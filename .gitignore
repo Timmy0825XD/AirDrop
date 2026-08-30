@@ -1,0 +1,23 @@
+# Personal (never commit)
+learning/
+.cursor
+
+# Env and secrets
+.env
+.env.*
+!.env.example
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Dependencies and build
+node_modules/
+dist/
+coverage/
+.pnpm-store/
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
