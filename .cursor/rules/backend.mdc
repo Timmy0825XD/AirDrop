@@ -1,0 +1,13 @@
+---
+description: pnpm, Nest modules, database indexes
+globs: backend/**/*
+alwaysApply: false
+---
+
+# Backend
+
+- Gestor: **pnpm**. Un `package.json` en `backend/` (no workspace pnpm en la raíz). `npm install` en `backend/` debe seguir funcionando.
+- Lockfile: `pnpm-lock.yaml`. No commitear `package-lock.json`.
+- Deploy: `corepack enable && pnpm install --frozen-lockfile`.
+- En entidades/migraciones: índices en FKs, columnas de filtro/orden (`status`, `createdAt`, `hubId`) y lookups únicos (email). PostGIS: índice GIST en geometrías.
+- No crear índices “por si acaso” en columnas que no se consultan.

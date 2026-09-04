@@ -1,0 +1,45 @@
+---
+description: Realistic DB types and column sizes for domain entities
+alwaysApply: true
+---
+
+# Modelo de dominio (tipos y tamaños)
+
+No uses el default de TypeORM (`varchar(255)`). Cada columna tiene un tipo PostgreSQL real y un tope **coherente con el dato**, no “por si acaso”. El `MaxLength` del DTO y el modelo Flutter deben coincidir con la columna.
+
+## Tipos
+
+- IDs: `uuid`, no `varchar`.
+- Instante: `timestamptz`. Solo fecha de calendario: `date`.
+- Flags: `boolean`. Estados/roles: `enum` de Postgres, no strings sueltos.
+- Enteros: `smallint` / `int` / `bigint` según el rango real (porcentaje 0–100 → `smallint`).
+- Decimales (kg, km, temperatura): `numeric(p,s)`, **nunca** `float`/`double`.
+- Coordenadas: PostGIS o `numeric(9,6)`. Hashes: `char` con la longitud del algoritmo.
+
+`text` solo para prosa sin tope claro. Si hay máximo de negocio, usa `varchar(n)`.
+
+## Tamaños de referencia (MVP Colombia)
+
+| Dato | Tipo | n |
+| --- | --- | --- |
+| Correo | `varchar` | 50 |
+| Celular Colombia (10 dígitos) | `varchar` | 10 |
+| Nombre de persona | `varchar` | 40 |
+| Nombre de central / medicamento | `varchar` | 80 |
+| Dirección o motivo corto | `varchar` | 160 |
+| Descripción de pedido | `varchar` | 500 |
+| Identificador de dron | `varchar` | 32 |
+| Hash bcrypt | `char` | 60 |
+| Hash SHA-256 (OTP) | `char` | 64 |
+
+Si un campo nuevo no está en la tabla: elige el tipo más estrecho que siga siendo correcto y documenta `n` en la entidad (`length` / `precision`).
+
+```typescript
+// mal
+@Column()
+email: string; // varchar(255)
+
+// bien
+@Column({ type: 'varchar', length: 50 })
+email: string;
+```

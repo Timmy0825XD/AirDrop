@@ -1,0 +1,21 @@
+---
+description: Frontend local/remote data switch
+globs: frontend/**/*.dart
+alwaysApply: false
+---
+
+# Origen de datos
+
+El front no espera al backend. Cada feature lee por un repositorio; el origen se cambia en un solo sitio.
+
+```
+lib/core/data/
+  data_source.dart          # enum local | remote
+  repositories/...          # contrato
+  local/...                 # JSON/fixtures
+  remote/...                # HTTP
+```
+
+- UI y controllers hablan con el contrato, nunca con HTTP ni JSON directo.
+- `local` = datos de prueba. `remote` = API. Un flag/env, no `#ifdef` por pantalla.
+- Si el endpoint no existe, la feature sigue en `local`.

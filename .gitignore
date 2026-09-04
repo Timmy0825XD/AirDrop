@@ -1,6 +1,12 @@
 # Personal (never commit)
 learning/
-.cursor
+
+# Cursor: rules y skills del proyecto sí se versionan
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
+!.cursor/skills/
+!.cursor/skills/**
 
 # Env and secrets
 .env
