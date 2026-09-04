@@ -1,0 +1,10 @@
+---
+description: English identifiers, Spanish UI (Colombia)
+alwaysApply: true
+---
+
+# Idioma
+
+- Identificadores de código (variables, clases, archivos, APIs): **inglés**.
+- Textos de UI, copys, validaciones visibles: **español (Colombia)**.
+- No mezclar idiomas en un mismo identificador (`userNombre` está mal; `userName` + copy `"Nombre"` está bien).

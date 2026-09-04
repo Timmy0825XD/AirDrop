@@ -1,0 +1,7 @@
+{
+  "eslint.workingDirectories": [
+    { "directory": "backend", "changeProcessCWD": true }
+  ],
+  "jest.rootPath": "backend",
+  "jest.jestCommandLine": "pnpm test"
+}

@@ -18,6 +18,10 @@ PostgreSQL + PostGIS para lo persistente. Redis para el snapshot de vuelo. Gatew
 
 Cada FK, filtro frecuente (`status`, fechas, `hubId`) y lookup único (email) lleva índice. Geometrías PostGIS: GIST. No indexar columnas que no se consultan.
 
+## Modelo de datos (tipos y tamaños)
+
+Columnas con tipo PostgreSQL real y longitud coherente (no `varchar(255)` por defecto). IDs `uuid`; instantes `timestamptz`; flags `boolean`; roles/estados `enum`; decimales `numeric`, nunca `float`. El `MaxLength` del DTO coincide con la columna. Referencia: regla `.cursor/rules/domain-model.mdc`.
+
 ## Módulos sugeridos (cuando exista código)
 
 Nombres alineados al glosario:

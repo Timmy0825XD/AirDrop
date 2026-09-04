@@ -1,0 +1,12 @@
+---
+description: Flutter widgets, 60-line limit, theme, reuse
+globs: frontend/**/*.dart
+alwaysApply: false
+---
+
+# Flutter
+
+- Reutilizar widgets. Extraer a `lib/core` o al feature si se repite.
+- Ningún widget (archivo de UI) supera **60 líneas**. Si pasa, descomponer.
+- Tema solo en `frontend/lib/theme/`. Las pantallas usan `Theme.of(context)`, no colores/textos sueltos.
+- Un gestor de estado para todo el proyecto. No mezclar tres.
