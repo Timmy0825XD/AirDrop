@@ -14,7 +14,7 @@ Skill de **este repo**. `learning/` está en la raíz y **no se commitea** (`.gi
 
 Después de terminar un `feat`, `fix`, `refactor`, `test`, `perf` u otro cambio relevante.
 
-**No** escribas nota si el trabajo fue solo documentación (`docs/`).
+**No** escribas nota si el trabajo fue solo documentación (`docs/`), ni cuando el usuario invoca **Front Pending** (esa skill ya escribe su propio `.md` en `learning/`).
 
 ## Cómo
 
