@@ -36,6 +36,6 @@ import { RolesGuard } from './roles.guard';
     RolesGuard,
     AdminSeedService,
   ],
-  exports: [AuthService, RolesGuard],
+  exports: [AuthService, RolesGuard, PassportModule],
 })
 export class AuthModule {}

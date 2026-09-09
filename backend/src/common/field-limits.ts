@@ -7,6 +7,11 @@ export const FIELD_LIMITS = {
   otpDigits: 6,
   bcryptHash: 60,
   sha256Hex: 64,
+  hubName: 80,
+  address: 160,
+  droneIdentifier: 32,
+  droneModelName: 80,
+  droneModelCode: 32,
 } as const;
 
 export const OTP_SIGNUP_TTL_MS = 10 * 60 * 1000;

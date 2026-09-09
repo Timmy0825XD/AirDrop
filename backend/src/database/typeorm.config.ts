@@ -1,6 +1,9 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { OneTimeCode } from '../auth/one-time-code.entity';
+import { Drone } from '../fleet/drone.entity';
+import { DroneModel } from '../fleet/drone-model.entity';
+import { Hub } from '../hubs/hub.entity';
 import { User } from '../users/user.entity';
 
 export function typeOrmOptions(config: ConfigService): TypeOrmModuleOptions {
@@ -17,7 +20,7 @@ export function typeOrmOptions(config: ConfigService): TypeOrmModuleOptions {
     type: 'postgres',
     url,
     ssl: { rejectUnauthorized: false },
-    entities: [User, OneTimeCode],
+    entities: [User, OneTimeCode, Hub, DroneModel, Drone],
     synchronize: config.get<string>('NODE_ENV') !== 'production',
     dropSchema: isTest && config.get<string>('E2E_DROP_SCHEMA') === 'true',
     retryAttempts: isTest ? 1 : 10,

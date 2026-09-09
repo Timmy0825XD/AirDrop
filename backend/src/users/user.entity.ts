@@ -7,11 +7,11 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { OneTimeCode } from '../auth/one-time-code.entity';
 import { CHAR_TRANSFORMER } from '../common/column-transformers';
 import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { FIELD_LIMITS } from '../common/field-limits';
-import { OneTimeCode } from '../auth/one-time-code.entity';
 
 @Entity({ name: 'users' })
 export class User {
@@ -57,6 +57,10 @@ export class User {
 
   @Column({ type: 'timestamptz', nullable: true })
   lockedUntil: Date | null;
+
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  hubId: string | null;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;

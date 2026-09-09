@@ -30,7 +30,7 @@ No trabajes directo en `main` ni `develop` (salvo el commit inicial del repo).
 
 ## Al terminar la tarea
 
-En la respuesta, solo esto (corto). No redactes essays.
+En la respuesta van **siempre** estos dos bloques (corto, sin essays). El segundo no espera a que el usuario lo pida: lo entregas en la misma respuesta, para que lo corra **después de aprobar/mergear el PR**.
 
 ```
 # add
@@ -46,22 +46,21 @@ git push -u origin HEAD
 gh pr create --base develop --title "tipo(alcance): descripcion" --body "<1-2 lineas>"
 ```
 
-- `hotfix/*` y merge de `release/*` a producción: `--base main` (y luego también merge a `develop`).
-- Primera línea 50–72 caracteres, imperativo, sin punto.
-- Cuerpo solo si hace falta el **por qué** (1 línea).
-- Relación rama ↔ commit: `feature`→`feat`, `bugfix`/`hotfix`→`fix`, y el resto el mismo tipo que el prefijo.
-- Tag al mergear `release`→`main`: `fix` patch, `feat` minor, `BREAKING CHANGE` major.
-
-## Después del merge (cuando el usuario lo diga)
-
 ```
+# despues de aprobar el PR (borrar local + GitHub y volver a develop)
 git checkout develop
 git pull origin develop
 git branch -d <rama>
 git push origin --delete <rama>
 ```
 
-`hotfix/*` o post-release: `checkout`/`pull` de `main` y de `develop` según toque, luego borrar la rama.
+- Sustituye `<rama>` por el nombre real (`feature/auth-api`, etc.).
+- `hotfix/*` y merge de `release/*` a producción: `--base main` (y luego también merge a `develop`).
+- Primera línea 50–72 caracteres, imperativo, sin punto.
+- Cuerpo solo si hace falta el **por qué** (1 línea).
+- Relación rama ↔ commit: `feature`→`feat`, `bugfix`/`hotfix`→`fix`, y el resto el mismo tipo que el prefijo.
+- Tag al mergear `release`→`main`: `fix` patch, `feat` minor, `BREAKING CHANGE` major.
+- `hotfix/*` o post-release: el bloque de limpieza hace `checkout`/`pull` de `main` y de `develop`, luego borra la rama local y `origin`.
 
 ## FLUJO DE TRABAJO CON GIT FLOW Y COMMITS
 

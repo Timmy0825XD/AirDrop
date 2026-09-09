@@ -52,6 +52,25 @@ Cuando usen geovallas: en el SQL Editor de Supabase, `CREATE EXTENSION IF NOT EX
 
 En desarrollo el OTP se imprime en el log. Nombre máximo 40, correo 50, celular **10 dígitos** colombianos.
 
+## Centrales (HU-06)
+
+| Método | Ruta | Auth |
+| --- | --- | --- |
+| POST | `/hubs` | JWT despachador |
+| GET | `/hubs/me` | JWT despachador |
+
+La central queda en `pending_approval`. El admin no aprueba todavía (HU-07). En desarrollo el aviso al admin se imprime en el log.
+
+## Flota (HU-11)
+
+| Método | Ruta | Auth |
+| --- | --- | --- |
+| GET | `/fleet/models` | JWT operador o admin |
+| POST | `/fleet/drones` | JWT operador |
+| GET | `/fleet/drones?hubId=` | JWT operador o admin |
+
+Al arrancar se siembra el `DroneModel` Wingcopter 198 (150 km/h, 6 kg, 110 km). El dron nace en `available`. Identificador máximo 32 caracteres.
+
 ## Pruebas
 
 ```bash
