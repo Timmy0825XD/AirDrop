@@ -4,6 +4,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { typeOrmOptions } from './database/typeorm.config';
+import { FleetModule } from './fleet/fleet.module';
+import { HubsModule } from './hubs/hubs.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -18,6 +20,8 @@ import { UsersModule } from './users/users.module';
     }),
     UsersModule,
     AuthModule,
+    HubsModule,
+    FleetModule,
   ],
 })
 export class AppModule {}
