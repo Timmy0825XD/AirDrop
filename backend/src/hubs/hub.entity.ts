@@ -59,6 +59,9 @@ export class Hub {
   })
   status: HubStatus;
 
+  @Column({ type: 'varchar', length: FIELD_LIMITS.reason, nullable: true })
+  rejectionReason: string | null;
+
   @Index({ unique: true })
   @Column({ type: 'uuid' })
   createdByUserId: string;

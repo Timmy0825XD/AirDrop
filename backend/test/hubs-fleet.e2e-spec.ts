@@ -10,6 +10,7 @@ import { HubStatus } from '../src/common/enums/hub-status.enum';
 import { HubType } from '../src/common/enums/hub-type.enum';
 import { DroneStatus } from '../src/common/enums/drone-status.enum';
 import { WINGCOPTER_198_CODE } from '../src/fleet/drone-model-seed.service';
+import { hubPayload, loginAdmin, registerVerified } from './e2e-helpers';
 
 const envFile = resolve(__dirname, '..', '.env');
 if (existsSync(envFile)) {
@@ -17,39 +18,6 @@ if (existsSync(envFile)) {
 }
 
 const describeIfDb = process.env.DATABASE_URL ? describe : describe.skip;
-
-const hubPayload = {
-  name: 'Hospital Rosario Pumarejo',
-  type: HubType.HOSPITAL,
-  address: 'Calle 16 No. 19-35, Valledupar',
-  latitude: 10.46314,
-  longitude: -73.25322,
-  contactPhone: '3001234567',
-};
-
-async function registerVerified(
-  app: INestApplication<App>,
-  role: UserRole,
-  email: string,
-): Promise<string> {
-  const password = 'secreto12';
-  const register = await request(app.getHttpServer())
-    .post('/auth/register')
-    .send({
-      fullName: 'Usuario Prueba',
-      email,
-      password,
-      role,
-      consentAccepted: true,
-    })
-    .expect(201);
-  const otp = (register.body as { otp: string }).otp;
-  const verified = await request(app.getHttpServer())
-    .post('/auth/verify-otp')
-    .send({ email, code: otp })
-    .expect(201);
-  return (verified.body as { accessToken: string }).accessToken;
-}
 
 describeIfDb('Hubs y flota (e2e)', () => {
   let app: INestApplication<App> | undefined;
@@ -98,6 +66,7 @@ describeIfDb('Hubs y flota (e2e)', () => {
       UserRole.FLEET_OPERATOR,
       `flota.e2e.${stamp}@hospital.co`,
     );
+    const adminToken = await loginAdmin(app!);
 
     await request(app!.getHttpServer())
       .post('/hubs')
@@ -148,6 +117,22 @@ describeIfDb('Hubs y flota (e2e)', () => {
         hubId,
       })
       .expect(403);
+
+    await request(app!.getHttpServer())
+      .post('/fleet/drones')
+      .set('Authorization', `Bearer ${operatorToken}`)
+      .send({
+        identifier: `WC-PENDING-${stamp}`,
+        droneModelId: wingcopter!.id,
+        hubId,
+      })
+      .expect(403);
+
+    await request(app!.getHttpServer())
+      .patch(`/hubs/${hubId}/decision`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ status: HubStatus.APPROVED })
+      .expect(200);
 
     await request(app!.getHttpServer())
       .post('/fleet/drones')

@@ -1,4 +1,4 @@
-import { ConflictException, ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { HubType } from '../common/enums/hub-type.enum';
 import { UserRole } from '../common/enums/user-role.enum';
@@ -36,8 +36,12 @@ function buildService(hubs: {
 }) {
   const save = jest.fn((user: User) => Promise.resolve(user));
   const notifyPendingApproval = jest.fn();
+  const notifyDecision = jest.fn();
   const usersService = { save } as unknown as UsersService;
-  const notice = { notifyPendingApproval } as unknown as HubAdminNoticeService;
+  const notice = {
+    notifyPendingApproval,
+    notifyDecision,
+  } as unknown as HubAdminNoticeService;
   return {
     service: new HubsService(hubs as never, usersService, notice),
     save,
@@ -66,6 +70,41 @@ describe('HubsService', () => {
     expect(user.hubId).toBe(savedHub.id);
     expect(save).toHaveBeenCalledWith(user);
     expect(notifyPendingApproval).toHaveBeenCalledWith(savedHub);
+  });
+
+  it('approves a pending hub', async () => {
+    const pending = {
+      id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+      status: HubStatus.PENDING_APPROVAL,
+      rejectionReason: null,
+      createdAt: new Date(),
+      ...dto,
+    } as Hub;
+    const hubs = {
+      findOne: jest.fn().mockResolvedValue(pending),
+      create: jest.fn(),
+      save: jest.fn().mockImplementation((row: Hub) => Promise.resolve(row)),
+    };
+    const { service } = buildService(hubs);
+    const result = await service.decide(pending.id, {
+      status: HubStatus.APPROVED,
+    });
+    expect(result.status).toBe(HubStatus.APPROVED);
+  });
+
+  it('requires a reason when rejecting', async () => {
+    const pending = {
+      id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+      status: HubStatus.PENDING_APPROVAL,
+    } as Hub;
+    const { service } = buildService({
+      findOne: jest.fn().mockResolvedValue(pending),
+      create: jest.fn(),
+      save: jest.fn(),
+    });
+    await expect(
+      service.decide(pending.id, { status: HubStatus.REJECTED }),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('rejects a second hub for the same dispatcher', async () => {

@@ -46,6 +46,12 @@ export class Drone {
   })
   status: DroneStatus;
 
+  @Column({ type: 'varchar', length: FIELD_LIMITS.reason, nullable: true })
+  maintenanceReason: string | null;
+
+  @Column({ type: 'date', nullable: true })
+  maintenanceUntil: string | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 

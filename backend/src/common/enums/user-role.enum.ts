@@ -10,3 +10,8 @@ export const PUBLIC_REGISTER_ROLES: UserRole[] = [
   UserRole.DISPATCHER,
   UserRole.FLEET_OPERATOR,
 ];
+
+export const INSTITUTIONAL_ROLES: UserRole[] = [
+  UserRole.DISPATCHER,
+  UserRole.FLEET_OPERATOR,
+];

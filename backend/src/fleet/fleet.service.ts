@@ -11,6 +11,8 @@ import { UserStatus } from '../common/enums/user-status.enum';
 import { HubsService } from '../hubs/hubs.service';
 import { User } from '../users/user.entity';
 import { CreateDroneDto } from './dto/create-drone.dto';
+import { RegisterMaintenanceDto } from './dto/register-maintenance.dto';
+import { UpdateDroneStatusDto } from './dto/update-drone-status.dto';
 import { Drone } from './drone.entity';
 import { DroneModel } from './drone-model.entity';
 
@@ -37,10 +39,7 @@ export class FleetService {
     if (!model) {
       throw new NotFoundException('El modelo de dron no existe.');
     }
-    const hub = await this.hubsService.findById(dto.hubId);
-    if (!hub) {
-      throw new NotFoundException('La central no existe.');
-    }
+    await this.hubsService.requireApproved(dto.hubId);
     const duplicate = await this.drones.findOne({
       where: { identifier: dto.identifier },
     });
@@ -50,8 +49,10 @@ export class FleetService {
     const drone = this.drones.create({
       identifier: dto.identifier,
       droneModelId: model.id,
-      hubId: hub.id,
+      hubId: dto.hubId,
       status: DroneStatus.AVAILABLE,
+      maintenanceReason: null,
+      maintenanceUntil: null,
     });
     const saved = await this.drones.save(drone);
     return this.toPublicDrone(saved);
@@ -68,6 +69,35 @@ export class FleetService {
       order: { identifier: 'ASC' },
     });
     return rows.map((row) => this.toPublicDrone(row));
+  }
+
+  async updateStatus(user: User, id: string, dto: UpdateDroneStatusDto) {
+    const drone = await this.requireActiveOperatorDrone(user, id);
+    this.assertNotInMission(drone);
+    drone.status = dto.status;
+    if (dto.status === DroneStatus.AVAILABLE) {
+      drone.maintenanceReason = null;
+      drone.maintenanceUntil = null;
+    } else {
+      drone.maintenanceReason = dto.reason?.trim() || drone.maintenanceReason;
+      drone.maintenanceUntil = dto.estimatedEndDate ?? drone.maintenanceUntil;
+    }
+    const saved = await this.drones.save(drone);
+    return this.toPublicDrone(saved);
+  }
+
+  async registerMaintenance(
+    user: User,
+    id: string,
+    dto: RegisterMaintenanceDto,
+  ) {
+    const drone = await this.requireActiveOperatorDrone(user, id);
+    this.assertNotInMission(drone);
+    drone.status = DroneStatus.OUT_OF_SERVICE;
+    drone.maintenanceReason = dto.reason.trim();
+    drone.maintenanceUntil = dto.estimatedEndDate;
+    const saved = await this.drones.save(drone);
+    return this.toPublicDrone(saved);
   }
 
   toPublicModel(model: DroneModel) {
@@ -88,8 +118,27 @@ export class FleetService {
       droneModelId: drone.droneModelId,
       hubId: drone.hubId,
       status: drone.status,
+      maintenanceReason: drone.maintenanceReason,
+      maintenanceUntil: drone.maintenanceUntil,
       createdAt: drone.createdAt,
     };
+  }
+
+  private async requireActiveOperatorDrone(user: User, id: string) {
+    this.assertActiveOperator(user);
+    const drone = await this.drones.findOne({ where: { id } });
+    if (!drone) {
+      throw new NotFoundException('El dron no existe.');
+    }
+    return drone;
+  }
+
+  private assertNotInMission(drone: Drone): void {
+    if (drone.status === DroneStatus.IN_MISSION) {
+      throw new ConflictException(
+        'No puedes cambiar el estado de un dron en misión.',
+      );
+    }
   }
 
   private assertActiveOperator(user: User): void {
