@@ -5,7 +5,7 @@ Dirección acordada en el documento base. El detalle de carpetas y convenciones 
 ## 1. Aplicación móvil
 
 - **Flutter**, una sola app para Android e iOS.
-- Roles: solicitante, despachador, receptor, operador de flota (y administrador).
+- Roles: solicitante, despachador, operador de flota y administrador. No hay rol receptor.
 - **Sin componente web.** Mapas, geovallas y telemetría van en la misma app.
 
 ## 2. Backend y lógica de negocio
@@ -34,7 +34,9 @@ Dirección acordada en el documento base. El detalle de carpetas y convenciones 
 - Un **reloj** en el backend (intervalo configurable, techo 2 s en vuelo).
 - Cada tick: avanza el dron en la ruta, recalcula batería según **fase** (vertical vs ala fija).
 - Specs desde `DroneModel` (Wingcopter 198), independientes de cada unidad de flota.
-- Emergencia: asignación rápida, puede reservar flota al momento.
+- El reloj **no** arranca cuando el despachador autoriza. Autorizar dispara el motor de decisión (reserva dron + ruta). El tick de vuelo empieza cuando el despachador **confirma la carga**.
+- En el punto de destino el reloj pasa a una fase de **espera** (5 min). Código válido → cierra misión. Sin código → simula el **retorno** a la central con el paquete.
+- Emergencia: asignación al autorizar; el dron queda reservado hasta la carga o el fallback.
 - Programado: calendario, posibilidad de agrupar entregas si el payload alcanza (sin convertir esto en un VRP académico; heurística simple).
 
 ## 7. Cadena de frío
@@ -50,7 +52,7 @@ Dirección acordada en el documento base. El detalle de carpetas y convenciones 
 ## Diagrama lógico
 
 ```
-[Solicitante/Despachador/Operador/Receptor/Admin]  Flutter
+[Solicitante/Despachador/Operador/Admin]  Flutter
                       | HTTPS REST
                       | WSS telemetría / estados
                       v

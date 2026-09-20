@@ -11,11 +11,12 @@
 
 | Actor | Quién | Qué hace en el sistema |
 | --- | --- | --- |
-| Solicitante | Paciente, acompañante, personal de puesto rural | Registra el pedido, sigue estado y mapa |
-| Despachador | Rol en hospital, clínica o farmacia (central) | Inventario, autoriza, planes programados |
+| Solicitante | Paciente, acompañante, personal de puesto rural | Registra el pedido (con receta en imagen si aplica), sigue estado y mapa, genera e ingresa el código de entrega |
+| Despachador | Rol en hospital, clínica o farmacia (central) | Inventario, autoriza, carga el insumo en el dron asignado, planes programados |
 | Operador de flota | Responsable de drones | Estados, geovallas, telemetría, mantenimiento |
-| Receptor | Quien recibe en el punto | Confirma con código; puede no ser el solicitante |
 | Administrador | Operación de la plataforma | Aprueba centrales, cuentas institucionales, métricas |
+
+No existe el rol **receptor**. Quien está en el punto de entrega usa el **código de un uso** (pantalla de confirmación, con o sin sesión de solicitante); no hay un tipo de cuenta aparte.
 
 ## Lienzo resumido
 

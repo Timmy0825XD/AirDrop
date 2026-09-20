@@ -34,9 +34,9 @@ Desarrollar una aplicación móvil de logística aérea autónoma simulada que g
 
 ### Específicos
 
-1. Analizar requerimientos (solicitante, despachador, operador de flota, receptor).
+1. Analizar requerimientos (solicitante, despachador, operador de flota).
 2. Diseñar e implementar el **motor de simulación** y el **motor de decisión**, con parámetros distintos por tipo de misión (batería, carga, geovallas, rutas), con arquitectura clara y defendible.
-3. Validar con pruebas funcionales y de integración el ciclo: solicitud → asignación → vuelo simulado → entrega.
+3. Validar con pruebas funcionales y de integración el ciclo: solicitud → autorización → asignación de dron → carga del insumo → vuelo simulado → código de entrega o retorno.
 
 Objetivos ampliados: [`context/objetivos.md`](context/objetivos.md).
 
@@ -44,7 +44,7 @@ Objetivos ampliados: [`context/objetivos.md`](context/objetivos.md).
 
 ## 4. Qué entra en el MVP (y qué no)
 
-**Sí (Valledupar + 1–2 zonas cercanas):** pedidos de emergencia y programados, flota simulada, geovallas, motor de decisión, rutas por corredores a altitud fija, telemetría en vivo, cadena de frío simulada, fallback de entrega, dashboard epidemiológico simple.
+**Sí (Valledupar + 1–2 zonas cercanas):** pedidos de emergencia y programados (con receta en imagen cuando el medicamento lo exige), flota simulada, geovallas, motor de decisión al autorizar, confirmación de carga antes del despegue, rutas por corredores a altitud fija, telemetría en vivo, espera de código de entrega (5 min) o retorno con el paquete, cadena de frío simulada, fallback, dashboard epidemiológico simple.
 
 **No:** dron real, clima real, navegación 3D, multi-ciudad desplegada, integración hospitalaria, reemplazar la atención médica ni el traslado del paciente.
 
@@ -56,11 +56,12 @@ Alcance completo: [`context/alcance-y-limitaciones.md`](context/alcance-y-limita
 
 | Rol | Función |
 | --- | --- |
-| **Solicitante** | Reporta la urgencia o el pedido y sigue el vuelo. |
-| **Despachador** | Inventario de la central, autoriza despacho, crea planes programados. |
+| **Solicitante** | Reporta la urgencia o el pedido (adjunta receta si aplica), sigue el vuelo e ingresa el código de entrega. |
+| **Despachador** | Inventario de la central, autoriza, carga el insumo en el dron asignado, crea planes programados. |
 | **Operador de flota** | Drones, geovallas, telemetría, mantenimiento. |
-| **Receptor** | Confirma la entrega (con o sin cuenta, vía código). |
 | **Administrador** | Aprueba centrales, gestiona cuentas institucionales, métricas. |
+
+No hay rol de **receptor**. La entrega se cierra con el **código de un uso** (el solicitante lo genera y se ingresa cuando el dron está en el punto).
 
 Negocio y propuesta de valor: [`context/actores-y-modelo-de-negocio.md`](context/actores-y-modelo-de-negocio.md).
 
@@ -69,7 +70,7 @@ Negocio y propuesta de valor: [`context/actores-y-modelo-de-negocio.md`](context
 ## 6. Cómo está pensado el sistema
 
 ```
-App Flutter (un solo código, cuatro roles + admin)
+App Flutter (un solo código: tres roles operativos + admin)
         │  HTTPS + WSS
         ▼
 Backend NestJS (módulos por dominio, no microservicios)
@@ -79,9 +80,9 @@ Backend NestJS (módulos por dominio, no microservicios)
 
 Piezas de valor (las que hay que poder explicar en la sustentación):
 
-1. **Motor de decisión** — ¿puede este dron cumplir esta misión? Emergencia gana si hay competencia.
+1. **Motor de decisión** — al autorizar el despachador, elige el mejor dron y **no** inicia el vuelo: muestra la referencia para cargar el insumo. Emergencia gana si hay competencia.
 2. **Cálculo de rutas** — corredores a altitud fija; no se cruza una geovalla.
-3. **Motor de simulación** — “reloj” del backend: mueve el dron, gasta batería por fase de vuelo (eVTOL).
+3. **Motor de simulación** — “reloj” del backend: arranca **después** de confirmar la carga; en destino espera el código o regresa con el paquete.
 4. **Fallback** — si no hay dron, hay alternativa, no un rechazo ciego.
 
 Stack y conceptos: [`context/arquitectura-tecnologica.md`](context/arquitectura-tecnologica.md).  
@@ -119,7 +120,7 @@ Los `AGENTS.md` de frontend y backend **no inventan** reglas de negocio: las apl
 | [principios-de-diseno.md](context/principios-de-diseno.md) | Simplicidad, SOLID, qué no hacer |
 | [requisitos.md](context/requisitos.md) | RU, RF, RNF |
 | [product-backlog.md](context/product-backlog.md) | Historias, sprints, incrementos, cronograma |
-| [casos-de-uso.md](context/casos-de-uso.md) | CU-01 a CU-32 |
+| [casos-de-uso.md](context/casos-de-uso.md) | CU-01 a CU-34 |
 | [glosario.md](context/glosario.md) | Vocabulario del proyecto |
 | [fuentes.md](context/fuentes.md) | Referencias del documento base |
 

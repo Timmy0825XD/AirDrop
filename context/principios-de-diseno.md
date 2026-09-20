@@ -42,10 +42,10 @@ Los mismos nombres en backend (módulos Nest) y, en lo posible, en frontend (fea
 3. **Inventory** — existencias, vencimiento, cadena de frío (flag).
 4. **Fleet** — drones, `DroneModel`, estados, mantenimiento.
 5. **Geofences** — polígonos PostGIS.
-6. **Orders** — emergencia y programados, estados, código de entrega.
-7. **Decision** — elegibilidad + prioridad emergencia > programado.
+6. **Orders** — emergencia y programados, receta (imagen) si aplica, estados, código de entrega, confirmación de carga.
+7. **Decision** — elegibilidad + prioridad emergencia > programado; salida: dron asignado pendiente de carga, no vuelo.
 8. **Routing** — corredores a altitud fija evitando geovallas.
-9. **Simulation** — reloj, fases de vuelo, batería, temperatura simulada.
+9. **Simulation** — reloj (tras confirmar carga), fases de vuelo, espera de código, retorno con paquete, batería, temperatura simulada.
 10. **Telemetry** — Redis + gateway WebSocket.
 11. **Notifications** — push por cambio de estado y alertas.
 12. **Analytics** — dashboard epidemiológico y métricas admin (consultas SQL, no un data warehouse).
@@ -91,9 +91,14 @@ Al terminar la misión, un resumen (tiempos, incidencias de temperatura/batería
 
 ```
 Pedido (emergencia o ocurrencia de un plan programado)
-  → (si emergencia) despachador autoriza e inventario
+  → (si el ítem lo exige) receta en imagen
+  → (si emergencia) despachador autoriza y verifica inventario
   → Motor de decisión (batería, payload, mantenimiento, clima simulado, ruta)
-       ├─ hay dron → calcular ruta → simular vuelo → telemetría → entrega / código
+       ├─ hay dron → mostrar referencia al despachador → confirmar carga
+       │                 → calcular/usar ruta → simular vuelo → telemetría
+       │                 → en destino esperar código (5 min)
+       │                      ├─ código válido → entregado
+       │                      └─ timeout → retorno a la central con el paquete
        └─ no hay dron → fallback (otra central o traslado convencional)
 ```
 
@@ -113,14 +118,14 @@ No se modela aerodinámica, viento real ni colisiones 3D. Obstáculos = geovalla
 
 Tras el login, la UI muestra el **shell del rol**. Componentes compartidos: mapa, estados de pedido, notificaciones. No hay cuatro repositorios Flutter.
 
-Mapa y WebSockets son críticos (sprint 5); deben quedar en un módulo de cliente de telemetría pequeño y reutilizable (solicitante, receptor, operador), no copiados.
+Mapa y WebSockets son críticos (sprint 5); deben quedar en un módulo de cliente de telemetría pequeño y reutilizable (solicitante, operador), no copiados.
 
 ---
 
 ## 9. Pruebas (suficientes para defender calidad)
 
-- Unitarias: elegibilidad, prioridad, “ruta cruza geovalla”, gasto de batería por fase (números redondos, no un paper).
-- Integración: registro → pedido → (mock de decisión) → estado.
+- Unitarias: elegibilidad, prioridad, “ruta cruza geovalla”, gasto de batería por fase, timeout de 5 min → retorno, no despegar sin carga (números redondos, no un paper).
+- Integración: registro → pedido → autorizar → dron asignado → confirmar carga → vuelo → código o retorno.
 - No se exige cobertura 100 % ni pirámide de testing corporativa.
 
 ---
