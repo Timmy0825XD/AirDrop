@@ -28,7 +28,7 @@ Nombres alineados al glosario:
 
 `Auth`, `Users`, `Hubs`, `Inventory`, `Fleet`, `Geofences`, `Orders`, `Decision`, `Routing`, `Simulation`, `Telemetry`, `Notifications`, `Analytics`.
 
-Un módulo = controllers + services + entities de **ese** tema. El motor de decisión **no** vive dentro de `Simulation`. El reloj de vuelo **no** autoriza pedidos.
+Un módulo = controllers + services + entities de **ese** tema. El motor de decisión **no** vive dentro de `Simulation`. El reloj de vuelo **no** autoriza pedidos ni asume la carga a bordo.
 
 ## Patrones permitidos
 
@@ -46,10 +46,10 @@ Un módulo = controllers + services + entities de **ese** tema. El motor de deci
 
 ## Motores (lo que hay que poder dibujar en el tablero)
 
-1. **Decision** — entrada: pedido autorizado + drones candidatos. Salida: dron + ruta, o “nadie” → Fallback. Emergencia gana (RF-11).
-2. **Routing** — origen hub, destino pedido, geovallas PostGIS. Corredor a altitud fija. Si no hay camino, el dron no es elegible.
-3. **Simulation** — intervalo ≤ 2 s (RNF-08). Fases eVTOL y batería distinta en vertical vs crucero. Temperatura solo si el ítem tiene flag de frío.
-4. **Telemetry** — escribe Redis, publica WSS. Al cerrar misión, persiste resumen en Postgres.
+1. **Decision** — entrada: pedido **autorizado** + drones candidatos. Salida: dron + ruta **pendiente de carga**, o “nadie” → Fallback. **No** arranca el reloj. Emergencia gana (RF-11).
+2. **Routing** — origen hub, destino pedido, geovallas PostGIS. Corredor a altitud fija (ida; retorno si timeout). Si no hay camino, el dron no es elegible.
+3. **Simulation** — arranca **solo** tras confirmar carga (RF-28). Intervalo ≤ 2 s en vuelo (RNF-08). En destino espera 5 min el código (RF-29); si no, vuelo de retorno con el paquete (RF-30). Fases eVTOL y batería distinta en vertical vs crucero. Temperatura solo si el ítem tiene flag de frío.
+4. **Telemetry** — escribe Redis, publica WSS. Al cerrar misión (entregado o devuelto), persiste resumen en Postgres.
 
 Calibración: `DroneModel` tipo Wingcopter 198 ([`../context/arquitectura-tecnologica.md`](../context/arquitectura-tecnologica.md)).
 
@@ -59,4 +59,4 @@ bcrypt, JWT con expiración, rate limit de login (5 intentos), no SQL concatenad
 
 ## Pruebas
 
-Unitarias de Decision/Routing/Simulation (casos del documento). Un e2e feliz de auth + crear recurso protegido. No exigir 100 % coverage.
+Unitarias de Decision/Routing/Simulation (casos del documento: sin despegue al autorizar, espera de código, retorno). Un e2e feliz de auth + crear recurso protegido. No exigir 100 % coverage.

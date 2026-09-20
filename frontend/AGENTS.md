@@ -22,8 +22,8 @@ lib/
     fleet/
     geofences/
     orders/
-    tracking/    # mapa + telemetría (solicitante, receptor, operador)
-    delivery/    # código de entrega
+    tracking/    # mapa + telemetría (solicitante, operador)
+    delivery/    # código de entrega (sin rol receptor)
     analytics/
 ```
 

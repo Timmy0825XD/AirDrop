@@ -6,7 +6,7 @@
 | --- | --- |
 | **eVTOL** | Aeronave eléctrica de despegue y aterrizaje vertical; crucero más eficiente que un multirrotor puro. El Wingcopter 198 es un eVTOL de rotor basculante usado en entrega médica real. |
 | **BVLOS** | Vuelo más allá de la línea de vista del operador. Necesario en delivery a distancia; reto regulatorio en el mundo real. En el MVP solo se **simula** la misión, no se opera BVLOS legal. |
-| **Motor de decisión** | Software que, con reglas y datos actuales, dice si una unidad puede cumplir la tarea **antes** de asignarla. Es el núcleo de inteligencia de AirDrop. |
+| **Motor de decisión** | Software que, con reglas y datos actuales, dice si una unidad puede cumplir la tarea **cuando el despachador autoriza**. Asigna el dron; el vuelo espera la confirmación de carga. Es el núcleo de inteligencia de AirDrop. |
 | **Geovalla** | Perímetro virtual sobre coordenadas reales: restringe o permite movimiento. Aquí: polígonos que el enrutador no puede cruzar. |
 | **DroneModel** | Configuración reutilizable (no cada dron suelto) con specs tipo Wingcopter 198. |
 | **Corredor a altitud fija** | Sustituto simple de pathfinding 3D: se vuela a una banda de altura y se rodean geovallas en 2D. |

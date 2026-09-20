@@ -20,7 +20,7 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 
 | ID | Historia | Pri | SP | Sprint |
 | --- | --- | --- | --- | --- |
-| HU-01 | Registro con correo o celular y perfil (cinco roles) | Alta | 5 | 1 |
+| HU-01 | Registro con correo o celular y perfil (cuatro roles) | Alta | 5 | 1 |
 | HU-02 | OTP 6 dígitos, 10 minutos | Alta | 3 | 1 |
 | HU-03 | Login y JWT según rol | Alta | 3 | 1 |
 | HU-04 | Cerrar sesión | Alta | 1 | 1 |
@@ -33,7 +33,7 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 | HU-06 | Registrar datos de la central | Alta | 5 | 1 |
 | HU-07 | Admin aprueba o rechaza central | Alta | 5 | 2 |
 | HU-08 | Perfil básico del solicitante | Media | 3 | 2 |
-| HU-09 | Inventario (cantidad, vencimiento, frío) | Alta | 8 | 2 |
+| HU-09 | Inventario (cantidad, vencimiento, frío, exige receta) | Alta | 8 | 2 |
 | HU-10 | Suspender / reactivar cuentas institucionales | Media | 5 | 2 |
 
 ## Módulo 3 — Flota y geovallas
@@ -49,8 +49,8 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 
 | ID | Historia | Pri | SP | Sprint |
 | --- | --- | --- | --- | --- |
-| HU-15 | Pedido de emergencia | Alta | 8 | 3 |
-| HU-16 | Estados del pedido | Alta | 5 | 3 |
+| HU-15 | Pedido de emergencia (receta en imagen si el ítem lo exige) | Alta | 8 | 3 |
+| HU-16 | Estados del pedido (incluye pendiente de carga, espera y retorno) | Alta | 5 | 3 |
 | HU-17 | Cola de emergencia para el despachador | Alta | 5 | 3 |
 | HU-18 | Plan de reabastecimiento | Alta | 8 | 3 |
 | HU-19 | Alerta de pedido sin atender | Media | 3 | 3 |
@@ -60,7 +60,7 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 
 | ID | Historia | Pri | SP | Sprint |
 | --- | --- | --- | --- | --- |
-| HU-21 | Elegibilidad (batería, carga, mantenimiento, clima simulado) | Alta | 13 | 4 |
+| HU-21 | Elegibilidad al autorizar (reserva dron; no despega) | Alta | 13 | 4 |
 | HU-22 | Emergencia gana el dron | Alta | 5 | 4 |
 | HU-23 | Ruta por corredores, evita geovallas | Alta | 13 | 4 |
 | HU-24 | Fallback si nadie es elegible | Alta | 8 | 6 |
@@ -69,7 +69,7 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 
 | ID | Historia | Pri | SP | Sprint |
 | --- | --- | --- | --- | --- |
-| HU-25 | Simular movimiento y batería por fase | Alta | 13 | 5 |
+| HU-25 | Simular movimiento y batería por fase (solo tras confirmar carga) | Alta | 13 | 5 |
 | HU-26 | Publicar telemetría por WebSockets | Alta | 13 | 5 |
 | HU-27 | Panel de telemetría del operador | Alta | 8 | 5 |
 | HU-28 | Mapa en vivo para el solicitante | Alta | 8 | 5 |
@@ -83,8 +83,8 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 | HU-31 | Flag de sensible a temperatura | Media | 3 | 6 |
 | HU-32 | Alerta de temperatura fuera de rango | Alta | 5 | 6 |
 | HU-33 | Código de entrega de un uso | Alta | 5 | 6 |
-| HU-34 | Receptor sin cuenta confirma con código | Alta | 5 | 6 |
-| HU-35 | Receptor con cuenta: estado y mapa | Media | 5 | 6 |
+| HU-34 | Espera de código 5 min; si no, retorno con el paquete | Alta | 5 | 6 |
+| HU-35 | Despachador confirma carga en el dron asignado | Alta | 5 | 6 |
 
 ## Módulo 8 — Historial, dashboard, admin
 
@@ -105,9 +105,9 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 | 1 | 1 | Base: cuentas y flota inicial | OTP, JWT, recuperación, registro de central, alta de drones + `DroneModel` |
 | 2 | 2 | Centrales e inventario; mapa de vuelo | Aprobación, inventario, estados/mantenimiento, geovallas, cuentas institucionales |
 | 3 | 3 | Pedidos | Emergencia, estados, cola despachador, planes, alertas, historial solicitante |
-| 4 | 4 | Decisión | Elegibilidad, prioridad, rutas |
-| 5 | 5 | Vuelo en vivo | Simulación por fases, WSS, panel operador, mapa solicitante, notificaciones, alerta batería |
-| 6 | 6 | MVP presentable | Fallback, frío, código de entrega, historiales, dashboard, métricas, pruebas, despliegue |
+| 4 | 4 | Decisión | Elegibilidad al autorizar, prioridad, rutas (sin despegue) |
+| 5 | 5 | Vuelo en vivo | Simulación tras carga, WSS, panel operador, mapa solicitante, notificaciones, alerta batería |
+| 6 | 6 | MVP presentable | Fallback, frío, código, espera 5 min, retorno, historiales, dashboard, métricas, pruebas, despliegue |
 
 ---
 
@@ -120,6 +120,6 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 | 3 | 29 sep – 12 oct | Pedidos emergencia y programados |
 | 4 | 13 oct – 26 oct | Motor de decisión y rutas |
 | 5 | 27 oct – 9 nov | Simulación, telemetría, paneles, mapa |
-| 6 | 10 nov – 22 nov | Fallback, frío, entrega, dashboard, admin, pruebas, cierre |
+| 6 | 10 nov – 22 nov | Fallback, frío, carga, código, retorno, dashboard, admin, pruebas, cierre |
 
 Semanas del documento original (S1 = 1 sep … S12 = 17 nov) se agrupan de dos en dos en cada sprint.
