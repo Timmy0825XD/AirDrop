@@ -8,4 +8,10 @@ export class HubAdminNoticeService {
   notifyPendingApproval(hub: Hub): void {
     this.logger.log(`Central pendiente de aprobación: ${hub.id} (${hub.name})`);
   }
+
+  notifyDecision(hub: Hub): void {
+    this.logger.log(
+      `Central ${hub.status}: ${hub.id} (${hub.name})`,
+    );
+  }
 }

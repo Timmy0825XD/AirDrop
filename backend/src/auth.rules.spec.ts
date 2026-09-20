@@ -14,6 +14,7 @@ import {
   isPublicRegisterRole,
   nextFailedLoginState,
   requiresInstitutionalEmail,
+  clearLockState,
 } from './auth/auth.rules';
 import { RegisterDto } from './auth/dto/register.dto';
 import { User } from './users/user.entity';
@@ -51,6 +52,13 @@ describe('auth.rules', () => {
     expect(requiresInstitutionalEmail(UserRole.FLEET_OPERATOR)).toBe(true);
     expect(requiresInstitutionalEmail(UserRole.REQUESTER)).toBe(false);
     expect(requiresInstitutionalEmail(UserRole.ADMIN)).toBe(false);
+  });
+
+  it('keeps suspended status when clearing a lock', () => {
+    const next = clearLockState(UserStatus.SUSPENDED);
+    expect(next.status).toBe(UserStatus.SUSPENDED);
+    expect(next.failedLoginCount).toBe(0);
+    expect(next.lockedUntil).toBeNull();
   });
 
   it('allows only three public register roles', () => {

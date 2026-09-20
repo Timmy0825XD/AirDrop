@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -15,6 +16,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
@@ -68,5 +70,11 @@ export class AuthController {
   @Get('me')
   me(@CurrentUser() user: User) {
     return this.authService.toPublicUser(user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me')
+  updateMe(@CurrentUser() user: User, @Body() dto: UpdateProfileDto) {
+    return this.authService.updateProfile(user, dto);
   }
 }

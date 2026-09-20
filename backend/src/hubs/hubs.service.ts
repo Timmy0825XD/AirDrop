@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -11,6 +12,7 @@ import { UserStatus } from '../common/enums/user-status.enum';
 import { User } from '../users/user.entity';
 import { UsersService } from '../users/users.service';
 import { CreateHubDto } from './dto/create-hub.dto';
+import { DecideHubDto } from './dto/decide-hub.dto';
 import { HubAdminNoticeService } from './hub-admin-notice.service';
 import { Hub } from './hub.entity';
 
@@ -47,6 +49,7 @@ export class HubsService {
       contactPhone: dto.contactPhone,
       contactEmail: dto.contactEmail ?? null,
       status: HubStatus.PENDING_APPROVAL,
+      rejectionReason: null,
       createdByUserId: user.id,
     });
     const saved = await this.hubs.save(hub);
@@ -68,8 +71,53 @@ export class HubsService {
     return this.toPublicHub(hub);
   }
 
+  async listForAdmin(status?: HubStatus) {
+    const rows = await this.hubs.find({
+      where: status ? { status } : {},
+      order: { createdAt: 'DESC' },
+    });
+    return rows.map((row) => this.toPublicHub(row));
+  }
+
+  async decide(hubId: string, dto: DecideHubDto) {
+    const hub = await this.hubs.findOne({ where: { id: hubId } });
+    if (!hub) {
+      throw new NotFoundException('La central no existe.');
+    }
+    if (hub.status !== HubStatus.PENDING_APPROVAL) {
+      throw new ConflictException('Esta central ya fue aprobada o rechazada.');
+    }
+    if (dto.status === HubStatus.REJECTED) {
+      const reason = dto.reason?.trim();
+      if (!reason) {
+        throw new BadRequestException('El rechazo debe incluir un motivo.');
+      }
+      hub.status = HubStatus.REJECTED;
+      hub.rejectionReason = reason;
+    } else {
+      hub.status = HubStatus.APPROVED;
+      hub.rejectionReason = null;
+    }
+    const saved = await this.hubs.save(hub);
+    this.adminNotice.notifyDecision(saved);
+    return this.toPublicHub(saved);
+  }
+
   findById(id: string): Promise<Hub | null> {
     return this.hubs.findOne({ where: { id } });
+  }
+
+  async requireApproved(id: string): Promise<Hub> {
+    const hub = await this.findById(id);
+    if (!hub) {
+      throw new NotFoundException('La central no existe.');
+    }
+    if (hub.status !== HubStatus.APPROVED) {
+      throw new ForbiddenException(
+        'La central debe estar aprobada para operar.',
+      );
+    }
+    return hub;
   }
 
   toPublicHub(hub: Hub) {
@@ -83,6 +131,7 @@ export class HubsService {
       contactPhone: hub.contactPhone,
       contactEmail: hub.contactEmail,
       status: hub.status,
+      rejectionReason: hub.rejectionReason,
       createdAt: hub.createdAt,
     };
   }

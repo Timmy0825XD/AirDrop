@@ -3,10 +3,13 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
+import { enablePostgis } from './database/enable-postgis';
 import { removeRetiredUserRoles } from './database/remove-retired-user-roles';
 import { typeOrmOptions } from './database/typeorm.config';
 import { FleetModule } from './fleet/fleet.module';
+import { GeofencesModule } from './geofences/geofences.module';
 import { HubsModule } from './hubs/hubs.module';
+import { InventoryModule } from './inventory/inventory.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -19,6 +22,7 @@ import { UsersModule } from './users/users.module';
       inject: [ConfigService],
       useFactory: async (config: ConfigService) => {
         const options = typeOrmOptions(config);
+        await enablePostgis(options);
         await removeRetiredUserRoles(options);
         return options;
       },
@@ -26,7 +30,9 @@ import { UsersModule } from './users/users.module';
     UsersModule,
     AuthModule,
     HubsModule,
+    InventoryModule,
     FleetModule,
+    GeofencesModule,
   ],
 })
 export class AppModule {}

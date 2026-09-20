@@ -52,6 +52,8 @@ function buildService(opts: {
     droneModelId: model.id,
     hubId: hub.id,
     status: DroneStatus.AVAILABLE,
+    maintenanceReason: null,
+    maintenanceUntil: null,
     createdAt: new Date(),
   } as Drone;
   const drones = {
@@ -69,6 +71,10 @@ function buildService(opts: {
     findById: jest
       .fn()
       .mockResolvedValue(opts.hub === undefined ? hub : opts.hub),
+    requireApproved:
+      opts.hub === null
+        ? jest.fn().mockRejectedValue(new NotFoundException('La central no existe.'))
+        : jest.fn().mockResolvedValue(opts.hub === undefined ? hub : opts.hub),
   } as unknown as HubsService;
   return {
     service: new FleetService(drones as never, models as never, hubsService),
@@ -107,6 +113,43 @@ describe('FleetService', () => {
     await expect(service.createDrone(operator(), dto)).rejects.toBeInstanceOf(
       NotFoundException,
     );
+  });
+
+  it('rejects changing a drone that is in mission', async () => {
+    const inMission = {
+      id: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+      status: DroneStatus.IN_MISSION,
+    } as Drone;
+    const { service } = buildService({
+      drones: { findOne: jest.fn().mockResolvedValue(inMission) },
+    });
+    await expect(
+      service.updateStatus(operator(), inMission.id, {
+        status: DroneStatus.AVAILABLE,
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
+  });
+
+  it('registers maintenance as out of service', async () => {
+    const drone = {
+      id: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+      status: DroneStatus.AVAILABLE,
+      maintenanceReason: null,
+      maintenanceUntil: null,
+    } as Drone;
+    const { service, drones } = buildService({
+      drones: {
+        findOne: jest.fn().mockResolvedValue(drone),
+        save: jest.fn().mockImplementation((row: Drone) => Promise.resolve(row)),
+      },
+    });
+    const result = await service.registerMaintenance(operator(), drone.id, {
+      reason: 'Revisión de hélices',
+      estimatedEndDate: '2026-09-30',
+    });
+    expect(result.status).toBe(DroneStatus.OUT_OF_SERVICE);
+    expect(result.maintenanceReason).toBe('Revisión de hélices');
+    expect(drones.save).toHaveBeenCalled();
   });
 
   it('rejects an inactive operator', async () => {

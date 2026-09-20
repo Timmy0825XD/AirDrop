@@ -31,6 +31,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResendOtpDto } from './dto/resend-otp.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { UpdateProfileDto } from './dto/update-profile.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { JwtPayload } from './jwt-payload';
 import { OneTimeCode } from './one-time-code.entity';
@@ -117,7 +118,7 @@ export class AuthService {
       );
     }
     if (user.status === UserStatus.LOCKED && !isLockActive(user)) {
-      Object.assign(user, clearLockState());
+      Object.assign(user, clearLockState(user.status));
     }
     const matches = await passwordsMatch(dto.password, user.passwordHash);
     if (!matches) {
@@ -137,7 +138,12 @@ export class AuthService {
         'Debes verificar tu cuenta con el código que te enviamos.',
       );
     }
-    Object.assign(user, clearLockState());
+    if (user.status === UserStatus.SUSPENDED) {
+      throw new ForbiddenException(
+        'Tu cuenta está suspendida. Habla con el administrador.',
+      );
+    }
+    Object.assign(user, clearLockState(user.status));
     await this.usersService.save(user);
     return this.tokenResponse(user);
   }
@@ -163,7 +169,7 @@ export class AuthService {
     const user = await this.requireUserByContact(dto.email, dto.phone);
     await this.consumeOtp(user, OtpPurpose.PASSWORD_RESET, dto.code);
     user.passwordHash = await hashPassword(dto.password);
-    Object.assign(user, clearLockState());
+    Object.assign(user, clearLockState(user.status));
     await this.usersService.save(user);
     return { message: 'La contraseña se actualizó. Ya puedes iniciar sesión.' };
   }
@@ -176,7 +182,47 @@ export class AuthService {
       phone: user.phone,
       role: user.role,
       status: user.status,
+      hubId: user.hubId,
     };
+  }
+
+  async updateProfile(user: User, dto: UpdateProfileDto) {
+    if (
+      dto.fullName === undefined &&
+      dto.email === undefined &&
+      dto.phone === undefined
+    ) {
+      throw new BadRequestException(
+        'Debes enviar al menos un campo para actualizar.',
+      );
+    }
+    if (dto.fullName !== undefined) {
+      const fullName = dto.fullName.trim();
+      if (!fullName) {
+        throw new BadRequestException('El nombre es obligatorio.');
+      }
+      user.fullName = fullName;
+    }
+    if (dto.email !== undefined) {
+      const taken = await this.usersService.findByEmail(dto.email);
+      if (taken && taken.id !== user.id) {
+        throw new ConflictException(
+          'Ya existe una cuenta con este correo o celular.',
+        );
+      }
+      user.email = dto.email;
+    }
+    if (dto.phone !== undefined) {
+      const taken = await this.usersService.findByPhone(dto.phone);
+      if (taken && taken.id !== user.id) {
+        throw new ConflictException(
+          'Ya existe una cuenta con este correo o celular.',
+        );
+      }
+      user.phone = dto.phone;
+    }
+    const saved = await this.usersService.save(user);
+    return this.toPublicUser(saved);
   }
 
   private tokenResponse(user: User) {

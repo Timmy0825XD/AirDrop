@@ -2,6 +2,7 @@ import { createHash, randomInt } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
 import { User } from '../users/user.entity';
 import {
+  INSTITUTIONAL_ROLES,
   PUBLIC_REGISTER_ROLES,
   UserRole,
 } from '../common/enums/user-role.enum';
@@ -32,7 +33,7 @@ export async function passwordsMatch(
 }
 
 export function requiresInstitutionalEmail(role: UserRole): boolean {
-  return role === UserRole.DISPATCHER || role === UserRole.FLEET_OPERATOR;
+  return INSTITUTIONAL_ROLES.includes(role);
 }
 
 export function isPublicRegisterRole(role: string): boolean {
@@ -62,14 +63,13 @@ export function nextFailedLoginState(
   };
 }
 
-export function clearLockState(): Pick<
-  User,
-  'failedLoginCount' | 'lockedUntil' | 'status'
-> {
+export function clearLockState(
+  status: UserStatus,
+): Pick<User, 'failedLoginCount' | 'lockedUntil' | 'status'> {
   return {
     failedLoginCount: 0,
     lockedUntil: null,
-    status: UserStatus.ACTIVE,
+    status: status === UserStatus.LOCKED ? UserStatus.ACTIVE : status,
   };
 }
 
