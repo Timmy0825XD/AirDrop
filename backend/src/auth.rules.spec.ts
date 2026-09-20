@@ -1,6 +1,6 @@
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
-import { UserRole } from './common/enums/user-role.enum';
+import { PUBLIC_REGISTER_ROLES, UserRole } from './common/enums/user-role.enum';
 import { UserStatus } from './common/enums/user-status.enum';
 import {
   FIELD_LIMITS,
@@ -11,6 +11,7 @@ import {
   isLockActive,
   isOtpConsumed,
   isOtpExpired,
+  isPublicRegisterRole,
   nextFailedLoginState,
   requiresInstitutionalEmail,
 } from './auth/auth.rules';
@@ -49,6 +50,18 @@ describe('auth.rules', () => {
     expect(requiresInstitutionalEmail(UserRole.DISPATCHER)).toBe(true);
     expect(requiresInstitutionalEmail(UserRole.FLEET_OPERATOR)).toBe(true);
     expect(requiresInstitutionalEmail(UserRole.REQUESTER)).toBe(false);
+    expect(requiresInstitutionalEmail(UserRole.ADMIN)).toBe(false);
+  });
+
+  it('allows only three public register roles', () => {
+    expect(PUBLIC_REGISTER_ROLES).toEqual([
+      UserRole.REQUESTER,
+      UserRole.DISPATCHER,
+      UserRole.FLEET_OPERATOR,
+    ]);
+    expect(isPublicRegisterRole(UserRole.REQUESTER)).toBe(true);
+    expect(isPublicRegisterRole(UserRole.ADMIN)).toBe(false);
+    expect(isPublicRegisterRole('recipient')).toBe(false);
   });
 });
 
@@ -100,5 +113,28 @@ describe('RegisterDto lengths', () => {
     });
     const errors = await validate(dto);
     expect(errors).toHaveLength(0);
+  });
+
+  it('rejects admin and retired recipient on public register', async () => {
+    const admin = plainToInstance(RegisterDto, {
+      fullName: 'Ana Pérez',
+      email: 'ana@correo.co',
+      password: 'secreto12',
+      role: UserRole.ADMIN,
+      consentAccepted: true,
+    });
+    const recipient = plainToInstance(RegisterDto, {
+      fullName: 'Ana Pérez',
+      email: 'ana@correo.co',
+      password: 'secreto12',
+      role: 'recipient',
+      consentAccepted: true,
+    });
+    expect(
+      (await validate(admin)).some((error) => error.property === 'role'),
+    ).toBe(true);
+    expect(
+      (await validate(recipient)).some((error) => error.property === 'role'),
+    ).toBe(true);
   });
 });

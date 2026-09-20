@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
+import { removeRetiredUserRoles } from './database/remove-retired-user-roles';
 import { typeOrmOptions } from './database/typeorm.config';
 import { FleetModule } from './fleet/fleet.module';
 import { HubsModule } from './hubs/hubs.module';
@@ -16,7 +17,11 @@ import { UsersModule } from './users/users.module';
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: typeOrmOptions,
+      useFactory: async (config: ConfigService) => {
+        const options = typeOrmOptions(config);
+        await removeRetiredUserRoles(options);
+        return options;
+      },
     }),
     UsersModule,
     AuthModule,

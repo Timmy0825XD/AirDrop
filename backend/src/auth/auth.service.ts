@@ -21,6 +21,7 @@ import {
   isLockActive,
   isOtpConsumed,
   isOtpExpired,
+  isPublicRegisterRole,
   nextFailedLoginState,
   passwordsMatch,
   requiresInstitutionalEmail,
@@ -49,6 +50,9 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
+    if (!isPublicRegisterRole(dto.role)) {
+      throw new BadRequestException('El rol no es válido para el registro.');
+    }
     if (requiresInstitutionalEmail(dto.role) && !dto.email) {
       throw new BadRequestException(
         'El despachador y el operador deben registrarse con correo institucional.',
