@@ -85,5 +85,77 @@ describeIfDb('Auth (e2e)', () => {
       role: UserRole.REQUESTER,
       status: 'active',
     });
+
+    await request(app!.getHttpServer()).post('/auth/logout').expect(401);
+
+    await request(app!.getHttpServer())
+      .post('/auth/logout')
+      .set('Authorization', `Bearer ${loginToken}`)
+      .expect(204);
+  }, 20_000);
+
+  it('rejects recipient and admin on public register', async () => {
+    const email = `rol.e2e.${Date.now()}@correo.co`;
+    const body = {
+      fullName: 'Ana Pérez',
+      email,
+      password: 'secreto12',
+      consentAccepted: true,
+    };
+
+    await request(app!.getHttpServer())
+      .post('/auth/register')
+      .send({ ...body, role: 'recipient' })
+      .expect(400);
+
+    await request(app!.getHttpServer())
+      .post('/auth/register')
+      .send({ ...body, role: UserRole.ADMIN })
+      .expect(400);
+  }, 20_000);
+
+  it('forgot-password → reset-password → login', async () => {
+    const email = `clave.e2e.${Date.now()}@correo.co`;
+    const password = 'secreto12';
+    const nextPassword = 'secreto34';
+
+    const register = await request(app!.getHttpServer())
+      .post('/auth/register')
+      .send({
+        fullName: 'Ana Pérez',
+        email,
+        password,
+        role: UserRole.REQUESTER,
+        consentAccepted: true,
+      })
+      .expect(201);
+
+    await request(app!.getHttpServer())
+      .post('/auth/verify-otp')
+      .send({ email, code: (register.body as { otp: string }).otp })
+      .expect(201);
+
+    const forgot = await request(app!.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ email })
+      .expect(200);
+
+    const resetOtp = (forgot.body as { otp: string }).otp;
+    expect(resetOtp).toMatch(/^\d{6}$/);
+
+    await request(app!.getHttpServer())
+      .post('/auth/reset-password')
+      .send({ email, code: resetOtp, password: nextPassword })
+      .expect(200);
+
+    await request(app!.getHttpServer())
+      .post('/auth/login')
+      .send({ email, password })
+      .expect(401);
+
+    await request(app!.getHttpServer())
+      .post('/auth/login')
+      .send({ email, password: nextPassword })
+      .expect(200);
   }, 20_000);
 });

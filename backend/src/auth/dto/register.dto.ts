@@ -3,15 +3,17 @@ import {
   Equals,
   IsBoolean,
   IsEmail,
-  IsEnum,
-  IsNotIn,
+  IsIn,
   IsOptional,
   IsString,
   Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { UserRole } from '../../common/enums/user-role.enum';
+import {
+  PUBLIC_REGISTER_ROLES,
+  UserRole,
+} from '../../common/enums/user-role.enum';
 import { COLOMBIA_PHONE_REGEX, FIELD_LIMITS } from '../../common/field-limits';
 import { ContactCheckDto } from './contact-check.dto';
 
@@ -50,8 +52,7 @@ export class RegisterDto extends ContactCheckDto {
   })
   password: string;
 
-  @IsEnum(UserRole, { message: 'El rol no es válido para el registro.' })
-  @IsNotIn([UserRole.ADMIN], {
+  @IsIn(PUBLIC_REGISTER_ROLES, {
     message: 'El rol no es válido para el registro.',
   })
   role: UserRole;

@@ -1,7 +1,10 @@
 import { createHash, randomInt } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
 import { User } from '../users/user.entity';
-import { UserRole } from '../common/enums/user-role.enum';
+import {
+  PUBLIC_REGISTER_ROLES,
+  UserRole,
+} from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import {
   FIELD_LIMITS,
@@ -30,6 +33,10 @@ export async function passwordsMatch(
 
 export function requiresInstitutionalEmail(role: UserRole): boolean {
   return role === UserRole.DISPATCHER || role === UserRole.FLEET_OPERATOR;
+}
+
+export function isPublicRegisterRole(role: string): boolean {
+  return (PUBLIC_REGISTER_ROLES as string[]).includes(role);
 }
 
 export function isLockActive(user: User, now = new Date()): boolean {
