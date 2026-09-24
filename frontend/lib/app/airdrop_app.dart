@@ -6,8 +6,6 @@ import '../theme/app_theme.dart';
 import 'providers.dart';
 import 'router.dart';
 
-/// Raíz de la app: tema (claro/oscuro según el sistema), rutas,
-/// interface de Material en español y conexión de la sesión.
 class AirDropApp extends ConsumerStatefulWidget {
   const AirDropApp({super.key});
 
@@ -19,8 +17,6 @@ class _AirDropAppState extends ConsumerState<AirDropApp> {
   @override
   void initState() {
     super.initState();
-    // Contrato del ApiClient (Opción A): 401 con token → borrar sesión
-    // y volver al login desde cualquier pantalla.
     ref.read(apiClientProvider).onUnauthorized = () => appRouter.go('/login');
   }
 
