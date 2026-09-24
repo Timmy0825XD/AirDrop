@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../features/auth/presentation/auth_controller.dart';
 import '../theme/app_theme.dart';
 import 'providers.dart';
 import 'router.dart';
@@ -14,10 +16,16 @@ class AirDropApp extends ConsumerStatefulWidget {
 }
 
 class _AirDropAppState extends ConsumerState<AirDropApp> {
+  late final GoRouter _router;
+
   @override
   void initState() {
     super.initState();
-    ref.read(apiClientProvider).onUnauthorized = () => appRouter.go('/login');
+    _router = ref.read(routerProvider);
+    ref.read(apiClientProvider).onUnauthorized = () {
+      ref.read(authControllerProvider.notifier).clearSession();
+      _router.go('/login');
+    };
   }
 
   @override
@@ -28,7 +36,7 @@ class _AirDropAppState extends ConsumerState<AirDropApp> {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.system,
-      routerConfig: appRouter,
+      routerConfig: _router,
       supportedLocales: const [Locale('es')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

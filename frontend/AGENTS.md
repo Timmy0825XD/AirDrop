@@ -77,10 +77,35 @@ Plan de desarrollo frontend: una fase por sesión, rama `feature/…` desde
 | --- | --- | --- | --- |
 | 0 | Preparación | `pubspec` con dependencias base (riverpod, dio, secure storage) y `sdk: ^3.12.0` | ✅ Hecha (PR #7) |
 | 1 | Núcleo | `lib/core` (field_limits, api_exception, data source, token store, ApiClient), tema en `lib/theme`, widgets + `Validators`, rutas con placeholders y `main` con `ProviderScope` | ✅ Hecha (PR #7) |
-| 2 | Auth | Pantallas de login, registro, recuperar/restablecer contraseña y verify-otp; `AuthRepository` (local\|remote) y controller Riverpod contra los 9 endpoints de `/auth`; TTL de OTP (10 min registro / 15 min reset) | ⬜ **Siguiente** |
-| 3 | Homes por rol | Home de admin / operador / solicitante, resolución de rol con `GET /auth/me` y redirect real por sesión (reemplaza el placeholder `/home`) | ⬜ Pendiente |
+| 2 | Auth | Pantallas de login, registro, recuperar/restablecer contraseña, verify-otp y perfil; `AuthRepository` (local\|remote) y controller Riverpod contra los 9 endpoints de `/auth`; TTL de OTP (10 min registro / 15 min reset) | ✅ Hecha |
+| 3 | Homes por rol | Homes de solicitante, despachador, operador de flota y administrador; resolución de rol con `GET /auth/me` y redirect real por sesión (reemplaza el placeholder `/home`) | ⬜ **Siguiente** |
 | 4 | Módulos | Frente A: centrales, usuarios e inventario · Frente B: flota y geovallas (CRUDs con `AppTextField`, `PrimaryButton` y `Validators`) | ⬜ Pendiente |
-| 5 | Prueba manual | Recorrido completo con los 3 roles contra el backend corriendo + pulido final | ⬜ Pendiente |
+| 5 | Prueba manual | Recorrido completo con los 4 roles contra el backend corriendo + pulido final | ⬜ Pendiente |
+
+### Estado real al cerrar la Fase 2 — 23 de septiembre de 2026
+
+- Rama de trabajo: `feature/frontend-auth`, creada desde `develop`.
+- La Fase 2 de Auth está implementada y probada; no se modificó `backend/`.
+- Implementados `auth_models.dart`, `auth_repository.dart`, `remote_auth_repository.dart` y `local_auth_repository.dart` bajo `lib/features/auth/data/`.
+- `RemoteAuthRepository` cubre los 9 endpoints de `/auth`: register, verify-otp, resend-otp, login, logout, forgot-password, reset-password, me y update profile.
+- `LocalAuthRepository` permite trabajar sin NestJS con fixtures en memoria. Fixtures de desarrollo: `demo@airdrop.local / Demo1234`, `despacho@airdrop.local / Despacho123`, `operador@airdrop.local / Operador123`, `admin@airdrop.local / Admin1234`; OTP local `123456`. No son credenciales de producción.
+- `RegisterRequest` acepta `email` y `phone` independientes porque el backend exige al menos uno y permite ambos; despachador y operador requieren correo.
+- `AuthController` usa Riverpod 3, guarda el JWT únicamente mediante `TokenStore`, restaura la sesión con `me()` y no cambia el estado global a loading durante login o verificación OTP.
+- Pantallas reales: `login`, `register`, `verify-otp`, `forgot-password`, `reset-password` y `profile`. OTP de registro: 10 minutos; reset: 15 minutos.
+- `routerProvider` protege `/home` y `/profile`, permite las rutas públicas de Auth y sincroniza un `401` con el estado de sesión.
+- Referencia visual de Stitch: <https://stitch.withgoogle.com/projects/1947458192612690185>.
+- `DataSource.remote` sigue siendo el origen activo. Para una maqueta sin backend, cambiar temporalmente `appDataSource` a `DataSource.local`; no usar fixtures contra la API real.
+- Pruebas frontend ejecutadas: `flutter analyze` sin errores y `flutter test` con 12 pruebas correctas. No se ejecutaron e2e contra NestJS porque el backend no se modificó ni se levantó en esta fase.
+- El único placeholder de navegación que queda es `/home`; `/unauthorized` y el error global siguen usando `PlaceholderScreen` intencionalmente.
+- No se hicieron `commit`, `push` ni PR; el usuario debe hacerlos al terminar la revisión.
+
+### Siguiente paso: Fase 3 — Homes por rol
+
+1. Reemplazar `/home` por homes de solicitante, despachador, operador de flota y administrador.
+2. Usar `AuthState.user.role` y la restauración existente de `GET /auth/me`.
+3. Mantener acceso a `/profile` y logout desde cada home.
+4. Probar redirección inicial, navegación por rol y sesión expirada.
+5. No reabrir la Fase 2 salvo que aparezca un bug; trabajar la primera fase `⬜` de la tabla.
 
 **Protocolo de sesión:**
 
