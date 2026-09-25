@@ -9,6 +9,7 @@ import '../features/auth/presentation/profile_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/reset_password_screen.dart';
 import '../features/auth/presentation/verify_otp_screen.dart';
+import '../features/home/presentation/role_home.dart';
 import 'placeholder_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -69,13 +70,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           note: 'No tienes permiso para ver esa pantalla.',
         ),
       ),
-      GoRoute(
-        path: '/home',
-        builder: (_, _) => const PlaceholderScreen(
-          title: 'Inicio',
-          note: 'El home por rol llega en la Fase 3.',
-        ),
-      ),
+      GoRoute(path: '/home', builder: (_, _) => const RoleHomeScreen()),
     ],
     errorBuilder: (_, _) => const PlaceholderScreen(
       title: 'No encontrada',
