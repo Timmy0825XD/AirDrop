@@ -1,8 +1,13 @@
+import 'dart:io';
+
 import 'package:dio/dio.dart';
 import '../api_exception.dart';
 import '../auth/token_store.dart';
 
-const String defaultBaseUrl = 'http://localhost:3000';
+/// En el emulador de Android, `localhost` es el propio emulador.
+/// `10.0.2.2` es el alias que el emulador usa para llegar al PC.
+String get defaultBaseUrl =>
+    Platform.isAndroid ? 'http://10.0.2.2:3000' : 'http://localhost:3000';
 
 class ApiClient {
   ApiClient({required this.tokenStore, String? baseUrl})
