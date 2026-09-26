@@ -7,13 +7,13 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 ### CU-01 — Registrar cuenta
 
 - **Actores:** Solicitante
-- **Antes:** No existe una cuenta con ese documento o ese celular
+- **Antes:** No existe una cuenta con ese documento, ese correo o ese celular
 - **Pasos:**
-  1. Ingresa nombre, tipo y número de documento, celular, contraseña y consentimiento. El correo es opcional.
+  1. Ingresa nombre, tipo y número de documento, correo, celular, departamento, ciudad, dirección de residencia, contraseña y consentimiento. Ninguno es opcional.
   2. El sistema rechaza tarjeta de identidad y cualquier documento que no sea cédula de ciudadanía, cédula de extranjería o PPT.
   3. Crea la cuenta sin activar y envía un OTP de 6 dígitos al celular, vigente 10 minutos.
   4. Si el código es válido, la cuenta queda activa y abre el inicio del solicitante.
-- **Si falla:** Documento o celular repetido: error. OTP incorrecto o vencido: no activa y permite reenviar.
+- **Si falla:** Documento, correo o celular repetido: error. Falta departamento, ciudad o dirección: no se crea. OTP incorrecto o vencido: no activa y permite reenviar.
 - **Después:** Puede iniciar sesión. Todavía no hay pedido.
 - **Por qué:** RU-01 y RF-02. Sin consentimiento y sin documento no hay tratamiento de un dato que después puede ser de salud.
 
@@ -262,10 +262,13 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 
 - **Actores:** Administrador
 - **Pasos:**
-  1. Crea un despachador con correo institucional y exactamente una central activa.
-  2. Crea un operador con correo institucional y una o varias centrales activas.
-  3. Puede suspender o reactivar cualquiera de las dos.
-- **Después:** Entran por CU-02, sin OTP de registro. Suspender les quita el acceso.
+  1. Elige despachador u operador.
+  2. Ingresa los mismos datos obligatorios del solicitante (CU-01): nombre, documento, correo institucional, celular, departamento, ciudad, dirección, contraseña y consentimiento.
+  3. Puede dejar la central vacía, o marcar una activa si es despachador, o una o varias activas si es operador.
+  4. La cuenta queda activa, sin OTP de registro.
+  5. Después puede asignar o quitar centrales, y suspender o reactivar la cuenta.
+- **Si falla:** Documento, correo o celular repetidos: no se crea. Una segunda central en un despachador, o una central suspendida: no se asigna.
+- **Después:** Entran por CU-02. Sin central, el despachador no autoriza ni pide stock y el operador no ve flota ni geovallas. Suspender les quita el acceso.
 - **Por qué:** RU-27. La capacitación para aprobar salidas no se autodeclara en el registro público.
 
 ### CU-25 — Métricas

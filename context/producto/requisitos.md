@@ -10,11 +10,11 @@ No hay rol receptor. La recepción se cierra con el código (RU-07, RU-24).
 
 ### RU-01 — Registro civil
 
-Nombre, tipo y número de documento, celular de 10 dígitos, contraseña y consentimiento. El correo es opcional. Documentos: cédula de ciudadanía, cédula de extranjería o PPT.
+Nombre, tipo y número de documento, correo, celular de 10 dígitos, departamento, ciudad, dirección de residencia, contraseña y consentimiento. Todos son obligatorios. Documentos: cédula de ciudadanía, cédula de extranjería o PPT. La lista completa está en [../app/roles.md](../app/roles.md).
 
-**Por qué.** Es la única cuenta que se crea sola. El documento identifica a la persona que va a recibir el medicamento. El consentimiento es obligatorio porque el pedido puede llevar datos de salud (Ley 1581 de 2012). No se admite un documento de menor.
+**Por qué.** Es la única cuenta que se crea sola. El documento identifica a quien recibe el medicamento. Correo y celular sirven para verificar la cuenta y recuperarla. Departamento, ciudad y dirección fijan la residencia de una entrega en zona de difícil acceso, distinta del punto GPS de un pedido suelto. El consentimiento es obligatorio porque el pedido puede llevar datos de salud (Ley 1581 de 2012). No se admite un documento de menor.
 
-**Se cumple cuando.** Falta uno de esos datos, el documento o el celular ya existen, o no hay consentimiento: la cuenta no se crea. Sin OTP válido queda sin activar.
+**Se cumple cuando.** Falta uno de esos datos, el documento, el correo o el celular ya existen, o no hay consentimiento: la cuenta no se crea. Sin OTP válido queda sin activar.
 
 ### RU-02 — Urgencia a mi ubicación
 
@@ -110,7 +110,7 @@ Si una urgencia en su cola supera el tiempo configurado, recibe un aviso.
 
 ### RU-16 — Centrales asignadas
 
-Entra con la cuenta que creó el administrador y ve una o varias centrales. No se registra solo.
+Entra con la cuenta que creó el administrador. Puede no tener central al crearse. Cuando el administrador se la asigna, ve una o varias. No se registra solo.
 
 **Por qué.** El técnico no está atado a un solo sitio. El despachador sí, porque el inventario y la firma de salida son de una central.
 
@@ -148,7 +148,7 @@ Crea la central (nombre, tipo, ubicación, contacto) y puede suspenderla. No hay
 
 ### RU-27 — Cuentas institucionales
 
-Crea despachadores (una central, correo institucional) y operadores (una o varias centrales, correo institucional). Puede suspenderlos y reactivarlos. Esas cuentas no pasan por OTP de registro público.
+Crea despachadores y operadores con los mismos datos obligatorios del solicitante (RU-01) y con correo institucional. La central es opcional: ninguna en el alta, o asignada ahí mismo, y se puede marcar después. El despachador queda en una central como máximo. El operador, en una o varias. Puede suspenderlos y reactivarlos. Esas cuentas no pasan por OTP de registro público. Sin central asignada no autorizan, no piden stock y no operan flota.
 
 ### RU-28 — Métricas
 
@@ -158,7 +158,7 @@ Número de misiones, tiempo promedio e incidencias, incluidos los retornos sin e
 
 ### RF-01 — Registro
 
-El registro público solo crea solicitantes, con los datos de RU-01. Despachador y operador los crea el administrador. La cuenta de administrador inicial no sale de ese formulario.
+El registro público solo crea solicitantes, con los datos obligatorios de RU-01. Despachador y operador los crea el administrador. La cuenta de administrador inicial no sale de ese formulario.
 
 **Por qué.** Mezclar el alta pública con quien aprueba medicamentos deja la red sin control de la central.
 
@@ -246,7 +246,7 @@ Conteos por medicamento, zona y fecha. Sin identificadores de persona.
 
 ### RF-25 — Cuentas institucionales
 
-Crear, listar, suspender y reactivar. El despachador queda en una central. El operador, en una o varias.
+Crear, listar, asignar central, suspender y reactivar. El despachador queda en una central como máximo. El operador, en ninguna, una o varias. La asignación puede ir en el alta o en un cambio posterior.
 
 ### RF-26 — Métricas
 

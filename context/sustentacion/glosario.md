@@ -7,8 +7,8 @@ Términos que deben usarse igual en código, UI y sustentación.
 | AirDrop | Nombre del proyecto y de la app. Logística aérea médica **simulada**. |
 | Central (hub) | Lugar con inventario y drones. No es un usuario. Puede despachar o recibir un abastecimiento. |
 | Solicitante | Persona civil con documento. Única cuenta de registro público. Pide para su ubicación. |
-| Despachador | Profesional de la salud, o persona con capacitación certificada para aprobar solicitudes. Una central, creado por el admin. |
-| Operador de flota | Usuario creado por el admin. Flota, geovallas y telemetría de las centrales que tiene asignadas (una o varias). |
+| Despachador | Profesional de la salud, o persona con capacitación certificada para aprobar solicitudes. Lo crea el admin. Como máximo una central, y puede no tenerla al crearse. |
+| Operador de flota | Usuario creado por el admin. Puede no tener central al crearse. Con asignación, ve flota, geovallas y telemetría de una o varias centrales. |
 | Administrador | Crea y suspende centrales, despachadores y operadores. No despacha ni pide insumos. |
 | Tipo de venta | Libre, bajo fórmula médica o control especial. Lo define el ítem de inventario. |
 | Receta (imagen) | Foto de la prescripción. Obligatoria solo en venta bajo fórmula. El despachador verifica su contenido al autorizar. |

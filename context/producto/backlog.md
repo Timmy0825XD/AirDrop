@@ -20,7 +20,7 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 
 | ID | Historia | Pri | SP | Sprint |
 | --- | --- | --- | --- | --- |
-| HU-01 | Registro civil con documento, celular y OTP. Despachador y operador los crea el admin | Alta | 5 | 1 |
+| HU-01 | Registro civil con nombre, documento, correo, celular, departamento, ciudad, dirección, consentimiento y OTP. Despachador y operador los crea el admin | Alta | 5 | 1 |
 | HU-02 | OTP 6 dígitos, 10 minutos | Alta | 3 | 1 |
 | HU-03 | Login y JWT según rol | Alta | 3 | 1 |
 | HU-04 | Cerrar sesión | Alta | 1 | 1 |
@@ -34,7 +34,7 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 | HU-07 | Admin suspende o reactiva una central | Alta | 5 | 2 |
 | HU-08 | Perfil básico del solicitante | Media | 3 | 2 |
 | HU-09 | Inventario (cantidad, lote, vencimiento, frío, tipo de venta) | Alta | 8 | 2 |
-| HU-10 | Admin crea despachadores (una central) y operadores (una o varias), y puede suspenderlos | Media | 5 | 2 |
+| HU-10 | Admin crea despachadores y operadores con los datos del solicitante; la central es opcional y se asigna en el alta o después. Puede suspenderlos | Media | 5 | 2 |
 
 ## Módulo 3 — Flota y geovallas
 
@@ -103,7 +103,7 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 | Inc. | Sprint | El sistema al cerrar | Funcionalidades |
 | --- | --- | --- | --- |
 | 1 | 1 | Base: cuentas y flota inicial | OTP, JWT, recuperación, registro de central, alta de drones + `DroneModel` |
-| 2 | 2 | Centrales e inventario; mapa de vuelo | Aprobación, inventario, estados/mantenimiento, geovallas, cuentas institucionales |
+| 2 | 2 | Centrales e inventario; mapa de vuelo | Suspensión de centrales, inventario, estados/mantenimiento, geovallas, cuentas institucionales con central opcional |
 | 3 | 3 | Pedidos | Emergencia, estados, cola despachador, planes, alertas, historial solicitante |
 | 4 | 4 | Decisión | Elegibilidad al autorizar, prioridad, rutas (sin despegue) |
 | 5 | 5 | Vuelo en vivo | Simulación tras carga, WSS, panel operador, mapa solicitante, notificaciones, alerta batería |
@@ -116,7 +116,7 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 | Sprint | Semanas (2026) | Foco |
 | --- | --- | --- |
 | 1 | 1 sep – 14 sep | Arquitectura base, auth, OTP, JWT, central, flota |
-| 2 | 15 sep – 28 sep | Perfiles, inventario, aprobación, geovallas, estados de flota |
+| 2 | 15 sep – 28 sep | Perfiles, inventario, suspensión de centrales, geovallas, estados de flota, cuentas institucionales |
 | 3 | 29 sep – 12 oct | Pedidos emergencia y programados |
 | 4 | 13 oct – 26 oct | Motor de decisión y rutas |
 | 5 | 27 oct – 9 nov | Simulación, telemetría, paneles, mapa |
