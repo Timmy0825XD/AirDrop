@@ -18,7 +18,7 @@ Después de terminar un `feat`, `fix`, `refactor`, `test`, `perf` u otro cambio 
 
 ## Cómo
 
-1. Crea `learning/YYYY-MM-DD-tema-corto.md` (fecha del día, kebab-case).
+1. Crea `learning/<n>-<tema>.md`. `<n>` es el entero siguiente: el máximo de los archivos `learning/<n>-*.md` más 1; si no hay ninguno, `1`. `<tema>` en kebab-case, corto, sin fecha. Ejemplo: `learning/1-introduccion.md`. El mismo contador vale para Front Pending.
 2. Español, tono de tutor. Asume fase de aprendizaje.
 3. Enseña backend y tecnologías nuevas con detalle (qué es, por qué existe, cómo quedó en AirDrop).
 4. No copies código enorme; cita lo mínimo y explica.
