@@ -34,9 +34,9 @@ Lee antes de redactar:
 
 ## Archivo de salida
 
-`learning/YYYY-MM-DD-front-pending-<tema-corto>.md`
+`learning/<n>-front-pending-<tema>.md`
 
-Fecha del día. Un tema kebab-case (ej. `auth`, `hubs-fleet`). Si cubres varios módulos, usa el más amplio (`auth-hubs-fleet`) o un archivo por dominio si el diff es enorme.
+`<n>` es el entero siguiente en `learning/` (el máximo de `learning/<n>-*.md` más 1; si no hay ninguno, `1`). Mismo contador que las notas de aprendizaje. `<tema>` en kebab-case, sin fecha (ej. `auth`, `hubs-fleet`). Si cubres varios módulos, usa el más amplio (`auth-hubs-fleet`) o un archivo por dominio si el diff es enorme.
 
 Español (Colombia). Identificadores de código en inglés, copys de UI en español.
 
