@@ -1,0 +1,32 @@
+---
+description: Al cambiar una regla de negocio, actualizar HU, RF, CU y el contexto que la repite
+alwaysApply: true
+---
+
+# Documentación de negocio alineada al core
+
+`context/` es la especificación. Si el usuario pide cambiar una regla de negocio, el mismo cambio adapta la documentación a la indicación nueva. No es un registro de cambios.
+
+## Cuándo
+
+Sí: el usuario cambia comportamiento, alcance, rol, estado, plazo, prioridad, elegibilidad, ruta, entrega, inventario o cualquier regla que hoy esté escrita en `context/`.
+
+No: bug, refactor o detalle de implementación que deja la regla escrita igual. En ese caso no toques `context/`.
+
+## Qué actualizar
+
+Solo los ítems cuya redacción quedó falsa. Conserva el ID (`RF-11`, `HU-22`, `CU-26`); no renumeres.
+
+| Si cambia | Archivo |
+| --- | --- |
+| RU, RF, RNF | `context/requisitos.md` |
+| Historia, sprint, SP o incremento | `context/product-backlog.md` |
+| Caso de uso o flujo | `context/casos-de-uso.md` |
+| Alcance, actores, arquitectura, glosario, objetivos o principios | el `.md` de `context/` que lo afirma |
+| La misma frase en `INDEX.md` o en un `AGENTS.md` | esa copia, para que no contradiga `context/` |
+
+Misma regla, misma redacción en cada archivo que la afirma. Si se elimina, quítala en todos los sitios que la citan.
+
+## Ejemplo
+
+El usuario pide que la espera del código pase de 5 a 3 minutos: se actualizan el RF, `HU-34`, el CU y cualquier línea de `AGENTS.md` que aún diga 5 minutos. No se reescribe el módulo entero ni se agrega una sección "cambios".
