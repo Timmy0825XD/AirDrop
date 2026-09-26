@@ -5,8 +5,8 @@ Este archivo aplica a **todo** el monorepo. Las reglas de [`frontend/AGENTS.md`]
 Antes de implementar o cambiar comportamiento de negocio, leer:
 
 1. [`INDEX.md`](INDEX.md)
-2. [`context/principios-de-diseno.md`](context/principios-de-diseno.md)
-3. El documento de `context/` que corresponda (pedidos, flota, rutas, etc.)
+2. [`context/index.md`](context/index.md) y el archivo de la carpeta que corresponda
+3. [`context/diseno/principios.md`](context/diseno/principios.md)
 
 ---
 
@@ -65,7 +65,7 @@ AirDrop se **sustenta**. El código debe verse profesional y ser fácil de expli
 - Datos de salud: consentimiento explícito; no loguear payloads clínicos en texto plano.
 - Límite de intentos de login (RNF-04).
 
-Detalle: [`context/requisitos.md`](context/requisitos.md) (RNF).
+Detalle: [`context/producto/requisitos.md`](context/producto/requisitos.md) (RNF).
 
 ---
 

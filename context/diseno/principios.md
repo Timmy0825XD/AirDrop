@@ -37,12 +37,12 @@ La arquitectura prevista multi-ciudad (varias centrales, varios drones) se **mod
 
 Los mismos nombres en backend (módulos Nest) y, en lo posible, en frontend (features):
 
-1. **Auth** — registro, OTP, JWT, roles.
+1. **Auth** — registro solo del solicitante, OTP, JWT, roles. Despachador y operador los crea el admin.
 2. **Hubs (centrales)** — registro, aprobación, perfil.
-3. **Inventory** — existencias, vencimiento, cadena de frío (flag).
+3. **Inventory** — existencias, lote, vencimiento, cadena de frío y tipo de venta.
 4. **Fleet** — drones, `DroneModel`, estados, mantenimiento.
 5. **Geofences** — polígonos PostGIS.
-6. **Orders** — emergencia y programados, receta (imagen) si aplica, estados, código de entrega, confirmación de carga.
+6. **Orders** — los cuatro pedidos de [`../app/roles.md`](../app/roles.md), con las reglas de [`../entregas/`](../entregas/).
 7. **Decision** — elegibilidad + prioridad emergencia > programado; salida: dron asignado pendiente de carga, no vuelo.
 8. **Routing** — corredores a altitud fija evitando geovallas.
 9. **Simulation** — reloj (tras confirmar carga), fases de vuelo, espera de código, retorno con paquete, batería, temperatura simulada.
@@ -91,14 +91,15 @@ Al terminar la misión, un resumen (tiempos, incidencias de temperatura/batería
 
 ```
 Pedido (emergencia o ocurrencia de un plan programado)
-  → (si el ítem lo exige) receta en imagen
-  → (si emergencia) despachador autoriza y verifica inventario
+  → tipo de venta (libre, bajo fórmula con imagen, control especial rechazado)
+  → (si emergencia) despachador verifica fórmula e inventario y autoriza
   → Motor de decisión (batería, payload, mantenimiento, clima simulado, ruta)
        ├─ hay dron → mostrar referencia al despachador → confirmar carga
        │                 → calcular/usar ruta → simular vuelo → telemetría
        │                 → en destino esperar código (5 min)
        │                      ├─ código válido → entregado
        │                      └─ timeout → retorno a la central con el paquete
+       │                           → cuarentena: reingreso solo si el frío no se comprometió
        └─ no hay dron → fallback (otra central o traslado convencional)
 ```
 
@@ -134,7 +135,7 @@ Mapa y WebSockets son críticos (sprint 5); deben quedar en un módulo de client
 
 | Archivo | Autoridad |
 | --- | --- |
-| `INDEX.md` + este archivo + resto de `context/` | Negocio, alcance, diseño |
+| `context/index.md` y el resto de `context/` | Negocio, alcance, diseño |
 | `/AGENTS.md` | Disciplina de implementación global |
 | `frontend/AGENTS.md` | Convenciones Flutter |
 | `backend/AGENTS.md` | Convenciones NestJS |

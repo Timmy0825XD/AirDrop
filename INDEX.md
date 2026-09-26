@@ -22,7 +22,7 @@ Pregunta del proyecto:
 
 > ¿Cómo mejorar el acceso a medicamentos y suministros médicos, en urgencia puntual y en abastecimiento programado, con un sistema autónomo de decisión y logística que **no dependa de la vía terrestre**?
 
-Detalle, cifras y justificación: [`context/problema-y-justificacion.md`](context/problema-y-justificacion.md).
+Detalle, cifras y justificación: [`context/sustentacion/problema.md`](context/sustentacion/problema.md).
 
 ---
 
@@ -38,17 +38,17 @@ Desarrollar una aplicación móvil de logística aérea autónoma simulada que g
 2. Diseñar e implementar el **motor de simulación** y el **motor de decisión**, con parámetros distintos por tipo de misión (batería, carga, geovallas, rutas), con arquitectura clara y defendible.
 3. Validar con pruebas funcionales y de integración el ciclo: solicitud → autorización → asignación de dron → carga del insumo → vuelo simulado → código de entrega o retorno.
 
-Objetivos ampliados: [`context/objetivos.md`](context/objetivos.md).
+Objetivos ampliados: [`context/sustentacion/objetivos.md`](context/sustentacion/objetivos.md).
 
 ---
 
 ## 4. Qué entra en el MVP (y qué no)
 
-**Sí (Valledupar + 1–2 zonas cercanas):** pedidos de emergencia y programados (con receta en imagen cuando el medicamento lo exige), flota simulada, geovallas, motor de decisión al autorizar, confirmación de carga antes del despegue, rutas por corredores a altitud fija, telemetría en vivo, espera de código de entrega (5 min) o retorno con el paquete, cadena de frío simulada, fallback, dashboard epidemiológico simple.
+**Sí (Valledupar + 1–2 zonas cercanas):** pedidos de emergencia y programados, a una persona o entre centrales ([`context/entregas/`](context/entregas/)), flota simulada, geovallas, motor de decisión al autorizar, confirmación de carga antes del despegue, rutas por corredores a altitud fija, telemetría en vivo, espera de código de entrega (5 min) o retorno con el paquete, cadena de frío simulada, fallback, dashboard epidemiológico simple.
 
 **No:** dron real, clima real, navegación 3D, multi-ciudad desplegada, integración hospitalaria, reemplazar la atención médica ni el traslado del paciente.
 
-Alcance completo: [`context/alcance-y-limitaciones.md`](context/alcance-y-limitaciones.md).
+Alcance completo: [`context/producto/alcance.md`](context/producto/alcance.md).
 
 ---
 
@@ -56,14 +56,12 @@ Alcance completo: [`context/alcance-y-limitaciones.md`](context/alcance-y-limita
 
 | Rol | Función |
 | --- | --- |
-| **Solicitante** | Reporta la urgencia o el pedido (adjunta receta si aplica), sigue el vuelo e ingresa el código de entrega. |
-| **Despachador** | Inventario de la central, autoriza, carga el insumo en el dron asignado, crea planes programados. |
-| **Operador de flota** | Drones, geovallas, telemetría, mantenimiento. |
-| **Administrador** | Aprueba centrales, gestiona cuentas institucionales, métricas. |
+| **Solicitante** | Persona civil. Única cuenta que se autoregistra. Pide urgencias y entregas periódicas a su ubicación. |
+| **Despachador** | Persona de **una** central, creada por el admin. Inventario, autoriza, carga y puede pedir abastecimiento a otra central. |
+| **Operador de flota** | Persona creada por el admin. Drones, geovallas, telemetría y mantenimiento de **una o varias** centrales. |
+| **Administrador** | Crea y suspende centrales y sus cuentas. Ve métricas. No despacha. |
 
-No hay rol de **receptor**. La entrega se cierra con el **código de un uso** (el solicitante lo genera y se ingresa cuando el dron está en el punto).
-
-Negocio y propuesta de valor: [`context/actores-y-modelo-de-negocio.md`](context/actores-y-modelo-de-negocio.md).
+La central es el lugar, no un rol. No hay rol de **receptor**. Detalle: [`context/app/roles.md`](context/app/roles.md).
 
 ---
 
@@ -85,8 +83,8 @@ Piezas de valor (las que hay que poder explicar en la sustentación):
 3. **Motor de simulación** — “reloj” del backend: arranca **después** de confirmar la carga; en destino espera el código o regresa con el paquete.
 4. **Fallback** — si no hay dron, hay alternativa, no un rechazo ciego.
 
-Stack y conceptos: [`context/arquitectura-tecnologica.md`](context/arquitectura-tecnologica.md).  
-Cómo programamos (simple + SOLID, sin arquitectura de tesis): [`context/principios-de-diseno.md`](context/principios-de-diseno.md).
+Stack y conceptos: [`context/diseno/arquitectura.md`](context/diseno/arquitectura.md).  
+Cómo programamos (simple + SOLID, sin arquitectura de tesis): [`context/diseno/principios.md`](context/diseno/principios.md).
 
 ---
 
@@ -107,22 +105,9 @@ Los `AGENTS.md` de frontend y backend **no inventan** reglas de negocio: las apl
 
 ---
 
-## 8. Índice de documentos (`context/`)
+## 8. Context
 
-| Documento | Para qué abrirlo |
-| --- | --- |
-| [problema-y-justificacion.md](context/problema-y-justificacion.md) | Problema, cifras, por qué existe AirDrop |
-| [objetivos.md](context/objetivos.md) | Objetivo general y específicos |
-| [alcance-y-limitaciones.md](context/alcance-y-limitaciones.md) | MVP, fuera de alcance |
-| [actores-y-modelo-de-negocio.md](context/actores-y-modelo-de-negocio.md) | Roles, canvas de negocio |
-| [marco-de-referencia.md](context/marco-de-referencia.md) | Conceptos (eVTOL, BVLOS, geovalla) y antecedentes (Zipline, Colombia) |
-| [arquitectura-tecnologica.md](context/arquitectura-tecnologica.md) | Flutter, NestJS, Postgres/PostGIS, Redis, WebSockets, simulación |
-| [principios-de-diseno.md](context/principios-de-diseno.md) | Simplicidad, SOLID, qué no hacer |
-| [requisitos.md](context/requisitos.md) | RU, RF, RNF |
-| [product-backlog.md](context/product-backlog.md) | Historias, sprints, incrementos, cronograma |
-| [casos-de-uso.md](context/casos-de-uso.md) | CU-01 a CU-34 |
-| [glosario.md](context/glosario.md) | Vocabulario del proyecto |
-| [fuentes.md](context/fuentes.md) | Referencias del documento base |
+El mapa está en [`context/index.md`](context/index.md). En esa carpeta no hay otros markdown sueltos: roles, entregas, norma, producto, diseño y sustentación viven en subcarpetas.
 
 ---
 
@@ -136,7 +121,7 @@ Scrum, 6 sprints de 2 semanas (1 sep – 22 nov 2026), 227 SP.
 | Scrum Master | Josheph Martínez | Backend |
 | Development Team | Oscar Duque, Josheph Martínez, Sebastian Carrillo | Carrillo: mapa en tiempo real y WebSockets |
 
-Detalle: [`context/product-backlog.md`](context/product-backlog.md).
+Detalle: [`context/producto/backlog.md`](context/producto/backlog.md).
 
 ---
 

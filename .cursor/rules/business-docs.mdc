@@ -1,32 +1,35 @@
 ---
-description: Al cambiar una regla de negocio, actualizar HU, RF, CU y el contexto que la repite
+description: El código sigue a context/. Si un cambio se sale, advertir y preguntar antes de seguir
 alwaysApply: true
 ---
 
-# Documentación de negocio alineada al core
+# Context manda
 
-`context/` es la especificación. Si el usuario pide cambiar una regla de negocio, el mismo cambio adapta la documentación a la indicación nueva. No es un registro de cambios.
+`context/` es la especificación. Léelo antes de cambiar comportamiento. El mapa está en `context/index.md`.
 
-## Cuándo
+## Si el cambio cabe en context
 
-Sí: el usuario cambia comportamiento, alcance, rol, estado, plazo, prioridad, elegibilidad, ruta, entrega, inventario o cualquier regla que hoy esté escrita en `context/`.
-
-No: bug, refactor o detalle de implementación que deja la regla escrita igual. En ese caso no toques `context/`.
-
-## Qué actualizar
-
-Solo los ítems cuya redacción quedó falsa. Conserva el ID (`RF-11`, `HU-22`, `CU-26`); no renumeres.
+Impleméntalo y, en el mismo cambio, corrige solo los párrafos que hayan quedado falsos. Conserva los ID (`RF-11`, `HU-22`, `CU-26`). No renumeres. No abras una sección de "cambios".
 
 | Si cambia | Archivo |
 | --- | --- |
-| RU, RF, RNF | `context/requisitos.md` |
-| Historia, sprint, SP o incremento | `context/product-backlog.md` |
-| Caso de uso o flujo | `context/casos-de-uso.md` |
-| Alcance, actores, arquitectura, glosario, objetivos o principios | el `.md` de `context/` que lo afirma |
-| La misma frase en `INDEX.md` o en un `AGENTS.md` | esa copia, para que no contradiga `context/` |
+| Roles, registro, los cuatro pedidos | `context/app/roles.md` |
+| Dispensación a una persona | `context/entregas/persona.md` |
+| Traslado entre centrales | `context/entregas/centrales.md` |
+| Lote, frío, cuarentena | `context/entregas/productos.md` |
+| Norma de medicamentos | `context/legal/salud.md` |
+| Consentimiento, datos, seguridad | `context/legal/datos.md` |
+| RU, RF, RNF | `context/producto/requisitos.md` |
+| Historia, sprint o SP | `context/producto/backlog.md` |
+| Caso de uso | `context/producto/casos-de-uso.md` |
+| Alcance, arquitectura, glosario o principios | el `.md` que lo afirma |
+| La misma frase en `INDEX.md` o en un `AGENTS.md` | esa copia |
 
-Misma regla, misma redacción en cada archivo que la afirma. Si se elimina, quítala en todos los sitios que la citan.
+## Si el cambio se sale de context
 
-## Ejemplo
+Detente. No escribas el código ni reescribas `context/` por tu cuenta. Advierte qué regla vigente se rompería y pregunta, con estas dos opciones:
 
-El usuario pide que la espera del código pase de 5 a 3 minutos: se actualizan el RF, `HU-34`, el CU y cualquier línea de `AGENTS.md` que aún diga 5 minutos. No se reescribe el módulo entero ni se agrega una sección "cambios".
+1. Corregir el cambio para que siga a `context/`.
+2. Alinear `context/` a la decisión nueva y después implementar.
+
+Sin respuesta, no avances. Un bug o un refactor que deja la regla escrita igual no toca `context/`.

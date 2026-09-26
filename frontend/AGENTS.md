@@ -1,6 +1,6 @@
 # AGENTS.md — frontend (Flutter)
 
-Reglas de esta carpeta. Autoridad de negocio: [`../INDEX.md`](../INDEX.md) y [`../context/`](../context/). No contradecir [`../AGENTS.md`](../AGENTS.md) ni [`../context/principios-de-diseno.md`](../context/principios-de-diseno.md).
+Reglas de esta carpeta. Autoridad de negocio: [`../INDEX.md`](../INDEX.md) y [`../context/`](../context/). No contradecir [`../AGENTS.md`](../AGENTS.md) ni [`../context/diseno/principios.md`](../context/diseno/principios.md).
 
 ## Qué es este lado
 
@@ -8,7 +8,7 @@ Una **sola** aplicación Flutter. Tras autenticarse, el usuario ve el flujo de *
 
 ## Contexto de negocio que el frontend no debe perder
 
-AirDrop simula logística aérea médica para Valledupar y zonas cercanas. El frontend representa cuatro roles: **solicitante**, **despachador**, **operador de flota** y **administrador**. No existe un rol receptor: la entrega se confirma con un código de un uso.
+AirDrop simula logística aérea médica para Valledupar y zonas cercanas. El frontend representa cuatro roles: **solicitante** (persona civil, único registro público), **despachador** (una central, lo crea el admin), **operador de flota** (una o varias centrales, lo crea el admin) y **administrador**. La central no es un rol. No existe un rol receptor: la entrega se confirma con un código de un uso. La definición vigente está en [`../context/app/roles.md`](../context/app/roles.md). El contrato de `/auth` de abajo describe el código actual y se actualiza cuando el registro quede solo para el solicitante.
 
 Flujo central que las pantallas deben respetar:
 
@@ -22,13 +22,14 @@ Reglas de negocio que no deben contradecirse:
 - La simulación empieza únicamente después de que el despachador confirma la carga.
 - Emergencia tiene prioridad sobre un pedido programado.
 - La ruta debe evitar geovallas y trabajar a altitud/corredor fijo.
-- En destino se esperan 5 minutos por el código; sin código, el paquete vuelve a la central.
+- En destino se esperan 5 minutos por el código; sin código, el paquete vuelve a la central. El reingreso al inventario sigue la cuarentena de [`../context/entregas/productos.md`](../context/entregas/productos.md).
 - Si no hay dron elegible, se muestra fallback; no se rechaza ciegamente.
+- Una urgencia o un plan puede pedirlo un civil (destino: su ubicación) o el despachador de otra central (destino: su central). Quien autoriza y carga es siempre el despachador de la central que tiene el insumo.
 - El frontend no debe inventar hardware real, clima real, 3D, multi-ciudad ni un rol receptor.
 
-La autoridad completa de negocio está en [`../INDEX.md`](../INDEX.md) y [`../context/`](../context/); este resumen sirve para no perder el contexto durante una sesión de implementación.
+La autoridad completa de negocio está en [`../context/index.md`](../context/index.md). Este resumen sirve para no perder el contexto durante una sesión de implementación.
 
-## Organización sugerida (cuando exista código)
+## Organización
 
 Feature-first, alineado a dominios del backend:
 
@@ -161,12 +162,12 @@ La pantalla y las capas de datos no deben inventar endpoints ni cambiar el contr
 - El controller es la única capa que guarda o elimina el token en `TokenStore`.
 - Los repositorios no conocen Riverpod, Flutter UI ni `TokenStore` salvo el repositorio local para su sesión simulada.
 - La UI muestra el mensaje de `ApiException`; no reemplaza el mensaje del backend por otro texto genérico cuando este viene definido.
-- `RegisterRequest` puede enviar correo, celular o ambos; para despachador y operador el correo es obligatorio.
+- El código de hoy todavía deja que despachador y operador se registren, y les exige correo. Eso no es la regla: [`../context/app/roles.md`](../context/app/roles.md) reserva el registro público al solicitante. No extiendas ese alta institucional.
 - El OTP de registro dura 10 minutos; el de reset, 15 minutos.
 
 ## Alcance
 
-No inventar pantallas fuera del MVP (multi-ciudad, clima real, tienda, chat médico). Roles y pantallas salen de [`../context/requisitos.md`](../context/requisitos.md) y [`../context/casos-de-uso.md`](../context/casos-de-uso.md).
+No inventar pantallas fuera del MVP (multi-ciudad, clima real, tienda, chat médico). Roles y pantallas salen de [`../context/producto/requisitos.md`](../context/producto/requisitos.md) y [`../context/producto/casos-de-uso.md`](../context/producto/casos-de-uso.md).
 
 ---
 
@@ -175,7 +176,9 @@ No inventar pantallas fuera del MVP (multi-ciudad, clima real, tienda, chat méd
 > **Bloque temporal.** Sirve para que cada sesión de chat continúe donde
 > quedó la anterior (una sesión de chat por fase). **Cuando las 6 fases
 > estén completas, eliminar todo este bloque** —su único propósito es la
-> continuidad entre sesiones—.
+> continuidad entre sesiones—. Lo que sigue es el diario de lo ya
+> construido. Si choca con [`../context/index.md`](../context/index.md),
+> manda el contexto.
 
 Plan de desarrollo frontend: una fase por sesión, rama `feature/…` desde
 `develop` y su PR a `develop`.
@@ -216,7 +219,7 @@ Plan de desarrollo frontend: una fase por sesión, rama `feature/…` desde
 
 1. Frente A: centrales, usuarios institucionales e inventario.
 2. Frente B: flota y geovallas con CRUDs, `AppTextField`, `PrimaryButton` y `Validators`.
-3. Reutilizar la capa de hubs creada en Fase 3 y respetar el estado `approved` del backend.
+3. Reutilizar la capa de hubs, pero la central la crea el administrador. No sigas el alta pública del despachador ni dejes `pending_approval` como regla nueva: manda [`../context/app/roles.md`](../context/app/roles.md).
 4. Validar cada módulo por rol antes de avanzar.
 
 **Protocolo de sesión:**

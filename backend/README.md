@@ -1,6 +1,8 @@
 # Backend
 
-API NestJS de AirDrop. Convenciones: [AGENTS.md](AGENTS.md).
+API NestJS de AirDrop. Convenciones: [AGENTS.md](AGENTS.md). La regla de negocio está en [`../context/index.md`](../context/index.md).
+
+Las tablas de rutas de abajo describen el código que ya está desplegado. Parte de ese código todavía deja que el despachador se registre y cree una central en `pending_approval`. Eso no se extiende: el registro público es solo del solicitante, y la central la crea el administrador.
 
 Postgres vive en **Supabase** (una BD para el equipo). No usamos Docker.
 
@@ -59,7 +61,7 @@ En desarrollo el OTP se imprime en el log. Nombre máximo 40, correo 50, celular
 | POST | `/hubs` | JWT despachador |
 | GET | `/hubs/me` | JWT despachador |
 
-La central queda en `pending_approval`. El admin no aprueba todavía (HU-07). En desarrollo el aviso al admin se imprime en el log.
+Hoy la central queda en `pending_approval` y el alta la hace el despachador. La regla nueva es la contraria: la crea el administrador y no pasa por ese pendiente.
 
 ## Flota (HU-11)
 
