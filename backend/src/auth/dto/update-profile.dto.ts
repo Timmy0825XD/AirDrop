@@ -1,11 +1,13 @@
 import { Transform } from 'class-transformer';
 import {
   IsEmail,
+  IsEnum,
   IsOptional,
   IsString,
   Matches,
   MaxLength,
 } from 'class-validator';
+import { DocumentType } from '../../common/enums/document-type.enum';
 import { COLOMBIA_PHONE_REGEX, FIELD_LIMITS } from '../../common/field-limits';
 
 export class UpdateProfileDto {
@@ -34,4 +36,21 @@ export class UpdateProfileDto {
     message: 'El celular debe tener exactamente 10 dígitos (Colombia).',
   })
   phone?: string;
+
+  @IsOptional()
+  @IsEnum(DocumentType, {
+    message:
+      'El documento debe ser cédula de ciudadanía, cédula de extranjería o PPT.',
+  })
+  documentType?: DocumentType;
+
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString({ message: 'El número de documento no es válido.' })
+  @MaxLength(FIELD_LIMITS.documentNumber, {
+    message: `El número de documento no puede superar ${FIELD_LIMITS.documentNumber} caracteres.`,
+  })
+  documentNumber?: string;
 }

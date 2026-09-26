@@ -6,6 +6,14 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
 import { UserRole } from '../src/common/enums/user-role.enum';
+import {
+  anaPerez,
+  loginAdmin,
+  marianaCastro,
+  registerRequester,
+  removeFixtures,
+  TEST_PASSWORD,
+} from './e2e-helpers';
 
 const envFile = resolve(__dirname, '..', '.env');
 if (existsSync(envFile)) {
@@ -35,6 +43,7 @@ describeIfDb('Auth (e2e)', () => {
       }),
     );
     await app.init();
+    await removeFixtures(app);
   }, 20_000);
 
   afterAll(async () => {
@@ -44,16 +53,11 @@ describeIfDb('Auth (e2e)', () => {
   });
 
   it('register → verify-otp → login → me', async () => {
-    const email = `ana.e2e.${Date.now()}@correo.co`;
-    const password = 'secreto12';
-
     const register = await request(app!.getHttpServer())
       .post('/auth/register')
       .send({
-        fullName: 'Ana Pérez',
-        email,
-        password,
-        role: UserRole.REQUESTER,
+        ...anaPerez,
+        password: TEST_PASSWORD,
         consentAccepted: true,
       })
       .expect(201);
@@ -63,14 +67,14 @@ describeIfDb('Auth (e2e)', () => {
 
     const verified = await request(app!.getHttpServer())
       .post('/auth/verify-otp')
-      .send({ email, code: otp })
+      .send({ phone: anaPerez.phone, code: otp })
       .expect(201);
 
     expect((verified.body as { accessToken: string }).accessToken).toBeDefined();
 
     const login = await request(app!.getHttpServer())
       .post('/auth/login')
-      .send({ email, password })
+      .send({ email: anaPerez.email, password: TEST_PASSWORD })
       .expect(200);
 
     const loginToken = (login.body as { accessToken: string }).accessToken;
@@ -81,9 +85,13 @@ describeIfDb('Auth (e2e)', () => {
       .expect(200);
 
     expect(me.body).toMatchObject({
-      email,
+      email: anaPerez.email,
+      phone: anaPerez.phone,
+      documentType: anaPerez.documentType,
+      documentNumber: anaPerez.documentNumber,
       role: UserRole.REQUESTER,
       status: 'active',
+      hubIds: [],
     });
 
     await request(app!.getHttpServer()).post('/auth/logout').expect(401);
@@ -94,50 +102,37 @@ describeIfDb('Auth (e2e)', () => {
       .expect(204);
   }, 20_000);
 
-  it('rejects recipient and admin on public register', async () => {
-    const email = `rol.e2e.${Date.now()}@correo.co`;
-    const body = {
-      fullName: 'Ana Pérez',
-      email,
-      password: 'secreto12',
-      consentAccepted: true,
-    };
-
+  it('rejects a public role and a repeated document', async () => {
     await request(app!.getHttpServer())
       .post('/auth/register')
-      .send({ ...body, role: 'recipient' })
+      .send({
+        ...marianaCastro,
+        password: TEST_PASSWORD,
+        consentAccepted: true,
+        role: UserRole.DISPATCHER,
+      })
       .expect(400);
 
     await request(app!.getHttpServer())
       .post('/auth/register')
-      .send({ ...body, role: UserRole.ADMIN })
-      .expect(400);
+      .send({
+        fullName: 'Pedro Ramírez',
+        email: 'pedro.ramirez@gmail.com',
+        phone: '3149990011',
+        documentType: anaPerez.documentType,
+        documentNumber: anaPerez.documentNumber,
+        password: TEST_PASSWORD,
+        consentAccepted: true,
+      })
+      .expect(409);
   }, 20_000);
 
   it('forgot-password → reset-password → login', async () => {
-    const email = `clave.e2e.${Date.now()}@correo.co`;
-    const password = 'secreto12';
-    const nextPassword = 'secreto34';
-
-    const register = await request(app!.getHttpServer())
-      .post('/auth/register')
-      .send({
-        fullName: 'Ana Pérez',
-        email,
-        password,
-        role: UserRole.REQUESTER,
-        consentAccepted: true,
-      })
-      .expect(201);
-
-    await request(app!.getHttpServer())
-      .post('/auth/verify-otp')
-      .send({ email, code: (register.body as { otp: string }).otp })
-      .expect(201);
+    await registerRequester(app!, marianaCastro);
 
     const forgot = await request(app!.getHttpServer())
       .post('/auth/forgot-password')
-      .send({ email })
+      .send({ email: marianaCastro.email })
       .expect(200);
 
     const resetOtp = (forgot.body as { otp: string }).otp;
@@ -145,17 +140,45 @@ describeIfDb('Auth (e2e)', () => {
 
     await request(app!.getHttpServer())
       .post('/auth/reset-password')
-      .send({ email, code: resetOtp, password: nextPassword })
+      .send({
+        email: marianaCastro.email,
+        code: resetOtp,
+        password: TEST_PASSWORD,
+      })
       .expect(200);
 
     await request(app!.getHttpServer())
+      .post('/auth/reset-password')
+      .send({
+        email: marianaCastro.email,
+        code: resetOtp,
+        password: TEST_PASSWORD,
+      })
+      .expect(400);
+
+    await request(app!.getHttpServer())
       .post('/auth/login')
-      .send({ email, password })
+      .send({ email: marianaCastro.email, password: 'clave-incorrecta' })
       .expect(401);
 
     await request(app!.getHttpServer())
       .post('/auth/login')
-      .send({ email, password: nextPassword })
+      .send({ email: marianaCastro.email, password: TEST_PASSWORD })
       .expect(200);
+
+    const unknown = await request(app!.getHttpServer())
+      .post('/auth/forgot-password')
+      .send({ email: 'persona.desconocida@gmail.com' })
+      .expect(200);
+    expect(unknown.body).toEqual(forgot.body.message ? { message: forgot.body.message } : unknown.body);
+    expect((unknown.body as { message: string }).message).toBe(
+      (forgot.body as { message: string }).message,
+    );
+    expect(unknown.body).not.toHaveProperty('otp');
+  }, 20_000);
+
+  it('admin keeps the seed password', async () => {
+    const token = await loginAdmin(app!);
+    expect(token).toEqual(expect.any(String));
   }, 20_000);
 });

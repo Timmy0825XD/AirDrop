@@ -1,5 +1,6 @@
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
+import { DocumentType } from './common/enums/document-type.enum';
 import { PUBLIC_REGISTER_ROLES, UserRole } from './common/enums/user-role.enum';
 import { UserStatus } from './common/enums/user-status.enum';
 import {
@@ -13,6 +14,7 @@ import {
   isOtpExpired,
   isPublicRegisterRole,
   nextFailedLoginState,
+  normalizeDocumentNumber,
   requiresInstitutionalEmail,
   clearLockState,
 } from './auth/auth.rules';
@@ -61,26 +63,45 @@ describe('auth.rules', () => {
     expect(next.lockedUntil).toBeNull();
   });
 
-  it('allows only three public register roles', () => {
-    expect(PUBLIC_REGISTER_ROLES).toEqual([
-      UserRole.REQUESTER,
-      UserRole.DISPATCHER,
-      UserRole.FLEET_OPERATOR,
-    ]);
+  it('allows only the requester on public register', () => {
+    expect(PUBLIC_REGISTER_ROLES).toEqual([UserRole.REQUESTER]);
     expect(isPublicRegisterRole(UserRole.REQUESTER)).toBe(true);
+    expect(isPublicRegisterRole(UserRole.DISPATCHER)).toBe(false);
     expect(isPublicRegisterRole(UserRole.ADMIN)).toBe(false);
     expect(isPublicRegisterRole('recipient')).toBe(false);
   });
+
+  it('accepts citizenship, foreigner id and PPT numbers', () => {
+    expect(
+      normalizeDocumentNumber(DocumentType.CITIZENSHIP_ID, '1065487321'),
+    ).toBe('1065487321');
+    expect(normalizeDocumentNumber(DocumentType.FOREIGNER_ID, '384921')).toBe(
+      '384921',
+    );
+    expect(normalizeDocumentNumber(DocumentType.PPT, 'ppt26a18421')).toBe(
+      'PPT26A18421',
+    );
+    expect(
+      normalizeDocumentNumber(DocumentType.CITIZENSHIP_ID, '12345'),
+    ).toBeNull();
+  });
 });
+
+const requester = {
+  fullName: 'Ana Pérez',
+  email: 'ana.perez@gmail.com',
+  phone: '3001112233',
+  documentType: DocumentType.CITIZENSHIP_ID,
+  documentNumber: '1065487321',
+  password: 'Password123',
+  consentAccepted: true,
+};
 
 describe('RegisterDto lengths', () => {
   it('rejects email longer than 50', async () => {
     const dto = plainToInstance(RegisterDto, {
-      fullName: 'Ana Pérez',
-      email: `${'a'.repeat(45)}@mail.com`,
-      password: 'secreto12',
-      role: UserRole.REQUESTER,
-      consentAccepted: true,
+      ...requester,
+      email: `${'a'.repeat(42)}@gmail.com`,
     });
     const errors = await validate(dto);
     expect(errors.some((e) => e.property === 'email')).toBe(true);
@@ -88,11 +109,8 @@ describe('RegisterDto lengths', () => {
 
   it('rejects a name longer than 40', async () => {
     const dto = plainToInstance(RegisterDto, {
+      ...requester,
       fullName: 'N'.repeat(41),
-      email: 'ana@correo.co',
-      password: 'secreto12',
-      role: UserRole.REQUESTER,
-      consentAccepted: true,
     });
     const errors = await validate(dto);
     expect(errors.some((e) => e.property === 'fullName')).toBe(true);
@@ -100,49 +118,27 @@ describe('RegisterDto lengths', () => {
 
   it('rejects a phone that is not 10 digits', async () => {
     const dto = plainToInstance(RegisterDto, {
-      fullName: 'Ana Pérez',
+      ...requester,
       phone: '300123456',
-      password: 'secreto12',
-      role: UserRole.REQUESTER,
-      consentAccepted: true,
     });
     const errors = await validate(dto);
     expect(errors.some((e) => e.property === 'phone')).toBe(true);
   });
 
   it('accepts a realistic Colombian payload', async () => {
-    const dto = plainToInstance(RegisterDto, {
-      fullName: 'Ana Pérez',
-      email: 'ana@correo.co',
-      phone: '3001234567',
-      password: 'secreto12',
-      role: UserRole.REQUESTER,
-      consentAccepted: true,
-    });
+    const dto = plainToInstance(RegisterDto, requester);
     const errors = await validate(dto);
     expect(errors).toHaveLength(0);
   });
 
-  it('rejects admin and retired recipient on public register', async () => {
-    const admin = plainToInstance(RegisterDto, {
-      fullName: 'Ana Pérez',
-      email: 'ana@correo.co',
-      password: 'secreto12',
-      role: UserRole.ADMIN,
-      consentAccepted: true,
+  it('rejects a document type outside citizenship, foreigner id and PPT', async () => {
+    const dto = plainToInstance(RegisterDto, {
+      ...requester,
+      documentType: 'identity_card',
     });
-    const recipient = plainToInstance(RegisterDto, {
-      fullName: 'Ana Pérez',
-      email: 'ana@correo.co',
-      password: 'secreto12',
-      role: 'recipient',
-      consentAccepted: true,
-    });
-    expect(
-      (await validate(admin)).some((error) => error.property === 'role'),
-    ).toBe(true);
-    expect(
-      (await validate(recipient)).some((error) => error.property === 'role'),
-    ).toBe(true);
+    const errors = await validate(dto);
+    expect(errors.some((error) => error.property === 'documentType')).toBe(
+      true,
+    );
   });
 });

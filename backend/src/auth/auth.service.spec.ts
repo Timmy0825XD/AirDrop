@@ -12,7 +12,7 @@ import { OneTimeCode } from './one-time-code.entity';
 describe('AuthService OTP consume', () => {
   const user = {
     id: '11111111-1111-1111-1111-111111111111',
-    email: 'ana@correo.co',
+    email: 'ana.perez@gmail.com',
     phone: null,
     status: UserStatus.UNVERIFIED,
     role: UserRole.REQUESTER,

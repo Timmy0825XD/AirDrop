@@ -8,6 +8,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { SaleType } from '../common/enums/sale-type.enum';
 import { FIELD_LIMITS } from '../common/field-limits';
 import { Hub } from '../hubs/hub.entity';
 
@@ -30,14 +31,17 @@ export class InventoryItem {
   @Column({ type: 'int' })
   quantity: number;
 
+  @Column({ type: 'varchar', length: FIELD_LIMITS.lotCode })
+  lot: string;
+
   @Column({ type: 'date' })
   expirationDate: string;
 
   @Column({ type: 'boolean' })
   requiresColdChain: boolean;
 
-  @Column({ type: 'boolean' })
-  requiresPrescription: boolean;
+  @Column({ type: 'enum', enum: SaleType, enumName: 'sale_type' })
+  saleType: SaleType;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;

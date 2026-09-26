@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { DroneStatus } from '../common/enums/drone-status.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { HubsService } from '../hubs/hubs.service';
+import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
 import { CreateDroneDto } from './dto/create-drone.dto';
 import { RegisterMaintenanceDto } from './dto/register-maintenance.dto';
@@ -39,7 +40,8 @@ export class FleetService {
     if (!model) {
       throw new NotFoundException('El modelo de dron no existe.');
     }
-    await this.hubsService.requireApproved(dto.hubId);
+    await this.hubsService.requireActive(dto.hubId);
+    this.assertAssigned(user, dto.hubId);
     const duplicate = await this.drones.findOne({
       where: { identifier: dto.identifier },
     });
@@ -60,6 +62,7 @@ export class FleetService {
 
   async listDrones(user: User, hubId: string) {
     this.assertActiveOperator(user);
+    this.assertAssigned(user, hubId);
     const hub = await this.hubsService.findById(hubId);
     if (!hub) {
       throw new NotFoundException('La central no existe.');
@@ -130,7 +133,16 @@ export class FleetService {
     if (!drone) {
       throw new NotFoundException('El dron no existe.');
     }
+    this.assertAssigned(user, drone.hubId);
     return drone;
+  }
+
+  private assertAssigned(user: User, hubId: string): void {
+    if (!assignedHubIds(user).includes(hubId)) {
+      throw new ForbiddenException(
+        'Esa central no está asignada a tu cuenta.',
+      );
+    }
   }
 
   private assertNotInMission(drone: Drone): void {

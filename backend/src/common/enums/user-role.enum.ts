@@ -5,11 +5,7 @@ export enum UserRole {
   ADMIN = 'admin',
 }
 
-export const PUBLIC_REGISTER_ROLES: UserRole[] = [
-  UserRole.REQUESTER,
-  UserRole.DISPATCHER,
-  UserRole.FLEET_OPERATOR,
-];
+export const PUBLIC_REGISTER_ROLES: UserRole[] = [UserRole.REQUESTER];
 
 export const INSTITUTIONAL_ROLES: UserRole[] = [
   UserRole.DISPATCHER,

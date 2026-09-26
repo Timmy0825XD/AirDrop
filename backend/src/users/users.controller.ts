@@ -5,6 +5,7 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -14,6 +15,7 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { UserRole } from '../common/enums/user-role.enum';
 import { User } from './user.entity';
+import { CreateInstitutionalUserDto } from './dto/create-institutional-user.dto';
 import { ListInstitutionalUsersQueryDto } from './dto/list-institutional-users-query.dto';
 import { SetUserSuspensionDto } from './dto/set-user-suspension.dto';
 import { UsersService } from './users.service';
@@ -23,6 +25,15 @@ import { UsersService } from './users.service';
 @Roles(UserRole.ADMIN)
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
+
+  @Post()
+  async create(
+    @CurrentUser() actor: User,
+    @Body() dto: CreateInstitutionalUserDto,
+  ) {
+    const saved = await this.usersService.createInstitutional(actor, dto);
+    return this.usersService.toPublicUser(saved);
+  }
 
   @Get()
   async list(@Query() query: ListInstitutionalUsersQueryDto) {

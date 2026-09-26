@@ -1,5 +1,6 @@
 import { createHash, randomInt } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
+import { DocumentType } from '../common/enums/document-type.enum';
 import { User } from '../users/user.entity';
 import {
   INSTITUTIONAL_ROLES,
@@ -38,6 +39,23 @@ export function requiresInstitutionalEmail(role: UserRole): boolean {
 
 export function isPublicRegisterRole(role: string): boolean {
   return (PUBLIC_REGISTER_ROLES as string[]).includes(role);
+}
+
+const DOCUMENT_PATTERNS: Record<DocumentType, RegExp> = {
+  [DocumentType.CITIZENSHIP_ID]: /^\d{6,10}$/,
+  [DocumentType.FOREIGNER_ID]: /^\d{6,10}$/,
+  [DocumentType.PPT]: /^[A-Z0-9]{6,15}$/,
+};
+
+export function normalizeDocumentNumber(
+  type: DocumentType,
+  raw: string,
+): string | null {
+  const value = raw.trim().toUpperCase();
+  if (!DOCUMENT_PATTERNS[type]?.test(value)) {
+    return null;
+  }
+  return value;
 }
 
 export function isLockActive(user: User, now = new Date()): boolean {

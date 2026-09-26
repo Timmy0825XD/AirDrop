@@ -7,6 +7,7 @@ import { Hub } from '../hubs/hub.entity';
 import { InventoryItem } from '../inventory/inventory-item.entity';
 import { Geofence } from '../geofences/geofence.entity';
 import { User } from '../users/user.entity';
+import { UserHubAssignment } from '../users/user-hub-assignment.entity';
 
 export function typeOrmOptions(config: ConfigService): TypeOrmModuleOptions {
   const url = config.get<string>('DATABASE_URL');
@@ -22,7 +23,16 @@ export function typeOrmOptions(config: ConfigService): TypeOrmModuleOptions {
     type: 'postgres',
     url,
     ssl: { rejectUnauthorized: false },
-    entities: [User, OneTimeCode, Hub, DroneModel, Drone, InventoryItem, Geofence],
+    entities: [
+      User,
+      UserHubAssignment,
+      OneTimeCode,
+      Hub,
+      DroneModel,
+      Drone,
+      InventoryItem,
+      Geofence,
+    ],
     synchronize: config.get<string>('NODE_ENV') !== 'production',
     dropSchema: isTest && config.get<string>('E2E_DROP_SCHEMA') === 'true',
     retryAttempts: isTest ? 1 : 10,

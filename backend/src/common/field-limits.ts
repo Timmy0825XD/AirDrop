@@ -2,6 +2,10 @@ export const FIELD_LIMITS = {
   fullName: 40,
   email: 50,
   phone: 10,
+  /** Cédula (6–10) o PPT (hasta 15). */
+  documentNumber: 15,
+  /** Código de lote del empaque. */
+  lotCode: 20,
   passwordMax: 72,
   passwordMin: 8,
   otpDigits: 6,

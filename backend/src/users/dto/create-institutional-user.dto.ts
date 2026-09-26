@@ -1,42 +1,29 @@
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
-  Equals,
-  IsBoolean,
+  ArrayMinSize,
+  IsArray,
   IsEmail,
-  IsEnum,
+  IsIn,
   IsOptional,
   IsString,
+  IsUUID,
   Matches,
   MaxLength,
   MinLength,
 } from 'class-validator';
-import { DocumentType } from '../../common/enums/document-type.enum';
+import {
+  INSTITUTIONAL_ROLES,
+  UserRole,
+} from '../../common/enums/user-role.enum';
 import { COLOMBIA_PHONE_REGEX, FIELD_LIMITS } from '../../common/field-limits';
-import { ContactCheckDto } from './contact-check.dto';
 
-export class RegisterDto extends ContactCheckDto {
+export class CreateInstitutionalUserDto {
   @IsString({ message: 'El nombre es obligatorio.' })
   @MaxLength(FIELD_LIMITS.fullName, {
     message: `El nombre no puede superar ${FIELD_LIMITS.fullName} caracteres.`,
   })
   fullName: string;
 
-  @IsEnum(DocumentType, {
-    message:
-      'El documento debe ser cédula de ciudadanía, cédula de extranjería o PPT.',
-  })
-  documentType: DocumentType;
-
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
-  @IsString({ message: 'El número de documento es obligatorio.' })
-  @MaxLength(FIELD_LIMITS.documentNumber, {
-    message: `El número de documento no puede superar ${FIELD_LIMITS.documentNumber} caracteres.`,
-  })
-  documentNumber: string;
-
-  @IsOptional()
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim().toLowerCase() : value,
   )
@@ -44,15 +31,16 @@ export class RegisterDto extends ContactCheckDto {
   @MaxLength(FIELD_LIMITS.email, {
     message: `El correo no puede superar ${FIELD_LIMITS.email} caracteres.`,
   })
-  email?: string;
+  email: string;
 
+  @IsOptional()
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.replace(/\D/g, '') : value,
   )
   @Matches(COLOMBIA_PHONE_REGEX, {
     message: 'El celular debe tener exactamente 10 dígitos (Colombia).',
   })
-  phone: string;
+  phone?: string;
 
   @IsString({ message: 'La contraseña es obligatoria.' })
   @MinLength(FIELD_LIMITS.passwordMin, {
@@ -63,9 +51,14 @@ export class RegisterDto extends ContactCheckDto {
   })
   password: string;
 
-  @IsBoolean({ message: 'Debes indicar si aceptas el tratamiento de datos.' })
-  @Equals(true, {
-    message: 'Debes aceptar el tratamiento de datos personales.',
+  @IsIn(INSTITUTIONAL_ROLES, {
+    message: 'El rol debe ser despachador u operador de flota.',
   })
-  consentAccepted: boolean;
+  role: UserRole;
+
+  @IsArray({ message: 'Debes indicar las centrales.' })
+  @ArrayMinSize(1, { message: 'Debes asignar al menos una central.' })
+  @IsUUID('4', { each: true, message: 'La central no es válida.' })
+  @Type(() => String)
+  hubIds: string[];
 }

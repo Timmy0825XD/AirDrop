@@ -6,8 +6,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { HubsService } from '../hubs/hubs.service';
+import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
 import { CreateInventoryItemDto } from './dto/create-inventory-item.dto';
 import { UpdateInventoryItemDto } from './dto/update-inventory-item.dto';
@@ -27,9 +29,10 @@ export class InventoryService {
       hubId: hub.id,
       name: dto.name,
       quantity: dto.quantity,
+      lot: dto.lot,
       expirationDate: dto.expirationDate,
       requiresColdChain: dto.requiresColdChain,
-      requiresPrescription: dto.requiresPrescription,
+      saleType: dto.saleType,
     });
     const saved = await this.items.save(item);
     return this.toPublicItem(saved);
@@ -48,9 +51,10 @@ export class InventoryService {
     if (
       dto.name === undefined &&
       dto.quantity === undefined &&
+      dto.lot === undefined &&
       dto.expirationDate === undefined &&
       dto.requiresColdChain === undefined &&
-      dto.requiresPrescription === undefined
+      dto.saleType === undefined
     ) {
       throw new BadRequestException(
         'Debes enviar al menos un campo para actualizar.',
@@ -63,14 +67,17 @@ export class InventoryService {
     if (dto.quantity !== undefined) {
       item.quantity = dto.quantity;
     }
+    if (dto.lot !== undefined) {
+      item.lot = dto.lot;
+    }
     if (dto.expirationDate !== undefined) {
       item.expirationDate = dto.expirationDate;
     }
     if (dto.requiresColdChain !== undefined) {
       item.requiresColdChain = dto.requiresColdChain;
     }
-    if (dto.requiresPrescription !== undefined) {
-      item.requiresPrescription = dto.requiresPrescription;
+    if (dto.saleType !== undefined) {
+      item.saleType = dto.saleType;
     }
     const saved = await this.items.save(item);
     return this.toPublicItem(saved);
@@ -87,9 +94,10 @@ export class InventoryService {
       hubId: item.hubId,
       name: item.name,
       quantity: item.quantity,
+      lot: item.lot,
       expirationDate: item.expirationDate,
       requiresColdChain: item.requiresColdChain,
-      requiresPrescription: item.requiresPrescription,
+      saleType: item.saleType,
       createdAt: item.createdAt,
     };
   }
@@ -100,12 +108,18 @@ export class InventoryService {
         'Tu cuenta debe estar activa para gestionar inventario.',
       );
     }
-    if (!user.hubId) {
+    if (user.role !== UserRole.DISPATCHER) {
       throw new ForbiddenException(
-        'Debes registrar una central antes de gestionar inventario.',
+        'Solo el despachador gestiona el inventario de su central.',
       );
     }
-    return this.hubsService.requireApproved(user.hubId);
+    const hubIds = assignedHubIds(user);
+    if (hubIds.length !== 1) {
+      throw new ForbiddenException(
+        'Debes tener una central asignada para gestionar inventario.',
+      );
+    }
+    return this.hubsService.requireActive(hubIds[0]);
   }
 
   private async requireOwnItem(user: User, id: string) {

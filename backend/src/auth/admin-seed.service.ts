@@ -19,7 +19,10 @@ export class AdminSeedService implements OnModuleInit {
     if (existing) {
       return;
     }
-    const email = this.config.get<string>('ADMIN_EMAIL', 'admin@airdrop.local');
+    const email = this.config.get<string>(
+      'ADMIN_EMAIL',
+      'administrador.plataforma@gmail.com',
+    );
     const password = this.config.get<string>('ADMIN_PASSWORD', 'Admin1234');
     const fullName = this.config.get<string>(
       'ADMIN_FULL_NAME',
@@ -29,6 +32,8 @@ export class AdminSeedService implements OnModuleInit {
       fullName,
       email: email.toLowerCase(),
       phone: null,
+      documentType: null,
+      documentNumber: null,
       passwordHash: await hashPassword(password),
       role: UserRole.ADMIN,
       status: UserStatus.ACTIVE,
