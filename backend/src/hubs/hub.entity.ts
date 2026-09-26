@@ -55,14 +55,11 @@ export class Hub {
     type: 'enum',
     enum: HubStatus,
     enumName: 'hub_status',
-    default: HubStatus.PENDING_APPROVAL,
+    default: HubStatus.ACTIVE,
   })
   status: HubStatus;
 
-  @Column({ type: 'varchar', length: FIELD_LIMITS.reason, nullable: true })
-  rejectionReason: string | null;
-
-  @Index({ unique: true })
+  @Index()
   @Column({ type: 'uuid' })
   createdByUserId: string;
 

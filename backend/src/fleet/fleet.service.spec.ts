@@ -37,6 +37,7 @@ function operator(overrides: Partial<User> = {}): User {
     id: 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
     role: UserRole.FLEET_OPERATOR,
     status: UserStatus.ACTIVE,
+    hubAssignments: [{ hubId: hub.id }],
     ...overrides,
   } as User;
 }
@@ -71,7 +72,7 @@ function buildService(opts: {
     findById: jest
       .fn()
       .mockResolvedValue(opts.hub === undefined ? hub : opts.hub),
-    requireApproved:
+    requireActive:
       opts.hub === null
         ? jest.fn().mockRejectedValue(new NotFoundException('La central no existe.'))
         : jest.fn().mockResolvedValue(opts.hub === undefined ? hub : opts.hub),
@@ -118,6 +119,7 @@ describe('FleetService', () => {
   it('rejects changing a drone that is in mission', async () => {
     const inMission = {
       id: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+      hubId: hub.id,
       status: DroneStatus.IN_MISSION,
     } as Drone;
     const { service } = buildService({
@@ -133,6 +135,7 @@ describe('FleetService', () => {
   it('registers maintenance as out of service', async () => {
     const drone = {
       id: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
+      hubId: hub.id,
       status: DroneStatus.AVAILABLE,
       maintenanceReason: null,
       maintenanceUntil: null,
@@ -150,6 +153,13 @@ describe('FleetService', () => {
     expect(result.status).toBe(DroneStatus.OUT_OF_SERVICE);
     expect(result.maintenanceReason).toBe('Revisión de hélices');
     expect(drones.save).toHaveBeenCalled();
+  });
+
+  it('rejects a hub that is not assigned to the operator', async () => {
+    const { service } = buildService({});
+    await expect(
+      service.createDrone(operator({ hubAssignments: [] }), dto),
+    ).rejects.toBeInstanceOf(ForbiddenException);
   });
 
   it('rejects an inactive operator', async () => {

@@ -9,11 +9,16 @@ import {
 } from 'typeorm';
 import { OneTimeCode } from '../auth/one-time-code.entity';
 import { CHAR_TRANSFORMER } from '../common/column-transformers';
+import { DocumentType } from '../common/enums/document-type.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { FIELD_LIMITS } from '../common/field-limits';
+import { UserHubAssignment } from './user-hub-assignment.entity';
 
 @Entity({ name: 'users' })
+@Index('users_document_unique', ['documentType', 'documentNumber'], {
+  unique: true,
+})
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -28,6 +33,21 @@ export class User {
   @Index({ unique: true })
   @Column({ type: 'varchar', length: FIELD_LIMITS.phone, nullable: true })
   phone: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: DocumentType,
+    enumName: 'document_type',
+    nullable: true,
+  })
+  documentType: DocumentType | null;
+
+  @Column({
+    type: 'varchar',
+    length: FIELD_LIMITS.documentNumber,
+    nullable: true,
+  })
+  documentNumber: string | null;
 
   @Column({
     type: 'char',
@@ -58,10 +78,6 @@ export class User {
   @Column({ type: 'timestamptz', nullable: true })
   lockedUntil: Date | null;
 
-  @Index()
-  @Column({ type: 'uuid', nullable: true })
-  hubId: string | null;
-
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
@@ -70,4 +86,7 @@ export class User {
 
   @OneToMany(() => OneTimeCode, (code) => code.user)
   oneTimeCodes: OneTimeCode[];
+
+  @OneToMany(() => UserHubAssignment, (assignment) => assignment.user)
+  hubAssignments: UserHubAssignment[];
 }

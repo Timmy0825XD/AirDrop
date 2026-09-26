@@ -2,12 +2,14 @@ import { Transform, Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
+  IsEnum,
   IsInt,
   IsString,
   Matches,
   MaxLength,
   Min,
 } from 'class-validator';
+import { SaleType } from '../../common/enums/sale-type.enum';
 import { FIELD_LIMITS } from '../../common/field-limits';
 
 export class CreateInventoryItemDto {
@@ -25,6 +27,18 @@ export class CreateInventoryItemDto {
   @Min(0, { message: 'La cantidad no puede ser negativa.' })
   quantity: number;
 
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim().toUpperCase() : value,
+  )
+  @IsString({ message: 'El lote es obligatorio.' })
+  @Matches(/^[A-Z0-9-]{3,20}$/, {
+    message: 'El lote debe tener entre 3 y 20 letras, números o guiones.',
+  })
+  @MaxLength(FIELD_LIMITS.lotCode, {
+    message: `El lote no puede superar ${FIELD_LIMITS.lotCode} caracteres.`,
+  })
+  lot: string;
+
   @IsDateString(
     { strict: true },
     { message: 'La fecha de vencimiento no es válida.' },
@@ -37,6 +51,8 @@ export class CreateInventoryItemDto {
   @IsBoolean({ message: 'Debes indicar si exige cadena de frío.' })
   requiresColdChain: boolean;
 
-  @IsBoolean({ message: 'Debes indicar si exige receta.' })
-  requiresPrescription: boolean;
+  @IsEnum(SaleType, {
+    message: 'El tipo de venta debe ser libre, bajo fórmula o control especial.',
+  })
+  saleType: SaleType;
 }

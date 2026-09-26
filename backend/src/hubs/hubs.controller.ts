@@ -16,8 +16,8 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { User } from '../users/user.entity';
 import { CreateHubDto } from './dto/create-hub.dto';
-import { DecideHubDto } from './dto/decide-hub.dto';
 import { ListHubsQueryDto } from './dto/list-hubs-query.dto';
+import { SetHubSuspensionDto } from './dto/set-hub-suspension.dto';
 import { HubsService } from './hubs.service';
 
 @Controller('hubs')
@@ -26,7 +26,7 @@ export class HubsController {
   constructor(private readonly hubsService: HubsService) {}
 
   @Post()
-  @Roles(UserRole.DISPATCHER)
+  @Roles(UserRole.ADMIN)
   create(@CurrentUser() user: User, @Body() dto: CreateHubDto) {
     return this.hubsService.create(user, dto);
   }
@@ -38,17 +38,20 @@ export class HubsController {
   }
 
   @Get()
-  @Roles(UserRole.ADMIN)
-  list(@Query() query: ListHubsQueryDto) {
-    return this.hubsService.listForAdmin(query.status);
+  @Roles(UserRole.ADMIN, UserRole.FLEET_OPERATOR)
+  list(@CurrentUser() user: User, @Query() query: ListHubsQueryDto) {
+    if (user.role === UserRole.ADMIN) {
+      return this.hubsService.listForAdmin(query.status);
+    }
+    return this.hubsService.listAssigned(user);
   }
 
-  @Patch(':id/decision')
+  @Patch(':id/suspension')
   @Roles(UserRole.ADMIN)
-  decide(
+  setSuspension(
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
-    @Body() dto: DecideHubDto,
+    @Body() dto: SetHubSuspensionDto,
   ) {
-    return this.hubsService.decide(id, dto);
+    return this.hubsService.setSuspension(id, dto.suspended);
   }
 }

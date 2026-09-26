@@ -1,6 +1,7 @@
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
+import { CreateInstitutionalUserDto } from './dto/create-institutional-user.dto';
 import { User } from './user.entity';
 import { UsersService } from './users.service';
 
@@ -22,9 +23,9 @@ describe('UsersService.setSuspension', () => {
     });
     const users = {
       findOne: jest.fn().mockResolvedValue(target),
-      save: jest.fn().mockImplementation((row: User) => Promise.resolve(row)),
+      update: jest.fn().mockResolvedValue(undefined),
     };
-    const service = new UsersService(users as never);
+    const service = new UsersService(users as never, { find: jest.fn() } as never, { find: jest.fn() } as never);
     const result = await service.setSuspension(user({ role: UserRole.ADMIN }), target.id, true);
     expect(result.status).toBe(UserStatus.SUSPENDED);
   });
@@ -38,9 +39,30 @@ describe('UsersService.setSuspension', () => {
       findOne: jest.fn().mockResolvedValue(target),
       save: jest.fn(),
     };
-    const service = new UsersService(users as never);
+    const service = new UsersService(users as never, { find: jest.fn() } as never, { find: jest.fn() } as never);
     await expect(
       service.setSuspension(user({ role: UserRole.ADMIN }), target.id, true),
     ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('rejects a dispatcher assigned to two hubs', async () => {
+    const service = new UsersService(
+      {} as never,
+      {} as never,
+      { find: jest.fn() } as never,
+    );
+    const dto: CreateInstitutionalUserDto = {
+      fullName: 'Laura Gómez',
+      email: 'laura.gomez@outlook.com',
+      password: 'Password123',
+      role: UserRole.DISPATCHER,
+      hubIds: [
+        'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+        'cccccccc-cccc-cccc-cccc-cccccccccccc',
+      ],
+    };
+    await expect(
+      service.createInstitutional(user({ role: UserRole.ADMIN }), dto),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 });

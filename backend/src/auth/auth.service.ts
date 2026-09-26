@@ -8,6 +8,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { IsNull, Repository } from 'typeorm';
+import { UserRole } from '../common/enums/user-role.enum';
 import { OtpPurpose } from '../common/enums/otp-purpose.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { OTP_RESET_TTL_MS, OTP_SIGNUP_TTL_MS } from '../common/field-limits';
@@ -21,10 +22,9 @@ import {
   isLockActive,
   isOtpConsumed,
   isOtpExpired,
-  isPublicRegisterRole,
   nextFailedLoginState,
+  normalizeDocumentNumber,
   passwordsMatch,
-  requiresInstitutionalEmail,
 } from './auth.rules';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
@@ -51,22 +51,28 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    if (!isPublicRegisterRole(dto.role)) {
-      throw new BadRequestException('El rol no es válido para el registro.');
-    }
-    if (requiresInstitutionalEmail(dto.role) && !dto.email) {
+    const documentNumber = normalizeDocumentNumber(
+      dto.documentType,
+      dto.documentNumber,
+    );
+    if (!documentNumber) {
       throw new BadRequestException(
-        'El despachador y el operador deben registrarse con correo institucional.',
+        'El número de documento no corresponde a una cédula o a un PPT.',
       );
+    }
+    if (await this.usersService.findByDocument(dto.documentType, documentNumber)) {
+      throw new ConflictException('Ya existe una cuenta con este documento.');
     }
     await this.assertContactAvailable(dto.email, dto.phone);
     const passwordHash = await hashPassword(dto.password);
     const user = this.usersService.create({
       fullName: dto.fullName.trim(),
       email: dto.email ?? null,
-      phone: dto.phone ?? null,
+      phone: dto.phone,
+      documentType: dto.documentType,
+      documentNumber,
       passwordHash,
-      role: dto.role,
+      role: UserRole.REQUESTER,
       status: UserStatus.UNVERIFIED,
       consentAcceptedAt: new Date(),
       failedLoginCount: 0,
@@ -175,22 +181,16 @@ export class AuthService {
   }
 
   toPublicUser(user: User) {
-    return {
-      id: user.id,
-      fullName: user.fullName,
-      email: user.email,
-      phone: user.phone,
-      role: user.role,
-      status: user.status,
-      hubId: user.hubId,
-    };
+    return this.usersService.toPublicUser(user);
   }
 
   async updateProfile(user: User, dto: UpdateProfileDto) {
     if (
       dto.fullName === undefined &&
       dto.email === undefined &&
-      dto.phone === undefined
+      dto.phone === undefined &&
+      dto.documentType === undefined &&
+      dto.documentNumber === undefined
     ) {
       throw new BadRequestException(
         'Debes enviar al menos un campo para actualizar.',
@@ -220,6 +220,36 @@ export class AuthService {
         );
       }
       user.phone = dto.phone;
+    }
+    if (dto.documentType !== undefined || dto.documentNumber !== undefined) {
+      if (user.role !== UserRole.REQUESTER) {
+        throw new BadRequestException(
+          'El documento solo aplica al solicitante.',
+        );
+      }
+      if (!dto.documentType || !dto.documentNumber) {
+        throw new BadRequestException(
+          'El tipo y el número de documento se actualizan juntos.',
+        );
+      }
+      const documentNumber = normalizeDocumentNumber(
+        dto.documentType,
+        dto.documentNumber,
+      );
+      if (!documentNumber) {
+        throw new BadRequestException(
+          'El número de documento no corresponde a una cédula o a un PPT.',
+        );
+      }
+      const taken = await this.usersService.findByDocument(
+        dto.documentType,
+        documentNumber,
+      );
+      if (taken && taken.id !== user.id) {
+        throw new ConflictException('Ya existe una cuenta con este documento.');
+      }
+      user.documentType = dto.documentType;
+      user.documentNumber = documentNumber;
     }
     const saved = await this.usersService.save(user);
     return this.toPublicUser(saved);

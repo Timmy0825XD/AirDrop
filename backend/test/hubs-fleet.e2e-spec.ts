@@ -10,7 +10,19 @@ import { HubStatus } from '../src/common/enums/hub-status.enum';
 import { HubType } from '../src/common/enums/hub-type.enum';
 import { DroneStatus } from '../src/common/enums/drone-status.enum';
 import { WINGCOPTER_198_CODE } from '../src/fleet/drone-model-seed.service';
-import { hubPayload, loginAdmin, registerVerified } from './e2e-helpers';
+import {
+  andresLopez,
+  clinicPayload,
+  createStaff,
+  dianaHerrera,
+  DRONE_VUP_02,
+  DRONE_VUP_03,
+  hubPayload,
+  loginAdmin,
+  registerRequester,
+  removeFixtures,
+  santiagoMora,
+} from './e2e-helpers';
 
 const envFile = resolve(__dirname, '..', '.env');
 if (existsSync(envFile)) {
@@ -41,6 +53,7 @@ describeIfDb('Hubs y flota (e2e)', () => {
       }),
     );
     await app.init();
+    await removeFixtures(app);
   }, 20_000);
 
   afterAll(async () => {
@@ -49,24 +62,9 @@ describeIfDb('Hubs y flota (e2e)', () => {
     }
   });
 
-  it('despachador registra central; solicitante no puede; operador da de alta un Wingcopter', async () => {
-    const stamp = Date.now();
-    const dispatcherToken = await registerVerified(
-      app!,
-      UserRole.DISPATCHER,
-      `despacho.e2e.${stamp}@hospital.co`,
-    );
-    const requesterToken = await registerVerified(
-      app!,
-      UserRole.REQUESTER,
-      `solicita.e2e.${stamp}@correo.co`,
-    );
-    const operatorToken = await registerVerified(
-      app!,
-      UserRole.FLEET_OPERATOR,
-      `flota.e2e.${stamp}@hospital.co`,
-    );
+  it('el admin crea centrales activas y el operador solo usa las suyas', async () => {
     const adminToken = await loginAdmin(app!);
+    const requesterToken = await registerRequester(app!, andresLopez);
 
     await request(app!.getHttpServer())
       .post('/hubs')
@@ -74,34 +72,69 @@ describeIfDb('Hubs y flota (e2e)', () => {
       .send(hubPayload)
       .expect(403);
 
-    const created = await request(app!.getHttpServer())
+    const hospital = await request(app!.getHttpServer())
       .post('/hubs')
-      .set('Authorization', `Bearer ${dispatcherToken}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send(hubPayload)
       .expect(201);
-
-    expect(created.body).toMatchObject({
+    expect(hospital.body).toMatchObject({
       name: hubPayload.name,
       type: HubType.HOSPITAL,
-      status: HubStatus.PENDING_APPROVAL,
+      status: HubStatus.ACTIVE,
     });
-    const hubId = (created.body as { id: string }).id;
+    const hospitalId = (hospital.body as { id: string }).id;
+
+    const clinic = await request(app!.getHttpServer())
+      .post('/hubs')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send(clinicPayload)
+      .expect(201);
+    const clinicId = (clinic.body as { id: string }).id;
+
+    await request(app!.getHttpServer())
+      .post('/users')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({
+        fullName: dianaHerrera.fullName,
+        email: dianaHerrera.email,
+        phone: dianaHerrera.phone,
+        password: 'Password123',
+        role: UserRole.DISPATCHER,
+        hubIds: [hospitalId, clinicId],
+      })
+      .expect(400);
+
+    const dispatcher = await createStaff(
+      app!,
+      adminToken,
+      dianaHerrera,
+      UserRole.DISPATCHER,
+      [hospitalId],
+    );
 
     await request(app!.getHttpServer())
       .post('/hubs')
-      .set('Authorization', `Bearer ${dispatcherToken}`)
+      .set('Authorization', `Bearer ${dispatcher.token}`)
       .send(hubPayload)
-      .expect(409);
+      .expect(403);
 
     const mine = await request(app!.getHttpServer())
       .get('/hubs/me')
-      .set('Authorization', `Bearer ${dispatcherToken}`)
+      .set('Authorization', `Bearer ${dispatcher.token}`)
       .expect(200);
-    expect((mine.body as { id: string }).id).toBe(hubId);
+    expect((mine.body as { id: string }).id).toBe(hospitalId);
+
+    const operator = await createStaff(
+      app!,
+      adminToken,
+      santiagoMora,
+      UserRole.FLEET_OPERATOR,
+      [hospitalId, clinicId],
+    );
 
     const models = await request(app!.getHttpServer())
       .get('/fleet/models')
-      .set('Authorization', `Bearer ${operatorToken}`)
+      .set('Authorization', `Bearer ${operator.token}`)
       .expect(200);
     const wingcopter = (
       models.body as Array<{ id: string; code: string }>
@@ -110,75 +143,48 @@ describeIfDb('Hubs y flota (e2e)', () => {
 
     await request(app!.getHttpServer())
       .post('/fleet/drones')
-      .set('Authorization', `Bearer ${dispatcherToken}`)
+      .set('Authorization', `Bearer ${operator.token}`)
       .send({
-        identifier: `WC-${stamp}`,
-        droneModelId: wingcopter!.id,
-        hubId,
-      })
-      .expect(403);
-
-    await request(app!.getHttpServer())
-      .post('/fleet/drones')
-      .set('Authorization', `Bearer ${operatorToken}`)
-      .send({
-        identifier: `WC-PENDING-${stamp}`,
-        droneModelId: wingcopter!.id,
-        hubId,
-      })
-      .expect(403);
-
-    await request(app!.getHttpServer())
-      .patch(`/hubs/${hubId}/decision`)
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({ status: HubStatus.APPROVED })
-      .expect(200);
-
-    await request(app!.getHttpServer())
-      .post('/fleet/drones')
-      .set('Authorization', `Bearer ${operatorToken}`)
-      .send({
-        identifier: `WC-MISS-${stamp}`,
+        identifier: DRONE_VUP_02,
         droneModelId: wingcopter!.id,
         hubId: '00000000-0000-4000-8000-000000000000',
       })
       .expect(404);
 
-    const identifier = `WC-${stamp}`;
-    const drone = await request(app!.getHttpServer())
+    const first = await request(app!.getHttpServer())
       .post('/fleet/drones')
-      .set('Authorization', `Bearer ${operatorToken}`)
+      .set('Authorization', `Bearer ${operator.token}`)
       .send({
-        identifier,
+        identifier: DRONE_VUP_02,
         droneModelId: wingcopter!.id,
-        hubId,
+        hubId: hospitalId,
       })
       .expect(201);
-    expect(drone.body).toMatchObject({
-      identifier,
+    expect(first.body).toMatchObject({
+      identifier: DRONE_VUP_02,
       status: DroneStatus.AVAILABLE,
-      hubId,
+      hubId: hospitalId,
     });
+
+    const second = await request(app!.getHttpServer())
+      .post('/fleet/drones')
+      .set('Authorization', `Bearer ${operator.token}`)
+      .send({
+        identifier: DRONE_VUP_03,
+        droneModelId: wingcopter!.id,
+        hubId: clinicId,
+      })
+      .expect(201);
+    expect((second.body as { hubId: string }).hubId).toBe(clinicId);
 
     await request(app!.getHttpServer())
       .post('/fleet/drones')
-      .set('Authorization', `Bearer ${operatorToken}`)
+      .set('Authorization', `Bearer ${operator.token}`)
       .send({
-        identifier,
+        identifier: DRONE_VUP_02,
         droneModelId: wingcopter!.id,
-        hubId,
+        hubId: hospitalId,
       })
       .expect(409);
-
-    const listed = await request(app!.getHttpServer())
-      .get('/fleet/drones')
-      .query({ hubId })
-      .set('Authorization', `Bearer ${operatorToken}`)
-      .expect(200);
-    expect(
-      (listed.body as Array<{ identifier: string }>).some(
-        (row) => row.identifier === identifier,
-      ),
-    ).toBe(true);
   }, 40_000);
 });

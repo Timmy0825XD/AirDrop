@@ -1,19 +1,17 @@
 import {
-  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
+import { UserRole } from '../common/enums/user-role.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
+import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
-import { UsersService } from '../users/users.service';
 import { CreateHubDto } from './dto/create-hub.dto';
-import { DecideHubDto } from './dto/decide-hub.dto';
-import { HubAdminNoticeService } from './hub-admin-notice.service';
 import { Hub } from './hub.entity';
 
 @Injectable()
@@ -21,25 +19,10 @@ export class HubsService {
   constructor(
     @InjectRepository(Hub)
     private readonly hubs: Repository<Hub>,
-    private readonly usersService: UsersService,
-    private readonly adminNotice: HubAdminNoticeService,
   ) {}
 
   async create(user: User, dto: CreateHubDto) {
-    this.assertActiveAccount(user);
-    if (user.hubId) {
-      throw new ConflictException(
-        'Ya registraste una central. Espera la aprobación.',
-      );
-    }
-    const existing = await this.hubs.findOne({
-      where: { createdByUserId: user.id },
-    });
-    if (existing) {
-      throw new ConflictException(
-        'Ya registraste una central. Espera la aprobación.',
-      );
-    }
+    this.assertActiveAdmin(user);
     const hub = this.hubs.create({
       name: dto.name.trim(),
       type: dto.type,
@@ -48,25 +31,25 @@ export class HubsService {
       longitude: dto.longitude,
       contactPhone: dto.contactPhone,
       contactEmail: dto.contactEmail ?? null,
-      status: HubStatus.PENDING_APPROVAL,
-      rejectionReason: null,
+      status: HubStatus.ACTIVE,
       createdByUserId: user.id,
     });
     const saved = await this.hubs.save(hub);
-    user.hubId = saved.id;
-    await this.usersService.save(user);
-    this.adminNotice.notifyPendingApproval(saved);
     return this.toPublicHub(saved);
   }
 
   async findMine(user: User) {
     this.assertActiveAccount(user);
-    if (!user.hubId) {
-      throw new NotFoundException('No has registrado una central.');
+    if (user.role !== UserRole.DISPATCHER) {
+      throw new ForbiddenException('Solo el despachador tiene una central.');
     }
-    const hub = await this.hubs.findOne({ where: { id: user.hubId } });
+    const hubIds = assignedHubIds(user);
+    if (hubIds.length !== 1) {
+      throw new NotFoundException('No tienes una central asignada.');
+    }
+    const hub = await this.hubs.findOne({ where: { id: hubIds[0] } });
     if (!hub) {
-      throw new NotFoundException('No has registrado una central.');
+      throw new NotFoundException('No tienes una central asignada.');
     }
     return this.toPublicHub(hub);
   }
@@ -79,27 +62,34 @@ export class HubsService {
     return rows.map((row) => this.toPublicHub(row));
   }
 
-  async decide(hubId: string, dto: DecideHubDto) {
+  async listAssigned(user: User) {
+    this.assertActiveAccount(user);
+    const hubIds = assignedHubIds(user);
+    if (!hubIds.length) {
+      return [];
+    }
+    const rows = await this.hubs.find({
+      where: { id: In(hubIds) },
+      order: { name: 'ASC' },
+    });
+    return rows.map((row) => this.toPublicHub(row));
+  }
+
+  async setSuspension(hubId: string, suspended: boolean) {
     const hub = await this.hubs.findOne({ where: { id: hubId } });
     if (!hub) {
       throw new NotFoundException('La central no existe.');
     }
-    if (hub.status !== HubStatus.PENDING_APPROVAL) {
-      throw new ConflictException('Esta central ya fue aprobada o rechazada.');
+    const next = suspended ? HubStatus.SUSPENDED : HubStatus.ACTIVE;
+    if (hub.status === next) {
+      throw new ConflictException(
+        suspended
+          ? 'Esta central ya está suspendida.'
+          : 'Esta central ya está activa.',
+      );
     }
-    if (dto.status === HubStatus.REJECTED) {
-      const reason = dto.reason?.trim();
-      if (!reason) {
-        throw new BadRequestException('El rechazo debe incluir un motivo.');
-      }
-      hub.status = HubStatus.REJECTED;
-      hub.rejectionReason = reason;
-    } else {
-      hub.status = HubStatus.APPROVED;
-      hub.rejectionReason = null;
-    }
+    hub.status = next;
     const saved = await this.hubs.save(hub);
-    this.adminNotice.notifyDecision(saved);
     return this.toPublicHub(saved);
   }
 
@@ -107,15 +97,13 @@ export class HubsService {
     return this.hubs.findOne({ where: { id } });
   }
 
-  async requireApproved(id: string): Promise<Hub> {
+  async requireActive(id: string): Promise<Hub> {
     const hub = await this.findById(id);
     if (!hub) {
       throw new NotFoundException('La central no existe.');
     }
-    if (hub.status !== HubStatus.APPROVED) {
-      throw new ForbiddenException(
-        'La central debe estar aprobada para operar.',
-      );
+    if (hub.status !== HubStatus.ACTIVE) {
+      throw new ForbiddenException('La central está suspendida.');
     }
     return hub;
   }
@@ -131,9 +119,15 @@ export class HubsService {
       contactPhone: hub.contactPhone,
       contactEmail: hub.contactEmail,
       status: hub.status,
-      rejectionReason: hub.rejectionReason,
       createdAt: hub.createdAt,
     };
+  }
+
+  private assertActiveAdmin(user: User): void {
+    this.assertActiveAccount(user);
+    if (user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('Solo el administrador crea centrales.');
+    }
   }
 
   private assertActiveAccount(user: User): void {

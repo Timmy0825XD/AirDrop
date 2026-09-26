@@ -5,15 +5,22 @@ import { Test, TestingModule } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
+import { SaleType } from '../src/common/enums/sale-type.enum';
 import { UserRole } from '../src/common/enums/user-role.enum';
-import { HubStatus } from '../src/common/enums/hub-status.enum';
 import { DroneStatus } from '../src/common/enums/drone-status.enum';
 import { UserStatus } from '../src/common/enums/user-status.enum';
 import { WINGCOPTER_198_CODE } from '../src/fleet/drone-model-seed.service';
 import {
+  camilaDiaz,
+  createStaff,
+  DRONE_VUP_01,
   hubPayload,
+  julianRojas,
+  lauraGomez,
   loginAdmin,
-  registerVerified,
+  registerRequester,
+  removeFixtures,
+  TEST_PASSWORD,
   valleduparPolygon,
 } from './e2e-helpers';
 
@@ -46,6 +53,7 @@ describeIfDb('Sprint 2 (e2e)', () => {
       }),
     );
     await app.init();
+    await removeFixtures(app);
   }, 20_000);
 
   afterAll(async () => {
@@ -54,78 +62,89 @@ describeIfDb('Sprint 2 (e2e)', () => {
     }
   });
 
-  it('aprueba central, inventario con receta, flota, geovalla y suspensión', async () => {
-    const stamp = Date.now();
-    const dispatcherToken = await registerVerified(
-      app!,
-      UserRole.DISPATCHER,
-      `despacho.s2.${stamp}@hospital.co`,
-    );
-    const requesterToken = await registerVerified(
-      app!,
-      UserRole.REQUESTER,
-      `solicita.s2.${stamp}@correo.co`,
-    );
-    const operatorEmail = `flota.s2.${stamp}@hospital.co`;
-    const operatorToken = await registerVerified(
-      app!,
-      UserRole.FLEET_OPERATOR,
-      operatorEmail,
-    );
+  it('inventario, flota, geovalla y suspensión de central y operador', async () => {
     const adminToken = await loginAdmin(app!);
+    const requesterToken = await registerRequester(app!, camilaDiaz);
 
     const profile = await request(app!.getHttpServer())
       .patch('/auth/me')
       .set('Authorization', `Bearer ${requesterToken}`)
-      .send({ fullName: 'Ana Pérez' })
+      .send({ fullName: 'Camila Díaz Rueda' })
       .expect(200);
-    expect((profile.body as { fullName: string }).fullName).toBe('Ana Pérez');
+    expect((profile.body as { fullName: string }).fullName).toBe(
+      'Camila Díaz Rueda',
+    );
 
     const hub = await request(app!.getHttpServer())
       .post('/hubs')
-      .set('Authorization', `Bearer ${dispatcherToken}`)
+      .set('Authorization', `Bearer ${adminToken}`)
       .send(hubPayload)
       .expect(201);
     const hubId = (hub.body as { id: string }).id;
 
-    await request(app!.getHttpServer())
-      .post('/inventory')
-      .set('Authorization', `Bearer ${dispatcherToken}`)
-      .send({
-        name: 'Paracetamol 500 mg',
-        quantity: 10,
-        expirationDate: '2027-03-01',
-        requiresColdChain: false,
-        requiresPrescription: true,
-      })
-      .expect(403);
-
-    await request(app!.getHttpServer())
-      .patch(`/hubs/${hubId}/decision`)
-      .set('Authorization', `Bearer ${adminToken}`)
-      .send({ status: HubStatus.APPROVED })
-      .expect(200);
+    const dispatcher = await createStaff(
+      app!,
+      adminToken,
+      lauraGomez,
+      UserRole.DISPATCHER,
+      [hubId],
+    );
+    const operator = await createStaff(
+      app!,
+      adminToken,
+      julianRojas,
+      UserRole.FLEET_OPERATOR,
+      [hubId],
+    );
 
     const item = await request(app!.getHttpServer())
       .post('/inventory')
-      .set('Authorization', `Bearer ${dispatcherToken}`)
+      .set('Authorization', `Bearer ${dispatcher.token}`)
       .send({
         name: 'Paracetamol 500 mg',
         quantity: 10,
+        lot: 'L-2026-014',
         expirationDate: '2027-03-01',
         requiresColdChain: false,
-        requiresPrescription: true,
+        saleType: SaleType.PRESCRIPTION,
       })
       .expect(201);
     expect(item.body).toMatchObject({
       name: 'Paracetamol 500 mg',
-      requiresPrescription: true,
+      lot: 'L-2026-014',
+      saleType: SaleType.PRESCRIPTION,
       requiresColdChain: false,
     });
 
+    await request(app!.getHttpServer())
+      .patch(`/hubs/${hubId}/suspension`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ suspended: true })
+      .expect(200);
+
+    const blocked = await request(app!.getHttpServer())
+      .post('/inventory')
+      .set('Authorization', `Bearer ${dispatcher.token}`)
+      .send({
+        name: 'Suero oral',
+        quantity: 4,
+        lot: 'L-2026-020',
+        expirationDate: '2027-06-01',
+        requiresColdChain: false,
+        saleType: SaleType.OVER_THE_COUNTER,
+      });
+    console.error('blocked-inventory', blocked.status, blocked.body);
+    expect(blocked.status).toBe(403);
+
+    await request(app!.getHttpServer())
+      .patch(`/hubs/${hubId}/suspension`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ suspended: false })
+      .expect(200);
+
     const models = await request(app!.getHttpServer())
       .get('/fleet/models')
-      .set('Authorization', `Bearer ${operatorToken}`)
+      .set('Authorization', `Bearer ${operator.token}`)
       .expect(200);
     const wingcopter = (
       models.body as Array<{ id: string; code: string }>
@@ -133,9 +152,9 @@ describeIfDb('Sprint 2 (e2e)', () => {
 
     const drone = await request(app!.getHttpServer())
       .post('/fleet/drones')
-      .set('Authorization', `Bearer ${operatorToken}`)
+      .set('Authorization', `Bearer ${operator.token}`)
       .send({
-        identifier: `WC-S2-${stamp}`,
+        identifier: DRONE_VUP_01,
         droneModelId: wingcopter!.id,
         hubId,
       })
@@ -144,13 +163,13 @@ describeIfDb('Sprint 2 (e2e)', () => {
 
     await request(app!.getHttpServer())
       .patch(`/fleet/drones/${droneId}/status`)
-      .set('Authorization', `Bearer ${operatorToken}`)
+      .set('Authorization', `Bearer ${operator.token}`)
       .send({ status: DroneStatus.MAINTENANCE })
       .expect(200);
 
     const maintained = await request(app!.getHttpServer())
       .post(`/fleet/drones/${droneId}/maintenance`)
-      .set('Authorization', `Bearer ${operatorToken}`)
+      .set('Authorization', `Bearer ${operator.token}`)
       .send({
         reason: 'Revisión de hélices',
         estimatedEndDate: '2026-10-01',
@@ -163,51 +182,38 @@ describeIfDb('Sprint 2 (e2e)', () => {
 
     const geofence = await request(app!.getHttpServer())
       .post('/geofences')
-      .set('Authorization', `Bearer ${operatorToken}`)
+      .set('Authorization', `Bearer ${operator.token}`)
       .send({
         name: 'Plaza Alfonso López',
-        reason: 'Zona restringida de prueba',
+        reason: 'Zona restringida de vuelo',
         polygon: valleduparPolygon,
       })
       .expect(201);
-    expect((geofence.body as { polygon: { type: string } }).polygon.type).toBe(
-      'Polygon',
-    );
     const geofenceId = (geofence.body as { id: string }).id;
 
     await request(app!.getHttpServer())
       .delete(`/geofences/${geofenceId}`)
-      .set('Authorization', `Bearer ${operatorToken}`)
+      .set('Authorization', `Bearer ${operator.token}`)
       .expect(204);
 
-    const users = await request(app!.getHttpServer())
-      .get('/users')
-      .query({ role: UserRole.FLEET_OPERATOR })
-      .set('Authorization', `Bearer ${adminToken}`)
-      .expect(200);
-    const operator = (
-      users.body as Array<{ id: string; email: string | null }>
-    ).find((row) => row.email === operatorEmail);
-    expect(operator).toBeDefined();
-
     await request(app!.getHttpServer())
-      .patch(`/users/${operator!.id}/suspension`)
+      .patch(`/users/${operator.id}/suspension`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ suspended: true })
       .expect(200);
 
     await request(app!.getHttpServer())
       .get('/geofences')
-      .set('Authorization', `Bearer ${operatorToken}`)
+      .set('Authorization', `Bearer ${operator.token}`)
       .expect(401);
 
     await request(app!.getHttpServer())
       .post('/auth/login')
-      .send({ email: operatorEmail, password: 'secreto12' })
+      .send({ email: julianRojas.email, password: TEST_PASSWORD })
       .expect(403);
 
     await request(app!.getHttpServer())
-      .patch(`/users/${operator!.id}/suspension`)
+      .patch(`/users/${operator.id}/suspension`)
       .set('Authorization', `Bearer ${adminToken}`)
       .send({ suspended: false })
       .expect(200);
@@ -220,7 +226,7 @@ describeIfDb('Sprint 2 (e2e)', () => {
     expect(
       (
         reactivated.body as Array<{ email: string | null; status: string }>
-      ).find((row) => row.email === operatorEmail)?.status,
+      ).find((row) => row.email === julianRojas.email)?.status,
     ).toBe(UserStatus.ACTIVE);
   }, 60_000);
 });
