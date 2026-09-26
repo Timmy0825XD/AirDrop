@@ -1,6 +1,6 @@
 # AGENTS.md — backend (NestJS)
 
-Reglas de esta carpeta. Autoridad de negocio: [`../INDEX.md`](../INDEX.md) y [`../context/`](../context/). No contradecir [`../AGENTS.md`](../AGENTS.md) ni [`../context/principios-de-diseno.md`](../context/principios-de-diseno.md).
+Reglas de esta carpeta. Autoridad de negocio: [`../context/index.md`](../context/index.md). No contradecir [`../AGENTS.md`](../AGENTS.md) ni [`../context/diseno/principios.md`](../context/diseno/principios.md).
 
 ## Qué es este lado
 
@@ -22,7 +22,7 @@ Cada FK, filtro frecuente (`status`, fechas, `hubId`) y lookup único (email) ll
 
 Columnas con tipo PostgreSQL real y longitud coherente (no `varchar(255)` por defecto). IDs `uuid`; instantes `timestamptz`; flags `boolean`; roles/estados `enum`; decimales `numeric`, nunca `float`. El `MaxLength` del DTO coincide con la columna. Referencia: regla `.cursor/rules/domain-model.mdc`.
 
-## Módulos sugeridos (cuando exista código)
+## Módulos
 
 Nombres alineados al glosario:
 
@@ -48,10 +48,10 @@ Un módulo = controllers + services + entities de **ese** tema. El motor de deci
 
 1. **Decision** — entrada: pedido **autorizado** + drones candidatos. Salida: dron + ruta **pendiente de carga**, o “nadie” → Fallback. **No** arranca el reloj. Emergencia gana (RF-11).
 2. **Routing** — origen hub, destino pedido, geovallas PostGIS. Corredor a altitud fija (ida; retorno si timeout). Si no hay camino, el dron no es elegible.
-3. **Simulation** — arranca **solo** tras confirmar carga (RF-28). Intervalo ≤ 2 s en vuelo (RNF-08). En destino espera 5 min el código (RF-29); si no, vuelo de retorno con el paquete (RF-30). Fases eVTOL y batería distinta en vertical vs crucero. Temperatura solo si el ítem tiene flag de frío.
+3. **Simulation** — arranca **solo** tras confirmar carga (RF-28). Intervalo ≤ 2 s en vuelo (RNF-08). En destino espera 5 min el código (RF-29); si no, vuelo de retorno con el paquete (RF-30) y la cuarentena de [`../context/entregas/productos.md`](../context/entregas/productos.md). Fases eVTOL y batería distinta en vertical vs crucero. Temperatura solo si el ítem tiene flag de frío. Un traslado entre centrales, al recibirse bien, ingresa el lote en la central de destino ([`../context/entregas/centrales.md`](../context/entregas/centrales.md)).
 4. **Telemetry** — escribe Redis, publica WSS. Al cerrar misión (entregado o devuelto), persiste resumen en Postgres.
 
-Calibración: `DroneModel` tipo Wingcopter 198 ([`../context/arquitectura-tecnologica.md`](../context/arquitectura-tecnologica.md)).
+Calibración: `DroneModel` tipo Wingcopter 198 ([`../context/diseno/arquitectura.md`](../context/diseno/arquitectura.md)).
 
 ## Seguridad
 

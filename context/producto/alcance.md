@@ -8,7 +8,7 @@
 ## Incluido en el MVP
 
 - Pedidos de **emergencia** (prioridad alta) y **programados** (fecha, frecuencia, cantidad: sangre, vacunas, otros).
-- Receta en **imagen** cuando el medicamento o insumo del catálogo lo exige; el despachador la ve al autorizar.
+- Entrega según [`../entregas/`](../entregas/) y el mínimo legal de [`../legal/`](../legal/).
 - Flota de drones simulados con estados de disponibilidad.
 - Geovallas y zonas restringidas definidas por el operador.
 - Motor de decisión **al autorizar**: elige el mejor dron (batería, carga, mantenimiento, clima **simulado**, ruta libre de geovallas, tipo de misión); emergencia gana el recurso si hay competencia. **No** asume que el insumo ya está a bordo ni inicia el vuelo.
@@ -16,7 +16,7 @@
 - Rutas simuladas que evitan zonas restringidas y “edificaciones” vía **corredores a altitud fija** (no navegación 3D).
 - Telemetría en tiempo real en la app.
 - Panel de operador: posición, altitud, velocidad, batería, payload, temperatura de carga, ping/latencia, fase de vuelo.
-- En destino: el dron **espera 5 minutos** el código de entrega. Si no se ingresa, **regresa a la central con el paquete** (vuelo de retorno simulado).
+- En destino: el dron **espera 5 minutos** el código de entrega. Si no se ingresa, **regresa a la central con el paquete**. El reingreso al inventario pasa por la cuarentena de [`../entregas/productos.md`](../entregas/productos.md).
 - Cadena de frío simulada y alerta si la temperatura sale de rango.
 - Fallback: alternativa de entrega si ningún dron es elegible al autorizar.
 - Dashboard epidemiológico simple: qué se pide más y desde dónde.
