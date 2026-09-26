@@ -20,7 +20,7 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 
 | ID | Historia | Pri | SP | Sprint |
 | --- | --- | --- | --- | --- |
-| HU-01 | Registro con correo o celular y perfil (cuatro roles) | Alta | 5 | 1 |
+| HU-01 | Registro civil con documento, celular y OTP. Despachador y operador los crea el admin | Alta | 5 | 1 |
 | HU-02 | OTP 6 dígitos, 10 minutos | Alta | 3 | 1 |
 | HU-03 | Login y JWT según rol | Alta | 3 | 1 |
 | HU-04 | Cerrar sesión | Alta | 1 | 1 |
@@ -30,11 +30,11 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 
 | ID | Historia | Pri | SP | Sprint |
 | --- | --- | --- | --- | --- |
-| HU-06 | Registrar datos de la central | Alta | 5 | 1 |
-| HU-07 | Admin aprueba o rechaza central | Alta | 5 | 2 |
+| HU-06 | Admin crea la central (nombre, tipo, ubicación, contacto) | Alta | 5 | 1 |
+| HU-07 | Admin suspende o reactiva una central | Alta | 5 | 2 |
 | HU-08 | Perfil básico del solicitante | Media | 3 | 2 |
-| HU-09 | Inventario (cantidad, vencimiento, frío, exige receta) | Alta | 8 | 2 |
-| HU-10 | Suspender / reactivar cuentas institucionales | Media | 5 | 2 |
+| HU-09 | Inventario (cantidad, lote, vencimiento, frío, tipo de venta) | Alta | 8 | 2 |
+| HU-10 | Admin crea despachadores (una central) y operadores (una o varias), y puede suspenderlos | Media | 5 | 2 |
 
 ## Módulo 3 — Flota y geovallas
 
@@ -49,10 +49,10 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 
 | ID | Historia | Pri | SP | Sprint |
 | --- | --- | --- | --- | --- |
-| HU-15 | Pedido de emergencia (receta en imagen si el ítem lo exige) | Alta | 8 | 3 |
+| HU-15 | Pedido de emergencia (imagen de fórmula si es venta bajo fórmula; control especial no se crea) | Alta | 8 | 3 |
 | HU-16 | Estados del pedido (incluye pendiente de carga, espera y retorno) | Alta | 5 | 3 |
 | HU-17 | Cola de emergencia para el despachador | Alta | 5 | 3 |
-| HU-18 | Plan de reabastecimiento | Alta | 8 | 3 |
+| HU-18 | Abastecimiento programado entre centrales, o entrega periódica a un solicitante | Alta | 8 | 3 |
 | HU-19 | Alerta de pedido sin atender | Media | 3 | 3 |
 | HU-20 | Historial del solicitante | Media | 3 | 3 |
 
@@ -83,8 +83,8 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 | HU-31 | Flag de sensible a temperatura | Media | 3 | 6 |
 | HU-32 | Alerta de temperatura fuera de rango | Alta | 5 | 6 |
 | HU-33 | Código de entrega de un uso | Alta | 5 | 6 |
-| HU-34 | Espera de código 5 min; si no, retorno con el paquete | Alta | 5 | 6 |
-| HU-35 | Despachador confirma carga en el dron asignado | Alta | 5 | 6 |
+| HU-34 | Espera de código 5 min; si no, retorno con el paquete y cuarentena | Alta | 5 | 6 |
+| HU-35 | Despachador confirma carga, información de uso y registro de salida | Alta | 5 | 6 |
 
 ## Módulo 8 — Historial, dashboard, admin
 

@@ -5,7 +5,7 @@ Dirección acordada en el documento base. El detalle de carpetas y convenciones 
 ## 1. Aplicación móvil
 
 - **Flutter**, una sola app para Android e iOS.
-- Roles: solicitante, despachador, operador de flota y administrador. No hay rol receptor.
+- Roles: solicitante (registro público), despachador y operador de flota (los crea el admin) y administrador. La central no es un rol. No hay rol receptor. Detalle en [`../app/roles.md`](../app/roles.md).
 - **Sin componente web.** Mapas, geovallas y telemetría van en la misma app.
 
 ## 2. Backend y lógica de negocio

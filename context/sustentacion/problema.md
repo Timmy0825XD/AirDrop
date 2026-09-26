@@ -37,6 +37,6 @@ El problema **no** es la falta de medicamentos en el sistema de salud en general
 ## Justificación (cuatro pilares)
 
 1. **Riesgo documentado.** Cifras INS, remisiones y patrones rurales coinciden: a mayor distancia y peor vía, mayor riesgo de tratamiento tardío. La vía aérea simulada ataca ese desfase.
-2. **Prevención, no solo emergencia.** Flujo periódico de sangre y vacunas reduce urgencias por falta de insumos. Experiencias reales (Zipline y otras; ver [marco-de-referencia.md](marco-de-referencia.md)) combinan ambos modos; AirDrop adopta ese modelo dual a escala simulada.
+2. **Prevención, no solo emergencia.** Flujo periódico de sangre y vacunas reduce urgencias por falta de insumos. Experiencias reales (Zipline y otras; ver [marco.md](marco.md)) combinan ambos modos; AirDrop adopta ese modelo dual a escala simulada.
 3. **Sistema de decisión, no solo transporte.** Central + dron + ruta; si ningún dron cumple, hay **respaldo**. El valor se sostiene aunque el vuelo no sea posible.
 4. **Viabilidad académica.** Hardware real es prohibitivo. Se simula el comportamiento calibrado con el **Wingcopter 198** (eVTOL, ~150 km/h, hasta 6 kg, hasta ~110 km con carga ligera). Valor agregado: cadena de frío simulada y dashboard epidemiológico (qué se pide y desde dónde).
