@@ -122,7 +122,7 @@ describeIfDb('Sprint 2 (e2e)', () => {
       .send({ suspended: true })
       .expect(200);
 
-    const blocked = await request(app!.getHttpServer())
+    await request(app!.getHttpServer())
       .post('/inventory')
       .set('Authorization', `Bearer ${dispatcher.token}`)
       .send({
@@ -132,9 +132,8 @@ describeIfDb('Sprint 2 (e2e)', () => {
         expirationDate: '2027-06-01',
         requiresColdChain: false,
         saleType: SaleType.OVER_THE_COUNTER,
-      });
-    console.error('blocked-inventory', blocked.status, blocked.body);
-    expect(blocked.status).toBe(403);
+      })
+      .expect(403);
 
     await request(app!.getHttpServer())
       .patch(`/hubs/${hubId}/suspension`)

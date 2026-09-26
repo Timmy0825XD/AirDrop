@@ -86,7 +86,7 @@ export const hubPayload = {
   latitude: 10.46314,
   longitude: -73.25322,
   contactPhone: '3001234567',
-  contactEmail: 'urgencias@hospitalrosario.com',
+  contactEmail: 'urgencias.rosario@gmail.com',
 };
 
 export const clinicPayload = {
@@ -96,7 +96,7 @@ export const clinicPayload = {
   latitude: 10.4742,
   longitude: -73.2598,
   contactPhone: '3007654321',
-  contactEmail: 'contacto@clinicalauradaniela.com',
+  contactEmail: 'contacto.lauradaniela@hotmail.com',
 };
 
 export const valleduparPolygon = {
