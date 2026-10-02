@@ -24,7 +24,11 @@ class ApiClient {
 
   void Function()? onUnauthorized;
 
-  Future<dynamic> getJson(String path) => _send(() => _dio.get(path));
+  /// Lee un recurso. [query] se envía como query string; los valores que
+  /// sean `null` se omiten, así el backend puede distinguir "sin filtro" de
+  /// "filtro vacío".
+  Future<dynamic> getJson(String path, {Map<String, String>? query}) =>
+      _send(() => _dio.get(path, queryParameters: query));
 
   Future<dynamic> postJson(String path, {Object? body}) =>
       _send(() => _dio.post(path, data: body));

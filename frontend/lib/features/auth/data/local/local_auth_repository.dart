@@ -2,19 +2,19 @@ import '../../../../core/api_exception.dart';
 import '../../../../core/auth/token_store.dart';
 import '../auth_models.dart';
 import '../auth_repository.dart';
+import 'local_auth_rules.dart';
+import 'local_fixtures.dart';
+import 'local_user.dart';
 
+/// Sesión simulada en memoria, para trabajar sin NestJS. Aplica las
+/// mismas reglas que el backend para que los mensajes coincidan.
 class LocalAuthRepository implements AuthRepository {
   LocalAuthRepository({TokenStore? tokenStore})
     : _tokenStore = tokenStore ?? TokenStore(),
-      _users = {for (final user in _fixtureUsers) user.id: user.copy()};
-
-  static const _otp = '123456';
-  static const _tokenPrefix = 'local-session:';
-  static const _resetMessage =
-      'Si el contacto existe, te enviaremos un código.';
+      _users = {for (final user in localFixtureUsers) user.id: user.copy()};
 
   final TokenStore _tokenStore;
-  final Map<String, _LocalUser> _users;
+  final Map<String, LocalUser> _users;
 
   @override
   Future<RegisterResponse> register(RegisterRequest request) async {
@@ -25,8 +25,8 @@ class LocalAuthRepository implements AuthRepository {
       );
     }
 
-    final email = _normalizeEmail(request.email);
-    final phone = _normalizePhone(request.phone);
+    final email = LocalAuthRules.normalizeEmail(request.email);
+    final phone = LocalAuthRules.normalizePhone(request.phone);
     if (request.role.requiresEmail && email == null) {
       throw ApiException(
         'El despachador y el operador deben registrarse con correo institucional.',
@@ -41,15 +41,10 @@ class LocalAuthRepository implements AuthRepository {
           (email != null && user.email == email) ||
           (phone != null && user.phone == phone),
     );
-    if (duplicate) {
-      throw ApiException(
-        'Ya existe una cuenta con este correo o celular.',
-        statusCode: 409,
-      );
-    }
+    if (duplicate) throw LocalAuthRules.duplicateContact();
 
     final id = 'local-${DateTime.now().microsecondsSinceEpoch}';
-    final user = _LocalUser(
+    _users[id] = LocalUser(
       id: id,
       fullName: request.fullName.trim(),
       email: email,
@@ -58,7 +53,6 @@ class LocalAuthRepository implements AuthRepository {
       status: UserStatus.unverified,
       password: request.password,
     );
-    _users[id] = user;
     return RegisterResponse(
       message: 'Cuenta creada. Verifica el código para activarla.',
       userId: id,
@@ -68,8 +62,9 @@ class LocalAuthRepository implements AuthRepository {
   @override
   Future<AuthSession> verifyOtp(VerifyOtpRequest request) async {
     final user = _requireUser(request.contact);
-    if (user.status != UserStatus.unverified || request.code != _otp) {
-      throw _invalidOtp();
+    if (user.status != UserStatus.unverified ||
+        request.code != LocalAuthRules.otp) {
+      throw LocalAuthRules.invalidOtp();
     }
     user.status = UserStatus.active;
     return _sessionFor(user);
@@ -78,9 +73,7 @@ class LocalAuthRepository implements AuthRepository {
   @override
   Future<AuthMessage> resendOtp(ResendOtpRequest request) async {
     _requireUser(request.contact);
-    return const AuthMessage(
-      message: 'Si el contacto existe, te enviaremos un código.',
-    );
+    return const AuthMessage(message: LocalAuthRules.resetMessage);
   }
 
   @override
@@ -92,24 +85,8 @@ class LocalAuthRepository implements AuthRepository {
         statusCode: 401,
       );
     }
-    if (user.status == UserStatus.unverified) {
-      throw ApiException(
-        'Debes verificar tu cuenta con el código que te enviamos.',
-        statusCode: 403,
-      );
-    }
-    if (user.status == UserStatus.locked) {
-      throw ApiException(
-        'Demasiados intentos. Intenta de nuevo en unos minutos.',
-        statusCode: 403,
-      );
-    }
-    if (user.status == UserStatus.suspended) {
-      throw ApiException(
-        'Tu cuenta está suspendida. Habla con el administrador.',
-        statusCode: 403,
-      );
-    }
+    final blocked = _loginBlock(user.status);
+    if (blocked != null) throw blocked;
     return _sessionFor(user);
   }
 
@@ -118,14 +95,14 @@ class LocalAuthRepository implements AuthRepository {
 
   @override
   Future<AuthMessage> forgotPassword(ForgotPasswordRequest request) async {
-    return const AuthMessage(message: _resetMessage);
+    return const AuthMessage(message: LocalAuthRules.resetMessage);
   }
 
   @override
   Future<AuthMessage> resetPassword(ResetPasswordRequest request) async {
     final user = _findByContact(request.contact);
-    if (user == null || request.code != _otp) {
-      throw ApiException(_resetMessage, statusCode: 400);
+    if (user == null || request.code != LocalAuthRules.otp) {
+      throw ApiException(LocalAuthRules.resetMessage, statusCode: 400);
     }
     user.password = request.password;
     return const AuthMessage(
@@ -135,15 +112,7 @@ class LocalAuthRepository implements AuthRepository {
 
   @override
   Future<PublicUser> me() async {
-    final token = await _tokenStore.read();
-    final user = _userForToken(token);
-    if (user == null) {
-      throw ApiException(
-        'Tu sesión expiró. Inicia sesión de nuevo.',
-        statusCode: 401,
-      );
-    }
-    return _toPublicUser(user);
+    return (await _requireSessionUser()).toPublicUser();
   }
 
   @override
@@ -166,186 +135,73 @@ class LocalAuthRepository implements AuthRepository {
       user.fullName = fullName;
     }
     if (request.email != null) {
-      final email = _normalizeEmail(request.email);
+      final email = LocalAuthRules.normalizeEmail(request.email);
       if (email == null || _emailTaken(email, user.id)) {
-        throw ApiException(
-          'Ya existe una cuenta con este correo o celular.',
-          statusCode: 409,
-        );
+        throw LocalAuthRules.duplicateContact();
       }
       user.email = email;
     }
     if (request.phone != null) {
-      final phone = _normalizePhone(request.phone);
+      final phone = LocalAuthRules.normalizePhone(request.phone);
       if (phone == null || _phoneTaken(phone, user.id)) {
-        throw ApiException(
-          'Ya existe una cuenta con este correo o celular.',
-          statusCode: 409,
-        );
+        throw LocalAuthRules.duplicateContact();
       }
       user.phone = phone;
     }
-    return _toPublicUser(user);
+    return user.toPublicUser();
   }
 
-  _LocalUser _requireUser(AuthContact contact) {
+  ApiException? _loginBlock(UserStatus status) => switch (status) {
+    UserStatus.unverified => ApiException(
+      'Debes verificar tu cuenta con el código que te enviamos.',
+      statusCode: 403,
+    ),
+    UserStatus.locked => ApiException(
+      'Demasiados intentos. Intenta de nuevo en unos minutos.',
+      statusCode: 403,
+    ),
+    UserStatus.suspended => ApiException(
+      'Tu cuenta está suspendida. Habla con el administrador.',
+      statusCode: 403,
+    ),
+    UserStatus.active => null,
+  };
+
+  LocalUser _requireUser(AuthContact contact) {
     final user = _findByContact(contact);
-    if (user == null) {
-      throw _invalidOtp();
-    }
+    if (user == null) throw LocalAuthRules.invalidOtp();
     return user;
   }
 
-  Future<_LocalUser> _requireSessionUser() async {
-    final user = _userForToken(await _tokenStore.read());
-    if (user == null) {
-      throw ApiException(
-        'Tu sesión expiró. Inicia sesión de nuevo.',
-        statusCode: 401,
-      );
+  Future<LocalUser> _requireSessionUser() async {
+    final token = await _tokenStore.read();
+    if (token == null ||
+        !token.startsWith(LocalAuthRules.tokenPrefix)) {
+      throw LocalAuthRules.expiredSession();
     }
+    final user = _users[token.substring(LocalAuthRules.tokenPrefix.length)];
+    if (user == null) throw LocalAuthRules.expiredSession();
     return user;
   }
 
-  _LocalUser? _findByContact(AuthContact contact) {
-    final email = _normalizeEmail(contact.email);
-    final phone = _normalizePhone(contact.phone);
+  LocalUser? _findByContact(AuthContact contact) {
+    final email = LocalAuthRules.normalizeEmail(contact.email);
+    final phone = LocalAuthRules.normalizePhone(contact.phone);
     for (final user in _users.values) {
-      if (email != null && user.email == email) {
-        return user;
-      }
-      if (phone != null && user.phone == phone) {
-        return user;
-      }
+      if (email != null && user.email == email) return user;
+      if (phone != null && user.phone == phone) return user;
     }
     return null;
   }
 
-  _LocalUser? _userForToken(String? token) {
-    if (token == null || !token.startsWith(_tokenPrefix)) {
-      return null;
-    }
-    return _users[token.substring(_tokenPrefix.length)];
-  }
+  bool _emailTaken(String email, String currentId) =>
+      _users.values.any((user) => user.id != currentId && user.email == email);
 
-  bool _emailTaken(String email, String currentId) {
-    return _users.values.any(
-      (user) => user.id != currentId && user.email == email,
-    );
-  }
+  bool _phoneTaken(String phone, String currentId) =>
+      _users.values.any((user) => user.id != currentId && user.phone == phone);
 
-  bool _phoneTaken(String phone, String currentId) {
-    return _users.values.any(
-      (user) => user.id != currentId && user.phone == phone,
-    );
-  }
-
-  AuthSession _sessionFor(_LocalUser user) {
-    return AuthSession(
-      accessToken: '$_tokenPrefix${user.id}',
-      user: _toPublicUser(user),
-    );
-  }
-
-  PublicUser _toPublicUser(_LocalUser user) {
-    return PublicUser(
-      id: user.id,
-      fullName: user.fullName,
-      email: user.email,
-      phone: user.phone,
-      role: user.role,
-      status: user.status,
-      hubId: user.hubId,
-    );
-  }
-
-  ApiException _invalidOtp() {
-    return ApiException('El código es inválido o ya venció.', statusCode: 400);
-  }
-
-  static String? _normalizeEmail(String? value) {
-    final email = value?.trim().toLowerCase();
-    return email == null || email.isEmpty ? null : email;
-  }
-
-  static String? _normalizePhone(String? value) {
-    final phone = value?.replaceAll(RegExp(r'\D'), '');
-    return phone == null || phone.isEmpty ? null : phone;
-  }
+  AuthSession _sessionFor(LocalUser user) => AuthSession(
+    accessToken: '${LocalAuthRules.tokenPrefix}${user.id}',
+    user: user.toPublicUser(),
+  );
 }
-
-class _LocalUser {
-  _LocalUser({
-    required this.id,
-    required this.fullName,
-    required this.email,
-    required this.phone,
-    required this.role,
-    required this.status,
-    required this.password,
-    this.hubId,
-  });
-
-  final String id;
-  String fullName;
-  String? email;
-  String? phone;
-  final UserRole role;
-  UserStatus status;
-  String password;
-  final String? hubId;
-
-  _LocalUser copy() {
-    return _LocalUser(
-      id: id,
-      fullName: fullName,
-      email: email,
-      phone: phone,
-      role: role,
-      status: status,
-      password: password,
-      hubId: hubId,
-    );
-  }
-}
-
-final List<_LocalUser> _fixtureUsers = [
-  _LocalUser(
-    id: '11111111-1111-4111-8111-111111111111',
-    fullName: 'Ana Solicitud',
-    email: 'demo@airdrop.local',
-    phone: '3001234567',
-    role: UserRole.requester,
-    status: UserStatus.active,
-    password: 'Demo1234',
-  ),
-  _LocalUser(
-    id: '22222222-2222-4222-8222-222222222222',
-    fullName: 'Diego Despacho',
-    email: 'despacho@airdrop.local',
-    phone: null,
-    role: UserRole.dispatcher,
-    status: UserStatus.active,
-    password: 'Despacho123',
-    hubId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-  ),
-  _LocalUser(
-    id: '33333333-3333-4333-8333-333333333333',
-    fullName: 'Sara Operadora',
-    email: 'operador@airdrop.local',
-    phone: null,
-    role: UserRole.fleetOperator,
-    status: UserStatus.active,
-    password: 'Operador123',
-    hubId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
-  ),
-  _LocalUser(
-    id: '44444444-4444-4444-8444-444444444444',
-    fullName: 'Admin AirDrop',
-    email: 'admin@airdrop.local',
-    phone: null,
-    role: UserRole.admin,
-    status: UserStatus.active,
-    password: 'Admin1234',
-  ),
-];

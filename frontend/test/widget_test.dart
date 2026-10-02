@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -11,7 +12,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('AirDrop'), findsOneWidget);
-    expect(find.text('Acceso de personal'), findsOneWidget);
-    expect(find.text('Iniciar sesión'), findsOneWidget);
+    expect(find.text('ACCESO DE PERSONAL'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'Iniciar sesión'), findsOneWidget);
   });
 }

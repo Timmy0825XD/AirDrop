@@ -4,13 +4,16 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/validators.dart';
-import '../../../core/widgets/error_banner.dart';
-import '../../../core/widgets/primary_button.dart';
 import '../data/auth_models.dart';
 import 'auth_controller.dart';
-import 'widgets/auth_brand.dart';
-import 'widgets/contact_field.dart';
+import 'widgets/auth_page.dart';
+import 'widgets/forgot/forgot_method_chips.dart';
+import 'widgets/forgot/forgot_password_content.dart';
+import 'widgets/login/login_form_alert.dart';
 
+/// Recuperación de contraseña. El backend siempre responde el mismo
+/// mensaje (`Si el contacto existe, te enviaremos un código.`), así que
+/// esta pantalla no revela si la cuenta existe.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -21,13 +24,14 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _contactController = TextEditingController();
+  final _contact = TextEditingController();
+  ForgotMethod _method = ForgotMethod.email;
   bool _isLoading = false;
   String? _errorMessage;
 
   @override
   void dispose() {
-    _contactController.dispose();
+    _contact.dispose();
     super.dispose();
   }
 
@@ -40,7 +44,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     });
 
     try {
-      final contact = AuthContact.parse(_contactController.text);
+      final contact = AuthContact.parse(_contact.text);
       await ref
           .read(authControllerProvider.notifier)
           .forgotPassword(ForgotPasswordRequest(contact: contact));
@@ -50,8 +54,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     } catch (_) {
       if (mounted) {
         setState(
-          () =>
-              _errorMessage = 'No se pudo enviar el código. Intenta de nuevo.',
+          () => _errorMessage = 'No se pudo enviar el código. Intenta de nuevo.',
         );
       }
     } finally {
@@ -66,75 +69,46 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     return looksLikeEmail ? Validators.email(text) : Validators.phone(text);
   }
 
+  void _clearError(String _) {
+    if (_errorMessage != null) setState(() => _errorMessage = null);
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.watch(authControllerProvider);
-    final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          tooltip: 'Volver',
-          onPressed: () => context.go('/login'),
-          icon: const Icon(Icons.arrow_back),
-        ),
-        title: const Text('AirDrop'),
-      ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 440),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const AuthBrandMark(),
-                    const SizedBox(height: 24),
-                    Text(
-                      'Recuperar contraseña',
-                      style: theme.textTheme.headlineSmall,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Ingresa el correo o celular vinculado a tu cuenta para recibir el código de verificación.',
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 24),
-                    if (_errorMessage != null) ...[
-                      ErrorBanner(
-                        message: _errorMessage!,
-                        onDismiss: () => setState(() => _errorMessage = null),
-                      ),
-                      const SizedBox(height: 18),
-                    ],
-                    ContactField(
-                      controller: _contactController,
-                      validator: _validateContact,
-                      onChanged: (_) {
-                        if (_errorMessage != null) {
-                          setState(() => _errorMessage = null);
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    PrimaryButton(
-                      label: 'Enviar código',
-                      isLoading: _isLoading,
-                      onPressed: _submit,
-                    ),
-                    const SizedBox(height: 18),
-                    TextButton(
-                      onPressed: () => context.go('/login'),
-                      child: const Text('Regresar al inicio de sesión'),
-                    ),
-                  ],
-                ),
+    return AuthPage(
+      maxWidth: 440,
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ForgotPasswordContent(
+              onBack: () => context.go('/login'),
+              onReturnToLogin: () => context.go('/login'),
+              contactController: _contact,
+              hint: _method == ForgotMethod.email
+                  ? 'ej. v.morales@clinica.org'
+                  : 'ej. 3001234567 o +57 300 123 4567',
+              keyboardType: _method == ForgotMethod.email
+                  ? TextInputType.emailAddress
+                  : TextInputType.phone,
+              validator: _validateContact,
+              onChanged: _clearError,
+              isLoading: _isLoading,
+              onSubmit: _submit,
+              methodChips: ForgotMethodChips(
+                selected: _method,
+                onChanged: (method) => setState(() => _method = method),
               ),
             ),
-          ),
+            AuthFormAlert(
+              message: _errorMessage,
+              onDismiss: () => setState(() => _errorMessage = null),
+              topPadding: 16,
+            ),
+          ],
         ),
       ),
     );

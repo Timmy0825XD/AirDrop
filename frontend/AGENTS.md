@@ -37,13 +37,14 @@ Feature-first, alineado a dominios del backend:
 lib/
   app/           # MaterialApp, rutas, inyección simple
   theme/         # ThemeData, colores, tipografía (única fuente de estilo)
-  core/          # HTTP, WebSocket, storage, data source, widgets compartidos
+  core/          # HTTP, storage, data source, validadores, widgets compartidos
   features/
     auth/
-    hub/
+    hubs/
     inventory/
     fleet/
     geofences/
+    users/
     orders/
     tracking/    # mapa + telemetría (solicitante, operador)
     delivery/    # código de entrega (sin rol receptor)
@@ -52,10 +53,29 @@ lib/
 
 No Clean Architecture de tres capas por feature “porque sí”. Suficiente:
 
-- `data/` — API DTOs y un cliente
-- `presentation/` — pantallas y un controller/notifier (Riverpod, Bloc o Provider: **uno** para todo el proyecto)
+- `data/` — modelos, repositorio (local|remote) y providers
+- `presentation/` — pantallas, widgets y un controller/notifier (Riverpod: **uno** para todo el proyecto)
 
 Elegir un gestor de estado y no mezclar tres.
+
+### Estructura de `presentation/`
+
+Cada feature sigue el mismo patrón, y vale repetirlo en todas:
+
+```
+presentation/
+  <screen>_screen.dart      # estado, llamadas y armado del scaffold
+  widgets/
+    auth_page.dart          # andamiaje: fondo, SafeArea, ancho máximo
+    auth_ambience.dart      # brillo y animación de entrada
+    <subcarpeta>/           # un folder por pantalla
+      <screen>_content.dart # el cuerpo visual, sin estado
+      <screen>_fields.dart  # los campos del formulario
+```
+
+La regla: la pantalla tiene el `State` y los callbacks; los widgets solo pintan y
+reciben datos por constructor. Ningún widget importa Riverpod salvo el
+controller de la feature.
 
 ## UI
 
@@ -64,6 +84,34 @@ Elegir un gestor de estado y no mezclar tres.
 - Reutilizar widgets. Ningún widget supera **60 líneas**; si pasa, se descompone.
 - Tema solo en `lib/theme/`. Las pantallas leen `Theme.of(context)`.
 - El mapa y el socket de telemetría se implementan **una vez** en `core` o `features/tracking` y se reutilizan.
+
+### Sistema de diseño de Auth
+
+Las pantallas de auth tienen identidad propia y **comparten andamiaje**. Antes de
+armar una pantalla nueva, reusar lo que ya existe:
+
+| Widget | Para qué |
+| --- | --- |
+| `AuthPage` | Fondo con brillo, `SafeArea`, scroll y ancho máximo. Toda pantalla de auth lo usa como raíz. |
+| `AuthGlow` / `AuthEntrance` | El brillo y la animación de entrada por dentro del `AuthPage`. |
+| `AuthTopBar` | Botón de volver + título. `onBack` en `null` lo oculta; `showTitle: false` deja solo la flecha. |
+| `LoginGlassCard` | La superficie translúcida que envuelve los formularios. |
+| `LoginAlert` / `LoginFormAlert` | Mensaje de error o de éxito con animación. `LoginFormAlert` ya maneja el caso `null` sin ocupar espacio. |
+| `LoginButton` | Botón principal con estado de carga. Es `ElevatedButton`, no `FilledButton`. |
+| `LoginField` | Campo con label en **mayúsculas** (`toUpperCase()`), hint e ícono. |
+| `RegisterField` | Igual que `LoginField` pero con `badge`, `prefix` y `suffix` opcionales. |
+
+Colores siempre con `Theme.of(context)` y `withValues(alpha: ...)` para lo
+translúcido. Nunca hex dentro de una feature.
+
+Convenciones que ya están en el código:
+
+- Los labels de campo van en mayúsculas con `letterSpacing`. Los assert de los
+  tests buscan el texto en mayúsculas.
+- El registro y el login no piden rol de forma directa: usan las pestañas de
+  rol y el bloque de método de contacto.
+- Un formulario reusa `RegisterFieldValidators` o `LoginFieldValidators` para no
+  pasar validadores uno por uno.
 
 ## Paleta y tokens visuales
 
@@ -109,16 +157,47 @@ La fuente de verdad ejecutable es [`lib/theme/app_theme.dart`](lib/theme/app_the
 
 El front no depende de que el backend ya exista. Cada feature habla con un **repositorio** (contrato). El origen se elige en **un** sitio (`lib/core/data`):
 
-- `local` — fixtures/JSON en el cliente.
+- `local` — fixtures en memoria del cliente.
 - `remote` — HTTP hacia Nest.
 
-La UI no importa DTOs de red ni archivos JSON. Si el endpoint no está listo, la feature queda en `local`.
+La UI no importa DTOs de red ni fixtures. Si el endpoint no está listo, la
+feature queda en `local`.
+
+### Patrón de una feature
+
+Todas las features nuevas copian esta estructura. Es el mismo patrón que
+`hubs` ya tiene:
+
+```
+lib/features/<dominio>/data/
+  <dominio>_models.dart        # enums y entidades con fromJson/toJson
+  <dominio>_repository.dart    # contrato abstracto
+  remote_<dominio>_repository.dart
+  local_<dominio>_repository.dart
+  <dominio>_providers.dart     # switch local|remote + providers de estado
+lib/features/<dominio>/presentation/
+  ...
+```
+
+Reglas de los datos:
+
+- El switch `appDataSource` que elige local o remote vive **solo** en el
+  `<dominio>_providers.dart` de la feature.
+- Los repositorios no importan Riverpod ni `TokenStore`, salvo el local (que
+  necesita el token para simular la sesión).
+- Los fixtures van en su propio archivo (`local_fixtures.dart`) o en el
+  repositorio local si son pocos.
+- `mine()` es el único método que convierte un 404 en `null`; el resto relanza
+  para que la UI muestre el mensaje de Nest.
 
 ## Contrato con el backend
 
-- REST para CRUD y comandos (crear pedido, autorizar, dibujar geovalla).
+- REST para CRUD y comandos (crear central, crear dron, dibujar geovalla).
 - WebSocket solo para telemetría y, si conviene, cambios de estado en vivo. Reconexión automática (RNF-12).
 - No persistir JWT en texto plano si la plataforma ofrece almacenamiento seguro.
+- El contrato verificado de cada módulo está en la sección 2 de
+  [`../PLAN.md`](../PLAN.md). Si el backend cambia, ese archivo se actualiza en
+  el mismo PR.
 
 ## Ejecución y validación del frontend
 
@@ -171,14 +250,11 @@ No inventar pantallas fuera del MVP (multi-ciudad, clima real, tienda, chat méd
 
 ---
 
-## Estado de las fases (temporal)
+## Estado de las fases → ver [`../PLAN.md`](../PLAN.md)
 
-> **Bloque temporal.** Sirve para que cada sesión de chat continúe donde
-> quedó la anterior (una sesión de chat por fase). **Cuando las 6 fases
-> estén completas, eliminar todo este bloque** —su único propósito es la
-> continuidad entre sesiones—. Lo que sigue es el diario de lo ya
-> construido. Si choca con [`../context/index.md`](../context/index.md),
-> manda el contexto.
+> El plan de fases vigente vive en [`../PLAN.md`](../PLAN.md). Este bloque se
+> conserva solo como diario de lo ya entregado. **Cuando `PLAN.md` se elimine,
+> este bloque se elimina con él.**
 
 Plan de desarrollo frontend: una fase por sesión, rama `feature/…` desde
 `develop` y su PR a `develop`.
@@ -189,45 +265,111 @@ Plan de desarrollo frontend: una fase por sesión, rama `feature/…` desde
 | 1 | Núcleo | `lib/core` (field_limits, api_exception, data source, token store, ApiClient), tema en `lib/theme`, widgets + `Validators`, rutas con placeholders y `main` con `ProviderScope` | ✅ Hecha (PR #7) |
 | 2 | Auth | Pantallas de login, registro, recuperar/restablecer contraseña, verify-otp y perfil; `AuthRepository` (local\|remote) y controller Riverpod contra los 9 endpoints de `/auth`; TTL de OTP (10 min registro / 15 min reset) | ✅ Hecha |
 | 3 | Homes por rol | Homes de solicitante, despachador, operador de flota y administrador; resolución de rol con `GET /auth/me` y redirect real por sesión (reemplaza el placeholder `/home`) | ✅ Hecha |
-| 4 | Módulos | Frente A: centrales, usuarios e inventario · Frente B: flota y geovallas (CRUDs con `AppTextField`, `PrimaryButton` y `Validators`) | ⬜ Pendiente |
-| 5 | Prueba manual | Recorrido completo con los 4 roles contra el backend corriendo + pulido final | ⬜ Pendiente |
+| 4 | Módulos | Frente A: centrales, usuarios e inventario · Frente B: flota y geovallas | ⬜ Anulada: el contrato de backend cambió (ver `PLAN.md`) |
 
-### Estado real al cerrar la Fase 2 — 24 de septiembre de 2026
+El plan actual son las Fases 1 a 9 de [`../PLAN.md`](../PLAN.md): verificación
+de `context/`, núcleo y deuda, auth realineado, centrales, cuentas, inventario,
+flota, geovallas y cierre. La Fase 4 anterior queda anulada porque el backend
+pasó de `pending_approval / approved / rejected` a `active / suspended`, el
+registro público quedó solo para solicitante y las cuentas institucionales las
+crea el administrador.
 
-- Rama de trabajo: `feature/frontend-auth`, creada desde `develop`.
-- La Fase 2 de Auth está implementada y probada; no se modificó `backend/`.
-- Implementados `auth_models.dart`, `auth_repository.dart`, `remote_auth_repository.dart` y `local_auth_repository.dart` bajo `lib/features/auth/data/`.
-- `RemoteAuthRepository` cubre los 9 endpoints de `/auth`: register, verify-otp, resend-otp, login, logout, forgot-password, reset-password, me y update profile.
-- `LocalAuthRepository` permite trabajar sin NestJS con fixtures en memoria. Fixtures de desarrollo: `demo@airdrop.local / Demo1234`, `despacho@airdrop.local / Despacho123`, `operador@airdrop.local / Operador123`, `admin@airdrop.local / Admin1234`; OTP local `123456`. No son credenciales de producción.
-- `RegisterRequest` acepta `email` y `phone` independientes porque el backend exige al menos uno y permite ambos; despachador y operador requieren correo.
-- `AuthController` usa Riverpod 3, guarda el JWT únicamente mediante `TokenStore`, restaura la sesión con `me()` y no cambia el estado global a loading durante login o verificación OTP.
-- Pantallas reales: `login`, `register`, `verify-otp`, `forgot-password`, `reset-password` y `profile`. OTP de registro: 10 minutos; reset: 15 minutos.
-- `routerProvider` protege `/home` y `/profile`, permite las rutas públicas de Auth y sincroniza un `401` con el estado de sesión.
-- Referencia visual de Stitch: <https://stitch.withgoogle.com/projects/1947458192612690185>.
-- `DataSource.remote` sigue siendo el origen activo. Para una maqueta sin backend, cambiar temporalmente `appDataSource` a `DataSource.local`; no usar fixtures contra la API real.
-- Pruebas frontend ejecutadas: `flutter analyze` sin errores y `flutter test` con 12 pruebas correctas. No se ejecutaron e2e contra NestJS porque el backend no se modificó ni se levantó en esta fase.
-- En Fase 2 el único placeholder de navegación era `/home`; en Fase 3 fue reemplazado por `RoleHomeScreen`. `/unauthorized` y el error global siguen usando `PlaceholderScreen` intencionalmente.
-- No se hicieron `commit`, `push` ni PR; el usuario debe hacerlos al terminar la revisión.
+### Diario: Auth y Homes (25 de septiembre de 2026)
 
-### Estado real al cerrar la Fase 3 — 25 de septiembre de 2026
+Fases 2 y 3 del plan viejo, sobre el contrato de backend anterior.
 
-- Rama de trabajo: `feature/frontend-homes`, creada desde `develop`; `RoleHomeScreen` resuelve los cuatro roles desde `AuthState.user.role` y reemplaza el placeholder `/home`.
-- `HomeShell` mantiene perfil y logout; el home de despachador consulta `GET /hubs/me` y solo habilita Inventario cuando la central está `approved`. Los homes de operador y administrador muestran Flota/Geovallas y Centrales/Cuentas institucionales.
-- Validación manual completada con `DataSource.local`, `flutter analyze` sin errores y `flutter test` con 17 pruebas correctas. Se restauró `DataSource.remote` como origen predeterminado; no se modificó `backend/` ni se hicieron commit, push o PR.
+- `feature/frontend-auth` y `feature/frontend-homes`. `AuthRepository`
+  (local\|remote) contra los 9 endpoints de `/auth`. Fixtures locales:
+  `demo@airdrop.local / Demo1234`, `despacho@airdrop.local / Despacho123`,
+  `operador@airdrop.local / Operador123`, `admin@airdrop.local / Admin1234`;
+  OTP local `123456`. No son credenciales de producción.
+- `RoleHomeScreen` resuelve los cuatro roles desde `AuthState.user.role`.
+  `HomeShell` mantiene perfil y logout.
+- `DataSource.remote` como origen predeterminado. `flutter test` con 17 pruebas.
+- **Lo de esta etapa ya no vale:** el registro pedía rol y `PublicUser` traía
+  `hubId`. Ver la sección de la Fase 3.
 
-### Siguiente paso: Fase 4 — Módulos
+### Estado real al cerrar la Fase 2 del plan nuevo — 1 de octubre de 2026
 
-1. Frente A: centrales, usuarios institucionales e inventario.
-2. Frente B: flota y geovallas con CRUDs, `AppTextField`, `PrimaryButton` y `Validators`.
-3. Reutilizar la capa de hubs, pero la central la crea el administrador. No sigas el alta pública del despachador ni dejes `pending_approval` como regla nueva: manda [`../context/app/roles.md`](../context/app/roles.md).
-4. Validar cada módulo por rol antes de avanzar.
+Rama `feature/frontend-nucleo`, desde `develop` con los PR #14 a #17 del backend ya
+mergeados. **No se tocó `backend/`.**
+
+**a. `getJson` con query.** `api_client.dart` acepta
+`getJson(path, {Map<String, String>? query})` y lo manda como
+`queryParameters`. Lo necesitan `GET /hubs?status=`, `GET /users?role=&status=`
+y `GET /fleet/drones?hubId=`.
+
+**b. `FieldLimits`.** `documentNumber = 15` y `lotCode = 20`, más los regex que
+necesitan los validadores: `documentDigitsRegex` (cédula, 6–10 dígitos),
+`documentPptRegex` (6–15 alfanuméricos), `lotCodeRegex` (3–20 con guiones) e
+`isoDateRegex`.
+
+**c. `Validators`.** 13 métodos nuevos: `documentDigits`, `documentPpt`,
+`lotCode`, `isoDate`, `latitude`, `longitude`, `reason`, `droneIdentifier`,
+`hubName`, `medicationName`, `geofenceName` y `address`. Los mensajes son los
+mismos que devuelve Nest. `invalidDocumentMessage` es la constante compartida
+para cédula y PPT, igual que el backend.
+
+**d. Partición de pantallas.** Las 6 pantallas grandes de auth quedaron
+partidas en widgets por pantalla, siguiendo el patrón
+`auth_page.dart` + `widgets/<pantalla>/<screen>_content.dart`:
+
+| Pantalla | Antes | Ahora |
+| --- | --- | --- |
+| `register_screen` | 342 | 207 |
+| `profile_screen` | 285 | 83 |
+| `reset_password_screen` | 325 | 176 |
+| `verify_otp_screen` | 290 | 160 |
+| `forgot_password_screen` | 224 | 105 |
+| `login_screen` | 265 | 136 |
+
+Widgets nuevos del andamiaje compartido: `auth_page.dart` (fondo, `SafeArea`,
+scroll y ancho máximo), `auth_form_alert.dart` (alerta con animación que ya
+maneja el `null`), `login_security_footer.dart`, `login_credentials.dart`,
+`register_fields.dart`, `register_role_section.dart`, `profile_content.dart`,
+`profile_labels.dart`, `profile_states.dart`, `otp_verify_content.dart`,
+`reset_password_form.dart`, `reset_code_section.dart`, `reset_code_header.dart`,
+`reset_resend_button.dart` y `forgot_password_content.dart`.
+
+`AuthTopBar` pasó a `onBack` opcional y `showTitle`, para que la verificación del
+código no repita el título.
+
+**e. `local_auth_repository`.** 321 → 186 líneas. Se partió por responsabilidad en
+`local_user.dart` (el usuario de la sesión simulada, con `toPublicUser()`),
+`local_fixtures.dart` (las 4 cuentas de prueba + `localFixtureHubId`) y
+`local_auth_rules.dart` (normalización y mensajes, con `LocalAuthRules.otp` y
+`tokenPrefix`).
+
+**Verificación:** `flutter analyze` sin errores y `flutter test` con **36
+pruebas** (subieron de 17: 18 de los validadores nuevos más el ajuste de
+`widget_test.dart` y la firma del `FakeApiClient`).
+
+**Pendiente de esta fase:** 12 widgets siguen sobre las 60 líneas. Parte son
+pantallas cuyo `State` no se puede partir sin inventar una capa
+(`register_screen` 207, `reset_password_screen` 176, `verify_otp_screen` 160,
+`login_screen` 136) y parte son widgets del rediseño visual que no se tocaron
+(`otp_boxes_input` 168, `profile_identity_card` 141, `register_role_tabs` 128).
+Queda decidir si se parten en una fase corta o se aceptan, porque la Fase 3 va a
+reescribir `register_screen` y `profile_screen` de todos modos.
+
+**Dos bugs encontrados y documentados, no corregidos a propósito:**
+
+- `Validators.phone('+57 300 123 4567')` **falla**, y está bien que falle por
+  ahora. Nest solo quita lo que no es dígito, así que el número llega como
+  `573001234567` y no cumple los 10 dígitos. La Fase 3 quita el prefijo `57`.
+  Hay un test en `test/core/validators_test.dart` que deja constancia.
+- `register_screen` sigue mandando `role` en el body. El backend nuevo usa
+  `forbidNonWhitelisted`, así que el registro público está **roto contra la API
+  real** hasta la Fase 3. También sobran `register_role_tabs.dart` y
+  `register_role_section.dart`.
 
 **Protocolo de sesión:**
 
-1. **Al iniciar:** trabajar solo la primera fase `⬜` de la tabla; leer `lib/core`, `lib/theme` y `lib/app` antes de escribir código.
-2. **Estilo de trabajo:** avanzar paso a paso — explicar cada paso y esperar la confirmación del usuario antes de ejecutarlo (así se trabajaron las fases 0 y 1).
-3. **Al terminar la fase:** marcarla `✅` aquí con 1-3 líneas de lo que quedó hecho; el agente guía, el usuario hace el commit, push y PR (regla del `AGENTS.md` raíz).
-4. **No reabrir** filas ya `✅` ni borrar la tabla hasta que la Fase 5 esté completa; entonces eliminar el bloque entero.
+1. **Al iniciar:** trabajar solo la primera fase `⬜` del plan; leer `lib/core`, `lib/theme` y `lib/app` antes de escribir código.
+2. **Estilo de trabajo:** avanzar paso a paso — explicar cada paso y esperar la confirmación del usuario antes de ejecutarlo.
+3. **Al terminar la fase:** marcarla `✅` en [`../PLAN.md`](../PLAN.md) con 1–3 líneas de lo que quedó; el agente guía, el usuario hace el commit, push y PR (regla del `AGENTS.md` raíz).
+4. **Rama por fase:** `feature/frontend-nucleo`, `feature/frontend-auth`, `feature/frontend-hubs`, etc., siempre desde `develop`. Si ya hay trabajo sin commitear en `develop`, se guarda con `git stash push`, se crea la rama y se recupera con `git stash pop`; nunca se commitea en `develop`.
+4. **No reabrir** filas ya `✅` de este diario. El plan vigente y su tabla están en [`../PLAN.md`](../PLAN.md); cuando la Fase 9 de ese plan cierre, se eliminan `PLAN.md` y este bloque.
 
 **Decisiones tomadas en sesiones anteriores (no reabrir):**
 

@@ -10,7 +10,7 @@ class FakeApiClient extends ApiClient {
   final calls = <String>[];
 
   @override
-  Future<dynamic> getJson(String path) async {
+  Future<dynamic> getJson(String path, {Map<String, String>? query}) async {
     calls.add('GET $path');
     return _user;
   }

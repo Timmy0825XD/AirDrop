@@ -8,6 +8,8 @@ Antes de implementar o cambiar comportamiento de negocio, leer:
 2. [`context/index.md`](context/index.md) y el archivo de la carpeta que corresponda
 3. [`context/diseno/principios.md`](context/diseno/principios.md)
 
+Si el trabajo viene por fases (una sesión = una fase), el plan vigente está en [`PLAN.md`](PLAN.md). Ese archivo manda sobre cualquier bloque de fases local: si un `AGENTS.md` describe un plan anterior, gana `PLAN.md`.
+
 ---
 
 ## Fuente de verdad

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/field_limits.dart';
-import '../../../../core/validators.dart';
-import '../../../../core/widgets/app_text_field.dart';
-import '../../data/auth_models.dart';
+import '../../../../../core/field_limits.dart';
+import '../../../../../core/validators.dart';
+import '../../../../../core/widgets/app_text_field.dart';
+import '../../../data/auth_models.dart';
 
 enum ProfileFieldType { fullName, email, phone }
 
