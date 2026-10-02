@@ -3,14 +3,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
-import '../../../core/field_limits.dart';
 import '../../../core/validators.dart';
-import '../../../core/widgets/app_text_field.dart';
-import '../../../core/widgets/error_banner.dart';
-import '../../../core/widgets/primary_button.dart';
 import '../data/auth_models.dart';
 import 'auth_controller.dart';
-import 'widgets/role_selector.dart';
+import 'widgets/auth_page.dart';
+import 'widgets/login/login_form_alert.dart';
+import 'widgets/login/login_glass_card.dart';
+import 'widgets/register/register_fields.dart';
+import 'widgets/register/register_header.dart';
+import 'widgets/register/register_info_banner.dart';
+import 'widgets/register/register_role_section.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -21,10 +23,10 @@ class RegisterScreen extends ConsumerStatefulWidget {
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _name = TextEditingController();
+  final _email = TextEditingController();
+  final _phone = TextEditingController();
+  final _password = TextEditingController();
   UserRole _role = UserRole.requester;
   bool _consentAccepted = false;
   bool _isLoading = false;
@@ -32,10 +34,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   void dispose() {
-    _nameController.dispose();
-    _emailController.dispose();
-    _phoneController.dispose();
-    _passwordController.dispose();
+    _name.dispose();
+    _email.dispose();
+    _phone.dispose();
+    _password.dispose();
     super.dispose();
   }
 
@@ -66,10 +68,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           .read(authControllerProvider.notifier)
           .register(
             RegisterRequest(
-              fullName: _nameController.text,
+              fullName: _name.text,
               email: email,
               phone: phone,
-              password: _passwordController.text,
+              password: _password.text,
               role: _role,
               consentAccepted: true,
             ),
@@ -105,20 +107,13 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   String? _emailValue() {
-    final value = _emailController.text.trim();
+    final value = _email.text.trim();
     return value.isEmpty ? null : value.toLowerCase();
   }
 
   String? _phoneValue() {
-    final value = _phoneController.text.replaceAll(RegExp(r'\D'), '');
+    final value = _phone.text.replaceAll(RegExp(r'\D'), '');
     return value.isEmpty ? null : value;
-  }
-
-  void _onRoleChanged(UserRole role) {
-    setState(() {
-      _role = role;
-      _errorMessage = null;
-    });
   }
 
   void _clearError(String _) {
@@ -130,137 +125,100 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     ref.watch(authControllerProvider);
     final theme = Theme.of(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          tooltip: 'Volver',
-          onPressed: () => context.go('/login'),
-          icon: const Icon(Icons.arrow_back),
-        ),
-        title: const Text('AirDrop'),
-      ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 32),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 520),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text('Crear cuenta', style: theme.textTheme.headlineSmall),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Únete a la red de despacho y recepción médica autónoma.',
-                      style: theme.textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 24),
-                    if (_errorMessage != null) ...[
-                      ErrorBanner(
-                        message: _errorMessage!,
-                        onDismiss: () => setState(() => _errorMessage = null),
-                      ),
-                      const SizedBox(height: 18),
-                    ],
-                    AppTextField(
-                      label: 'Nombre completo',
-                      controller: _nameController,
-                      maxLength: FieldLimits.fullName,
-                      textInputAction: TextInputAction.next,
-                      validator: Validators.name,
-                      onChanged: _clearError,
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      'Rol operativo aeromédico',
-                      style: theme.textTheme.labelLarge,
-                    ),
-                    const SizedBox(height: 8),
-                    RoleSelector(
-                      selectedRole: _role,
-                      onChanged: _onRoleChanged,
-                    ),
-                    if (_role.requiresEmail) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        'Correo institucional obligatorio.',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 18),
-                    AppTextField(
-                      label: 'Correo electrónico',
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      maxLength: FieldLimits.email,
-                      textInputAction: TextInputAction.next,
-                      validator: _validateEmail,
-                      onChanged: _clearError,
-                    ),
-                    const SizedBox(height: 14),
-                    AppTextField(
-                      label: 'Celular de contacto',
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      textInputAction: TextInputAction.next,
-                      validator: _validatePhone,
-                      onChanged: _clearError,
-                    ),
-                    const SizedBox(height: 14),
-                    AppTextField(
-                      label: 'Contraseña de acceso',
-                      controller: _passwordController,
-                      obscureText: true,
-                      keyboardType: TextInputType.visiblePassword,
-                      maxLength: FieldLimits.passwordMax,
-                      textInputAction: TextInputAction.done,
-                      validator: Validators.password,
-                      onChanged: _clearError,
-                    ),
-                    const SizedBox(height: 8),
-                    CheckboxListTile(
-                      value: _consentAccepted,
-                      onChanged: (value) => setState(() {
-                        _consentAccepted = value ?? false;
-                        _errorMessage = null;
-                      }),
-                      contentPadding: EdgeInsets.zero,
-                      controlAffinity: ListTileControlAffinity.leading,
-                      title: const Text(
-                        'Acepto el tratamiento de datos personales y la política de privacidad.',
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    PrimaryButton(
-                      label: 'Crear cuenta',
-                      isLoading: _isLoading,
-                      onPressed: _submit,
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          '¿Ya tienes cuenta?',
-                          style: theme.textTheme.bodySmall,
-                        ),
-                        TextButton(
-                          onPressed: () => context.go('/login'),
-                          child: const Text('Inicia sesión'),
-                        ),
-                      ],
-                    ),
-                  ],
+    return AuthPage(
+      maxWidth: 520,
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            RegisterHeader(onBack: () => context.go('/login')),
+            const SizedBox(height: 12),
+            Text(
+              'Únete a la red de despacho y recepción médica autónoma.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+                height: 1.4,
+              ),
+            ),
+            const SizedBox(height: 20),
+            AuthFormAlert(
+              message: _errorMessage,
+              onDismiss: () => setState(() => _errorMessage = null),
+              bottomPadding: 16,
+            ),
+            LoginGlassCard(
+              child: RegisterFields(
+                nameController: _name,
+                emailController: _email,
+                phoneController: _phone,
+                passwordController: _password,
+                consentAccepted: _consentAccepted,
+                isLoading: _isLoading,
+                onSubmit: _submit,
+                onConsentChanged: (value) => setState(() {
+                  _consentAccepted = value;
+                  _errorMessage = null;
+                }),
+                roleSection: RegisterRoleSection(
+                  selectedRole: _role,
+                  onChanged: (role) => setState(() {
+                    _role = role;
+                    _errorMessage = null;
+                  }),
+                ),
+                validators: RegisterFieldValidators(
+                  name: Validators.name,
+                  email: _validateEmail,
+                  phone: _validatePhone,
+                  password: Validators.password,
+                  onChanged: _clearError,
                 ),
               ),
             ),
-          ),
+            const SizedBox(height: 16),
+            const RegisterInfoBanner(),
+            const SizedBox(height: 24),
+            const _LoginLinkRow(),
+          ],
         ),
       ),
+    );
+  }
+}
+
+class _LoginLinkRow extends StatelessWidget {
+  const _LoginLinkRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          '¿Ya tienes cuenta?',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+        TextButton(
+          onPressed: () => context.go('/login'),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Inicia sesión',
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: theme.colorScheme.primary,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Icon(Icons.chevron_right, size: 18),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

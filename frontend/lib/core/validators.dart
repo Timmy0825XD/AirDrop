@@ -59,4 +59,131 @@ class Validators {
     }
     return null;
   }
+
+  /// Cédula de ciudadanía o de extranjería: 6 a 10 dígitos.
+  static String? documentDigits(String? value) {
+    final digits = value?.trim() ?? '';
+    if (digits.isEmpty) return 'Escribe el número de documento.';
+    if (digits.length > FieldLimits.documentNumber) {
+      return 'El número de documento no puede superar '
+          '${FieldLimits.documentNumber} caracteres.';
+    }
+    if (!FieldLimits.documentDigitsRegex.hasMatch(digits)) {
+      return invalidDocumentMessage;
+    }
+    return null;
+  }
+
+  /// PPT: 6 a 15 letras o números, en mayúsculas.
+  static String? documentPpt(String? value) {
+    final text = value?.trim().toUpperCase() ?? '';
+    if (text.isEmpty) return 'Escribe el número de documento.';
+    if (text.length > FieldLimits.documentNumber) {
+      return 'El número de documento no puede superar '
+          '${FieldLimits.documentNumber} caracteres.';
+    }
+    if (!FieldLimits.documentPptRegex.hasMatch(text)) {
+      return invalidDocumentMessage;
+    }
+    return null;
+  }
+
+  /// Un único mensaje para los tres tipos de documento, igual que Nest.
+  static const String invalidDocumentMessage =
+      'El número de documento no corresponde a una cédula o a un PPT.';
+
+  /// Lote del empaque. Nest lo pasa a mayúsculas antes de validar.
+  static String? lotCode(String? value) {
+    final text = value?.trim().toUpperCase() ?? '';
+    if (text.isEmpty) return 'Escribe el lote.';
+    if (!FieldLimits.lotCodeRegex.hasMatch(text)) {
+      return 'El lote debe tener entre 3 y 20 letras, números o guiones.';
+    }
+    return null;
+  }
+
+  /// Fechas de vencimiento y fechas estimadas: AAAA-MM-DD.
+  static String? isoDate(String? value, {String label = 'La fecha'}) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return 'Escribe $label.';
+    if (!FieldLimits.isoDateRegex.hasMatch(text)) {
+      return '$label debe ser AAAA-MM-DD.';
+    }
+    return null;
+  }
+
+  static String? latitude(String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return 'Escribe la latitud.';
+    final parsed = double.tryParse(text);
+    if (parsed == null || parsed < -90 || parsed > 90) {
+      return 'La latitud no es válida.';
+    }
+    return null;
+  }
+
+  static String? longitude(String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return 'Escribe la longitud.';
+    final parsed = double.tryParse(text);
+    if (parsed == null || parsed < -180 || parsed > 180) {
+      return 'La longitud no es válida.';
+    }
+    return null;
+  }
+
+  /// Motivo de geovalla o de mantenimiento.
+  static String? reason(String? value, {bool required = true}) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) {
+      return required ? 'Escribe el motivo.' : null;
+    }
+    if (text.length > FieldLimits.reason) {
+      return 'El motivo no puede superar ${FieldLimits.reason} caracteres.';
+    }
+    return null;
+  }
+
+  /// Identificador del dron en el campo.
+  static String? droneIdentifier(String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return 'Escribe el identificador.';
+    if (text.length > FieldLimits.droneIdentifier) {
+      return 'El identificador no puede superar '
+          '${FieldLimits.droneIdentifier} caracteres.';
+    }
+    return null;
+  }
+
+  /// Nombre de central, medicamento o geovalla: mismo tope en Nest.
+  static String? hubName(String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return 'Escribe el nombre.';
+    if (text.length > FieldLimits.hubName) {
+      return 'El nombre no puede superar ${FieldLimits.hubName} caracteres.';
+    }
+    return null;
+  }
+
+  static String? medicationName(String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return 'Escribe el nombre del medicamento.';
+    if (text.length > FieldLimits.medicationName) {
+      return 'El nombre no puede superar '
+          '${FieldLimits.medicationName} caracteres.';
+    }
+    return null;
+  }
+
+  static String? geofenceName(String? value) => hubName(value);
+
+  static String? address(String? value) {
+    final text = value?.trim() ?? '';
+    if (text.isEmpty) return 'Escribe la dirección.';
+    if (text.length > FieldLimits.address) {
+      return 'La dirección no puede superar '
+          '${FieldLimits.address} caracteres.';
+    }
+    return null;
+  }
 }

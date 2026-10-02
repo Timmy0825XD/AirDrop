@@ -3,15 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
-import '../../../core/field_limits.dart';
 import '../../../core/validators.dart';
-import '../../../core/widgets/app_text_field.dart';
-import '../../../core/widgets/error_banner.dart';
-import '../../../core/widgets/primary_button.dart';
 import '../data/auth_models.dart';
 import 'auth_controller.dart';
-import 'widgets/auth_brand.dart';
-import 'widgets/contact_field.dart';
+import 'widgets/auth_page.dart';
+import 'widgets/login/login_brand_header.dart';
+import 'widgets/login/login_credentials.dart';
+import 'widgets/login/login_form_alert.dart';
+import 'widgets/login/login_glass_card.dart';
+import 'widgets/login/login_security_footer.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -22,15 +22,15 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _contactController = TextEditingController();
-  final _passwordController = TextEditingController();
+  final _contact = TextEditingController();
+  final _password = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
 
   @override
   void dispose() {
-    _contactController.dispose();
-    _passwordController.dispose();
+    _contact.dispose();
+    _password.dispose();
     super.dispose();
   }
 
@@ -47,8 +47,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           .read(authControllerProvider.notifier)
           .login(
             LoginRequest(
-              contact: AuthContact.parse(_contactController.text),
-              password: _passwordController.text,
+              contact: AuthContact.parse(_contact.text),
+              password: _password.text,
             ),
           );
       if (mounted) context.go('/home');
@@ -79,107 +79,71 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     ref.watch(authControllerProvider);
-    final theme = Theme.of(context);
 
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 420),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const AuthBrandMark(),
-                    const SizedBox(height: 28),
-                    if (_errorMessage != null) ...[
-                      ErrorBanner(
-                        message: _errorMessage!,
-                        onDismiss: () => setState(() => _errorMessage = null),
-                      ),
-                      const SizedBox(height: 18),
-                    ],
-                    Text(
-                      'Acceso de personal',
-                      style: theme.textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 18),
-                    ContactField(
-                      controller: _contactController,
-                      validator: _validateContact,
-                      onChanged: _clearError,
-                    ),
-                    const SizedBox(height: 14),
-                    AppTextField(
-                      label: 'Contraseña',
-                      controller: _passwordController,
-                      obscureText: true,
-                      keyboardType: TextInputType.visiblePassword,
-                      maxLength: FieldLimits.passwordMax,
-                      textInputAction: TextInputAction.done,
-                      validator: Validators.password,
-                      onChanged: _clearError,
-                    ),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () => context.go('/forgot-password'),
-                        child: const Text('¿Olvidaste tu contraseña?'),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    PrimaryButton(
-                      label: 'Iniciar sesión',
-                      isLoading: _isLoading,
-                      onPressed: _submit,
-                    ),
-                    const SizedBox(height: 26),
-                    Row(
-                      children: [
-                        const Expanded(child: Divider()),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: Text(
-                            '¿No tienes cuenta?',
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        ),
-                        const Expanded(child: Divider()),
-                      ],
-                    ),
-                    TextButton(
-                      onPressed: () => context.go('/register'),
-                      child: const Text('Regístrate'),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.shield_outlined,
-                          size: 16,
-                          color: theme.colorScheme.primary,
-                        ),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            'Acceso seguro para personal médico',
-                            textAlign: TextAlign.center,
-                            style: theme.textTheme.bodySmall,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+    return AuthPage(
+      child: Form(
+        key: _formKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const LoginBrandHeader(),
+            AuthFormAlert(
+              message: _errorMessage,
+              onDismiss: () => setState(() => _errorMessage = null),
+              topPadding: 16,
+            ),
+            const SizedBox(height: 20),
+            LoginGlassCard(
+              child: LoginCredentials(
+                contactController: _contact,
+                passwordController: _password,
+                isLoading: _isLoading,
+                onSubmit: _submit,
+                onForgotPassword: () => context.go('/forgot-password'),
+                validators: LoginFieldValidators(
+                  contact: _validateContact,
+                  password: Validators.password,
+                  onChanged: _clearError,
                 ),
               ),
             ),
-          ),
+            const SizedBox(height: 24),
+            const _RegisterLinkRow(),
+            const SizedBox(height: 28),
+            const LoginSecurityFooter(),
+          ],
         ),
       ),
+    );
+  }
+}
+
+class _RegisterLinkRow extends StatelessWidget {
+  const _RegisterLinkRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text(
+          '¿No tienes cuenta?',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          ),
+        ),
+        TextButton(
+          onPressed: () => context.go('/register'),
+          child: Text(
+            'Regístrate',
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: theme.colorScheme.primary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
