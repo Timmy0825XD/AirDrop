@@ -3,12 +3,18 @@ import 'local_user.dart';
 
 /// Cuentas de prueba para trabajar sin NestJS. No son credenciales de
 /// producción; el OTP local es `123456`.
+///
+/// Solo el solicitante lleva documento, porque el registro público es el
+/// único que lo pide. Los tres usuarios institucionales nacieron sin él,
+/// igual que cuando el administrador los crea.
 final List<LocalUser> localFixtureUsers = [
   LocalUser(
     id: '11111111-1111-4111-8111-111111111111',
     fullName: 'Ana Solicitud',
     email: 'demo@airdrop.local',
     phone: '3001234567',
+    documentType: DocumentType.citizenshipId,
+    documentNumber: '1098765432',
     role: UserRole.requester,
     status: UserStatus.active,
     password: 'Demo1234',
@@ -21,7 +27,7 @@ final List<LocalUser> localFixtureUsers = [
     role: UserRole.dispatcher,
     status: UserStatus.active,
     password: 'Despacho123',
-    hubId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    hubIds: [localFixtureHubId],
   ),
   LocalUser(
     id: '33333333-3333-4333-8333-333333333333',
@@ -31,7 +37,7 @@ final List<LocalUser> localFixtureUsers = [
     role: UserRole.fleetOperator,
     status: UserStatus.active,
     password: 'Operador123',
-    hubId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+    hubIds: [localFixtureHubId],
   ),
   LocalUser(
     id: '44444444-4444-4444-8444-444444444444',

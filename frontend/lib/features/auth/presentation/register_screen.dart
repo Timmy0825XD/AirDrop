@@ -3,17 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
+import '../../../core/colombian_phone.dart';
 import '../../../core/validators.dart';
 import '../data/auth_models.dart';
 import 'auth_controller.dart';
 import 'widgets/auth_page.dart';
+import 'widgets/document_type_labels.dart';
 import 'widgets/login/login_form_alert.dart';
 import 'widgets/login/login_glass_card.dart';
+import 'widgets/register/register_document_section.dart';
 import 'widgets/register/register_fields.dart';
 import 'widgets/register/register_header.dart';
 import 'widgets/register/register_info_banner.dart';
-import 'widgets/register/register_role_section.dart';
 
+/// Alta pública del solicitante. No hay campo de rol: el despachador y el
+/// operador los crea el administrador.
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
@@ -24,10 +28,11 @@ class RegisterScreen extends ConsumerStatefulWidget {
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
   final _name = TextEditingController();
-  final _email = TextEditingController();
+  final _documentNumber = TextEditingController();
   final _phone = TextEditingController();
+  final _email = TextEditingController();
   final _password = TextEditingController();
-  UserRole _role = UserRole.requester;
+  DocumentType _documentType = DocumentType.citizenshipId;
   bool _consentAccepted = false;
   bool _isLoading = false;
   String? _errorMessage;
@@ -35,20 +40,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   @override
   void dispose() {
     _name.dispose();
-    _email.dispose();
+    _documentNumber.dispose();
     _phone.dispose();
+    _email.dispose();
     _password.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    final email = _emailValue();
-    final phone = _phoneValue();
-    if (email == null && phone == null) {
-      setState(() => _errorMessage = 'Indica un correo o un celular.');
-      return;
-    }
     if (!_consentAccepted) {
       setState(
         () =>
@@ -57,6 +57,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
 
+    final phone = normalizeColombianPhone(_phone.text);
     FocusScope.of(context).unfocus();
     setState(() {
       _isLoading = true;
@@ -69,18 +70,18 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           .register(
             RegisterRequest(
               fullName: _name.text,
-              email: email,
+              documentType: _documentType,
+              documentNumber: _documentNumber.text,
               phone: phone,
               password: _password.text,
-              role: _role,
               consentAccepted: true,
+              email: _emailValue(),
             ),
           );
       if (!mounted) return;
-      final contact = email != null
-          ? AuthContact.email(email)
-          : AuthContact.phone(phone!);
-      context.go('/verify-otp', extra: contact);
+      // El código de un uso va al celular, que es el único contacto
+      // obligatorio del registro.
+      context.go('/verify-otp', extra: AuthContact.phone(phone));
     } on ApiException catch (error) {
       if (mounted) setState(() => _errorMessage = error.message);
     } catch (_) {
@@ -94,26 +95,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
   }
 
-  String? _validateEmail(String? value) {
-    if (_emailValue() == null) {
-      return _role.requiresEmail ? 'El correo es obligatorio.' : null;
-    }
-    return Validators.email(value);
-  }
+  /// La cédula es solo dígitos y el PPT admite letras: el patrón depende
+  /// del tipo elegido, igual que en Nest.
+  String? _validateDocument(String? value) =>
+      DocumentTypeLabels.usesDigits(_documentType)
+      ? Validators.documentDigits(value)
+      : Validators.documentPpt(value);
 
-  String? _validatePhone(String? value) {
-    if (_phoneValue() == null) return null;
-    return Validators.phone(value);
+  String? _validateEmail(String? value) {
+    if (_emailValue() == null) return null;
+    return Validators.email(value);
   }
 
   String? _emailValue() {
     final value = _email.text.trim();
     return value.isEmpty ? null : value.toLowerCase();
-  }
-
-  String? _phoneValue() {
-    final value = _phone.text.replaceAll(RegExp(r'\D'), '');
-    return value.isEmpty ? null : value;
   }
 
   void _clearError(String _) {
@@ -150,8 +146,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
             LoginGlassCard(
               child: RegisterFields(
                 nameController: _name,
-                emailController: _email,
+                documentNumberController: _documentNumber,
                 phoneController: _phone,
+                emailController: _email,
                 passwordController: _password,
                 consentAccepted: _consentAccepted,
                 isLoading: _isLoading,
@@ -160,17 +157,21 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                   _consentAccepted = value;
                   _errorMessage = null;
                 }),
-                roleSection: RegisterRoleSection(
-                  selectedRole: _role,
-                  onChanged: (role) => setState(() {
-                    _role = role;
+                documentSection: RegisterDocumentSection(
+                  type: _documentType,
+                  onTypeChanged: (type) => setState(() {
+                    _documentType = type;
                     _errorMessage = null;
                   }),
+                  numberController: _documentNumber,
+                  validator: _validateDocument,
+                  onChanged: _clearError,
                 ),
                 validators: RegisterFieldValidators(
                   name: Validators.name,
+                  documentNumber: _validateDocument,
+                  phone: Validators.phone,
                   email: _validateEmail,
-                  phone: _validatePhone,
                   password: Validators.password,
                   onChanged: _clearError,
                 ),

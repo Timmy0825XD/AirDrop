@@ -11,10 +11,11 @@ class RegisterFields extends StatelessWidget {
   const RegisterFields({
     super.key,
     required this.nameController,
-    required this.emailController,
+    required this.documentNumberController,
     required this.phoneController,
+    required this.emailController,
     required this.passwordController,
-    required this.roleSection,
+    required this.documentSection,
     required this.consentAccepted,
     required this.onConsentChanged,
     required this.onSubmit,
@@ -23,10 +24,15 @@ class RegisterFields extends StatelessWidget {
   });
 
   final TextEditingController nameController;
-  final TextEditingController emailController;
+  final TextEditingController documentNumberController;
   final TextEditingController phoneController;
+  final TextEditingController emailController;
   final TextEditingController passwordController;
-  final Widget roleSection;
+
+  /// El selector de tipo y su campo los arma la pantalla, porque el tipo
+  /// elegido decide el validador del número y ella tiene el estado.
+  final Widget documentSection;
+
   final bool consentAccepted;
   final ValueChanged<bool> onConsentChanged;
   final VoidCallback onSubmit;
@@ -41,8 +47,8 @@ class RegisterFields extends StatelessWidget {
         RegisterField(
           label: 'Nombre completo',
           badge: 'Requerido',
-          hint: 'Dra. Valentina Morales',
-          icon: Icons.badge_outlined,
+          hint: 'Valentina Morales',
+          icon: Icons.person_outline_rounded,
           controller: nameController,
           maxLength: FieldLimits.fullName,
           textInputAction: TextInputAction.next,
@@ -50,19 +56,7 @@ class RegisterFields extends StatelessWidget {
           onChanged: validators.onChanged,
         ),
         const SizedBox(height: 16),
-        roleSection,
-        const SizedBox(height: 16),
-        RegisterField(
-          label: 'Correo electrónico',
-          hint: 'hospital@salud.gov.co',
-          icon: Icons.local_hospital_outlined,
-          controller: emailController,
-          keyboardType: TextInputType.emailAddress,
-          maxLength: FieldLimits.email,
-          textInputAction: TextInputAction.next,
-          validator: validators.email,
-          onChanged: validators.onChanged,
-        ),
+        documentSection,
         const SizedBox(height: 16),
         RegisterField(
           label: 'Celular de contacto',
@@ -72,6 +66,18 @@ class RegisterFields extends StatelessWidget {
           keyboardType: TextInputType.phone,
           textInputAction: TextInputAction.next,
           validator: validators.phone,
+          onChanged: validators.onChanged,
+        ),
+        const SizedBox(height: 16),
+        RegisterField(
+          label: 'Correo electrónico',
+          hint: 'Opcional: para recibir novedades',
+          icon: Icons.alternate_email_rounded,
+          controller: emailController,
+          keyboardType: TextInputType.emailAddress,
+          maxLength: FieldLimits.email,
+          textInputAction: TextInputAction.next,
+          validator: validators.email,
           onChanged: validators.onChanged,
         ),
         const SizedBox(height: 16),
@@ -88,10 +94,7 @@ class RegisterFields extends StatelessWidget {
           onChanged: validators.onChanged,
         ),
         const SizedBox(height: 18),
-        RegisterConsentRow(
-          value: consentAccepted,
-          onChanged: onConsentChanged,
-        ),
+        RegisterConsentRow(value: consentAccepted, onChanged: onConsentChanged),
         const SizedBox(height: 18),
         LoginButton(
           label: 'Crear cuenta',
@@ -114,7 +117,10 @@ class RegisterFields extends StatelessWidget {
         children: [
           Icon(Icons.cell_tower, size: 18, color: muted),
           const SizedBox(width: 6),
-          Text('+57', style: theme.textTheme.labelMedium?.copyWith(color: muted)),
+          Text(
+            '+57',
+            style: theme.textTheme.labelMedium?.copyWith(color: muted),
+          ),
         ],
       ),
     );
@@ -126,15 +132,17 @@ class RegisterFields extends StatelessWidget {
 class RegisterFieldValidators {
   const RegisterFieldValidators({
     required this.name,
-    required this.email,
+    required this.documentNumber,
     required this.phone,
+    required this.email,
     required this.password,
     required this.onChanged,
   });
 
   final String? Function(String?)? name;
-  final String? Function(String?)? email;
+  final String? Function(String?)? documentNumber;
   final String? Function(String?)? phone;
+  final String? Function(String?)? email;
   final String? Function(String?)? password;
   final ValueChanged<String> onChanged;
 }

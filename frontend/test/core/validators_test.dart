@@ -150,13 +150,19 @@ void main() {
       expect(Validators.otp('123456'), isNull);
     });
 
-    test('el celular con prefijo +57 todavía se rechaza', () {
-      // Nest solo quita lo que no es dígito, así que "+57 300 123 4567"
-      // llega como 573001234567 y no cumple el patrón de 10 dígitos.
-      // La Fase 3 (auth realineado) quita el prefijo 57 antes de validar;
-      // aquí se deja constancia del comportamiento actual.
-      expect(Validators.phone('+57 300 123 4567'), isNotNull);
-      expect(Validators.phone('573001234567'), isNotNull);
+    test('el celular con prefijo +57 se normaliza y se acepta', () {
+      // El prefijo se quita antes de validar, porque Nest exige 10
+      // dígitos y solo quita lo que no es dígito. Antes de la Fase 3
+      // estos dos casos fallaban y llegaban 12 dígitos a la API.
+      expect(Validators.phone('+57 300 123 4567'), isNull);
+      expect(Validators.phone('573001234567'), isNull);
+      expect(Validators.phone('+57 (300) 123-45.67'), isNull);
+    });
+
+    test('el celular que no son 10 dígitos se sigue rechazando', () {
+      expect(Validators.phone('300123456'), isNotNull);
+      expect(Validators.phone('30012345678'), isNotNull);
+      expect(Validators.phone('abcdefghij'), isNotNull);
     });
   });
 }

@@ -16,32 +16,29 @@ class LocalAuthRepository implements AuthRepository {
   final TokenStore _tokenStore;
   final Map<String, LocalUser> _users;
 
+  /// Alta pública: siempre nace un solicitante, porque el despachador y el
+  /// operador los crea el administrador.
   @override
   Future<RegisterResponse> register(RegisterRequest request) async {
-    if (!request.role.canSelfRegister) {
-      throw ApiException(
-        'El rol no es válido para el registro.',
-        statusCode: 400,
-      );
-    }
-
-    final email = LocalAuthRules.normalizeEmail(request.email);
     final phone = LocalAuthRules.normalizePhone(request.phone);
-    if (request.role.requiresEmail && email == null) {
+    if (phone == null) {
       throw ApiException(
-        'El despachador y el operador deben registrarse con correo institucional.',
+        'El celular debe tener exactamente 10 dígitos (Colombia).',
         statusCode: 400,
       );
     }
-    if (email == null && phone == null) {
-      throw ApiException('Indica un correo o un celular.', statusCode: 400);
-    }
-    final duplicate = _users.values.any(
-      (user) =>
-          (email != null && user.email == email) ||
-          (phone != null && user.phone == phone),
+    final email = LocalAuthRules.normalizeEmail(request.email);
+    final documentNumber = LocalAuthRules.normalizeDocument(
+      request.documentType,
+      request.documentNumber,
     );
-    if (duplicate) throw LocalAuthRules.duplicateContact();
+    if (documentNumber == null) {
+      throw ApiException(LocalAuthRules.invalidDocument, statusCode: 400);
+    }
+    if (_contactTaken(email, phone)) throw LocalAuthRules.duplicateContact();
+    if (_documentTaken(request.documentType, documentNumber)) {
+      throw LocalAuthRules.duplicateDocument();
+    }
 
     final id = 'local-${DateTime.now().microsecondsSinceEpoch}';
     _users[id] = LocalUser(
@@ -49,7 +46,9 @@ class LocalAuthRepository implements AuthRepository {
       fullName: request.fullName.trim(),
       email: email,
       phone: phone,
-      role: request.role,
+      documentType: request.documentType,
+      documentNumber: documentNumber,
+      role: UserRole.requester,
       status: UserStatus.unverified,
       password: request.password,
     );
@@ -115,40 +114,80 @@ class LocalAuthRepository implements AuthRepository {
     return (await _requireSessionUser()).toPublicUser();
   }
 
+  /// El documento se edita solo para el solicitante y siempre van juntos
+  /// tipo y número. Es el mismo orden de reglas que en Nest.
   @override
   Future<PublicUser> updateProfile(UpdateProfileRequest request) async {
     final user = await _requireSessionUser();
-    if (request.fullName == null &&
+    _assertSomethingToUpdate(request);
+    if (request.fullName != null) _applyFullName(user, request.fullName!);
+    if (request.email != null) _applyEmail(user, request.email!);
+    if (request.phone != null) _applyPhone(user, request.phone!);
+    if (request.documentType != null || request.documentNumber != null) {
+      _applyDocument(user, request);
+    }
+    return user.toPublicUser();
+  }
+
+  void _assertSomethingToUpdate(UpdateProfileRequest request) {
+    final empty =
+        request.fullName == null &&
         request.email == null &&
-        request.phone == null) {
+        request.phone == null &&
+        request.documentType == null &&
+        request.documentNumber == null;
+    if (empty) {
       throw ApiException(
         'Debes enviar al menos un campo para actualizar.',
         statusCode: 400,
       );
     }
+  }
 
-    if (request.fullName != null) {
-      final fullName = request.fullName!.trim();
-      if (fullName.isEmpty) {
-        throw ApiException('El nombre es obligatorio.', statusCode: 400);
-      }
-      user.fullName = fullName;
+  void _applyFullName(LocalUser user, String raw) {
+    final fullName = raw.trim();
+    if (fullName.isEmpty) {
+      throw ApiException('El nombre es obligatorio.', statusCode: 400);
     }
-    if (request.email != null) {
-      final email = LocalAuthRules.normalizeEmail(request.email);
-      if (email == null || _emailTaken(email, user.id)) {
-        throw LocalAuthRules.duplicateContact();
-      }
-      user.email = email;
+    user.fullName = fullName;
+  }
+
+  void _applyEmail(LocalUser user, String raw) {
+    final email = LocalAuthRules.normalizeEmail(raw);
+    if (email == null || _emailTaken(email, user.id)) {
+      throw LocalAuthRules.duplicateContact();
     }
-    if (request.phone != null) {
-      final phone = LocalAuthRules.normalizePhone(request.phone);
-      if (phone == null || _phoneTaken(phone, user.id)) {
-        throw LocalAuthRules.duplicateContact();
-      }
-      user.phone = phone;
+    user.email = email;
+  }
+
+  void _applyPhone(LocalUser user, String raw) {
+    final phone = LocalAuthRules.normalizePhone(raw);
+    if (phone == null || _phoneTaken(phone, user.id)) {
+      throw LocalAuthRules.duplicateContact();
     }
-    return user.toPublicUser();
+    user.phone = phone;
+  }
+
+  void _applyDocument(LocalUser user, UpdateProfileRequest request) {
+    if (user.role != UserRole.requester) {
+      throw LocalAuthRules.documentOnlyForRequester();
+    }
+    if (request.documentType == null || request.documentNumber == null) {
+      throw LocalAuthRules.documentTogether();
+    }
+    final type = request.documentType!;
+    final documentNumber = LocalAuthRules.normalizeDocument(
+      type,
+      request.documentNumber,
+    );
+    if (documentNumber == null) {
+      throw ApiException(LocalAuthRules.invalidDocument, statusCode: 400);
+    }
+    if (_documentTaken(type, documentNumber, exceptId: user.id)) {
+      throw LocalAuthRules.duplicateDocument();
+    }
+    user.documentType = type;
+    user.documentNumber = documentNumber;
   }
 
   ApiException? _loginBlock(UserStatus status) => switch (status) {
@@ -175,8 +214,7 @@ class LocalAuthRepository implements AuthRepository {
 
   Future<LocalUser> _requireSessionUser() async {
     final token = await _tokenStore.read();
-    if (token == null ||
-        !token.startsWith(LocalAuthRules.tokenPrefix)) {
+    if (token == null || !token.startsWith(LocalAuthRules.tokenPrefix)) {
       throw LocalAuthRules.expiredSession();
     }
     final user = _users[token.substring(LocalAuthRules.tokenPrefix.length)];
@@ -199,6 +237,27 @@ class LocalAuthRepository implements AuthRepository {
 
   bool _phoneTaken(String phone, String currentId) =>
       _users.values.any((user) => user.id != currentId && user.phone == phone);
+
+  /// El correo es opcional, así que solo se busca duplicado si viene.
+  bool _contactTaken(String? email, String phone) {
+    if (email != null && _emailTaken(email, '')) return true;
+    return _phoneTaken(phone, '');
+  }
+
+  /// El documento es único por tipo: dos cédulas de ciudadanía distintas
+  /// pueden compartir número si cambia el tipo.
+  bool _documentTaken(
+    DocumentType type,
+    String documentNumber, {
+    String? exceptId,
+  }) {
+    return _users.values.any(
+      (user) =>
+          user.id != exceptId &&
+          user.documentType == type &&
+          user.documentNumber == documentNumber,
+    );
+  }
 
   AuthSession _sessionFor(LocalUser user) => AuthSession(
     accessToken: '${LocalAuthRules.tokenPrefix}${user.id}',

@@ -108,8 +108,9 @@ Convenciones que ya están en el código:
 
 - Los labels de campo van en mayúsculas con `letterSpacing`. Los assert de los
   tests buscan el texto en mayúsculas.
-- El registro y el login no piden rol de forma directa: usan las pestañas de
-  rol y el bloque de método de contacto.
+- El registro y el login no piden rol. El registro es solo del solicitante y
+  usa `DocumentTypeTabs` para el tipo de documento; el login usa el bloque de
+  método de contacto.
 - Un formulario reusa `RegisterFieldValidators` o `LoginFieldValidators` para no
   pasar validadores uno por uno.
 
@@ -241,8 +242,75 @@ La pantalla y las capas de datos no deben inventar endpoints ni cambiar el contr
 - El controller es la única capa que guarda o elimina el token en `TokenStore`.
 - Los repositorios no conocen Riverpod, Flutter UI ni `TokenStore` salvo el repositorio local para su sesión simulada.
 - La UI muestra el mensaje de `ApiException`; no reemplaza el mensaje del backend por otro texto genérico cuando este viene definido.
-- El código de hoy todavía deja que despachador y operador se registren, y les exige correo. Eso no es la regla: [`../context/app/roles.md`](../context/app/roles.md) reserva el registro público al solicitante. No extiendas ese alta institucional.
 - El OTP de registro dura 10 minutos; el de reset, 15 minutos.
+
+### Registro: solo solicitante
+
+`POST /auth/register` es el **único** registro público y crea un `requester`.
+Despachador y operador los crea el administrador por `POST /users`
+(`CreateInstitutionalUserDto`), sin OTP. Ver
+[`../context/app/roles.md`](../context/app/roles.md).
+
+`RegisterRequest` no lleva `role`, y eso no es una omisión: Nest usa
+`forbidNonWhitelisted`, así que mandarlo produce 400. Tampoco existe
+`UserRole.canSelfRegister` ni `UserRole.requiresEmail`; no los reañadas.
+
+| Campo | Regla |
+| --- | --- |
+| `fullName` | obligatorio, 40 |
+| `documentType` | obligatorio: `citizenship_id`, `foreigner_id` o `ppt` |
+| `documentNumber` | obligatorio, 15. Cédulas: 6–10 dígitos. PPT: 6–15 alfanuméricos en mayúsculas |
+| `phone` | **obligatorio**, 10 dígitos. Es donde llega el código de un uso |
+| `email` | opcional |
+| `password` | 8–72 |
+| `consentAccepted` | obligatorio y `true` (RNF-05) |
+
+### `PublicUser` y el documento
+
+`PublicUser` trae `documentType`, `documentNumber` y `hubIds`.
+
+- El documento **solo existe en el solicitante**. Las cuentas institucionales
+  nacen con `documentType: null`, así que ambos campos son `DocumentType?` y
+  `String?`.
+- `hubIds` es `List<String>`, no `hubId`. Lee `[]` si el campo falta o no es
+  lista, porque "ninguna central asignada" es un caso normal del solicitante y
+  del administrador, no un error.
+- Editar el documento es solo del solicitante, y el tipo y el número van
+  **juntos**: Nest responde `El tipo y el número de documento se actualizan
+  juntos.` si llega uno solo.
+
+### El celular y el prefijo `57`
+
+Nest solo quita lo que no es dígito (`replace(/\D/g, '')`) y después exige
+`^\d{10}$`. No quita el prefijo de país. Por eso `+57 300 123 4567` llegaba
+como `573001234567` y el registro, el login y la recuperación respondían 400.
+
+La regla vive **en un solo lugar**: `normalizeColombianPhone` en
+[`lib/core/colombian_phone.dart`](lib/core/colombian_phone.dart). La usan
+`Validators.phone`, `AuthContact.parse` y `LocalAuthRules.normalizePhone`.
+No la reescribas en otro archivo. Cuando cambies un campo de contacto, pasa
+por ahí.
+
+El campo de login es único y `AuthContact.parse` decide correo o celular.
+Como el mismo helper alimenta los tres caminos, escribir `+57 300 123 4567`
+funciona igual que `300 123 4567` en las tres pantallas.
+
+### Widgets de documento
+
+| Archivo | Para qué |
+| --- | --- |
+| `widgets/document_type_labels.dart` | Copy: nombre completo, corto, hint y `usesDigits` |
+| `widgets/document_type_tabs.dart` | Selector segmentado, compartido por registro y perfil |
+| `widgets/register/register_document_section.dart` | Selector + campo del número en el registro |
+| `widgets/profile/profile_document_editor.dart` | Lo mismo dentro del diálogo de perfil |
+
+Viven fuera de `register/` porque los usan dos features. El enum
+`DocumentType` sigue en `data/`, el copy en `presentation/`, igual que
+`UserRole` con `ProfileLabels`.
+
+`DocumentTypeLabels.usesDigits` decide el patrón: las dos cédulas son solo
+dígitos y el PPT admite letras. Refleja `DOCUMENT_PATTERNS` de
+`backend/src/auth/auth.rules.ts`.
 
 ## Alcance
 
@@ -324,12 +392,15 @@ partidas en widgets por pantalla, siguiendo el patrón
 | `login_screen` | 265 | 136 |
 
 Widgets nuevos del andamiaje compartido: `auth_page.dart` (fondo, `SafeArea`,
-scroll y ancho máximo), `auth_form_alert.dart` (alerta con animación que ya
+scroll y ancho máximo), `login_form_alert.dart` (alerta con animación que ya
 maneja el `null`), `login_security_footer.dart`, `login_credentials.dart`,
-`register_fields.dart`, `register_role_section.dart`, `profile_content.dart`,
-`profile_labels.dart`, `profile_states.dart`, `otp_verify_content.dart`,
-`reset_password_form.dart`, `reset_code_section.dart`, `reset_code_header.dart`,
-`reset_resend_button.dart` y `forgot_password_content.dart`.
+`register_fields.dart`, `profile_content.dart`, `profile_labels.dart`,
+`profile_states.dart`, `otp_verify_content.dart`, `reset_password_form.dart`,
+`reset_code_section.dart`, `reset_code_header.dart`, `reset_resend_button.dart`
+y `forgot_password_content.dart`.
+
+`register_role_section.dart`Vivió aquí y se borró en la Fase 3, cuando el
+registro dejó de pedir rol.
 
 `AuthTopBar` pasó a `onBack` opcional y `showTitle`, para que la verificación del
 código no repita el título.
@@ -363,6 +434,11 @@ reescribir `register_screen` y `profile_screen` de todos modos.
   real** hasta la Fase 3. También sobran `register_role_tabs.dart` y
   `register_role_section.dart`.
 
+> Los dos bugs de arriba **quedaron corregidos** en la Fase 3. El registro ya
+> no manda `role` y el prefijo `57` se quita en `core/colombian_phone.dart`.
+> `register_role_tabs.dart` y `register_role_section.dart` se borraron. El
+> texto de arriba se conserva como el registro de lo que se encontró.
+
 **Protocolo de sesión:**
 
 1. **Al iniciar:** trabajar solo la primera fase `⬜` del plan; leer `lib/core`, `lib/theme` y `lib/app` antes de escribir código.
@@ -377,4 +453,36 @@ reescribir `register_screen` y `profile_screen` de todos modos.
 - HTTP: `defaultBaseUrl` en `lib/core/network/api_client.dart` — `http://localhost:3000` (emulador Android: `http://10.0.2.2:3000`), **sin** prefijo `/api`.
 - UI: tema único en `lib/theme/` (tokens Stitch: cyan `#06B6D4`, `themeMode: ThemeMode.system`); `google_fonts` **^8.2.1** (la 6.x no compila con Dart 3.12+), titulares en Plus Jakarta Sans y cuerpo en Inter.
 - Origen de datos hoy: `DataSource.remote` (`lib/core/data/data_source_config.dart`).
-- Validar siempre con `Validators` + `FieldLimits` (el celular se limpia de símbolos igual que Nest antes del regex).
+- Validar siempre con `Validators` + `FieldLimits`.
+- El celular se normaliza con `normalizeColombianPhone` de
+  [`lib/core/colombian_phone.dart`](lib/core/colombian_phone.dart) antes de
+  validar o de mandar. No reescribir la regla en otro archivo.
+
+### Estado real al cerrar la Fase 3 — 2 de octubre de 2026
+
+Rama `feature/frontend-auth-realineado`, desde `develop` con el PR #18 ya
+mergeado. **No se tocó `backend/`.** `flutter analyze` sin issues y
+`flutter test` con **49 pruebas** (subieron de 36).
+
+El registro público ya no manda `role`, así que `forbidNonWhitelisted` lo
+acepta. `PublicUser` trae documento y `hubIds`. El prefijo `57` se quita en
+`core/colombian_phone.dart`, lo que arregló también el login y la
+recuperación, que devolvían 400. `register_role_tabs.dart`,
+`register_role_section.dart` y `role_selector.dart` se borraron.
+
+**Pendiente de esta fase:** validar contra Nest con el backend arriba.
+`flutter run` no se probó en esa sesión.
+
+### Pendientes que dejó la Fase 3
+
+| Qué | Dónde | Por qué |
+| --- | --- | --- |
+| `dispatcher_cards.dart` sigue con `hub?.isApproved` | `lib/features/home/presentation/` | `HubStatus` con los tres valores viejos; es de la Fase 4 |
+| `local_auth_repository.dart` en 240 líneas | `lib/features/auth/data/local/` | Candidato a otra partición en la Fase 9 |
+| 12 widgets sobre 60 líneas | varios | La Fase 9 decide si se parten o se aceptan |
+
+**Pendiente de la Fase 2 que sigue igual:** la línea "Homologación
+Aeronáutica" de `register_info_banner.dart` y el sello "Cifrado TLS 1.3 de
+Grado Clínico" de `login_security_footer.dart` son copy de maquetación. No
+afirman nada falso sobre el MVP, pero tampoco describen una funcionalidad;
+si la sustentación los señala, se cambian en una fase corta.

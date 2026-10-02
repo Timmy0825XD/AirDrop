@@ -31,9 +31,10 @@ class ProfileLabels {
   }
 
   /// "Cuenta personal" o "Central operativa vinculada", según tenga o no
-  /// alguna central asignada. Con el contrato nuevo esto mira `hubIds`.
+  /// alguna central asignada. Con el contrato nuevo esto mira `hubIds`:
+  /// el despachador tiene exactamente una y el operador una o más.
   static String organization(PublicUser user) =>
-      user.hubId == null ? 'Cuenta personal' : 'Central operativa vinculada';
+      user.hubIds.isEmpty ? 'Cuenta personal' : 'Central operativa vinculada';
 
   /// Tope de caracteres que cada campo de datos admite, tomado del mismo
   /// lugar que los validadores para que no se duplique el número.
@@ -41,5 +42,6 @@ class ProfileLabels {
     ProfileFieldType.fullName => FieldLimits.fullName,
     ProfileFieldType.email => FieldLimits.email,
     ProfileFieldType.phone => FieldLimits.phoneDigits,
+    ProfileFieldType.document => FieldLimits.documentNumber,
   };
 }
