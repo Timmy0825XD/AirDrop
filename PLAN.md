@@ -29,7 +29,7 @@ reestructuración de `context/` en carpetas (`producto/`, `app/`, `entregas/`,
 | Capa | Estado |
 | --- | --- |
 | `frontend/lib/core` | Listo: `ApiClient` con JWT y manejo de 401, `TokenStore`, `ApiException`, `Validators`, `FieldLimits`, widgets, tema. |
-| `frontend` Auth | Login, registro, OTP, recuperación, reset y perfil contra el contrato **anterior** (registro con `role`, `PublicUser.hubId`). |
+| `frontend` Auth | **Alineado** desde la Fase 3: registro sin `role` con documento y celular obligatorio, `PublicUser` con `documentType`, `documentNumber` y `hubIds`, prefijo `57` normalizado. |
 | `frontend` Homes | Homes de los 4 roles, `RoleHomeScreen`, `HomeShell`. Las tarjetas usan `showModulePreview` (snackbar). |
 | `frontend` Hubs | Solo `mine()` con `HubSummary` y el enum viejo `pending_approval / approved / rejected`. |
 | `backend` Auth | **Alineado**: registro sin `role` con `documentType` + `documentNumber` + celular, `PATCH /auth/me` con documento, `PublicUser` con `documentType`, `documentNumber` y `hubIds`. |
@@ -84,7 +84,7 @@ strategy; interceptor de `Authorization`; `AdminSeedService`
 | --- | --- | --- | --- |
 | 1 | Verificar `context/` | Confirmar que `context/` y el backend coinciden | ✅ hecha, sin cambios |
 | 2 | Núcleo y deuda | `getJson` con query, `FieldLimits` y `Validators` nuevos, splitting de archivos >60 líneas | ✅ hecha |
-| 3 | Auth realineado | Documento, `hubIds`, perfil, registro de solicitante | — |
+| 3 | Auth realineado | Documento, `hubIds`, perfil, registro de solicitante | ✅ hecha |
 | 4 | Centrales | Lista, alta y suspensión del admin; `/hubs/me` del despachador | — |
 | 5 | Cuentas | Lista, alta, suspensión y reactivación de despachadores y operadores | Fase 4 |
 | 6 | Inventario | CRUD del despachador, bloqueado por central suspendida | Fase 4 |
@@ -150,6 +150,11 @@ todos modos.
 Arregla el registro, que hoy está roto contra la API real: sigue mandando
 `role` y el backend nuevo usa `forbidNonWhitelisted`.
 
+Los diez pasos se ejecutaron en cinco bloques, en el orden de la tabla de
+abajo. Se agruparon así para que cada bloque dejara el árbol más cerca de
+compilar: modelo y copy, celular, fixtures y repositorio local, pantallas, y
+por último las pruebas.
+
 | Paso | Qué | Detalle |
 | --- | --- | --- |
 | a | `DocumentType` | Enum con `citizenship_id`, `foreigner_id`, `ppt` y su copy: Cédula de ciudadanía, Cédula de extranjería, PPT |
@@ -165,6 +170,46 @@ Arregla el registro, que hoy está roto contra la API real: sigue mandando
 
 **Valida:** contra Nest, registrar un solicitante nuevo con documento y entrar
 con el OTP que sale en el log.
+
+---
+
+### Fase 3 — Auth realineado ✅
+
+Cerrada el 2 de octubre de 2026, en `feature/frontend-auth-realineado`, en
+cinco bloques. **No se tocó `backend/`.** El registro público ya no manda
+`role`, así que `forbidNonWhitelisted` lo acepta y el 400 desapareció.
+
+| Bloque | Qué quedó |
+| --- | --- |
+| Modelo | `DocumentType` (`citizenship_id`, `foreigner_id`, `ppt`), `PublicUser` con `documentType`, `documentNumber` y `hubIds` en vez de `hubId`, `RegisterRequest` sin `role` con celular obligatorio, `UpdateProfileRequest` con documento |
+| Copy | `document_type_labels.dart` y `document_type_tabs.dart` compartidos por registro y perfil |
+| Celular | `core/colombian_phone.dart` quita el prefijo `57` en los 10 dígitos que Nest exige |
+| Local | `local_user` y fixtures con documento, `LocalAuthRules.normalizeDocument`, `register` siempre `requester`, `updateProfile` desarmado en cinco métodos |
+| Pantallas | Registro sin rol con selector de documento; perfil muestra el documento y solo el solicitante lo edita; fuera `role_selector.dart`, `register_role_tabs.dart` y `register_role_section.dart` |
+
+**El arreglo del prefijo `57` era más amplio de lo que decía el plan:**
+`AuthContact.parse` también lo usan el login y la recuperación de contraseña,
+así que las tres pantallas devolvían 400 con `+57 300 123 4567`.
+
+**El OTP va al celular.** `register_screen` manda
+`AuthContact.phone(phone)` al `/verify-otp`, porque el celular es el único
+contacto obligatorio y `roles.md` dice "OTP al celular". Antes prefería el
+correo.
+
+**Fuera de alcance, para más adelante:** `dispatcher_cards.dart` sigue con
+`hub?.isApproved` y `HubStatus` con los tres valores viejos; eso es de la
+Fase 4. Los 12 widgets sobre 60 líneas siguen pendientes de la Fase 9.
+`local_auth_repository.dart` quedó en 240 líneas y es candidato a otra
+partición.
+
+**Verificación:** `flutter analyze` sin issues y `flutter test` con **49
+pruebas** (subieron de 36). Las 13 nuevas cubren el enum de documento, el
+`hubIds` que puede faltar, el registro sin `role`, el prefijo `57` en
+validación y en `AuthContact.parse`, y las reglas de documento del
+repositorio local.
+
+**Pendiente de esta fase:** validar contra Nest con el backend arriba.
+`flutter run` no se probó en esta sesión.
 
 ### Fase 4 — Centrales
 

@@ -36,10 +36,12 @@ class FakeApiClient extends ApiClient {
     'id': 'user-1',
     'fullName': 'Ana Pérez',
     'email': 'ana@correo.co',
-    'phone': null,
+    'phone': '3001234567',
+    'documentType': 'citizenship_id',
+    'documentNumber': '1098765432',
     'role': 'requester',
     'status': 'active',
-    'hubId': null,
+    'hubIds': <String>[],
   };
 
   Map<String, dynamic> _responseFor(String path) {
@@ -75,9 +77,11 @@ void main() {
     await repository.register(
       RegisterRequest(
         fullName: 'Ana Pérez',
-        email: 'ana@correo.co',
+        documentType: DocumentType.citizenshipId,
+        documentNumber: '1098765432',
+        phone: '3001234567',
         password: 'secreto12',
-        role: UserRole.requester,
+        email: 'ana@correo.co',
         consentAccepted: true,
       ),
     );
@@ -102,6 +106,15 @@ void main() {
       UpdateProfileRequest(fullName: 'Ana Actualizada'),
     );
 
+    // El PATCH del documento manda tipo y número juntos: Nest rechaza
+    // que llegue uno sin el otro.
+    await repository.updateProfile(
+      const UpdateProfileRequest(
+        documentType: DocumentType.ppt,
+        documentNumber: 'AB123456',
+      ),
+    );
+
     expect(client.calls, [
       'POST /auth/register',
       'POST /auth/verify-otp',
@@ -112,6 +125,17 @@ void main() {
       'POST /auth/reset-password',
       'GET /auth/me',
       'PATCH /auth/me',
+      'PATCH /auth/me',
     ]);
+  });
+
+  test('lee documentType y hubIds de la respuesta de Nest', () async {
+    final repository = RemoteAuthRepository(apiClient: FakeApiClient());
+
+    final user = await repository.me();
+
+    expect(user.documentType, DocumentType.citizenshipId);
+    expect(user.documentNumber, '1098765432');
+    expect(user.hubIds, isEmpty);
   });
 }

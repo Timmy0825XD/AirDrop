@@ -4,12 +4,15 @@ class ProfileInfoItem {
   const ProfileInfoItem({
     required this.label,
     required this.value,
-    required this.onEdit,
+    this.onEdit,
   });
 
   final String label;
   final String value;
-  final VoidCallback onEdit;
+
+  /// `null` deja la fila como solo lectura: es el caso del documento en
+  /// las cuentas institucionales, que no lo tienen ni pueden cambiarlo.
+  final VoidCallback? onEdit;
 }
 
 class ProfileInfoList extends StatelessWidget {
@@ -41,7 +44,9 @@ class ProfileInfoList extends StatelessWidget {
         Material(
           color: colors.onSurface.withValues(alpha: 0.05),
           clipBehavior: Clip.antiAlias,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
           child: Column(
             children: [
               for (var i = 0; i < items.length; i++) ...[
@@ -72,8 +77,8 @@ class _InfoRow extends StatelessWidget {
     final muted = colors.onSurface.withValues(alpha: 0.6);
 
     return Semantics(
-      button: true,
-      label: 'Editar ${item.label}',
+      button: item.onEdit != null,
+      label: item.onEdit == null ? item.label : 'Editar ${item.label}',
       child: InkWell(
         onTap: item.onEdit,
         child: Padding(
@@ -104,16 +109,18 @@ class _InfoRow extends StatelessWidget {
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
-              Container(
-                width: 32,
-                height: 32,
-                decoration: BoxDecoration(
-                  color: colors.onSurface.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(10),
+              if (item.onEdit != null) ...[
+                const SizedBox(width: 12),
+                Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    color: colors.onSurface.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(Icons.edit_outlined, size: 18, color: muted),
                 ),
-                child: Icon(Icons.edit_outlined, size: 18, color: muted),
-              ),
+              ],
             ],
           ),
         ),

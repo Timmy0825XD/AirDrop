@@ -1,3 +1,4 @@
+import 'colombian_phone.dart';
 import 'field_limits.dart';
 
 /// Reglas de validación de los formularios. Cada método devuelve `null`
@@ -7,8 +8,7 @@ import 'field_limits.dart';
 class Validators {
   Validators._();
 
-  static final RegExp _emailPattern =
-      RegExp(r'^[\w.+-]+@[\w-]+\.[\w.-]+$');
+  static final RegExp _emailPattern = RegExp(r'^[\w.+-]+@[\w-]+\.[\w.-]+$');
 
   static String? name(String? value) {
     final text = value?.trim() ?? '';
@@ -30,8 +30,9 @@ class Validators {
   }
 
   static String? phone(String? value) {
-    // Quita espacios, puntos y símbolos igual que Nest antes de validar.
-    final digits = value?.replaceAll(RegExp(r'\D'), '') ?? '';
+    // Se normaliza antes de validar: el prefijo +57 se ignora, igual que
+    // el usuario lo escribiría, y lo que llega a Nest son 10 dígitos.
+    final digits = normalizeColombianPhone(value);
     if (digits.isEmpty) return 'Escribe tu celular.';
     if (!FieldLimits.phoneRegex.hasMatch(digits)) {
       return 'El celular debe tener ${FieldLimits.phoneDigits} dígitos.';

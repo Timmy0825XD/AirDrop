@@ -49,6 +49,7 @@ class ProfileScreen extends ConsumerWidget {
       builder: (_) => ProfileEditDialog(
         type: type,
         initialValue: _initialValue(user, type),
+        initialDocumentType: user.documentType,
       ),
     );
     if (request == null || !context.mounted) return;
@@ -72,6 +73,7 @@ class ProfileScreen extends ConsumerWidget {
         ProfileFieldType.fullName => user.fullName,
         ProfileFieldType.email => user.email ?? '',
         ProfileFieldType.phone => user.phone ?? '',
+        ProfileFieldType.document => user.documentNumber ?? '',
       };
 
   Future<void> _logout(BuildContext context, WidgetRef ref) async {

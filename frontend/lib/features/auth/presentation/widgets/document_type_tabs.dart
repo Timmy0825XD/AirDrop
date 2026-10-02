@@ -1,22 +1,19 @@
 import 'package:flutter/material.dart';
 
-import '../../../data/auth_models.dart';
+import '../../data/auth_models.dart';
+import 'document_type_labels.dart';
 
-class RegisterRoleTabs extends StatelessWidget {
-  const RegisterRoleTabs({
+/// Selector segmentado del tipo de documento. Lo usan el registro y la
+/// edición del perfil, así que vive fuera de `register/`.
+class DocumentTypeTabs extends StatelessWidget {
+  const DocumentTypeTabs({
     super.key,
-    required this.selectedRole,
+    required this.selected,
     required this.onChanged,
   });
 
-  final UserRole selectedRole;
-  final ValueChanged<UserRole> onChanged;
-
-  static const _roles = [
-    UserRole.requester,
-    UserRole.dispatcher,
-    UserRole.fleetOperator,
-  ];
+  final DocumentType selected;
+  final ValueChanged<DocumentType> onChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -30,31 +27,22 @@ class RegisterRoleTabs extends StatelessWidget {
       ),
       child: Row(
         children: [
-          for (final role in _roles)
+          for (final type in DocumentType.values)
             Expanded(
-              child: _RoleTab(
-                label: _label(role),
-                selected: role == selectedRole,
-                onTap: () => onChanged(role),
+              child: _DocumentTypeTab(
+                label: DocumentTypeLabels.shortLabel(type),
+                selected: type == selected,
+                onTap: () => onChanged(type),
               ),
             ),
         ],
       ),
     );
   }
-
-  String _label(UserRole role) {
-    return switch (role) {
-      UserRole.requester => 'Solicitante',
-      UserRole.dispatcher => 'Despachador',
-      UserRole.fleetOperator => 'Operador flota',
-      UserRole.admin => 'Administrador',
-    };
-  }
 }
 
-class _RoleTab extends StatelessWidget {
-  const _RoleTab({
+class _DocumentTypeTab extends StatelessWidget {
+  const _DocumentTypeTab({
     required this.label,
     required this.selected,
     required this.onTap,
@@ -105,38 +93,6 @@ class _RoleTab extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class RegisterRoleHint extends StatelessWidget {
-  const RegisterRoleHint({super.key, required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
-      decoration: BoxDecoration(
-        color: colors.onSurface.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.verified_user_outlined, size: 16, color: colors.primary),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              style: theme.textTheme.labelSmall?.copyWith(color: colors.primary),
-            ),
-          ),
-        ],
       ),
     );
   }

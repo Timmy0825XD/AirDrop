@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../data/auth_models.dart';
+import '../document_type_labels.dart';
 import 'profile_edit_dialog.dart';
 import 'profile_info_list.dart';
 import 'profile_identity_card.dart';
@@ -57,23 +58,41 @@ class ProfileContent extends StatelessWidget {
     );
   }
 
-  List<ProfileInfoItem> _items() => [
-    ProfileInfoItem(
-      label: 'Nombre completo',
-      value: user.fullName,
-      onEdit: () => onEdit(ProfileFieldType.fullName),
-    ),
-    ProfileInfoItem(
-      label: 'Correo',
-      value: user.email ?? 'Sin registrar',
-      onEdit: () => onEdit(ProfileFieldType.email),
-    ),
-    ProfileInfoItem(
-      label: 'Celular',
-      value: user.phone ?? 'Sin registrar',
-      onEdit: () => onEdit(ProfileFieldType.phone),
-    ),
-  ];
+  List<ProfileInfoItem> _items() {
+    final items = [
+      ProfileInfoItem(
+        label: 'Nombre completo',
+        value: user.fullName,
+        onEdit: () => onEdit(ProfileFieldType.fullName),
+      ),
+      ProfileInfoItem(
+        label: 'Correo',
+        value: user.email ?? 'Sin registrar',
+        onEdit: () => onEdit(ProfileFieldType.email),
+      ),
+      ProfileInfoItem(
+        label: 'Celular',
+        value: user.phone ?? 'Sin registrar',
+        onEdit: () => onEdit(ProfileFieldType.phone),
+      ),
+    ];
+    if (user.documentType != null) {
+      items.add(
+        ProfileInfoItem(
+          label: 'Documento',
+          value:
+              '${DocumentTypeLabels.label(user.documentType!)} · '
+              '${user.documentNumber}',
+          // Solo el solicitante puede corregir su documento; en las cuentas
+          // institucionales lo deja el administrador.
+          onEdit: user.isRequester
+              ? () => onEdit(ProfileFieldType.document)
+              : null,
+        ),
+      );
+    }
+    return items;
+  }
 }
 
 class _ProtocolDivider extends StatelessWidget {

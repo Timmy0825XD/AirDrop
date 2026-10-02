@@ -1,3 +1,27 @@
+import '../../../core/colombian_phone.dart';
+
+/// Documento de identidad del solicitante. Los mismos tres valores de
+/// `backend/src/common/enums/document-type.enum.ts`. Solo el solicitante
+/// lo tiene: el administrador crea a las cuentas institucionales sin
+/// documento.
+enum DocumentType {
+  citizenshipId('citizenship_id'),
+  foreignerId('foreigner_id'),
+  ppt('ppt');
+
+  const DocumentType(this.apiValue);
+
+  final String apiValue;
+
+  static DocumentType fromJson(String value) {
+    return DocumentType.values.firstWhere(
+      (type) => type.apiValue == value,
+      orElse: () =>
+          throw FormatException('Tipo de documento desconocido: $value'),
+    );
+  }
+}
+
 enum UserRole {
   requester('requester'),
   dispatcher('dispatcher'),
@@ -7,12 +31,6 @@ enum UserRole {
   const UserRole(this.apiValue);
 
   final String apiValue;
-
-  bool get canSelfRegister => this != UserRole.admin;
-
-  /// Estos roles requieren un correo según el contrato de NestJS.
-  bool get requiresEmail =>
-      this == UserRole.dispatcher || this == UserRole.fleetOperator;
 
   static UserRole fromJson(String value) {
     return UserRole.values.firstWhere(
@@ -49,7 +67,9 @@ class PublicUser {
     required this.phone,
     required this.role,
     required this.status,
-    required this.hubId,
+    required this.hubIds,
+    this.documentType,
+    this.documentNumber,
   });
 
   factory PublicUser.fromJson(Map<String, dynamic> json) {
@@ -58,9 +78,11 @@ class PublicUser {
       fullName: json['fullName'] as String,
       email: json['email'] as String?,
       phone: json['phone'] as String?,
+      documentType: _documentTypeFrom(json['documentType']),
+      documentNumber: json['documentNumber'] as String?,
       role: UserRole.fromJson(json['role'] as String),
       status: UserStatus.fromJson(json['status'] as String),
-      hubId: json['hubId'] as String?,
+      hubIds: _hubIdsFrom(json['hubIds']),
     );
   }
 
@@ -68,9 +90,21 @@ class PublicUser {
   final String fullName;
   final String? email;
   final String? phone;
+
+  /// Solo el solicitante registra documento; las cuentas institucionales
+  /// nacen sin él.
+  final DocumentType? documentType;
+  final String? documentNumber;
+
   final UserRole role;
   final UserStatus status;
-  final String? hubId;
+
+  /// Centrales asignadas: exactamente una para el despachador, una o más
+  /// para el operador de flota, ninguna para el solicitante y el
+  /// administrador. Un despachador u operador nunca trae `hubId` en el JSON.
+  final List<String> hubIds;
+
+  bool get isRequester => role == UserRole.requester;
 
   Map<String, dynamic> toJson() {
     return {
@@ -78,10 +112,24 @@ class PublicUser {
       'fullName': fullName,
       'email': email,
       'phone': phone,
+      'documentType': documentType?.apiValue,
+      'documentNumber': documentNumber,
       'role': role.apiValue,
       'status': status.apiValue,
-      'hubId': hubId,
+      'hubIds': hubIds,
     };
+  }
+
+  static DocumentType? _documentTypeFrom(Object? value) {
+    if (value is! String || value.isEmpty) return null;
+    return DocumentType.fromJson(value);
+  }
+
+  /// Lee la lista de centrales sin fallar cuando el backend omite el
+  /// campo: "ninguna asignada" es un caso normal, no un error.
+  static List<String> _hubIdsFrom(Object? value) {
+    if (value is! List) return const [];
+    return value.whereType<String>().toList(growable: false);
   }
 }
 
@@ -93,14 +141,15 @@ class AuthContact {
   const AuthContact.phone(String phone) : this._(phone: phone);
 
   /// Convierte el campo único del login en correo o celular.
-  /// Los signos de téléphone se limpian como lo hace NestJS.
+  /// El celular se normaliza a 10 dígitos como lo espera Nest, así que
+  /// escribir `+57 300 123 4567` funciona igual que `300 123 4567`.
   factory AuthContact.parse(String raw) {
     final value = raw.trim();
     final looksLikeEmail = RegExp(r'[A-Za-z@]').hasMatch(value);
     if (looksLikeEmail) {
       return AuthContact.email(value.toLowerCase());
     }
-    return AuthContact.phone(value.replaceAll(RegExp(r'\D'), ''));
+    return AuthContact.phone(normalizeColombianPhone(value));
   }
 
   final String? email;
@@ -122,30 +171,37 @@ class LoginRequest {
   }
 }
 
+/// Alta pública del solicitante. No lleva `role`: Nest lo fija en
+/// `requester` y el `ValidationPipe` rechaza el campo con
+/// `forbidNonWhitelisted`. El celular es obligatorio porque el código de
+/// un uso va al celular; el correo es opcional.
 class RegisterRequest {
   const RegisterRequest({
     required this.fullName,
-    this.email,
-    this.phone,
+    required this.documentType,
+    required this.documentNumber,
+    required this.phone,
     required this.password,
-    required this.role,
     required this.consentAccepted,
+    this.email,
   });
 
   final String fullName;
-  final String? email;
-  final String? phone;
+  final DocumentType documentType;
+  final String documentNumber;
+  final String phone;
   final String password;
-  final UserRole role;
   final bool consentAccepted;
+  final String? email;
 
   Map<String, dynamic> toJson() {
     return {
       if (email != null) 'email': email,
-      if (phone != null) 'phone': phone,
       'fullName': fullName,
+      'documentType': documentType.apiValue,
+      'documentNumber': documentNumber,
+      'phone': phone,
       'password': password,
-      'role': role.apiValue,
       'consentAccepted': consentAccepted,
     };
   }
@@ -208,18 +264,31 @@ class ResetPasswordRequest {
   }
 }
 
+/// Edición de perfil. `documentType` y `documentNumber` solo aplican al
+/// solicitante y Nest los exige juntos: enviar uno solo devuelve "El tipo
+/// y el número de documento se actualizan juntos".
 class UpdateProfileRequest {
-  const UpdateProfileRequest({this.fullName, this.email, this.phone});
+  const UpdateProfileRequest({
+    this.fullName,
+    this.email,
+    this.phone,
+    this.documentType,
+    this.documentNumber,
+  });
 
   final String? fullName;
   final String? email;
   final String? phone;
+  final DocumentType? documentType;
+  final String? documentNumber;
 
   Map<String, dynamic> toJson() {
     return {
       if (fullName != null) 'fullName': fullName,
       if (email != null) 'email': email,
       if (phone != null) 'phone': phone,
+      if (documentType != null) 'documentType': documentType!.apiValue,
+      if (documentNumber != null) 'documentNumber': documentNumber,
     };
   }
 }
