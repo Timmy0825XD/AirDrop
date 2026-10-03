@@ -45,6 +45,40 @@ class ResetPasswordForm extends StatelessWidget {
         _Alert(message: errorMessage, onDismiss: onDismissError),
         codeSection,
         const SizedBox(height: 24),
+        _PasswordFields(
+          passwordController: passwordController,
+          confirmPasswordController: confirmPasswordController,
+          confirmValidator: confirmValidator,
+        ),
+        const SizedBox(height: 24),
+        LoginButton(
+          label: 'Actualizar contraseña',
+          isLoading: isLoading,
+          onPressed: onSubmit,
+        ),
+      ],
+    );
+  }
+}
+
+/// La nueva clave y su confirmación, con el medidor de fuerza entre
+/// ellas. La regla de confirmación la pasa la pantalla.
+class _PasswordFields extends StatelessWidget {
+  const _PasswordFields({
+    required this.passwordController,
+    required this.confirmPasswordController,
+    this.confirmValidator,
+  });
+
+  final TextEditingController passwordController;
+  final TextEditingController confirmPasswordController;
+  final String? Function(String?)? confirmValidator;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
         RegisterField(
           label: 'Nueva contraseña',
           hint: '••••••••••••',
@@ -72,12 +106,6 @@ class ResetPasswordForm extends StatelessWidget {
           maxLength: FieldLimits.passwordMax,
           textInputAction: TextInputAction.done,
           validator: confirmValidator,
-        ),
-        const SizedBox(height: 24),
-        LoginButton(
-          label: 'Actualizar contraseña',
-          isLoading: isLoading,
-          onPressed: onSubmit,
         ),
       ],
     );

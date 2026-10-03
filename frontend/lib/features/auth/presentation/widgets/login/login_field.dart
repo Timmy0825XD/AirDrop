@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'login_field_input.dart';
 import 'login_palette.dart';
 
 /// Campo de vidrio con la etiqueta arriba (en minúsculas) y un resplandor
@@ -37,7 +38,6 @@ class LoginField extends StatefulWidget {
 
 class _LoginFieldState extends State<LoginField> {
   final _focus = FocusNode();
-  late bool _hidden = widget.obscureText;
 
   @override
   void initState() {
@@ -51,30 +51,14 @@ class _LoginFieldState extends State<LoginField> {
     super.dispose();
   }
 
-  OutlineInputBorder _border(Color color, [double width = 1]) {
-    return OutlineInputBorder(
-      borderRadius: BorderRadius.circular(14),
-      borderSide: BorderSide(color: color, width: width),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final p = LoginPalette.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ExcludeSemantics(
-          child: Text(
-            widget.label,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-              color: p.ink,
-            ),
-          ),
-        ),
+        LoginFieldLabel(widget.label),
         const SizedBox(height: 8),
         AnimatedContainer(
           duration: const Duration(milliseconds: 200),
@@ -87,54 +71,38 @@ class _LoginFieldState extends State<LoginField> {
           ),
           child: Semantics(
             label: widget.label,
-            child: _input(theme, p),
+            child: LoginFieldInput(
+              controller: widget.controller,
+              focusNode: _focus,
+              hint: widget.hint,
+              validator: widget.validator,
+              onChanged: widget.onChanged,
+              obscureText: widget.obscureText,
+              keyboardType: widget.keyboardType,
+              maxLength: widget.maxLength,
+              textInputAction: widget.textInputAction,
+            ),
           ),
         ),
       ],
     );
   }
+}
 
-  Widget _input(ThemeData theme, LoginPalette p) {
-    return TextFormField(
-      controller: widget.controller,
-      focusNode: _focus,
-      validator: widget.validator,
-      onChanged: widget.onChanged,
-      obscureText: _hidden,
-      keyboardType: widget.keyboardType,
-      maxLength: widget.maxLength,
-      textInputAction: widget.textInputAction,
-      style: theme.textTheme.bodyLarge,
-      decoration: InputDecoration(
-        hintText: widget.hint,
-        hintStyle: theme.textTheme.bodyLarge?.copyWith(
-          color: p.muted.withValues(alpha: 0.7),
-        ),
-        counterText: '',
-        filled: true,
-        fillColor: p.field,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        suffixIcon: widget.obscureText ? _toggle(p.muted) : null,
-        border: _border(p.fieldBorder),
-        enabledBorder: _border(p.fieldBorder),
-        focusedBorder: _border(p.accent, 1.5),
-        errorBorder: _border(p.error),
-        focusedErrorBorder: _border(p.error, 1.5),
-        errorStyle: TextStyle(color: p.error),
-      ),
-    );
-  }
+/// La etiqueta visible del campo. Se queda fuera del `Semantics` para que el
+/// lector de pantalla no anuncie la etiqueta dos veces: ya la declara el
+/// propio campo.
+class LoginFieldLabel extends StatelessWidget {
+  const LoginFieldLabel(this.text, {super.key});
 
-  Widget _toggle(Color color) {
-    return IconButton(
-      tooltip: 'Mostrar u ocultar contraseña',
-      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-      onPressed: () => setState(() => _hidden = !_hidden),
-      icon: Icon(
-        _hidden ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-        size: 20,
-        color: color,
-      ),
-    );
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.bodyMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+          color: LoginPalette.of(context).ink,
+        );
+    return ExcludeSemantics(child: Text(text, style: style));
   }
 }

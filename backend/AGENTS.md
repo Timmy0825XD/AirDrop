@@ -8,12 +8,12 @@ Una API **NestJS** (un proceso). Módulos por dominio, no microservicios.
 
 PostgreSQL + PostGIS para lo persistente. Redis para el snapshot de vuelo. Gateway WebSocket para empujar telemetría.
 
-## Contrato (temporal)
+## Contrato
 
-El contrato que el frontend ya consume está verificado contra esta API en la
-**sección 2 de [`../PLAN.md`](../PLAN.md)**. Si un endpoint se cambia, se
-actualiza ese archivo en el mismo PR: el frontend muestra los mensajes de error
-que Nest define y no los sustituye.
+El contrato que el frontend ya consume está verificado contra esta API en el
+código (`backend/src/<módulo>`). Si un endpoint se cambia, se actualiza el
+frontend en el mismo PR: el frontend muestra los mensajes de error que Nest
+define y no los sustituye.
 
 ## Paquetes
 
