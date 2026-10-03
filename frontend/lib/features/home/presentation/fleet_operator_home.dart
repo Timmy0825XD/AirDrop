@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../auth/data/auth_models.dart';
 import 'widgets/home_action_card.dart';
@@ -18,9 +19,9 @@ class FleetOperatorHome extends StatelessWidget {
         children: [
           HomeActionCard(
             title: 'Flota',
-            subtitle: 'Consulta la disponibilidad de los drones.',
+            subtitle: 'Drones, estados y mantenimiento de tus centrales.',
             icon: Icons.flight_takeoff,
-            onTap: () => showModulePreview(context, 'Flota'),
+            onTap: () => context.go('/fleet'),
           ),
           const SizedBox(height: 12),
           HomeActionCard(
