@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-10-03 12:29
+Generado: 2026-10-03 14:18
 
 ## auth
 
@@ -36,12 +36,15 @@ Generado: 2026-10-03 12:29
 | `document_type_tabs.dart` | _DocumentTypeTab | 56 | ok |
 | `forgot_header.dart` | ForgotHeader | 38 | ok |
 | `forgot_header.dart` | _SecureChip | 32 | ok |
+| `forgot_intro.dart` | ForgotIntro | 28 | ok |
 | `forgot_key_badge.dart` | ForgotKeyBadge | 7 | ok |
 | `forgot_key_badge.dart` | _ForgotKeyBadgeState | 109 | **>60** |
 | `forgot_method_chips.dart` | ForgotMethodChips | 36 | ok |
 | `forgot_method_chips.dart` | _MethodChip | 58 | ok |
-| `forgot_password_content.dart` | ForgotPasswordContent | 81 | **>60** |
+| `forgot_password_content.dart` | ForgotPasswordContent | 52 | ok |
+| `forgot_password_content.dart` | _ContactCard | 54 | ok |
 | `forgot_password_content.dart` | _ReturnLink | 41 | ok |
+| `glass_field.dart` | PasswordVisibilityToggle | 31 | ok |
 | `login_alert.dart` | LoginAlert | 59 | ok |
 | `login_backdrop.dart` | LoginBackdrop | 32 | ok |
 | `login_backdrop.dart` | _Orb | 40 | ok |
@@ -55,7 +58,10 @@ Generado: 2026-10-03 12:29
 | `login_credentials.dart` | _ForgotLink | 23 | ok |
 | `login_credentials.dart` | LoginFieldValidators | 11 | ok |
 | `login_field.dart` | LoginField | 30 | ok |
-| `login_field.dart` | _LoginFieldState | 103 | **>60** |
+| `login_field.dart` | _LoginFieldState | 56 | ok |
+| `login_field.dart` | LoginFieldLabel | 14 | ok |
+| `login_field_input.dart` | LoginFieldInput | 28 | ok |
+| `login_field_input.dart` | _LoginFieldInputState | 45 | ok |
 | `login_form_alert.dart` | AuthFormAlert | 37 | ok |
 | `login_glass_card.dart` | LoginGlassCard | 45 | ok |
 | `login_glass_card.dart` | _Gloss | 16 | ok |
@@ -71,15 +77,18 @@ Generado: 2026-10-03 12:29
 | `otp_shield_badge.dart` | OtpShieldBadge | 7 | ok |
 | `otp_shield_badge.dart` | _OtpShieldBadgeState | 71 | **>60** |
 | `otp_shield_badge.dart` | _Beacon | 36 | ok |
-| `otp_verify_content.dart` | OtpVerifyContent | 64 | **>60** |
-| `otp_verify_content.dart` | _Heading | 41 | ok |
+| `otp_verify_content.dart` | OtpVerifyContent | 60 | ok |
+| `otp_verify_content.dart` | _CodeInputs | 33 | ok |
+| `otp_verify_content.dart` | _Heading | 43 | ok |
 | `otp_verify_content.dart` | _Alert | 37 | ok |
 | `otp_verify_content.dart` | _SupportRow | 28 | ok |
-| `profile_content.dart` | ProfileContent | 84 | **>60** |
+| `profile_content.dart` | ProfileContent | 48 | ok |
 | `profile_content.dart` | _ProtocolDivider | 27 | ok |
+| `profile_data_section.dart` | ProfileDataSection | 51 | ok |
 | `profile_document_editor.dart` | ProfileDocumentEditor | 50 | ok |
 | `profile_edit_dialog.dart` | ProfileEditDialog | 18 | ok |
-| `profile_edit_dialog.dart` | _ProfileEditDialogState | 95 | **>60** |
+| `profile_edit_dialog.dart` | _ProfileEditDialogState | 59 | ok |
+| `profile_field_type.dart` | (sin clases) | 60 | ok |
 | `profile_identity_card.dart` | ProfileIdentityCard | 55 | ok |
 | `profile_identity_card.dart` | _Avatar | 61 | **>60** |
 | `profile_identity_card.dart` | _RoleBadge | 33 | ok |
@@ -98,18 +107,24 @@ Generado: 2026-10-03 12:29
 | `profile_top_bar.dart` | _SquareButton | 27 | ok |
 | `register_consent_row.dart` | RegisterConsentRow | 54 | ok |
 | `register_consent_row.dart` | _CheckBox | 27 | ok |
+| `register_contact_fields.dart` | RegisterContactFields | 60 | ok |
+| `register_contact_fields.dart` | _PhonePrefix | 21 | ok |
 | `register_document_section.dart` | RegisterDocumentSection | 51 | ok |
 | `register_field.dart` | RegisterField | 36 | ok |
-| `register_field.dart` | _RegisterFieldState | 97 | **>60** |
-| `register_fields.dart` | RegisterFields | 122 | **>60** |
-| `register_fields.dart` | RegisterFieldValidators | 17 | ok |
+| `register_field.dart` | _RegisterFieldState | 50 | ok |
+| `register_field_input.dart` | RegisterFieldInput | 32 | ok |
+| `register_field_input.dart` | _RegisterFieldInputState | 54 | ok |
+| `register_field_validators.dart` | RegisterFieldValidators | 17 | ok |
+| `register_fields.dart` | RegisterFields | 60 | ok |
 | `register_header.dart` | RegisterHeader | 37 | ok |
 | `register_header.dart` | RegisterStatusChip | 32 | ok |
 | `register_info_banner.dart` | RegisterInfoBanner | 55 | ok |
+| `register_name_field.dart` | RegisterNameField | 25 | ok |
 | `reset_code_header.dart` | ResetCodeHeader | 52 | ok |
 | `reset_code_section.dart` | ResetCodeSection | 31 | ok |
 | `reset_match_icon.dart` | ResetMatchIcon | 36 | ok |
-| `reset_password_form.dart` | ResetPasswordForm | 73 | **>60** |
+| `reset_password_form.dart` | ResetPasswordForm | 52 | ok |
+| `reset_password_form.dart` | _PasswordFields | 49 | ok |
 | `reset_password_form.dart` | _ResetHeading | 59 | ok |
 | `reset_password_form.dart` | _Alert | 26 | ok |
 | `reset_password_strength.dart` | ResetPasswordStrength | 20 | ok |
@@ -282,27 +297,19 @@ Generado: 2026-10-03 12:29
 ## Resumen
 
 - Pantallas (17 archivos): 17
-- Archivos de widgets: 94 - clases de widget medidas: 154
-- Widgets sobre 60 lineas: 18
+- Archivos de widgets: 103 - clases de widget medidas: 168
+- Widgets sobre 60 lineas: 10
 
 Detalle de los que exceden 60 lineas (candidatos a partir):
 
 - auth/forgot_key_badge.dart :: _ForgotKeyBadgeState = 109
-- auth/forgot_password_content.dart :: ForgotPasswordContent = 81
 - auth/login_brand_header.dart :: _EmblemState = 80
 - auth/login_button.dart :: _LoginButtonState = 108
-- auth/login_field.dart :: _LoginFieldState = 103
 - auth/login_palette.dart :: LoginPalette = 69
 - auth/otp_boxes_input.dart :: _OtpBoxesInputState = 73
 - auth/otp_boxes_input.dart :: _OtpCell = 99
 - auth/otp_shield_badge.dart :: _OtpShieldBadgeState = 71
-- auth/otp_verify_content.dart :: OtpVerifyContent = 64
-- auth/profile_content.dart :: ProfileContent = 84
-- auth/profile_edit_dialog.dart :: _ProfileEditDialogState = 95
 - auth/profile_identity_card.dart :: _Avatar = 61
 - auth/profile_info_list.dart :: _InfoRow = 63
-- auth/register_field.dart :: _RegisterFieldState = 97
-- auth/register_fields.dart :: RegisterFields = 122
-- auth/reset_password_form.dart :: ResetPasswordForm = 73
 - auth/reset_password_strength.dart :: _StrengthBody = 65
 

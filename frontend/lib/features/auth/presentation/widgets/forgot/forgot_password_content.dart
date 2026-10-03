@@ -4,8 +4,7 @@ import '../../../../../core/field_limits.dart';
 import '../login/login_button.dart';
 import '../login/login_glass_card.dart';
 import '../register/register_field.dart';
-import 'forgot_header.dart';
-import 'forgot_key_badge.dart';
+import 'forgot_intro.dart';
 
 /// Contenido de "olvidé mi contraseña": pide el contacto, deja elegir si
 /// es correo o celular y envía el código. El texto y el tipo de teclado
@@ -38,55 +37,80 @@ class ForgotPasswordContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ForgotHeader(onBack: onBack),
+        ForgotIntro(onBack: onBack),
         const SizedBox(height: 24),
-        const Center(child: ForgotKeyBadge()),
-        const SizedBox(height: 20),
-        Text(
-          'Ingresa el correo o celular vinculado a tu cuenta para recibir '
-          'el código de verificación.',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            height: 1.45,
-          ),
-        ),
-        const SizedBox(height: 24),
-        LoginGlassCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              RegisterField(
-                label: 'Identificador de acceso',
-                hint: hint,
-                icon: Icons.badge_outlined,
-                controller: contactController,
-                keyboardType: keyboardType,
-                maxLength: FieldLimits.email,
-                textInputAction: TextInputAction.next,
-                validator: validator,
-                onChanged: onChanged,
-              ),
-              const SizedBox(height: 16),
-              methodChips,
-              const SizedBox(height: 20),
-              LoginButton(
-                label: 'Enviar código',
-                icon: Icons.send_rounded,
-                iconFirst: true,
-                isLoading: isLoading,
-                onPressed: onSubmit,
-              ),
-            ],
-          ),
+        _ContactCard(
+          contactController: contactController,
+          methodChips: methodChips,
+          onSubmit: onSubmit,
+          hint: hint,
+          keyboardType: keyboardType,
+          validator: validator,
+          onChanged: onChanged,
+          isLoading: isLoading,
         ),
         const SizedBox(height: 24),
         _ReturnLink(onPressed: onReturnToLogin),
       ],
+    );
+  }
+}
+
+/// La tarjeta de vidrio con el campo de contacto, los chips de método y el
+/// botón que envía el código.
+class _ContactCard extends StatelessWidget {
+  const _ContactCard({
+    required this.contactController,
+    required this.methodChips,
+    required this.onSubmit,
+    required this.hint,
+    required this.keyboardType,
+    required this.validator,
+    required this.onChanged,
+    required this.isLoading,
+  });
+
+  final TextEditingController contactController;
+  final Widget methodChips;
+  final VoidCallback onSubmit;
+  final String hint;
+  final TextInputType keyboardType;
+  final String? Function(String?)? validator;
+  final ValueChanged<String> onChanged;
+  final bool isLoading;
+
+  @override
+  Widget build(BuildContext context) {
+    return LoginGlassCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          RegisterField(
+            label: 'Identificador de acceso',
+            hint: hint,
+            icon: Icons.badge_outlined,
+            controller: contactController,
+            keyboardType: keyboardType,
+            maxLength: FieldLimits.email,
+            textInputAction: TextInputAction.next,
+            validator: validator,
+            onChanged: onChanged,
+          ),
+          const SizedBox(height: 16),
+          methodChips,
+          const SizedBox(height: 20),
+          LoginButton(
+            label: 'Enviar código',
+            icon: Icons.send_rounded,
+            iconFirst: true,
+            isLoading: isLoading,
+            onPressed: onSubmit,
+          ),
+        ],
+      ),
     );
   }
 }

@@ -44,8 +44,6 @@ class OtpVerifyContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const Center(child: OtpShieldBadge()),
-        const SizedBox(height: 24),
         _Heading(contactLabel: contactLabel),
         const SizedBox(height: 24),
         _Alert(
@@ -53,14 +51,11 @@ class OtpVerifyContent extends StatelessWidget {
           noticeMessage: noticeMessage,
           onDismiss: onDismissMessage,
         ),
-        Center(child: OtpBoxesInput(onChanged: onCodeChanged)),
-        const SizedBox(height: 20),
-        Center(
-          child: OtpResendSection(
-            secondsRemaining: secondsRemaining,
-            countdownLabel: countdownLabel,
-            onResend: canResend ? onResend : null,
-          ),
+        _CodeInputs(
+          onCodeChanged: onCodeChanged,
+          secondsRemaining: secondsRemaining,
+          countdownLabel: countdownLabel,
+          onResend: canResend ? onResend : null,
         ),
         const SizedBox(height: 24),
         LoginButton(
@@ -75,6 +70,40 @@ class OtpVerifyContent extends StatelessWidget {
   }
 }
 
+/// Las seis cajas del código y el bloque de reenvío con su contador.
+class _CodeInputs extends StatelessWidget {
+  const _CodeInputs({
+    required this.onCodeChanged,
+    required this.secondsRemaining,
+    required this.countdownLabel,
+    required this.onResend,
+  });
+
+  final ValueChanged<String> onCodeChanged;
+  final int secondsRemaining;
+  final String countdownLabel;
+  final VoidCallback? onResend;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Center(child: OtpBoxesInput(onChanged: onCodeChanged)),
+        const SizedBox(height: 20),
+        Center(
+          child: OtpResendSection(
+            secondsRemaining: secondsRemaining,
+            countdownLabel: countdownLabel,
+            onResend: onResend,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// El escudo con el título y la bajada que explica a qué contacto llegó el
+/// código.
 class _Heading extends StatelessWidget {
   const _Heading({required this.contactLabel});
 
@@ -86,6 +115,8 @@ class _Heading extends StatelessWidget {
     final colors = theme.colorScheme;
     return Column(
       children: [
+        const Center(child: OtpShieldBadge()),
+        const SizedBox(height: 24),
         Text(
           'Verifica tu cuenta',
           textAlign: TextAlign.center,

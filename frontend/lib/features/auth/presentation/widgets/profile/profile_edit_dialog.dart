@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/field_limits.dart';
-import '../../../../../core/validators.dart';
 import '../../../../../core/widgets/app_text_field.dart';
 import '../../../data/auth_models.dart';
-import '../document_type_labels.dart';
 import 'profile_document_editor.dart';
+import 'profile_field_type.dart';
 
-enum ProfileFieldType { fullName, email, phone, document }
+export 'profile_field_type.dart';
 
 class ProfileEditDialog extends StatefulWidget {
   const ProfileEditDialog({
@@ -45,45 +43,16 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
     super.dispose();
   }
 
-  String get _label => switch (widget.type) {
-    ProfileFieldType.fullName => 'Nombre completo',
-    ProfileFieldType.email => 'Correo electrónico',
-    ProfileFieldType.phone => 'Celular',
-    ProfileFieldType.document => 'Documento',
-  };
-
-  String? _validate(String? value) {
-    return switch (widget.type) {
-      ProfileFieldType.fullName => Validators.name(value),
-      ProfileFieldType.email => Validators.email(value),
-      ProfileFieldType.phone => Validators.phone(value),
-      ProfileFieldType.document =>
-        DocumentTypeLabels.usesDigits(_documentType)
-            ? Validators.documentDigits(value)
-            : Validators.documentPpt(value),
-    };
-  }
-
   void _save() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
     final value = _controller.text.trim();
-    final request = switch (widget.type) {
-      ProfileFieldType.fullName => UpdateProfileRequest(fullName: value),
-      ProfileFieldType.email => UpdateProfileRequest(email: value),
-      ProfileFieldType.phone => UpdateProfileRequest(phone: value),
-      // El tipo y el número se mandan siempre juntos.
-      ProfileFieldType.document => UpdateProfileRequest(
-        documentType: _documentType,
-        documentNumber: value,
-      ),
-    };
-    Navigator.of(context).pop(request);
+    Navigator.of(context).pop(widget.type.request(value, _documentType));
   }
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('Editar $_label'),
+      title: Text('Editar ${widget.type.label}'),
       content: Form(key: _formKey, child: _content()),
       actions: [
         TextButton(
@@ -96,29 +65,22 @@ class _ProfileEditDialogState extends State<ProfileEditDialog> {
   }
 
   Widget _content() {
-    if (widget.type == ProfileFieldType.document) {
+    final type = widget.type;
+    if (type == ProfileFieldType.document) {
       return ProfileDocumentEditor(
         type: _documentType,
-        onTypeChanged: (type) => setState(() => _documentType = type),
+        onTypeChanged: (value) => setState(() => _documentType = value),
         numberController: _controller,
-        validator: _validate,
+        validator: (value) => type.validate(value, _documentType),
       );
     }
     return AppTextField(
-      label: _label,
+      label: type.label,
       controller: _controller,
-      keyboardType: switch (widget.type) {
-        ProfileFieldType.fullName => TextInputType.name,
-        ProfileFieldType.email => TextInputType.emailAddress,
-        _ => TextInputType.phone,
-      },
-      maxLength: switch (widget.type) {
-        ProfileFieldType.fullName => FieldLimits.fullName,
-        ProfileFieldType.email => FieldLimits.email,
-        _ => null,
-      },
+      keyboardType: type.keyboardType,
+      maxLength: type.maxLength,
       textInputAction: TextInputAction.done,
-      validator: _validate,
+      validator: (value) => type.validate(value, _documentType),
     );
   }
 }
