@@ -511,6 +511,31 @@ sin issues y `flutter test` con **50 pruebas**.
 `dispatcher_cards.dart` ya **no** es pendiente: en la Fase 4 pasó a `Hub` con
 `hub.isActive` y navega a `/hubs/me`.
 
+### Estado real al cerrar la Fase 5 — 3 de octubre de 2026
+
+Rama `feature/cuentas-fase5`. **No se tocó `backend/`.** `flutter analyze`
+sin issues y `flutter test` con **50 pruebas**. Ningún widget nuevo pasa de
+60 líneas.
+
+- Feature `users` (`data/` con los 5 archivos del patrón + `presentation/`),
+  reusando `PublicUser` de auth. El local replica los mensajes y el 409 de
+  `UsersService`.
+- `/users` y `/users/new` con guard de admin en `router.dart`. La tarjeta
+  "Cuentas institucionales" del `admin_home` dejó de `showModulePreview`.
+- `hub_multi_select`: dropdown único para despachador, chips para operador.
+  La regla 1/≥1 vive en `hubSelectionError` de `user_form_values.dart`.
+- La fila oculta Suspender/Activar en la cuenta propia (Nest responde 403).
+- **Validación contra Nest (3 de oct):** crear despachador y operador con la
+  misma central → ambos `active`; entran **sin OTP**; repetir suspensión →
+  `409 "Esta cuenta ya está suspendida."`; reactivar → `active`; suspender la
+  propia → `403`; central suspendida en el alta → `400 "Solo puedes asignar
+  centrales activas."`; `role=requester` en query → `400`; `GET /users` nunca
+  trae solicitantes.
+- **Inventario de UI:** `frontend/tools/ui_inventory.ps1` genera
+  `frontend/docs/ui_inventory.md` (pantalla/widget por feature y tamaño de
+  cada clase, con las que pasan de 60 marcadas). Correrlo tras cada fase que
+  agregue o borre UI: es el mapa de lo que habrá que retocar al rediseñar.
+
 **Pendiente de la Fase 2 que sigue igual:** la línea "Homologación
 Aeronáutica" de `register_info_banner.dart` y el sello "Cifrado TLS 1.3 de
 Grado Clínico" de `login_security_footer.dart` son copy de maquetación. No

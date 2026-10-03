@@ -13,6 +13,8 @@ import '../features/home/presentation/role_home.dart';
 import '../features/hubs/presentation/hub_detail_screen.dart';
 import '../features/hubs/presentation/hub_form_screen.dart';
 import '../features/hubs/presentation/hubs_screen.dart';
+import '../features/users/presentation/user_form_screen.dart';
+import '../features/users/presentation/users_screen.dart';
 import 'placeholder_screen.dart';
 
 /// Rol que autoriza cada ruta protegida por rol. Cualquier otra cuenta que
@@ -21,6 +23,8 @@ const _roleRoutes = <String, UserRole>{
   '/hubs': UserRole.admin,
   '/hubs/new': UserRole.admin,
   '/hubs/me': UserRole.dispatcher,
+  '/users': UserRole.admin,
+  '/users/new': UserRole.admin,
 };
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -92,6 +96,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/hubs', builder: (_, _) => const HubsScreen()),
       GoRoute(path: '/hubs/new', builder: (_, _) => const HubFormScreen()),
       GoRoute(path: '/hubs/me', builder: (_, _) => const HubDetailScreen()),
+      GoRoute(path: '/users', builder: (_, _) => const UsersScreen()),
+      GoRoute(path: '/users/new', builder: (_, _) => const UserFormScreen()),
     ],
     errorBuilder: (_, _) => const PlaceholderScreen(
       title: 'No encontrada',
