@@ -89,7 +89,7 @@ strategy; interceptor de `Authorization`; `AdminSeedService`
 | 5 | Cuentas | Lista, alta, suspensión y reactivación de despachadores y operadores | ✅ hecha |
 | 6 | Inventario | CRUD del despachador, bloqueado por central suspendida | ✅ hecha |
 | 7 | Flota | Modelos, drones por central, estado y mantenimiento del operador | ✅ hecha |
-| 8 | Geovallas | CRUD de polígonos del operador, ruta real, tests | — |
+| 8 | Geovallas | CRUD de polígonos del operador, ruta real, tests | ✅ hecha |
 | 9 | Cierre | Recorrido manual de los 4 roles contra Nest, pulido y estado real | Todas |
 
 ### Fase 1 — Verificar `context/` ✅
@@ -145,7 +145,7 @@ rediseño visual que no se tocaron. Queda decidir si se parten en una fase corta
 o se aceptan, porque la Fase 3 reescribe `register_screen` y `profile_screen` de
 todos modos.
 
-### Fase 3 — Auth realineado
+### Fase 3 — Auth realineado ✅
 
 Arregla el registro, que hoy está roto contra la API real: sigue mandando
 `role` y el backend nuevo usa `forbidNonWhitelisted`.
@@ -173,7 +173,7 @@ con el OTP que sale en el log.
 
 ---
 
-### Fase 3 — Auth realineado ✅
+### Fase 3 — Auth realineado ✅ (cierre)
 
 Cerrada el 2 de octubre de 2026, en `feature/frontend-auth-realineado`, en
 cinco bloques. **No se tocó `backend/`.** El registro público ya no manda
@@ -273,7 +273,7 @@ dispositivos disponibles en la máquina, aparte de Windows). Se decide con
 lanzar `Platform._operatingSystem`. La recorrida manual de la UI en el
 navegador no se completó en esta sesión; la cubren las 50 pruebas de widget.
 
-### Fase 5 — Cuentas
+### Fase 5 — Cuentas ✅
 
 | Paso | Qué | Detalle |
 | --- | --- | --- |
@@ -288,7 +288,7 @@ navegador no se completó en esta sesión; la cubren las 50 pruebas de widget.
 Ambos entran **sin OTP**. Suspender la central y tratar de asignarla a uno nuevo
 → "Solo puedes asignar centrales activas."
 
-### Fase 5 — Cuentas ✅
+### Fase 5 — Cuentas ✅ (cierre)
 
 Cerrada el 3 de octubre de 2026, en `feature/cuentas-fase5`. **No se tocó
 `backend/`.** `flutter analyze` sin issues y `flutter test` con **50 pruebas**.
@@ -369,7 +369,7 @@ contrato real: una cuenta suspendida responde `401` (la filtra `JwtStrategy`,
 no `assertActiveOperator`) y un motivo en blanco en `POST .../maintenance` no
 da `400`. Sin bloqueos de backend.
 
-### Fase 8 — Geovallas
+### Fase 8 — Geovallas ✅
 
 Único módulo cuyo backend nunca cambió: se puede hacer en cualquier momento. No
 va por central, no usa `hubId`, y cualquier operador activo ve todas.
@@ -389,6 +389,14 @@ telemetría, que no existe.
 
 **Valida:** con una cuenta de operador, crear una geovalla de 3 vértices,
 editar el nombre y borrar.
+
+**Cierre (3 oct, `feature/geofences-fase8`):** alta, edición y borrado
+validados contra Nest con la app en `DataSource.remote`. Se corrigió un bug
+del backend en `GeofencesService.update` (TypeORM devuelve `[rows, rowCount]`
+en `UPDATE`, no las filas: el `PATCH /geofences/:id` respondía 500 aunque el
+`UPDATE` se aplicaba); fix de 2 líneas, contrato sin cambio. Sin bloqueos de
+backend. El paso b de la Fase 9 (`module_preview.dart`) quedó hecho: su único
+uso era la tarjeta "Geovallas".
 
 ### Fase 9 — Cierre
 

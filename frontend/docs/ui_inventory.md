@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-10-03 10:54
+Generado: 2026-10-03 12:29
 
 ## auth
 
@@ -156,6 +156,28 @@ Generado: 2026-10-03 10:54
 | `maintenance_form_dialog.dart` | _MaintenanceFormDialogState | 54 | ok |
 | `maintenance_form_dialog.dart` | _MaintenanceFields | 42 | ok |
 
+## geofences
+
+### Pantallas
+
+| Archivo | Lineas |
+| --- | --- |
+| `geofence_form_screen.dart` | 145 |
+| `geofences_screen.dart` | 109 |
+
+### Widgets
+
+| Archivo | Widget/clase | Lineas | Estado |
+| --- | --- | --- | --- |
+| `geofence_delete_confirm.dart` | (sin clases) | 33 | ok |
+| `geofence_fields.dart` | GeofenceFields | 29 | ok |
+| `geofence_form_content.dart` | GeofenceFormContent | 45 | ok |
+| `geofence_form_values.dart` | GeofenceFormValues | 59 | ok |
+| `geofence_tile.dart` | GeofenceTile | 52 | ok |
+| `geofence_vertex.dart` | GeofenceVertex | 22 | ok |
+| `polygon_point_fields.dart` | PolygonPointFields | 60 | ok |
+| `polygon_point_fields.dart` | _VertexRow | 52 | ok |
+
 ## home
 
 ### Widgets
@@ -166,7 +188,6 @@ Generado: 2026-10-03 10:54
 | `home_info_card.dart` | HomeInfoCard | 39 | ok |
 | `home_shell.dart` | HomeShell | 57 | ok |
 | `home_shell.dart` | _WelcomeHeader | 22 | ok |
-| `module_preview.dart` | (sin clases) | 7 | ok |
 
 ### Otros (presentation/ sin /widgets)
 
@@ -175,7 +196,7 @@ Generado: 2026-10-03 10:54
 | `admin_home.dart` | 36 |
 | `dispatcher_cards.dart` | 54 |
 | `dispatcher_home.dart` | 38 |
-| `fleet_operator_home.dart` | 37 |
+| `fleet_operator_home.dart` | 36 |
 | `requester_home.dart` | 23 |
 | `role_home.dart` | 70 |
 
@@ -260,8 +281,8 @@ Generado: 2026-10-03 10:54
 
 ## Resumen
 
-- Pantallas (15 archivos): 15
-- Archivos de widgets: 88 - clases de widget medidas: 147
+- Pantallas (17 archivos): 17
+- Archivos de widgets: 94 - clases de widget medidas: 154
 - Widgets sobre 60 lineas: 18
 
 Detalle de los que exceden 60 lineas (candidatos a partir):

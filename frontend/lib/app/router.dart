@@ -11,6 +11,8 @@ import '../features/auth/presentation/reset_password_screen.dart';
 import '../features/auth/presentation/verify_otp_screen.dart';
 import '../features/fleet/presentation/drone_form_screen.dart';
 import '../features/fleet/presentation/fleet_screen.dart';
+import '../features/geofences/presentation/geofence_form_screen.dart';
+import '../features/geofences/presentation/geofences_screen.dart';
 import '../features/home/presentation/role_home.dart';
 import '../features/hubs/presentation/hub_detail_screen.dart';
 import '../features/hubs/presentation/hub_form_screen.dart';
@@ -34,19 +36,22 @@ const _roleRoutes = <String, UserRole>{
   '/inventory/:id': UserRole.dispatcher,
   '/fleet': UserRole.fleetOperator,
   '/fleet/new': UserRole.fleetOperator,
+  '/geofences': UserRole.fleetOperator,
+  '/geofences/new': UserRole.fleetOperator,
+  '/geofences/:id': UserRole.fleetOperator,
 };
 
 /// Rol que exige una ruta con parámetro. Las rutas fijas se resuelven
-/// primero en el `redirect`; este camino cubre `/inventory/<id>` sin
-/// capturar otras rutas del mismo prefijo.
+/// primero en el `redirect`; este camino cubre `/inventory/<id>` y
+/// `/geofences/<id>` sin capturar otras rutas del mismo prefijo.
 UserRole? _parameterizedRole(String location) {
   final segments = location.split('/');
-  if (segments.length == 3 &&
-      segments[1] == 'inventory' &&
-      segments[2].isNotEmpty) {
-    return _roleRoutes['/inventory/:id'];
-  }
-  return null;
+  if (segments.length != 3 || segments[2].isEmpty) return null;
+  return switch (segments[1]) {
+    'inventory' => _roleRoutes['/inventory/:id'],
+    'geofences' => _roleRoutes['/geofences/:id'],
+    _ => null,
+  };
 }
 
 final routerProvider = Provider<GoRouter>((ref) {
@@ -133,6 +138,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: '/fleet', builder: (_, _) => const FleetScreen()),
       GoRoute(path: '/fleet/new', builder: (_, _) => const DroneFormScreen()),
+      GoRoute(path: '/geofences', builder: (_, _) => const GeofencesScreen()),
+      GoRoute(
+        path: '/geofences/new',
+        builder: (_, _) => const GeofenceFormScreen(),
+      ),
+      GoRoute(
+        path: '/geofences/:id',
+        builder: (_, state) =>
+            GeofenceFormScreen(geofenceId: state.pathParameters['id']),
+      ),
     ],
     errorBuilder: (_, _) => const PlaceholderScreen(
       title: 'No encontrada',

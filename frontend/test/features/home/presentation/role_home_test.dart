@@ -11,6 +11,10 @@ import 'package:frontend/features/fleet/data/fleet_models.dart';
 import 'package:frontend/features/fleet/data/fleet_providers.dart';
 import 'package:frontend/features/fleet/data/fleet_repository.dart';
 import 'package:frontend/features/fleet/presentation/fleet_screen.dart';
+import 'package:frontend/features/geofences/data/geofence_models.dart';
+import 'package:frontend/features/geofences/data/geofence_providers.dart';
+import 'package:frontend/features/geofences/data/geofence_repository.dart';
+import 'package:frontend/features/geofences/presentation/geofences_screen.dart';
 import 'package:frontend/features/home/presentation/role_home.dart';
 import 'package:frontend/features/hubs/data/hub_models.dart';
 import 'package:frontend/features/hubs/data/hub_providers.dart';
@@ -48,7 +52,8 @@ class FakeHubRepository implements HubRepository {
       hub == null ? const [] : [hub!];
 
   @override
-  Future<Hub> create(CreateHubRequest request) async => throw UnimplementedError();
+  Future<Hub> create(CreateHubRequest request) async =>
+      throw UnimplementedError();
 
   @override
   Future<Hub> setSuspension(String id, {required bool suspended}) async =>
@@ -64,6 +69,17 @@ Hub _hub({required HubStatus status}) => Hub(
   longitude: -73.253220,
   contactPhone: '3001234567',
   status: status,
+);
+
+Geofence _geofence() => Geofence(
+  id: 'e1111111-1111-4111-8111-111111111111',
+  name: 'Corredor Aéreo Ambulancia',
+  reason: 'Pasillo aéreo para traslados programados',
+  polygon: GeoJsonPolygon.fromVertices([
+    [-73.26, 10.46],
+    [-73.24, 10.46],
+    [-73.25, 10.48],
+  ]),
 );
 
 class FakeInventoryRepository implements InventoryRepository {
@@ -83,6 +99,28 @@ class FakeInventoryRepository implements InventoryRepository {
     String id,
     UpdateInventoryItemRequest request,
   ) async => throw UnimplementedError();
+
+  @override
+  Future<void> remove(String id) async => throw UnimplementedError();
+}
+
+/// Una sola geovalla, para que el listado tenga algo que mostrar sin
+/// depender del origen de datos real.
+class FakeGeofenceRepository implements GeofenceRepository {
+  const FakeGeofenceRepository(this.rows);
+
+  final List<Geofence> rows;
+
+  @override
+  Future<List<Geofence>> list() async => rows;
+
+  @override
+  Future<Geofence> create(CreateGeofenceRequest request) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Geofence> update(String id, UpdateGeofenceRequest request) async =>
+      throw UnimplementedError();
 
   @override
   Future<void> remove(String id) async => throw UnimplementedError();
@@ -236,7 +274,10 @@ void main() {
 
     await _pumpHome(tester, container);
 
-    expect(find.textContaining('No tienes una central asignada.'), findsOneWidget);
+    expect(
+      find.textContaining('No tienes una central asignada.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('la tarjeta de flota navega al listado de drones', (
@@ -295,6 +336,35 @@ void main() {
     expect(find.textContaining('Lote ACT-500-26 · 240 und.'), findsOneWidget);
     expect(find.textContaining('Cadena de frío'), findsOneWidget);
   });
+
+  testWidgets('la tarjeta de geovallas navega al listado', (tester) async {
+    final container = await _authenticatedContainer(
+      email: 'operador@airdrop.local',
+      password: 'Operador123',
+      hubRepository: FakeHubRepository(_hub(status: HubStatus.active)),
+      geofenceRepository: FakeGeofenceRepository([_geofence()]),
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(routerConfig: container.read(routerProvider)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(GeofencesScreen), findsNothing);
+
+    await tester.tap(find.text('Geovallas'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(GeofencesScreen), findsOneWidget);
+    expect(find.text('Corredor Aéreo Ambulancia'), findsOneWidget);
+    expect(
+      find.text('Pasillo aéreo para traslados programados'),
+      findsOneWidget,
+    );
+  });
 }
 
 Future<ProviderContainer> _authenticatedContainer({
@@ -303,6 +373,7 @@ Future<ProviderContainer> _authenticatedContainer({
   HubRepository? hubRepository,
   InventoryRepository? inventoryRepository,
   FleetRepository? fleetRepository,
+  GeofenceRepository? geofenceRepository,
 }) async {
   final tokenStore = FakeTokenStore();
   final authRepository = LocalAuthRepository(tokenStore: tokenStore);
@@ -316,6 +387,8 @@ Future<ProviderContainer> _authenticatedContainer({
         inventoryRepositoryProvider.overrideWithValue(inventoryRepository),
       if (fleetRepository != null)
         fleetRepositoryProvider.overrideWithValue(fleetRepository),
+      if (geofenceRepository != null)
+        geofenceRepositoryProvider.overrideWithValue(geofenceRepository),
     ],
   );
 

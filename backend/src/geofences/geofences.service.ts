@@ -75,7 +75,10 @@ export class GeofencesService {
     const polygon = dto.polygon
       ? assertGeoJsonPolygon(dto.polygon)
       : undefined;
-    const rows = (await this.geofences.query(
+    // En UPDATE, TypeORM devuelve `[rows, rowCount]` (PostgresQueryRunner)
+    // y no las filas: sin desestructurar, `rows[0]` es el arreglo completo
+    // y `toPublicGeofence` recibiría `polygon: undefined` → 500 en JSON.parse.
+    const [rows] = (await this.geofences.query(
       `UPDATE geofences
        SET
          name = COALESCE($2, name),
@@ -93,7 +96,7 @@ export class GeofencesService {
         dto.reason?.trim() ?? null,
         polygon ? JSON.stringify(polygon) : null,
       ],
-    )) as GeofenceRow[];
+    )) as [GeofenceRow[], number];
     return this.toPublicGeofence(rows[0]);
   }
 

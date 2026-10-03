@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../auth/data/auth_models.dart';
 import 'widgets/home_action_card.dart';
 import 'widgets/home_shell.dart';
-import 'widgets/module_preview.dart';
 
 class FleetOperatorHome extends StatelessWidget {
   const FleetOperatorHome({super.key, required this.user});
@@ -28,7 +27,7 @@ class FleetOperatorHome extends StatelessWidget {
             title: 'Geovallas',
             subtitle: 'Administra las zonas restringidas.',
             icon: Icons.polyline_outlined,
-            onTap: () => showModulePreview(context, 'Geovallas'),
+            onTap: () => context.go('/geofences'),
           ),
         ],
       ),
