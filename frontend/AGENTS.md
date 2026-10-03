@@ -565,3 +565,69 @@ de 60 líneas.
   el despachador de validación (`despacho.fase6@airdrop.local`).
 - **Registro de UI regenerado:** 13 pantallas, 80 archivos widget, 20 clases
   >60 — todas preexistentes (auth y `hub_detail_content` de la Fase 4).
+
+### Estado real al cerrar la Fase 7 — 3 de octubre de 2026
+
+Rama `feature/fase7`, desde `develop`. **No se tocó `backend/`.** `flutter
+analyze` sin issues y `flutter test` con **81 pruebas** (62 → 81). Ningún widget
+de `fleet` pasa de 60 líneas.
+
+- Feature `fleet` (`data/` con los 5 archivos del patrón + `presentation/`):
+  `DroneModel`, `Drone` y `DroneStatus` con sus 4 valores. El repositorio local
+  replica `FleetService` (orden de validaciones incluido) y acepta `drones` en
+  el constructor para poder testear un estado que la UI nunca produce sola: un
+  dron `in_mission`.
+- **Pantallas nuevas:** `FleetScreen` (`/fleet`) y `DroneFormScreen`
+  (`/fleet/new`), ambas con guard `fleetOperator` en `router.dart` (el
+  `POST /fleet/drones` es solo del operador). La tarjeta "Flota" del home dejó
+  `showModulePreview`; "Geovallas" sigue en preview hasta la Fase 8.
+- La central elegida vive en `fleetHubProvider` y la efectiva en
+  `effectiveHubProvider` (cae a la primera asignada): la auto-selección es del
+  provider, nunca del `build`. El modelo se resuelve con `fleetModelsProvider`
+  para mostrar `name` y guardar `id`.
+- `out_of_service` **solo** por "Registrar mantenimiento"
+  (`POST .../maintenance`, motivo y fecha obligatorios); `PATCH .../status`
+  ofrece `available | maintenance` con motivo y fecha opcionales. Un dron
+  `in_mission` no recibe acciones desde la UI.
+- **Validación contra Nest (3 oct), con la app corriendo en Chrome sobre
+  `DataSource.remote`:** alta `201`; identificador repetido →
+  `409 "Ya existe un dron con este identificador."`; modelo inexistente →
+  `404 "El modelo de dron no existe."`; central inexistente →
+  `404 "La central no existe."`; central sin asignar →
+  `403 "Esa central no está asignada a tu cuenta."`; central suspendida →
+  `403 "La central está suspendida."`; `hubId` sin uuid →
+  `400 "La central no es válida."`; identificador de 33 →
+  `400 "El identificador no puede superar 32 caracteres."`; fecha no ISO →
+  `400 "La fecha estimada debe ser AAAA-MM-DD."`; `PATCH` con `in_mission` →
+  `400 "El estado debe ser available, maintenance o out_of_service."`; dron en
+  misión (marcado en datos) → `409 "No puedes cambiar el estado de un dron en
+  misión."` en `PATCH` y en `POST .../maintenance`. Recorrido de UI: hoja de
+  estado → mantenimiento → volver a disponible (borra motivo y fecha), alta de
+  `DRON-03` con modelo y especificaciones → vuelve a la flota, validaciones de
+  cliente (`Escribe el identificador.`, `Selecciona un modelo de dron.`) y el
+  `403` de la central suspendida mostrado en el snack. `GET /fleet/models` como
+  admin → `200`; `GET /fleet/drones` como admin → `403` por no tener la central
+  asignada.
+- **Dos divergencias del repositorio local corregidas contra el contrato
+  real:** (1) una cuenta suspendida produce `401` porque la filtra
+  `JwtStrategy.validate` antes que `assertActiveOperator`, así que el local
+  lanza `LocalAuthRules.expiredSession()` y no un `403`; (2) un motivo en
+  blanco en `POST .../maintenance` **no** da `400` (Nest solo exige `@IsString`
+  y guarda `reason.trim()`), y el local además validaba lo que los DTO validan:
+  `MaxLength(160)` y `AAAA-MM-DD`.
+- **Tests nuevos:** `test/features/fleet/data/local_fleet_repository_test.dart`
+  (11), `test/features/fleet/data/fleet_models_test.dart` (6) y el recorrido de
+  la tarjeta "Flota" en `role_home_test.dart`. También se pasó el `tokenStore`
+  a `LocalFleetRepository` desde `fleet_providers.dart`: sin él la maqueta local
+  no podía consultar la flota.
+- **Registro de UI regenerado:** 15 pantallas, 88 archivos widget, 18 clases
+  >60 — todas preexistentes (auth); ninguna de `fleet`.
+- **Datos de validación que quedaron en la base:** central `Central Fase 7`
+  (activa), `operador.fase7@airdrop.local / Operador123` y los drones `DRON-01`
+  (disponible), `DRON-02` (mantenimiento, hasta 2026-10-15) y `DRON-03`
+  (disponible). No hay `DELETE /fleet/drones`, así que se limpiaron a mano los
+  drones de prueba sobrantes.
+- **Nota conocida:** la pantalla no ve en caliente una suspensión hecha por el
+  admin (`assignedHubsProvider` está en caché), por eso el banner "La central
+  está suspendida." solo aparece con datos frescos; igual el envío responde con
+  el `403` de Nest en el snack.
