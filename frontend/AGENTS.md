@@ -631,3 +631,43 @@ de `fleet` pasa de 60 líneas.
   admin (`assignedHubsProvider` está en caché), por eso el banner "La central
   está suspendida." solo aparece con datos frescos; igual el envío responde con
   el `403` de Nest en el snack.
+
+### Estado real al cerrar la Fase 8 — 3 de octubre de 2026
+
+Rama `feature/geofences-fase8`. `flutter analyze` sin issues y `flutter test`
+con **119 pruebas** (108 → 119). Ningún widget de `geofences` pasa de 60
+líneas. **Sí se tocó `backend/`** (un fix de 2 líneas, con visto bueno del
+usuario; ver abajo).
+
+- Feature `geofences` (`data/` + `presentation/`): `GeoJsonPolygon` guarda el
+  anillo exterior en `coordinates[0]` y expone `hasSameRing()`; repositorio
+  remoto con los 4 verbos (`remove` no parsea el 204) y local con las
+  validaciones de Nest (anillo ≥4 cerrado, primer y último punto iguales,
+  `MaxLength` 80/160, `diff` vacío → "No hay cambios para guardar.").
+- **Pantallas:** `GeofencesScreen` (`/geofences`), alta (`/geofences/new`) y
+  edición (`/geofences/:id`), con guard `fleetOperator`. El cliente cierra el
+  anillo al guardar (si cargó 3 vértices distintos, copia el primero al final)
+  y al editar muestra los puntos sin repetir el cierre. La edición se prefiila
+  desde `geofencesProvider` porque no existe `GET /geofences/:id`.
+- La tarjeta "Geovallas" del home dejó `showModulePreview` y **se borró
+  `module_preview.dart`** (era su último uso; paso b de la Fase 9 hecho).
+- **Validación contra Nest (3 oct), con la app sobre `DataSource.remote`:**
+  alta de 3 vértices → `201` y fila en la lista; editar solo el nombre → `200`
+  con "Geovalla actualizada." (motivo y polígono intactos vía `GET`); borrar
+  con confirmación → `204` con "Geovalla eliminada."; validación de cliente
+  antes de enviar ("Escribe la longitud.") y mensaje de Nest mostrado en la UI
+  ("Correo o celular y contraseña no coinciden." en el login).
+- **Bug del backend encontrado en la validación y corregido:**
+  `GeofencesService.update` leía `rows[0]` del `query()` con `UPDATE`, pero
+  TypeORM (`PostgresQueryRunner`) devuelve `[rows, rowCount]` para
+  `UPDATE/DELETE`; `row.polygon` llegaba a `JSON.parse(undefined)` y **todo
+  `PATCH /geofences/:id` respondía 500** aunque el `UPDATE` sí se aplicaba.
+  Fix desestructurando `const [rows] = ... as [GeofenceRow[], number]`; solo
+  ese módulo usaba `UPDATE...RETURNING`, el contrato no cambió y `npm test`
+  del backend quedó en verde (34 pruebas).
+- **Registro de UI regenerado:** 17 pantallas, 94 archivos widget, 18 clases
+  >60 — todas preexistentes (auth); ninguna de `geofences`.
+- **Datos de validación que quedaron en la base:** ninguna geovalla (se creó,
+  editó y borró en el recorrido). Se usó la cuenta
+  `operador.fase7@airdrop.local / Operador123`: la de fixtures locales
+  `operador@airdrop.local` no existe en la BD remota y Nest respondió `401`.
