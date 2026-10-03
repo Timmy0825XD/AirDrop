@@ -165,7 +165,8 @@ String? _modelName(List<DroneModel>? models, String droneModelId) {
 }
 
 /// Hoja de acciones. Cada botón dispara un endpoint distinto, nunca los
-/// dos (`PLAN.md`, paso e).
+/// dos: "Registrar mantenimiento" usa POST .../maintenance; los cambios de
+/// estado usan PATCH .../status.
 void _openDroneActions(BuildContext context, WidgetRef ref, Drone drone) {
   showDroneStatusSheet(
     context,
