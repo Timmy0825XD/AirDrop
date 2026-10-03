@@ -7,6 +7,10 @@ import 'package:frontend/core/auth/token_store.dart';
 import 'package:frontend/features/auth/data/auth_models.dart';
 import 'package:frontend/features/auth/data/local/local_auth_repository.dart';
 import 'package:frontend/features/auth/presentation/auth_controller.dart';
+import 'package:frontend/features/fleet/data/fleet_models.dart';
+import 'package:frontend/features/fleet/data/fleet_providers.dart';
+import 'package:frontend/features/fleet/data/fleet_repository.dart';
+import 'package:frontend/features/fleet/presentation/fleet_screen.dart';
 import 'package:frontend/features/home/presentation/role_home.dart';
 import 'package:frontend/features/hubs/data/hub_models.dart';
 import 'package:frontend/features/hubs/data/hub_providers.dart';
@@ -82,6 +86,51 @@ class FakeInventoryRepository implements InventoryRepository {
 
   @override
   Future<void> remove(String id) async => throw UnimplementedError();
+}
+
+/// La flota de la maqueta: un solo dron disponible, para que la pantalla
+/// de flota tenga algo que listar sin depender del origen de datos real.
+class FakeFleetRepository implements FleetRepository {
+  const FakeFleetRepository();
+
+  @override
+  Future<List<DroneModel>> listModels() async => const [
+    DroneModel(
+      id: 'm1',
+      code: 'wingcopter_198',
+      name: 'Wingcopter 198',
+      maxSpeedKmh: 150,
+      maxPayloadKg: 6,
+      maxRangeKm: 110,
+    ),
+  ];
+
+  @override
+  Future<List<Drone>> listDrones(String hubId) async => [
+    const Drone(
+      id: 'd1',
+      identifier: 'DRON-01',
+      droneModelId: 'm1',
+      hubId: 'hub-1',
+      status: DroneStatus.available,
+    ),
+  ];
+
+  @override
+  Future<Drone> create(CreateDroneRequest request) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Drone> updateStatus(
+    String id,
+    UpdateDroneStatusRequest request,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Drone> registerMaintenance(
+    String id,
+    RegisterMaintenanceRequest request,
+  ) async => throw UnimplementedError();
 }
 
 const InventoryItem _inventoryItem = InventoryItem(
@@ -190,6 +239,36 @@ void main() {
     expect(find.textContaining('No tienes una central asignada.'), findsOneWidget);
   });
 
+  testWidgets('la tarjeta de flota navega al listado de drones', (
+    tester,
+  ) async {
+    final container = await _authenticatedContainer(
+      email: 'operador@airdrop.local',
+      password: 'Operador123',
+      hubRepository: FakeHubRepository(_hub(status: HubStatus.active)),
+      fleetRepository: FakeFleetRepository(),
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(routerConfig: container.read(routerProvider)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(FleetScreen), findsNothing);
+
+    await tester.tap(find.text('Flota'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FleetScreen), findsOneWidget);
+    expect(find.text('DRON-01'), findsOneWidget);
+    expect(find.text('Central de prueba'), findsOneWidget);
+    expect(find.text('Wingcopter 198'), findsWidgets);
+    expect(find.text('Disponible'), findsOneWidget);
+  });
+
   testWidgets('la tarjeta de inventario navega al listado', (tester) async {
     final container = await _authenticatedContainer(
       email: 'despacho@airdrop.local',
@@ -223,6 +302,7 @@ Future<ProviderContainer> _authenticatedContainer({
   required String password,
   HubRepository? hubRepository,
   InventoryRepository? inventoryRepository,
+  FleetRepository? fleetRepository,
 }) async {
   final tokenStore = FakeTokenStore();
   final authRepository = LocalAuthRepository(tokenStore: tokenStore);
@@ -234,6 +314,8 @@ Future<ProviderContainer> _authenticatedContainer({
         hubRepositoryProvider.overrideWithValue(hubRepository),
       if (inventoryRepository != null)
         inventoryRepositoryProvider.overrideWithValue(inventoryRepository),
+      if (fleetRepository != null)
+        fleetRepositoryProvider.overrideWithValue(fleetRepository),
     ],
   );
 
