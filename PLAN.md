@@ -85,7 +85,7 @@ strategy; interceptor de `Authorization`; `AdminSeedService`
 | 1 | Verificar `context/` | Confirmar que `context/` y el backend coinciden | ✅ hecha, sin cambios |
 | 2 | Núcleo y deuda | `getJson` con query, `FieldLimits` y `Validators` nuevos, splitting de archivos >60 líneas | ✅ hecha |
 | 3 | Auth realineado | Documento, `hubIds`, perfil, registro de solicitante | ✅ hecha |
-| 4 | Centrales | Lista, alta y suspensión del admin; `/hubs/me` del despachador | — |
+| 4 | Centrales | Lista, alta y suspensión del admin; `/hubs/me` del despachador | ✅ hecha |
 | 5 | Cuentas | Lista, alta, suspensión y reactivación de despachadores y operadores | Fase 4 |
 | 6 | Inventario | CRUD del despachador, bloqueado por central suspendida | Fase 4 |
 | 7 | Flota | Modelos, drones por central, estado y mantenimiento del operador | Fase 4 |
@@ -209,12 +209,15 @@ validación y en `AuthContact.parse`, y las reglas de documento del
 repositorio local.
 
 **Pendiente de esta fase:** validar contra Nest con el backend arriba.
-`flutter run` no se probó en esta sesión.
+`flutter run` no se probó en esta sesión. **Quedó cerrado** en la sesión de la
+Fase 4: los 9 endpoints de `/auth` respondieron como espera el contrato.
 
-### Fase 4 — Centrales
+### Fase 4 — Centrales ✅
 
-El admin crea y suspende; el despachador consulta la suya. Es la base de las
-Fases 5, 6 y 7 porque las tres Leap de la central asignada.
+Cerrada el 2 de octubre de 2026, en `feature/redisign-auth`, en tres bloques.
+**No se tocó `backend/`.** El admin crea y suspende; el despachador consulta
+la suya. Es la base de las Fases 5, 6 y 7 porque las tres leen la central
+asignada.
 
 | Paso | Qué | Detalle |
 | --- | --- | --- |
@@ -229,9 +232,46 @@ Fases 5, 6 y 7 porque las tres Leap de la central asignada.
 | i | Rutas | `/hubs`, `/hubs/new` (admin), `/hubs/me` (despachador). Otro rol a `/unauthorized` |
 | j | Homes | `admin_home` navega a `/hubs` y `/users`; `dispatcher_cards` navega a `/hubs/me` |
 
-**Valida:** como admin, crear una central en Valledupar (10.46 / -73.25) →
-queda **Activa**. Suspenderla → **Suspendida**. Como despachador, el home la
-muestra con su estado.
+| Bloque | Qué quedó |
+| --- | --- |
+| Modelo | `Hub` completo con `HubType` de 5 valores, `HubStatus` `active`/`suspended`, lat/lng `double` y `CreateHubRequest`; fuera `HubSummary`, `rejectionReason` y `isApproved` |
+| Datos | `HubRepository` con los cuatro métodos; el remoto solo convierte 404 en `null` en `mine()`; el local replica el 409 de Nest ("Esta central ya está suspendida.") |
+| Providers | `hubsProvider` con filtro `hubFilterProvider` (`Notifier<HubStatus?>`, porque `StateProvider` quedó en `legacy` de Riverpod 3), `myHubProvider` a `Hub?`, y un `AsyncNotifier` por mutación que invalida listado **y** `myHubProvider` |
+| Pantallas | `hub_form_screen` (alta con `HubFormValues`, que agrupa los seis controladores), `hubs_screen` (filtro + confirmación antes de suspender) y `hub_detail_screen` (solo lectura) |
+| Rutas | `/hubs`, `/hubs/new` (admin) y `/hubs/me` (despachador) con guardia por rol en el `redirect` → otro rol cae en `/unauthorized` |
+| Copy | `hub_labels.dart` compartido por lista, formulario y detalle; `app_snack.dart` en `core/widgets` para el resultado de las mutaciones |
+
+**Fuera de alcance:** el paso j dijo `admin_home` a `/users`, pero esa ruta
+es de la Fase 5, así que "Cuentas institucionales" sigue en
+`showModulePreview` hasta que exista `users_screen`.
+
+**Verificación:** `flutter analyze` sin issues y `flutter test` con **50
+pruebas**. Ningún widget nuevo pasa de 60 líneas (`home_shell.dart`, en 63,
+es de la Fase 1 y queda para la Fase 9).
+
+**Validación contra Nest con el backend arriba (cerrada el 2 de octubre):**
+
+| Qué se probó | Resultado |
+| --- | --- |
+| `POST /hubs` central en Valledupar (10.46 / -73.25) | Nace `active`, con tipo, dirección, teléfono y correo |
+| `PATCH /hubs/:id/suspension` con `suspended: true` | → `suspended` |
+| Repetir la misma suspensión | → `409 "Esta central ya está activa."` |
+| `PATCH` con `suspended: false` | Vuelve a `active` |
+| `GET /hubs?status=` (sin filtro, `active`, `suspended`) | Conteos correctos, incluye la central nueva |
+| `POST /hubs` con `latitude: 999` | → `400 "La latitud no es válida."` |
+| `GET /hubs/me` como admin | → `403` (la ruta del front tiene guard de rol) |
+| `GET /hubs/me` como despachador con central | → `200` con nombre y estado; al suspender, responde `suspended` |
+| Credenciales inválidas | → `401 "Correo o celular y contraseña no coinciden."` |
+
+**Bug encontrado y corregido en esta validación:** `defaultBaseUrl` usaba
+`Platform.isAndroid`, que en compilación web lanza `Unsupported operation:
+Platform._operatingSystem` y la app no arrancaba en Chrome/Edge (los únicos
+dispositivos disponibles en la máquina, aparte de Windows). Se decide con
+`kIsWeb` antes de tocar `Platform`.
+
+`flutter run` quedó probado en Chrome: la app compila, arranca y no vuelve a
+lanzar `Platform._operatingSystem`. La recorrida manual de la UI en el
+navegador no se completó en esta sesión; la cubren las 50 pruebas de widget.
 
 ### Fase 5 — Cuentas
 

@@ -10,7 +10,18 @@ import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/reset_password_screen.dart';
 import '../features/auth/presentation/verify_otp_screen.dart';
 import '../features/home/presentation/role_home.dart';
+import '../features/hubs/presentation/hub_detail_screen.dart';
+import '../features/hubs/presentation/hub_form_screen.dart';
+import '../features/hubs/presentation/hubs_screen.dart';
 import 'placeholder_screen.dart';
+
+/// Rol que autoriza cada ruta protegida por rol. Cualquier otra cuenta que
+/// entre recibe `/unauthorized`. `null` = solo hace falta sesión.
+const _roleRoutes = <String, UserRole>{
+  '/hubs': UserRole.admin,
+  '/hubs/new': UserRole.admin,
+  '/hubs/me': UserRole.dispatcher,
+};
 
 final routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
@@ -35,6 +46,13 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
       if (isAuthenticated && publicLocations.contains(location)) {
         return '/home';
+      }
+
+      // Guardia por rol: fuera del rol autorizado, a /unauthorized.
+      final requiredRole = _roleRoutes[location];
+      if (requiredRole != null) {
+        final user = auth.asData?.value.user;
+        if (user == null || user.role != requiredRole) return '/unauthorized';
       }
       return null;
     },
@@ -71,6 +89,9 @@ final routerProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(path: '/home', builder: (_, _) => const RoleHomeScreen()),
+      GoRoute(path: '/hubs', builder: (_, _) => const HubsScreen()),
+      GoRoute(path: '/hubs/new', builder: (_, _) => const HubFormScreen()),
+      GoRoute(path: '/hubs/me', builder: (_, _) => const HubDetailScreen()),
     ],
     errorBuilder: (_, _) => const PlaceholderScreen(
       title: 'No encontrada',

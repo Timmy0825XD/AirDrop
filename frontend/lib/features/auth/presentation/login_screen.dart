@@ -7,11 +7,12 @@ import '../../../core/validators.dart';
 import '../data/auth_models.dart';
 import 'auth_controller.dart';
 import 'widgets/auth_page.dart';
+import 'widgets/login/login_backdrop.dart';
 import 'widgets/login/login_brand_header.dart';
 import 'widgets/login/login_credentials.dart';
 import 'widgets/login/login_form_alert.dart';
 import 'widgets/login/login_glass_card.dart';
-import 'widgets/login/login_security_footer.dart';
+import 'widgets/login/login_palette.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -81,39 +82,67 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     ref.watch(authControllerProvider);
 
     return AuthPage(
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const LoginBrandHeader(),
-            AuthFormAlert(
-              message: _errorMessage,
-              onDismiss: () => setState(() => _errorMessage = null),
-              topPadding: 16,
+      background: const LoginBackdrop(),
+      padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+      child: Form(key: _formKey, child: _content()),
+    );
+  }
+
+  Widget _content() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const LoginBrandHeader(),
+        const SizedBox(height: 32),
+        LoginGlassCard(child: _cardBody()),
+        const SizedBox(height: 16),
+        const _RegisterLinkRow(),
+      ],
+    );
+  }
+
+  Widget _cardBody() {
+    final theme = Theme.of(context);
+    final p = LoginPalette.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Semantics(
+          header: true,
+          child: Text(
+            'Iniciar sesión',
+            style: theme.textTheme.headlineMedium?.copyWith(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(height: 20),
-            LoginGlassCard(
-              child: LoginCredentials(
-                contactController: _contact,
-                passwordController: _password,
-                isLoading: _isLoading,
-                onSubmit: _submit,
-                onForgotPassword: () => context.go('/forgot-password'),
-                validators: LoginFieldValidators(
-                  contact: _validateContact,
-                  password: Validators.password,
-                  onChanged: _clearError,
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-            const _RegisterLinkRow(),
-            const SizedBox(height: 28),
-            const LoginSecurityFooter(),
-          ],
+          ),
         ),
-      ),
+        const SizedBox(height: 4),
+        Text(
+          'Entra con tu correo o celular.',
+          style: theme.textTheme.bodyMedium?.copyWith(color: p.muted, height: 1.5),
+        ),
+        const SizedBox(height: 16),
+        AuthFormAlert(
+          message: _errorMessage,
+          onDismiss: () => setState(() => _errorMessage = null),
+          bottomPadding: 16,
+        ),
+        LoginCredentials(
+          contactController: _contact,
+          passwordController: _password,
+          isLoading: _isLoading,
+          onSubmit: _submit,
+          onForgotPassword: () => context.go('/forgot-password'),
+          validators: LoginFieldValidators(
+            contact: _validateContact,
+            password: Validators.password,
+            onChanged: _clearError,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -124,21 +153,28 @@ class _RegisterLinkRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    final p = LoginPalette.of(context);
+
+    // Wrap y no Row: en pantallas angostas la línea se parte en dos en vez
+    // de desbordar 3 px por el borde.
+    return Wrap(
+      alignment: WrapAlignment.center,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Text(
           '¿No tienes cuenta?',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-          ),
+          style: theme.textTheme.bodyMedium?.copyWith(color: p.muted),
         ),
         TextButton(
           onPressed: () => context.go('/register'),
+          style: TextButton.styleFrom(
+            foregroundColor: p.accent,
+            minimumSize: const Size(44, 44),
+          ),
           child: Text(
             'Regístrate',
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: theme.colorScheme.primary,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: p.accent,
               fontWeight: FontWeight.w700,
             ),
           ),

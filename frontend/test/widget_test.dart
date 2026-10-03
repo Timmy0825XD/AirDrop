@@ -12,7 +12,8 @@ void main() {
     await tester.pump();
 
     expect(find.text('AirDrop'), findsOneWidget);
-    expect(find.text('ACCESO DE PERSONAL'), findsOneWidget);
+    expect(find.text('Correo o celular'), findsOneWidget);
+    expect(find.text('¿No tienes cuenta?'), findsOneWidget);
     expect(find.widgetWithText(ElevatedButton, 'Iniciar sesión'), findsOneWidget);
   });
 }

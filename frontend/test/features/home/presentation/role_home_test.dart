@@ -29,11 +29,33 @@ class FakeTokenStore extends TokenStore {
 class FakeHubRepository implements HubRepository {
   FakeHubRepository(this.hub);
 
-  final HubSummary? hub;
+  final Hub? hub;
 
   @override
-  Future<HubSummary?> mine() async => hub;
+  Future<Hub?> mine() async => hub;
+
+  @override
+  Future<List<Hub>> list({HubStatus? status}) async =>
+      hub == null ? const [] : [hub!];
+
+  @override
+  Future<Hub> create(CreateHubRequest request) async => throw UnimplementedError();
+
+  @override
+  Future<Hub> setSuspension(String id, {required bool suspended}) async =>
+      throw UnimplementedError();
 }
+
+Hub _hub({required HubStatus status}) => Hub(
+  id: 'hub-1',
+  name: 'Central de prueba',
+  type: HubType.hospital,
+  address: 'Calle 15 # 12-45, Valledupar',
+  latitude: 10.463140,
+  longitude: -73.253220,
+  contactPhone: '3001234567',
+  status: status,
+);
 
 void main() {
   testWidgets('muestra el home del solicitante sin inventar pedidos', (
@@ -78,17 +100,11 @@ void main() {
     expect(find.text('Cuentas institucionales'), findsOneWidget);
   });
 
-  testWidgets('deshabilita inventario con central pendiente', (tester) async {
+  testWidgets('deshabilita inventario con central suspendida', (tester) async {
     final container = await _authenticatedContainer(
       email: 'despacho@airdrop.local',
       password: 'Despacho123',
-      hubRepository: FakeHubRepository(
-        HubSummary(
-          id: 'hub-1',
-          name: 'Central de prueba',
-          status: HubStatus.pendingApproval,
-        ),
-      ),
+      hubRepository: FakeHubRepository(_hub(status: HubStatus.suspended)),
     );
     addTearDown(container.dispose);
 
@@ -99,20 +115,15 @@ void main() {
       matching: find.byType(InkWell),
     );
     expect(tester.widget<InkWell>(inventoryCard).onTap, isNull);
-    expect(find.textContaining('Pendiente de aprobación'), findsOneWidget);
+    expect(find.textContaining('La central está suspendida.'), findsOneWidget);
+    expect(find.textContaining('Suspendida'), findsOneWidget);
   });
 
-  testWidgets('habilita inventario con central aprobada', (tester) async {
+  testWidgets('habilita inventario con central activa', (tester) async {
     final container = await _authenticatedContainer(
       email: 'despacho@airdrop.local',
       password: 'Despacho123',
-      hubRepository: FakeHubRepository(
-        const HubSummary(
-          id: 'hub-1',
-          name: 'Central de prueba',
-          status: HubStatus.approved,
-        ),
-      ),
+      hubRepository: FakeHubRepository(_hub(status: HubStatus.active)),
     );
     addTearDown(container.dispose);
 
@@ -123,7 +134,22 @@ void main() {
       matching: find.byType(InkWell),
     );
     expect(tester.widget<InkWell>(inventoryCard).onTap, isNotNull);
-    expect(find.textContaining('Aprobada'), findsOneWidget);
+    expect(find.textContaining('Activa'), findsOneWidget);
+  });
+
+  testWidgets('sin central asignada muestra el mensaje de Nest', (
+    tester,
+  ) async {
+    final container = await _authenticatedContainer(
+      email: 'despacho@airdrop.local',
+      password: 'Despacho123',
+      hubRepository: FakeHubRepository(null),
+    );
+    addTearDown(container.dispose);
+
+    await _pumpHome(tester, container);
+
+    expect(find.textContaining('No tienes una central asignada.'), findsOneWidget);
   });
 }
 
