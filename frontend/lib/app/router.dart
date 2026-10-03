@@ -9,6 +9,8 @@ import '../features/auth/presentation/profile_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/reset_password_screen.dart';
 import '../features/auth/presentation/verify_otp_screen.dart';
+import '../features/fleet/presentation/drone_form_screen.dart';
+import '../features/fleet/presentation/fleet_screen.dart';
 import '../features/home/presentation/role_home.dart';
 import '../features/hubs/presentation/hub_detail_screen.dart';
 import '../features/hubs/presentation/hub_form_screen.dart';
@@ -30,6 +32,8 @@ const _roleRoutes = <String, UserRole>{
   '/inventory': UserRole.dispatcher,
   '/inventory/new': UserRole.dispatcher,
   '/inventory/:id': UserRole.dispatcher,
+  '/fleet': UserRole.fleetOperator,
+  '/fleet/new': UserRole.fleetOperator,
 };
 
 /// Rol que exige una ruta con parámetro. Las rutas fijas se resuelven
@@ -127,6 +131,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) =>
             InventoryFormScreen(itemId: state.pathParameters['id']),
       ),
+      GoRoute(path: '/fleet', builder: (_, _) => const FleetScreen()),
+      GoRoute(path: '/fleet/new', builder: (_, _) => const DroneFormScreen()),
     ],
     errorBuilder: (_, _) => const PlaceholderScreen(
       title: 'No encontrada',

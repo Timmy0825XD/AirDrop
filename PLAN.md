@@ -88,7 +88,7 @@ strategy; interceptor de `Authorization`; `AdminSeedService`
 | 4 | Centrales | Lista, alta y suspensión del admin; `/hubs/me` del despachador | ✅ hecha |
 | 5 | Cuentas | Lista, alta, suspensión y reactivación de despachadores y operadores | ✅ hecha |
 | 6 | Inventario | CRUD del despachador, bloqueado por central suspendida | ✅ hecha |
-| 7 | Flota | Modelos, drones por central, estado y mantenimiento del operador | Fase 4 |
+| 7 | Flota | Modelos, drones por central, estado y mantenimiento del operador | ✅ hecha |
 | 8 | Geovallas | CRUD de polígonos del operador, ruta real, tests | — |
 | 9 | Cierre | Recorrido manual de los 4 roles contra Nest, pulido y estado real | Todas |
 
@@ -344,7 +344,7 @@ no existe todavía, así que no se bloquea el alta del ítem.
 rutas, gate e invalidación), **62 pruebas** y validación contra Nest en verde
 (CRUD `201/200/204`, mensajes exactos de 400/403/404). Sin bloqueos de backend.
 
-### Fase 7 — Flota
+### Fase 7 — Flota ✅
 
 | Paso | Qué | Detalle |
 | --- | --- | --- |
@@ -357,6 +357,17 @@ rutas, gate e invalidación), **62 pruebas** y validación contra Nest en verde
 
 **Valida:** crear `DRON-01` con Wingcopter 198, pasarlo a mantenimiento,
 registrar mantenimiento → queda Fuera de servicio con motivo y fecha.
+
+**Cerrada (3 de octubre):** feature `fleet` completa (datos, `fleet_screen`,
+`drone_form_screen`, hoja de estado, rutas `/fleet` y `/fleet/new`, tarjeta del
+home), **81 pruebas** (62 → 81) y validación contra Nest con la app corriendo en
+Chrome y `DataSource.remote`: alta `201`, `PATCH .../status` `200`,
+`POST .../maintenance` `201` → `out_of_service`, `available` borra motivo y
+fecha, mensajes exactos de `400/403/404/409` (incluido el `409` de un dron en
+misión). Dos divergencias del repositorio local se corrigieron contra el
+contrato real: una cuenta suspendida responde `401` (la filtra `JwtStrategy`,
+no `assertActiveOperator`) y un motivo en blanco en `POST .../maintenance` no
+da `400`. Sin bloqueos de backend.
 
 ### Fase 8 — Geovallas
 
