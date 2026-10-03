@@ -86,7 +86,7 @@ strategy; interceptor de `Authorization`; `AdminSeedService`
 | 2 | Núcleo y deuda | `getJson` con query, `FieldLimits` y `Validators` nuevos, splitting de archivos >60 líneas | ✅ hecha |
 | 3 | Auth realineado | Documento, `hubIds`, perfil, registro de solicitante | ✅ hecha |
 | 4 | Centrales | Lista, alta y suspensión del admin; `/hubs/me` del despachador | ✅ hecha |
-| 5 | Cuentas | Lista, alta, suspensión y reactivación de despachadores y operadores | Fase 4 |
+| 5 | Cuentas | Lista, alta, suspensión y reactivación de despachadores y operadores | ✅ hecha |
 | 6 | Inventario | CRUD del despachador, bloqueado por central suspendida | Fase 4 |
 | 7 | Flota | Modelos, drones por central, estado y mantenimiento del operador | Fase 4 |
 | 8 | Geovallas | CRUD de polígonos del operador, ruta real, tests | — |
@@ -287,6 +287,42 @@ navegador no se completó en esta sesión; la cubren las 50 pruebas de widget.
 **Valida:** crear un despachador con una central y un operador con esa misma.
 Ambos entran **sin OTP**. Suspender la central y tratar de asignarla a uno nuevo
 → "Solo puedes asignar centrales activas."
+
+### Fase 5 — Cuentas ✅
+
+Cerrada el 3 de octubre de 2026, en `feature/cuentas-fase5`. **No se tocó
+`backend/`.** `flutter analyze` sin issues y `flutter test` con **50 pruebas**.
+Ningún widget nuevo pasa de 60 líneas (medido clase por clase).
+
+Feature `users` completa (modelos, contrato, remoto, local y providers),
+`users_screen` con filtros de rol y estado, `user_form_screen` con
+`hub_multi_select` (dropdown único para despachador, chips para operador),
+rutas `/users` y `/users/new` con guard de admin, y la tarjeta del
+`admin_home` dejó de usar `showModulePreview`. La fila oculta el botón en la
+cuenta propia (Nest da 403).
+
+**Validación contra Nest con el backend arriba (3 de octubre):**
+
+| Qué se probó | Resultado |
+| --- | --- |
+| `POST /users` despachador con 1 central y operador con la misma | ambos `active` con el mismo `hubIds` |
+| Login de los dos nuevos | entran **sin OTP** |
+| `PATCH /users/:id/suspension` + repetirlo | `suspended` → `409 "Esta cuenta ya está suspendida."` |
+| `PATCH` con `suspended: false` | vuelve a `active` |
+| Suspender la cuenta propia | `403` |
+| Alta con central suspendida | `400 "Solo puedes asignar centrales activas."` |
+| Alta con `role: requester` | `400 "El rol debe ser despachador u operador de flota."` |
+| `GET /users?role=&status=` | filtros correctos; `role=requester` → `400` (el front no lo envía) |
+| `GET /users` sin filtro | solo institucionales, nunca solicitantes |
+
+**Inventario de UI para el rediseño:** `frontend/tools/ui_inventory.ps1`
+genera `frontend/docs/ui_inventory.md` con pantalla/widget por feature y el
+tamaño de cada clase, marcando las que pasan de 60 líneas. Correrlo después
+de cada fase que agregue o borre UI.
+
+**Nota:** el formulario solo lista centrales `active`, así que una central
+suspendida no aparece en el selector; el mensaje de Nest se vería si la
+suspensión ocurre con el formulario ya abierto.
 
 ### Fase 6 — Inventario
 
