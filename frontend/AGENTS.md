@@ -541,3 +541,27 @@ Aeronáutica" de `register_info_banner.dart` y el sello "Cifrado TLS 1.3 de
 Grado Clínico" de `login_security_footer.dart` son copy de maquetación. No
 afirman nada falso sobre el MVP, pero tampoco describen una funcionalidad;
 si la sustentación los señala, se cambian en una fase corta.
+
+### Estado real al cerrar la Fase 6 — 3 de octubre de 2026
+
+Rama `feature/fase6`. **No se tocó `backend/`.** `flutter analyze` sin issues
+y `flutter test` con **62 pruebas** (50 → 62). Ningún widget de inventory pasa
+de 60 líneas.
+
+- Feature `inventory` (`data/` con los 5 archivos del patrón +
+  `presentation/`): modelos con `SaleType`; el local replica los mensajes de
+  `InventoryService` y `HubsService.requireActive`.
+- `/inventory`, `/inventory/new` y `/inventory/:id` con guard de despachador;
+  la edición busca el ítem en `inventoryProvider` (no existe `GET /inventory/:id`).
+- El `diff()` del formulario solo envía lo que cambió: un PATCH sin cambios no
+  se emite (Nest responde `400 "Debes enviar al menos un campo para actualizar."`).
+- La tarjeta del home navega solo con central activa; el paso f invalida
+  `inventoryProvider` desde `hubs_screen._toggle` (no desde el notifier, para
+  no ciclar imports `hubs ↔ inventory`).
+- **Validación contra Nest (3 oct):** CRUD `201/200/204`; lote `ab` →
+  `400 "El lote debe tener entre 3 y 20 letras, números o guiones."`; central
+  suspendida → `403 "La central está suspendida."` en GET y POST; DELETE
+  repetido → `404 "El ítem de inventario no existe."`. Quedaron la central y
+  el despachador de validación (`despacho.fase6@airdrop.local`).
+- **Registro de UI regenerado:** 13 pantallas, 80 archivos widget, 20 clases
+  >60 — todas preexistentes (auth y `hub_detail_content` de la Fase 4).
