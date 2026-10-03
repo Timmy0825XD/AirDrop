@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../../../core/field_limits.dart';
 import 'login_button.dart';
 import 'login_field.dart';
+import 'login_palette.dart';
 
-/// Los dos campos del login más el enlace de recuperación.
+/// Los dos campos del login, el enlace de recuperación y el botón.
 class LoginCredentials extends StatelessWidget {
   const LoginCredentials({
     super.key,
@@ -29,9 +30,8 @@ class LoginCredentials extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         LoginField(
-          label: 'Acceso de personal',
-          hint: 'Correo institucional o celular',
-          icon: Icons.contact_mail_outlined,
+          label: 'Correo o celular',
+          hint: 'nombre@correo.com o 300 123 4567',
           controller: contactController,
           keyboardType: TextInputType.text,
           maxLength: FieldLimits.email,
@@ -41,9 +41,8 @@ class LoginCredentials extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         LoginField(
-          label: 'Clave de seguridad',
-          hint: 'Contraseña',
-          icon: Icons.lock_outline_rounded,
+          label: 'Contraseña',
+          hint: 'Tu contraseña',
           controller: passwordController,
           obscureText: true,
           keyboardType: TextInputType.visiblePassword,
@@ -52,20 +51,36 @@ class LoginCredentials extends StatelessWidget {
           validator: validators.password,
           onChanged: validators.onChanged,
         ),
-        const SizedBox(height: 20),
+        _ForgotLink(onPressed: onForgotPassword),
+        const SizedBox(height: 4),
         LoginButton(
           label: 'Iniciar sesión',
           isLoading: isLoading,
           onPressed: onSubmit,
         ),
-        const SizedBox(height: 4),
-        Center(
-          child: TextButton(
-            onPressed: onForgotPassword,
-            child: const Text('¿Olvidaste tu contraseña?'),
-          ),
-        ),
       ],
+    );
+  }
+}
+
+class _ForgotLink extends StatelessWidget {
+  const _ForgotLink({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = LoginPalette.of(context);
+    return Align(
+      alignment: Alignment.centerRight,
+      child: TextButton(
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          foregroundColor: p.accent,
+          minimumSize: const Size(44, 44),
+        ),
+        child: const Text('¿Olvidaste tu contraseña?'),
+      ),
     );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/error_banner.dart';
 import '../../hubs/data/hub_models.dart';
@@ -8,12 +9,12 @@ import 'widgets/module_preview.dart';
 class DispatcherCards extends StatelessWidget {
   const DispatcherCards({super.key, this.hub, this.errorMessage});
 
-  final HubSummary? hub;
+  final Hub? hub;
   final String? errorMessage;
 
   @override
   Widget build(BuildContext context) {
-    final inventoryEnabled = hub?.isApproved ?? false;
+    final inventoryEnabled = hub?.isActive ?? false;
     return Column(
       children: [
         if (errorMessage != null) ...[
@@ -24,14 +25,14 @@ class DispatcherCards extends StatelessWidget {
           title: 'Central',
           subtitle: _centralSubtitle(hub),
           icon: Icons.home_work_outlined,
-          onTap: () => showModulePreview(context, 'Central'),
+          onTap: hub == null ? null : () => context.go('/hubs/me'),
         ),
         const SizedBox(height: 12),
         HomeActionCard(
           title: 'Inventario',
           subtitle: inventoryEnabled
               ? 'Módulo disponible en la siguiente fase.'
-              : 'Se habilita cuando la central esté aprobada.',
+              : _inventorySubtitle(hub),
           icon: Icons.inventory_2_outlined,
           onTap: inventoryEnabled
               ? () => showModulePreview(context, 'Inventario')
@@ -41,12 +42,16 @@ class DispatcherCards extends StatelessWidget {
     );
   }
 
-  String _centralSubtitle(HubSummary? hub) {
+  String _centralSubtitle(Hub? hub) {
     if (hub == null) return 'No tienes una central registrada.';
-    return switch (hub.status) {
-      HubStatus.approved => '${hub.name} · Aprobada',
-      HubStatus.pendingApproval => '${hub.name} · Pendiente de aprobación',
-      HubStatus.rejected => '${hub.name} · Rechazada',
-    };
+    final state = hub.isActive ? 'Activa' : 'Suspendida';
+    return '${hub.name} · $state';
+  }
+
+  /// La central suspendida es un estado del sistema, no una omisión:
+  /// el mensaje viene de `HubsService.requireActive` en Nest.
+  String _inventorySubtitle(Hub? hub) {
+    if (hub == null) return 'No tienes una central asignada.';
+    return 'La central está suspendida.';
   }
 }

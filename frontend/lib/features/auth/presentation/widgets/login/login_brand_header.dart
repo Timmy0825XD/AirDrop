@@ -1,98 +1,123 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 
+import 'login_palette.dart';
+
+/// Marca del login: emblema de cristal con un anillo que se expande,
+/// nombre y bajada. Sin puntos parpadeantes ni textos en mayúsculas.
 class LoginBrandHeader extends StatelessWidget {
   const LoginBrandHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final p = LoginPalette.of(context);
 
     return Column(
       children: [
-        _Emblem(color: colors.primary),
+        const _Emblem(),
         const SizedBox(height: 12),
         Text(
           'AirDrop',
           style: theme.textTheme.headlineLarge?.copyWith(
+            fontSize: 24,
             fontWeight: FontWeight.w700,
-            letterSpacing: -0.4,
           ),
         ),
         const SizedBox(height: 4),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _PulsingDot(color: colors.primary),
-            const SizedBox(width: 6),
-            Text(
-              'LOGÍSTICA AEROMÉDICA',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: colors.onSurface.withValues(alpha: 0.6),
-                letterSpacing: 1.6,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
+        Text(
+          'Logística aeromédica',
+          style: theme.textTheme.bodyMedium?.copyWith(fontSize: 13, color: p.muted),
         ),
       ],
     );
   }
 }
 
-class _Emblem extends StatelessWidget {
-  const _Emblem({required this.color});
-
-  final Color color;
+class _Emblem extends StatefulWidget {
+  const _Emblem();
 
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 64,
-      height: 64,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        color: color.withValues(alpha: 0.14),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
-        boxShadow: [
-          BoxShadow(color: color.withValues(alpha: 0.35), blurRadius: 24),
-        ],
-      ),
-      child: Icon(Icons.flight_takeoff_rounded, color: color, size: 32),
-    );
-  }
+  State<_Emblem> createState() => _EmblemState();
 }
 
-class _PulsingDot extends StatefulWidget {
-  const _PulsingDot({required this.color});
-
-  final Color color;
-
-  @override
-  State<_PulsingDot> createState() => _PulsingDotState();
-}
-
-class _PulsingDotState extends State<_PulsingDot>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
+class _EmblemState extends State<_Emblem> with SingleTickerProviderStateMixin {
+  late final AnimationController _ping = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1100),
-  )..repeat(reverse: true);
+    duration: const Duration(seconds: 3),
+  );
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _ping.stop();
+    } else if (!_ping.isAnimating) {
+      _ping.repeat();
+    }
+  }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _ping.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: Tween<double>(begin: 0.3, end: 1).animate(_controller),
-      child: Container(
-        width: 6,
-        height: 6,
-        decoration: BoxDecoration(color: widget.color, shape: BoxShape.circle),
+    final p = LoginPalette.of(context);
+    final radius = BorderRadius.circular(18);
+
+    return ExcludeSemantics(
+      child: Stack(
+        alignment: Alignment.center,
+        clipBehavior: Clip.none,
+        children: [
+          AnimatedBuilder(
+            animation: _ping,
+            builder: (_, child) => Opacity(
+              opacity: 0.7 * (1 - _ping.value),
+              child: Transform.scale(scale: 1 + 0.5 * _ping.value, child: child),
+            ),
+            child: Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                borderRadius: radius,
+                border: Border.all(color: p.accent),
+              ),
+            ),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: radius,
+              boxShadow: [
+                BoxShadow(color: p.shadow, blurRadius: 30, offset: const Offset(0, 10)),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: radius,
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 14, sigmaY: 14),
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    borderRadius: radius,
+                    border: Border.all(color: p.border),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [p.glassTop, p.glassBottom],
+                    ),
+                  ),
+                  child: Icon(Icons.flight_takeoff_rounded, size: 28, color: p.accent),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,13 +1,18 @@
 import 'dart:io';
 
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 import '../api_exception.dart';
 import '../auth/token_store.dart';
 
 /// En el emulador de Android, `localhost` es el propio emulador.
 /// `10.0.2.2` es el alias que el emulador usa para llegar al PC.
-String get defaultBaseUrl =>
-    Platform.isAndroid ? 'http://10.0.2.2:3000' : 'http://localhost:3000';
+///
+/// En web `Platform` no existe y lanza `Unsupported operation:
+/// Platform._operatingSystem`, así que `kIsWeb` se decide antes de tocarlo.
+String get defaultBaseUrl => kIsWeb
+    ? 'http://localhost:3000'
+    : (Platform.isAndroid ? 'http://10.0.2.2:3000' : 'http://localhost:3000');
 
 class ApiClient {
   ApiClient({required this.tokenStore, String? baseUrl})

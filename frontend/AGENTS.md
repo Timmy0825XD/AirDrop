@@ -211,7 +211,12 @@ flutter test
 flutter run -d windows
 ```
 
-También están disponibles Chrome/Edge si se necesita revisar en web. Para Android/iOS se usa el dispositivo o emulador configurado. El backend remoto espera `http://localhost:3000`; en el emulador Android, `localhost` apunta al propio emulador y se debe usar `http://10.0.2.2:3000` cuando se conecte el backend real.
+También están disponibles Chrome/Edge si se necesita revisar en web
+(`flutter run -d chrome --web-port=8888`). Para Android/iOS se usa el
+dispositivo o emulador configurado. El backend remoto espera
+`http://localhost:3000`; en el emulador Android, `localhost` apunta al propio
+emulador y se debe usar `http://10.0.2.2:3000` cuando se conecte el backend
+real.
 
 Para una maqueta sin NestJS:
 
@@ -450,7 +455,7 @@ reescribir `register_screen` y `profile_screen` de todos modos.
 **Decisiones tomadas en sesiones anteriores (no reabrir):**
 
 - Riverpod 3 es el **único** gestor de estado; el JWT vive solo en `FlutterSecureStorage` vía `TokenStore`.
-- HTTP: `defaultBaseUrl` en `lib/core/network/api_client.dart` — `http://localhost:3000` (emulador Android: `http://10.0.2.2:3000`), **sin** prefijo `/api`.
+- HTTP: `defaultBaseUrl` en `lib/core/network/api_client.dart` — `http://localhost:3000` (emulador Android: `http://10.0.2.2:3000`), **sin** prefijo `/api`. En web decide con `kIsWeb` **antes** de tocar `Platform.isAndroid`, porque en compilación web `Platform` lanza `Unsupported operation: Platform._operatingSystem` y la app no arranca.
 - UI: tema único en `lib/theme/` (tokens Stitch: cyan `#06B6D4`, `themeMode: ThemeMode.system`); `google_fonts` **^8.2.1** (la 6.x no compila con Dart 3.12+), titulares en Plus Jakarta Sans y cuerpo en Inter.
 - Origen de datos hoy: `DataSource.remote` (`lib/core/data/data_source_config.dart`).
 - Validar siempre con `Validators` + `FieldLimits`.
@@ -471,15 +476,40 @@ recuperación, que devolvían 400. `register_role_tabs.dart`,
 `register_role_section.dart` y `role_selector.dart` se borraron.
 
 **Pendiente de esta fase:** validar contra Nest con el backend arriba.
-`flutter run` no se probó en esa sesión.
+`flutter run` no se probó en esa sesión. **Quedó cerrado** en la sesión de la
+Fase 4 (ver abajo).
+
+### Estado real al cerrar la Fase 4 — 2 de octubre de 2026
+
+Rama `feature/redisign-auth`. **No se tocó `backend/`.** `flutter analyze`
+sin issues y `flutter test` con **50 pruebas**.
+
+- Modelo `Hub` con `active | suspended`, `address`, `contactPhone`,
+  `contactEmail` y coordenadas `double`; repositorio `mine | list | create |
+  setSuspension`; `mine()` sigue siendo el único 404 → `null`.
+- Rutas `/hubs` (admin), `/hubs/new` (admin) y `/hubs/me` (despachador), con
+  guard `_roleRoutes` en `router.dart`.
+- **Validación contra Nest con el backend arriba:** crear central en
+  Valledupar → `active`; suspender → `suspended`; repetir la acción → `409
+  "Esta central ya está activa."`; `latitud 999` → `400 "La latitud no es
+  válida."`; `GET /hubs/me` como admin → `403`; como despachador con central
+  → `200` con nombre y estado; despachador sin central → `404` que el
+  repositorio convierte en `null`. Los 9 endpoints de `/auth` de la Fase 3
+  quedaron verificados en el mismo backend arriba.
+- **Bug encontrado en la validación:** `defaultBaseUrl` usaba
+  `Platform.isAndroid`, que en compilación web lanza `Unsupported operation:
+  Platform._operatingSystem` y la app no arrancaba en Chrome/Edge. Se arregló
+  con `kIsWeb` antes de tocar `Platform`.
 
 ### Pendientes que dejó la Fase 3
 
 | Qué | Dónde | Por qué |
 | --- | --- | --- |
-| `dispatcher_cards.dart` sigue con `hub?.isApproved` | `lib/features/home/presentation/` | `HubStatus` con los tres valores viejos; es de la Fase 4 |
 | `local_auth_repository.dart` en 240 líneas | `lib/features/auth/data/local/` | Candidato a otra partición en la Fase 9 |
 | 12 widgets sobre 60 líneas | varios | La Fase 9 decide si se parten o se aceptan |
+
+`dispatcher_cards.dart` ya **no** es pendiente: en la Fase 4 pasó a `Hub` con
+`hub.isActive` y navega a `/hubs/me`.
 
 **Pendiente de la Fase 2 que sigue igual:** la línea "Homologación
 Aeronáutica" de `register_info_banner.dart` y el sello "Cifrado TLS 1.3 de

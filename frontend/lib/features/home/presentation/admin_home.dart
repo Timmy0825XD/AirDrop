@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../auth/data/auth_models.dart';
 import 'widgets/home_action_card.dart';
@@ -18,9 +19,9 @@ class AdminHome extends StatelessWidget {
         children: [
           HomeActionCard(
             title: 'Centrales',
-            subtitle: 'Revisa las solicitudes de las centrales.',
+            subtitle: 'Crea, revisa y suspende centrales operativas.',
             icon: Icons.home_work_outlined,
-            onTap: () => showModulePreview(context, 'Centrales'),
+            onTap: () => context.go('/hubs'),
           ),
           const SizedBox(height: 12),
           HomeActionCard(
