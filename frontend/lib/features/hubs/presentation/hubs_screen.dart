@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
+import '../../inventory/data/inventory_providers.dart';
 import '../data/hub_models.dart';
 import '../data/hub_providers.dart';
 import 'widgets/hub_filter_tabs.dart';
@@ -54,6 +55,11 @@ class HubsScreen extends ConsumerWidget {
       await ref
           .read(setHubSuspensionProvider.notifier)
           .setSuspension(hub.id, suspended: suspend);
+      // Una central suspendida bloquea el inventario del despachador:
+      // se refresca para que su tarjeta se apague sin reiniciar la app
+      // (Fase 6, paso f). La invalidación vive acá y no en el notifier
+      // de hubs para no crear un ciclo de imports con inventory.
+      ref.invalidate(inventoryProvider);
       if (context.mounted) {
         showAppSnack(
           context,

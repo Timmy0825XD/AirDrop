@@ -87,7 +87,7 @@ strategy; interceptor de `Authorization`; `AdminSeedService`
 | 3 | Auth realineado | Documento, `hubIds`, perfil, registro de solicitante | ✅ hecha |
 | 4 | Centrales | Lista, alta y suspensión del admin; `/hubs/me` del despachador | ✅ hecha |
 | 5 | Cuentas | Lista, alta, suspensión y reactivación de despachadores y operadores | ✅ hecha |
-| 6 | Inventario | CRUD del despachador, bloqueado por central suspendida | Fase 4 |
+| 6 | Inventario | CRUD del despachador, bloqueado por central suspendida | ✅ hecha |
 | 7 | Flota | Modelos, drones por central, estado y mantenimiento del operador | Fase 4 |
 | 8 | Geovallas | CRUD de polígonos del operador, ruta real, tests | — |
 | 9 | Cierre | Recorrido manual de los 4 roles contra Nest, pulido y estado real | Todas |
@@ -324,7 +324,7 @@ de cada fase que agregue o borre UI.
 suspendida no aparece en el selector; el mensaje de Nest se vería si la
 suspensión ocurre con el formulario ya abierto.
 
-### Fase 6 — Inventario
+### Fase 6 — Inventario ✅
 
 | Paso | Qué | Detalle |
 | --- | --- | --- |
@@ -339,6 +339,10 @@ suspensión ocurre con el formulario ya abierto.
 
 **Nota:** el control especial **se puede guardar**. El pedido de control especial
 no existe todavía, así que no se bloquea el alta del ítem.
+
+**Cerrada (3 de octubre):** feature `inventory` completa (datos, pantallas,
+rutas, gate e invalidación), **62 pruebas** y validación contra Nest en verde
+(CRUD `201/200/204`, mensajes exactos de 400/403/404). Sin bloqueos de backend.
 
 ### Fase 7 — Flota
 

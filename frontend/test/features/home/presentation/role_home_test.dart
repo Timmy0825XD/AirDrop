@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/app/providers.dart';
+import 'package:frontend/app/router.dart';
 import 'package:frontend/core/auth/token_store.dart';
 import 'package:frontend/features/auth/data/auth_models.dart';
 import 'package:frontend/features/auth/data/local/local_auth_repository.dart';
@@ -10,6 +11,10 @@ import 'package:frontend/features/home/presentation/role_home.dart';
 import 'package:frontend/features/hubs/data/hub_models.dart';
 import 'package:frontend/features/hubs/data/hub_providers.dart';
 import 'package:frontend/features/hubs/data/hub_repository.dart';
+import 'package:frontend/features/inventory/data/inventory_models.dart';
+import 'package:frontend/features/inventory/data/inventory_providers.dart';
+import 'package:frontend/features/inventory/data/inventory_repository.dart';
+import 'package:frontend/features/inventory/presentation/inventory_screen.dart';
 
 class FakeTokenStore extends TokenStore {
   FakeTokenStore() : super();
@@ -55,6 +60,39 @@ Hub _hub({required HubStatus status}) => Hub(
   longitude: -73.253220,
   contactPhone: '3001234567',
   status: status,
+);
+
+class FakeInventoryRepository implements InventoryRepository {
+  FakeInventoryRepository(this.items);
+
+  final List<InventoryItem> items;
+
+  @override
+  Future<List<InventoryItem>> list() async => items;
+
+  @override
+  Future<InventoryItem> create(CreateInventoryItemRequest request) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<InventoryItem> update(
+    String id,
+    UpdateInventoryItemRequest request,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<void> remove(String id) async => throw UnimplementedError();
+}
+
+const InventoryItem _inventoryItem = InventoryItem(
+  id: 'e1111111-1111-4111-8111-111111111111',
+  hubId: 'hub-1',
+  name: 'Acetaminofén 500 mg',
+  quantity: 240,
+  lot: 'ACT-500-26',
+  expirationDate: '2027-06-30',
+  requiresColdChain: true,
+  saleType: SaleType.overTheCounter,
 );
 
 void main() {
@@ -151,12 +189,40 @@ void main() {
 
     expect(find.textContaining('No tienes una central asignada.'), findsOneWidget);
   });
+
+  testWidgets('la tarjeta de inventario navega al listado', (tester) async {
+    final container = await _authenticatedContainer(
+      email: 'despacho@airdrop.local',
+      password: 'Despacho123',
+      hubRepository: FakeHubRepository(_hub(status: HubStatus.active)),
+      inventoryRepository: FakeInventoryRepository([_inventoryItem]),
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: MaterialApp.router(routerConfig: container.read(routerProvider)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(InventoryScreen), findsNothing);
+
+    await tester.tap(find.text('Inventario'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(InventoryScreen), findsOneWidget);
+    expect(find.text('Acetaminofén 500 mg'), findsOneWidget);
+    expect(find.textContaining('Lote ACT-500-26 · 240 und.'), findsOneWidget);
+    expect(find.textContaining('Cadena de frío'), findsOneWidget);
+  });
 }
 
 Future<ProviderContainer> _authenticatedContainer({
   required String email,
   required String password,
   HubRepository? hubRepository,
+  InventoryRepository? inventoryRepository,
 }) async {
   final tokenStore = FakeTokenStore();
   final authRepository = LocalAuthRepository(tokenStore: tokenStore);
@@ -166,6 +232,8 @@ Future<ProviderContainer> _authenticatedContainer({
       authRepositoryProvider.overrideWithValue(authRepository),
       if (hubRepository != null)
         hubRepositoryProvider.overrideWithValue(hubRepository),
+      if (inventoryRepository != null)
+        inventoryRepositoryProvider.overrideWithValue(inventoryRepository),
     ],
   );
 

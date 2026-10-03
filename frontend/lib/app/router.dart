@@ -13,6 +13,8 @@ import '../features/home/presentation/role_home.dart';
 import '../features/hubs/presentation/hub_detail_screen.dart';
 import '../features/hubs/presentation/hub_form_screen.dart';
 import '../features/hubs/presentation/hubs_screen.dart';
+import '../features/inventory/presentation/inventory_form_screen.dart';
+import '../features/inventory/presentation/inventory_screen.dart';
 import '../features/users/presentation/user_form_screen.dart';
 import '../features/users/presentation/users_screen.dart';
 import 'placeholder_screen.dart';
@@ -25,7 +27,23 @@ const _roleRoutes = <String, UserRole>{
   '/hubs/me': UserRole.dispatcher,
   '/users': UserRole.admin,
   '/users/new': UserRole.admin,
+  '/inventory': UserRole.dispatcher,
+  '/inventory/new': UserRole.dispatcher,
+  '/inventory/:id': UserRole.dispatcher,
 };
+
+/// Rol que exige una ruta con parámetro. Las rutas fijas se resuelven
+/// primero en el `redirect`; este camino cubre `/inventory/<id>` sin
+/// capturar otras rutas del mismo prefijo.
+UserRole? _parameterizedRole(String location) {
+  final segments = location.split('/');
+  if (segments.length == 3 &&
+      segments[1] == 'inventory' &&
+      segments[2].isNotEmpty) {
+    return _roleRoutes['/inventory/:id'];
+  }
+  return null;
+}
 
 final routerProvider = Provider<GoRouter>((ref) {
   final router = GoRouter(
@@ -53,7 +71,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       }
 
       // Guardia por rol: fuera del rol autorizado, a /unauthorized.
-      final requiredRole = _roleRoutes[location];
+      final requiredRole =
+          _roleRoutes[location] ?? _parameterizedRole(location);
       if (requiredRole != null) {
         final user = auth.asData?.value.user;
         if (user == null || user.role != requiredRole) return '/unauthorized';
@@ -98,6 +117,16 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/hubs/me', builder: (_, _) => const HubDetailScreen()),
       GoRoute(path: '/users', builder: (_, _) => const UsersScreen()),
       GoRoute(path: '/users/new', builder: (_, _) => const UserFormScreen()),
+      GoRoute(path: '/inventory', builder: (_, _) => const InventoryScreen()),
+      GoRoute(
+        path: '/inventory/new',
+        builder: (_, _) => const InventoryFormScreen(),
+      ),
+      GoRoute(
+        path: '/inventory/:id',
+        builder: (_, state) =>
+            InventoryFormScreen(itemId: state.pathParameters['id']),
+      ),
     ],
     errorBuilder: (_, _) => const PlaceholderScreen(
       title: 'No encontrada',

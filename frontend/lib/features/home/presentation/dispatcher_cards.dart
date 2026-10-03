@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 import '../../../core/widgets/error_banner.dart';
 import '../../hubs/data/hub_models.dart';
 import 'widgets/home_action_card.dart';
-import 'widgets/module_preview.dart';
 
 class DispatcherCards extends StatelessWidget {
   const DispatcherCards({super.key, this.hub, this.errorMessage});
@@ -31,12 +30,10 @@ class DispatcherCards extends StatelessWidget {
         HomeActionCard(
           title: 'Inventario',
           subtitle: inventoryEnabled
-              ? 'Módulo disponible en la siguiente fase.'
+              ? 'Insumos, lotes y vencimientos de tu central.'
               : _inventorySubtitle(hub),
           icon: Icons.inventory_2_outlined,
-          onTap: inventoryEnabled
-              ? () => showModulePreview(context, 'Inventario')
-              : null,
+          onTap: inventoryEnabled ? () => context.go('/inventory') : null,
         ),
       ],
     );
