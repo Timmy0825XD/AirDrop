@@ -24,7 +24,7 @@ Medicamento, ubicación y una descripción breve, con prioridad alta.
 
 ### RU-30 — Entrega periódica a mi ubicación
 
-Medicamento, cantidad, frecuencia y fecha de inicio.
+Medicamento, cantidad, frecuencia y fecha de inicio. La ventana es de 8 semanas (56 días) desde esa fecha: una ocurrencia por periodo. La frecuencia única es una sola fecha y no se extiende. En la última semana, o si la ventana ya pasó y el plan sigue activo, quien lo creó ve en la app el aviso para extender otras 8 semanas. Puede cancelarlo cuando quiera: el plan queda cancelado y las ocurrencias que siguen en recibido también. Las que ya salieron de recibido no se revierten.
 
 **Por qué.** Hay civiles en zonas de difícil acceso que necesitan el mismo insumo cada semana, quincena o mes. No se modela como un abastecimiento de central.
 
@@ -36,7 +36,7 @@ Si el tipo de venta es bajo fórmula, la imagen es obligatoria y el documento de
 
 ### RU-03 — Ver el estado
 
-Estados: recibido, en evaluación, asignado, pendiente de carga, en vuelo, en espera de entrega, entregado, en retorno, devuelto, rechazado o reasignado.
+Estados: recibido, en evaluación, asignado, pendiente de carga, en vuelo, en espera de entrega, entregado, en retorno, devuelto, rechazado, reasignado o cancelado. Cancelar un plan deja en cancelado las ocurrencias que siguen en recibido.
 
 **Por qué.** Autorizar no es despegar. El solicitante tiene que distinguir “ya hay dron reservado” de “ya va en el aire”.
 
@@ -84,7 +84,7 @@ Cantidad, lote, vencimiento, tipo de venta y si exige frío.
 
 ### RU-12 — Abastecimiento programado desde otra central
 
-Pide a otra central un plan: suministro, cantidad, frecuencia y fechas. El destino es su central.
+Pide a otra central un plan: suministro, cantidad, frecuencia y fechas. El destino es su central. La ventana, el aviso para extender y la cancelación son los de RU-30.
 
 ### RU-31 — Urgencia de abastecimiento
 
@@ -192,7 +192,7 @@ La crea el solicitante (destino: su ubicación) o el despachador que necesita st
 
 ### RF-10 — Programado
 
-Suministro, cantidad, frecuencia (única, semanal, quincenal o mensual) y fecha de inicio. El destino es la ubicación del solicitante o la central que pide el abastecimiento.
+Suministro, cantidad, frecuencia (única, semanal, quincenal o mensual) y fecha de inicio. El destino es la ubicación del solicitante o la central que pide el abastecimiento. Cada plan materializa 8 semanas. La frecuencia única no se extiende.
 
 ### RF-11 — Elegibilidad
 

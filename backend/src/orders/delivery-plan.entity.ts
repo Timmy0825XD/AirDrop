@@ -6,36 +6,24 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { NUMERIC_TRANSFORMER } from '../common/numeric.transformer';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { FIELD_LIMITS } from '../common/field-limits';
-import { MissionType } from '../common/enums/mission-type.enum';
-import { OrderPriority } from '../common/enums/order-priority.enum';
-import { OrderStatus } from '../common/enums/order-status.enum';
+import { PlanFrequency } from '../common/enums/plan-frequency.enum';
+import { PlanStatus } from '../common/enums/plan-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
+import { NUMERIC_TRANSFORMER } from '../common/numeric.transformer';
 
-@Entity({ name: 'orders' })
-export class Order {
+@Entity({ name: 'delivery_plans' })
+export class DeliveryPlan {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index()
-  @Column({ type: 'enum', enum: MissionType, enumName: 'mission_type' })
-  missionType: MissionType;
-
-  @Column({
-    type: 'enum',
-    enum: DestinationKind,
-    enumName: 'destination_kind',
-  })
-  destinationKind: DestinationKind;
+  @Column({ type: 'enum', enum: PlanFrequency, enumName: 'plan_frequency' })
+  frequency: PlanFrequency;
 
   @Index()
-  @Column({ type: 'enum', enum: OrderStatus, enumName: 'order_status' })
-  status: OrderStatus;
-
-  @Column({ type: 'enum', enum: OrderPriority, enumName: 'order_priority' })
-  priority: OrderPriority;
+  @Column({ type: 'enum', enum: PlanStatus, enumName: 'plan_status' })
+  status: PlanStatus;
 
   @Column({ type: 'varchar', length: FIELD_LIMITS.medicationName })
   medicationName: string;
@@ -49,12 +37,12 @@ export class Order {
   @Column({ type: 'int' })
   quantity: number;
 
-  @Column({
-    type: 'varchar',
-    length: FIELD_LIMITS.orderDescription,
-    nullable: true,
-  })
-  description: string | null;
+  @Column({ type: 'date' })
+  startDate: string;
+
+  /** Día en que empieza la ventana siguiente. Esta ventana no lo incluye. */
+  @Column({ type: 'date' })
+  windowEndsOn: string;
 
   @Index()
   @Column({ type: 'uuid', nullable: true })
@@ -63,6 +51,13 @@ export class Order {
   @Index()
   @Column({ type: 'uuid' })
   createdByUserId: string;
+
+  @Column({
+    type: 'enum',
+    enum: DestinationKind,
+    enumName: 'destination_kind',
+  })
+  destinationKind: DestinationKind;
 
   @Index()
   @Column({ type: 'uuid', nullable: true })
@@ -92,21 +87,6 @@ export class Order {
     nullable: true,
   })
   longitude: number | null;
-
-  @Column({ type: 'uuid', nullable: true })
-  droneId: string | null;
-
-  /** Motivo del rechazo, o de cancelar el plan. */
-  @Column({ type: 'varchar', length: FIELD_LIMITS.reason, nullable: true })
-  statusReason: string | null;
-
-  @Index()
-  @Column({ type: 'uuid', nullable: true })
-  planId: string | null;
-
-  @Index()
-  @Column({ type: 'date', nullable: true })
-  scheduledFor: string | null;
 
   @Index()
   @CreateDateColumn({ type: 'timestamptz' })

@@ -18,6 +18,8 @@ import { User } from '../users/user.entity';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
 import { CreateEmergencyDto } from './dto/create-emergency.dto';
 import { CreateHubEmergencyDto } from './dto/create-hub-emergency.dto';
+import { CreateHubPlanDto } from './dto/create-hub-plan.dto';
+import { CreatePlanDto } from './dto/create-plan.dto';
 import { RejectOrderDto } from './dto/reject-order.dto';
 import { OrdersService } from './orders.service';
 
@@ -42,6 +44,57 @@ export class OrdersController {
   @Roles(UserRole.DISPATCHER)
   queue(@CurrentUser() user: User) {
     return this.ordersService.listQueue(user);
+  }
+
+  @Get('scheduled')
+  @Roles(UserRole.DISPATCHER)
+  scheduled(@CurrentUser() user: User) {
+    return this.ordersService.listScheduled(user);
+  }
+
+  @Post('plans')
+  @Roles(UserRole.REQUESTER)
+  createPlan(@CurrentUser() user: User, @Body() dto: CreatePlanDto) {
+    return this.ordersService.createPlan(user, dto);
+  }
+
+  @Post('hub-plans')
+  @Roles(UserRole.DISPATCHER)
+  createHubPlan(@CurrentUser() user: User, @Body() dto: CreateHubPlanDto) {
+    return this.ordersService.createHubPlan(user, dto);
+  }
+
+  @Get('plans')
+  @Roles(UserRole.REQUESTER, UserRole.DISPATCHER)
+  plans(@CurrentUser() user: User) {
+    return this.ordersService.listPlans(user);
+  }
+
+  @Get('plans/:id')
+  @Roles(UserRole.REQUESTER, UserRole.DISPATCHER)
+  findPlan(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.ordersService.findPlan(user, id);
+  }
+
+  @Post('plans/:id/extend')
+  @Roles(UserRole.REQUESTER, UserRole.DISPATCHER)
+  extendPlan(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.ordersService.extendPlan(user, id);
+  }
+
+  @Post('plans/:id/cancel')
+  @Roles(UserRole.REQUESTER, UserRole.DISPATCHER)
+  cancelPlan(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.ordersService.cancelPlan(user, id);
   }
 
   @Post('emergencies')

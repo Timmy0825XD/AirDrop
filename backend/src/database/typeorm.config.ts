@@ -5,6 +5,7 @@ import { Drone } from '../fleet/drone.entity';
 import { DroneModel } from '../fleet/drone-model.entity';
 import { Hub } from '../hubs/hub.entity';
 import { InventoryItem } from '../inventory/inventory-item.entity';
+import { DeliveryPlan } from '../orders/delivery-plan.entity';
 import { Order } from '../orders/order.entity';
 import { PrescriptionImage } from '../orders/prescription-image.entity';
 import { Geofence } from '../geofences/geofence.entity';
@@ -35,6 +36,7 @@ export function typeOrmOptions(config: ConfigService): TypeOrmModuleOptions {
       InventoryItem,
       Geofence,
       Order,
+      DeliveryPlan,
       PrescriptionImage,
     ],
     synchronize: config.get<string>('NODE_ENV') !== 'production',
