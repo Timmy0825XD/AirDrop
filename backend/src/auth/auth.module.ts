@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { BrevoMailService } from '../mail/brevo-mail.service';
 import { UsersModule } from '../users/users.module';
 import { AdminSeedService } from './admin-seed.service';
 import { AuthController } from './auth.controller';
@@ -31,6 +32,7 @@ import { RolesGuard } from './roles.guard';
   controllers: [AuthController],
   providers: [
     AuthService,
+    BrevoMailService,
     OtpDeliveryService,
     JwtStrategy,
     RolesGuard,

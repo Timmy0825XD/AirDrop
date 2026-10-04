@@ -163,7 +163,7 @@ export async function registerRequester(
   const otp = (register.body as { otp: string }).otp;
   const verified = await request(app.getHttpServer())
     .post('/auth/verify-otp')
-    .send({ phone: person.phone, code: otp })
+    .send({ email: person.email, code: otp })
     .expect(201);
   return (verified.body as { accessToken: string }).accessToken;
 }
