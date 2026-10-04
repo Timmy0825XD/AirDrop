@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -20,15 +21,18 @@ import { User } from '../users/user.entity';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
 import { CreateEmergencyDto } from './dto/create-emergency.dto';
 import { CreateHubEmergencyDto } from './dto/create-hub-emergency.dto';
+import { RejectOrderDto } from './dto/reject-order.dto';
 import { InventoryOfferQuery } from './inventory-offer.query';
 import { Order } from './order.entity';
 import {
+  NOT_THE_SUPPLYING_HUB,
   NO_STOCK_MESSAGE,
   ORIGIN_STOCK_MESSAGE,
   SAME_HUB_MESSAGE,
   SPECIAL_CONTROL_MESSAGE,
   assertCoordinates,
   assertNoPatientFormula,
+  assertStillReceived,
   patientFormula,
 } from './orders.rules';
 import { PrescriptionImage } from './prescription-image.entity';
@@ -97,6 +101,7 @@ export class OrdersService {
         latitude: coords.latitude,
         longitude: coords.longitude,
         droneId: null,
+        statusReason: null,
       }),
     );
     if (image) {
@@ -143,9 +148,28 @@ export class OrdersService {
         latitude: destination.latitude,
         longitude: destination.longitude,
         droneId: null,
+        statusReason: null,
       }),
     );
     return this.toPublicOrder(saved);
+  }
+
+  async findOne(user: User, id: string) {
+    const order = await this.requireReadable(user, id);
+    return this.toPublicOrder(order);
+  }
+
+  async reject(user: User, id: string, dto: RejectOrderDto) {
+    const hub = await this.requireDispatcherHub(user);
+    const order = await this.orders.findOne({ where: { id } });
+    if (!order) {
+      throw new NotFoundException('El pedido no existe.');
+    }
+    assertStillReceived(order.status);
+    await this.assertSupplyingHub(hub.id, order);
+    order.status = OrderStatus.REJECTED;
+    order.statusReason = dto.reason;
+    return this.toPublicOrder(await this.orders.save(order));
   }
 
   private async requireOffer(
@@ -191,6 +215,50 @@ export class OrdersService {
     return this.hubsService.requireActive(hubIds[0]);
   }
 
+  private async requireReadable(user: User, id: string) {
+    const order = await this.orders.findOne({ where: { id } });
+    if (!order || !this.canRead(user, order)) {
+      throw new NotFoundException('El pedido no existe.');
+    }
+    return order;
+  }
+
+  private canRead(user: User, order: Order): boolean {
+    if (user.role === UserRole.REQUESTER) {
+      return order.requesterId === user.id;
+    }
+    if (user.role !== UserRole.DISPATCHER) {
+      return false;
+    }
+    const hubIds = assignedHubIds(user);
+    if (hubIds.length !== 1) {
+      return false;
+    }
+    const hubId = hubIds[0];
+    return (
+      order.createdByUserId === user.id ||
+      order.originHubId === hubId ||
+      order.destinationHubId === hubId
+    );
+  }
+
+  private async assertSupplyingHub(hubId: string, order: Order) {
+    if (order.originHubId) {
+      if (order.originHubId !== hubId) {
+        throw new ForbiddenException(NOT_THE_SUPPLYING_HUB);
+      }
+      return;
+    }
+    const offer = await this.offers.offer(
+      order.medicationName,
+      order.saleType,
+      hubId,
+    );
+    if (!offer || offer.availableQuantity < order.quantity) {
+      throw new ForbiddenException(NOT_THE_SUPPLYING_HUB);
+    }
+  }
+
   private toPublicOrder(order: Order) {
     return {
       id: order.id,
@@ -211,6 +279,7 @@ export class OrdersService {
       latitude: order.latitude,
       longitude: order.longitude,
       droneId: order.droneId,
+      statusReason: order.statusReason,
       hasPrescription: order.saleType === SaleType.PRESCRIPTION,
       createdAt: order.createdAt,
     };

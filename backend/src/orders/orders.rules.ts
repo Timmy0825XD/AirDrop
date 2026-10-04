@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { normalizeDocumentNumber } from '../auth/auth.rules';
 import { DocumentType } from '../common/enums/document-type.enum';
+import { OrderStatus } from '../common/enums/order-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 import { PRESCRIPTION_MAX_BYTES } from '../common/field-limits';
 import { User } from '../users/user.entity';
@@ -34,6 +35,12 @@ export const NO_STOCK_MESSAGE =
 
 export const ORIGIN_STOCK_MESSAGE =
   'La central de origen no tiene esa cantidad disponible.';
+
+export const ONLY_RECEIVED_IS_REJECTED =
+  'Solo se rechaza un pedido que sigue en recibido.';
+
+export const NOT_THE_SUPPLYING_HUB =
+  'Solo el despachador de la central que tiene el insumo rechaza este pedido.';
 
 const PRESCRIPTION_MIMES = new Set(['image/jpeg', 'image/png']);
 
@@ -148,6 +155,13 @@ export function decodePrescription(mime: string, base64: string): Buffer {
     );
   }
   return content;
+}
+
+/** CU-11: el rechazo cierra el pedido. No reserva dron ni busca otra central. */
+export function assertStillReceived(status: OrderStatus): void {
+  if (status !== OrderStatus.RECEIVED) {
+    throw new BadRequestException(ONLY_RECEIVED_IS_REJECTED);
+  }
 }
 
 function hasAtMostSixDecimals(value: number): boolean {

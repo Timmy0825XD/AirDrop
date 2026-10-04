@@ -1,4 +1,13 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Query,
+  UseGuards,
+} from '@nestjs/common';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -8,6 +17,7 @@ import { User } from '../users/user.entity';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
 import { CreateEmergencyDto } from './dto/create-emergency.dto';
 import { CreateHubEmergencyDto } from './dto/create-hub-emergency.dto';
+import { RejectOrderDto } from './dto/reject-order.dto';
 import { OrdersService } from './orders.service';
 
 @Controller('orders')
@@ -40,5 +50,24 @@ export class OrdersController {
     @Body() dto: CreateHubEmergencyDto,
   ) {
     return this.ordersService.createHubEmergency(user, dto);
+  }
+
+  @Get(':id')
+  @Roles(UserRole.REQUESTER, UserRole.DISPATCHER)
+  findOne(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.ordersService.findOne(user, id);
+  }
+
+  @Post(':id/reject')
+  @Roles(UserRole.DISPATCHER)
+  reject(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() dto: RejectOrderDto,
+  ) {
+    return this.ordersService.reject(user, id, dto);
   }
 }
