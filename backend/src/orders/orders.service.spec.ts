@@ -5,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { DocumentType } from '../common/enums/document-type.enum';
+import { PlanFrequency } from '../common/enums/plan-frequency.enum';
+import { PlanStatus } from '../common/enums/plan-status.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
@@ -22,9 +24,16 @@ import {
   FORMULA_NOT_FOR_TRANSFER,
   NOT_THE_SUPPLYING_HUB,
   NO_STOCK_MESSAGE,
+  ONCE_IS_NOT_EXTENDED,
   ONLY_RECEIVED_IS_REJECTED,
+  PLAN_NOT_READY_TO_EXTEND,
   SAME_HUB_MESSAGE,
   SPECIAL_CONTROL_MESSAGE,
+  START_DATE_IN_THE_PAST,
+  addCalendarDays,
+  occurrenceDates,
+  todayInColombia,
+  windowEnd,
 } from './orders.rules';
 import { OrdersService } from './orders.service';
 
@@ -119,6 +128,7 @@ function build(options?: {
     create: jest.fn((value: Partial<Order>) => value),
     find: jest.fn(),
     findOne: jest.fn(),
+    update: jest.fn(),
     save: jest.fn((value: Order) => {
       value.id = '11111111-1111-4111-8111-111111111111';
       value.createdAt = new Date('2026-10-03T15:00:00.000Z');
@@ -147,14 +157,25 @@ function build(options?: {
         Promise.resolve(id === origin.id ? origin : destination),
       ),
   } as unknown as HubsService;
+  const plans = {
+    create: jest.fn((value: object) => value),
+    save: jest.fn((value: { id?: string; createdAt?: Date }) => {
+      value.id = value.id ?? '44444444-4444-4444-8444-444444444444';
+      value.createdAt = value.createdAt ?? new Date('2026-10-04T15:00:00.000Z');
+      return value;
+    }),
+    find: jest.fn(),
+    findOne: jest.fn(),
+  };
   const service = new OrdersService(
     orders as never,
     images as never,
     hubs as never,
     offers,
     hubsService,
+    plans as never,
   );
-  return { service, orders, images, stockForHub, saved };
+  return { service, orders, images, stockForHub, plans, saved };
 }
 
 describe('OrdersService emergencies', () => {
@@ -428,5 +449,148 @@ describe('OrdersService queue', () => {
       service.readPrescription(originDispatcher(), receivedOrder().id),
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(images.findOne).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('OrdersService plans', () => {
+  const start = todayInColombia();
+
+  function planDto(overrides: Record<string, unknown> = {}) {
+    return {
+      medicationName: offer.name,
+      saleType: SaleType.OVER_THE_COUNTER,
+      quantity: 2,
+      frequency: PlanFrequency.WEEKLY,
+      startDate: start,
+      address: 'Calle 20 # 8-15',
+      ...overrides,
+    };
+  }
+
+  it('creates one received occurrence per week and does not reserve a drone', async () => {
+    const { service, orders } = build();
+    const result = await service.createPlan(requester(), planDto());
+    const dates = occurrenceDates(
+      start,
+      windowEnd(start),
+      PlanFrequency.WEEKLY,
+    );
+    expect(dates).toHaveLength(8);
+    expect(result.windowEndsOn).toBe(windowEnd(start));
+    expect(result.renewalDue).toBe(false);
+    expect(orders.save).toHaveBeenCalledTimes(8);
+    const first = orders.save.mock.calls[0][0];
+    const last = orders.save.mock.calls[7][0];
+    expect(first.missionType).toBe(MissionType.SCHEDULED);
+    expect(first.priority).toBe('normal');
+    expect(first.status).toBe(OrderStatus.RECEIVED);
+    expect(first.droneId).toBeNull();
+    expect(first.scheduledFor).toBe(dates[0]);
+    expect(last.scheduledFor).toBe(dates[7]);
+  });
+
+  it('does not create a plan in the past, without stock, or with a hub formula', async () => {
+    const { service, orders, plans } = build();
+    await expect(
+      service.createPlan(requester(), planDto({ startDate: '2020-01-01' })),
+    ).rejects.toThrow(new BadRequestException(START_DATE_IN_THE_PAST));
+
+    const noStock = build({ offer: null });
+    await expect(
+      noStock.service.createPlan(requester(), planDto()),
+    ).rejects.toThrow(new BadRequestException(NO_STOCK_MESSAGE));
+
+    await expect(
+      service.createHubPlan(dispatcher(), {
+        originHubId: origin.id,
+        medicationName: offer.name,
+        saleType: SaleType.OVER_THE_COUNTER,
+        quantity: 2,
+        frequency: PlanFrequency.WEEKLY,
+        startDate: start,
+        prescriptionImageBase64: Buffer.from('formula').toString('base64'),
+      }),
+    ).rejects.toThrow(new BadRequestException(FORMULA_NOT_FOR_TRANSFER));
+    expect(orders.save).not.toHaveBeenCalled();
+    expect(plans.save).not.toHaveBeenCalled();
+    expect(noStock.plans.save).not.toHaveBeenCalled();
+  });
+
+  it('extends only a repeating plan that is already in its last week', async () => {
+    const { service, plans, orders } = build();
+    const id = '44444444-4444-4444-8444-444444444444';
+    plans.findOne.mockResolvedValue({
+      id,
+      frequency: PlanFrequency.ONCE,
+      status: PlanStatus.ACTIVE,
+      startDate: start,
+      windowEndsOn: windowEnd(start),
+      requesterId: requester().id,
+      saleType: SaleType.OVER_THE_COUNTER,
+    });
+    await expect(service.extendPlan(requester(), id)).rejects.toThrow(
+      new BadRequestException(ONCE_IS_NOT_EXTENDED),
+    );
+
+    plans.findOne.mockResolvedValue({
+      id,
+      frequency: PlanFrequency.WEEKLY,
+      status: PlanStatus.ACTIVE,
+      startDate: start,
+      windowEndsOn: addCalendarDays(start, 30),
+      requesterId: requester().id,
+      saleType: SaleType.OVER_THE_COUNTER,
+    });
+    await expect(service.extendPlan(requester(), id)).rejects.toThrow(
+      new BadRequestException(PLAN_NOT_READY_TO_EXTEND),
+    );
+
+    const opened = addCalendarDays(start, -56);
+    plans.findOne.mockResolvedValue({
+      id,
+      frequency: PlanFrequency.WEEKLY,
+      status: PlanStatus.ACTIVE,
+      startDate: opened,
+      windowEndsOn: start,
+      requesterId: requester().id,
+      saleType: SaleType.OVER_THE_COUNTER,
+      medicationName: offer.name,
+      requiresColdChain: false,
+      quantity: 2,
+      createdByUserId: requester().id,
+      destinationKind: DestinationKind.PERSON,
+      destinationHubId: null,
+      originHubId: null,
+      address: 'Calle 20 # 8-15',
+      latitude: null,
+      longitude: null,
+    });
+    const extended = await service.extendPlan(requester(), id);
+    expect(extended.windowEndsOn).toBe(addCalendarDays(start, 56));
+    expect(orders.save).toHaveBeenCalledTimes(8);
+    expect(extended.renewalDue).toBe(false);
+  });
+
+  it('cancels the plan and only the occurrences still received', async () => {
+    const { service, plans, orders } = build();
+    const id = '44444444-4444-4444-8444-444444444444';
+    plans.findOne.mockResolvedValue({
+      id,
+      frequency: PlanFrequency.WEEKLY,
+      status: PlanStatus.ACTIVE,
+      startDate: start,
+      windowEndsOn: windowEnd(start),
+      requesterId: requester().id,
+      saleType: SaleType.OVER_THE_COUNTER,
+    });
+    const result = await service.cancelPlan(requester(), id);
+    expect(result.status).toBe(PlanStatus.CANCELLED);
+    expect(orders.update).toHaveBeenCalledWith(
+      { planId: id, status: OrderStatus.RECEIVED },
+      {
+        status: OrderStatus.CANCELLED,
+        statusReason: 'El plan fue cancelado.',
+      },
+    );
   });
 });

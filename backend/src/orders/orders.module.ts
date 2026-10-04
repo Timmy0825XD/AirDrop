@@ -4,6 +4,7 @@ import { AuthModule } from '../auth/auth.module';
 import { Hub } from '../hubs/hub.entity';
 import { HubsModule } from '../hubs/hubs.module';
 import { InventoryItem } from '../inventory/inventory-item.entity';
+import { DeliveryPlan } from './delivery-plan.entity';
 import { InventoryOfferQuery } from './inventory-offer.query';
 import { Order } from './order.entity';
 import { OrdersController } from './orders.controller';
@@ -12,7 +13,13 @@ import { PrescriptionImage } from './prescription-image.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, PrescriptionImage, InventoryItem, Hub]),
+    TypeOrmModule.forFeature([
+      Order,
+      PrescriptionImage,
+      DeliveryPlan,
+      InventoryItem,
+      Hub,
+    ]),
     AuthModule,
     HubsModule,
   ],

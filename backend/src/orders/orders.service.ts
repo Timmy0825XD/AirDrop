@@ -11,6 +11,8 @@ import { HubStatus } from '../common/enums/hub-status.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
 import { OrderPriority } from '../common/enums/order-priority.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
+import { PlanFrequency } from '../common/enums/plan-frequency.enum';
+import { PlanStatus } from '../common/enums/plan-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { CIVIL_EMERGENCY_QUANTITY } from '../common/field-limits';
@@ -21,19 +23,32 @@ import { User } from '../users/user.entity';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
 import { CreateEmergencyDto } from './dto/create-emergency.dto';
 import { CreateHubEmergencyDto } from './dto/create-hub-emergency.dto';
+import { CreateHubPlanDto } from './dto/create-hub-plan.dto';
+import { CreatePlanDto } from './dto/create-plan.dto';
 import { RejectOrderDto } from './dto/reject-order.dto';
+import { DeliveryPlan } from './delivery-plan.entity';
 import { CatalogRow, InventoryOfferQuery } from './inventory-offer.query';
 import { Order } from './order.entity';
 import {
   NOT_THE_SUPPLYING_HUB,
   NO_STOCK_MESSAGE,
+  ONCE_IS_NOT_EXTENDED,
   ORIGIN_STOCK_MESSAGE,
+  PLAN_ALREADY_CANCELLED,
+  PLAN_CANCELLED_REASON,
+  PLAN_NOT_READY_TO_EXTEND,
   SAME_HUB_MESSAGE,
   SPECIAL_CONTROL_MESSAGE,
   assertCoordinates,
   assertNoPatientFormula,
+  assertStartDate,
   assertStillReceived,
+  datesForExtension,
+  occurrenceDates,
   patientFormula,
+  renewalDue,
+  todayInColombia,
+  windowEnd,
 } from './orders.rules';
 import { PrescriptionImage } from './prescription-image.entity';
 
@@ -48,6 +63,8 @@ export class OrdersService {
     private readonly hubs: Repository<Hub>,
     private readonly offers: InventoryOfferQuery,
     private readonly hubsService: HubsService,
+    @InjectRepository(DeliveryPlan)
+    private readonly plans: Repository<DeliveryPlan>,
   ) {}
 
   async catalog(user: User, query: CatalogQueryDto) {
@@ -102,6 +119,8 @@ export class OrdersService {
         longitude: coords.longitude,
         droneId: null,
         statusReason: null,
+        planId: null,
+        scheduledFor: null,
       }),
     );
     if (image) {
@@ -149,9 +168,157 @@ export class OrdersService {
         longitude: destination.longitude,
         droneId: null,
         statusReason: null,
+        planId: null,
+        scheduledFor: null,
       }),
     );
     return this.toPublicOrder(saved);
+  }
+
+  async createPlan(user: User, dto: CreatePlanDto) {
+    this.requireRequester(user);
+    const image = patientFormula(user, dto.saleType, dto);
+    const coords = assertCoordinates(dto.latitude, dto.longitude);
+    const offer = await this.requireOffer(
+      dto.medicationName,
+      dto.saleType,
+      undefined,
+      dto.quantity,
+    );
+    return this.persistPlan(
+      {
+        frequency: dto.frequency,
+        medicationName: offer.name,
+        saleType: dto.saleType,
+        requiresColdChain: offer.requiresColdChain,
+        quantity: dto.quantity,
+        startDate: dto.startDate,
+        requesterId: user.id,
+        createdByUserId: user.id,
+        destinationKind: DestinationKind.PERSON,
+        destinationHubId: null,
+        originHubId: null,
+        address: dto.address,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
+      },
+      image,
+      dto.prescriptionMime ?? null,
+    );
+  }
+
+  async createHubPlan(user: User, dto: CreateHubPlanDto) {
+    const destination = await this.requireDispatcherHub(user);
+    assertNoPatientFormula(dto);
+    const origin = await this.hubsService.requireActive(dto.originHubId);
+    if (origin.id === destination.id) {
+      throw new BadRequestException(SAME_HUB_MESSAGE);
+    }
+    const offer = await this.requireOffer(
+      dto.medicationName,
+      dto.saleType,
+      origin.id,
+      dto.quantity,
+    );
+    return this.persistPlan(
+      {
+        frequency: dto.frequency,
+        medicationName: offer.name,
+        saleType: dto.saleType,
+        requiresColdChain: offer.requiresColdChain,
+        quantity: dto.quantity,
+        startDate: dto.startDate,
+        requesterId: null,
+        createdByUserId: user.id,
+        destinationKind: DestinationKind.HUB,
+        destinationHubId: destination.id,
+        originHubId: origin.id,
+        address: destination.address,
+        latitude: destination.latitude,
+        longitude: destination.longitude,
+      },
+      null,
+      null,
+    );
+  }
+
+  async listPlans(user: User) {
+    const plans = await this.plans.find({
+      where: this.ownedPlanWhere(user),
+      order: { createdAt: 'DESC' },
+    });
+    return plans.map((plan) => this.toPublicPlan(plan));
+  }
+
+  async findPlan(user: User, id: string) {
+    const plan = await this.requireOwnedPlan(user, id);
+    const occurrences = await this.orders.find({
+      where: { planId: plan.id },
+      order: { scheduledFor: 'ASC' },
+    });
+    return {
+      ...this.toPublicPlan(plan),
+      occurrences: occurrences.map((order) => ({
+        id: order.id,
+        status: order.status,
+        scheduledFor: order.scheduledFor,
+        droneId: order.droneId,
+      })),
+    };
+  }
+
+  async extendPlan(user: User, id: string) {
+    const plan = await this.requireOwnedPlan(user, id);
+    this.assertCanExtend(plan);
+    const today = todayInColombia();
+    const extension = datesForExtension(
+      plan.startDate,
+      plan.windowEndsOn,
+      plan.frequency,
+      today,
+    );
+    plan.windowEndsOn = extension.windowEndsOn;
+    await this.plans.save(plan);
+    const image = await this.formulaForPlan(plan);
+    for (const scheduledFor of extension.dates) {
+      await this.saveOccurrence(plan, scheduledFor, image);
+    }
+    return this.toPublicPlan(plan);
+  }
+
+  async cancelPlan(user: User, id: string) {
+    const plan = await this.requireOwnedPlan(user, id);
+    if (plan.status === PlanStatus.CANCELLED) {
+      throw new BadRequestException(PLAN_ALREADY_CANCELLED);
+    }
+    plan.status = PlanStatus.CANCELLED;
+    await this.plans.save(plan);
+    await this.orders.update(
+      { planId: plan.id, status: OrderStatus.RECEIVED },
+      {
+        status: OrderStatus.CANCELLED,
+        statusReason: PLAN_CANCELLED_REASON,
+      },
+    );
+    return this.toPublicPlan(plan);
+  }
+
+  async listScheduled(user: User) {
+    const hub = await this.requireDispatcherHub(user);
+    const stock = await this.stockByKey(hub.id);
+    const pending = await this.orders.find({
+      where: {
+        missionType: MissionType.SCHEDULED,
+        status: OrderStatus.RECEIVED,
+      },
+      order: { scheduledFor: 'ASC' },
+    });
+    return pending
+      .filter((order) => this.isDirectedToHub(order, hub.id, stock))
+      .map((order) => ({
+        ...this.toPublicOrder(order),
+        availableQuantity: this.availableAt(order, stock),
+      }));
   }
 
   async listQueue(user: User) {
@@ -328,6 +495,164 @@ export class OrdersService {
     }
   }
 
+  private async persistPlan(
+    input: {
+      frequency: PlanFrequency;
+      medicationName: string;
+      saleType: SaleType;
+      requiresColdChain: boolean;
+      quantity: number;
+      startDate: string;
+      requesterId: string | null;
+      createdByUserId: string;
+      destinationKind: DestinationKind;
+      destinationHubId: string | null;
+      originHubId: string | null;
+      address: string;
+      latitude: number | null;
+      longitude: number | null;
+    },
+    image: Buffer | null,
+    mime: string | null,
+  ) {
+    assertStartDate(input.startDate);
+    const dates = occurrenceDates(
+      input.startDate,
+      windowEnd(input.startDate),
+      input.frequency,
+    );
+    const plan = await this.plans.save(
+      this.plans.create({
+        ...input,
+        status: PlanStatus.ACTIVE,
+        windowEndsOn: windowEnd(input.startDate),
+      }),
+    );
+    for (const scheduledFor of dates) {
+      await this.saveOccurrence(
+        plan,
+        scheduledFor,
+        image ? { content: image, mime: mime ?? 'image/jpeg' } : null,
+      );
+    }
+    return this.toPublicPlan(plan);
+  }
+
+  private async saveOccurrence(
+    plan: DeliveryPlan,
+    scheduledFor: string,
+    image: { content: Buffer; mime: string } | null,
+  ) {
+    const saved = await this.orders.save(
+      this.orders.create({
+        missionType: MissionType.SCHEDULED,
+        destinationKind: plan.destinationKind,
+        status: OrderStatus.RECEIVED,
+        priority: OrderPriority.NORMAL,
+        medicationName: plan.medicationName,
+        saleType: plan.saleType,
+        requiresColdChain: plan.requiresColdChain,
+        quantity: plan.quantity,
+        description: null,
+        requesterId: plan.requesterId,
+        createdByUserId: plan.createdByUserId,
+        destinationHubId: plan.destinationHubId,
+        originHubId: plan.originHubId,
+        address: plan.address,
+        latitude: plan.latitude,
+        longitude: plan.longitude,
+        droneId: null,
+        statusReason: null,
+        planId: plan.id,
+        scheduledFor,
+      }),
+    );
+    if (image) {
+      await this.images.save(
+        this.images.create({
+          orderId: saved.id,
+          content: image.content,
+          mime: image.mime,
+        }),
+      );
+    }
+    return saved;
+  }
+
+  private async formulaForPlan(plan: DeliveryPlan) {
+    if (plan.saleType !== SaleType.PRESCRIPTION) {
+      return null;
+    }
+    const existing = await this.orders.findOne({ where: { planId: plan.id } });
+    if (!existing) {
+      return null;
+    }
+    const image = await this.images.findOne({
+      where: { orderId: existing.id },
+    });
+    if (!image) {
+      return null;
+    }
+    return { content: image.content, mime: image.mime };
+  }
+
+  private assertCanExtend(plan: DeliveryPlan) {
+    if (plan.status === PlanStatus.CANCELLED) {
+      throw new BadRequestException(PLAN_ALREADY_CANCELLED);
+    }
+    if (plan.frequency === PlanFrequency.ONCE) {
+      throw new BadRequestException(ONCE_IS_NOT_EXTENDED);
+    }
+    if (!renewalDue(plan, todayInColombia())) {
+      throw new BadRequestException(PLAN_NOT_READY_TO_EXTEND);
+    }
+  }
+
+  private ownedPlanWhere(
+    user: User,
+  ): { requesterId: string } | { createdByUserId: string } {
+    if (user.role === UserRole.REQUESTER) {
+      return { requesterId: user.id };
+    }
+    if (user.role === UserRole.DISPATCHER) {
+      return { createdByUserId: user.id };
+    }
+    throw new ForbiddenException('No puedes consultar estos planes.');
+  }
+
+  private async requireOwnedPlan(user: User, id: string) {
+    const plan = await this.plans.findOne({
+      where: { id, ...this.ownedPlanWhere(user) },
+    });
+    if (!plan) {
+      throw new NotFoundException('El plan no existe.');
+    }
+    return plan;
+  }
+
+  private toPublicPlan(plan: DeliveryPlan) {
+    return {
+      id: plan.id,
+      frequency: plan.frequency,
+      status: plan.status,
+      medicationName: plan.medicationName,
+      saleType: plan.saleType,
+      requiresColdChain: plan.requiresColdChain,
+      quantity: plan.quantity,
+      startDate: plan.startDate,
+      windowEndsOn: plan.windowEndsOn,
+      destinationKind: plan.destinationKind,
+      originHubId: plan.originHubId,
+      destinationHubId: plan.destinationHubId,
+      address: plan.address,
+      latitude: plan.latitude,
+      longitude: plan.longitude,
+      hasPrescription: plan.saleType === SaleType.PRESCRIPTION,
+      renewalDue: renewalDue(plan, todayInColombia()),
+      createdAt: plan.createdAt,
+    };
+  }
+
   private toPublicOrder(order: Order) {
     return {
       id: order.id,
@@ -349,6 +674,8 @@ export class OrdersService {
       longitude: order.longitude,
       droneId: order.droneId,
       statusReason: order.statusReason,
+      planId: order.planId,
+      scheduledFor: order.scheduledFor,
       hasPrescription: order.saleType === SaleType.PRESCRIPTION,
       createdAt: order.createdAt,
     };

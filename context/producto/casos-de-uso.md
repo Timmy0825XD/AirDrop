@@ -62,9 +62,11 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
   1. Elige medicamento, cantidad, frecuencia (única, semanal, quincenal o mensual) y fecha de inicio.
   2. Si es bajo fórmula, adjunta la imagen y el documento coincide, igual que en CU-04.
   3. Fija la ubicación de entrega.
-  4. El sistema genera las ocurrencias. Cada una llega a la cola como un pedido programado, no como urgencia.
-- **Si falla:** Las mismas exclusiones de fórmula y de control especial que CU-04.
-- **Después:** Hay un plan. Cada fecha espera autorización. No hay vuelo todavía.
+  4. El sistema genera una ocurrencia por periodo dentro de las 8 semanas siguientes. La frecuencia única genera solo esa fecha. Cada una queda en `recibido`, como pedido programado, no como urgencia.
+  5. En la última semana, o si la ventana ya venció, la app pregunta si extiende otras 8 semanas. La única no se extiende.
+  6. Puede cancelar el plan. Las ocurrencias que siguen en `recibido` pasan a `cancelado`. Las demás no cambian.
+- **Si falla:** Las mismas exclusiones de fórmula y de control especial que CU-04. Una fecha de inicio anterior a hoy no crea el plan.
+- **Después:** Hay un plan activo. Cada fecha espera autorización. No hay vuelo todavía.
 - **Por qué:** RU-30. El periódico civil no se pide desde la cuenta de una central.
 
 ### CU-05 — Consultar estado
@@ -179,10 +181,11 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Antes:** Su central y la de origen están activas
 - **Pasos:**
   1. Elige origen, medicamento, cantidad, frecuencia y fecha de inicio.
-  2. El sistema crea las ocurrencias con destino en su central.
+  2. El sistema crea las ocurrencias de las 8 semanas, con destino en su central. La frecuencia única es solo la fecha de inicio.
   3. En cada fecha, el despachador de origen autoriza y carga como en CU-11 y CU-22.
   4. Quien pidió recibe con CU-21. Si la remisión cuadra, el inventario entra en su central.
-- **Si falla:** Origen inactivo: el plan no se crea.
+  5. En la última semana, o si la ventana ya venció, puede extender otras 8 semanas. Puede cancelar el plan: las ocurrencias que siguen en `recibido` pasan a `cancelado`.
+- **Si falla:** Origen inactivo, o igual al destino: el plan no se crea. Control especial: no se crea.
 - **Después:** El plan queda activo. Ninguna ocurrencia despega sola.
 - **Por qué:** RU-12. La frecuencia no salta la autorización de cada salida.
 

@@ -2,6 +2,8 @@ import { BadRequestException } from '@nestjs/common';
 import { normalizeDocumentNumber } from '../auth/auth.rules';
 import { DocumentType } from '../common/enums/document-type.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
+import { PlanFrequency } from '../common/enums/plan-frequency.enum';
+import { PlanStatus } from '../common/enums/plan-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 import { PRESCRIPTION_MAX_BYTES } from '../common/field-limits';
 import { User } from '../users/user.entity';
@@ -41,6 +43,23 @@ export const ONLY_RECEIVED_IS_REJECTED =
 
 export const NOT_THE_SUPPLYING_HUB =
   'Solo el despachador de la central que tiene el insumo rechaza este pedido.';
+
+export const START_DATE_IN_THE_PAST =
+  'La fecha de inicio no puede ser anterior a hoy.';
+
+export const ONCE_IS_NOT_EXTENDED = 'La frecuencia única no se extiende.';
+
+export const PLAN_NOT_READY_TO_EXTEND =
+  'El plan todavía no está en la última semana.';
+
+export const PLAN_ALREADY_CANCELLED = 'El plan ya está cancelado.';
+
+export const PLAN_CANCELLED_REASON = 'El plan fue cancelado.';
+
+/** Ocho semanas. El día `windowEndsOn` ya es la ventana siguiente. */
+export const PLAN_WINDOW_DAYS = 56;
+
+export const PLAN_RENEWAL_NOTICE_DAYS = 7;
 
 const PRESCRIPTION_MIMES = new Set(['image/jpeg', 'image/png']);
 
@@ -155,6 +174,95 @@ export function decodePrescription(mime: string, base64: string): Buffer {
     );
   }
   return content;
+}
+
+export function addCalendarDays(isoDate: string, days: number): string {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const utc = new Date(Date.UTC(year, month - 1, day));
+  utc.setUTCDate(utc.getUTCDate() + days);
+  return utc.toISOString().slice(0, 10);
+}
+
+function addCalendarMonths(isoDate: string, months: number): string {
+  const [year, month, day] = isoDate.split('-').map(Number);
+  const monthIndex = month - 1 + months;
+  const targetYear = year + Math.floor(monthIndex / 12);
+  const targetMonth = ((monthIndex % 12) + 12) % 12;
+  const lastDay = new Date(
+    Date.UTC(targetYear, targetMonth + 1, 0),
+  ).getUTCDate();
+  const targetDay = Math.min(day, lastDay);
+  const monthText = String(targetMonth + 1).padStart(2, '0');
+  const dayText = String(targetDay).padStart(2, '0');
+  return `${targetYear}-${monthText}-${dayText}`;
+}
+
+export function assertStartDate(
+  startDate: string,
+  today = todayInColombia(),
+): void {
+  if (startDate < today) {
+    throw new BadRequestException(START_DATE_IN_THE_PAST);
+  }
+}
+
+export function windowEnd(startDate: string): string {
+  return addCalendarDays(startDate, PLAN_WINDOW_DAYS);
+}
+
+/** Una ocurrencia por periodo, sin incluir el día en que abre la ventana siguiente. */
+export function occurrenceDates(
+  startDate: string,
+  untilExclusive: string,
+  frequency: PlanFrequency,
+): string[] {
+  if (frequency === PlanFrequency.ONCE) {
+    return [startDate];
+  }
+  const dates: string[] = [];
+  for (let index = 0; index < 24; index += 1) {
+    const cursor =
+      frequency === PlanFrequency.WEEKLY
+        ? addCalendarDays(startDate, 7 * index)
+        : frequency === PlanFrequency.BIWEEKLY
+          ? addCalendarDays(startDate, 14 * index)
+          : addCalendarMonths(startDate, index);
+    if (cursor >= untilExclusive) {
+      break;
+    }
+    dates.push(cursor);
+  }
+  return dates;
+}
+
+export function renewalDue(
+  plan: {
+    status: PlanStatus;
+    frequency: PlanFrequency;
+    windowEndsOn: string;
+  },
+  today: string,
+): boolean {
+  if (
+    plan.status !== PlanStatus.ACTIVE ||
+    plan.frequency === PlanFrequency.ONCE
+  ) {
+    return false;
+  }
+  return today >= addCalendarDays(plan.windowEndsOn, -PLAN_RENEWAL_NOTICE_DAYS);
+}
+
+export function datesForExtension(
+  startDate: string,
+  windowEndsOn: string,
+  frequency: PlanFrequency,
+  today: string,
+): { windowEndsOn: string; dates: string[] } {
+  const nextEnd = addCalendarDays(windowEndsOn, PLAN_WINDOW_DAYS);
+  const dates = occurrenceDates(startDate, nextEnd, frequency).filter(
+    (date) => date >= windowEndsOn && date >= today,
+  );
+  return { windowEndsOn: nextEnd, dates };
 }
 
 /** CU-11: el rechazo cierra el pedido. No reserva dron ni busca otra central. */
