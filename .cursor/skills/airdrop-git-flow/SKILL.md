@@ -2,9 +2,10 @@
 name: airdrop-git-flow
 description: >-
   Enforces AirDrop Git Flow, conventional commits, and manual git. Use before
-  any file change, when starting a task, choosing a branch, finishing work, or
-  when the user mentions commit, push, PR, merge, rama, git, feature, bugfix,
-  hotfix, or release.
+  any file change, when starting a task, choosing a branch, or when the user
+  mentions commit, push, PR, merge, rama, git, feature, bugfix, hotfix,
+  release, or writes _git. Deliver the add/commit/push/PR command blocks only
+  when the user writes _git.
 ---
 
 # AirDrop Git Flow
@@ -30,7 +31,23 @@ No trabajes directo en `main` ni `develop` (salvo el commit inicial del repo).
 
 ## Al terminar la tarea
 
-En la respuesta van **siempre** estos dos bloques (corto, sin essays). El segundo no espera a que el usuario lo pida: lo entregas en la misma respuesta, para que lo corra **después de aprobar/mergear el PR**.
+No pegues comandos de `git add`, `commit`, `push`, `gh pr create` ni la limpieza de la rama. Eso sale **solo** cuando el usuario escribe `_git`.
+
+## Cuando el usuario escribe `_git`
+
+Única vez en que entregas los dos bloques de abajo. Antes de redactarlos, revisa **todos** los cambios, no solo el último turno:
+
+1. `git branch --show-current` y `git status`.
+2. `git diff` y `git diff --staged`.
+3. `git diff develop...HEAD` y `git log develop..HEAD` si la rama ya tiene commits.
+4. `git log -8 --oneline` para el estilo del mensaje.
+
+Con esa evidencia defines **un** commit y **un** PR. El mensaje sale de lo que realmente cambió. No inventes archivos ni un título genérico.
+
+- Si no hay nada que commitear ni que abrir en PR: dilo en una frase y no pegues comandos.
+- Si ya está commiteado y solo falta publicar: omite add y commit; deja push y el PR.
+- Si hay cambios sin commitear: un solo `git add` con las rutas reales y un solo `git commit`.
+- El PR cubre la rama frente a su base (`develop`, o `main` en `hotfix/*` y en el merge de `release/*`).
 
 ```
 # add
@@ -61,6 +78,7 @@ git push origin --delete <rama>
 - Relación rama ↔ commit: `feature`→`feat`, `bugfix`/`hotfix`→`fix`, y el resto el mismo tipo que el prefijo.
 - Tag al mergear `release`→`main`: `fix` patch, `feat` minor, `BREAKING CHANGE` major.
 - `hotfix/*` o post-release: el bloque de limpieza hace `checkout`/`pull` de `main` y de `develop`, luego borra la rama local y `origin`.
+- El agente sigue sin ejecutar `git commit`, `git push` ni `gh pr create`.
 
 ## FLUJO DE TRABAJO CON GIT FLOW Y COMMITS
 
