@@ -363,6 +363,17 @@ export class OrdersService {
     return { content: image.content, mime: image.mime };
   }
 
+  async listMine(user: User) {
+    if (user.role !== UserRole.REQUESTER) {
+      throw new ForbiddenException('Solo el solicitante ve su historial.');
+    }
+    const orders = await this.orders.find({
+      where: { requesterId: user.id },
+      order: { createdAt: 'DESC', status: 'ASC' },
+    });
+    return orders.map((order) => this.toPublicOrder(order));
+  }
+
   async findOne(user: User, id: string) {
     const order = await this.requireReadable(user, id);
     return this.toPublicOrder(order);
