@@ -2,12 +2,15 @@ import { BadRequestException } from '@nestjs/common';
 import { DocumentType } from '../common/enums/document-type.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 import { User } from '../users/user.entity';
+import { OrderStatus } from '../common/enums/order-status.enum';
 import {
   DOCUMENT_MISMATCH,
   FORMULA_NOT_FOR_TRANSFER,
+  ONLY_RECEIVED_IS_REJECTED,
   PRESCRIPTION_IMAGE_REQUIRED,
   SPECIAL_CONTROL_MESSAGE,
   assertNoPatientFormula,
+  assertStillReceived,
   patientFormula,
 } from './orders.rules';
 
@@ -48,5 +51,17 @@ describe('patientFormula', () => {
         prescriptionImageBase64: jpeg,
       }),
     ).toThrow(new BadRequestException(FORMULA_NOT_FOR_TRANSFER));
+  });
+});
+
+describe('assertStillReceived', () => {
+  it('allows received and blocks any later status', () => {
+    expect(() => assertStillReceived(OrderStatus.RECEIVED)).not.toThrow();
+    expect(() => assertStillReceived(OrderStatus.REJECTED)).toThrow(
+      new BadRequestException(ONLY_RECEIVED_IS_REJECTED),
+    );
+    expect(() => assertStillReceived(OrderStatus.PENDING_LOAD)).toThrow(
+      new BadRequestException(ONLY_RECEIVED_IS_REJECTED),
+    );
   });
 });

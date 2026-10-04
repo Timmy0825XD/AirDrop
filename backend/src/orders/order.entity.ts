@@ -96,6 +96,10 @@ export class Order {
   @Column({ type: 'uuid', nullable: true })
   droneId: string | null;
 
+  /** Motivo del rechazo. Vacío mientras el pedido sigue en recibido. */
+  @Column({ type: 'varchar', length: FIELD_LIMITS.reason, nullable: true })
+  statusReason: string | null;
+
   @Index()
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;

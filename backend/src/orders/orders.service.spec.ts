@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { DocumentType } from '../common/enums/document-type.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
@@ -15,7 +19,9 @@ import { InventoryOfferQuery } from './inventory-offer.query';
 import { Order } from './order.entity';
 import {
   FORMULA_NOT_FOR_TRANSFER,
+  NOT_THE_SUPPLYING_HUB,
   NO_STOCK_MESSAGE,
+  ONLY_RECEIVED_IS_REJECTED,
   SAME_HUB_MESSAGE,
   SPECIAL_CONTROL_MESSAGE,
 } from './orders.rules';
@@ -64,6 +70,33 @@ function dispatcher(): User {
   } as unknown as User;
 }
 
+function originDispatcher(): User {
+  return {
+    id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+    role: UserRole.DISPATCHER,
+    status: UserStatus.ACTIVE,
+    hubAssignments: [{ hubId: origin.id }],
+  } as unknown as User;
+}
+
+function receivedOrder(overrides: Partial<Order> = {}): Order {
+  return {
+    id: '11111111-1111-4111-8111-111111111111',
+    missionType: MissionType.EMERGENCY,
+    status: OrderStatus.RECEIVED,
+    medicationName: offer.name,
+    saleType: SaleType.OVER_THE_COUNTER,
+    quantity: 1,
+    requesterId: requester().id,
+    createdByUserId: requester().id,
+    originHubId: null,
+    destinationHubId: null,
+    droneId: null,
+    statusReason: null,
+    ...overrides,
+  } as Order;
+}
+
 function emergencyDto(
   overrides: Partial<CreateEmergencyDto> = {},
 ): CreateEmergencyDto {
@@ -83,6 +116,7 @@ function build(options?: {
   const saved: Order[] = [];
   const orders = {
     create: jest.fn((value: Partial<Order>) => value),
+    findOne: jest.fn(),
     save: jest.fn((value: Order) => {
       value.id = '11111111-1111-4111-8111-111111111111';
       value.createdAt = new Date('2026-10-03T15:00:00.000Z');
@@ -203,5 +237,89 @@ describe('OrdersService emergencies', () => {
     await expect(
       service.createEmergency(requester(), emergencyDto()),
     ).rejects.toThrow(new BadRequestException(NO_STOCK_MESSAGE));
+  });
+});
+
+describe('OrdersService status', () => {
+  it('shows the requester their status and a drone id that is still empty', async () => {
+    const { service, orders } = build();
+    orders.findOne.mockResolvedValue(receivedOrder());
+    const result = await service.findOne(
+      requester(),
+      '11111111-1111-4111-8111-111111111111',
+    );
+    expect(result.status).toBe(OrderStatus.RECEIVED);
+    expect(result.droneId).toBeNull();
+    expect(result.statusReason).toBeNull();
+  });
+
+  it('hides an order that is not the requester’s', async () => {
+    const { service, orders } = build();
+    orders.findOne.mockResolvedValue(receivedOrder());
+    const other = requester();
+    other.id = '99999999-9999-4999-8999-999999999999';
+    await expect(
+      service.findOne(other, '11111111-1111-4111-8111-111111111111'),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  it('rejects a hub emergency from received without reserving a drone', async () => {
+    const { service, orders } = build();
+    const order = receivedOrder({
+      requesterId: null,
+      createdByUserId: dispatcher().id,
+      originHubId: origin.id,
+      destinationHubId: destination.id,
+      quantity: 4,
+    });
+    orders.findOne.mockResolvedValue(order);
+    const result = await service.reject(originDispatcher(), order.id, {
+      reason: 'La fórmula no se lee',
+    });
+    expect(result.status).toBe(OrderStatus.REJECTED);
+    expect(result.statusReason).toBe('La fórmula no se lee');
+    expect(result.droneId).toBeNull();
+  });
+
+  it('does not let the destination hub or a later status reject the order', async () => {
+    const { service, orders } = build();
+    const order = receivedOrder({
+      originHubId: origin.id,
+      destinationHubId: destination.id,
+    });
+    orders.findOne.mockResolvedValue(order);
+    await expect(
+      service.reject(dispatcher(), order.id, { reason: 'No corresponde' }),
+    ).rejects.toThrow(new ForbiddenException(NOT_THE_SUPPLYING_HUB));
+
+    orders.findOne.mockResolvedValue(
+      receivedOrder({
+        status: OrderStatus.PENDING_LOAD,
+        originHubId: origin.id,
+      }),
+    );
+    await expect(
+      service.reject(originDispatcher(), order.id, { reason: 'Tarde' }),
+    ).rejects.toThrow(new BadRequestException(ONLY_RECEIVED_IS_REJECTED));
+    expect(orders.save).not.toHaveBeenCalled();
+  });
+
+  it('rejects a civil emergency only when that hub still has the medication', async () => {
+    const withoutStock = build({ offer: null });
+    withoutStock.orders.findOne.mockResolvedValue(receivedOrder());
+    await expect(
+      withoutStock.service.reject(dispatcher(), receivedOrder().id, {
+        reason: 'No hay unidades selladas',
+      }),
+    ).rejects.toThrow(new ForbiddenException(NOT_THE_SUPPLYING_HUB));
+    expect(withoutStock.orders.save).not.toHaveBeenCalled();
+
+    const { service, orders } = build();
+    orders.findOne.mockResolvedValue(receivedOrder());
+    const result = await service.reject(dispatcher(), receivedOrder().id, {
+      reason: 'Fórmula vencida',
+    });
+    expect(result.status).toBe(OrderStatus.REJECTED);
+    expect(result.droneId).toBeNull();
   });
 });
