@@ -1,18 +1,25 @@
 class ApiException implements Exception {
-  const ApiException(this.message, {this.statusCode});
+  const ApiException(this.message, {this.statusCode, this.code});
   final String message;
   final int? statusCode;
 
+  /// Código de negocio de Nest, por ejemplo `account_unverified`.
+  final String? code;
+
   factory ApiException.fromNest(Object? data, {int? statusCode}) {
     if (data is Map<String, dynamic>) {
+      final rawCode = data['code'];
+      final code = rawCode is String && rawCode.trim().isNotEmpty
+          ? rawCode.trim()
+          : null;
       final message = data['message'];
       if (message is String && message.trim().isNotEmpty) {
-        return ApiException(message.trim(), statusCode: statusCode);
+        return ApiException(message.trim(), statusCode: statusCode, code: code);
       }
       if (message is List && message.isNotEmpty) {
         final first = message.first;
         if (first is String && first.trim().isNotEmpty) {
-          return ApiException(first.trim(), statusCode: statusCode);
+          return ApiException(first.trim(), statusCode: statusCode, code: code);
         }
       }
     }

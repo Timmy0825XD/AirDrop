@@ -39,8 +39,6 @@ Generado: 2026-10-03 14:18
 | `forgot_intro.dart` | ForgotIntro | 28 | ok |
 | `forgot_key_badge.dart` | ForgotKeyBadge | 7 | ok |
 | `forgot_key_badge.dart` | _ForgotKeyBadgeState | 109 | **>60** |
-| `forgot_method_chips.dart` | ForgotMethodChips | 36 | ok |
-| `forgot_method_chips.dart` | _MethodChip | 58 | ok |
 | `forgot_password_content.dart` | ForgotPasswordContent | 52 | ok |
 | `forgot_password_content.dart` | _ContactCard | 54 | ok |
 | `forgot_password_content.dart` | _ReturnLink | 41 | ok |

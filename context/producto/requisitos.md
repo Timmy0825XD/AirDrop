@@ -10,7 +10,7 @@ No hay rol receptor. La recepción se cierra con el código (RU-07, RU-24).
 
 ### RU-01 — Registro civil
 
-Nombre, tipo y número de documento, celular de 10 dígitos, contraseña y consentimiento. El correo es opcional. Documentos: cédula de ciudadanía, cédula de extranjería o PPT.
+Nombre, tipo y número de documento, celular de 10 dígitos, correo, contraseña y consentimiento. Documentos: cédula de ciudadanía, cédula de extranjería o PPT.
 
 **Por qué.** Es la única cuenta que se crea sola. El documento identifica a la persona que va a recibir el medicamento. El consentimiento es obligatorio porque el pedido puede llevar datos de salud (Ley 1581 de 2012). No se admite un documento de menor.
 
@@ -164,11 +164,11 @@ El registro público solo crea solicitantes, con los datos de RU-01. Despachador
 
 ### RF-02 — OTP del solicitante
 
-Seis dígitos, un uso, 10 minutos, al celular. La cuenta civil queda activa solo después.
+Seis dígitos, un uso, 10 minutos, al correo. El celular no recibe ese código. La cuenta civil queda activa solo después. Si intenta entrar sin verificar, se envía un código nuevo al correo.
 
 ### RF-03 — Sesión
 
-Correo o celular, más contraseña. El token lleva el rol.
+Correo y contraseña. El token lleva el rol. Una cuenta sin verificar no abre sesión: recibe un código nuevo en el correo.
 
 ### RF-04 — Cierre de sesión
 
@@ -176,7 +176,7 @@ El cliente deja de usar el token. El servidor lo considera vencido al expirar.
 
 ### RF-05 — Recuperar contraseña
 
-Código de 15 minutos al correo o al celular. Si el contacto no existe, el mensaje no lo revela.
+Código de 15 minutos al correo de la cuenta. Si el correo no existe, el mensaje no lo revela.
 
 ### RF-06 y RF-07 — Central
 

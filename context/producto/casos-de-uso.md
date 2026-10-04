@@ -9,9 +9,9 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Actores:** Solicitante
 - **Antes:** No existe una cuenta con ese documento o ese celular
 - **Pasos:**
-  1. Ingresa nombre, tipo y número de documento, celular, contraseña y consentimiento. El correo es opcional.
+  1. Ingresa nombre, tipo y número de documento, celular, correo, contraseña y consentimiento.
   2. El sistema rechaza tarjeta de identidad y cualquier documento que no sea cédula de ciudadanía, cédula de extranjería o PPT.
-  3. Crea la cuenta sin activar y envía un OTP de 6 dígitos al celular, vigente 10 minutos.
+  3. Crea la cuenta sin activar y envía un OTP de 6 dígitos al correo, vigente 10 minutos.
   4. Si el código es válido, la cuenta queda activa y abre el inicio del solicitante.
 - **Si falla:** Documento o celular repetido: error. OTP incorrecto o vencido: no activa y permite reenviar.
 - **Después:** Puede iniciar sesión. Todavía no hay pedido.
@@ -22,10 +22,10 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Actores:** Solicitante, despachador, operador, administrador
 - **Antes:** Cuenta activa. La institucional ya fue creada por el administrador. La de administrador existe desde el arranque.
 - **Pasos:**
-  1. Ingresa correo o celular, y contraseña.
+  1. Ingresa correo y contraseña.
   2. El sistema entrega un token con el rol.
   3. Abre el inicio de ese rol.
-- **Si falla:** Clave incorrecta, hasta 5 intentos. Después, bloqueo temporal.
+- **Si falla:** Clave incorrecta, hasta 5 intentos. Después, bloqueo temporal. Cuenta sin verificar: no abre sesión, envía un código nuevo al correo y la persona lo ingresa en la pantalla de verificación.
 - **Después:** La sesión solo muestra lo de su rol.
 - **Por qué:** RF-03 y RNF-04. El despachador no pasa por el registro público de CU-01.
 
@@ -34,12 +34,12 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Actores:** Cualquier rol con cuenta
 - **Antes:** La cuenta existe
 - **Pasos:**
-  1. Pide recuperación con correo o celular.
-  2. Si el contacto existe, llega un código de 15 minutos. Si no existe, el mensaje es el mismo.
+  1. Pide recuperación con el correo.
+  2. Si el correo existe, llega un código de 15 minutos a ese correo. Si no existe, el mensaje es el mismo.
   3. Ingresa el código y la clave nueva.
 - **Si falla:** Código inválido: puede reintentar. No se dice si la cuenta estaba o no.
 - **Después:** La clave anterior deja de servir.
-- **Por qué:** RF-05. El mensaje genérico evita confirmar qué celulares están registrados.
+- **Por qué:** RF-05. El mensaje genérico evita confirmar qué correos están registrados.
 
 ### CU-04 — Urgencia civil
 

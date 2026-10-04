@@ -173,30 +173,30 @@ class LoginRequest {
 
 /// Alta pública del solicitante. No lleva `role`: Nest lo fija en
 /// `requester` y el `ValidationPipe` rechaza el campo con
-/// `forbidNonWhitelisted`. El celular es obligatorio porque el código de
-/// un uso va al celular; el correo es opcional.
+/// `forbidNonWhitelisted`. El celular y el correo son obligatorios. El
+/// código de un uso llega al correo.
 class RegisterRequest {
   const RegisterRequest({
     required this.fullName,
     required this.documentType,
     required this.documentNumber,
     required this.phone,
+    required this.email,
     required this.password,
     required this.consentAccepted,
-    this.email,
   });
 
   final String fullName;
   final DocumentType documentType;
   final String documentNumber;
   final String phone;
+  final String email;
   final String password;
   final bool consentAccepted;
-  final String? email;
 
   Map<String, dynamic> toJson() {
     return {
-      if (email != null) 'email': email,
+      'email': email,
       'fullName': fullName,
       'documentType': documentType.apiValue,
       'documentNumber': documentNumber,

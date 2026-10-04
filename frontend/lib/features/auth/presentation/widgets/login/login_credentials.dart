@@ -30,10 +30,10 @@ class LoginCredentials extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         LoginField(
-          label: 'Correo o celular',
-          hint: 'nombre@correo.com o 300 123 4567',
+          label: 'Correo',
+          hint: 'nombre@correo.com',
           controller: contactController,
-          keyboardType: TextInputType.text,
+          keyboardType: TextInputType.emailAddress,
           maxLength: FieldLimits.email,
           textInputAction: TextInputAction.next,
           validator: validators.contact,

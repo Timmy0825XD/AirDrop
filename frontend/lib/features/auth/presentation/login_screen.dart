@@ -23,14 +23,14 @@ class LoginScreen extends ConsumerStatefulWidget {
 
 class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _contact = TextEditingController();
+  final _email = TextEditingController();
   final _password = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
 
   @override
   void dispose() {
-    _contact.dispose();
+    _email.dispose();
     _password.dispose();
     super.dispose();
   }
@@ -44,16 +44,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     try {
+      final email = _email.text.trim().toLowerCase();
       await ref
           .read(authControllerProvider.notifier)
           .login(
             LoginRequest(
-              contact: AuthContact.parse(_contact.text),
+              contact: AuthContact.email(email),
               password: _password.text,
             ),
           );
       if (mounted) context.go('/home');
     } on ApiException catch (error) {
+      if (error.code == 'account_unverified' && mounted) {
+        context.go(
+          '/verify-otp',
+          extra: AuthContact.email(_email.text.trim().toLowerCase()),
+        );
+        return;
+      }
       if (mounted) setState(() => _errorMessage = error.message);
     } catch (_) {
       if (mounted) {
@@ -66,12 +74,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     }
   }
 
-  String? _validateContact(String? value) {
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) return 'Escribe tu correo o celular.';
-    final looksLikeEmail = RegExp(r'[A-Za-z@]').hasMatch(text);
-    return looksLikeEmail ? Validators.email(text) : Validators.phone(text);
-  }
+  String? _validateEmail(String? value) => Validators.email(value);
 
   void _clearError(String _) {
     if (_errorMessage != null) setState(() => _errorMessage = null);
@@ -121,7 +124,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
         const SizedBox(height: 4),
         Text(
-          'Entra con tu correo o celular.',
+          'Entra con tu correo y tu contraseña.',
           style: theme.textTheme.bodyMedium?.copyWith(color: p.muted, height: 1.5),
         ),
         const SizedBox(height: 16),
@@ -131,13 +134,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           bottomPadding: 16,
         ),
         LoginCredentials(
-          contactController: _contact,
+          contactController: _email,
           passwordController: _password,
           isLoading: _isLoading,
           onSubmit: _submit,
           onForgotPassword: () => context.go('/forgot-password'),
           validators: LoginFieldValidators(
-            contact: _validateContact,
+            contact: _validateEmail,
             password: Validators.password,
             onChanged: _clearError,
           ),

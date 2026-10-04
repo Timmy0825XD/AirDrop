@@ -21,8 +21,8 @@ class ForgotIntro extends StatelessWidget {
         const Center(child: ForgotKeyBadge()),
         const SizedBox(height: 20),
         Text(
-          'Ingresa el correo o celular vinculado a tu cuenta para recibir '
-          'el código de verificación.',
+          'Ingresa el correo de tu cuenta. Ahí llega el código '
+          'para restablecer la contraseña.',
           textAlign: TextAlign.center,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
