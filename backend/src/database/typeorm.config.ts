@@ -5,6 +5,8 @@ import { Drone } from '../fleet/drone.entity';
 import { DroneModel } from '../fleet/drone-model.entity';
 import { Hub } from '../hubs/hub.entity';
 import { InventoryItem } from '../inventory/inventory-item.entity';
+import { Order } from '../orders/order.entity';
+import { PrescriptionImage } from '../orders/prescription-image.entity';
 import { Geofence } from '../geofences/geofence.entity';
 import { User } from '../users/user.entity';
 import { UserHubAssignment } from '../users/user-hub-assignment.entity';
@@ -32,6 +34,8 @@ export function typeOrmOptions(config: ConfigService): TypeOrmModuleOptions {
       Drone,
       InventoryItem,
       Geofence,
+      Order,
+      PrescriptionImage,
     ],
     synchronize: config.get<string>('NODE_ENV') !== 'production',
     dropSchema: isTest && config.get<string>('E2E_DROP_SCHEMA') === 'true',

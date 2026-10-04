@@ -19,7 +19,16 @@ export const FIELD_LIMITS = {
   droneIdentifier: 32,
   droneModelName: 80,
   droneModelCode: 32,
+  /** Descripción breve de una urgencia civil. */
+  orderDescription: 500,
+  prescriptionMime: 32,
 } as const;
+
+/** Imagen de fórmula: jpeg o png, hasta 2 MiB. */
+export const PRESCRIPTION_MAX_BYTES = 2 * 1024 * 1024;
+
+/** RU-02 no pide cantidad: la urgencia civil sale con una unidad. */
+export const CIVIL_EMERGENCY_QUANTITY = 1;
 
 export const OTP_SIGNUP_TTL_MS = 10 * 60 * 1000;
 export const OTP_RESET_TTL_MS = 15 * 60 * 1000;
