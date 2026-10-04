@@ -200,8 +200,8 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 
 - **Actores:** Sistema y despachador
 - **Antes:** Una urgencia está en su cola sin autorizar
-- **Pasos:** Al pasar el tiempo configurado, llega un aviso.
-- **Después:** Sigue en cola. El aviso no autoriza solo.
+- **Pasos:** Al abrir la cola, si la urgencia lleva más de 5 minutos en `recibido`, la marca como sin atender.
+- **Después:** Sigue en cola y en `recibido`. El aviso no autoriza solo.
 - **Por qué:** RU-15.
 
 ## Operador

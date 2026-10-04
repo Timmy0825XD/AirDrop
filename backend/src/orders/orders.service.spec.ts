@@ -103,6 +103,7 @@ function receivedOrder(overrides: Partial<Order> = {}): Order {
     destinationHubId: null,
     droneId: null,
     statusReason: null,
+    createdAt: new Date(),
     ...overrides,
   } as Order;
 }
@@ -386,6 +387,7 @@ describe('OrdersService queue', () => {
       '11111111-1111-4111-8111-111111111111',
     ]);
     expect(rows[0].availableQuantity).toBe(8);
+    expect(rows[0].unattended).toBe(false);
     expect(rows[0]).not.toHaveProperty('content');
     expect(orders.find).toHaveBeenCalledWith({
       where: {
@@ -449,6 +451,19 @@ describe('OrdersService queue', () => {
       service.readPrescription(originDispatcher(), receivedOrder().id),
     ).rejects.toBeInstanceOf(NotFoundException);
     expect(images.findOne).toHaveBeenCalledTimes(1);
+  });
+
+  it('marks the queue row when the emergency has waited more than five minutes', async () => {
+    const { service, orders, stockForHub } = build();
+    stockForHub.mockResolvedValue(stock);
+    const waiting = receivedOrder({
+      createdAt: new Date(Date.now() - 5 * 60 * 1000 - 1),
+    });
+    orders.find.mockResolvedValue([waiting]);
+    const rows = await service.listQueue(dispatcher());
+    expect(rows[0].unattended).toBe(true);
+    expect(rows[0].status).toBe(OrderStatus.RECEIVED);
+    expect(orders.save).not.toHaveBeenCalled();
   });
 });
 

@@ -14,6 +14,8 @@ import {
   occurrenceDates,
   renewalDue,
   windowEnd,
+  isUnattendedEmergency,
+  UNATTENDED_EMERGENCY_MS,
   PRESCRIPTION_IMAGE_REQUIRED,
   SPECIAL_CONTROL_MESSAGE,
   assertNoPatientFormula,
@@ -114,5 +116,24 @@ describe('occurrenceDates', () => {
     expect(
       renewalDue({ ...plan, frequency: PlanFrequency.ONCE }, '2026-12-01'),
     ).toBe(false);
+  });
+});
+
+describe('isUnattendedEmergency', () => {
+  const now = new Date('2026-10-04T12:00:00.000Z');
+
+  it('flags an emergency only after five minutes in received', () => {
+    expect(
+      isUnattendedEmergency(
+        new Date(now.getTime() - UNATTENDED_EMERGENCY_MS),
+        now,
+      ),
+    ).toBe(false);
+    expect(
+      isUnattendedEmergency(
+        new Date(now.getTime() - UNATTENDED_EMERGENCY_MS - 1),
+        now,
+      ),
+    ).toBe(true);
   });
 });
