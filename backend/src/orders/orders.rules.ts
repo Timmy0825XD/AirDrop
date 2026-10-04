@@ -61,6 +61,9 @@ export const PLAN_WINDOW_DAYS = 56;
 
 export const PLAN_RENEWAL_NOTICE_DAYS = 7;
 
+/** RU-15: la urgencia en recibido avisa al pasar de 5 minutos. */
+export const UNATTENDED_EMERGENCY_MS = 5 * 60 * 1000;
+
 const PRESCRIPTION_MIMES = new Set(['image/jpeg', 'image/png']);
 
 export function todayInColombia(now = new Date()): string {
@@ -263,6 +266,14 @@ export function datesForExtension(
     (date) => date >= windowEndsOn && date >= today,
   );
   return { windowEndsOn: nextEnd, dates };
+}
+
+/** Se calcula al abrir la cola. No cambia el estado ni autoriza. */
+export function isUnattendedEmergency(
+  createdAt: Date,
+  now = new Date(),
+): boolean {
+  return now.getTime() - createdAt.getTime() > UNATTENDED_EMERGENCY_MS;
 }
 
 /** CU-11: el rechazo cierra el pedido. No reserva dron ni busca otra central. */

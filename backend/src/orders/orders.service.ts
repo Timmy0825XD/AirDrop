@@ -44,6 +44,7 @@ import {
   assertStartDate,
   assertStillReceived,
   datesForExtension,
+  isUnattendedEmergency,
   occurrenceDates,
   patientFormula,
   renewalDue,
@@ -336,6 +337,7 @@ export class OrdersService {
       .map((order) => ({
         ...this.toPublicOrder(order),
         availableQuantity: this.availableAt(order, stock),
+        unattended: isUnattendedEmergency(order.createdAt),
       }));
   }
 

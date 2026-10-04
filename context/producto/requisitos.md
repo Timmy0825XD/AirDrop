@@ -104,7 +104,7 @@ Misiones de emergencia y programadas de su central.
 
 ### RU-15 — Alerta de urgencia sin atender
 
-Si una urgencia en su cola supera el tiempo configurado, recibe un aviso.
+Si una urgencia en su cola lleva más de 5 minutos en recibido, al abrir la cola ve el aviso. El aviso no autoriza la salida.
 
 ## Operador de flota
 
@@ -212,7 +212,7 @@ Estado y mapa desde el despegue, ida y retorno. No antes: todavía no hay vuelo.
 
 ### RF-16 y RF-24 — Avisos
 
-Cambios de estado, llegada, espera de código, retorno, temperatura, batería y urgencia quieta más del tiempo configurado.
+Cambios de estado, llegada, espera de código, retorno, temperatura, batería y urgencia quieta más de 5 minutos en recibido. El aviso de la cola se calcula al abrirla.
 
 ### RF-17 — Frío
 
