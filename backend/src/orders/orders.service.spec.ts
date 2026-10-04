@@ -179,6 +179,37 @@ function build(options?: {
   return { service, orders, images, stockForHub, plans, saved };
 }
 
+describe('OrdersService history', () => {
+  it('lists only the requester orders, newest first', async () => {
+    const { service, orders } = build();
+    const mine = receivedOrder({
+      createdAt: new Date('2026-10-04T12:00:00.000Z'),
+    });
+    orders.find.mockResolvedValue([mine]);
+    const rows = await service.listMine(requester());
+    expect(rows).toEqual([
+      expect.objectContaining({
+        id: mine.id,
+        status: OrderStatus.RECEIVED,
+        requesterId: requester().id,
+      }),
+    ]);
+    expect(rows[0]).not.toHaveProperty('content');
+    expect(orders.find).toHaveBeenCalledWith({
+      where: { requesterId: requester().id },
+      order: { createdAt: 'DESC', status: 'ASC' },
+    });
+  });
+
+  it('does not open the history for a dispatcher', async () => {
+    const { service, orders } = build();
+    await expect(service.listMine(dispatcher())).rejects.toThrow(
+      new ForbiddenException('Solo el solicitante ve su historial.'),
+    );
+    expect(orders.find).not.toHaveBeenCalled();
+  });
+});
+
 describe('OrdersService emergencies', () => {
   it('creates a civil emergency as received without reserving a drone', async () => {
     const { service, saved } = build();

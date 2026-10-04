@@ -34,6 +34,12 @@ export class OrdersController {
     return this.ordersService.catalog(user, query);
   }
 
+  @Get('mine')
+  @Roles(UserRole.REQUESTER)
+  mine(@CurrentUser() user: User) {
+    return this.ordersService.listMine(user);
+  }
+
   @Get('origin-hubs')
   @Roles(UserRole.DISPATCHER)
   originHubs(@CurrentUser() user: User) {
