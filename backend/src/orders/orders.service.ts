@@ -22,7 +22,7 @@ import { CatalogQueryDto } from './dto/catalog-query.dto';
 import { CreateEmergencyDto } from './dto/create-emergency.dto';
 import { CreateHubEmergencyDto } from './dto/create-hub-emergency.dto';
 import { RejectOrderDto } from './dto/reject-order.dto';
-import { InventoryOfferQuery } from './inventory-offer.query';
+import { CatalogRow, InventoryOfferQuery } from './inventory-offer.query';
 import { Order } from './order.entity';
 import {
   NOT_THE_SUPPLYING_HUB,
@@ -154,6 +154,46 @@ export class OrdersService {
     return this.toPublicOrder(saved);
   }
 
+  async listQueue(user: User) {
+    const hub = await this.requireDispatcherHub(user);
+    const stock = await this.stockByKey(hub.id);
+    const pending = await this.orders.find({
+      where: {
+        missionType: MissionType.EMERGENCY,
+        status: OrderStatus.RECEIVED,
+      },
+      order: { createdAt: 'ASC' },
+    });
+    return pending
+      .filter((order) => this.isDirectedToHub(order, hub.id, stock))
+      .map((order) => ({
+        ...this.toPublicOrder(order),
+        availableQuantity: this.availableAt(order, stock),
+      }));
+  }
+
+  async readPrescription(user: User, id: string) {
+    const hub = await this.requireDispatcherHub(user);
+    const order = await this.orders.findOne({ where: { id } });
+    const stock = order ? await this.stockByKey(hub.id) : null;
+    if (
+      !order ||
+      !stock ||
+      order.missionType !== MissionType.EMERGENCY ||
+      order.status !== OrderStatus.RECEIVED ||
+      order.destinationKind !== DestinationKind.PERSON ||
+      order.saleType !== SaleType.PRESCRIPTION ||
+      !this.isDirectedToHub(order, hub.id, stock)
+    ) {
+      throw new NotFoundException('El pedido no existe.');
+    }
+    const image = await this.images.findOne({ where: { orderId: order.id } });
+    if (!image) {
+      throw new NotFoundException('El pedido no existe.');
+    }
+    return { content: image.content, mime: image.mime };
+  }
+
   async findOne(user: User, id: string) {
     const order = await this.requireReadable(user, id);
     return this.toPublicOrder(order);
@@ -240,6 +280,35 @@ export class OrdersService {
       order.originHubId === hubId ||
       order.destinationHubId === hubId
     );
+  }
+
+  private async stockByKey(hubId: string) {
+    const rows = await this.offers.stockForHub(hubId);
+    return new Map(
+      rows.map((row) => [this.offerKey(row.name, row.saleType), row]),
+    );
+  }
+
+  private offerKey(name: string, saleType: SaleType) {
+    return `${name.trim().toLowerCase()}|${saleType}`;
+  }
+
+  private availableAt(order: Order, stock: Map<string, CatalogRow>) {
+    return (
+      stock.get(this.offerKey(order.medicationName, order.saleType))
+        ?.availableQuantity ?? 0
+    );
+  }
+
+  private isDirectedToHub(
+    order: Order,
+    hubId: string,
+    stock: Map<string, CatalogRow>,
+  ) {
+    if (order.originHubId) {
+      return order.originHubId === hubId;
+    }
+    return this.availableAt(order, stock) >= order.quantity;
   }
 
   private async assertSupplyingHub(hubId: string, order: Order) {

@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { DocumentType } from '../common/enums/document-type.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
@@ -116,6 +117,7 @@ function build(options?: {
   const saved: Order[] = [];
   const orders = {
     create: jest.fn((value: Partial<Order>) => value),
+    find: jest.fn(),
     findOne: jest.fn(),
     save: jest.fn((value: Order) => {
       value.id = '11111111-1111-4111-8111-111111111111';
@@ -127,14 +129,16 @@ function build(options?: {
   const images = {
     create: jest.fn((value: object) => value),
     save: jest.fn((value: object) => value),
+    findOne: jest.fn(),
   };
   const hubs = { find: jest.fn() };
+  const stockForHub = jest.fn();
   const offers = {
     offer: jest
       .fn()
       .mockResolvedValue(options && 'offer' in options ? options.offer : offer),
     catalog: jest.fn(),
-    stockForHub: jest.fn(),
+    stockForHub,
   } as unknown as InventoryOfferQuery;
   const hubsService = {
     requireActive:
@@ -150,7 +154,7 @@ function build(options?: {
     offers,
     hubsService,
   );
-  return { service, orders, saved };
+  return { service, orders, images, stockForHub, saved };
 }
 
 describe('OrdersService emergencies', () => {
@@ -321,5 +325,108 @@ describe('OrdersService status', () => {
     });
     expect(result.status).toBe(OrderStatus.REJECTED);
     expect(result.droneId).toBeNull();
+  });
+});
+
+describe('OrdersService queue', () => {
+  const stock = [
+    {
+      name: offer.name,
+      saleType: SaleType.OVER_THE_COUNTER,
+      requiresColdChain: false,
+      availableQuantity: 8,
+    },
+  ];
+
+  it('lists emergencies directed to the hub that holds the stock', async () => {
+    const { service, orders, stockForHub } = build();
+    stockForHub.mockResolvedValue(stock);
+    orders.find.mockResolvedValue([
+      receivedOrder({
+        id: '22222222-2222-4222-8222-222222222222',
+        requesterId: null,
+        createdByUserId: dispatcher().id,
+        originHubId: origin.id,
+        destinationHubId: destination.id,
+        destinationKind: DestinationKind.HUB,
+        quantity: 4,
+      }),
+      receivedOrder(),
+      receivedOrder({
+        id: '33333333-3333-4333-8333-333333333333',
+        medicationName: 'Ibuprofeno 400 mg',
+      }),
+    ]);
+
+    const rows = await service.listQueue(originDispatcher());
+
+    expect(rows.map((row) => row.id)).toEqual([
+      '22222222-2222-4222-8222-222222222222',
+      '11111111-1111-4111-8111-111111111111',
+    ]);
+    expect(rows[0].availableQuantity).toBe(8);
+    expect(rows[0]).not.toHaveProperty('content');
+    expect(orders.find).toHaveBeenCalledWith({
+      where: {
+        missionType: MissionType.EMERGENCY,
+        status: OrderStatus.RECEIVED,
+      },
+      order: { createdAt: 'ASC' },
+    });
+  });
+
+  it('keeps a hub emergency in the origin queue even when stock is gone', async () => {
+    const { service, orders, stockForHub } = build();
+    stockForHub.mockResolvedValue([]);
+    orders.find.mockResolvedValue([
+      receivedOrder({
+        requesterId: null,
+        originHubId: origin.id,
+        destinationHubId: destination.id,
+        destinationKind: DestinationKind.HUB,
+        quantity: 4,
+      }),
+    ]);
+    const forOrigin = await service.listQueue(originDispatcher());
+    const forDestination = await service.listQueue(dispatcher());
+    expect(forOrigin).toHaveLength(1);
+    expect(forOrigin[0].availableQuantity).toBe(0);
+    expect(forDestination).toHaveLength(0);
+  });
+
+  it('returns the formula only to the hub that can attend a received person order', async () => {
+    const { service, orders, images, stockForHub } = build();
+    const formula = Buffer.from('formula');
+    stockForHub.mockResolvedValue([
+      {
+        name: offer.name,
+        saleType: SaleType.PRESCRIPTION,
+        requiresColdChain: false,
+        availableQuantity: 3,
+      },
+    ]);
+    orders.findOne.mockResolvedValue(
+      receivedOrder({
+        saleType: SaleType.PRESCRIPTION,
+        destinationKind: DestinationKind.PERSON,
+      }),
+    );
+    images.findOne.mockResolvedValue({
+      content: formula,
+      mime: 'image/jpeg',
+    });
+
+    const image = await service.readPrescription(
+      dispatcher(),
+      receivedOrder().id,
+    );
+    expect(image.content).toBe(formula);
+    expect(image.mime).toBe('image/jpeg');
+
+    stockForHub.mockResolvedValue([]);
+    await expect(
+      service.readPrescription(originDispatcher(), receivedOrder().id),
+    ).rejects.toBeInstanceOf(NotFoundException);
+    expect(images.findOne).toHaveBeenCalledTimes(1);
   });
 });

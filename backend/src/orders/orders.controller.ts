@@ -6,6 +6,7 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
+  StreamableFile,
   UseGuards,
 } from '@nestjs/common';
 import { CurrentUser } from '../auth/current-user.decorator';
@@ -37,6 +38,12 @@ export class OrdersController {
     return this.ordersService.listOriginHubs(user);
   }
 
+  @Get('queue')
+  @Roles(UserRole.DISPATCHER)
+  queue(@CurrentUser() user: User) {
+    return this.ordersService.listQueue(user);
+  }
+
   @Post('emergencies')
   @Roles(UserRole.REQUESTER)
   createEmergency(@CurrentUser() user: User, @Body() dto: CreateEmergencyDto) {
@@ -50,6 +57,19 @@ export class OrdersController {
     @Body() dto: CreateHubEmergencyDto,
   ) {
     return this.ordersService.createHubEmergency(user, dto);
+  }
+
+  @Get(':id/prescription')
+  @Roles(UserRole.DISPATCHER)
+  async prescription(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    const image = await this.ordersService.readPrescription(user, id);
+    return new StreamableFile(image.content, {
+      type: image.mime,
+      disposition: 'inline',
+    });
   }
 
   @Get(':id')
