@@ -65,6 +65,8 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     });
 
     try {
+      final email = _emailValue();
+      if (email == null) return;
       await ref
           .read(authControllerProvider.notifier)
           .register(
@@ -75,13 +77,11 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               phone: phone,
               password: _password.text,
               consentAccepted: true,
-              email: _emailValue(),
+              email: email,
             ),
           );
       if (!mounted) return;
-      // El código de un uso va al celular, que es el único contacto
-      // obligatorio del registro.
-      context.go('/verify-otp', extra: AuthContact.phone(phone));
+      context.go('/verify-otp', extra: AuthContact.email(email));
     } on ApiException catch (error) {
       if (mounted) setState(() => _errorMessage = error.message);
     } catch (_) {
@@ -103,7 +103,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       : Validators.documentPpt(value);
 
   String? _validateEmail(String? value) {
-    if (_emailValue() == null) return null;
+    if (_emailValue() == null) return 'El correo es obligatorio.';
     return Validators.email(value);
   }
 

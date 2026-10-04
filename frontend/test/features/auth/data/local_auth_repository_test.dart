@@ -78,6 +78,7 @@ void main() {
           documentType: DocumentType.citizenshipId,
           documentNumber: 'AB12',
           phone: '3031234567',
+          email: 'mal.digitado@correo.co',
           password: 'secreto12',
           consentAccepted: true,
         ),
@@ -92,20 +93,28 @@ void main() {
     );
   });
 
-  test('el registro local acepta al solicitante sin correo', () async {
+  test('el registro local rechaza una cuenta sin correo', () async {
     final unique = DateTime.now().microsecondsSinceEpoch;
-    final response = await repository.register(
-      RegisterRequest(
-        fullName: 'Nueva Cuenta',
-        documentType: DocumentType.citizenshipId,
-        documentNumber: '$unique'.substring(0, 8),
-        phone: '30${unique.toString().substring(4)}',
-        password: 'secreto12',
-        consentAccepted: true,
+    expect(
+      () => repository.register(
+        RegisterRequest(
+          fullName: 'Nueva Cuenta',
+          documentType: DocumentType.citizenshipId,
+          documentNumber: '$unique'.substring(0, 8),
+          phone: '3010001122',
+          email: '   ',
+          password: 'secreto12',
+          consentAccepted: true,
+        ),
+      ),
+      throwsA(
+        isA<ApiException>().having(
+          (e) => e.message,
+          'mensaje',
+          'El correo es obligatorio.',
+        ),
       ),
     );
-
-    expect(response.userId, startsWith('local-'));
   });
 
   test('el registro local siempre nace como solicitante', () async {
@@ -139,6 +148,7 @@ void main() {
           documentType: DocumentType.citizenshipId,
           documentNumber: '1098765432',
           phone: '3041234567',
+          email: 'repetido@correo.co',
           password: 'secreto12',
           consentAccepted: true,
         ),

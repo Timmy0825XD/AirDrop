@@ -4,7 +4,6 @@ import {
   IsBoolean,
   IsEmail,
   IsEnum,
-  IsOptional,
   IsString,
   Matches,
   MaxLength,
@@ -36,7 +35,6 @@ export class RegisterDto extends ContactCheckDto {
   })
   documentNumber: string;
 
-  @IsOptional()
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim().toLowerCase() : value,
   )
@@ -44,7 +42,7 @@ export class RegisterDto extends ContactCheckDto {
   @MaxLength(FIELD_LIMITS.email, {
     message: `El correo no puede superar ${FIELD_LIMITS.email} caracteres.`,
   })
-  email?: string;
+  email: string;
 
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.replace(/\D/g, '') : value,

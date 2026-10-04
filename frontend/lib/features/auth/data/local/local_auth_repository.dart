@@ -28,6 +28,9 @@ class LocalAuthRepository implements AuthRepository {
       );
     }
     final email = LocalAuthRules.normalizeEmail(request.email);
+    if (email == null) {
+      throw const ApiException('El correo es obligatorio.', statusCode: 400);
+    }
     final documentNumber = LocalAuthRules.normalizeDocument(
       request.documentType,
       request.documentNumber,
@@ -80,7 +83,7 @@ class LocalAuthRepository implements AuthRepository {
     final user = _findByContact(request.contact);
     if (user == null || user.password != request.password) {
       throw ApiException(
-        'Correo o celular y contraseña no coinciden.',
+        'El correo y la contraseña no coinciden.',
         statusCode: 401,
       );
     }
@@ -191,9 +194,10 @@ class LocalAuthRepository implements AuthRepository {
   }
 
   ApiException? _loginBlock(UserStatus status) => switch (status) {
-    UserStatus.unverified => ApiException(
-      'Debes verificar tu cuenta con el código que te enviamos.',
+    UserStatus.unverified => const ApiException(
+      'Debes verificar tu cuenta. Te enviamos un código nuevo a tu correo.',
       statusCode: 403,
+      code: 'account_unverified',
     ),
     UserStatus.locked => ApiException(
       'Demasiados intentos. Intenta de nuevo en unos minutos.',
@@ -238,7 +242,6 @@ class LocalAuthRepository implements AuthRepository {
   bool _phoneTaken(String phone, String currentId) =>
       _users.values.any((user) => user.id != currentId && user.phone == phone);
 
-  /// El correo es opcional, así que solo se busca duplicado si viene.
   bool _contactTaken(String? email, String phone) {
     if (email != null && _emailTaken(email, '')) return true;
     return _phoneTaken(phone, '');

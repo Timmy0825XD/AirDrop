@@ -67,7 +67,7 @@ describeIfDb('Auth (e2e)', () => {
 
     const verified = await request(app!.getHttpServer())
       .post('/auth/verify-otp')
-      .send({ phone: anaPerez.phone, code: otp })
+      .send({ email: anaPerez.email, code: otp })
       .expect(201);
 
     expect((verified.body as { accessToken: string }).accessToken).toBeDefined();

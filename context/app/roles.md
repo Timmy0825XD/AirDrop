@@ -8,7 +8,7 @@ La **central** es el lugar donde están el inventario y los drones. No es una cu
 
 | Rol | Quién | Cómo entra | Qué no hace |
 | --- | --- | --- | --- |
-| Solicitante | Persona civil adulta, con documento | Registro público y OTP al celular | No opera una central ni autoriza una salida |
+| Solicitante | Persona civil adulta, con documento | Registro público. Entra con correo y contraseña. El OTP va al correo | No opera una central ni autoriza una salida |
 | Despachador | Profesional de la salud, o persona con capacitación certificada para aprobar solicitudes | Lo crea el administrador, en **una** central | No se autoregistra y no cubre otra central |
 | Operador de flota | Técnico de los drones | Lo crea el administrador, en **una o varias** centrales | No dispensa ni autoriza pedidos |
 | Administrador | Operación de la plataforma | La primera cuenta nace del sistema | No pide insumos, no autoriza una salida y no pilotea la flota |
@@ -19,7 +19,7 @@ No hay rol receptor. El código de un uso lo ingresa el solicitante o, si el des
 
 ## Registro del solicitante
 
-Nombre, tipo y número de documento, celular de 10 dígitos, contraseña y consentimiento. El correo es opcional. Documentos admitidos: cédula de ciudadanía, cédula de extranjería o PPT. No se registra a un menor.
+Nombre, tipo y número de documento, celular de 10 dígitos, correo, contraseña y consentimiento. El celular no recibe el código de verificación. Documentos admitidos: cédula de ciudadanía, cédula de extranjería o PPT. No se registra a un menor.
 
 En venta bajo fórmula, el documento de la cuenta es el del paciente de la fórmula. Si no coincide, el pedido no se crea. El fundamento está en [../legal/datos.md](../legal/datos.md) y [../legal/salud.md](../legal/salud.md).
 

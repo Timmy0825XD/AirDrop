@@ -39,7 +39,7 @@ class RegisterContactFields extends StatelessWidget {
         const SizedBox(height: 16),
         RegisterField(
           label: 'Correo electrónico',
-          hint: 'Opcional: para recibir novedades',
+          hint: 'nombre@correo.com',
           icon: Icons.alternate_email_rounded,
           controller: emailController,
           keyboardType: TextInputType.emailAddress,

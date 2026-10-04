@@ -51,17 +51,18 @@ void main() {
     expect(request.toJson().containsKey('role'), isFalse);
   });
 
-  test('RegisterRequest omite el correo cuando no viene', () {
+  test('RegisterRequest siempre manda el correo', () {
     final request = RegisterRequest(
       fullName: 'Ana Pérez',
       documentType: DocumentType.ppt,
       documentNumber: 'AB123456',
       phone: '3001234567',
+      email: 'ana@correo.co',
       password: 'secreto12',
       consentAccepted: true,
     );
 
-    expect(request.toJson().containsKey('email'), isFalse);
+    expect(request.toJson()['email'], 'ana@correo.co');
   });
 
   test('UpdateProfileRequest manda el documento solo si viene', () {

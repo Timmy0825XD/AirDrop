@@ -7,7 +7,6 @@ import '../../../core/validators.dart';
 import '../data/auth_models.dart';
 import 'auth_controller.dart';
 import 'widgets/auth_page.dart';
-import 'widgets/forgot/forgot_method_chips.dart';
 import 'widgets/forgot/forgot_password_content.dart';
 import 'widgets/login/login_form_alert.dart';
 
@@ -24,14 +23,13 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _contact = TextEditingController();
-  ForgotMethod _method = ForgotMethod.email;
+  final _email = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
 
   @override
   void dispose() {
-    _contact.dispose();
+    _email.dispose();
     super.dispose();
   }
 
@@ -44,7 +42,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     });
 
     try {
-      final contact = AuthContact.parse(_contact.text);
+      final contact = AuthContact.email(_email.text.trim().toLowerCase());
       await ref
           .read(authControllerProvider.notifier)
           .forgotPassword(ForgotPasswordRequest(contact: contact));
@@ -62,12 +60,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     }
   }
 
-  String? _validateContact(String? value) {
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) return 'Escribe tu correo o celular.';
-    final looksLikeEmail = RegExp(r'[A-Za-z@]').hasMatch(text);
-    return looksLikeEmail ? Validators.email(text) : Validators.phone(text);
-  }
+  String? _validateEmail(String? value) => Validators.email(value);
 
   void _clearError(String _) {
     if (_errorMessage != null) setState(() => _errorMessage = null);
@@ -87,21 +80,13 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
             ForgotPasswordContent(
               onBack: () => context.go('/login'),
               onReturnToLogin: () => context.go('/login'),
-              contactController: _contact,
-              hint: _method == ForgotMethod.email
-                  ? 'ej. v.morales@clinica.org'
-                  : 'ej. 3001234567 o +57 300 123 4567',
-              keyboardType: _method == ForgotMethod.email
-                  ? TextInputType.emailAddress
-                  : TextInputType.phone,
-              validator: _validateContact,
+              contactController: _email,
+              hint: 'nombre@correo.com',
+              keyboardType: TextInputType.emailAddress,
+              validator: _validateEmail,
               onChanged: _clearError,
               isLoading: _isLoading,
               onSubmit: _submit,
-              methodChips: ForgotMethodChips(
-                selected: _method,
-                onChanged: (method) => setState(() => _method = method),
-              ),
             ),
             AuthFormAlert(
               message: _errorMessage,

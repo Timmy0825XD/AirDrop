@@ -35,10 +35,9 @@ import { UpdateProfileDto } from './dto/update-profile.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { JwtPayload } from './jwt-payload';
 import { OneTimeCode } from './one-time-code.entity';
-import { OtpDeliveryService } from './otp-delivery.service';
+import { OtpDeliveryService, OtpDestination } from './otp-delivery.service';
 
-const GENERIC_RESET_MESSAGE =
-  'Si el contacto existe, te enviaremos un código.';
+const GENERIC_RESET_MESSAGE = 'Si el contacto existe, te enviaremos un código.';
 
 @Injectable()
 export class AuthService {
@@ -60,14 +59,16 @@ export class AuthService {
         'El número de documento no corresponde a una cédula o a un PPT.',
       );
     }
-    if (await this.usersService.findByDocument(dto.documentType, documentNumber)) {
+    if (
+      await this.usersService.findByDocument(dto.documentType, documentNumber)
+    ) {
       throw new ConflictException('Ya existe una cuenta con este documento.');
     }
     await this.assertContactAvailable(dto.email, dto.phone);
     const passwordHash = await hashPassword(dto.password);
     const user = this.usersService.create({
       fullName: dto.fullName.trim(),
-      email: dto.email ?? null,
+      email: dto.email,
       phone: dto.phone,
       documentType: dto.documentType,
       documentNumber,
@@ -79,7 +80,12 @@ export class AuthService {
       lockedUntil: null,
     });
     const saved = await this.usersService.save(user);
-    const otp = await this.issueOtp(saved, OtpPurpose.SIGNUP, OTP_SIGNUP_TTL_MS);
+    const otp = await this.issueOtp(
+      saved,
+      OtpPurpose.SIGNUP,
+      OTP_SIGNUP_TTL_MS,
+      this.signupDestination(saved),
+    );
     return this.withOptionalOtp(
       {
         message: 'Cuenta creada. Verifica el código para activarla.',
@@ -104,7 +110,12 @@ export class AuthService {
     if (user.status !== UserStatus.UNVERIFIED) {
       throw new BadRequestException('Esta cuenta ya está verificada.');
     }
-    const otp = await this.issueOtp(user, OtpPurpose.SIGNUP, OTP_SIGNUP_TTL_MS);
+    const otp = await this.issueOtp(
+      user,
+      OtpPurpose.SIGNUP,
+      OTP_SIGNUP_TTL_MS,
+      this.signupDestination(user),
+    );
     return this.withOptionalOtp(
       { message: 'Si el contacto existe, te enviaremos un código.' },
       otp,
@@ -112,10 +123,10 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.findUserByContact(dto.email, dto.phone);
+    const user = await this.usersService.findByEmail(dto.email);
     if (!user) {
       throw new UnauthorizedException(
-        'Correo o celular y contraseña no coinciden.',
+        'El correo y la contraseña no coinciden.',
       );
     }
     if (isLockActive(user)) {
@@ -136,13 +147,21 @@ export class AuthService {
         );
       }
       throw new UnauthorizedException(
-        'Correo o celular y contraseña no coinciden.',
+        'El correo y la contraseña no coinciden.',
       );
     }
     if (user.status === UserStatus.UNVERIFIED) {
-      throw new ForbiddenException(
-        'Debes verificar tu cuenta con el código que te enviamos.',
+      await this.issueOtp(
+        user,
+        OtpPurpose.SIGNUP,
+        OTP_SIGNUP_TTL_MS,
+        this.signupDestination(user),
       );
+      throw new ForbiddenException({
+        message:
+          'Debes verificar tu cuenta. Te enviamos un código nuevo a tu correo.',
+        code: 'account_unverified',
+      });
     }
     if (user.status === UserStatus.SUSPENDED) {
       throw new ForbiddenException(
@@ -161,10 +180,19 @@ export class AuthService {
   async forgotPassword(dto: ForgotPasswordDto) {
     const user = await this.findUserByContact(dto.email, dto.phone);
     if (user) {
+      if (!user.email) {
+        return { message: GENERIC_RESET_MESSAGE };
+      }
+      const destination: OtpDestination = {
+        channel: 'email',
+        email: user.email,
+        name: user.fullName,
+      };
       const otp = await this.issueOtp(
         user,
         OtpPurpose.PASSWORD_RESET,
         OTP_RESET_TTL_MS,
+        destination,
       );
       return this.withOptionalOtp({ message: GENERIC_RESET_MESSAGE }, otp);
     }
@@ -310,10 +338,20 @@ export class AuthService {
     return user;
   }
 
+  private signupDestination(user: User): OtpDestination {
+    if (!user.email) {
+      throw new BadRequestException(
+        'Esta cuenta no tiene correo para el código.',
+      );
+    }
+    return { channel: 'email', email: user.email, name: user.fullName };
+  }
+
   private async issueOtp(
     user: User,
     purpose: OtpPurpose,
     ttlMs: number,
+    destination: OtpDestination,
   ): Promise<string> {
     const open = await this.codes.find({
       where: { userId: user.id, purpose, consumedAt: IsNull() },
@@ -334,7 +372,7 @@ export class AuthService {
       consumedAt: null,
     });
     await this.codes.save(row);
-    this.otpDelivery.deliver(purpose, code);
+    await this.otpDelivery.deliver(purpose, code, destination);
     return code;
   }
 

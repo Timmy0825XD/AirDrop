@@ -109,8 +109,8 @@ Convenciones que ya están en el código:
 - Los labels de campo van en mayúsculas con `letterSpacing`. Los assert de los
   tests buscan el texto en mayúsculas.
 - El registro y el login no piden rol. El registro es solo del solicitante y
-  usa `DocumentTypeTabs` para el tipo de documento; el login usa el bloque de
-  método de contacto.
+  usa `DocumentTypeTabs` para el tipo de documento. El login pide correo y
+  contraseña.
 - Un formulario reusa `RegisterFieldValidators` o `LoginFieldValidators` para no
   pasar validadores uno por uno.
 
@@ -265,8 +265,8 @@ Despachador y operador los crea el administrador por `POST /users`
 | `fullName` | obligatorio, 40 |
 | `documentType` | obligatorio: `citizenship_id`, `foreigner_id` o `ppt` |
 | `documentNumber` | obligatorio, 15. Cédulas: 6–10 dígitos. PPT: 6–15 alfanuméricos en mayúsculas |
-| `phone` | **obligatorio**, 10 dígitos. Es donde llega el código de un uso |
-| `email` | opcional |
+| `phone` | **obligatorio**, 10 dígitos. No recibe el OTP |
+| `email` | **obligatorio**. Ahí llega el OTP de registro y el de recuperación. El login es este correo y la contraseña |
 | `password` | 8–72 |
 | `consentAccepted` | obligatorio y `true` (RNF-05) |
 
@@ -288,7 +288,7 @@ Despachador y operador los crea el administrador por `POST /users`
 
 Nest solo quita lo que no es dígito (`replace(/\D/g, '')`) y después exige
 `^\d{10}$`. No quita el prefijo de país. Por eso `+57 300 123 4567` llegaba
-como `573001234567` y el registro, el login y la recuperación respondían 400.
+como `573001234567` y el registro respondía 400.
 
 La regla vive **en un solo lugar**: `normalizeColombianPhone` en
 [`lib/core/colombian_phone.dart`](lib/core/colombian_phone.dart). La usan
@@ -296,9 +296,9 @@ La regla vive **en un solo lugar**: `normalizeColombianPhone` en
 No la reescribas en otro archivo. Cuando cambies un campo de contacto, pasa
 por ahí.
 
-El campo de login es único y `AuthContact.parse` decide correo o celular.
-Como el mismo helper alimenta los tres caminos, escribir `+57 300 123 4567`
-funciona igual que `300 123 4567` en las tres pantallas.
+El login y la recuperación piden correo. `AuthContact.parse` sigue
+sirviendo para normalizar un celular en el registro: `+57 300 123 4567`
+equivale a `300 123 4567`.
 
 ### Widgets de documento
 

@@ -6,16 +6,13 @@ import '../login/login_glass_card.dart';
 import '../register/register_field.dart';
 import 'forgot_intro.dart';
 
-/// Contenido de "olvidé mi contraseña": pide el contacto, deja elegir si
-/// es correo o celular y envía el código. El texto y el tipo de teclado
-/// dependen del método elegido, así que llegan ya resueltos.
+/// Contenido de "olvidé mi contraseña": pide el correo y envía el código.
 class ForgotPasswordContent extends StatelessWidget {
   const ForgotPasswordContent({
     super.key,
     required this.onBack,
     required this.onReturnToLogin,
     required this.contactController,
-    required this.methodChips,
     required this.onSubmit,
     required this.hint,
     required this.keyboardType,
@@ -27,7 +24,6 @@ class ForgotPasswordContent extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onReturnToLogin;
   final TextEditingController contactController;
-  final Widget methodChips;
   final VoidCallback onSubmit;
   final String hint;
   final TextInputType keyboardType;
@@ -44,7 +40,6 @@ class ForgotPasswordContent extends StatelessWidget {
         const SizedBox(height: 24),
         _ContactCard(
           contactController: contactController,
-          methodChips: methodChips,
           onSubmit: onSubmit,
           hint: hint,
           keyboardType: keyboardType,
@@ -59,12 +54,10 @@ class ForgotPasswordContent extends StatelessWidget {
   }
 }
 
-/// La tarjeta de vidrio con el campo de contacto, los chips de método y el
-/// botón que envía el código.
+/// La tarjeta de vidrio con el correo y el botón que envía el código.
 class _ContactCard extends StatelessWidget {
   const _ContactCard({
     required this.contactController,
-    required this.methodChips,
     required this.onSubmit,
     required this.hint,
     required this.keyboardType,
@@ -74,7 +67,6 @@ class _ContactCard extends StatelessWidget {
   });
 
   final TextEditingController contactController;
-  final Widget methodChips;
   final VoidCallback onSubmit;
   final String hint;
   final TextInputType keyboardType;
@@ -89,7 +81,7 @@ class _ContactCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           RegisterField(
-            label: 'Identificador de acceso',
+            label: 'Correo',
             hint: hint,
             icon: Icons.badge_outlined,
             controller: contactController,
@@ -99,8 +91,6 @@ class _ContactCard extends StatelessWidget {
             validator: validator,
             onChanged: onChanged,
           ),
-          const SizedBox(height: 16),
-          methodChips,
           const SizedBox(height: 20),
           LoginButton(
             label: 'Enviar código',
