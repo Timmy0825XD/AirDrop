@@ -13,7 +13,7 @@ class DispatcherCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final inventoryEnabled = hub?.isActive ?? false;
+    final active = hub?.isActive ?? false;
     return Column(
       children: [
         if (errorMessage != null) ...[
@@ -29,11 +29,45 @@ class DispatcherCards extends StatelessWidget {
         const SizedBox(height: 12),
         HomeActionCard(
           title: 'Inventario',
-          subtitle: inventoryEnabled
+          subtitle: active
               ? 'Insumos, lotes y vencimientos de tu central.'
-              : _inventorySubtitle(hub),
+              : _inactiveSubtitle(hub),
           icon: Icons.inventory_2_outlined,
-          onTap: inventoryEnabled ? () => context.go('/inventory') : null,
+          onTap: active ? () => context.go('/inventory') : null,
+        ),
+        const SizedBox(height: 12),
+        HomeActionCard(
+          title: 'Cola de urgencias',
+          subtitle: active
+              ? 'Urgencias en recibido de tu central.'
+              : _inactiveSubtitle(hub),
+          icon: Icons.pending_actions_outlined,
+          onTap: active ? () => context.go('/orders/queue') : null,
+        ),
+        const SizedBox(height: 12),
+        HomeActionCard(
+          title: 'Programados',
+          subtitle: active
+              ? 'Entregas periódicas que tu central puede soltar.'
+              : _inactiveSubtitle(hub),
+          icon: Icons.schedule_outlined,
+          onTap: active ? () => context.go('/orders/scheduled') : null,
+        ),
+        const SizedBox(height: 12),
+        HomeActionCard(
+          title: 'Pedir a otra central',
+          subtitle: active
+              ? 'Urgencia o abastecimiento desde otra central activa.'
+              : _inactiveSubtitle(hub),
+          icon: Icons.swap_horiz_outlined,
+          onTap: active ? () => _pickHubSource(context) : null,
+        ),
+        const SizedBox(height: 12),
+        HomeActionCard(
+          title: 'Mis planes',
+          subtitle: 'Fechas, extensión y cancelación.',
+          icon: Icons.event_repeat_outlined,
+          onTap: () => context.go('/orders/plans'),
         ),
       ],
     );
@@ -45,10 +79,37 @@ class DispatcherCards extends StatelessWidget {
     return '${hub.name} · $state';
   }
 
-  /// La central suspendida es un estado del sistema, no una omisión:
-  /// el mensaje viene de `HubsService.requireActive` en Nest.
-  String _inventorySubtitle(Hub? hub) {
+  String _inactiveSubtitle(Hub? hub) {
     if (hub == null) return 'No tienes una central asignada.';
     return 'La central está suspendida.';
+  }
+
+  void _pickHubSource(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheet) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.emergency_outlined),
+              title: const Text('Urgencia'),
+              onTap: () {
+                Navigator.of(sheet).pop();
+                context.go('/orders/hub-emergency');
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.calendar_month_outlined),
+              title: const Text('Abastecimiento'),
+              onTap: () {
+                Navigator.of(sheet).pop();
+                context.go('/orders/hub-plans/new');
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

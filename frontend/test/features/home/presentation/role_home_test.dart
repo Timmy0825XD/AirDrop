@@ -183,7 +183,7 @@ const InventoryItem _inventoryItem = InventoryItem(
 );
 
 void main() {
-  testWidgets('muestra el home del solicitante sin inventar pedidos', (
+  testWidgets('muestra el home del solicitante con las cuatro tarjetas', (
     tester,
   ) async {
     final container = await _authenticatedContainer(
@@ -195,7 +195,11 @@ void main() {
     await _pumpHome(tester, container);
 
     expect(find.text('Hola, Ana'), findsOneWidget);
-    expect(find.text('Pedidos aún no disponibles'), findsOneWidget);
+    expect(find.text('Urgencia'), findsOneWidget);
+    expect(find.text('Entrega periódica'), findsOneWidget);
+    expect(find.text('Mis planes'), findsOneWidget);
+    expect(find.text('Historial'), findsOneWidget);
+    expect(find.text('Pedidos aún no disponibles'), findsNothing);
     expect(find.text('Crear pedido'), findsNothing);
   });
 
@@ -240,8 +244,15 @@ void main() {
       matching: find.byType(InkWell),
     );
     expect(tester.widget<InkWell>(inventoryCard).onTap, isNull);
-    expect(find.textContaining('La central está suspendida.'), findsOneWidget);
-    expect(find.textContaining('Suspendida'), findsOneWidget);
+    expect(
+      find.textContaining('La central está suspendida.'),
+      findsNWidgets(4),
+    );
+    expect(find.textContaining('Suspendida'), findsWidgets);
+    expect(find.text('Cola de urgencias'), findsOneWidget);
+    expect(find.text('Programados'), findsOneWidget);
+    expect(find.text('Pedir a otra central'), findsOneWidget);
+    expect(find.text('Mis planes'), findsOneWidget);
   });
 
   testWidgets('habilita inventario con central activa', (tester) async {
@@ -276,8 +287,10 @@ void main() {
 
     expect(
       find.textContaining('No tienes una central asignada.'),
-      findsOneWidget,
+      findsNWidgets(4),
     );
+    expect(find.text('Cola de urgencias'), findsOneWidget);
+    expect(find.text('Programados'), findsOneWidget);
   });
 
   testWidgets('la tarjeta de flota navega al listado de drones', (
