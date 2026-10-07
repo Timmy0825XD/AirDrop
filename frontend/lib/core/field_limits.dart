@@ -17,6 +17,8 @@ class FieldLimits {
   static const int droneModelName = 80;
   static const int address = 160;
   static const int reason = 160;
+  static const int orderDescription = 500;
+  static const int prescriptionMime = 32;
   static const int droneIdentifier = 32;
   static const int droneModelCode = 32;
 
