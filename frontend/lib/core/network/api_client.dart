@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:dio/dio.dart';
@@ -45,6 +46,25 @@ class ApiClient {
 
   Future<void> delete(String path) => _sendVoid(() => _dio.delete(path));
 
+  /// Baja bytes (`GET /orders/:id/prescription`). `getJson` no sirve: Dio
+  /// interpretaría la imagen como texto. Lee `content-type` y usa
+  /// `image/jpeg` cuando el header falta.
+  Future<ApiBytes> getBytes(String path) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        path,
+        options: Options(responseType: ResponseType.bytes),
+      );
+      final rawTypes = response.headers['content-type'];
+      final mime = _mimeOf(rawTypes == null || rawTypes.isEmpty
+          ? null
+          : rawTypes.first);
+      return ApiBytes(bytes: Uint8List.fromList(response.data ?? []), mime: mime);
+    } on DioException catch (e) {
+      throw _bytesToApiException(e);
+    }
+  }
+
   void _addSessionInterceptor() {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
@@ -87,4 +107,39 @@ class ApiClient {
     if (response == null) return ApiException.connection();
     return ApiException.fromNest(response.data, statusCode: response.statusCode);
   }
+
+  /// El cuerpo de error del GET de bytes llega como `List<int>`, no como
+  /// `Map`: se decodifica a UTF-8 y se pasa a `ApiException.fromNest`
+  /// para no perder el `El pedido no existe.`.
+  ApiException _bytesToApiException(DioException error) {
+    final response = error.response;
+    if (response == null) return ApiException.connection();
+    final data = response.data;
+    if (data is List<int>) {
+      try {
+        final decoded = jsonDecode(utf8.decode(data));
+        return ApiException.fromNest(
+          decoded,
+          statusCode: response.statusCode,
+        );
+      } on FormatException {
+        return ApiException.fromNest(null, statusCode: response.statusCode);
+      }
+    }
+    return ApiException.fromNest(data, statusCode: response.statusCode);
+  }
+
+  String _mimeOf(String? contentType) {
+    final mime = (contentType ?? '').split(';').first.trim().toLowerCase();
+    if (mime == 'image/png' || mime == 'image/jpeg') return mime;
+    return 'image/jpeg';
+  }
+}
+
+/// Bytes crudos más su MIME, sin guardar en disco.
+class ApiBytes {
+  const ApiBytes({required this.bytes, required this.mime});
+
+  final Uint8List bytes;
+  final String mime;
 }
