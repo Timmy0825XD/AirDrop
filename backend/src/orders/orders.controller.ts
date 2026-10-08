@@ -14,6 +14,8 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { UserRole } from '../common/enums/user-role.enum';
+import { AuthorizeOrderDto } from '../decision/dto/authorize-order.dto';
+import { DecisionService } from '../decision/decision.service';
 import { User } from '../users/user.entity';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
 import { CreateEmergencyDto } from './dto/create-emergency.dto';
@@ -26,7 +28,10 @@ import { OrdersService } from './orders.service';
 @Controller('orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class OrdersController {
-  constructor(private readonly ordersService: OrdersService) {}
+  constructor(
+    private readonly ordersService: OrdersService,
+    private readonly decisionService: DecisionService,
+  ) {}
 
   @Get('catalog')
   @Roles(UserRole.REQUESTER, UserRole.DISPATCHER)
@@ -36,8 +41,9 @@ export class OrdersController {
 
   @Get('mine')
   @Roles(UserRole.REQUESTER)
-  mine(@CurrentUser() user: User) {
-    return this.ordersService.listMine(user);
+  async mine(@CurrentUser() user: User) {
+    const rows = await this.ordersService.listMine(user);
+    return this.decisionService.attachAssignments(rows);
   }
 
   @Get('origin-hubs')
@@ -56,6 +62,12 @@ export class OrdersController {
   @Roles(UserRole.DISPATCHER)
   scheduled(@CurrentUser() user: User) {
     return this.ordersService.listScheduled(user);
+  }
+
+  @Get('pending-load')
+  @Roles(UserRole.DISPATCHER)
+  pendingLoad(@CurrentUser() user: User) {
+    return this.decisionService.listPendingLoad(user);
   }
 
   @Post('plans')
@@ -133,11 +145,25 @@ export class OrdersController {
 
   @Get(':id')
   @Roles(UserRole.REQUESTER, UserRole.DISPATCHER)
-  findOne(
+  async findOne(
     @CurrentUser() user: User,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ) {
-    return this.ordersService.findOne(user, id);
+    const order = await this.ordersService.findOne(user, id);
+    const [withAssignment] = await this.decisionService.attachAssignments([
+      order,
+    ]);
+    return withAssignment;
+  }
+
+  @Post(':id/authorize')
+  @Roles(UserRole.DISPATCHER)
+  authorize(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() dto: AuthorizeOrderDto,
+  ) {
+    return this.decisionService.authorize(user, id, dto);
   }
 
   @Post(':id/reject')

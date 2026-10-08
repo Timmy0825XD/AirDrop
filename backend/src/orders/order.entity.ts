@@ -93,8 +93,14 @@ export class Order {
   })
   longitude: number | null;
 
+  @Index()
   @Column({ type: 'uuid', nullable: true })
   droneId: string | null;
+
+  /** Lote elegido al autorizar. La cantidad no se descuenta hasta confirmar la carga. */
+  @Index()
+  @Column({ type: 'uuid', nullable: true })
+  inventoryItemId: string | null;
 
   /** Motivo del rechazo, o de cancelar el plan. */
   @Column({ type: 'varchar', length: FIELD_LIMITS.reason, nullable: true })
