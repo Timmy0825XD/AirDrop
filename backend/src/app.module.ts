@@ -7,11 +7,13 @@ import { alignSprintSchema } from './database/align-sprint-schema';
 import { enablePostgis } from './database/enable-postgis';
 import { removeRetiredUserRoles } from './database/remove-retired-user-roles';
 import { typeOrmOptions } from './database/typeorm.config';
+import { DecisionModule } from './decision/decision.module';
 import { FleetModule } from './fleet/fleet.module';
 import { GeofencesModule } from './geofences/geofences.module';
 import { HubsModule } from './hubs/hubs.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { OrdersModule } from './orders/orders.module';
+import { RoutingModule } from './routing/routing.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -36,6 +38,8 @@ import { UsersModule } from './users/users.module';
     InventoryModule,
     FleetModule,
     GeofencesModule,
+    RoutingModule,
+    DecisionModule,
     OrdersModule,
   ],
 })

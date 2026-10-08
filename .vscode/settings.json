@@ -3,5 +3,6 @@
     { "directory": "backend", "changeProcessCWD": true }
   ],
   "jest.rootPath": "backend",
-  "jest.jestCommandLine": "pnpm test"
+  "jest.jestCommandLine": "pnpm test",
+  "typescript.tsdk": "backend/node_modules/typescript/lib"
 }
