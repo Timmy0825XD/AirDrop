@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { DataSource, EntityManager, In } from 'typeorm';
 import { DroneStatus } from '../common/enums/drone-status.enum';
@@ -21,6 +22,9 @@ import { Order } from '../orders/order.entity';
 import { todayInColombia } from '../orders/orders.rules';
 import { PlannedCorridor } from '../routing/routing.rules';
 import { RoutePlannerService } from '../routing/route-planner.service';
+import { FlightClockService } from '../simulation/flight-clock.service';
+import { FLIGHT_NOT_READY } from '../simulation/simulation.rules';
+import { TELEMETRY_UNAVAILABLE } from '../telemetry/telemetry.rules';
 import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
 import { AuthorizeOrderDto } from './dto/authorize-order.dto';
@@ -28,7 +32,9 @@ import { EligibilityService } from './eligibility.service';
 import {
   DroneCandidate,
   LOT_NOT_AVAILABLE,
+  NOT_THE_LOADING_HUB,
   NO_ELIGIBLE_DRONE,
+  ONLY_PENDING_LOAD_IS_CONFIRMED,
   assertAuthorizingHub,
   assertCanAuthorize,
   simulatedWeather,
@@ -48,6 +54,7 @@ export class DecisionService {
     private readonly hubsService: HubsService,
     private readonly routes: RoutePlannerService,
     private readonly eligibility: EligibilityService,
+    private readonly flights: FlightClockService,
   ) {}
 
   async authorize(user: User, orderId: string, dto: AuthorizeOrderDto = {}) {
@@ -55,6 +62,40 @@ export class DecisionService {
     return this.dataSource.transaction((manager) =>
       this.authorizeIn(manager, hub, orderId, dto),
     );
+  }
+
+  async confirmLoad(user: User, orderId: string) {
+    const hub = await this.requireDispatcherHub(user);
+    if (!this.flights.isReady()) {
+      throw new ServiceUnavailableException(TELEMETRY_UNAVAILABLE);
+    }
+    const order = await this.dataSource.transaction(async (manager) => {
+      const current = await manager.findOne(Order, {
+        where: { id: orderId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!current) {
+        throw new NotFoundException('El pedido no existe.');
+      }
+      if (
+        current.status !== OrderStatus.PENDING_LOAD ||
+        current.loadConfirmedAt != null
+      ) {
+        throw new BadRequestException(ONLY_PENDING_LOAD_IS_CONFIRMED);
+      }
+      if (current.originHubId !== hub.id) {
+        throw new ForbiddenException(NOT_THE_LOADING_HUB);
+      }
+      const corridor = await this.routes.findOutboundMany([orderId]);
+      if (!current.droneId || !corridor.has(orderId)) {
+        throw new BadRequestException(FLIGHT_NOT_READY);
+      }
+      current.loadConfirmedAt = new Date();
+      return manager.save(current);
+    });
+    await this.flights.start(order.id);
+    const [presented] = await this.attachAssignments([presentOrder(order)]);
+    return presented;
   }
 
   async listPendingLoad(user: User) {

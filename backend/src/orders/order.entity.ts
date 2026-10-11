@@ -102,6 +102,10 @@ export class Order {
   @Column({ type: 'uuid', nullable: true })
   inventoryItemId: string | null;
 
+  /** El reloj de vuelo no arranca antes de esta marca. */
+  @Column({ type: 'timestamptz', nullable: true })
+  loadConfirmedAt: Date | null;
+
   /** Motivo del rechazo, o de cancelar el plan. */
   @Column({ type: 'varchar', length: FIELD_LIMITS.reason, nullable: true })
   statusReason: string | null;

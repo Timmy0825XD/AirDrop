@@ -26,6 +26,12 @@ export const NOT_THE_AUTHORIZING_HUB =
 export const ONLY_RECEIVED_IS_AUTHORIZED =
   'Solo se autoriza un pedido que sigue en recibido.';
 
+export const ONLY_PENDING_LOAD_IS_CONFIRMED =
+  'Solo se confirma la carga de un pedido pendiente de carga.';
+
+export const NOT_THE_LOADING_HUB =
+  'Solo el despachador de la central de origen confirma la carga.';
+
 export const MISSING_DESTINATION = 'El pedido no tiene coordenadas de destino.';
 
 export const WEATHER_BLOCKS = 'El clima simulado no permite volar.';
