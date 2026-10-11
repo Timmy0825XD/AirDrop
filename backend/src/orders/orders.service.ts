@@ -53,6 +53,7 @@ import {
 } from './orders.rules';
 import { presentOrder } from './order.presenter';
 import { PrescriptionImage } from './prescription-image.entity';
+import { PrescriptionStorage } from './prescription-storage';
 
 @Injectable()
 export class OrdersService {
@@ -61,6 +62,7 @@ export class OrdersService {
     private readonly orders: Repository<Order>,
     @InjectRepository(PrescriptionImage)
     private readonly images: Repository<PrescriptionImage>,
+    private readonly storage: PrescriptionStorage,
     @InjectRepository(Hub)
     private readonly hubs: Repository<Hub>,
     private readonly offers: InventoryOfferQuery,
@@ -126,12 +128,10 @@ export class OrdersService {
       }),
     );
     if (image) {
-      await this.images.save(
-        this.images.create({
-          orderId: saved.id,
-          content: image,
-          mime: dto.prescriptionMime ?? 'image/jpeg',
-        }),
+      await this.attachFormula(
+        saved.id,
+        image,
+        dto.prescriptionMime ?? 'image/jpeg',
       );
     }
     return this.toPublicOrder(saved);
@@ -361,7 +361,10 @@ export class OrdersService {
     if (!image) {
       throw new NotFoundException('El pedido no existe.');
     }
-    return { content: image.content, mime: image.mime };
+    return {
+      content: await this.storage.download(image.objectKey),
+      mime: image.mime,
+    };
   }
 
   async listMine(user: User) {
@@ -582,15 +585,20 @@ export class OrdersService {
       }),
     );
     if (image) {
-      await this.images.save(
-        this.images.create({
-          orderId: saved.id,
-          content: image.content,
-          mime: image.mime,
-        }),
-      );
+      await this.attachFormula(saved.id, image.content, image.mime);
     }
     return saved;
+  }
+
+  private async attachFormula(orderId: string, content: Buffer, mime: string) {
+    const objectKey = await this.storage.upload(orderId, content, mime);
+    await this.images.save(
+      this.images.create({
+        orderId,
+        objectKey,
+        mime,
+      }),
+    );
   }
 
   private async formulaForPlan(plan: DeliveryPlan) {
@@ -607,7 +615,10 @@ export class OrdersService {
     if (!image) {
       return null;
     }
-    return { content: image.content, mime: image.mime };
+    return {
+      content: await this.storage.download(image.objectKey),
+      mime: image.mime,
+    };
   }
 
   private assertCanExtend(plan: DeliveryPlan) {

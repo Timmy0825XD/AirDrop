@@ -142,6 +142,12 @@ function build(options?: {
     save: jest.fn((value: object) => value),
     findOne: jest.fn(),
   };
+  const storage = {
+    upload: jest.fn((orderId: string, _content: Buffer, mime: string) =>
+      Promise.resolve(`${orderId}.${mime === 'image/png' ? 'png' : 'jpg'}`),
+    ),
+    download: jest.fn(() => Promise.resolve(Buffer.from('formula'))),
+  };
   const hubs = { find: jest.fn() };
   const stockForHub = jest.fn();
   const offers = {
@@ -171,12 +177,13 @@ function build(options?: {
   const service = new OrdersService(
     orders as never,
     images as never,
+    storage as never,
     hubs as never,
     offers,
     hubsService,
     plans as never,
   );
-  return { service, orders, images, stockForHub, plans, saved };
+  return { service, orders, images, storage, stockForHub, plans, saved };
 }
 
 describe('OrdersService history', () => {
@@ -252,6 +259,33 @@ describe('OrdersService emergencies', () => {
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(orders.save).not.toHaveBeenCalled();
+  });
+
+  it('stores a matching formula in the bucket and keeps only the object key', async () => {
+    const { service, images, storage } = build();
+    await service.createEmergency(
+      requester(),
+      emergencyDto({
+        saleType: SaleType.PRESCRIPTION,
+        patientDocumentType: DocumentType.CITIZENSHIP_ID,
+        patientDocumentNumber: '1098765432',
+        prescriptionMime: 'image/jpeg',
+        prescriptionImageBase64: Buffer.from('formula').toString('base64'),
+      }),
+    );
+    const orderId = '11111111-1111-4111-8111-111111111111';
+    expect(storage.upload).toHaveBeenCalledWith(
+      orderId,
+      Buffer.from('formula'),
+      'image/jpeg',
+    );
+    expect(images.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId,
+        objectKey: `${orderId}.jpg`,
+        mime: 'image/jpeg',
+      }),
+    );
   });
 
   it('rejects a hub transfer with a formula, the same hub or a suspended origin', async () => {
@@ -449,7 +483,7 @@ describe('OrdersService queue', () => {
   });
 
   it('returns the formula only to the hub that can attend a received person order', async () => {
-    const { service, orders, images, stockForHub } = build();
+    const { service, orders, images, storage, stockForHub } = build();
     const formula = Buffer.from('formula');
     stockForHub.mockResolvedValue([
       {
@@ -466,7 +500,7 @@ describe('OrdersService queue', () => {
       }),
     );
     images.findOne.mockResolvedValue({
-      content: formula,
+      objectKey: `${receivedOrder().id}.jpg`,
       mime: 'image/jpeg',
     });
 
@@ -474,8 +508,9 @@ describe('OrdersService queue', () => {
       dispatcher(),
       receivedOrder().id,
     );
-    expect(image.content).toBe(formula);
+    expect(image.content).toEqual(formula);
     expect(image.mime).toBe('image/jpeg');
+    expect(storage.download).toHaveBeenCalledWith(`${receivedOrder().id}.jpg`);
 
     stockForHub.mockResolvedValue([]);
     await expect(
