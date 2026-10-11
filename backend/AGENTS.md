@@ -6,7 +6,7 @@ Reglas de esta carpeta. Autoridad de negocio: [`../context/index.md`](../context
 
 Una API **NestJS** (un proceso). Módulos por dominio, no microservicios.
 
-PostgreSQL + PostGIS para lo persistente. Redis para el snapshot de vuelo. Gateway WebSocket para empujar telemetría.
+PostgreSQL + PostGIS para lo persistente. La foto de la fórmula va a un bucket privado de Supabase Storage (`prescriptions`); Postgres guarda la clave del objeto, no los bytes. Redis para el snapshot de vuelo. Gateway WebSocket para empujar telemetría.
 
 ## Contrato
 

@@ -4,6 +4,7 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
 import { alignSprintSchema } from './database/align-sprint-schema';
+import { ensurePrescriptionBucket } from './database/ensure-prescription-bucket';
 import { enablePostgis } from './database/enable-postgis';
 import { removeRetiredUserRoles } from './database/remove-retired-user-roles';
 import { typeOrmOptions } from './database/typeorm.config';
@@ -29,6 +30,7 @@ import { UsersModule } from './users/users.module';
         await enablePostgis(options);
         await removeRetiredUserRoles(options);
         await alignSprintSchema(options);
+        await ensurePrescriptionBucket(options);
         return options;
       },
     }),

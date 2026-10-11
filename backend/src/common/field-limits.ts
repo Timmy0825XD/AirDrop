@@ -22,7 +22,12 @@ export const FIELD_LIMITS = {
   /** Descripción breve de una urgencia civil. */
   orderDescription: 500,
   prescriptionMime: 32,
+  /** `{uuid}.jpg` o `{uuid}.png` dentro del bucket. */
+  prescriptionObjectKey: 40,
 } as const;
+
+/** Bucket privado de Supabase Storage. Sin políticas públicas. */
+export const PRESCRIPTION_BUCKET = 'prescriptions';
 
 /** Imagen de fórmula: jpeg o png, hasta 2 MiB. */
 export const PRESCRIPTION_MAX_BYTES = 2 * 1024 * 1024;

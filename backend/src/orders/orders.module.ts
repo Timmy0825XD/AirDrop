@@ -11,6 +11,7 @@ import { Order } from './order.entity';
 import { OrdersController } from './orders.controller';
 import { OrdersService } from './orders.service';
 import { PrescriptionImage } from './prescription-image.entity';
+import { PrescriptionStorage } from './prescription-storage';
 
 @Module({
   imports: [
@@ -26,6 +27,6 @@ import { PrescriptionImage } from './prescription-image.entity';
     DecisionModule,
   ],
   controllers: [OrdersController],
-  providers: [OrdersService, InventoryOfferQuery],
+  providers: [OrdersService, InventoryOfferQuery, PrescriptionStorage],
 })
 export class OrdersModule {}

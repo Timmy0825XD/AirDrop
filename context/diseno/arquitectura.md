@@ -18,6 +18,7 @@ Dirección acordada en el documento base. El detalle de carpetas y convenciones 
 
 - **PostgreSQL + PostGIS:** geovallas, distancias, “¿la ruta cruza zona restringida?”.
 - Persiste: pedidos, historial de misiones, inventario, geovallas, usuarios, configuración.
+- La imagen de la fórmula no va en la fila del pedido. Va a un bucket privado de Supabase Storage. Postgres guarda la clave. La sigue viendo solo el despachador que autoriza (RNF-06).
 
 ## 4. Estado en vivo
 
