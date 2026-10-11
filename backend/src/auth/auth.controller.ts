@@ -7,7 +7,8 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
+import { LoginRateLimitGuard } from './login-rate-limit.guard';
 import { User } from '../users/user.entity';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
@@ -39,7 +40,7 @@ export class AuthController {
     return this.authService.resendSignupOtp(dto);
   }
 
-  @UseGuards(ThrottlerGuard)
+  @UseGuards(LoginRateLimitGuard)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(200)
   @Post('login')

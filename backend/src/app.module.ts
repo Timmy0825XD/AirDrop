@@ -10,6 +10,9 @@ import { removeRetiredUserRoles } from './database/remove-retired-user-roles';
 import { typeOrmOptions } from './database/typeorm.config';
 import { DecisionModule } from './decision/decision.module';
 import { FleetModule } from './fleet/fleet.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { SimulationModule } from './simulation/simulation.module';
+import { TelemetryModule } from './telemetry/telemetry.module';
 import { GeofencesModule } from './geofences/geofences.module';
 import { HubsModule } from './hubs/hubs.module';
 import { InventoryModule } from './inventory/inventory.module';
@@ -41,6 +44,9 @@ import { UsersModule } from './users/users.module';
     FleetModule,
     GeofencesModule,
     RoutingModule,
+    TelemetryModule,
+    NotificationsModule,
+    SimulationModule,
     DecisionModule,
     OrdersModule,
   ],

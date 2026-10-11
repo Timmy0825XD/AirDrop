@@ -10,6 +10,7 @@ import { Order } from '../orders/order.entity';
 import { PrescriptionImage } from '../orders/prescription-image.entity';
 import { Geofence } from '../geofences/geofence.entity';
 import { MissionRoute } from '../routing/mission-route.entity';
+import { Mission } from '../simulation/mission.entity';
 import { User } from '../users/user.entity';
 import { UserHubAssignment } from '../users/user-hub-assignment.entity';
 
@@ -37,6 +38,7 @@ export function typeOrmOptions(config: ConfigService): TypeOrmModuleOptions {
       InventoryItem,
       Geofence,
       MissionRoute,
+      Mission,
       Order,
       DeliveryPlan,
       PrescriptionImage,

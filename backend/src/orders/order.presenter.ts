@@ -21,6 +21,7 @@ export function presentOrder(order: Order) {
     latitude: order.latitude,
     longitude: order.longitude,
     droneId: order.droneId,
+    loadConfirmedAt: order.loadConfirmedAt,
     statusReason: order.statusReason,
     planId: order.planId,
     scheduledFor: order.scheduledFor,

@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
@@ -22,6 +23,7 @@ import { Order } from '../orders/order.entity';
 import { addCalendarDays, todayInColombia } from '../orders/orders.rules';
 import { PlannedCorridor } from '../routing/routing.rules';
 import { RoutePlannerService } from '../routing/route-planner.service';
+import { FlightClockService } from '../simulation/flight-clock.service';
 import { User } from '../users/user.entity';
 import { DecisionService } from './decision.service';
 import { EligibilityService } from './eligibility.service';
@@ -29,6 +31,8 @@ import {
   LOT_NOT_AVAILABLE,
   NO_ELIGIBLE_DRONE,
   NOT_THE_AUTHORIZING_HUB,
+  NOT_THE_LOADING_HUB,
+  ONLY_PENDING_LOAD_IS_CONFIRMED,
   PRESCRIPTION_NOT_VERIFIED,
   SCHEDULED_TOO_EARLY,
 } from './decision.rules';
@@ -118,6 +122,7 @@ function received(overrides: Partial<Order> = {}): Order {
     longitude: -73.25,
     droneId: null,
     inventoryItemId: null,
+    loadConfirmedAt: null,
     statusReason: null,
     planId: null,
     scheduledFor: null,
@@ -178,7 +183,13 @@ function build(state?: {
     transaction: jest.fn((work: (unit: EntityManager) => Promise<unknown>) =>
       work(manager as unknown as EntityManager),
     ),
-    getRepository: jest.fn(),
+    getRepository: jest.fn().mockReturnValue({
+      find: jest.fn().mockResolvedValue([]),
+    }),
+  };
+  const flights = {
+    isReady: jest.fn().mockReturnValue(true),
+    start: jest.fn(),
   };
   const routes = {
     loadPolygons: jest.fn().mockResolvedValue([]),
@@ -195,6 +206,7 @@ function build(state?: {
     hubsService as unknown as HubsService,
     routes as unknown as RoutePlannerService,
     new EligibilityService(),
+    flights as unknown as FlightClockService,
   );
   return {
     service,
@@ -204,6 +216,7 @@ function build(state?: {
     currentLot,
     manager,
     routes,
+    flights,
     saved,
     dataSource,
   };
@@ -211,7 +224,8 @@ function build(state?: {
 
 describe('DecisionService.authorize', () => {
   it('reserves a drone in pending load without discounting stock or taking off', async () => {
-    const { service, order, drones, currentLot, routes, manager } = build();
+    const { service, order, drones, currentLot, routes, manager, flights } =
+      build();
     const result = await service.authorize(dispatcher(), order.id, {});
     expect(result.status).toBe(OrderStatus.PENDING_LOAD);
     expect(result.status).not.toBe(OrderStatus.IN_FLIGHT);
@@ -232,6 +246,7 @@ describe('DecisionService.authorize', () => {
       corridor,
       manager,
     );
+    expect(flights.start).not.toHaveBeenCalled();
   });
 
   it('gives an emergency the drone reserved by a scheduled load', async () => {
@@ -363,5 +378,62 @@ describe('DecisionService.listPendingLoad', () => {
     });
     expect(rows[0].assignment?.identifier).toBe('WC-01');
     expect(rows[0].assignment?.route.altitudeM).toBe(100);
+  });
+});
+
+describe('DecisionService.confirmLoad', () => {
+  it('marks the load and starts the clock without taking off', async () => {
+    const order = received({
+      status: OrderStatus.PENDING_LOAD,
+      originHubId: HUB_ID,
+      droneId: DRONE_ID,
+      loadConfirmedAt: null,
+    });
+    const { service, flights, routes } = build({ order });
+    routes.findOutboundMany.mockResolvedValue(new Map([[order.id, corridor]]));
+    const result = await service.confirmLoad(dispatcher(), order.id);
+    expect(order.loadConfirmedAt).toBeInstanceOf(Date);
+    expect(order.status).toBe(OrderStatus.PENDING_LOAD);
+    expect(flights.start).toHaveBeenCalledWith(order.id);
+    expect(result.status).toBe(OrderStatus.PENDING_LOAD);
+  });
+
+  it('rejects a dispatcher from another hub', async () => {
+    const order = received({
+      status: OrderStatus.PENDING_LOAD,
+      originHubId: OTHER_HUB_ID,
+      droneId: DRONE_ID,
+    });
+    const { service, flights } = build({ order });
+    await expect(service.confirmLoad(dispatcher(), order.id)).rejects.toThrow(
+      NOT_THE_LOADING_HUB,
+    );
+    expect(flights.start).not.toHaveBeenCalled();
+  });
+
+  it('rejects an order that is not pending load', async () => {
+    const { service, flights } = build();
+    await expect(
+      service.confirmLoad(dispatcher(), ORDER_ID),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.confirmLoad(dispatcher(), ORDER_ID)).rejects.toThrow(
+      ONLY_PENDING_LOAD_IS_CONFIRMED,
+    );
+    expect(flights.start).not.toHaveBeenCalled();
+  });
+
+  it('does not confirm when telemetry is down', async () => {
+    const order = received({
+      status: OrderStatus.PENDING_LOAD,
+      originHubId: HUB_ID,
+      droneId: DRONE_ID,
+    });
+    const { service, flights } = build({ order });
+    flights.isReady.mockReturnValue(false);
+    await expect(
+      service.confirmLoad(dispatcher(), order.id),
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
+    expect(order.loadConfirmedAt).toBeNull();
+    expect(flights.start).not.toHaveBeenCalled();
   });
 });

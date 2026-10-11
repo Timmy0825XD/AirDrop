@@ -166,6 +166,15 @@ export class OrdersController {
     return this.decisionService.authorize(user, id, dto);
   }
 
+  @Post(':id/confirm-load')
+  @Roles(UserRole.DISPATCHER)
+  confirmLoad(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.decisionService.confirmLoad(user, id);
+  }
+
   @Post(':id/reject')
   @Roles(UserRole.DISPATCHER)
   reject(
