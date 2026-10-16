@@ -15,7 +15,7 @@ Plan por fases del frontend Flutter a partir de la guía 25 (`learning/25-front-
 | 0 | Preparación y documento de avance | `docs/plan-fases-front` | Hecha (PR #39) |
 | 1 | Rediseño de auth con transiciones | `style/rediseno-auth` | Hecha (PR #40) |
 | 2 | Autorizar y confirmar carga (HU-21, HU-35) | `feature/autorizar-carga-front` | Hecha (PR #41) |
-| 3 | Telemetría y mapa en vivo (HU-26 a HU-28) | `feature/tracking-front` | Hecha (PR pendiente) |
+| 3 | Telemetría y mapa en vivo (HU-26 a HU-28) | `feature/tracking-front` | Hecha (PR #43) |
 | 4 | Geovalla sobre el mapa (HU-14) | `feature/geovalla-mapa` | Pendiente |
 | 5 | Revisión y rediseño del administrador | `style/rediseno-admin` | Pendiente |
 | 6 | Revisión y rediseño del despachador | `style/rediseno-despachador` | Pendiente |
@@ -146,9 +146,10 @@ Fase 1. Una rama por rol para que cada PR sea revisable.
   esa lista muestra pedidos que el despachador no puede leer (Nest solo deja
   leer al creador o a la central de origen o destino). Además, el detalle no
   debe quedarse cargando: tiene que mostrar el error enseguida.
-- **Despachador:** no hay lista de vuelos en curso; al despegar, el pedido
-  sale de la cola y de pending-load. Hoy la única entrada al mapa es el aviso
-  de "Carga confirmada" o el detalle abierto.
+- **Despachador:** no hay lista de vuelos en curso en el frontend; al
+  despegar, el pedido sale de la cola y de pending-load. Nest ya tiene
+  `GET /orders/in-flight` (rama `fix/socket-y-vuelos-en-curso`); falta la
+  bandeja con su tarjeta en el home.
 
 ## Fase 8 — Limpieza antes de la revisión
 
@@ -173,6 +174,7 @@ Va en su propia rama porque `AGENTS.md` pide no mezclar limpieza con una histori
 - Fallback con estado `reasignado` (RF-18); hoy solo responde 409.
 - Código de entrega, espera de 5 min, retorno y cuarentena (Sprint 6).
 - Bandeja de telemetría del operador (RU-18, CU-19): la API no le dice qué pedido lleva su dron.
-- Carrera en `TelemetryGateway`: `handleConnection` valida el token de forma asíncrona y Nest no la espera, así que un `subscribe` inmediato responde "El pedido no existe.". El frontend reintenta una vez; el arreglo de fondo es esperar la validación dentro de `subscribe`.
-- Lista de vuelos en curso del despachador (pedidos de su central en `in_flight` o `awaiting_delivery`).
-- Decisión pendiente (2026-10-16): estos dos arreglos del backend los hace Josheph o nosotros en una rama `fix/` del backend, después de subir la Fase 3.
+## Arreglos del backend hechos por nosotros (`fix/socket-y-vuelos-en-curso`, 2026-10-16)
+
+- Carrera en `TelemetryGateway`: `handleConnection` guarda la validación del token como promesa (`ready`) y `subscribe` la espera, así que un `subscribe` inmediato ya no responde "El pedido no existe.". El reintento de 800 ms del frontend (`TelemetryClient.retryDelay`) queda sobrando; se quita en la revisión del frontend.
+- `GET /orders/in-flight` (solo despachador): pedidos de su central en `in_flight` o `awaiting_delivery`, con `assignment`, del más reciente al más viejo. La bandeja del frontend llega en la Fase 6.

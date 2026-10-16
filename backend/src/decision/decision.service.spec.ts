@@ -4,7 +4,7 @@ import {
   ForbiddenException,
   ServiceUnavailableException,
 } from '@nestjs/common';
-import { DataSource, EntityManager } from 'typeorm';
+import { DataSource, EntityManager, In } from 'typeorm';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { DroneStatus } from '../common/enums/drone-status.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
@@ -378,6 +378,41 @@ describe('DecisionService.listPendingLoad', () => {
     });
     expect(rows[0].assignment?.identifier).toBe('WC-01');
     expect(rows[0].assignment?.route.altitudeM).toBe(100);
+  });
+});
+
+describe('DecisionService.listInFlight', () => {
+  it('lists the flights in the air or awaiting delivery of the dispatcher hub', async () => {
+    const flying = received({
+      status: OrderStatus.IN_FLIGHT,
+      originHubId: HUB_ID,
+      droneId: DRONE_ID,
+    });
+    const orders = { find: jest.fn().mockResolvedValue([flying]) };
+    const drones = {
+      find: jest
+        .fn()
+        .mockResolvedValue([drone({ status: DroneStatus.IN_MISSION })]),
+    };
+    const models = { find: jest.fn().mockResolvedValue([model()]) };
+    const { service, dataSource, routes } = build();
+    dataSource.getRepository.mockImplementation((entity: unknown) => {
+      if (entity === Order) return orders;
+      if (entity === Drone) return drones;
+      if (entity === DroneModel) return models;
+      throw new Error('Repositorio inesperado');
+    });
+    routes.findOutboundMany.mockResolvedValue(new Map([[flying.id, corridor]]));
+    const rows = await service.listInFlight(dispatcher());
+    expect(orders.find).toHaveBeenCalledWith({
+      where: {
+        originHubId: HUB_ID,
+        status: In([OrderStatus.IN_FLIGHT, OrderStatus.AWAITING_DELIVERY]),
+      },
+      order: { updatedAt: 'DESC' },
+    });
+    expect(rows[0].status).toBe(OrderStatus.IN_FLIGHT);
+    expect(rows[0].assignment?.identifier).toBe('WC-01');
   });
 });
 

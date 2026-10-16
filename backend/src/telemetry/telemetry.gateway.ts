@@ -19,7 +19,12 @@ const UUID_V4 =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type ClientState = {
-  user?: User;
+  /**
+   * Validación del token en curso. Nest no espera `handleConnection`, así
+   * que un `subscribe` que llega apenas conecta espera esta promesa en vez
+   * de leer un usuario que todavía no existe.
+   */
+  ready: Promise<User | null>;
   orders: Record<string, TelemetryAccess>;
 };
 
@@ -49,24 +54,9 @@ export class TelemetryGateway
   }
 
   async handleConnection(client: Socket): Promise<void> {
-    const state: ClientState = { orders: {} };
+    const state: ClientState = { ready: this.authenticate(client), orders: {} };
     this.clients.set(client.id, state);
-    const token = tokenFrom(client);
-    if (!token) {
-      client.disconnect(true);
-      return;
-    }
-    try {
-      const payload = this.jwt.verify<JwtPayload>(token);
-      const user = await this.access.findUser(payload.sub);
-      if (!user || user.status !== UserStatus.ACTIVE) {
-        client.disconnect(true);
-        return;
-      }
-      state.user = user;
-    } catch {
-      client.disconnect(true);
-    }
+    await state.ready;
   }
 
   handleDisconnect(client: Socket): void {
@@ -77,8 +67,8 @@ export class TelemetryGateway
   async subscribe(client: Socket, body: { orderId?: string }) {
     const orderId = body?.orderId ?? '';
     const state = this.clients.get(client.id);
-    const user = state?.user;
-    if (!user || !UUID_V4.test(orderId)) {
+    const user = state ? await state.ready : null;
+    if (!state || !user || !UUID_V4.test(orderId)) {
       return { event: 'error', data: { message: 'El pedido no existe.' } };
     }
     const access = await this.access.resolve(user, orderId);
@@ -92,6 +82,27 @@ export class TelemetryGateway
       client.emit('telemetry', presentTelemetry(flight, access.view));
     }
     return { event: 'subscribed', data: { orderId } };
+  }
+
+  /** Usuario activo dueño del token, o `null` (y desconecta) si no lo hay. */
+  private async authenticate(client: Socket): Promise<User | null> {
+    const token = tokenFrom(client);
+    if (!token) {
+      client.disconnect(true);
+      return null;
+    }
+    try {
+      const payload = this.jwt.verify<JwtPayload>(token);
+      const user = await this.access.findUser(payload.sub);
+      if (!user || user.status !== UserStatus.ACTIVE) {
+        client.disconnect(true);
+        return null;
+      }
+      return user;
+    } catch {
+      client.disconnect(true);
+      return null;
+    }
   }
 
   private async dispatch(event: TelemetryEvent): Promise<void> {
