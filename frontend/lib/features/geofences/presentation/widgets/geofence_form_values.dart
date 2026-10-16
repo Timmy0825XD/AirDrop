@@ -1,53 +1,39 @@
 import 'package:flutter/material.dart';
 
 import '../../data/geofence_models.dart';
-import 'geofence_vertex.dart';
 
 /// Los campos del formulario de geovallas en un solo objeto.
 ///
-/// No pinta nada: conserva los controladores (nombre, motivo y las filas
-/// de vértices), los libera, carga una geovalla existente y arma los
-/// body de `POST /geofences` y de `PATCH /geofences/:id`.
+/// No pinta nada: conserva los controladores (nombre y motivo) y los
+/// vértices que se dibujan en el mapa, carga una geovalla existente y arma
+/// los body de `POST /geofences` y de `PATCH /geofences/:id`.
 class GeofenceFormValues {
   final name = TextEditingController();
   final reason = TextEditingController();
 
-  /// Filas `[longitud, latitud]` sin cierre; arrancan en 3 (el mínimo).
-  final vertices = List.generate(3, (_) => GeofenceVertex());
+  /// Vértices `[longitud, latitud]` sin el punto de cierre. Los pone el
+  /// modo dibujar (`GeofenceDrawScreen`); arranca vacío.
+  List<List<double>> vertices = [];
 
   void dispose() {
     name.dispose();
     reason.dispose();
-    for (final vertex in vertices) {
-      vertex.dispose();
-    }
   }
 
   /// Rellena el formulario al editar. Los vértices llegan **sin** el
-  /// punto de cierre (`Geofence.polygon.vertices`) y solo corre la
-  /// primera vez: si el provider se refresca, no pisa lo que el usuario
-  /// esté escribiendo.
+  /// punto de cierre (`Geofence.polygon.vertices`).
   void load(Geofence geofence) {
     name.text = geofence.name;
     reason.text = geofence.reason;
-    for (final vertex in vertices) {
-      vertex.dispose();
-    }
-    vertices
-      ..clear()
-      ..addAll(geofence.polygon.vertices.map(GeofenceVertex.fromPoint));
+    vertices = geofence.polygon.vertices;
   }
-
-  void addVertex() => vertices.add(GeofenceVertex());
-
-  void removeVertex(int index) => vertices.removeAt(index).dispose();
 
   /// Body de `POST /geofences`: cierra el anillo con el primero al final.
   CreateGeofenceRequest request() {
     return CreateGeofenceRequest(
       name: name.text.trim(),
       reason: reason.text.trim(),
-      polygon: GeoJsonPolygon.fromVertices(_points()),
+      polygon: GeoJsonPolygon.fromVertices(vertices),
     );
   }
 
@@ -57,13 +43,11 @@ class GeofenceFormValues {
   UpdateGeofenceRequest diff(Geofence geofence) {
     final nameText = name.text.trim();
     final reasonText = reason.text.trim();
-    final polygon = GeoJsonPolygon.fromVertices(_points());
+    final polygon = GeoJsonPolygon.fromVertices(vertices);
     return UpdateGeofenceRequest(
       name: nameText == geofence.name ? null : nameText,
       reason: reasonText == geofence.reason ? null : reasonText,
       polygon: polygon.hasSameRing(geofence.polygon) ? null : polygon,
     );
   }
-
-  List<List<double>> _points() => [for (final vertex in vertices) vertex.point];
 }

@@ -6,6 +6,7 @@ import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../data/geofence_models.dart';
 import '../data/geofence_providers.dart';
+import 'geofence_draw_screen.dart';
 import 'widgets/geofence_form_content.dart';
 import 'widgets/geofence_form_values.dart';
 
@@ -50,9 +51,11 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
 
   Future<void> _submit(Geofence? original) async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    // Menos de 3 vértices no forma polígono; el mensaje ya está a la
-    // vista en `PolygonPointFields`.
-    if (_values.vertices.length < 3) return;
+    // Menos de 3 vértices no forma polígono.
+    if (_values.vertices.length < 3) {
+      showAppSnack(context, 'Dibuja al menos 3 vértices en el mapa.');
+      return;
+    }
     if (original != null && _values.diff(original).isEmpty) {
       showAppSnack(context, 'No hay cambios para guardar.');
       return;
@@ -64,6 +67,12 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _draw() async {
+    final vertices = await GeofenceDrawScreen.open(context, _values.vertices);
+    if (vertices == null || !mounted) return;
+    setState(() => _values.vertices = vertices);
   }
 
   @override
@@ -98,7 +107,7 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
         values: _values,
         original: original,
         onSubmit: () => _submit(original),
-        onVerticesChanged: () => setState(() {}),
+        onDraw: _draw,
         isLoading: _isLoading,
       ),
     );

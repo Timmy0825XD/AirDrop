@@ -13,25 +13,21 @@ Geofence _geofence() => Geofence(
   ]),
 );
 
-/// Llena los tres vértices iniciales del formulario.
+/// Lo que devuelve el modo dibujar con tres toques.
 void _fillThree(GeofenceFormValues values) {
-  final points = [
+  values.vertices = [
     [-73.26, 10.46],
     [-73.24, 10.46],
     [-73.25, 10.48],
   ];
-  for (final (index, point) in points.indexed) {
-    values.vertices[index].longitude.text = '${point[0]}';
-    values.vertices[index].latitude.text = '${point[1]}';
-  }
 }
 
 void main() {
-  test('arranca con los 3 vértices mínimos', () {
+  test('arranca sin vértices: se dibujan en el mapa', () {
     final values = GeofenceFormValues();
     addTearDown(values.dispose);
 
-    expect(values.vertices, hasLength(3));
+    expect(values.vertices, isEmpty);
   });
 
   group('request (POST /geofences)', () {
@@ -67,10 +63,7 @@ void main() {
       final values = GeofenceFormValues();
       addTearDown(values.dispose);
       _fillThree(values);
-      values
-        ..addVertex()
-        ..vertices[3].longitude.text = '-73.2'
-        ..vertices[3].latitude.text = '10.5';
+      values.vertices.add([-73.2, 10.5]);
 
       final ring = values.request().polygon.ring;
 
@@ -101,7 +94,11 @@ void main() {
 
     test('mover un vértice cambia solo el polígono', () {
       final values = GeofenceFormValues()..load(_geofence());
-      values.vertices[1].longitude.text = '-73.23';
+      values.vertices = [
+        [-73.26, 10.46],
+        [-73.23, 10.46],
+        [-73.25, 10.48],
+      ];
 
       final request = values.diff(_geofence());
 
@@ -131,18 +128,6 @@ void main() {
       hasLength(3),
       reason: 'el anillo de 4 cierra con el primero, que no se edita',
     );
-    expect(values.vertices.first.longitude.text, '-73.26');
-    expect(values.vertices.first.latitude.text, '10.46');
-  });
-
-  test('agregar y quitar vértices cambia el número de filas', () {
-    final values = GeofenceFormValues();
-    addTearDown(values.dispose);
-
-    values.addVertex();
-    expect(values.vertices, hasLength(4));
-
-    values.removeVertex(3);
-    expect(values.vertices, hasLength(3));
+    expect(values.vertices.first, [-73.26, 10.46]);
   });
 }

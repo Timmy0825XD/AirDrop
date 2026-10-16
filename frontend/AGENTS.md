@@ -228,11 +228,27 @@ La fuente de verdad ejecutable es [`lib/theme/app_theme.dart`](lib/theme/app_the
   ack). Con `error` se muestra el mensaje y no se reintenta.
 - El 404 `Todavía no hay vuelo para este pedido.` no es un error: la pantalla
   dice "El vuelo está por empezar".
-- La ruta llega `[lng, lat]`; `FlightMap` la voltea a `LatLng(lat, lng)`.
-  Tiles de OpenStreetMap con `userAgentPackageName`.
+- El mapa base es **uno**: `AppMap` en `lib/core/widgets/app_map.dart`
+  (tiles de OpenStreetMap con `userAgentPackageName`, crédito y centro en
+  Valledupar). Cada pantalla le pasa sus capas; no se crea otro `FlutterMap`.
+- GeoJSON viene `[lng, lat]`: se convierte con `latLngFromGeoJson` y
+  `geoJsonFromLatLng` (6 decimales), también en `app_map.dart`.
+- `flutter_map` revienta con una `Polyline` sin puntos: la línea solo se
+  agrega con 2 puntos o más.
 - "Ver vuelo" (`WatchFlightButton`) aparece cuando `Order.hasFlight`: carga
   confirmada, en vuelo o esperando la entrega. El despachador solo si su
   central es el origen. El operador no tiene entrada al mapa.
+
+## Geovallas sobre el mapa (`features/geofences/`)
+
+- Los vértices se dibujan en `GeofenceDrawScreen` (pantalla completa, con
+  `Navigator.push` desde el formulario): toque = vértice, tocar un vértice
+  lo quita, Deshacer y Borrar todo, "Listo" con 3 o más.
+- El formulario solo muestra la vista previa quieta
+  (`GeofencePolygonPreview`); dentro de su scroll, arrastrar un mapa
+  peleaba con el scroll.
+- `GeofenceFormValues.vertices` guarda `[lng, lat]` sin el cierre; el
+  anillo se cierra al armar el body (`GeoJsonPolygon.fromVertices`).
 
 ## Origen de datos (local | remote)
 
