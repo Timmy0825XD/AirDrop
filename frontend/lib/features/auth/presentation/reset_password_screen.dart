@@ -6,16 +6,25 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/field_limits.dart';
+import '../../../core/validators.dart';
+import '../../../core/widgets/app_snack.dart';
 import '../data/auth_models.dart';
 import 'auth_controller.dart';
-import 'widgets/auth_page.dart';
-import 'widgets/auth_top_bar.dart';
+import 'login_screen.dart';
+import 'widgets/auth_morph_button.dart';
+import 'widgets/auth_step_scaffold.dart';
+import 'widgets/circle_reveal.dart';
 import 'widgets/reset/reset_code_section.dart';
 import 'widgets/reset/reset_password_form.dart';
 import 'widgets/reset/reset_success_view.dart';
 
-/// Restablecimiento de contraseña. El código viaja por el mismo flujo de
-/// OTP que el registro, con TTL de 15 minutos (`OTP_RESET_TTL_MS`).
+/// Los campos de la nueva contraseña, para nombrar sus errores.
+enum ResetInput { code, password, confirm }
+
+/// Nueva contraseña con el código del correo. El código dura 15 minutos
+/// en Nest (`OTP_RESET_TTL_MS`). Al actualizar, el botón crece en círculo y
+/// aparece "Contraseña actualizada"; la sesión no se abre, se vuelve al
+/// login.
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key, this.contact});
 
@@ -26,168 +35,234 @@ class ResetPasswordScreen extends ConsumerStatefulWidget {
       _ResetPasswordScreenState();
 }
 
-class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
-  static const _ttlSeconds = 15 * 60;
-  final _formKey = GlobalKey<FormState>();
+class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen>
+    with SingleTickerProviderStateMixin {
+  /// Espera antes de pedir otro código; es solo de la app.
+  static const _resendSeconds = 45;
+
+  final _code = TextEditingController();
   final _password = TextEditingController();
-  final _confirmPassword = TextEditingController();
-  String _code = '';
-  int _secondsRemaining = _ttlSeconds;
+  final _confirm = TextEditingController();
+  final _buttonKey = GlobalKey();
+  late final _reveal = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 720),
+  );
+  late final _revealCurve = CurvedAnimation(
+    parent: _reveal,
+    curve: Curves.easeInOutCubic,
+  );
+
+  Timer? _timer;
+  int _secondsLeft = _resendSeconds;
   bool _isLoading = false;
   bool _isResending = false;
-  String? _errorMessage;
+  bool _showPassword = false;
+  int _shakeCount = 0;
+  Map<ResetInput, String> _errors = const {};
+  Offset _revealCenter = Offset.zero;
   String? _successMessage;
-  Timer? _timer;
 
   @override
   void initState() {
     super.initState();
+    _code.addListener(_clearCodeError);
     _startCountdown();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _revealCurve.dispose();
+    _reveal.dispose();
+    _code.dispose();
     _password.dispose();
-    _confirmPassword.dispose();
+    _confirm.dispose();
     super.dispose();
   }
 
   void _startCountdown() {
     _timer?.cancel();
-    _secondsRemaining = _ttlSeconds;
+    setState(() => _secondsLeft = _resendSeconds);
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      if (_secondsRemaining <= 1) {
-        timer.cancel();
-        setState(() => _secondsRemaining = 0);
-      } else {
-        setState(() => _secondsRemaining--);
-      }
+      if (!mounted || _secondsLeft <= 1) timer.cancel();
+      if (mounted) setState(() => _secondsLeft--);
     });
   }
 
-  String get _contactLabel =>
-      widget.contact?.email ?? widget.contact?.phone ?? 'tu contacto';
+  void _clearCodeError() {
+    if (_errors.containsKey(ResetInput.code)) {
+      setState(() => _errors = Map.of(_errors)..remove(ResetInput.code));
+    }
+  }
 
-  String get _countdownLabel {
-    final minutes = (_secondsRemaining ~/ 60).toString().padLeft(2, '0');
-    final seconds = (_secondsRemaining % 60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
+  /// Se redibuja al escribir: el check de coincidencia y el aviso en vivo.
+  void _onPasswordChanged(String _) => setState(() {
+    _errors = Map.of(_errors)
+      ..remove(ResetInput.password)
+      ..remove(ResetInput.confirm);
+  });
+
+  Map<ResetInput, String> _validate() {
+    final confirm = _confirm.text;
+    final results = {
+      ResetInput.code: _code.text.length == FieldLimits.otpDigits
+          ? null
+          : 'Escribe los ${FieldLimits.otpDigits} dígitos del código.',
+      ResetInput.password: Validators.password(_password.text),
+      ResetInput.confirm: confirm.isEmpty
+          ? 'Confirma tu nueva contraseña.'
+          : (confirm != _password.text
+                ? 'Las contraseñas no coinciden.'
+                : null),
+    };
+    return {for (final MapEntry(:key, :value) in results.entries) key: ?value};
+  }
+
+  /// Sin esperar a enviar: si la confirmación ya es tan larga como la
+  /// contraseña y no coincide, se avisa.
+  String? get _liveMismatch {
+    final confirm = _confirm.text;
+    final mismatch =
+        confirm.isNotEmpty &&
+        confirm.length >= _password.text.length &&
+        confirm != _password.text;
+    return mismatch ? 'Las contraseñas no coinciden.' : null;
   }
 
   Future<void> _submit() async {
     final contact = widget.contact;
-    if (contact == null) {
-      setState(() => _errorMessage = 'No encontramos el contacto de la cuenta.');
+    if (_isLoading) return;
+    final errors = _validate();
+    if (contact == null || errors.isNotEmpty) {
+      setState(() {
+        _errors = contact == null
+            ? {ResetInput.code: 'No encontramos el correo de la cuenta.'}
+            : errors;
+        _shakeCount++;
+      });
       return;
     }
-    if (_code.length != FieldLimits.otpDigits) {
-      setState(
-        () =>
-            _errorMessage =
-                'Escribe los ${FieldLimits.otpDigits} dígitos del código.',
-      );
-      return;
-    }
-    if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    FocusScope.of(context).unfocus();
+    setState(() => _isLoading = true);
     try {
       final response = await ref
           .read(authControllerProvider.notifier)
           .resetPassword(
             ResetPasswordRequest(
               contact: contact,
-              code: _code,
+              code: _code.text,
               password: _password.text,
             ),
           );
+      await _playReveal();
       if (mounted) setState(() => _successMessage = response.message);
     } on ApiException catch (error) {
-      if (mounted) setState(() => _errorMessage = error.message);
+      _fail(error.message);
     } catch (_) {
-      if (mounted) {
-        setState(
-          () => _errorMessage = 'No se pudo actualizar la contraseña.',
-        );
-      }
+      _fail('No se pudo actualizar la contraseña.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
+  /// El código es lo que Nest suele rechazar, así que el error va ahí.
+  void _fail(String message) {
+    if (!mounted) return;
+    setState(() {
+      _errors = {ResetInput.code: message};
+      _shakeCount++;
+    });
+  }
+
+  Future<void> _playReveal() async {
+    if (!mounted || MediaQuery.disableAnimationsOf(context)) return;
+    final box = _buttonKey.currentContext?.findRenderObject() as RenderBox?;
+    if (box != null) {
+      setState(
+        () => _revealCenter = box.localToGlobal(box.size.center(Offset.zero)),
+      );
+    }
+    await _reveal.forward();
+  }
+
   Future<void> _resend() async {
     final contact = widget.contact;
     if (contact == null || _isResending) return;
-    setState(() {
-      _isResending = true;
-      _errorMessage = null;
-    });
+    setState(() => _isResending = true);
     try {
-      await ref
+      final response = await ref
           .read(authControllerProvider.notifier)
           .forgotPassword(ForgotPasswordRequest(contact: contact));
-      if (mounted) _startCountdown();
+      if (!mounted) return;
+      _startCountdown();
+      showAppSnack(context, response.message);
     } on ApiException catch (error) {
-      if (mounted) setState(() => _errorMessage = error.message);
+      _fail(error.message);
     } finally {
       if (mounted) setState(() => _isResending = false);
     }
   }
 
-  String? _validateConfirmation(String? value) {
-    if (value == null || value.isEmpty) return 'Confirma tu nueva contraseña.';
-    if (value != _password.text) return 'Las contraseñas no coinciden.';
-    return null;
-  }
+  void _toLogin() => context.go('/login', extra: LoginScreen.returnExtra);
 
   @override
   Widget build(BuildContext context) {
     ref.watch(authControllerProvider);
     final success = _successMessage;
+    if (success != null) {
+      return ResetSuccessView(message: success, onContinue: _toLogin);
+    }
 
-    return AuthPage(
-      maxWidth: 440,
-      child: Column(
-        children: [
-          AuthTopBar(onBack: () => context.go('/forgot-password')),
-          const SizedBox(height: 12),
-          if (success != null)
-            ResetSuccessView(
-              message: success,
-              onContinue: () => context.go('/login'),
-            )
-          else
-            Form(
-              key: _formKey,
-              child: ResetPasswordForm(
-                contactLabel: _contactLabel,
-                passwordController: _password,
-                confirmPasswordController: _confirmPassword,
-                errorMessage: _errorMessage,
-                onDismissError: () => setState(() => _errorMessage = null),
-                onSubmit: _submit,
-                confirmValidator: _validateConfirmation,
-                isLoading: _isLoading,
-                codeSection: ResetCodeSection(
-                  secondsRemaining: _secondsRemaining,
-                  countdownLabel: _countdownLabel,
-                  onCodeChanged: (value) => setState(() => _code = value),
-                  onResend: _secondsRemaining == 0 && !_isResending
-                      ? _resend
-                      : null,
-                ),
-              ),
-            ),
-        ],
+    return AuthStepScaffold(
+      pill: 'Recuperar acceso',
+      icon: Icons.lock_reset_rounded,
+      onBack: () => context.go('/forgot-password'),
+      overlay: CircleReveal(progress: _revealCurve, center: _revealCenter),
+      body: _body(),
+      action: Center(
+        child: AuthMorphButton(
+          key: _buttonKey,
+          label: 'Actualizar contraseña',
+          loadingLabel: 'Actualizando contraseña',
+          isLoading: _isLoading,
+          onPressed: _submit,
+        ),
       ),
+    );
+  }
+
+  Widget _body() {
+    final contact = widget.contact;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ResetHeading(contactLabel: contact?.email ?? 'tu correo'),
+        const SizedBox(height: 22),
+        ResetCodeSection(
+          controller: _code,
+          errorText: _errors[ResetInput.code],
+          shakeCount: _shakeCount,
+          secondsLeft: _secondsLeft,
+          onResend: _isResending ? null : _resend,
+        ),
+        const SizedBox(height: 18),
+        ResetPasswordFields(
+          password: _password,
+          confirm: _confirm,
+          errors: (
+            _errors[ResetInput.password],
+            _errors[ResetInput.confirm] ?? _liveMismatch,
+          ),
+          shakeCount: _shakeCount,
+          showPassword: _showPassword,
+          onTogglePassword: () =>
+              setState(() => _showPassword = !_showPassword),
+          onChanged: _onPasswordChanged,
+          onSubmit: _submit,
+        ),
+      ],
     );
   }
 }

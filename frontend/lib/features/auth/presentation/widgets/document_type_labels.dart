@@ -15,10 +15,14 @@ class DocumentTypeLabels {
   /// Hint del campo del número, con un ejemplo de cada formato: las dos
   /// cédulas son solo dígitos y el PPT admite letras.
   static String hint(DocumentType type) => switch (type) {
-    DocumentType.citizenshipId => '1098765432',
-    DocumentType.foreignerId => '1098765432',
-    DocumentType.ppt => 'AB123456',
+    DocumentType.citizenshipId => 'Ej. 1065123456',
+    DocumentType.foreignerId => 'Ej. 1065123456',
+    DocumentType.ppt => 'Ej. AB123456',
   };
+
+  /// Cuántos caracteres admite cada tipo, para la nota junto al label.
+  static String lengthNote(DocumentType type) =>
+      usesDigits(type) ? '6 a 10 dígitos' : '6 a 15 letras o números';
 
   /// Versión corta para el selector segmentado, donde cada pestaña tiene
   /// un tercio del ancho de la pantalla.

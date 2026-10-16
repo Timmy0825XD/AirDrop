@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../../data/auth_models.dart';
 import 'document_type_labels.dart';
 
-/// Selector segmentado del tipo de documento. Lo usan el registro y la
-/// edición del perfil, así que vive fuera de `register/`.
+/// Selector segmentado del tipo de documento: una pastilla blanca se
+/// desliza con un rebote corto hasta la opción elegida. Lo usan el registro
+/// y la edición del perfil, así que vive fuera de `register/`.
 class DocumentTypeTabs extends StatelessWidget {
   const DocumentTypeTabs({
     super.key,
@@ -18,23 +19,63 @@ class DocumentTypeTabs extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    const types = DocumentType.values;
+    final index = types.indexOf(selected);
 
     return Container(
+      height: 52,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: colors.onSurface.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(14),
+        color: colors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(
+      child: Stack(
         children: [
-          for (final type in DocumentType.values)
-            Expanded(
-              child: _DocumentTypeTab(
-                label: DocumentTypeLabels.shortLabel(type),
-                selected: type == selected,
-                onTap: () => onChanged(type),
-              ),
+          AnimatedAlign(
+            duration: const Duration(milliseconds: 480),
+            curve: Curves.easeOutBack,
+            // -1, 0 y 1: izquierda, centro y derecha para tres opciones.
+            alignment: Alignment(index * 2 / (types.length - 1) - 1, 0),
+            child: FractionallySizedBox(
+              widthFactor: 1 / types.length,
+              heightFactor: 1,
+              child: const _SlidingPill(),
             ),
+          ),
+          Row(
+            children: [
+              for (final type in types)
+                Expanded(
+                  child: _DocumentTypeTab(
+                    label: DocumentTypeLabels.shortLabel(type),
+                    selected: type == selected,
+                    onTap: () => onChanged(type),
+                  ),
+                ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SlidingPill extends StatelessWidget {
+  const _SlidingPill();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
     );
@@ -63,34 +104,14 @@ class _DocumentTypeTab extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
-          curve: Curves.easeOut,
-          height: 36,
-          alignment: Alignment.center,
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          decoration: BoxDecoration(
-            color: selected ? colors.primary : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: colors.primary.withValues(alpha: 0.3),
-                      blurRadius: 10,
-                    ),
-                  ]
-                : null,
-          ),
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: selected
-                  ? colors.onSecondary
-                  : colors.onSurface.withValues(alpha: 0.6),
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
+        child: Center(
+          child: AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.fastOutSlowIn,
+            style: theme.textTheme.titleSmall!.copyWith(
+              color: selected ? colors.onSurface : colors.onSurfaceVariant,
             ),
+            child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
           ),
         ),
       ),

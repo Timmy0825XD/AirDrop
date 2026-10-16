@@ -1,7 +1,37 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/validators.dart';
+/// Puntaje de la nueva contraseña, de 0 a 4. Solo orienta; la regla que se
+/// exige es la de `Validators.password`.
+class PasswordScore {
+  PasswordScore._();
 
+  /// Un punto por largo mínimo, mayúsculas y minúsculas, números, y
+  /// símbolos o 12 caracteres o más. Con menos de 8 no pasa de "Débil".
+  static int of(String text) {
+    if (text.isEmpty) return 0;
+    var points = 0;
+    if (text.length >= 8) points++;
+    if (RegExp('[a-z]').hasMatch(text) && RegExp('[A-Z]').hasMatch(text)) {
+      points++;
+    }
+    if (RegExp(r'\d').hasMatch(text)) points++;
+    if (RegExp(r'[^A-Za-z0-9]').hasMatch(text) || text.length >= 12) points++;
+    return text.length < 8 ? points.clamp(0, 1) : points;
+  }
+
+  /// Etiqueta y color de cada nivel.
+  static (String, Color) look(ColorScheme colors, int level) => switch (level) {
+    0 => ('', colors.onSurfaceVariant),
+    1 => ('Débil', colors.error),
+    2 => ('Aceptable', colors.secondary),
+    3 => ('Segura', colors.primary),
+    _ => ('Muy segura', colors.primary),
+  };
+}
+
+/// Medidor de la nueva contraseña: cuatro segmentos que se llenan en
+/// escalera y la etiqueta (Débil, Aceptable, Segura, Muy segura). Solo
+/// orienta; la regla que se exige es la de `Validators.password`.
 class ResetPasswordStrength extends StatelessWidget {
   const ResetPasswordStrength({super.key, required this.controller});
 
@@ -11,108 +41,73 @@ class ResetPasswordStrength extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<TextEditingValue>(
       valueListenable: controller,
-      builder: (context, value, _) => AnimatedSize(
-        duration: const Duration(milliseconds: 200),
-        alignment: Alignment.topCenter,
-        child: value.text.isEmpty
-            ? const SizedBox(width: double.infinity)
-            : _StrengthBody(text: value.text),
-      ),
-    );
-  }
-}
-
-class _StrengthBody extends StatelessWidget {
-  const _StrengthBody({required this.text});
-
-  final String text;
-
-  int _level(bool valid) {
-    if (!valid) return 1;
-    var score = 2;
-    if (text.length >= 12) score++;
-    if (RegExp(r'[^A-Za-z0-9]').hasMatch(text)) score++;
-    return score.clamp(2, 4);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final issue = Validators.password(text);
-    final level = _level(issue == null);
-    final tone = level == 1
-        ? colors.error
-        : level == 2
-        ? colors.primary
-        : colors.tertiary;
-    const labels = ['', 'Débil', 'Aceptable', 'Segura', 'Muy segura'];
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 8, 4, 0),
-      child: Column(
-        children: [
-          Row(
+      builder: (context, value, _) {
+        final level = PasswordScore.of(value.text);
+        final (label, color) = PasswordScore.look(
+          Theme.of(context).colorScheme,
+          level,
+        );
+        return Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Row(
             children: [
-              Icon(
-                issue == null ? Icons.verified_outlined : Icons.info_outline,
-                size: 16,
-                color: tone,
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text(
-                  issue ?? 'Cumple los requisitos de la clave.',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colors.onSurface.withValues(alpha: 0.6),
-                  ),
+              for (var i = 0; i < 4; i++) ...[
+                if (i > 0) const SizedBox(width: 6),
+                Expanded(
+                  child: _Segment(filled: i < level, color: color, index: i),
                 ),
-              ),
-              Text(
-                labels[level],
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: tone,
-                  fontWeight: FontWeight.w700,
+              ],
+              SizedBox(
+                width: 86,
+                child: Text(
+                  label,
+                  textAlign: TextAlign.right,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          _StrengthBars(level: level, tone: tone),
-        ],
-      ),
+        );
+      },
     );
   }
 }
 
-class _StrengthBars extends StatelessWidget {
-  const _StrengthBars({required this.level, required this.tone});
+/// Un segmento: se llena de izquierda a derecha, cada uno 70 ms después
+/// del anterior.
+class _Segment extends StatelessWidget {
+  const _Segment({
+    required this.filled,
+    required this.color,
+    required this.index,
+  });
 
-  final int level;
-  final Color tone;
+  final bool filled;
+  final Color color;
+  final int index;
 
   @override
   Widget build(BuildContext context) {
-    final off = Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.12);
-
-    return Row(
-      children: List.generate(4, (index) {
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.only(right: index < 3 ? 6 : 0),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              height: 4,
-              decoration: BoxDecoration(
-                color: index < level ? tone : off,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(6),
+      child: Container(
+        height: 6,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        alignment: Alignment.centerLeft,
+        child: AnimatedFractionallySizedBox(
+          duration: Duration(milliseconds: 460 + 70 * index),
+          curve: Curves.fastOutSlowIn,
+          widthFactor: filled ? 1 : 0,
+          heightFactor: 1,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 360),
+            color: color,
           ),
-        );
-      }),
+        ),
+      ),
     );
   }
 }

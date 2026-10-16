@@ -12,15 +12,16 @@ Plan por fases del frontend Flutter a partir de la guía 25 (`learning/25-front-
 
 | Fase | Tema | Rama | Estado |
 | --- | --- | --- | --- |
-| 0 | Preparación y documento de avance | `docs/plan-fases-front` | Hecha (PR pendiente) |
-| 1 | Rediseño de auth con transiciones | `style/rediseno-auth` | Pendiente |
+| 0 | Preparación y documento de avance | `docs/plan-fases-front` | Hecha (PR #39) |
+| 1 | Rediseño de auth con transiciones | `style/rediseno-auth` | Hecha (PR pendiente) |
 | 2 | Autorizar y confirmar carga (HU-21, HU-35) | `feature/autorizar-carga-front` | Pendiente |
 | 3 | Telemetría y mapa en vivo (HU-26 a HU-28) | `feature/tracking-front` | Pendiente |
 | 4 | Geovalla sobre el mapa (HU-14) | `feature/geovalla-mapa` | Pendiente |
 | 5 | Rediseño del administrador | `style/rediseno-admin` | Pendiente |
 | 6 | Rediseño del despachador | `style/rediseno-despachador` | Pendiente |
 | 7 | Rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Pendiente |
-| 8 | Cierre y pruebas de punta a punta | `test/flujos-front` | Pendiente |
+| 8 | Limpieza antes de la revisión | `refactor/limpieza-front` | Pendiente |
+| 9 | Cierre y pruebas de punta a punta | `test/flujos-front` | Pendiente |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -34,6 +35,25 @@ Plan por fases del frontend Flutter a partir de la guía 25 (`learning/25-front-
 ## Fase 1 — Rediseño de auth con transiciones
 
 Referencia visual: canvas "AirDrop · Auth transiciones" en Claude Design (https://claude.ai/artifact/93zRSvo1BoLixvXs9dzjqC). Solo pantallas de `features/auth/presentation/`. No cambia carpetas, rutas ni bodies.
+
+Se trabaja pantalla por pantalla: se termina una, Oscar la prueba en el emulador y aprueba antes de pasar a la siguiente. En cada carpeta que se toca se borra lo que deja de usarse.
+
+Decisiones (2026-10-15): el tema nuevo es global (toda la app pasa al verde azulado y a Plus Jakarta Sans); el login correcto termina en el home real del rol; toque sutil de glassmorfismo (tarjeta del formulario, logo y pastilla de la ciudad); el logo es provisional hasta que el equipo lo defina.
+
+Avance por pantalla:
+
+- [x] Login: splash al abrir la app y al cerrar sesión, morph al encabezado, campos con temblor y error, botón que se vuelve dron, círculo de salida al inicio. Aprobado por Oscar.
+- [x] Registro: el encabezado se encoge desde el login, formulario de lado, selector de documento deslizante, consentimiento en tarjeta y botón apagado hasta aceptarlo. Volver al login no repite el splash. Aprobado por Oscar.
+- [x] Verificar cuenta: encabezado de paso con volver y "Paso 2 de 2", ícono con rebote, seis cajas sobre un campo invisible, temblor y error, reenvío a los 45 s con barra que se vacía; al verificar, las cajas se juntan en el check y el círculo lleva al inicio. Aprobado por Oscar.
+- [x] Recuperar contraseña: el encabezado se encoge desde el login, la llave gira al entrar, correo con temblor y error, el botón se vuelve el dron y regresa como "Ingresar el código" junto a la confirmación de Nest. Aprobado por Oscar.
+- [x] Nueva contraseña y contraseña actualizada: código en seis cajas con "Solicitar otro código" a los 45 s, medidor de fuerza por segmentos, check que gira al coincidir y aviso en vivo si no; al actualizar, el círculo cubre la pantalla, el verde se encoge al encabezado y el sello con el check aparece con el dron orbitando.
+- [x] Perfil: solo toma el tema nuevo; no tiene diseño propio en el canvas. Sus widgets viejos quedan listados en `frontend/AGENTS.md`.
+
+Pendientes que deja la fase:
+
+- Cambiar la animación de la ruta del splash del login (el trazo que se dibuja): a Oscar no le convence; se define más adelante.
+- Definir el logo; hoy va un ícono provisional.
+- Rediseñar el perfil y quitar con él `AuthPage`, `LoginGlassCard`, `LoginButton` y `LoginPalette` (los dos últimos pasan de 60 líneas).
 
 - Paso 1: Tokens del diseño en `theme/` (fondo `#F5F6F3`, acento `#0B7A75`, dron `#E8743B`, modo oscuro, Plus Jakarta Sans).
 - Paso 2: Widgets animados compartidos en `auth/presentation/widgets/`: encabezado curvo con morph, botón que se encoge a loader con el dron, campo con temblor y error deslizante, escala al tocar.
@@ -83,7 +103,18 @@ Mismo lenguaje visual de la Fase 1. Una rama por rol para que cada PR sea revisa
 - Paso 3: Actualizar los tests que verifican textos.
 - Paso 4: Cerrar la fase.
 
-## Fase 8 — Cierre y pruebas de punta a punta
+## Fase 8 — Limpieza antes de la revisión
+
+Va en su propia rama porque `AGENTS.md` pide no mezclar limpieza con una historia de usuario.
+
+- Paso 1: Buscar otra vez archivos, widgets, clases y paquetes sin uso (las fases 1 a 7 dejan cosas nuevas y viejas). Candidatos ya vistos: `home_info_card.dart`, `order_tile.dart` y el paquete `cupertino_icons`.
+- Paso 2: Mostrarle a Oscar la lista final para que apruebe cada borrado.
+- Paso 3: Borrar lo aprobado y quitar los paquetes sin uso.
+- Paso 4: Regenerar `frontend/docs/ui_inventory.md` con `frontend/tools/ui_inventory.ps1`.
+- Paso 5: `flutter analyze` y `flutter test`.
+- Paso 6: Cerrar la fase.
+
+## Fase 9 — Cierre y pruebas de punta a punta
 
 - Paso 1: Recorrer con el backend real los flujos de la sección 10 de la guía 25.
 - Paso 2: Corregir lo que aparezca.

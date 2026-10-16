@@ -92,18 +92,64 @@ controller de la feature.
 ### Sistema de diseño de Auth
 
 Las pantallas de auth tienen identidad propia y **comparten andamiaje**. Antes de
-armar una pantalla nueva, reusar lo que ya existe:
+armar una pantalla nueva, reusar lo que ya existe.
+
+El rediseño de la Fase 1 (ver `../context/producto/avance.md`) va pantalla por
+pantalla. Estas piezas son las nuevas y las usan el login y el registro; las
+demás pantallas las adoptan cuando les toque su rediseño:
 
 | Widget | Para qué |
 | --- | --- |
-| `AuthPage` | Fondo con brillo, `SafeArea`, scroll y ancho máximo. Toda pantalla de auth lo usa como raíz. |
-| `AuthGlow` / `AuthEntrance` | El brillo y la animación de entrada por dentro del `AuthPage`. |
-| `AuthTopBar` | Botón de volver + título. `onBack` en `null` lo oculta; `showTitle: false` deja solo la flecha. |
-| `LoginGlassCard` | La superficie translúcida que envuelve los formularios. |
+| `AuthCurvedHeader` | Bloque verde con borde inferior curvo. Altura y curva se animan desde afuera (splash → encabezado). |
+| `AuthHeaderMetrics` | Alturas del encabezado: alto (login) y compacto (el resto). Con ellas una pantalla arranca con la forma de la anterior. |
+| `AuthBrandBar` / `AuthLogoTile` / `AuthPill` | Logo, nombre y pastilla de vidrio en la esquina del encabezado. El logo es provisional. |
+| `AuthFormSheet` | Tarjeta de vidrio del formulario sobre la curva, con scroll y su animación de entrada (desde abajo o de lado). |
+| `AuthField` | Label en mayúsculas (con nota o `AuthFieldBadge` opcional a la derecha), caja de 56 px, temblor y mensaje deslizante cuando la pantalla pasa `errorText`. |
+| `AuthMorphButton` | `ElevatedButton` que se encoge a círculo con el dron girando mientras carga; con `onPressed` en `null` queda apagado. |
+| `AuthGlass` / `AuthGlassPanel` | Vidrio esmerilado (blur + tinte + borde fino). Con medida: tarjeta del formulario y piezas sobre el encabezado. |
+| `CircleReveal` | Círculo de marca que crece desde un punto hasta cubrir la pantalla. |
+| `DroneGlyph` / `SpinningDrone` | El dron dibujado; quieto o girando como indicador de carga. |
+| `AuthStepScaffold` | Pantallas de paso (código, recuperación): encabezado con `AuthBackButton` y pastilla opcional, ícono montado sobre la curva que entra con rebote (`turnIcon` lo hace girar, como la llave), contenido y la acción al fondo. `fromTall` cuando se llega desde el login. |
+| `AuthTextLink` | "Pregunta + acción" centrados (¿No tienes cuenta? Regístrate). |
+| `OtpCodeField` | Un campo invisible (acepta el autocompletado del código) y seis cajas que lo muestran; al verificar, las cajas se juntan en el check (`OtpSuccessCheck`). |
+| `CheckMarkPainter` | Check que se dibuja de punta a punta; lo usan el consentimiento y el código. |
+
+El login arma su coreografía con un solo `AnimationController` y tramos
+`Interval` (`widgets/login/login_timeline.dart`). Con "reducir movimiento" del
+sistema (`MediaQuery.disableAnimationsOf`) se salta el splash, el bucle y el
+círculo de salida.
+
+`/login`, `/register`, `/verify-otp`, `/forgot-password` y `/reset-password`
+usan `NoTransitionPage`: cada pantalla anima su propia entrada partiendo de
+la forma del encabezado de la anterior (`AuthHeaderMetrics`). Volver al login
+desde registro, código o recuperación usa
+`extra: LoginScreen.returnExtra`: el encabezado crece y no se repite el
+splash, que sale solo al abrir la app y al cerrar sesión.
+
+Verificar el código abre la sesión (Nest devuelve `AuthSession`), así que tras
+el check el círculo de marca cubre la pantalla y se va a `/home`. El reenvío
+se habilita a los 45 s (espera solo de la app; el código dura 10 min).
+
+Recuperar contraseña ya no salta sola a la siguiente pantalla: al enviar
+muestra el mensaje de Nest (que no dice si la cuenta existe) y el botón pasa
+a "Ingresar el código", que lleva a `/reset-password`.
+
+Nueva contraseña reusa `OtpCodeField` para el código, mide la clave con
+`PasswordScore` (solo orienta; lo que se exige es `Validators.password`) y
+avisa en vivo si la confirmación no coincide. Al actualizar, el círculo de
+marca cubre la pantalla y aparece `ResetSuccessView`; la sesión no se abre y
+el botón vuelve al login.
+
+Piezas anteriores, que hoy solo usa el perfil (y `LoginFormAlert`, también
+login y registro). Se reemplazan cuando el perfil tenga diseño propio:
+
+| Widget | Para qué |
+| --- | --- |
+| `AuthPage` | Fondo con brillo, `SafeArea`, scroll y ancho máximo. Raíz del perfil. |
+| `AuthGlow` / `AuthEntrance` / `AuthPulsingDot` | El brillo, la entrada y el punto que late del perfil. |
+| `LoginGlassCard` | La superficie translúcida del perfil. |
 | `LoginAlert` / `LoginFormAlert` | Mensaje de error o de éxito con animación. `LoginFormAlert` ya maneja el caso `null` sin ocupar espacio. |
-| `LoginButton` | Botón principal con estado de carga. Es `ElevatedButton`, no `FilledButton`. |
-| `LoginField` | Campo con label en **mayúsculas** (`toUpperCase()`), hint e ícono. |
-| `RegisterField` | Igual que `LoginField` pero con `badge`, `prefix` y `suffix` opcionales. |
+| `LoginButton` | Botón con estado de carga del perfil. Es `ElevatedButton`, no `FilledButton`. |
 
 Colores siempre con `Theme.of(context)` y `withValues(alpha: ...)` para lo
 translúcido. Nunca hex dentro de una feature.
@@ -115,8 +161,11 @@ Convenciones que ya están en el código:
 - El registro y el login no piden rol. El registro es solo del solicitante y
   usa `DocumentTypeTabs` para el tipo de documento. El login pide correo y
   contraseña.
-- Un formulario reusa `RegisterFieldValidators` o `LoginFieldValidators` para no
-  pasar validadores uno por uno.
+- Login y registro validan en la pantalla con `Validators` y pasan el error a
+  cada `AuthField`. El registro nombra sus campos con `RegisterInput` y agrupa
+  lo que comparten en `RegisterFormData`, para no pasar parámetros uno por uno.
+- En el registro, "Crear cuenta" queda apagado hasta aceptar el
+  consentimiento (RNF-05).
 
 ## Paleta y tokens visuales
 
@@ -126,37 +175,43 @@ La fuente de verdad ejecutable es [`lib/theme/app_theme.dart`](lib/theme/app_the
 
 | Token | Valor | Uso |
 | --- | --- | --- |
-| `primary` | `#06B6D4` | Marca, enlaces, foco y elementos activos |
-| `secondary` | `#22D3EE` | Botones principales y acentos cyan |
+| `primary` | `#0B7A75` (claro) · `#68ADA9` (oscuro) | Marca, botones, enlaces, foco y el encabezado curvo |
+| `secondary` | `#E8743B` | Naranja de señal: el dron y lo que está en vuelo |
 | `tertiary` | `#10B981` | Éxito y estados positivos |
-| `error` | `#E5484D` | Errores y acciones destructivas |
+| `error` | `#C2362B` (claro) · `#FF8C7F` (oscuro) | Errores y acciones destructivas |
 
 ### Tema oscuro
 
 | Token | Valor | Uso |
 | --- | --- | --- |
-| Background | `#0A0E14` | Fondo general |
-| Surface | `#141A21` | Tarjetas, campos y superficies |
-| Texto principal | `#EAF0E5` | Títulos y contenido principal |
-| Texto secundario | `#8B98A5` | Ayudas y textos secundarios |
+| Background | `#0B1110` | Fondo general |
+| Surface | `#141B1A` | Tarjetas, campos y superficies |
+| Hundido (`surfaceContainerHighest`) | `#0F1615` | Segmentados y rellenos |
+| Línea (`outline`) | `#25302E` | Bordes de campos |
+| Texto principal | `#EEF3F1` | Títulos y contenido principal |
+| Texto secundario (`onSurfaceVariant`) | `#95A4A0` | Ayudas, labels y textos secundarios |
+| Texto sobre marca (`onPrimary`) | `#05201C` | Texto e íconos sobre el verde |
 
 ### Tema claro
 
 | Token | Valor | Uso |
 | --- | --- | --- |
-| Background | `#F5F7FA` | Fondo general |
+| Background | `#F5F6F3` | Fondo general |
 | Surface | `#FFFFFF` | Tarjetas, campos y superficies |
-| Texto principal | `#10151B` | Títulos y contenido principal |
-| Texto secundario | `#5B6672` | Ayudas y textos secundarios |
+| Hundido (`surfaceContainerHighest`) | `#ECEEEA` | Segmentados y rellenos |
+| Línea (`outline`) | `#E2E6E1` | Bordes de campos |
+| Texto principal | `#101716` | Títulos y contenido principal |
+| Texto secundario (`onSurfaceVariant`) | `#5D6A67` | Ayudas, labels y textos secundarios |
+| Texto sobre marca (`onPrimary`) | `#FFFFFF` | Texto e íconos sobre el verde |
 
-- Radius principal: `18`.
+- Radius principal: `18` (campos y botones); tarjetas `24`–`28`.
 - `themeMode`: `ThemeMode.system`.
-- Titulares: **Plus Jakarta Sans**.
-- Cuerpo y etiquetas: **Inter**.
+- Tipografía única: **Plus Jakarta Sans**. Titulares w800 con letter-spacing negativo; cuerpo w500; labels de campo `labelSmall` (11 px, w700, en mayúsculas).
 - `google_fonts`: `^8.2.1`.
 - Las superficies translúcidas se construyen con `color.withValues(alpha: ...)`, no con colores nuevos.
 - Las pantallas leen `Theme.of(context)` y los widgets reutilizados; no se definen RGB/hex dentro de features.
-- Stitch es la referencia visual: <https://stitch.withgoogle.com/projects/1947458192612690185>. La app conserva tema claro y oscuro porque el tema sigue el sistema.
+- Referencia visual de auth: canvas "AirDrop · Auth transiciones" en Claude Design (<https://claude.ai/artifact/93zRSvo1BoLixvXs9dzjqC>). La app conserva tema claro y oscuro porque el tema sigue el sistema.
+- Curvas de animación: nunca `Curves.linear` ni `Curves.ease`. Se usan `fastOutSlowIn`, `easeOutBack` (rebotes) y `easeInOutCubic`; se anima con `Transform`, `Opacity` y recortes, no con márgenes.
 
 ## Origen de datos (local | remote)
 

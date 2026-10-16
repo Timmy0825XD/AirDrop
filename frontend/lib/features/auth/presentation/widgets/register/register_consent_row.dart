@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../check_mark.dart';
+
+/// Consentimiento de datos (RNF-05) en su propia tarjeta. Sin marcarlo, el
+/// botón de crear cuenta queda apagado.
 class RegisterConsentRow extends StatelessWidget {
   const RegisterConsentRow({
     super.key,
@@ -14,46 +18,64 @@ class RegisterConsentRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final muted = colors.onSurface.withValues(alpha: 0.6);
-
     return Semantics(
       checked: value,
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: () => onChanged(!value),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _CheckBox(checked: value),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text.rich(
-                TextSpan(
-                  text: 'Acepto el tratamiento de datos personales y la ',
-                  children: [
-                    TextSpan(
-                      text: 'política de privacidad',
-                      style: TextStyle(
-                        color: colors.primary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const TextSpan(text: '.'),
-                  ],
-                ),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: muted,
-                  height: 1.35,
-                ),
-              ),
+      child: Material(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(20),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          onTap: () => onChanged(!value),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _CheckBox(checked: value),
+                const SizedBox(width: 14),
+                Expanded(child: _ConsentText(theme: theme)),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
+class _ConsentText extends StatelessWidget {
+  const _ConsentText({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = theme.colorScheme;
+    return Text.rich(
+      TextSpan(
+        text: 'Acepto el tratamiento de datos personales y la ',
+        children: [
+          TextSpan(
+            text: 'política de privacidad',
+            style: TextStyle(
+              color: colors.onSurface,
+              fontWeight: FontWeight.w700,
+              decoration: TextDecoration.underline,
+            ),
+          ),
+          const TextSpan(text: '.'),
+        ],
+      ),
+      style: theme.textTheme.bodySmall?.copyWith(
+        color: colors.onSurfaceVariant,
+        fontSize: 13,
+        height: 1.55,
+      ),
+    );
+  }
+}
+
+/// Casilla de 24 px: se llena de verde y el check se dibuja de punta a punta.
 class _CheckBox extends StatelessWidget {
   const _CheckBox({required this.checked});
 
@@ -62,21 +84,26 @@ class _CheckBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: 22,
-      height: 22,
-      margin: const EdgeInsets.only(top: 1),
+      duration: const Duration(milliseconds: 260),
+      curve: Curves.fastOutSlowIn,
+      width: 24,
+      height: 24,
       decoration: BoxDecoration(
-        color: checked ? colors.primary : colors.onSurface.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(7),
+        color: checked ? colors.primary : colors.surface,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: checked ? colors.primary : colors.outline,
+          width: 1.5,
+        ),
       ),
-      child: AnimatedScale(
-        scale: checked ? 1 : 0,
-        duration: const Duration(milliseconds: 200),
-        curve: Curves.easeOutBack,
-        child: Icon(Icons.check_rounded, size: 16, color: colors.onSecondary),
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(end: checked ? 1 : 0),
+        duration: const Duration(milliseconds: 360),
+        curve: Curves.easeInOutCubic,
+        builder: (context, t, _) => CustomPaint(
+          painter: CheckMarkPainter(progress: t, color: colors.onPrimary),
+        ),
       ),
     );
   }

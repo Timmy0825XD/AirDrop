@@ -28,7 +28,7 @@ class LoginPalette {
     final dark = c.brightness == Brightness.dark;
     Color white(double a) => Colors.white.withValues(alpha: a);
     Color deep(Color base, double t) => Color.lerp(base, Colors.black, t)!;
-    final accent = dark ? c.secondary : deep(c.primary, 0.38);
+    final accent = dark ? c.primary : deep(c.primary, 0.2);
 
     return LoginPalette._(
       dark: dark,
@@ -44,12 +44,12 @@ class LoginPalette {
       shadow: dark
           ? Colors.black.withValues(alpha: 0.5)
           : accent.withValues(alpha: 0.25),
-      btn1: dark ? c.secondary : deep(c.primary, 0.32),
-      btn2: dark ? c.primary : deep(c.primary, 0.5),
-      btnText: dark ? c.onSecondary : Colors.white,
+      btn1: c.primary,
+      btn2: dark ? deep(c.primary, 0.2) : deep(c.primary, 0.3),
+      btnText: c.onPrimary,
       error: dark ? c.error : deep(c.error, 0.35),
       success: dark ? c.tertiary : deep(c.tertiary, 0.45),
-      orbs: [c.primary, c.tertiary, c.secondary],
+      orbs: [c.primary, c.tertiary, c.primary],
     );
   }
 

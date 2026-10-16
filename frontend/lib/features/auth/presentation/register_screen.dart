@@ -7,17 +7,23 @@ import '../../../core/colombian_phone.dart';
 import '../../../core/validators.dart';
 import '../data/auth_models.dart';
 import 'auth_controller.dart';
-import 'widgets/auth_page.dart';
+import 'login_screen.dart';
+import 'widgets/auth_brand.dart';
+import 'widgets/auth_form_sheet.dart';
+import 'widgets/auth_morph_button.dart';
+import 'widgets/auth_text_link.dart';
 import 'widgets/document_type_labels.dart';
 import 'widgets/login/login_form_alert.dart';
-import 'widgets/login/login_glass_card.dart';
+import 'widgets/register/register_consent_row.dart';
 import 'widgets/register/register_document_section.dart';
 import 'widgets/register/register_fields.dart';
 import 'widgets/register/register_header.dart';
-import 'widgets/register/register_info_banner.dart';
 
 /// Alta pública del solicitante. No hay campo de rol: el despachador y el
 /// operador los crea el administrador.
+///
+/// Llega desde el login: el encabezado se encoge y el formulario entra de
+/// lado. Al volver al login pasa lo contrario, sin repetir el splash.
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
 
@@ -25,63 +31,99 @@ class RegisterScreen extends ConsumerStatefulWidget {
   ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends ConsumerState<RegisterScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _name = TextEditingController();
-  final _documentNumber = TextEditingController();
-  final _phone = TextEditingController();
-  final _email = TextEditingController();
-  final _password = TextEditingController();
+class _RegisterScreenState extends ConsumerState<RegisterScreen>
+    with SingleTickerProviderStateMixin {
+  final _controllers = RegisterControllers();
+  late final _entry = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 640),
+  );
+  late final _header = CurvedAnimation(
+    parent: _entry,
+    curve: Curves.fastOutSlowIn,
+  );
+  late final _panel = CurvedAnimation(
+    parent: _entry,
+    curve: const Interval(0.25, 1, curve: Curves.fastOutSlowIn),
+  );
+
+  bool _started = false;
   DocumentType _documentType = DocumentType.citizenshipId;
   bool _consentAccepted = false;
   bool _isLoading = false;
+  int _shakeCount = 0;
+  Map<RegisterInput, String> _errors = const {};
   String? _errorMessage;
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    MediaQuery.disableAnimationsOf(context)
+        ? _entry.value = 1
+        : _entry.forward();
+  }
+
+  @override
   void dispose() {
-    _name.dispose();
-    _documentNumber.dispose();
-    _phone.dispose();
-    _email.dispose();
-    _password.dispose();
+    _header.dispose();
+    _panel.dispose();
+    _entry.dispose();
+    _controllers.dispose();
     super.dispose();
   }
 
+  /// Valida todo de una vez y devuelve solo los campos con error.
+  Map<RegisterInput, String> _validate() {
+    final c = _controllers;
+    // La cédula es solo dígitos y el PPT admite letras, igual que en Nest.
+    final document = DocumentTypeLabels.usesDigits(_documentType)
+        ? Validators.documentDigits(c.document.text)
+        : Validators.documentPpt(c.document.text);
+    final results = {
+      RegisterInput.name: Validators.name(c.name.text),
+      RegisterInput.document: document,
+      RegisterInput.phone: Validators.phone(c.phone.text),
+      RegisterInput.email: Validators.email(c.email.text),
+      RegisterInput.password: Validators.password(c.password.text),
+    };
+    return {for (final MapEntry(:key, :value) in results.entries) key: ?value};
+  }
+
   Future<void> _submit() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    if (!_consentAccepted) {
-      setState(
-        () =>
-            _errorMessage = 'Debes aceptar el tratamiento de datos personales.',
-      );
+    if (_isLoading) return;
+    final errors = _validate();
+    if (errors.isNotEmpty) {
+      setState(() {
+        _errors = errors;
+        _shakeCount++;
+      });
       return;
     }
 
-    final phone = normalizeColombianPhone(_phone.text);
     FocusScope.of(context).unfocus();
     setState(() {
       _isLoading = true;
       _errorMessage = null;
     });
-
+    final c = _controllers;
+    final email = c.email.text.trim().toLowerCase();
     try {
-      final email = _emailValue();
-      if (email == null) return;
       await ref
           .read(authControllerProvider.notifier)
           .register(
             RegisterRequest(
-              fullName: _name.text,
+              fullName: c.name.text,
               documentType: _documentType,
-              documentNumber: _documentNumber.text,
-              phone: phone,
-              password: _password.text,
+              documentNumber: c.document.text,
+              phone: normalizeColombianPhone(c.phone.text),
+              password: c.password.text,
               consentAccepted: true,
               email: email,
             ),
           );
-      if (!mounted) return;
-      context.go('/verify-otp', extra: AuthContact.email(email));
+      if (mounted) context.go('/verify-otp', extra: AuthContact.email(email));
     } on ApiException catch (error) {
       if (mounted) setState(() => _errorMessage = error.message);
     } catch (_) {
@@ -95,131 +137,96 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
     }
   }
 
-  /// La cédula es solo dígitos y el PPT admite letras: el patrón depende
-  /// del tipo elegido, igual que en Nest.
-  String? _validateDocument(String? value) =>
-      DocumentTypeLabels.usesDigits(_documentType)
-      ? Validators.documentDigits(value)
-      : Validators.documentPpt(value);
-
-  String? _validateEmail(String? value) {
-    if (_emailValue() == null) return 'El correo es obligatorio.';
-    return Validators.email(value);
+  void _clearErrors(String _) {
+    if (_errors.isEmpty && _errorMessage == null) return;
+    setState(() {
+      _errors = const {};
+      _errorMessage = null;
+    });
   }
 
-  String? _emailValue() {
-    final value = _email.text.trim();
-    return value.isEmpty ? null : value.toLowerCase();
-  }
-
-  void _clearError(String _) {
-    if (_errorMessage != null) setState(() => _errorMessage = null);
-  }
+  void _backToLogin() => context.go('/login', extra: LoginScreen.returnExtra);
 
   @override
   Widget build(BuildContext context) {
     ref.watch(authControllerProvider);
-    final theme = Theme.of(context);
+    final inset = MediaQuery.paddingOf(context).top;
 
-    return AuthPage(
-      maxWidth: 520,
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _backToLogin();
+      },
+      child: Scaffold(
+        body: Stack(
           children: [
-            RegisterHeader(onBack: () => context.go('/login')),
-            const SizedBox(height: 12),
-            Text(
-              'Únete a la red de despacho y recepción médica autónoma.',
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-                height: 1.4,
+            Positioned.fill(child: RegisterHeaderLayer(entry: _header)),
+            Positioned.fill(
+              child: AuthFormSheet(
+                entrance: _panel,
+                from: const Offset(56, 0),
+                top:
+                    AuthHeaderMetrics.compact(inset) -
+                    AuthHeaderMetrics.overlap,
+                child: _form(),
               ),
             ),
-            const SizedBox(height: 20),
-            AuthFormAlert(
-              message: _errorMessage,
-              onDismiss: () => setState(() => _errorMessage = null),
-              bottomPadding: 16,
-            ),
-            LoginGlassCard(
-              child: RegisterFields(
-                nameController: _name,
-                documentNumberController: _documentNumber,
-                phoneController: _phone,
-                emailController: _email,
-                passwordController: _password,
-                consentAccepted: _consentAccepted,
-                isLoading: _isLoading,
-                onSubmit: _submit,
-                onConsentChanged: (value) => setState(() {
-                  _consentAccepted = value;
-                  _errorMessage = null;
-                }),
-                documentSection: RegisterDocumentSection(
-                  type: _documentType,
-                  onTypeChanged: (type) => setState(() {
-                    _documentType = type;
-                    _errorMessage = null;
-                  }),
-                  numberController: _documentNumber,
-                  validator: _validateDocument,
-                  onChanged: _clearError,
-                ),
-                validators: RegisterFieldValidators(
-                  name: Validators.name,
-                  documentNumber: _validateDocument,
-                  phone: Validators.phone,
-                  email: _validateEmail,
-                  password: Validators.password,
-                  onChanged: _clearError,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const RegisterInfoBanner(),
-            const SizedBox(height: 24),
-            const _LoginLinkRow(),
           ],
         ),
       ),
     );
   }
-}
 
-class _LoginLinkRow extends StatelessWidget {
-  const _LoginLinkRow();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          '¿Ya tienes cuenta?',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+  Widget _form() {
+    final data = RegisterFormData(
+      controllers: _controllers,
+      errors: _errors,
+      shakeCount: _shakeCount,
+      onChanged: _clearErrors,
+    );
+    return AutofillGroup(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const RegisterHeading(),
+          const SizedBox(height: 22),
+          AuthFormAlert(
+            message: _errorMessage,
+            onDismiss: () => setState(() => _errorMessage = null),
+            bottomPadding: 16,
           ),
-        ),
-        TextButton(
-          onPressed: () => context.go('/login'),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Inicia sesión',
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: theme.colorScheme.primary,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const Icon(Icons.chevron_right, size: 18),
-            ],
+          RegisterIdentityFields(
+            data: data,
+            documentType: _documentType,
+            onDocumentTypeChanged: (type) => setState(() {
+              _documentType = type;
+              _errors = const {};
+            }),
           ),
-        ),
-      ],
+          const SizedBox(height: 18),
+          RegisterContactFields(data: data),
+          const SizedBox(height: 20),
+          RegisterConsentRow(
+            value: _consentAccepted,
+            onChanged: (value) => setState(() => _consentAccepted = value),
+          ),
+          const SizedBox(height: 22),
+          Center(
+            child: AuthMorphButton(
+              label: 'Crear cuenta',
+              loadingLabel: 'Creando cuenta',
+              isLoading: _isLoading,
+              onPressed: _consentAccepted ? _submit : null,
+            ),
+          ),
+          const SizedBox(height: 10),
+          AuthTextLink(
+            question: '¿Ya tienes cuenta?',
+            action: 'Inicia sesión',
+            onPressed: _backToLogin,
+          ),
+        ],
+      ),
     );
   }
 }

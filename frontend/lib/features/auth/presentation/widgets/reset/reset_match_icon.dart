@@ -1,38 +1,43 @@
 import 'package:flutter/material.dart';
 
+/// Check verde que aparece girando con un rebote cuando la confirmación
+/// coincide con la nueva contraseña.
 class ResetMatchIcon extends StatelessWidget {
-  const ResetMatchIcon({
-    super.key,
-    required this.password,
-    required this.confirm,
-  });
+  const ResetMatchIcon({super.key, required this.match});
 
-  final TextEditingController password;
-  final TextEditingController confirm;
+  final bool match;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-
-    return ListenableBuilder(
-      listenable: Listenable.merge([password, confirm]),
-      builder: (context, _) {
-        final match = confirm.text.isNotEmpty && confirm.text == password.text;
-        return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 200),
-          child: match
-              ? Padding(
-                  key: const ValueKey('match'),
-                  padding: const EdgeInsets.only(right: 4),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 520),
+      switchInCurve: Curves.easeOutBack,
+      transitionBuilder: (child, animation) => ScaleTransition(
+        scale: Tween<double>(begin: 0.2, end: 1).animate(animation),
+        child: RotationTransition(
+          turns: Tween<double>(begin: -30 / 360, end: 0).animate(animation),
+          child: FadeTransition(opacity: animation, child: child),
+        ),
+      ),
+      child: match
+          ? Semantics(
+              key: const ValueKey('match'),
+              label: 'Las contraseñas coinciden',
+              child: Padding(
+                padding: const EdgeInsets.only(right: 12),
+                child: CircleAvatar(
+                  radius: 13,
+                  backgroundColor: colors.primary,
                   child: Icon(
-                    Icons.check_circle_rounded,
-                    size: 20,
-                    color: colors.tertiary,
+                    Icons.check_rounded,
+                    size: 16,
+                    color: colors.onPrimary,
                   ),
-                )
-              : const SizedBox(key: ValueKey('none'), width: 14),
-        );
-      },
+                ),
+              ),
+            )
+          : const SizedBox(key: ValueKey('none')),
     );
   }
 }
