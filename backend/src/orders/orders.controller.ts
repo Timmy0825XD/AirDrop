@@ -70,6 +70,12 @@ export class OrdersController {
     return this.decisionService.listPendingLoad(user);
   }
 
+  @Get('in-flight')
+  @Roles(UserRole.DISPATCHER)
+  inFlight(@CurrentUser() user: User) {
+    return this.decisionService.listInFlight(user);
+  }
+
   @Post('plans')
   @Roles(UserRole.REQUESTER)
   createPlan(@CurrentUser() user: User, @Body() dto: CreatePlanDto) {

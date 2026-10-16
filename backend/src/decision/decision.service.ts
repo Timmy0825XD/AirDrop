@@ -107,6 +107,22 @@ export class DecisionService {
     return this.attachAssignments(rows.map((row) => presentOrder(row)));
   }
 
+  /**
+   * Vuelos en curso de la central del despachador: al despegar, el pedido
+   * sale de la cola y de pending-load, y esta es su entrada al mapa.
+   */
+  async listInFlight(user: User) {
+    const hub = await this.requireDispatcherHub(user);
+    const rows = await this.dataSource.getRepository(Order).find({
+      where: {
+        originHubId: hub.id,
+        status: In([OrderStatus.IN_FLIGHT, OrderStatus.AWAITING_DELIVERY]),
+      },
+      order: { updatedAt: 'DESC' },
+    });
+    return this.attachAssignments(rows.map((row) => presentOrder(row)));
+  }
+
   async attachAssignments<T extends { id: string; droneId: string | null }>(
     orders: T[],
   ) {
