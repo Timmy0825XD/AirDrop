@@ -29,6 +29,10 @@ Reglas de negocio que no deben contradecirse:
 
 La autoridad completa de negocio está en [`../context/index.md`](../context/index.md). Este resumen sirve para no perder el contexto durante una sesión de implementación.
 
+## Avance por fases
+
+Antes de empezar, leer [`../context/producto/avance.md`](../context/producto/avance.md): dice en qué fase vamos, su rama y sus pasos. Cada fase va en su propia rama desde `develop` y al cerrarla se actualiza ese archivo.
+
 ## Organización
 
 Feature-first, alineado a dominios del backend:
