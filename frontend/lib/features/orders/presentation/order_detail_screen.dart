@@ -15,6 +15,7 @@ import 'widgets/order_detail/order_assignment_card.dart';
 import 'widgets/order_detail/order_summary.dart';
 import 'widgets/order_detail/prescription_viewer.dart';
 import 'widgets/order_detail/reject_section.dart';
+import 'widgets/watch_flight_button.dart';
 
 /// Detalle del pedido (`GET /orders/:id`).
 ///
@@ -126,7 +127,12 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
                   order: order,
                   myHubId: user!.hubIds.firstOrNull,
                 ),
-              ),
+              )
+            // El solicitante solo abre sus pedidos, así que el vuelo es suyo.
+            else if (order.hasFlight) ...[
+              const SizedBox(height: 16),
+              WatchFlightButton(orderId: order.id),
+            ],
           ],
         ),
       ),
@@ -154,6 +160,10 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
       if (can.canConfirmLoad) ...[
         const SizedBox(height: 12),
         ConfirmLoadSection(busy: _busy, onConfirm: _confirmLoad),
+      ],
+      if (can.canWatchFlight) ...[
+        const SizedBox(height: 16),
+        WatchFlightButton(orderId: can.order.id),
       ],
     ];
   }

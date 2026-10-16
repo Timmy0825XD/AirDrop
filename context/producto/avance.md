@@ -14,12 +14,12 @@ Plan por fases del frontend Flutter a partir de la guía 25 (`learning/25-front-
 | --- | --- | --- | --- |
 | 0 | Preparación y documento de avance | `docs/plan-fases-front` | Hecha (PR #39) |
 | 1 | Rediseño de auth con transiciones | `style/rediseno-auth` | Hecha (PR #40) |
-| 2 | Autorizar y confirmar carga (HU-21, HU-35) | `feature/autorizar-carga-front` | Hecha (PR pendiente) |
-| 3 | Telemetría y mapa en vivo (HU-26 a HU-28) | `feature/tracking-front` | Pendiente |
+| 2 | Autorizar y confirmar carga (HU-21, HU-35) | `feature/autorizar-carga-front` | Hecha (PR #41) |
+| 3 | Telemetría y mapa en vivo (HU-26 a HU-28) | `feature/tracking-front` | Hecha (PR pendiente) |
 | 4 | Geovalla sobre el mapa (HU-14) | `feature/geovalla-mapa` | Pendiente |
-| 5 | Rediseño del administrador | `style/rediseno-admin` | Pendiente |
-| 6 | Rediseño del despachador | `style/rediseno-despachador` | Pendiente |
-| 7 | Rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Pendiente |
+| 5 | Revisión y rediseño del administrador | `style/rediseno-admin` | Pendiente |
+| 6 | Revisión y rediseño del despachador | `style/rediseno-despachador` | Pendiente |
+| 7 | Revisión y rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Pendiente |
 | 8 | Limpieza antes de la revisión | `refactor/limpieza-front` | Pendiente |
 | 9 | Cierre y pruebas de punta a punta | `test/flujos-front` | Pendiente |
 
@@ -97,6 +97,18 @@ Resultado (2026-10-15):
 - Paso 7: Botones "Ver vuelo" en historial, detalle y pending-load.
 - Paso 8: Cerrar la fase.
 
+Resultado (2026-10-16):
+
+- `features/tracking/` nueva: modelos (`Telemetry`, `FlightVitals`, `FlightPhase`, `FlightAlert`), `TelemetryClient` (GET + socket `/telemetry`, sin Riverpod) y `TrackingNotifier`.
+- Ojo con la guía 25: Nest responde `subscribe` con los **eventos** `subscribed` o `error`, no con ack. El cliente escucha esos eventos.
+- Mapa `/tracking/:orderId` (solicitante y despachador de origen): ruta del pedido, dron en vivo, ficha y avisos ("El vuelo está por empezar", "El dron llegó…").
+- "Ver vuelo" en el detalle, el historial y la bandeja (cuando la carga ya está confirmada). `Order.hasFlight` decide cuándo.
+- El operador no abre el mapa: la API no le lista pedidos.
+- Pendiente fuera de esta fase: `AndroidManifest.xml` principal no declara `INTERNET`; en builds de *release* el mapa y la API no cargarían.
+- Encontrado al probar con Nest (2026-10-16): `TelemetryGateway.handleConnection` valida el token sin que Nest lo espere, así que un `subscribe` inmediato recibe "El pedido no existe.". El cliente reintenta una vez a los 800 ms; el arreglo de fondo es del backend.
+- Encontrado al probar: el despachador no tiene lista de vuelos en curso (el pedido sale de la cola y de pending-load al despegar). Por ahora el aviso de "Carga confirmada" lleva "Ver vuelo"; hace falta un endpoint en Nest.
+- `flutter analyze` sin issues; 149 tests en verde.
+
 ## Fase 4 — Geovalla sobre el mapa (HU-14)
 
 - Paso 1: Modo "dibujar" del mapa, sin socket.
@@ -104,14 +116,39 @@ Resultado (2026-10-15):
 - Paso 3: Usarlo al crear y editar geovallas.
 - Paso 4: Cerrar la fase.
 
-## Fases 5 a 7 — Rediseño por rol
+## Fases 5 a 7 — Revisión a fondo y rediseño por rol
 
-Mismo lenguaje visual de la Fase 1. Una rama por rol para que cada PR sea revisable.
+Muchas pantallas de los roles vienen de una versión anterior y tienen errores
+(Oscar encontró varios al probar la Fase 3). Por eso cada una de estas fases
+**primero revisa y corrige**, y después rediseña. Mismo lenguaje visual de la
+Fase 1. Una rama por rol para que cada PR sea revisable.
 
-- Paso 1: Aplicar el diseño a los homes y pantallas del rol, sin cambiar rutas ni bodies.
-- Paso 2: Partir los widgets de más de 60 líneas.
-- Paso 3: Actualizar los tests que verifican textos.
-- Paso 4: Cerrar la fase.
+- Paso 1: Revisión rincón por rincón de cada pantalla del rol, contra el
+  backend real: cada lista, cada detalle, cada botón y cada mensaje. Anotar
+  cada error con cómo reproducirlo.
+- Paso 2: Mostrarle a Oscar la lista de errores y acordar cuáles se corrigen
+  aquí y cuáles son del backend.
+- Paso 3: Corregir los errores del frontend, con un test por cada uno cuando
+  se pueda.
+- Paso 4: Aplicar el diseño a los homes y pantallas del rol, sin cambiar
+  rutas ni bodies.
+- Paso 5: Partir los widgets de más de 60 líneas.
+- Paso 6: Actualizar los tests que verifican textos.
+- Paso 7: Cerrar la fase (resumen de errores corregidos incluido).
+
+### Errores ya conocidos (para la revisión)
+
+- **Despachador (Fase 6):** dos pedidos aparecen en sus listas pero al
+  abrirlos el detalle se queda cargando y termina en "El pedido no existe."
+  (`GET /orders/:id` responde 404, por ejemplo
+  `39d04443-f6b1-4960-98df-7382118796fc` y
+  `861c71c7-7652-4576-93a2-5312db258548`). Revisar en qué lista salen y si
+  esa lista muestra pedidos que el despachador no puede leer (Nest solo deja
+  leer al creador o a la central de origen o destino). Además, el detalle no
+  debe quedarse cargando: tiene que mostrar el error enseguida.
+- **Despachador:** no hay lista de vuelos en curso; al despegar, el pedido
+  sale de la cola y de pending-load. Hoy la única entrada al mapa es el aviso
+  de "Carga confirmada" o el detalle abierto.
 
 ## Fase 8 — Limpieza antes de la revisión
 
@@ -136,3 +173,6 @@ Va en su propia rama porque `AGENTS.md` pide no mezclar limpieza con una histori
 - Fallback con estado `reasignado` (RF-18); hoy solo responde 409.
 - Código de entrega, espera de 5 min, retorno y cuarentena (Sprint 6).
 - Bandeja de telemetría del operador (RU-18, CU-19): la API no le dice qué pedido lleva su dron.
+- Carrera en `TelemetryGateway`: `handleConnection` valida el token de forma asíncrona y Nest no la espera, así que un `subscribe` inmediato responde "El pedido no existe.". El frontend reintenta una vez; el arreglo de fondo es esperar la validación dentro de `subscribe`.
+- Lista de vuelos en curso del despachador (pedidos de su central en `in_flight` o `awaiting_delivery`).
+- Decisión pendiente (2026-10-16): estos dos arreglos del backend los hace Josheph o nosotros en una rama `fix/` del backend, después de subir la Fase 3.
