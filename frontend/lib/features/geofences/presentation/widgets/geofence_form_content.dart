@@ -4,17 +4,17 @@ import '../../../../core/widgets/primary_button.dart';
 import '../../data/geofence_models.dart';
 import 'geofence_fields.dart';
 import 'geofence_form_values.dart';
-import 'polygon_point_fields.dart';
+import 'geofence_polygon_preview.dart';
 
-/// Cuerpo del formulario de geovallas: nombre, motivo, vértices y
-/// botón. La pantalla conserva el estado de carga y el envío.
+/// Cuerpo del formulario de geovallas: nombre, motivo, el polígono
+/// dibujado y el botón. La pantalla conserva el estado de carga y el envío.
 class GeofenceFormContent extends StatelessWidget {
   const GeofenceFormContent({
     super.key,
     required this.formKey,
     required this.values,
     required this.onSubmit,
-    required this.onVerticesChanged,
+    required this.onDraw,
     required this.isLoading,
     this.original,
   });
@@ -22,7 +22,9 @@ class GeofenceFormContent extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final GeofenceFormValues values;
   final VoidCallback onSubmit;
-  final VoidCallback onVerticesChanged;
+
+  /// Abre el modo dibujar del mapa.
+  final VoidCallback onDraw;
   final bool isLoading;
 
   /// `null` en el alta; con geovalla existente el botón dice
@@ -40,7 +42,7 @@ class GeofenceFormContent extends StatelessWidget {
           children: [
             GeofenceFields(values: values),
             const SizedBox(height: 16),
-            PolygonPointFields(values: values, onChanged: onVerticesChanged),
+            GeofencePolygonPreview(vertices: values.vertices, onDraw: onDraw),
             const SizedBox(height: 24),
             PrimaryButton(
               label: original == null ? 'Crear geovalla' : 'Guardar cambios',

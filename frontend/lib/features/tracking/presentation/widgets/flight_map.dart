@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-/// Mapa de OpenStreetMap con la ruta del pedido y el dron encima.
+import '../../../../core/widgets/app_map.dart';
+
+/// El mapa del vuelo: la ruta del pedido y el dron encima de [AppMap].
 ///
 /// La ruta llega como pares `[longitud, latitud]` (GeoJSON) y aquí se
 /// voltea a `LatLng(latitud, longitud)`, que es lo que pide el mapa.
 class FlightMap extends StatelessWidget {
   const FlightMap({super.key, required this.route, this.drone});
-
-  /// Valledupar, por si todavía no hay ruta ni dron.
-  static const _valledupar = LatLng(10.4631, -73.2532);
 
   /// Puntos del corredor, `[longitud, latitud]`.
   final List<List<double>> route;
@@ -20,31 +19,20 @@ class FlightMap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final points = [for (final p in route) LatLng(p[1], p[0])];
+    final points = route.map(latLngFromGeoJson).toList();
     final colors = Theme.of(context).colorScheme;
-    return FlutterMap(
-      options: MapOptions(
-        initialCenter: drone ?? (points.isEmpty ? _valledupar : points.first),
-        initialZoom: 14,
-        // Encuadra la ruta completa al abrir, con aire alrededor.
-        initialCameraFit: points.length < 2
-            ? null
-            : CameraFit.coordinates(
-                coordinates: points,
-                padding: const EdgeInsets.all(48),
-              ),
-      ),
-      children: [
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          // La política de uso de los tiles de OSM exige identificar la app.
-          userAgentPackageName: 'com.example.frontend',
-        ),
-        PolylineLayer(
-          polylines: [
-            Polyline(points: points, strokeWidth: 4, color: colors.primary),
-          ],
-        ),
+    return AppMap(
+      center: drone ?? (points.isEmpty ? AppMap.valledupar : points.first),
+      // Encuadra la ruta completa al abrir, con aire alrededor.
+      fit: points,
+      layers: [
+        // flutter_map no acepta una línea sin puntos: sin ruta, no hay capa.
+        if (points.length >= 2)
+          PolylineLayer(
+            polylines: [
+              Polyline(points: points, strokeWidth: 4, color: colors.primary),
+            ],
+          ),
         if (drone != null)
           MarkerLayer(
             markers: [
@@ -56,7 +44,6 @@ class FlightMap extends StatelessWidget {
               ),
             ],
           ),
-        const SimpleAttributionWidget(source: Text('OpenStreetMap')),
       ],
     );
   }

@@ -16,7 +16,7 @@ Plan por fases del frontend Flutter a partir de la guía 25 (`learning/25-front-
 | 1 | Rediseño de auth con transiciones | `style/rediseno-auth` | Hecha (PR #40) |
 | 2 | Autorizar y confirmar carga (HU-21, HU-35) | `feature/autorizar-carga-front` | Hecha (PR #41) |
 | 3 | Telemetría y mapa en vivo (HU-26 a HU-28) | `feature/tracking-front` | Hecha (PR #43) |
-| 4 | Geovalla sobre el mapa (HU-14) | `feature/geovalla-mapa` | Pendiente |
+| 4 | Geovalla sobre el mapa (HU-14) | `feature/geovalla-mapa` | Hecha (PR pendiente) |
 | 5 | Revisión y rediseño del administrador | `style/rediseno-admin` | Pendiente |
 | 6 | Revisión y rediseño del despachador | `style/rediseno-despachador` | Pendiente |
 | 7 | Revisión y rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Pendiente |
@@ -115,6 +115,16 @@ Resultado (2026-10-16):
 - Paso 2: Polígono con taps, cerrado al enviar.
 - Paso 3: Usarlo al crear y editar geovallas.
 - Paso 4: Cerrar la fase.
+
+Resultado (2026-10-16):
+
+- `AppMap` (`core/widgets/app_map.dart`): el único mapa de la app (tiles de OpenStreetMap, crédito, centro en Valledupar) y las conversiones `[lng, lat]` ↔ `LatLng`. `FlightMap` lo usa en vez de repetir los tiles.
+- Modo dibujar `GeofenceDrawScreen`: pantalla completa, sin socket ni llamadas a Nest. Cada toque pone un vértice numerado; tocar un vértice lo quita; Deshacer y Borrar todo; "Listo" se prende con 3 vértices y devuelve los puntos al formulario.
+- El formulario de crear y editar muestra el polígono en una vista previa quieta (`GeofencePolygonPreview`) con "Dibujar en el mapa" / "Editar en el mapa". El anillo se sigue cerrando al guardar (`GeoJsonPolygon.fromVertices`).
+- El mapa va a pantalla completa porque, dentro del scroll del formulario, arrastrar el mapa peleaba con el scroll.
+- Error encontrado y corregido: `flutter_map` revienta con una línea sin puntos. Le pasaba a `FlightMap` cuando el pedido aún no trae ruta; ahora la línea solo se pinta con 2 puntos o más (test `flight_map_test`).
+- Limpieza: se borraron `PolygonPointFields` y `GeofenceVertex` (las filas de longitud y latitud a mano); `GeofenceFormValues` guarda los vértices como lista.
+- `flutter analyze` sin issues; 154 tests en verde.
 
 ## Fases 5 a 7 — Revisión a fondo y rediseño por rol
 
