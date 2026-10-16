@@ -286,6 +286,12 @@ Reglas de los datos:
   repositorio local si son pocos.
 - `mine()` es el único método que convierte un 404 en `null`; el resto relanza
   para que la UI muestre el mensaje de Nest.
+- `ProviderScope` usa `retryOnlyWithoutResponse` (`lib/app/provider_retry.dart`):
+  un error con código HTTP de Nest no se reintenta y se muestra de una vez;
+  solo se reintenta (3 veces) cuando el servidor no respondió.
+- Las listas sin socket (cola, programados, pending-load, historial) se
+  envuelven en `AutoRefresh` (`lib/core/widgets/auto_refresh.dart`), que
+  invalida su provider cada 10 s mientras la pantalla está abierta.
 
 ## Contrato con el backend
 

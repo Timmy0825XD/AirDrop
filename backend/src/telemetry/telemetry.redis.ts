@@ -21,6 +21,13 @@ export class TelemetryRedis implements OnModuleInit, OnModuleDestroy {
   private ready = false;
   private reported = false;
 
+  /**
+   * Quién escucha el canal. Se guarda aparte porque Nest arranca los
+   * `onModuleInit` del módulo en paralelo: `TelemetryPublisher` llama
+   * [listen] antes de que esta conexión termine de abrir.
+   */
+  private readonly handlers: Array<(message: string) => void> = [];
+
   constructor(private readonly config: ConfigService) {}
 
   async onModuleInit(): Promise<void> {
@@ -48,6 +55,15 @@ export class TelemetryRedis implements OnModuleInit, OnModuleDestroy {
         this.fail('Redis no conecta. El reloj de vuelo no arranca.');
       });
       await this.subscriber.connect();
+      this.subscriber.on('message', (channel, message) => {
+        if (channel !== TELEMETRY_CHANNEL) {
+          return;
+        }
+        for (const handler of this.handlers) {
+          handler(message);
+        }
+      });
+      await this.subscriber.subscribe(TELEMETRY_CHANNEL);
       this.ready = true;
     } catch {
       this.fail('Redis no conecta. El reloj de vuelo no arranca.');
@@ -75,18 +91,9 @@ export class TelemetryRedis implements OnModuleInit, OnModuleDestroy {
     await this.client?.publish(channel, message);
   }
 
+  /** Sirve antes o después de conectar: el canal se suscribe al abrir. */
   listen(handler: (message: string) => void): void {
-    if (!this.subscriber || !this.ready) {
-      return;
-    }
-    this.subscriber.on('message', (channel, message) => {
-      if (channel === TELEMETRY_CHANNEL) {
-        handler(message);
-      }
-    });
-    void this.subscriber.subscribe(TELEMETRY_CHANNEL).catch(() => {
-      this.fail('Redis no conecta. El reloj de vuelo no arranca.');
-    });
+    this.handlers.push(handler);
   }
 
   private fail(message: string): void {
