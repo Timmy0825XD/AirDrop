@@ -4,24 +4,40 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
+import '../../../core/widgets/message_view.dart';
+import '../../../core/widgets/rise_in.dart';
+import '../../home/presentation/widgets/section_header.dart';
 import '../data/geofence_models.dart';
 import '../data/geofence_providers.dart';
 import 'widgets/geofence_delete_confirm.dart';
 import 'widgets/geofence_tile.dart';
 
-/// Listado de geovallas del operador. Cada mutación invalida
-/// `geofencesProvider`, así la lista se refresca sin reiniciar la app.
+/// Las geovallas: zonas por donde el motor de rutas no deja pasar al dron.
+/// Tocar una abre su edición; "Nueva geovalla" abre el formulario encima.
 class GeofencesScreen extends ConsumerWidget {
   const GeofencesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(geofencesProvider).asData?.value.length;
     return Scaffold(
-      appBar: AppBar(title: const Text('Geovallas')),
-      body: const _GeofenceList(),
+      body: Column(
+        children: [
+          SectionHeader(
+            title: 'Geovallas',
+            subtitle: count == null
+                ? 'Zonas restringidas'
+                : count == 1
+                ? '1 zona restringida'
+                : '$count zonas restringidas',
+            onBack: () => context.go('/home'),
+          ),
+          const Expanded(child: _GeofenceList()),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/geofences/new'),
-        icon: const Icon(Icons.add),
+        onPressed: () => context.push('/geofences/new'),
+        icon: const Icon(Icons.add_rounded),
         label: const Text('Nueva geovalla'),
       ),
     );
@@ -33,58 +49,31 @@ class _GeofenceList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final geofences = ref.watch(geofencesProvider);
-
-    return geofences.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => _GeofenceError(message: '$error'),
-      data: (rows) => rows.isEmpty
-          ? const _GeofenceEmpty()
-          : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-              itemCount: rows.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (context, index) => GeofenceTile(
-                geofence: rows[index],
-                onTap: () => context.go('/geofences/${rows[index].id}'),
-                onDelete: () => _deleteGeofence(context, ref, rows[index]),
-              ),
-            ),
-    );
-  }
-}
-
-class _GeofenceEmpty extends StatelessWidget {
-  const _GeofenceEmpty();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(
-          'Aún no hay geovallas registradas.',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyLarge,
+    return switch (ref.watch(geofencesProvider)) {
+      AsyncData(:final value) when value.isEmpty => const MessageView(
+        icon: Icons.polyline_outlined,
+        message: 'Aún no hay geovallas registradas.',
+      ),
+      AsyncData(:final value) => ListView.separated(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 96),
+        itemCount: value.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
+        itemBuilder: (context, i) => RiseIn(
+          key: ValueKey(value[i].id),
+          delay: RiseIn.stagger(i),
+          child: GeofenceTile(
+            geofence: value[i],
+            onTap: () => context.push('/geofences/${value[i].id}'),
+            onDelete: () => _deleteGeofence(context, ref, value[i]),
+          ),
         ),
       ),
-    );
-  }
-}
-
-class _GeofenceError extends StatelessWidget {
-  const _GeofenceError({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(message, textAlign: TextAlign.center),
+      AsyncError(:final error) => MessageView(
+        icon: Icons.cloud_off_rounded,
+        message: ApiException.messageOf(error),
       ),
-    );
+      _ => const Center(child: CircularProgressIndicator()),
+    };
   }
 }
 
@@ -100,9 +89,7 @@ Future<void> _deleteGeofence(
 
   try {
     await ref.read(deleteGeofenceProvider.notifier).delete(geofence.id);
-    if (context.mounted) {
-      showAppSnack(context, 'Geovalla eliminada.');
-    }
+    if (context.mounted) showAppSnack(context, 'Geovalla eliminada.');
   } on ApiException catch (error) {
     if (context.mounted) showAppSnack(context, error.message);
   }

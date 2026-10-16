@@ -5,10 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../../auth/presentation/widgets/auth_morph_button.dart';
+import '../data/order_models.dart';
 import '../data/order_providers.dart';
 import 'widgets/hub_request/hub_plan_extras.dart';
 import 'widgets/hub_request/hub_request_fields.dart';
-import 'widgets/hub_request/hub_request_scaffold.dart';
+import 'widgets/order_form_scaffold.dart';
 import 'widgets/hub_request/hub_request_values.dart';
 
 /// Abastecimiento programado desde otra central (`POST /orders/hub-plans`):
@@ -61,10 +62,12 @@ class _HubPlanFormScreenState extends ConsumerState<HubPlanFormScreen> {
   Widget build(BuildContext context) {
     final origin = _values.originHubId;
     void changed() => setState(() {});
-    return HubRequestScaffold(
+    return OrderFormScaffold<OriginHub>(
       title: 'Abastecimiento',
       subtitle: 'Entregas periódicas desde otra central',
-      origins: ref.watch(originHubsProvider),
+      source: ref.watch(originHubsProvider),
+      emptyIcon: Icons.domain_disabled_outlined,
+      emptyText: 'No hay otra central activa para pedirle.',
       fields: (origins) => [
         HubRequestFields(
           origins: origins,

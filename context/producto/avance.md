@@ -19,8 +19,8 @@ Plan por fases del frontend Flutter a partir de la guía 25 (`learning/25-front-
 | 4 | Geovalla sobre el mapa (HU-14) | `feature/geovalla-mapa` | Hecha (PR #45) |
 | 5 | Entrega del pedido y retorno del dron | — | Bloqueada (backend) |
 | 6 | Revisión y rediseño del administrador | `style/rediseno-admin` | Hecha (PR #47) |
-| 7 | Revisión y rediseño del despachador | `style/rediseno-despachador` | Hecha (PR pendiente) |
-| 8 | Revisión y rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Pendiente |
+| 7 | Revisión y rediseño del despachador | `style/rediseno-despachador` | Hecha (PR #48) |
+| 8 | Revisión y rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Hecha (PR pendiente) |
 | 9 | Limpieza antes de la revisión | `refactor/limpieza-front` | Pendiente |
 | 10 | Cierre y pruebas de punta a punta | `test/flujos-front` | Pendiente |
 
@@ -309,6 +309,83 @@ Además de la revisión: el **perfil** con diseño propio (y con él se borran
 `AuthPage`, `LoginGlassCard`, `LoginButton` y `LoginPalette`), la nueva
 animación de la ruta del splash del login y el logo definitivo si el equipo
 ya lo tiene. Operador: flota y geovallas.
+
+Sin canvas propio: el mismo lenguaje de las fases 6 y 7. **El splash y el
+logo quedan para después** (Oscar, 2026-10-16): siguen pendientes.
+
+Resultado (2026-10-16):
+
+- Inicio del solicitante: `RoleHero` con "Solicitante", números sobre la
+  curva (en curso, volando, planes activos) y accesos Pedir urgencia,
+  Entrega periódica, Mis pedidos (naranja si hay un dron en camino) y Mis
+  planes. Se refresca cada 10 s.
+- Urgencia y entrega periódica: tarjeta sobre la curva con el medicamento
+  en chips (copo si va en frío), la fórmula con vista previa y el documento
+  legible, la dirección y **el punto en el mapa** (`AuthLocationField`),
+  más cantidad, frecuencia y calendario en la entrega periódica.
+- Mis pedidos: `OrderTray` con tarjetas de estado y "Ver vuelo".
+- Inicio del operador: sus centrales en el encabezado, drones disponibles,
+  en misión y en taller, y accesos a Flota y Geovallas con contador.
+- Flota: centrales en chips bajo el encabezado, tarjetas de dron con el
+  dron dibujado, hoja de acciones nueva y el mantenimiento en hoja con
+  calendario. Nuevo dron con el formulario nuevo y el modelo en chips.
+- Geovallas: tarjetas con sus vértices, hoja de confirmación al eliminar
+  y formulario nuevo (el modo dibujar no cambia).
+- Perfil: encabezado, tarjeta con las iniciales en el color del rol, "Tus
+  datos" editables en una hoja inferior, las centrales por nombre y
+  Cerrar sesión con `signOut`.
+
+Errores corregidos:
+
+1. La urgencia y la entrega periódica dejaban la ubicación opcional y Nest
+   no autoriza sin coordenadas (`MISSING_DESTINATION`): el despachador
+   nunca podía sacar el pedido. Ahora el punto en el mapa es obligatorio
+   (test `requester_order_test`).
+2. La fórmula mostraba el documento crudo (`citizenship_id …`); ahora
+   "Cédula de ciudadanía · …".
+3. Errores crudos y `setState` tras cerrar la pantalla en urgencia,
+   entrega periódica e historial.
+4. Urgencia y entrega periódica copiaban medicamento, fórmula y ubicación:
+   ahora comparten `RequesterOrderValues`, sus campos y
+   `RequesterOrderState`. `HubRequestScaffold` pasó a `OrderFormScaffold`
+   y lo usan las cuatro formas de pedir.
+5. Historial y formularios sin flecha de volver.
+6. La entrega periódica revisaba un stock que el catálogo del solicitante
+   no trae; se quitó.
+7. Con la central suspendida, la flota ofrecía gestionar drones (Nest
+   responde 403); ahora la tarjeta dice "Sin cambios" (test
+   `fleet_fixes_test`).
+8. La fecha del mantenimiento se escribía a mano; ahora calendario.
+9. Errores crudos en flota, nuevo dron, geovallas y en las pantallas del
+   admin (centrales, cuentas, nueva cuenta) y el inicio.
+10. Flota y geovallas sin flecha de volver.
+11. El botón de notificaciones del perfil no hacía nada; se quitó.
+12. El perfil decía "Central operativa vinculada" sin decir cuál; ahora
+    nombra las centrales (test `profile_sections_test`).
+13. Cerrar sesión desde el perfil repetía su lógica; ahora usa `signOut`.
+14. Textos raros del perfil ("Mi cuenta aeromédica", "PROTOCOLO DE
+    DESCONEXIÓN") fuera.
+15. Encontrado al rediseñar: "Mantenimiento" en la flota pintaba el texto
+    del mismo color que su fondo y no se leía; el estado del dron ahora va
+    en `StatusPill`.
+16. Para el backend: cambiar el correo no pide verificarlo. Anotado en
+    [`pendientes-backend.md`](pendientes-backend.md), punto 7.
+
+Limpieza:
+
+- Compartidas nuevas: `AuthLocationField` (era `HubLocationPicker`, ahora
+  también del solicitante), `OrderFormScaffold`, `maxLines` en
+  `AuthField`. Los inicios de los cuatro roles usan `RoleHero`.
+- Borrados: `HomeShell`, `HomeActionCard`, `AuthPage`, `auth_ambience`
+  (`AuthGlow`, `AuthEntrance`, `AuthPulsingDot`), `LoginGlassCard`,
+  `LoginButton`, `LoginPalette`, `AppTextField`, `PrimaryButton`, los
+  widgets viejos del perfil (`ProfileContent`, `ProfileTopBar`,
+  `ProfileInfoList`, `ProfileLogoutRow`, `ProfileEditDialog`,
+  `ProfileDataSection`, `ProfileStates`), `MaintenanceFormDialog`,
+  `DroneFormContent`, `GeofenceFormContent`, `GeofenceFields`,
+  `ProfileLabels.organization` / `limitFor`, `parseCoord` e `isoOf`.
+- `LoginAlert` toma sus colores del tema.
+- `flutter analyze` sin issues; 189 tests en verde.
 
 ### Errores ya conocidos
 

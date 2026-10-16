@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/press_scale.dart';
+import '../../../../core/widgets/row_action_button.dart';
+import '../../../../core/widgets/status_card.dart';
+import '../../../../core/widgets/status_pill.dart';
 import '../../data/geofence_models.dart';
 
-/// Fila del listado: nombre y motivo de la geovalla. Tocar abre la
-/// edición; el ícono elimina con confirmación (la decide la pantalla).
+/// Tarjeta de una geovalla: nombre, motivo y cuántos vértices tiene, con
+/// "Eliminar" a la derecha. Tocarla abre la edición.
 class GeofenceTile extends StatelessWidget {
   const GeofenceTile({
     super.key,
@@ -19,37 +23,48 @@ class GeofenceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final mutedStyle = theme.textTheme.bodySmall?.copyWith(
-      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-    );
-
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
+    final colors = theme.colorScheme;
+    return PressScale(
+      child: GestureDetector(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
-          child: Row(
+        behavior: HitTestBehavior.opaque,
+        child: StatusCard(
+          leading: Container(
+            width: 46,
+            height: 46,
+            decoration: BoxDecoration(
+              color: colors.error.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Icon(Icons.polyline_outlined, color: colors.error),
+          ),
+          body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(geofence.name, style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 4),
-                    Text(geofence.reason, style: mutedStyle),
-                  ],
+              Text(
+                geofence.name,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
-              IconButton(
-                tooltip: 'Eliminar',
-                color: theme.colorScheme.error,
-                onPressed: onDelete,
-                icon: const Icon(Icons.delete_outline),
+              const SizedBox(height: 3),
+              Text(
+                geofence.reason,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colors.onSurfaceVariant,
+                ),
               ),
             ],
+          ),
+          status: StatusPill(
+            label: '${geofence.polygon.vertices.length} vértices',
+            tone: PillTone.negative,
+          ),
+          action: RowActionButton(
+            label: 'Eliminar',
+            destructive: true,
+            onPressed: onDelete,
           ),
         ),
       ),

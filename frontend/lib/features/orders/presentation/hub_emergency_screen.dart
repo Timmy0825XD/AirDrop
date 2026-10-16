@@ -5,9 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../../auth/presentation/widgets/auth_morph_button.dart';
+import '../data/order_models.dart';
 import '../data/order_providers.dart';
 import 'widgets/hub_request/hub_request_fields.dart';
-import 'widgets/hub_request/hub_request_scaffold.dart';
+import 'widgets/order_form_scaffold.dart';
 import 'widgets/hub_request/hub_request_values.dart';
 
 /// Urgencia a otra central (`POST /orders/hub-emergencies`): tu central
@@ -57,10 +58,12 @@ class _HubEmergencyScreenState extends ConsumerState<HubEmergencyScreen> {
   @override
   Widget build(BuildContext context) {
     final origin = _values.originHubId;
-    return HubRequestScaffold(
+    return OrderFormScaffold<OriginHub>(
       title: 'Urgencia a otra central',
       subtitle: 'Llega a tu central en el próximo vuelo',
-      origins: ref.watch(originHubsProvider),
+      source: ref.watch(originHubsProvider),
+      emptyIcon: Icons.domain_disabled_outlined,
+      emptyText: 'No hay otra central activa para pedirle.',
       fields: (origins) => [
         HubRequestFields(
           origins: origins,

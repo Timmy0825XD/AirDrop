@@ -2,23 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
-import '../../../../../core/widgets/app_map.dart';
-import '../../../../auth/presentation/widgets/auth_field.dart';
+import '../../../../core/widgets/app_map.dart';
+import 'auth_field.dart';
 
-/// Ubicación de la central: un toque en el mapa pone el pin y debajo
+/// Campo de ubicación con la forma de [AuthField]: un toque en el mapa pone el pin y debajo
 /// aparecen las coordenadas. El mapa no se arrastra (va dentro del scroll
 /// del formulario); se acerca con dos dedos o doble toque.
-class HubLocationPicker extends StatelessWidget {
-  const HubLocationPicker({
+class AuthLocationField extends StatelessWidget {
+  const AuthLocationField({
     super.key,
     required this.location,
     required this.onChanged,
     this.errorText,
+    this.emptyHint = 'Toca el mapa para ubicar el punto',
   });
 
   final LatLng? location;
   final ValueChanged<LatLng> onChanged;
   final String? errorText;
+
+  /// Lo que dice la pastilla del mapa mientras no hay pin.
+  final String emptyHint;
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +55,7 @@ class HubLocationPicker extends StatelessWidget {
               Positioned(
                 left: 10,
                 bottom: 10,
-                child: _MapHint(hasPin: point != null),
+                child: _MapHint(hasPin: point != null, emptyHint: emptyHint),
               ),
             ],
           ),
@@ -135,9 +139,10 @@ class _PinLayer extends StatelessWidget {
 }
 
 class _MapHint extends StatelessWidget {
-  const _MapHint({required this.hasPin});
+  const _MapHint({required this.hasPin, required this.emptyHint});
 
   final bool hasPin;
+  final String emptyHint;
 
   @override
   Widget build(BuildContext context) {
@@ -149,9 +154,7 @@ class _MapHint extends StatelessWidget {
         borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
-        hasPin
-            ? 'Toca otra vez para mover el pin'
-            : 'Toca el mapa para ubicar la central',
+        hasPin ? 'Toca otra vez para mover el pin' : emptyHint,
         style: theme.textTheme.labelMedium?.copyWith(
           fontWeight: FontWeight.w700,
         ),

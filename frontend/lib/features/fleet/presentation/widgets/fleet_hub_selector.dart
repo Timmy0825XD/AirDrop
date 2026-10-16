@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/choice_pill.dart';
 import '../../../hubs/data/hub_models.dart';
 
-/// Selector de la central que se está gestionando. El operador puede tener
-/// una o varias centrales y `POST /fleet/drones` necesita saber en cuál va
-/// el dron, así que la lista siempre trabaja sobre una elegida.
-///
-/// Pinta [selectedId]; la pantalla escucha los cambios. Si la central
-/// elegida ya no está en la lista, el dropdown muestra vacío y la pantalla
-/// vuelve a la primera.
+/// Las centrales del operador en chips que se deslizan de lado. Siempre
+/// hay una elegida: `POST /fleet/drones` necesita saber en cuál va el dron.
+/// Una central suspendida lleva su candado.
 class FleetHubSelector extends StatelessWidget {
   const FleetHubSelector({
     super.key,
@@ -23,28 +20,23 @@ class FleetHubSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final known = hubs.any((hub) => hub.id == selectedId);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'CENTRAL',
-          style: theme.textTheme.labelSmall?.copyWith(letterSpacing: 1.2),
-        ),
-        const SizedBox(height: 8),
-        DropdownButtonFormField<String>(
-          initialValue: known ? selectedId : null,
-          items: [
-            for (final hub in hubs)
-              DropdownMenuItem(value: hub.id, child: Text(hub.name)),
-          ],
-          onChanged: (id) {
-            if (id != null) onChanged(id);
-          },
-        ),
-      ],
+    return SizedBox(
+      height: 40,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: hubs.length,
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
+        itemBuilder: (context, i) {
+          final hub = hubs[i];
+          return ChoicePill(
+            label: hub.name,
+            icon: hub.isActive ? null : Icons.lock_outline_rounded,
+            selected: hub.id == selectedId,
+            onTap: () => onChanged(hub.id),
+          );
+        },
+      ),
     );
   }
 }

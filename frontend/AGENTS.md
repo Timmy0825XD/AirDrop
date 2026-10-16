@@ -146,16 +146,11 @@ avisa en vivo si la confirmación no coincide. Al actualizar, el círculo de
 marca cubre la pantalla y aparece `ResetSuccessView`; la sesión no se abre y
 el botón vuelve al login.
 
-Piezas anteriores, que hoy solo usa el perfil (y `LoginFormAlert`, también
-login y registro). Se reemplazan cuando el perfil tenga diseño propio:
-
-| Widget | Para qué |
-| --- | --- |
-| `AuthPage` | Fondo con brillo, `SafeArea`, scroll y ancho máximo. Raíz del perfil. |
-| `AuthGlow` / `AuthEntrance` / `AuthPulsingDot` | El brillo, la entrada y el punto que late del perfil. |
-| `LoginGlassCard` | La superficie translúcida del perfil. |
-| `LoginAlert` / `LoginFormAlert` | Mensaje de error o de éxito con animación. `LoginFormAlert` ya maneja el caso `null` sin ocupar espacio. |
-| `LoginButton` | Botón con estado de carga del perfil. Es `ElevatedButton`, no `FilledButton`. |
+`LoginAlert` / `AuthFormAlert` (en `widgets/login/`) son el aviso de error
+o de éxito del login y el registro; `AuthFormAlert` ya maneja el caso
+`null` sin ocupar espacio. Las piezas del perfil viejo (`AuthPage`,
+`LoginGlassCard`, `LoginButton`, `LoginPalette`) se borraron en la Fase 8:
+el perfil usa las pantallas de trabajo de abajo.
 
 Colores siempre con `Theme.of(context)` y `withValues(alpha: ...)` para lo
 translúcido. Nunca hex dentro de una feature.
@@ -268,16 +263,20 @@ Las pantallas de los roles usan las piezas de auth (`AuthCurvedHeader`,
 | `FormSheetCard` | `core/widgets` | Tarjeta del formulario sobre la curva. |
 | `MessageView` | `core/widgets` | Lista vacía o error de Nest, centrado. |
 | `RiseIn` (`RiseIn.stagger`) / `PressScale` / `CountUpText` | `core/widgets` | Entrada en cascada, hundirse al tocar y números que cuentan. Respetan "reducir movimiento". |
-| `RoleHero` / `HomeStatsCard` / `HomeAccessCard` | `home/presentation/widgets` | Inicio rediseñado: encabezado con rol, saludo y línea de contexto; números sobre la curva; accesos con contador (naranja con `urgent` si hay pendientes) y candado con `onTap: null`. Los usan admin y despachador. |
+| `RoleHero` / `HomeStatsCard` / `HomeAccessCard` | `home/presentation/widgets` | Inicio rediseñado: encabezado con rol, saludo y línea de contexto; números sobre la curva; accesos con contador (naranja con `urgent` si hay pendientes) y candado con `onTap: null`. Los usan los inicios de los cuatro roles. |
 | `SectionHeader.backOrHome` | `home/presentation/widgets` | Volver con `pop` si se llegó con `push`; si no, al inicio. Los detalles y el mapa se abren con `push`. |
 | `DetailSection` / `DetailLine` | `core/widgets` | Tarjeta con ícono teñido y rótulo, y filas "etiqueta … valor". |
 | `AuthDateField` + `pickIsoDate` / `AuthChoiceGroup` | `auth/presentation/widgets` | Fecha en calendario (AAAA-MM-DD) y grupo de chips con label y error que tiembla, con la forma de `AuthField`. |
 | `OrderTray` / `OrderRowCard` | `orders/presentation/widgets` | Andamiaje de las bandejas (encabezado con conteo, lista en cascada, recarga, vacío, error y refresco cada 10 s) y su tarjeta. |
+| `AuthLocationField` | `auth/presentation/widgets` | El punto en el mapa con pin que cae (nueva central, urgencia y entrega periódica del solicitante). |
+| `OrderFormScaffold` | `orders/presentation/widgets` | Andamiaje de los formularios de pedido: encabezado, tarjeta sobre la curva y botón; mientras su lista (catálogo o centrales) carga, falla o viene vacía, lo dice. |
+| `RequesterOrderValues` / `RequesterOrderState` | `orders/presentation/widgets/requester_order` | Valores, validación y estado compartidos por la urgencia y la entrega periódica del solicitante. **La ubicación es obligatoria**: Nest no autoriza sin coordenadas. |
 
 Los formularios validan en la pantalla con `Validators` y pasan
 `errorText` + `shakeCount` a cada `AuthField`, igual que el login
 (`HubFormValues.validate`, `UserFormValues.validate`,
-`HubRequestValues.validate`, `InventoryFormValues.validate`). Los errores de
+`HubRequestValues.validate`, `InventoryFormValues.validate`,
+`RequesterOrderValues.validate`, `GeofenceFormValues.validate`). Los errores de
 un provider se muestran con `ApiException.messageOf(error)`, nunca con
 `'$error'`.
 
@@ -321,7 +320,7 @@ Reglas de los datos:
   un error con código HTTP de Nest no se reintenta y se muestra de una vez;
   solo se reintenta (3 veces) cuando el servidor no respondió.
 - Las listas sin socket (cola, programados, pending-load, vuelos en curso,
-  historial) y los números del inicio del despachador se
+  mis pedidos) y los números del inicio del despachador y del solicitante se
   envuelven en `AutoRefresh` (`lib/core/widgets/auto_refresh.dart`), que
   invalida su provider cada 10 s mientras la pantalla está abierta.
 

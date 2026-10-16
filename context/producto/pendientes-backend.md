@@ -116,3 +116,16 @@ la central del despachador, con su estado (por ejemplo
 **La app lo usará** en el inicio del despachador: una bandeja "Por recibir"
 junto a "Vuelos en curso", y más adelante para ingresar el código de
 entrega del traslado (punto 1).
+
+## 7. Cambiar el correo sin verificarlo — Pendiente
+
+**Hoy.** `PATCH /auth/me` cambia el correo de una vez si no está tomado.
+El login y la recuperación de contraseña usan ese correo, así que un error
+de tipeo deja a la persona sin poder entrar ni recuperar la cuenta.
+
+**Debería** (RNF de seguridad en [`requisitos.md`](requisitos.md)): mandar
+un código al correo nuevo y cambiarlo solo cuando se confirme, como en el
+registro.
+
+**La app lo usará** en el perfil: al guardar un correo nuevo, la misma
+pantalla de seis cajas del registro para confirmarlo.

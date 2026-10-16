@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/validators.dart';
 import '../../data/geofence_models.dart';
+
+/// Los campos del formulario de geovallas que pueden tener error.
+enum GeofenceInput { name, reason, polygon }
 
 /// Los campos del formulario de geovallas en un solo objeto.
 ///
@@ -18,6 +22,22 @@ class GeofenceFormValues {
   void dispose() {
     name.dispose();
     reason.dispose();
+  }
+
+  /// Un mensaje por campo con error; vacío si todo está bien. Menos de 3
+  /// vértices no forma polígono.
+  Map<GeofenceInput, String> validate() {
+    final errors = <GeofenceInput, String?>{
+      GeofenceInput.name: Validators.geofenceName(name.text),
+      GeofenceInput.reason: Validators.reason(reason.text),
+      GeofenceInput.polygon: vertices.length < 3
+          ? 'Dibuja al menos 3 vértices en el mapa.'
+          : null,
+    };
+    return {
+      for (final entry in errors.entries)
+        if (entry.value != null) entry.key: entry.value!,
+    };
   }
 
   /// Rellena el formulario al editar. Los vértices llegan **sin** el
