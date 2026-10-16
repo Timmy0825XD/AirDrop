@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../data/order_models.dart';
+import '../order_format.dart';
 import 'order_kind_chip.dart';
 import 'order_status_chip.dart';
 
@@ -24,6 +25,7 @@ class OrderTile extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(order.medicationName, style: theme.textTheme.titleMedium),
+              Text(formatBogota(order.createdAt), style: theme.textTheme.bodySmall),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,

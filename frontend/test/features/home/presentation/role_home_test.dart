@@ -246,7 +246,8 @@ void main() {
     expect(tester.widget<InkWell>(inventoryCard).onTap, isNull);
     expect(
       find.textContaining('La central está suspendida.'),
-      findsNWidgets(4),
+      // Inventario, cola, programados, pendiente de carga y pedir a otra.
+      findsNWidgets(5),
     );
     expect(find.textContaining('Suspendida'), findsWidgets);
     expect(find.text('Cola de urgencias'), findsOneWidget);
@@ -287,7 +288,7 @@ void main() {
 
     expect(
       find.textContaining('No tienes una central asignada.'),
-      findsNWidgets(4),
+      findsNWidgets(5),
     );
     expect(find.text('Cola de urgencias'), findsOneWidget);
     expect(find.text('Programados'), findsOneWidget);

@@ -55,6 +55,15 @@ class DispatcherCards extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         HomeActionCard(
+          title: 'Pendiente de carga',
+          subtitle: active
+              ? 'Pedidos autorizados que esperan el insumo en el dron.'
+              : _inactiveSubtitle(hub),
+          icon: Icons.flight_takeoff_outlined,
+          onTap: active ? () => context.go('/orders/pending-load') : null,
+        ),
+        const SizedBox(height: 12),
+        HomeActionCard(
           title: 'Pedir a otra central',
           subtitle: active
               ? 'Urgencia o abastecimiento desde otra central activa.'

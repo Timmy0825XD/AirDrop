@@ -6,11 +6,29 @@ import 'order_models.dart';
 import 'order_repository.dart';
 
 /// Fixture mínimo para `DataSource.local`: una oferta, una urgencia en
-/// `received` con `unattended: true` y un plan semanal con dos
-/// ocurrencias. Al rechazar, la fila pasa a `rejected` con el motivo.
-/// No simula autorización ni dron.
+/// `received` con `unattended: true`, otra ya autorizada esperando carga y
+/// un plan semanal con dos ocurrencias. Rechazar, autorizar y confirmar la
+/// carga cambian el estado como en Nest; no hay telemetría.
 class LocalOrderRepository implements OrderRepository {
   final List<Order> _orders = [
+    Order(
+      id: 'a2222222-2222-4222-8222-222222222222',
+      missionType: MissionType.emergency,
+      destinationKind: DestinationKind.person,
+      status: OrderStatus.pendingLoad,
+      priority: OrderPriority.high,
+      medicationName: 'Insulina glargina 100 UI/ml',
+      saleType: SaleType.overTheCounter,
+      requiresColdChain: true,
+      quantity: 1,
+      address: 'Carrera 9 # 15-20, Valledupar',
+      hasPrescription: false,
+      createdByUserId: 'local-requester',
+      originHubId: _localHubId,
+      droneId: _localAssignment.droneId,
+      assignment: _localAssignment,
+      createdAt: DateTime.now().toUtc().subtract(const Duration(minutes: 3)),
+    ),
     Order(
       id: 'a1111111-1111-4111-8111-111111111111',
       missionType: MissionType.emergency,
@@ -173,10 +191,8 @@ class LocalOrderRepository implements OrderRepository {
   Future<PlanDetail> planDetail(String id) async {
     final plan = _plans.firstWhere(
       (e) => e.id == id,
-      orElse: () => throw const ApiException(
-        'El plan no existe.',
-        statusCode: 404,
-      ),
+      orElse: () =>
+          throw const ApiException('El plan no existe.', statusCode: 404),
     );
     return PlanDetail(
       plan: plan,
@@ -236,11 +252,7 @@ class LocalOrderRepository implements OrderRepository {
     return _orders
         .where((e) => e.status == OrderStatus.received)
         .map(
-          (e) => QueueEntry(
-            order: e,
-            availableQuantity: 8,
-            unattended: true,
-          ),
+          (e) => QueueEntry(order: e, availableQuantity: 8, unattended: true),
         )
         .toList(growable: false);
   }
@@ -257,10 +269,8 @@ class LocalOrderRepository implements OrderRepository {
   Future<Order> findOne(String id) async {
     return _orders.firstWhere(
       (e) => e.id == id,
-      orElse: () => throw const ApiException(
-        'El pedido no existe.',
-        statusCode: 404,
-      ),
+      orElse: () =>
+          throw const ApiException('El pedido no existe.', statusCode: 404),
     );
   }
 
@@ -272,29 +282,79 @@ class LocalOrderRepository implements OrderRepository {
 
   @override
   Future<Order> reject(String id, String reason) async {
-    final index = _orders.indexWhere((e) => e.id == id);
-    if (index < 0) {
-      throw const ApiException('El pedido no existe.', statusCode: 404);
+    final current = await findOne(id);
+    if (current.status != OrderStatus.received) {
+      throw const ApiException(
+        'Solo se rechaza un pedido que sigue en recibido.',
+        statusCode: 400,
+      );
     }
-    final current = _orders[index];
-    _orders[index] = Order(
-      id: current.id,
-      missionType: current.missionType,
-      destinationKind: current.destinationKind,
-      status: OrderStatus.rejected,
-      priority: current.priority,
-      medicationName: current.medicationName,
-      saleType: current.saleType,
-      requiresColdChain: current.requiresColdChain,
-      quantity: current.quantity,
-      description: current.description,
-      address: current.address,
-      hasPrescription: current.hasPrescription,
-      requesterId: current.requesterId,
-      createdByUserId: current.createdByUserId,
-      statusReason: reason,
-      createdAt: current.createdAt,
+    return _replace(
+      current.copyWith(status: OrderStatus.rejected, statusReason: reason),
     );
-    return _orders[index];
+  }
+
+  /// Simula al motor de decisión: siempre elige el mismo dron y un
+  /// corredor recto de dos puntos.
+  @override
+  Future<Order> authorize(String id, {bool? prescriptionVerified}) async {
+    final current = await findOne(id);
+    if (current.status != OrderStatus.received) {
+      throw const ApiException(
+        'Solo se autoriza un pedido que sigue en recibido.',
+        statusCode: 400,
+      );
+    }
+    return _replace(
+      current.copyWith(
+        status: OrderStatus.pendingLoad,
+        droneId: _localAssignment.droneId,
+        originHubId: _localHubId,
+        assignment: _localAssignment,
+      ),
+    );
+  }
+
+  @override
+  Future<Order> confirmLoad(String id) async {
+    final current = await findOne(id);
+    if (!current.awaitsLoad) {
+      throw const ApiException(
+        'Solo se confirma la carga de un pedido pendiente de carga.',
+        statusCode: 400,
+      );
+    }
+    final confirmed = current.copyWith(loadConfirmedAt: DateTime.now().toUtc());
+    // Como Nest, responde todavía en `pending_load`; pero aquí no hay reloj,
+    // así que se guarda como si el primer tick ya lo hubiera puesto en vuelo.
+    _replace(confirmed.copyWith(status: OrderStatus.inFlight));
+    return confirmed;
+  }
+
+  @override
+  Future<List<Order>> listPendingLoad() async {
+    return _orders
+        .where((e) => e.status == OrderStatus.pendingLoad)
+        .toList(growable: false);
+  }
+
+  Order _replace(Order updated) {
+    final index = _orders.indexWhere((e) => e.id == updated.id);
+    _orders[index] = updated;
+    return updated;
   }
 }
+
+const _localHubId = 'local-hub';
+
+const _localAssignment = OrderAssignment(
+  droneId: 'local-drone',
+  identifier: 'D-01',
+  modelName: 'Wingcopter 198',
+  altitudeM: 100,
+  distanceKm: 4.2,
+  coordinates: [
+    [-73.2532, 10.4631],
+    [-73.2410, 10.4790],
+  ],
+);

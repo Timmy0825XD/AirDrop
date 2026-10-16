@@ -3,9 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../data/order_providers.dart';
-import 'order_format.dart';
-import 'widgets/order_kind_chip.dart';
-import 'widgets/order_status_chip.dart';
+import 'widgets/order_tile.dart';
 
 /// Historial del solicitante (`GET /orders/mine`).
 class OrderHistoryScreen extends ConsumerWidget {
@@ -29,37 +27,10 @@ class OrderHistoryScreen extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               itemCount: rows.length,
               separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (context, i) {
-                final order = rows[i];
-                return Card(
-                  margin: EdgeInsets.zero,
-                  clipBehavior: Clip.antiAlias,
-                  child: InkWell(
-                    onTap: () => context.go('/orders/${order.id}'),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(order.medicationName,
-                              style:
-                                  Theme.of(context).textTheme.titleMedium),
-                          Text(formatBogota(order.createdAt),
-                              style: Theme.of(context).textTheme.bodySmall),
-                          const SizedBox(height: 8),
-                          Wrap(
-                            spacing: 8,
-                            children: [
-                              OrderStatusChip(status: order.status),
-                              OrderKindChip(missionType: order.missionType),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
+              itemBuilder: (context, i) => OrderTile(
+                order: rows[i],
+                onTap: () => context.go('/orders/${rows[i].id}'),
+              ),
             ),
           );
         },

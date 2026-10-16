@@ -23,10 +23,12 @@ final catalogProvider = FutureProvider<List<CatalogOffer>>((ref) {
 });
 
 /// Catálogo con stock de una central, para el despachador.
-final hubCatalogProvider =
-    FutureProvider.family<List<CatalogOffer>, String>((ref, hubId) {
-      return ref.watch(orderRepositoryProvider).catalog(hubId: hubId);
-    });
+final hubCatalogProvider = FutureProvider.family<List<CatalogOffer>, String>((
+  ref,
+  hubId,
+) {
+  return ref.watch(orderRepositoryProvider).catalog(hubId: hubId);
+});
 
 final mineProvider = FutureProvider<List<Order>>((ref) {
   return ref.watch(orderRepositoryProvider).listMine();
@@ -52,10 +54,7 @@ final orderDetailProvider = FutureProvider.family<Order, String>((ref, id) {
   return ref.watch(orderRepositoryProvider).findOne(id);
 });
 
-final planDetailProvider = FutureProvider.family<PlanDetail, String>((
-  ref,
-  id,
-) {
+final planDetailProvider = FutureProvider.family<PlanDetail, String>((ref, id) {
   return ref.watch(orderRepositoryProvider).planDetail(id);
 });
 
@@ -64,7 +63,9 @@ class CreateEmergencyNotifier extends AsyncNotifier<Order?> {
   Future<Order?> build() async => null;
 
   Future<Order> create(CreateEmergencyRequest request) async {
-    final order = await ref.read(orderRepositoryProvider).createEmergency(request);
+    final order = await ref
+        .read(orderRepositoryProvider)
+        .createEmergency(request);
     ref.invalidate(mineProvider);
     state = AsyncData(order);
     return order;
@@ -130,23 +131,48 @@ final createHubPlanProvider =
       CreateHubPlanNotifier.new,
     );
 
-class RejectOrderNotifier extends AsyncNotifier<Order?> {
+/// Bandeja "Pendiente de carga" del despachador: pedidos autorizados de su
+/// central que esperan que alguien confirme la carga.
+final pendingLoadProvider = FutureProvider<List<Order>>((ref) {
+  return ref.watch(orderRepositoryProvider).listPendingLoad();
+});
+
+/// Lo que el despachador hace sobre un pedido: rechazar, autorizar y
+/// confirmar la carga. Cada acción mueve el pedido entre listas, así que
+/// al terminar refresca la cola, los programados, la bandeja y el detalle.
+class OrderDispatchNotifier extends AsyncNotifier<Order?> {
   @override
   Future<Order?> build() async => null;
 
-  Future<Order> reject(String id, String reason) async {
-    final order = await ref.read(orderRepositoryProvider).reject(id, reason);
-    ref.invalidate(queueProvider);
-    ref.invalidate(scheduledProvider);
-    ref.invalidate(orderDetailProvider(id));
+  Future<Order> reject(String id, String reason) =>
+      _run(id, (repo) => repo.reject(id, reason));
+
+  Future<Order> authorize(String id, {bool? prescriptionVerified}) => _run(
+    id,
+    (repo) => repo.authorize(id, prescriptionVerified: prescriptionVerified),
+  );
+
+  Future<Order> confirmLoad(String id) =>
+      _run(id, (repo) => repo.confirmLoad(id));
+
+  Future<Order> _run(
+    String id,
+    Future<Order> Function(OrderRepository repo) action,
+  ) async {
+    final order = await action(ref.read(orderRepositoryProvider));
+    ref
+      ..invalidate(queueProvider)
+      ..invalidate(scheduledProvider)
+      ..invalidate(pendingLoadProvider)
+      ..invalidate(orderDetailProvider(id));
     state = AsyncData(order);
     return order;
   }
 }
 
-final rejectOrderProvider =
-    AsyncNotifierProvider<RejectOrderNotifier, Order?>(
-      RejectOrderNotifier.new,
+final orderDispatchProvider =
+    AsyncNotifierProvider<OrderDispatchNotifier, Order?>(
+      OrderDispatchNotifier.new,
     );
 
 class ExtendPlanNotifier extends AsyncNotifier<DeliveryPlan?> {

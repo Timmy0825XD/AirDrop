@@ -15,13 +15,17 @@ class RemoteOrderRepository implements OrderRepository {
       '/orders/catalog',
       query: hubId == null ? null : {'hubId': hubId},
     );
-    return _asJsonList(data).map((row) => CatalogOffer.fromJson(_asMap(row))).toList();
+    return _asJsonList(
+      data,
+    ).map((row) => CatalogOffer.fromJson(_asMap(row))).toList();
   }
 
   @override
   Future<List<OriginHub>> originHubs() async {
     final data = await apiClient.getJson('/orders/origin-hubs');
-    return _asJsonList(data).map((row) => OriginHub.fromJson(_asMap(row))).toList();
+    return _asJsonList(
+      data,
+    ).map((row) => OriginHub.fromJson(_asMap(row))).toList();
   }
 
   @override
@@ -69,7 +73,9 @@ class RemoteOrderRepository implements OrderRepository {
   @override
   Future<List<DeliveryPlan>> listPlans() async {
     final data = await apiClient.getJson('/orders/plans');
-    return _asJsonList(data).map((row) => DeliveryPlan.fromJson(_asMap(row))).toList();
+    return _asJsonList(
+      data,
+    ).map((row) => DeliveryPlan.fromJson(_asMap(row))).toList();
   }
 
   @override
@@ -93,13 +99,17 @@ class RemoteOrderRepository implements OrderRepository {
   @override
   Future<List<QueueEntry>> queue() async {
     final data = await apiClient.getJson('/orders/queue');
-    return _asJsonList(data).map((row) => QueueEntry.fromJson(_asMap(row))).toList();
+    return _asJsonList(
+      data,
+    ).map((row) => QueueEntry.fromJson(_asMap(row))).toList();
   }
 
   @override
   Future<List<ScheduledEntry>> scheduled() async {
     final data = await apiClient.getJson('/orders/scheduled');
-    return _asJsonList(data).map((row) => ScheduledEntry.fromJson(_asMap(row))).toList();
+    return _asJsonList(
+      data,
+    ).map((row) => ScheduledEntry.fromJson(_asMap(row))).toList();
   }
 
   @override
@@ -123,14 +133,42 @@ class RemoteOrderRepository implements OrderRepository {
     return Order.fromJson(_asMap(data));
   }
 
+  @override
+  Future<Order> authorize(String id, {bool? prescriptionVerified}) async {
+    final data = await apiClient.postJson(
+      '/orders/$id/authorize',
+      body: {'prescriptionVerified': ?prescriptionVerified},
+    );
+    return Order.fromJson(_asMap(data));
+  }
+
+  @override
+  Future<Order> confirmLoad(String id) async {
+    final data = await apiClient.postJson(
+      '/orders/$id/confirm-load',
+      body: const <String, dynamic>{},
+    );
+    return Order.fromJson(_asMap(data));
+  }
+
+  @override
+  Future<List<Order>> listPendingLoad() async {
+    final data = await apiClient.getJson('/orders/pending-load');
+    return _asJsonList(data).map((row) => Order.fromJson(_asMap(row))).toList();
+  }
+
   Map<String, dynamic> _asMap(Object? data) {
     if (data is Map<String, dynamic>) return data;
     if (data is Map<Object?, Object?>) return Map<String, dynamic>.from(data);
-    throw const FormatException('La respuesta del pedido no es un objeto JSON.');
+    throw const FormatException(
+      'La respuesta del pedido no es un objeto JSON.',
+    );
   }
 
   List<Object?> _asJsonList(Object? data) {
     if (data is List<Object?>) return data;
-    throw const FormatException('La respuesta de pedidos no es una lista JSON.');
+    throw const FormatException(
+      'La respuesta de pedidos no es una lista JSON.',
+    );
   }
 }
