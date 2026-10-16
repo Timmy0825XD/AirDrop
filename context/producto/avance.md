@@ -13,8 +13,8 @@ Plan por fases del frontend Flutter a partir de la guía 25 (`learning/25-front-
 | Fase | Tema | Rama | Estado |
 | --- | --- | --- | --- |
 | 0 | Preparación y documento de avance | `docs/plan-fases-front` | Hecha (PR #39) |
-| 1 | Rediseño de auth con transiciones | `style/rediseno-auth` | Hecha (PR pendiente) |
-| 2 | Autorizar y confirmar carga (HU-21, HU-35) | `feature/autorizar-carga-front` | Pendiente |
+| 1 | Rediseño de auth con transiciones | `style/rediseno-auth` | Hecha (PR #40) |
+| 2 | Autorizar y confirmar carga (HU-21, HU-35) | `feature/autorizar-carga-front` | Hecha (PR pendiente) |
 | 3 | Telemetría y mapa en vivo (HU-26 a HU-28) | `feature/tracking-front` | Pendiente |
 | 4 | Geovalla sobre el mapa (HU-14) | `feature/geovalla-mapa` | Pendiente |
 | 5 | Rediseño del administrador | `style/rediseno-admin` | Pendiente |
@@ -76,6 +76,16 @@ Pendientes que deja la fase:
 - Paso 6: Tests (`order_assignment_test` y los existentes).
 - Paso 7: Cerrar la fase.
 
+Resultado (2026-10-15):
+
+- `Order` lee `assignment` (dron y corredor `[lng, lat]`) y `loadConfirmedAt`; `awaitsLoad` dice si falta confirmar la carga.
+- `OrderDispatchNotifier` reúne rechazar, autorizar y confirmar carga, y refresca cola, programados, bandeja y detalle.
+- Detalle partido en `widgets/order_detail/`; `DispatcherPermissions` decide qué acciones ve el despachador según su central.
+- Bandeja `/orders/pending-load` con su tarjeta en el home (apagada con la central suspendida).
+- "Ver vuelo" no está todavía: llega en la Fase 3 con `/tracking/:orderId`.
+- Limpieza: el historial reusa `OrderTile`; se borró `home_info_card.dart` (sin uso).
+- `flutter analyze` sin issues; 139 tests en verde.
+
 ## Fase 3 — Telemetría y mapa en vivo (HU-26 a HU-28)
 
 - Paso 1: `socket_io_client`, `flutter_map` y `latlong2` en `pubspec.yaml`.
@@ -107,7 +117,7 @@ Mismo lenguaje visual de la Fase 1. Una rama por rol para que cada PR sea revisa
 
 Va en su propia rama porque `AGENTS.md` pide no mezclar limpieza con una historia de usuario.
 
-- Paso 1: Buscar otra vez archivos, widgets, clases y paquetes sin uso (las fases 1 a 7 dejan cosas nuevas y viejas). Candidatos ya vistos: `home_info_card.dart`, `order_tile.dart` y el paquete `cupertino_icons`.
+- Paso 1: Buscar otra vez archivos, widgets, clases y paquetes sin uso (las fases 1 a 7 dejan cosas nuevas y viejas). Candidato ya visto: el paquete `cupertino_icons`.
 - Paso 2: Mostrarle a Oscar la lista final para que apruebe cada borrado.
 - Paso 3: Borrar lo aprobado y quitar los paquetes sin uso.
 - Paso 4: Regenerar `frontend/docs/ui_inventory.md` con `frontend/tools/ui_inventory.ps1`.

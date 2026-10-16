@@ -119,10 +119,56 @@ enum PlanStatus {
   static PlanStatus fromJson(String value) {
     return PlanStatus.values.firstWhere(
       (e) => e.apiValue == value,
-      orElse: () =>
-          throw FormatException('Estado de plan desconocido: $value'),
+      orElse: () => throw FormatException('Estado de plan desconocido: $value'),
     );
   }
+}
+
+/// Lo que el motor de decisión reservó al autorizar: el dron y el corredor.
+///
+/// Viaja en `assignment` del pedido en `GET /orders/mine`, `GET /orders/:id`,
+/// `GET /orders/pending-load`, `authorize` y `confirm-load`. En las altas,
+/// la cola, los programados y el rechazo no viene la clave.
+class OrderAssignment {
+  const OrderAssignment({
+    required this.droneId,
+    required this.identifier,
+    required this.modelName,
+    required this.altitudeM,
+    required this.distanceKm,
+    required this.coordinates,
+  });
+
+  factory OrderAssignment.fromJson(Map<String, dynamic> json) {
+    final route = json['route'] is Map ? json['route'] as Map : const {};
+    final points = route['coordinates'] is List
+        ? route['coordinates'] as List
+        : const [];
+    return OrderAssignment(
+      droneId: json['droneId'] as String,
+      identifier: json['identifier'] as String,
+      modelName: json['modelName'] as String,
+      altitudeM: _asDoubleOrNull(route['altitudeM']) ?? 0,
+      distanceKm: _asDoubleOrNull(route['distanceKm']) ?? 0,
+      coordinates: [
+        for (final point in points.whereType<List>())
+          [for (final value in point) _asDoubleOrNull(value) ?? 0],
+      ],
+    );
+  }
+
+  final String droneId;
+
+  /// Nombre corto del dron en la central, como `D-01`.
+  final String identifier;
+  final String modelName;
+
+  /// Altitud del corredor. Hoy siempre 100 m.
+  final double altitudeM;
+  final double distanceKm;
+
+  /// Puntos del corredor como `[longitud, latitud]`, igual que GeoJSON.
+  final List<List<double>> coordinates;
 }
 
 /// Pedido público: crear urgencia, `GET /orders/mine`, `GET /orders/:id`
@@ -153,9 +199,12 @@ class Order {
     this.planId,
     this.scheduledFor,
     this.createdAt,
+    this.loadConfirmedAt,
+    this.assignment,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
+    final assignment = json['assignment'];
     return Order(
       id: json['id'] as String,
       missionType: MissionType.fromJson(json['missionType'] as String),
@@ -182,8 +231,58 @@ class Order {
       scheduledFor: json['scheduledFor'] as String?,
       hasPrescription: json['hasPrescription'] as bool? ?? false,
       createdAt: DateTime.tryParse('${json['createdAt']}'),
+      loadConfirmedAt: DateTime.tryParse('${json['loadConfirmedAt']}'),
+      // Puede venir el objeto, `null` o no venir la clave: los dos últimos
+      // significan "sin asignación".
+      assignment: assignment is Map<String, dynamic>
+          ? OrderAssignment.fromJson(assignment)
+          : null,
     );
   }
+
+  /// Copia con los campos que cambian al autorizar, confirmar o rechazar.
+  /// La usa el repositorio local para simular esas transiciones.
+  Order copyWith({
+    OrderStatus? status,
+    String? statusReason,
+    String? droneId,
+    String? originHubId,
+    DateTime? loadConfirmedAt,
+    OrderAssignment? assignment,
+  }) {
+    return Order(
+      id: id,
+      missionType: missionType,
+      destinationKind: destinationKind,
+      status: status ?? this.status,
+      priority: priority,
+      medicationName: medicationName,
+      saleType: saleType,
+      requiresColdChain: requiresColdChain,
+      quantity: quantity,
+      address: address,
+      hasPrescription: hasPrescription,
+      description: description,
+      requesterId: requesterId,
+      createdByUserId: createdByUserId,
+      destinationHubId: destinationHubId,
+      originHubId: originHubId ?? this.originHubId,
+      latitude: latitude,
+      longitude: longitude,
+      droneId: droneId ?? this.droneId,
+      statusReason: statusReason ?? this.statusReason,
+      planId: planId,
+      scheduledFor: scheduledFor,
+      createdAt: createdAt,
+      loadConfirmedAt: loadConfirmedAt ?? this.loadConfirmedAt,
+      assignment: assignment ?? this.assignment,
+    );
+  }
+
+  /// Autorizado, con dron reservado, y nadie ha confirmado la carga: el
+  /// reloj de la simulación todavía no arranca.
+  bool get awaitsLoad =>
+      status == OrderStatus.pendingLoad && loadConfirmedAt == null;
 
   final String id;
   final MissionType missionType;
@@ -212,6 +311,14 @@ class Order {
 
   /// `timestamptz`: se muestra en `America/Bogota`.
   final DateTime? createdAt;
+
+  /// Cuándo el despachador confirmó la carga. Distingue "pendiente de carga"
+  /// de "ya confirmé y el reloj acaba de arrancar" (el estado sigue en
+  /// `pending_load` hasta el primer tick).
+  final DateTime? loadConfirmedAt;
+
+  /// Dron y corredor reservados al autorizar; `null` antes de eso.
+  final OrderAssignment? assignment;
 }
 
 /// Plan público, sin ocurrencias. `GET /orders/plans/:id` agrega la lista.
@@ -393,10 +500,7 @@ class QueueEntry {
 
 /// Fila de `GET /orders/scheduled`: sin `unattended`.
 class ScheduledEntry {
-  const ScheduledEntry({
-    required this.order,
-    required this.availableQuantity,
-  });
+  const ScheduledEntry({required this.order, required this.availableQuantity});
 
   factory ScheduledEntry.fromJson(Map<String, dynamic> json) {
     return ScheduledEntry(

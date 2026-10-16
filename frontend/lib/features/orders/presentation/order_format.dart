@@ -45,6 +45,18 @@ double? parseCoord(String raw, {required bool isLatitude}) {
   return parsed;
 }
 
+/// Distancia del corredor con coma decimal: `4,2 km`.
+String formatKm(double km) =>
+    '${km.toStringAsFixed(1).replaceAll('.', ',')} km';
+
+/// Un programado con fecha posterior a hoy en Bogotá (UTC−5, sin horario de
+/// verano) todavía no se puede autorizar: Nest respondería 400.
+bool isFutureSchedule(String? scheduledFor) {
+  if (scheduledFor == null) return false;
+  final bogota = DateTime.now().toUtc().subtract(const Duration(hours: 5));
+  return scheduledFor.compareTo(_isoOf(bogota)) > 0;
+}
+
 /// Etiqueta de destino de la cola: persona o central.
 String destinationLabel(Order order) {
   return order.destinationKind == DestinationKind.hub ? 'Central' : 'Persona';

@@ -52,4 +52,16 @@ abstract class OrderRepository {
 
   /// `POST /orders/:id/reject` — despachador, 201.
   Future<Order> reject(String id, String reason);
+
+  /// `POST /orders/:id/authorize` — despachador, 201. El motor de decisión
+  /// reserva dron y corredor; el pedido pasa a `pending_load` y **no**
+  /// despega. [prescriptionVerified] solo va en persona + fórmula.
+  Future<Order> authorize(String id, {bool? prescriptionVerified});
+
+  /// `POST /orders/:id/confirm-load` — despachador de origen, sin body.
+  /// Arranca el reloj de la simulación.
+  Future<Order> confirmLoad(String id);
+
+  /// `GET /orders/pending-load` — despachador: la bandeja de su central.
+  Future<List<Order>> listPendingLoad();
 }

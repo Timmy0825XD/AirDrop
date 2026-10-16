@@ -24,6 +24,7 @@ import '../features/orders/presentation/hub_emergency_screen.dart';
 import '../features/orders/presentation/hub_plan_form_screen.dart';
 import '../features/orders/presentation/order_detail_screen.dart';
 import '../features/orders/presentation/order_history_screen.dart';
+import '../features/orders/presentation/pending_load_screen.dart';
 import '../features/orders/presentation/plan_detail_screen.dart';
 import '../features/orders/presentation/plan_form_screen.dart';
 import '../features/orders/presentation/plans_screen.dart';
@@ -56,6 +57,7 @@ const _roleRoutes = <String, Set<UserRole>>{
   '/orders/mine': {UserRole.requester},
   '/orders/queue': {UserRole.dispatcher},
   '/orders/scheduled': {UserRole.dispatcher},
+  '/orders/pending-load': {UserRole.dispatcher},
   '/orders/hub-emergency': {UserRole.dispatcher},
   '/orders/hub-plans/new': {UserRole.dispatcher},
   '/orders/plans/:id': {UserRole.requester, UserRole.dispatcher},
@@ -67,6 +69,7 @@ const _fixedOrderRoutes = {
   'mine',
   'queue',
   'scheduled',
+  'pending-load',
   'hub-emergency',
   'plans',
 };
@@ -238,6 +241,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/orders/hub-plans/new',
         builder: (_, _) => const HubPlanFormScreen(),
+      ),
+      // Antes de '/orders/:id': si no, 'pending-load' se leería como un id.
+      GoRoute(
+        path: '/orders/pending-load',
+        builder: (_, _) => const PendingLoadScreen(),
       ),
       GoRoute(
         path: '/orders/:id',
