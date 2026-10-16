@@ -227,13 +227,14 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    await _pumpHome(tester, container);
+    await _pumpHome(tester, container, settles: false);
 
     expect(find.text('Hola, Ana'), findsOneWidget);
-    expect(find.text('Urgencia'), findsOneWidget);
+    expect(find.text('Solicitante'), findsOneWidget);
+    expect(find.text('Pedir urgencia'), findsOneWidget);
     expect(find.text('Entrega periódica'), findsOneWidget);
     expect(find.text('Mis planes'), findsOneWidget);
-    expect(find.text('Historial'), findsOneWidget);
+    expect(find.text('Mis pedidos'), findsOneWidget);
     expect(find.text('Pedidos aún no disponibles'), findsNothing);
     expect(find.text('Crear pedido'), findsNothing);
   });
@@ -242,13 +243,17 @@ void main() {
     final container = await _authenticatedContainer(
       email: 'operador@airdrop.local',
       password: 'Operador123',
+      hubRepository: FakeHubRepository(_hub(status: HubStatus.active)),
+      fleetRepository: const FakeFleetRepository(),
+      geofenceRepository: FakeGeofenceRepository([_geofence()]),
     );
     addTearDown(container.dispose);
 
-    await _pumpHome(tester, container);
+    await _pumpHome(tester, container, settles: false);
 
     expect(find.text('Flota'), findsOneWidget);
     expect(find.text('Geovallas'), findsOneWidget);
+    expect(find.text('Operador de flota'), findsOneWidget);
   });
 
   testWidgets('muestra los accesos de administrador', (tester) async {
@@ -365,15 +370,15 @@ void main() {
         child: MaterialApp.router(routerConfig: container.read(routerProvider)),
       ),
     );
-    await tester.pumpAndSettle();
+    await _pumpFrames(tester);
     expect(find.byType(FleetScreen), findsNothing);
 
     await tester.tap(find.text('Flota'));
-    await tester.pumpAndSettle();
+    await _pumpFrames(tester);
 
     expect(find.byType(FleetScreen), findsOneWidget);
     expect(find.text('DRON-01'), findsOneWidget);
-    expect(find.text('Central de prueba'), findsOneWidget);
+    expect(find.textContaining('Central de prueba'), findsOneWidget);
     expect(find.text('Wingcopter 198'), findsWidgets);
     expect(find.text('Disponible'), findsOneWidget);
   });
@@ -424,11 +429,11 @@ void main() {
         child: MaterialApp.router(routerConfig: container.read(routerProvider)),
       ),
     );
-    await tester.pumpAndSettle();
+    await _pumpFrames(tester);
     expect(find.byType(GeofencesScreen), findsNothing);
 
     await tester.tap(find.text('Geovallas'));
-    await tester.pumpAndSettle();
+    await _pumpFrames(tester);
 
     expect(find.byType(GeofencesScreen), findsOneWidget);
     expect(find.text('Corredor Aéreo Ambulancia'), findsOneWidget);

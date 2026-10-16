@@ -24,6 +24,7 @@ class AuthField extends StatelessWidget {
     this.obscureText = false,
     this.keyboardType,
     this.maxLength,
+    this.maxLines = 1,
     this.autofillHints,
     this.onChanged,
     this.onSubmitted,
@@ -41,6 +42,9 @@ class AuthField extends StatelessWidget {
   final bool obscureText;
   final TextInputType? keyboardType;
   final int? maxLength;
+
+  /// Más de 1 para un texto largo (la descripción de una urgencia).
+  final int maxLines;
   final Iterable<String>? autofillHints;
   final ValueChanged<String>? onChanged;
   final ValueChanged<String>? onSubmitted;
@@ -113,6 +117,8 @@ class _AuthInput extends StatelessWidget {
           ? TextInputAction.next
           : TextInputAction.done,
       maxLength: field.maxLength,
+      minLines: 1,
+      maxLines: field.maxLines,
       autofillHints: field.autofillHints,
       onChanged: field.onChanged,
       onSubmitted: field.onSubmitted,

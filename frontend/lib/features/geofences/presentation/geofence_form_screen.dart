@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
+import '../../../core/widgets/message_view.dart';
+import '../../../core/widgets/rise_in.dart';
+import '../../auth/presentation/widgets/auth_morph_button.dart';
+import '../../home/presentation/widgets/section_header.dart';
 import '../data/geofence_models.dart';
 import '../data/geofence_providers.dart';
 import 'geofence_draw_screen.dart';
-import 'widgets/geofence_form_content.dart';
+import 'widgets/geofence_form_sheet.dart';
 import 'widgets/geofence_form_values.dart';
 
 /// Alta (`/geofences/new`) y edición (`/geofences/:id`) de geovallas.
@@ -28,8 +31,9 @@ class GeofenceFormScreen extends ConsumerStatefulWidget {
 }
 
 class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _values = GeofenceFormValues();
+  Map<GeofenceInput, String> _errors = const {};
+  int _shakeCount = 0;
   bool _isLoading = false;
   bool _prefilled = false;
 
@@ -49,13 +53,19 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
     _values.load(geofence);
   }
 
+  Future<void> _draw() async {
+    final vertices = await GeofenceDrawScreen.open(context, _values.vertices);
+    if (vertices == null || !mounted) return;
+    setState(() => _values.vertices = vertices);
+  }
+
   Future<void> _submit(Geofence? original) async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    // Menos de 3 vértices no forma polígono.
-    if (_values.vertices.length < 3) {
-      showAppSnack(context, 'Dibuja al menos 3 vértices en el mapa.');
-      return;
-    }
+    final errors = _values.validate();
+    setState(() {
+      _errors = errors;
+      if (errors.isNotEmpty) _shakeCount++;
+    });
+    if (errors.isNotEmpty) return;
     if (original != null && _values.diff(original).isEmpty) {
       showAppSnack(context, 'No hay cambios para guardar.');
       return;
@@ -63,92 +73,99 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
     FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
     try {
-      await _save(context, ref, original, _values);
+      if (original == null) {
+        await ref
+            .read(createGeofenceProvider.notifier)
+            .create(_values.request());
+      } else {
+        await ref
+            .read(updateGeofenceProvider.notifier)
+            .edit(original.id, _values.diff(original));
+      }
+      if (!mounted) return;
+      showAppSnack(
+        context,
+        original == null ? 'Geovalla creada.' : 'Geovalla actualizada.',
+      );
+      SectionHeader.backOrHome(context);
+    } on ApiException catch (e) {
+      if (mounted) showAppSnack(context, e.message);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _draw() async {
-    final vertices = await GeofenceDrawScreen.open(context, _values.vertices);
-    if (vertices == null || !mounted) return;
-    setState(() => _values.vertices = vertices);
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (!_isEdit) return _formScaffold(null);
-    final geofences = ref.watch(geofencesProvider);
-
-    return geofences.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (error, _) => _statusScaffold('$error'),
-      data: (rows) {
-        final geofence = rows
-            .where((row) => row.id == widget.geofenceId)
-            .firstOrNull;
-        if (geofence == null) {
-          return _statusScaffold('La geovalla no existe.');
-        }
-        _prefill(geofence);
-        return _formScaffold(geofence);
-      },
-    );
-  }
-
-  Scaffold _formScaffold(Geofence? original) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(original == null ? 'Nueva geovalla' : 'Editar geovalla'),
-      ),
-      body: GeofenceFormContent(
-        formKey: _formKey,
-        values: _values,
-        original: original,
-        onSubmit: () => _submit(original),
-        onDraw: _draw,
-        isLoading: _isLoading,
-      ),
-    );
-  }
-
-  Scaffold _statusScaffold(String message) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Geovallas')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(message, textAlign: TextAlign.center),
-        ),
-      ),
-    );
-  }
-}
-
-/// `POST` o `PATCH` según el modo, y vuelta al listado. Los mensajes de
-/// error son los de Nest; aquí no se sustituyen por textos genéricos.
-Future<void> _save(
-  BuildContext context,
-  WidgetRef ref,
-  Geofence? original,
-  GeofenceFormValues values,
-) async {
-  try {
-    if (original == null) {
-      await ref.read(createGeofenceProvider.notifier).create(values.request());
-    } else {
-      await ref
-          .read(updateGeofenceProvider.notifier)
-          .edit(original.id, values.diff(original));
+    if (!_isEdit) return _form(null);
+    final state = ref.watch(geofencesProvider);
+    if (state case AsyncError(:final error)) {
+      return _message(ApiException.messageOf(error));
     }
-    if (!context.mounted) return;
-    showAppSnack(
-      context,
-      original == null ? 'Geovalla creada.' : 'Geovalla actualizada.',
+    final rows = state.asData?.value;
+    if (rows == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    final geofence = rows.where((r) => r.id == widget.geofenceId).firstOrNull;
+    if (geofence == null) return _message('La geovalla no existe.');
+    _prefill(geofence);
+    return _form(geofence);
+  }
+
+  Widget _form(Geofence? original) {
+    return Scaffold(
+      body: ListView(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.paddingOf(context).bottom + 24,
+        ),
+        children: [
+          SectionHeader(
+            title: original == null ? 'Nueva geovalla' : 'Editar geovalla',
+            subtitle: original?.name ?? 'Una zona por donde el dron no pasa',
+            onBack: () => SectionHeader.backOrHome(context),
+          ),
+          Transform.translate(
+            offset: const Offset(0, -24),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: RiseIn(
+                child: GeofenceFormSheet(
+                  values: _values,
+                  errors: _errors,
+                  shakeCount: _shakeCount,
+                  onDraw: _draw,
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: AuthMorphButton(
+              label: original == null ? 'Crear geovalla' : 'Guardar cambios',
+              loadingLabel: 'Guardando la geovalla',
+              isLoading: _isLoading,
+              onPressed: () => _submit(original),
+            ),
+          ),
+        ],
+      ),
     );
-    context.go('/geofences');
-  } on ApiException catch (error) {
-    if (context.mounted) showAppSnack(context, error.message);
+  }
+
+  Widget _message(String text) {
+    return Scaffold(
+      body: Column(
+        children: [
+          SectionHeader(
+            title: 'Geovalla',
+            subtitle: 'Editar geovalla',
+            onBack: () => SectionHeader.backOrHome(context),
+          ),
+          Expanded(
+            child: MessageView(icon: Icons.polyline_outlined, message: text),
+          ),
+        ],
+      ),
+    );
   }
 }

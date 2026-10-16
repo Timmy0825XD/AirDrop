@@ -24,27 +24,6 @@ String _isoOf(DateTime value) {
   return '${value.year}-$m-$d';
 }
 
-String isoOf(DateTime value) => _isoOf(value);
-
-/// Coordenada opcional: vacías las dos o las dos con máximo 6 decimales.
-double? parseCoord(String raw, {required bool isLatitude}) {
-  final value = raw.trim();
-  if (value.isEmpty) return null;
-  final parsed = double.tryParse(value);
-  if (parsed == null) throw const FormatException('Coordenada no numérica.');
-  if (isLatitude && (parsed < -90 || parsed > 90)) {
-    throw const FormatException('La latitud no es válida.');
-  }
-  if (!isLatitude && (parsed < -180 || parsed > 180)) {
-    throw const FormatException('La longitud no es válida.');
-  }
-  final parts = value.replaceFirst('-', '').split('.');
-  if (parts.length == 2 && parts[1].length > 6) {
-    throw const FormatException('Las coordenadas admiten hasta 6 decimales.');
-  }
-  return parsed;
-}
-
 /// Distancia del corredor con coma decimal: `4,2 km`.
 String formatKm(double km) =>
     '${km.toStringAsFixed(1).replaceAll('.', ',')} km';

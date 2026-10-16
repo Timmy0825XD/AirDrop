@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'login_palette.dart';
-
 /// Aviso de error o de éxito con el mismo vidrio de la tarjeta.
 /// Mantiene la misma firma de antes, así que `AuthFormAlert` no cambia.
 class LoginAlert extends StatelessWidget {
@@ -19,8 +17,13 @@ class LoginAlert extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final p = LoginPalette.of(context);
-    final tone = success ? p.success : p.error;
+    final colors = theme.colorScheme;
+    // Un poco hacia la tinta para que lea sobre su propio tinte.
+    final tone = Color.lerp(
+      success ? colors.tertiary : colors.error,
+      colors.onSurface,
+      0.25,
+    )!;
 
     return Semantics(
       liveRegion: true,
@@ -35,7 +38,9 @@ class LoginAlert extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(
-              success ? Icons.check_circle_outline_rounded : Icons.error_outline_rounded,
+              success
+                  ? Icons.check_circle_outline_rounded
+                  : Icons.error_outline_rounded,
               size: 20,
               color: tone,
             ),

@@ -75,7 +75,7 @@ class _UserList extends ConsumerWidget {
 
     return users.when(
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => MessageView(message: '$error'),
+      error: (error, _) => MessageView(message: ApiException.messageOf(error)),
       data: (rows) => rows.isEmpty
           ? const MessageView(
               icon: Icons.groups_outlined,

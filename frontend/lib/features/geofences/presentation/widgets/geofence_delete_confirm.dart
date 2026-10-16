@@ -1,33 +1,38 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/confirm_sheet.dart';
 import '../../data/geofence_models.dart';
 
-/// Confirma la eliminación de una geovalla.
+/// Confirma la eliminación de una geovalla en la hoja inferior.
 ///
-/// Es definitiva (Nest no tiene papelera), así que pide confirmación con
-/// el nombre. Devuelve `true` solo si el operador confirma.
+/// Es definitiva (Nest no tiene papelera) y cambia por dónde pueden volar
+/// los drones, así que la hoja muestra cuál es. Devuelve `true` solo si
+/// el operador confirma.
 Future<bool> confirmGeofenceDelete(
   BuildContext context, {
   required Geofence geofence,
-}) async {
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: const Text('Eliminar geovalla'),
-      content: Text(
-        '¿Eliminar "${geofence.name}"? Esta acción no se puede deshacer.',
+}) {
+  final theme = Theme.of(context);
+  return showConfirmSheet(
+    context,
+    title: 'Eliminar geovalla',
+    message: 'Los drones podrán volver a pasar por esta zona.',
+    confirmLabel: 'Eliminar',
+    icon: Icons.delete_outline_rounded,
+    subject: Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(18),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext, false),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(dialogContext, true),
-          child: const Text('Eliminar'),
-        ),
-      ],
+      child: Column(
+        children: [
+          Text(geofence.name, style: theme.textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text(geofence.reason, style: theme.textTheme.bodySmall),
+        ],
+      ),
     ),
   );
-  return confirmed ?? false;
 }

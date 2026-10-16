@@ -5,25 +5,40 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../../../core/widgets/error_banner.dart';
+import '../../../core/widgets/message_view.dart';
+import '../../../core/widgets/rise_in.dart';
+import '../../home/presentation/widgets/section_header.dart';
 import '../../hubs/data/hub_models.dart';
 import '../data/fleet_models.dart';
 import '../data/fleet_providers.dart';
 import 'widgets/drone_status_sheet.dart';
 import 'widgets/drone_tile.dart';
 import 'widgets/fleet_hub_selector.dart';
-import 'widgets/maintenance_form_dialog.dart';
+import 'widgets/maintenance_sheet.dart';
 
-/// Flota del operador: elige una de sus centrales y lista sus drones.
-/// De la central elegida sale también el `hubId` del alta, porque
-/// `POST /fleet/drones` lo exige y el operador puede tener varias.
+/// Flota del operador: elige una de sus centrales (chips bajo el
+/// encabezado si tiene varias) y lista sus drones. De la central elegida
+/// sale también el `hubId` del alta, porque `POST /fleet/drones` lo exige.
 class FleetScreen extends ConsumerWidget {
   const FleetScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final hub = ref.watch(effectiveHubProvider);
+    final count = ref.watch(dronesProvider).asData?.value.length;
     return Scaffold(
-      appBar: AppBar(title: const Text('Flota')),
-      body: const _FleetBody(),
+      body: Column(
+        children: [
+          SectionHeader(
+            title: 'Flota',
+            subtitle: hub == null
+                ? 'Drones de tus centrales'
+                : '${hub.name}${count == null ? '' : ' · ${count == 1 ? '1 dron' : '$count drones'}'}',
+            onBack: () => context.go('/home'),
+          ),
+          const Expanded(child: _FleetBody()),
+        ],
+      ),
       floatingActionButton: const _NewDroneButton(),
     );
   }
@@ -36,15 +51,18 @@ class _FleetBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hubs = ref.watch(assignedHubsProvider);
-
-    return hubs.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => _FleetMessage(message: '$error'),
-      data: (rows) => rows.isEmpty
-          ? const _FleetMessage(message: 'No tienes centrales asignadas.')
-          : _FleetPane(hubs: rows),
-    );
+    return switch (ref.watch(assignedHubsProvider)) {
+      AsyncData(:final value) when value.isEmpty => const MessageView(
+        icon: Icons.domain_disabled_outlined,
+        message: 'No tienes centrales asignadas.',
+      ),
+      AsyncData(:final value) => _FleetPane(hubs: value),
+      AsyncError(:final error) => MessageView(
+        icon: Icons.cloud_off_rounded,
+        message: ApiException.messageOf(error),
+      ),
+      _ => const Center(child: CircularProgressIndicator()),
+    };
   }
 }
 
@@ -58,61 +76,72 @@ class _FleetPane extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final hub = ref.watch(effectiveHubProvider);
     if (hub == null) return const SizedBox.shrink();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: FleetHubSelector(
+        if (hubs.length > 1) ...[
+          const SizedBox(height: 16),
+          FleetHubSelector(
             hubs: hubs,
             selectedId: hub.id,
-            onChanged: (id) =>
-                ref.read(fleetHubProvider.notifier).select(id),
+            onChanged: (id) => ref.read(fleetHubProvider.notifier).select(id),
           ),
-        ),
+        ],
         if (!hub.isActive)
           const Padding(
-            padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: ErrorBanner(message: 'La central está suspendida.'),
+            padding: EdgeInsets.fromLTRB(20, 14, 20, 0),
+            child: ErrorBanner(
+              message:
+                  'La central está suspendida: sus drones no se pueden '
+                  'gestionar hasta que la reactiven.',
+            ),
           ),
-        const Expanded(child: _DroneList()),
+        Expanded(child: _DroneList(hubActive: hub.isActive)),
       ],
     );
   }
 }
 
-/// Drones de la central efectiva. Un dron en misión entra sin acciones:
-/// Nest responde `409` si se intenta cambiar su estado.
+/// Drones de la central efectiva. Sin acciones si el dron está en misión
+/// (Nest responde 409) o si la central está suspendida (403).
 class _DroneList extends ConsumerWidget {
-  const _DroneList();
+  const _DroneList({required this.hubActive});
+
+  final bool hubActive;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final drones = ref.watch(dronesProvider);
     final models = ref.watch(fleetModelsProvider).asData?.value;
-
-    return drones.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => _FleetMessage(message: '$error'),
-      data: (rows) => rows.isEmpty
-          ? const _FleetMessage(message: 'Aún no hay drones en esta central.')
-          : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-              itemCount: rows.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (context, index) {
-                final drone = rows[index];
-                return DroneTile(
-                  drone: drone,
-                  modelName: _modelName(models, drone.droneModelId),
-                  onActions: drone.status.isInMission
-                      ? null
-                      : () => _openDroneActions(context, ref, drone),
-                );
-              },
+    return switch (ref.watch(dronesProvider)) {
+      AsyncData(:final value) when value.isEmpty => const MessageView(
+        icon: Icons.flight_land_rounded,
+        message: 'Aún no hay drones en esta central.',
+      ),
+      AsyncData(:final value) => ListView.separated(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 96),
+        itemCount: value.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
+        itemBuilder: (context, i) {
+          final drone = value[i];
+          return RiseIn(
+            key: ValueKey(drone.id),
+            delay: RiseIn.stagger(i),
+            child: DroneTile(
+              drone: drone,
+              modelName: _modelName(models, drone.droneModelId),
+              onActions: drone.status.isInMission || !hubActive
+                  ? null
+                  : () => _openDroneActions(context, ref, drone),
             ),
-    );
+          );
+        },
+      ),
+      AsyncError(:final error) => MessageView(
+        icon: Icons.cloud_off_rounded,
+        message: ApiException.messageOf(error),
+      ),
+      _ => const Center(child: CircularProgressIndicator()),
+    };
   }
 }
 
@@ -124,32 +153,11 @@ class _NewDroneButton extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hub = ref.watch(effectiveHubProvider);
-    final canCreate = hub?.isActive ?? false;
-
+    if (!(hub?.isActive ?? false)) return const SizedBox.shrink();
     return FloatingActionButton.extended(
-      onPressed: canCreate ? () => context.go('/fleet/new') : null,
-      icon: const Icon(Icons.add),
+      onPressed: () => context.push('/fleet/new'),
+      icon: const Icon(Icons.add_rounded),
       label: const Text('Nuevo dron'),
-    );
-  }
-}
-
-class _FleetMessage extends StatelessWidget {
-  const _FleetMessage({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(
-          message,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
-      ),
     );
   }
 }
@@ -190,7 +198,7 @@ Future<void> _askMaintenance(
   WidgetRef ref,
   Drone drone,
 ) async {
-  final input = await showMaintenanceDialog(
+  final input = await showMaintenanceSheet(
     context,
     mandatory: false,
     initialReason: drone.maintenanceReason ?? '',
@@ -218,7 +226,7 @@ Future<void> _registerMaintenance(
   WidgetRef ref,
   Drone drone,
 ) async {
-  final input = await showMaintenanceDialog(
+  final input = await showMaintenanceSheet(
     context,
     mandatory: true,
     initialReason: drone.maintenanceReason ?? '',
@@ -227,7 +235,9 @@ Future<void> _registerMaintenance(
   if (input == null || !context.mounted) return;
 
   try {
-    await ref.read(registerMaintenanceProvider.notifier).register(
+    await ref
+        .read(registerMaintenanceProvider.notifier)
+        .register(
           drone.id,
           RegisterMaintenanceRequest(
             reason: input.reason,

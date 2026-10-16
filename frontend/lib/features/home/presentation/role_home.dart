@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/api_exception.dart';
 import '../../auth/data/auth_models.dart';
 import '../../auth/presentation/auth_controller.dart';
 import 'admin_home.dart';
@@ -18,7 +19,7 @@ class RoleHomeScreen extends ConsumerWidget {
     return auth.when(
       loading: () =>
           const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (error, _) => _HomeError(message: error.toString()),
+      error: (error, _) => _HomeError(message: ApiException.messageOf(error)),
       data: (state) {
         final user = state.user;
         if (!state.isAuthenticated || user == null) {

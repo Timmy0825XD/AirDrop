@@ -7,6 +7,8 @@ import 'package:frontend/features/auth/data/local/local_auth_repository.dart';
 import 'package:frontend/features/auth/presentation/auth_controller.dart';
 import 'package:frontend/features/auth/presentation/login_screen.dart';
 import 'package:frontend/features/auth/presentation/widgets/circle_reveal.dart';
+import 'package:frontend/features/orders/data/local_order_repository.dart';
+import 'package:frontend/features/orders/data/order_providers.dart';
 
 import 'auth_controller_test.dart' show FakeTokenStore;
 
@@ -21,6 +23,9 @@ void main() {
         authRepositoryProvider.overrideWithValue(
           LocalAuthRepository(tokenStore: tokenStore),
         ),
+        // El inicio del solicitante lista sus pedidos: sin esto pediría a
+        // la API real y el test quedaría esperando la red.
+        orderRepositoryProvider.overrideWithValue(LocalOrderRepository()),
       ],
     );
     addTearDown(container.dispose);

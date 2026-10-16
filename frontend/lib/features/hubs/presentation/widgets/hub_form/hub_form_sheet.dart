@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../../../core/field_limits.dart';
 import '../../../../../core/widgets/form_sheet_card.dart';
 import '../../../../auth/presentation/widgets/auth_field.dart';
+import '../../../../auth/presentation/widgets/auth_location_field.dart';
 import '../hub_form_values.dart';
-import 'hub_location_picker.dart';
+
 import 'hub_type_chips.dart';
 
 /// La tarjeta del alta de central: nombre, tipo, dirección, el mapa y el
@@ -46,7 +47,8 @@ class HubFormSheet extends StatelessWidget {
           shakeCount: shakeCount,
         ),
         const SizedBox(height: 16),
-        HubLocationPicker(
+        AuthLocationField(
+          emptyHint: 'Toca el mapa para ubicar la central',
           location: values.location,
           errorText: errors[HubInput.location],
           onChanged: (point) {

@@ -63,7 +63,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
     return Scaffold(
       body: hubs.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => MessageView(message: '$error'),
+        error: (error, _) => MessageView(message: ApiException.messageOf(error)),
         data: _form,
       ),
     );

@@ -99,7 +99,7 @@ void main() {
   testWidgets('borrar pide confirmación y quita la fila', (tester) async {
     await _pumpScreen(tester, _FakeGeofenceRepository([_geofence()]));
 
-    await tester.tap(find.byTooltip('Eliminar'));
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Eliminar'));
     await tester.pumpAndSettle();
     expect(find.text('Eliminar geovalla'), findsOneWidget);
 
@@ -108,9 +108,9 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Corredor Aéreo Ambulancia'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Eliminar'));
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Eliminar'));
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Eliminar'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Eliminar'));
     await tester.pumpAndSettle();
 
     expect(find.text('Corredor Aéreo Ambulancia'), findsNothing);
