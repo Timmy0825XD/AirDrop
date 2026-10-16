@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../core/widgets/detail_section.dart';
 import '../../../data/order_models.dart';
 import '../../order_format.dart';
 import '../order_kind_chip.dart';
 import '../order_status_chip.dart';
-import 'detail_section.dart';
 
-/// Lo que todo el que ve el pedido necesita saber: qué es, en qué estado
-/// va, a dónde va y por qué (si fue rechazado o reasignado).
+/// Lo que todo el que ve el pedido necesita saber: en qué estado va, qué
+/// es, a dónde va y por qué (si fue rechazado o reasignado). El nombre del
+/// insumo va en el encabezado de la pantalla.
 class OrderSummary extends StatelessWidget {
   const OrderSummary({
     super.key,
@@ -22,30 +23,24 @@ class OrderSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(order.medicationName, style: theme.textTheme.headlineLarge),
-        const SizedBox(height: 10),
-        Wrap(
-          spacing: 8,
-          runSpacing: 4,
-          children: [
-            OrderStatusChip(status: order.status),
-            OrderKindChip(missionType: order.missionType),
-          ],
-        ),
-        const SizedBox(height: 16),
-        DetailSection(
-          title: 'Datos del pedido',
-          icon: Icons.medication_outlined,
-          child: _SummaryLines(
-            order: order,
-            prescription: showPrescriptionFlag,
+    return DetailSection(
+      title: 'Datos del pedido',
+      icon: Icons.medication_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              OrderStatusChip(status: order.status),
+              OrderKindChip(missionType: order.missionType),
+            ],
           ),
-        ),
-      ],
+          const SizedBox(height: 14),
+          _SummaryLines(order: order, prescription: showPrescriptionFlag),
+        ],
+      ),
     );
   }
 }
@@ -59,7 +54,7 @@ class _SummaryLines extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         DetailLine(
           label: 'Venta',

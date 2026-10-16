@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../orders/data/order_providers.dart';
+import '../../home/presentation/widgets/section_header.dart';
 import '../../orders/presentation/widgets/order_status_chip.dart';
 import '../data/tracking_providers.dart';
 import 'widgets/flight_card.dart';
@@ -25,7 +26,12 @@ class TrackingScreen extends ConsumerWidget {
     final flight = ref.watch(trackingProvider(orderId));
     final t = flight.telemetry;
     return Scaffold(
-      appBar: AppBar(title: Text(order?.medicationName ?? 'Vuelo')),
+      appBar: AppBar(
+        // Se abre con `push` desde las listas; si se llegó directo, la
+        // flecha lleva al inicio en vez de dejar la pantalla sin salida.
+        leading: BackButton(onPressed: () => SectionHeader.backOrHome(context)),
+        title: Text(order?.medicationName ?? 'Vuelo'),
+      ),
       body: Column(
         children: [
           Expanded(

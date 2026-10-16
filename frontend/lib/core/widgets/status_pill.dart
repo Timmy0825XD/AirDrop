@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 /// Qué tan bien está lo que muestra la pastilla.
-enum PillTone { positive, attention, negative }
+/// `neutral` va en el color de marca: algo que sigue su curso normal.
+enum PillTone { positive, attention, negative, neutral }
 
 /// Estado en una pastilla de color (Activa, Suspendida, Bloqueada…). El
 /// color no es decorativo: distingue de un vistazo si algo puede operar.
@@ -20,6 +21,7 @@ class StatusPill extends StatelessWidget {
       PillTone.positive => colors.tertiary,
       PillTone.attention => colors.secondary,
       PillTone.negative => colors.error,
+      PillTone.neutral => colors.primary,
     };
     // El texto se oscurece (o aclara en tema oscuro) hacia la tinta para
     // que lea con contraste sobre su propio tinte.

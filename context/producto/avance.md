@@ -18,8 +18,8 @@ Plan por fases del frontend Flutter a partir de la guía 25 (`learning/25-front-
 | 3 | Telemetría y mapa en vivo (HU-26 a HU-28) | `feature/tracking-front` | Hecha (PR #43) |
 | 4 | Geovalla sobre el mapa (HU-14) | `feature/geovalla-mapa` | Hecha (PR #45) |
 | 5 | Entrega del pedido y retorno del dron | — | Bloqueada (backend) |
-| 6 | Revisión y rediseño del administrador | `style/rediseno-admin` | Hecha (PR pendiente) |
-| 7 | Revisión y rediseño del despachador | `style/rediseno-despachador` | Pendiente |
+| 6 | Revisión y rediseño del administrador | `style/rediseno-admin` | Hecha (PR #47) |
+| 7 | Revisión y rediseño del despachador | `style/rediseno-despachador` | Hecha (PR pendiente) |
 | 8 | Revisión y rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Pendiente |
 | 9 | Limpieza antes de la revisión | `refactor/limpieza-front` | Pendiente |
 | 10 | Cierre y pruebas de punta a punta | `test/flujos-front` | Pendiente |
@@ -224,6 +224,85 @@ Además de la revisión: la bandeja **"Vuelos en curso"** con su tarjeta en
 el home (Nest ya tiene `GET /orders/in-flight`, PR #44) y quitar el
 reintento de 800 ms de `TelemetryClient`, que sobra desde ese PR.
 
+Diseño: sin canvas propio. Oscar pidió seguir el lenguaje de la Fase 6
+(encabezado curvo, tarjetas con estado, hojas inferiores, entrada en
+cascada).
+
+Resultado (2026-10-16):
+
+- Inicio: el mismo encabezado del admin (`RoleHero`) con la central y su
+  estado; sobre la curva, cuántas urgencias hay en cola, cuántos drones por
+  cargar y cuántos en vuelo (`HomeStatsCard`); accesos en tres grupos
+  (operación, mi central, pedir a otra central) con contador y candado si la
+  central no está activa. Se refresca cada 10 s. "Pedir a otra central" ya
+  no abre una hoja: Urgencia y Abastecimiento son dos accesos.
+- Bandejas (cola, programados, pendiente de carga, vuelos en curso y mis
+  planes) sobre un mismo andamiaje, `OrderTray`: encabezado con cuántas
+  hay, tarjetas que entran en cascada, deslizar para recargar y el error
+  de Nest centrado.
+- Vuelos en curso: `/orders/in-flight` con el dron en naranja, el estado y
+  "Ver vuelo".
+- Detalle del pedido: el nombre del insumo en el encabezado, las secciones
+  en tarjetas con ícono teñido, Autorizar y Confirmar carga con el botón que
+  se vuelve dron, "Verifiqué la fórmula" en un chip y Rechazar plegado
+  hasta que se abre (el motivo tiembla si falta).
+- Urgencia y Abastecimiento a otra central: central de origen e insumo en
+  chips (con el stock), cantidad con su máximo, frecuencia en chips y la
+  fecha de inicio en el calendario.
+- Planes: tarjetas con estado; el detalle muestra el plan, sus entregas
+  (tocables) y Extender / Cancelar con la hoja de confirmación.
+- Mi central: identidad con estado, el mapa con el pin y el contacto.
+- Inventario: tarjetas con vencido / por vencer / vigente y "Eliminar" con
+  la hoja de confirmación; el formulario va en la tarjeta sobre la curva,
+  con el vencimiento en el calendario y el tipo de venta en chips.
+
+Errores corregidos:
+
+1. Las pantallas viejas no tenían flecha de volver y el mapa quedaba sin
+   salida: se abrían con `go`. Ahora las bandejas usan `SectionHeader`, los
+   detalles y el mapa se abren con `push` y vuelven con
+   `SectionHeader.backOrHome` (test `dispatcher_fixes_test`).
+2. Inventario: el interruptor de cadena de frío no se movía al tocarlo
+   (guardaba el valor sin repintar). Test `inventory_form_test`.
+3. Inventario: el vencimiento se escribía a mano; ahora es un calendario
+   (`AuthDateField`).
+4. Abastecimiento: la fecha de inicio quedaba fija en hoy; ahora se elige
+   (test `hub_request_values_test`).
+5. Detalle del plan: cada entrega mostraba el id interno del dron (UUID);
+   ahora muestra fecha y estado y abre su detalle.
+6. Los errores que no eran de Nest se veían crudos (`FormatException: …`);
+   ahora pasan por `ApiException.messageOf`.
+7. Urgencia y Abastecimiento guardaban estado tras cerrar la pantalla si
+   Nest respondía con error; ahora revisan `mounted`.
+8. Código repetido: Urgencia y Abastecimiento copiaban el mismo formulario
+   (ahora `HubRequestValues`, `HubRequestFields`, `HubRequestScaffold`);
+   las tarjetas de cola y programados estaban armadas dentro de la
+   pantalla; `HubDetailContent` pasaba de 60 líneas.
+9. Mi central mostraba latitud y longitud sueltas; ahora va el mapa.
+10. Para el backend: una central no puede ver las urgencias que le pidió a
+    otra. Anotado en [`pendientes-backend.md`](pendientes-backend.md),
+    punto 6.
+
+Limpieza:
+
+- Compartidas nuevas: `RoleHero`, `HomeStatsCard` y `HomeAccessCard` (eran
+  `AdminHero`, `AdminStatsCard` y `AdminActionCard`; ahora las usan admin y
+  despachador), `DetailSection` / `DetailLine` en `core/widgets`,
+  `AuthDateField` + `pickIsoDate` y `AuthChoiceGroup` junto a `AuthField`,
+  `PillTone.neutral` en `StatusPill`, `routeLine` en `order_format`.
+- `OrderStatusChip` y `OrderKindChip` pasan a `StatusPill` (el color dice
+  si el pedido va bien, vuela o se cortó).
+- Borrados: `DispatcherCards`, `HubDetailRow`, `InventoryFormContent`,
+  `InventoryFields`, `InventorySaleTypeField`, `InventoryColdChainSwitch` y
+  `inventory_chips.dart`.
+- `TelemetryClient` sin el reintento de 800 ms.
+- Ojo para la Fase 8: el detalle del pedido y los planes también los usa el
+  solicitante, así que ya tienen el diseño nuevo; el historial
+  (`OrderTile`), sus formularios y su inicio siguen con el viejo. Las
+  pantallas de admin, flota y geovallas todavía muestran `'$error'`: pasarlas a
+  `ApiException.messageOf` en la Fase 8 o la 9.
+- `flutter analyze` sin issues; 179 tests en verde.
+
 ### Fase 8 — Solicitante y operador
 
 Además de la revisión: el **perfil** con diseño propio (y con él se borran
@@ -249,8 +328,9 @@ ya lo tiene. Operador: flota y geovallas.
   abriera, así que nunca se suscribía al canal y el socket no recibía ni la
   telemetría ni los cambios de estado. Ahora `TelemetryRedis` guarda quién
   escucha y se suscribe al conectar (test `telemetry.redis.spec`).
-- **Despachador (Fase 7):** no hay lista de vuelos en curso en el frontend;
-  al despegar, el pedido sale de la cola y de pending-load.
+- ~~**Despachador (Fase 7):** no hay lista de vuelos en curso en el frontend;
+  al despegar, el pedido sale de la cola y de pending-load.~~ Corregido en
+  la Fase 7 con la bandeja "Vuelos en curso".
 
 ## Fase 9 — Limpieza antes de la revisión
 

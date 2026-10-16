@@ -4,27 +4,49 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
+import '../../../core/widgets/message_view.dart';
+import '../../../core/widgets/rise_in.dart';
+import '../../../core/widgets/status_pill.dart';
+import '../../home/presentation/widgets/section_header.dart';
 import '../data/inventory_models.dart';
 import '../data/inventory_providers.dart';
 import 'widgets/inventory_delete_confirm.dart';
 import 'widgets/inventory_tile.dart';
 
-/// Listado de los insumos de la central del despachador. Cada mutación
-/// invalida `inventoryProvider`, así la lista se refresca sin reiniciar.
+/// Los insumos de la central del despachador. El encabezado dice cuántos
+/// hay y cuántos están vencidos o por vencer. Cada mutación invalida
+/// `inventoryProvider`, así la lista se refresca sin reiniciar.
 class InventoryScreen extends ConsumerWidget {
   const InventoryScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final rows = ref.watch(inventoryProvider).asData?.value;
     return Scaffold(
-      appBar: AppBar(title: const Text('Inventario')),
-      body: const _InventoryList(),
+      body: Column(
+        children: [
+          SectionHeader(
+            title: 'Inventario',
+            subtitle: rows == null ? 'Insumos de tu central' : _summary(rows),
+            onBack: () => context.go('/home'),
+          ),
+          const Expanded(child: _InventoryList()),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/inventory/new'),
-        icon: const Icon(Icons.add),
+        icon: const Icon(Icons.add_rounded),
         label: const Text('Nuevo ítem'),
       ),
     );
+  }
+
+  static String _summary(List<InventoryItem> rows) {
+    final warned = rows
+        .where((item) => InventoryTile.expiryOf(item).$2 != PillTone.positive)
+        .length;
+    final total = rows.length == 1 ? '1 ítem' : '${rows.length} ítems';
+    return warned == 0 ? total : '$total · $warned por revisar';
   }
 }
 
@@ -33,58 +55,31 @@ class _InventoryList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final inventory = ref.watch(inventoryProvider);
-
-    return inventory.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => _InventoryError(message: '$error'),
-      data: (rows) => rows.isEmpty
-          ? const _InventoryEmpty()
-          : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-              itemCount: rows.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (context, index) => InventoryTile(
-                item: rows[index],
-                onTap: () => context.go('/inventory/${rows[index].id}'),
-                onDelete: () => _deleteItem(context, ref, rows[index]),
-              ),
-            ),
-    );
-  }
-}
-
-class _InventoryEmpty extends StatelessWidget {
-  const _InventoryEmpty();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(
-          'Aún no hay insumos en el inventario.',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyLarge,
+    return switch (ref.watch(inventoryProvider)) {
+      AsyncData(:final value) when value.isEmpty => const MessageView(
+        icon: Icons.inventory_2_outlined,
+        message: 'Aún no hay insumos en el inventario.',
+      ),
+      AsyncData(:final value) => ListView.separated(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 96),
+        itemCount: value.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
+        itemBuilder: (context, i) => RiseIn(
+          key: ValueKey(value[i].id),
+          delay: RiseIn.stagger(i),
+          child: InventoryTile(
+            item: value[i],
+            onTap: () => context.go('/inventory/${value[i].id}'),
+            onDelete: () => _deleteItem(context, ref, value[i]),
+          ),
         ),
       ),
-    );
-  }
-}
-
-class _InventoryError extends StatelessWidget {
-  const _InventoryError({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(message, textAlign: TextAlign.center),
+      AsyncError(:final error) => MessageView(
+        icon: Icons.cloud_off_rounded,
+        message: ApiException.messageOf(error),
       ),
-    );
+      _ => const Center(child: CircularProgressIndicator()),
+    };
   }
 }
 

@@ -1,6 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/field_limits.dart';
+import '../../../../core/validators.dart';
 import '../../data/inventory_models.dart';
+
+/// Los campos del formulario de inventario que pueden tener error.
+enum InventoryInput { name, lot, quantity, expirationDate }
 
 /// Los campos del formulario de inventario en un solo objeto.
 ///
@@ -21,6 +26,31 @@ class InventoryFormValues {
     for (final controller in [name, quantity, lot, expirationDate]) {
       controller.dispose();
     }
+  }
+
+  /// Un mensaje por campo con error; vacío si todo está bien. Mismos
+  /// mensajes que `CreateInventoryItemDto` de Nest.
+  Map<InventoryInput, String> validate() {
+    final qty = int.tryParse(quantity.text.trim());
+    final date = expirationDate.text.trim();
+    final errors = <InventoryInput, String?>{
+      InventoryInput.name: Validators.medicationName(name.text),
+      InventoryInput.lot: Validators.lotCode(lot.text),
+      InventoryInput.quantity: qty == null
+          ? 'La cantidad debe ser un entero.'
+          : qty < 0
+          ? 'La cantidad no puede ser negativa.'
+          : null,
+      InventoryInput.expirationDate: date.isEmpty
+          ? 'Elige la fecha de vencimiento.'
+          : !FieldLimits.isoDateRegex.hasMatch(date)
+          ? 'La fecha de vencimiento debe ser AAAA-MM-DD.'
+          : null,
+    };
+    return {
+      for (final entry in errors.entries)
+        if (entry.value != null) entry.key: entry.value!,
+    };
   }
 
   /// Rellena el formulario al editar. Solo corre la primera vez: si el

@@ -4,12 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/rise_in.dart';
 import '../../auth/data/auth_models.dart';
+import '../../hubs/data/hub_models.dart';
 import '../../hubs/data/hub_providers.dart';
 import '../../users/data/user_providers.dart';
-import 'widgets/admin/admin_action_card.dart';
-import 'widgets/admin/admin_hero.dart';
 import 'widgets/admin/admin_metrics_card.dart';
-import 'widgets/admin/admin_stats_card.dart';
+import 'widgets/home_access_card.dart';
+import 'widgets/home_stats_card.dart';
+import 'widgets/role_hero.dart';
 import 'widgets/sign_out.dart';
 
 /// Inicio del administrador: el encabezado con el saludo, los números del
@@ -25,11 +26,7 @@ class AdminHome extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final hubs = ref.watch(allHubsProvider).asData?.value;
     final users = ref.watch(allUsersProvider).asData?.value;
-    final suspendedHubs = hubs?.where((hub) => !hub.isActive).length;
-    final suspendedUsers = users
-        ?.where((account) => account.status == UserStatus.suspended)
-        .length;
-    final heroHeight = AdminHero.heightFor(context);
+    final heroHeight = RoleHero.heightFor(context);
 
     return Scaffold(
       body: ListView(
@@ -37,8 +34,10 @@ class AdminHome extends ConsumerWidget {
         children: [
           Stack(
             children: [
-              AdminHero(
-                firstName: user.fullName.trim().split(RegExp(r'\s+')).first,
+              RoleHero(
+                roleLabel: 'Administrador',
+                firstName: RoleHero.firstNameOf(user.fullName),
+                tagline: 'Así va la operación en Valledupar',
                 onProfile: () => context.push('/profile'),
                 onSignOut: () => signOut(context, ref),
               ),
@@ -46,15 +45,7 @@ class AdminHome extends ConsumerWidget {
                 padding: EdgeInsets.fromLTRB(20, heroHeight - 46, 20, 0),
                 child: RiseIn(
                   delay: const Duration(milliseconds: 150),
-                  child: AdminStatsCard(
-                    activeHubs: hubs?.where((hub) => hub.isActive).length,
-                    activeAccounts: users
-                        ?.where((a) => a.status == UserStatus.active)
-                        .length,
-                    suspended: suspendedHubs == null || suspendedUsers == null
-                        ? null
-                        : suspendedHubs + suspendedUsers,
-                  ),
+                  child: _AdminStats(hubs: hubs, users: users),
                 ),
               ),
             ],
@@ -94,7 +85,7 @@ class _AdminActions extends StatelessWidget {
         const SizedBox(height: 12),
         RiseIn(
           delay: const Duration(milliseconds: 280),
-          child: AdminActionCard(
+          child: HomeAccessCard(
             title: 'Centrales',
             subtitle: 'Crea, ubica en el mapa y suspende.',
             icon: Icons.domain_add_outlined,
@@ -106,7 +97,7 @@ class _AdminActions extends StatelessWidget {
         const SizedBox(height: 12),
         RiseIn(
           delay: const Duration(milliseconds: 350),
-          child: AdminActionCard(
+          child: HomeAccessCard(
             title: 'Cuentas institucionales',
             subtitle: 'Despachadores y operadores de flota.',
             icon: Icons.groups_outlined,
@@ -119,6 +110,44 @@ class _AdminActions extends StatelessWidget {
         const RiseIn(
           delay: Duration(milliseconds: 420),
           child: AdminMetricsCard(),
+        ),
+      ],
+    );
+  }
+}
+
+/// Centrales activas, cuentas activas y todo lo suspendido.
+class _AdminStats extends StatelessWidget {
+  const _AdminStats({required this.hubs, required this.users});
+
+  final List<Hub>? hubs;
+  final List<PublicUser>? users;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final suspendedHubs = hubs?.where((hub) => !hub.isActive).length;
+    final suspendedUsers = users
+        ?.where((account) => account.status == UserStatus.suspended)
+        .length;
+    return HomeStatsCard(
+      stats: [
+        HomeStat(
+          value: hubs?.where((hub) => hub.isActive).length,
+          label: 'Centrales activas',
+          color: colors.primary,
+        ),
+        HomeStat(
+          value: users?.where((a) => a.status == UserStatus.active).length,
+          label: 'Cuentas activas',
+          color: colors.onSurface,
+        ),
+        HomeStat(
+          value: suspendedHubs == null || suspendedUsers == null
+              ? null
+              : suspendedHubs + suspendedUsers,
+          label: 'Suspendidas',
+          color: colors.error,
         ),
       ],
     );

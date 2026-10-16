@@ -1,50 +1,54 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
+import '../../../core/widgets/message_view.dart';
+import '../../home/presentation/widgets/section_header.dart';
 import '../data/hub_providers.dart';
 import 'widgets/hub_detail_content.dart';
+import 'widgets/hub_labels.dart';
 
 /// `GET /hubs/me`: la central del despachador, en solo lectura.
 ///
-/// Cuando Nest responde 404 el repositorio devuelve `null` y se muestra el
-/// mensaje del backend: "No tienes una central asignada." Los demás
-/// errores se muestran tal cual (`Solo el despachador tiene una central.`).
+/// Cuando Nest responde 404 el repositorio devuelve `null` y se dice "No
+/// tienes una central asignada.". Los demás errores se muestran con el
+/// mensaje de Nest (`Solo el despachador tiene una central.`).
 class HubDetailScreen extends ConsumerWidget {
   const HubDetailScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hub = ref.watch(myHubProvider);
-
+    final state = ref.watch(myHubProvider);
+    final hub = state.asData?.value;
     return Scaffold(
-      appBar: AppBar(title: const Text('Mi central')),
-      body: hub.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => _message(context, _textOf(error)),
-        data: (value) => value == null
-            ? _message(context, 'No tienes una central asignada.')
-            : SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: HubDetailContent(hub: value),
+      body: Column(
+        children: [
+          SectionHeader(
+            title: 'Mi central',
+            subtitle: hub == null
+                ? 'Tu central asignada'
+                : HubLabels.type(hub.type),
+            onBack: () => context.go('/home'),
+          ),
+          Expanded(
+            child: switch (state) {
+              AsyncData(value: final hub?) => ListView(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
+                children: [HubDetailContent(hub: hub)],
               ),
-      ),
-    );
-  }
-
-  String _textOf(Object error) => error is ApiException
-      ? error.message
-      : 'No se pudo cargar la central. Intenta de nuevo.';
-
-  Widget _message(BuildContext context, String text) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
+              AsyncData() => const MessageView(
+                icon: Icons.domain_disabled_outlined,
+                message: 'No tienes una central asignada.',
+              ),
+              AsyncError(:final error) => MessageView(
+                icon: Icons.cloud_off_rounded,
+                message: ApiException.messageOf(error),
+              ),
+              _ => const Center(child: CircularProgressIndicator()),
+            },
+          ),
+        ],
       ),
     );
   }

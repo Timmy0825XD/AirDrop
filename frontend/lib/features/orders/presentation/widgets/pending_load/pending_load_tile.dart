@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../core/widgets/press_scale.dart';
 import '../../../data/order_models.dart';
 import '../../order_format.dart';
+import '../order_row_card.dart';
 import '../watch_flight_button.dart';
 
 /// Una fila de la bandeja "Pendiente de carga": qué insumo va, en qué dron
-/// y qué tan lejos, con el botón para confirmar la carga.
+/// y qué tan lejos, con el botón para confirmar la carga debajo.
 class PendingLoadTile extends StatelessWidget {
   const PendingLoadTile({
     super.key,
@@ -24,49 +26,27 @@ class PendingLoadTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Material(
-      color: theme.colorScheme.surface,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(22),
-        side: BorderSide(color: theme.colorScheme.outline),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onOpen,
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(order.medicationName, style: theme.textTheme.titleMedium),
-              const SizedBox(height: 4),
-              Text(
-                _routeLine(order.assignment),
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              const SizedBox(height: 14),
-              _ConfirmButton(
-                order: order,
-                confirming: confirming,
-                onConfirm: onConfirm,
-              ),
-            ],
-          ),
+    final colors = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        OrderRowCard(
+          icon: Icons.inventory_outlined,
+          tone: colors.primary,
+          title: order.medicationName,
+          accent: '${order.quantity} und. · ${destinationLabel(order)}',
+          detail: routeLine(order.assignment),
+          onTap: onOpen,
         ),
-      ),
+        const SizedBox(height: 8),
+        _ConfirmButton(
+          order: order,
+          confirming: confirming,
+          onConfirm: onConfirm,
+        ),
+      ],
     );
   }
-}
-
-/// "Dron D-01 · 4,2 km · 100 m". Sin asignación no debería llegar aquí,
-/// pero si llega no se cae.
-String _routeLine(OrderAssignment? a) {
-  if (a == null) return 'Sin dron asignado';
-  return 'Dron ${a.identifier} · ${formatKm(a.distanceKm)} · '
-      '${a.altitudeM.round()} m';
 }
 
 /// Mientras falta la carga, "Confirmar carga". Ya confirmado, Nest lo deja
@@ -85,11 +65,25 @@ class _ConfirmButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!order.awaitsLoad) return WatchFlightButton(orderId: order.id);
-    return FilledButton.icon(
-      onPressed: confirming ? null : onConfirm,
-      icon: const Icon(Icons.check_rounded),
-      label: Text(confirming ? 'Confirmando…' : 'Confirmar carga'),
+    final child = !order.awaitsLoad
+        ? WatchFlightButton(orderId: order.id)
+        : FilledButton.icon(
+            onPressed: confirming ? null : onConfirm,
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(48),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            icon: const Icon(Icons.check_rounded),
+            label: Text(confirming ? 'Confirmando…' : 'Confirmar carga'),
+          );
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 280),
+      switchInCurve: Curves.easeOutBack,
+      transitionBuilder: (child, animation) =>
+          ScaleTransition(scale: animation, child: child),
+      child: PressScale(key: ValueKey(order.awaitsLoad), child: child),
     );
   }
 }

@@ -137,9 +137,15 @@ final pendingLoadProvider = FutureProvider<List<Order>>((ref) {
   return ref.watch(orderRepositoryProvider).listPendingLoad();
 });
 
+/// Bandeja "Vuelos en curso" del despachador: al despegar, el pedido sale de
+/// pending-load y esta es su entrada al mapa hasta que se entrega.
+final inFlightProvider = FutureProvider<List<Order>>((ref) {
+  return ref.watch(orderRepositoryProvider).listInFlight();
+});
+
 /// Lo que el despachador hace sobre un pedido: rechazar, autorizar y
 /// confirmar la carga. Cada acción mueve el pedido entre listas, así que
-/// al terminar refresca la cola, los programados, la bandeja y el detalle.
+/// al terminar refresca la cola, los programados, las bandejas y el detalle.
 class OrderDispatchNotifier extends AsyncNotifier<Order?> {
   @override
   Future<Order?> build() async => null;
@@ -164,6 +170,7 @@ class OrderDispatchNotifier extends AsyncNotifier<Order?> {
       ..invalidate(queueProvider)
       ..invalidate(scheduledProvider)
       ..invalidate(pendingLoadProvider)
+      ..invalidate(inFlightProvider)
       ..invalidate(orderDetailProvider(id));
     state = AsyncData(order);
     return order;

@@ -4,9 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
+import '../../../core/widgets/message_view.dart';
+import '../../../core/widgets/rise_in.dart';
+import '../../auth/presentation/widgets/auth_date_field.dart';
+import '../../auth/presentation/widgets/auth_morph_button.dart';
+import '../../home/presentation/widgets/section_header.dart';
 import '../data/inventory_models.dart';
 import '../data/inventory_providers.dart';
-import 'widgets/inventory_form_content.dart';
+import 'widgets/inventory_form/inventory_form_sheet.dart';
 import 'widgets/inventory_form_values.dart';
 
 /// Alta (`/inventory/new`) y edición (`/inventory/:id`) del inventario.
@@ -24,8 +29,9 @@ class InventoryFormScreen extends ConsumerStatefulWidget {
 }
 
 class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _values = InventoryFormValues();
+  Map<InventoryInput, String> _errors = const {};
+  int _shakeCount = 0;
   bool _isLoading = false;
   bool _prefilled = false;
 
@@ -45,8 +51,24 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
     _values.load(item);
   }
 
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await pickIsoDate(
+      context,
+      current: _values.expirationDate.text,
+      first: DateTime(now.year - 5),
+      last: DateTime(now.year + 10, 12, 31),
+    );
+    if (picked != null) setState(() => _values.expirationDate.text = picked);
+  }
+
   Future<void> _submit(InventoryItem? original) async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    final errors = _values.validate();
+    setState(() {
+      _errors = errors;
+      if (errors.isNotEmpty) _shakeCount++;
+    });
+    if (errors.isNotEmpty) return;
     if (original != null && _values.diff(original).isEmpty) {
       showAppSnack(context, 'No hay cambios para guardar.');
       return;
@@ -54,83 +76,109 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
     FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
     try {
-      await _save(context, ref, original, _values);
+      await _save(original);
+      if (!mounted) return;
+      showAppSnack(
+        context,
+        original == null ? 'Ítem agregado al inventario.' : 'Ítem actualizado.',
+      );
+      context.go('/inventory');
+    } on ApiException catch (error) {
+      if (mounted) showAppSnack(context, error.message);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (!_isEdit) return _formScaffold(null);
-    final inventory = ref.watch(inventoryProvider);
-
-    return inventory.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
-      error: (error, _) => _statusScaffold('$error'),
-      data: (rows) {
-        final item = rows.where((row) => row.id == widget.itemId).firstOrNull;
-        if (item == null) {
-          return _statusScaffold('El ítem de inventario no existe.');
-        }
-        _prefill(item);
-        return _formScaffold(item);
-      },
-    );
-  }
-
-  Scaffold _formScaffold(InventoryItem? original) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(original == null ? 'Nuevo ítem' : 'Editar ítem'),
-      ),
-      body: InventoryFormContent(
-        formKey: _formKey,
-        values: _values,
-        original: original,
-        onSubmit: () => _submit(original),
-        isLoading: _isLoading,
-      ),
-    );
-  }
-
-  Scaffold _statusScaffold(String message) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Inventario')),
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Text(message, textAlign: TextAlign.center),
-        ),
-      ),
-    );
-  }
-}
-
-/// `POST` o `PATCH` según el modo, y vuelta al listado. Los mensajes de
-/// error son los de Nest; aquí no se sustituyen por textos genéricos.
-Future<void> _save(
-  BuildContext context,
-  WidgetRef ref,
-  InventoryItem? original,
-  InventoryFormValues values,
-) async {
-  try {
+  /// `POST` o `PATCH` según el modo. Los mensajes de error son los de Nest.
+  Future<void> _save(InventoryItem? original) async {
     if (original == null) {
-      await ref.read(createInventoryProvider.notifier).create(values.request());
+      await ref
+          .read(createInventoryProvider.notifier)
+          .create(_values.request());
     } else {
       await ref
           .read(updateInventoryProvider.notifier)
-          .edit(original.id, values.diff(original));
+          .edit(original.id, _values.diff(original));
     }
-    if (!context.mounted) return;
-    showAppSnack(
-      context,
-      original == null ? 'Ítem agregado al inventario.' : 'Ítem actualizado.',
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isEdit) return _form(null);
+    final state = ref.watch(inventoryProvider);
+    if (state case AsyncError(:final error)) {
+      return _message(ApiException.messageOf(error));
+    }
+    final rows = state.asData?.value;
+    if (rows == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    final item = rows.where((row) => row.id == widget.itemId).firstOrNull;
+    if (item == null) return _message('El ítem de inventario no existe.');
+    _prefill(item);
+    return _form(item);
+  }
+
+  Widget _form(InventoryItem? original) {
+    return Scaffold(
+      body: ListView(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.paddingOf(context).bottom + 24,
+        ),
+        children: [
+          SectionHeader(
+            title: original == null ? 'Nuevo ítem' : 'Editar ítem',
+            subtitle: original == null
+                ? 'Entra al inventario de tu central'
+                : 'Lote ${original.lot}',
+            onBack: () => context.go('/inventory'),
+          ),
+          Transform.translate(
+            offset: const Offset(0, -24),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: RiseIn(
+                child: InventoryFormSheet(
+                  values: _values,
+                  errors: _errors,
+                  shakeCount: _shakeCount,
+                  onPickDate: _pickDate,
+                  onChanged: () => setState(() {}),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: AuthMorphButton(
+              label: original == null
+                  ? 'Agregar al inventario'
+                  : 'Guardar cambios',
+              loadingLabel: 'Guardando el ítem',
+              isLoading: _isLoading,
+              onPressed: () => _submit(original),
+            ),
+          ),
+        ],
+      ),
     );
-    context.go('/inventory');
-  } on ApiException catch (error) {
-    if (context.mounted) showAppSnack(context, error.message);
+  }
+
+  Widget _message(String text) {
+    return Scaffold(
+      body: Column(
+        children: [
+          SectionHeader(
+            title: 'Inventario',
+            subtitle: 'Editar ítem',
+            onBack: () => context.go('/inventory'),
+          ),
+          Expanded(
+            child: MessageView(icon: Icons.inventory_2_outlined, message: text),
+          ),
+        ],
+      ),
+    );
   }
 }

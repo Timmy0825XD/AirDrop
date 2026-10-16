@@ -61,3 +61,11 @@ bool isFutureSchedule(String? scheduledFor) {
 String destinationLabel(Order order) {
   return order.destinationKind == DestinationKind.hub ? 'Central' : 'Persona';
 }
+
+/// "Dron D-01 · 4,2 km · 100 m": el dron y el corredor que reservó el
+/// motor al autorizar. Sin asignación no debería llegar, pero no se cae.
+String routeLine(OrderAssignment? a) {
+  if (a == null) return 'Sin dron asignado';
+  return 'Dron ${a.identifier} · ${formatKm(a.distanceKm)} · '
+      '${a.altitudeM.round()} m';
+}

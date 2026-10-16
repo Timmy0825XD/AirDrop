@@ -1,13 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
-import '../../../core/widgets/error_banner.dart';
+import '../../../core/widgets/confirm_sheet.dart';
+import '../../../core/widgets/message_view.dart';
+import '../../../core/widgets/rise_in.dart';
+import '../../home/presentation/widgets/section_header.dart';
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
+import 'widgets/plan_detail/plan_sections.dart';
+import 'widgets/plan_tile.dart';
 
-/// Detalle del plan con ocurrencias y botones Extender / Cancelar.
+/// Detalle del plan (`GET /orders/plans/:id`): sus datos, sus entregas y
+/// Extender / Cancelar, que se confirman en la hoja inferior.
 class PlanDetailScreen extends ConsumerStatefulWidget {
   const PlanDetailScreen({super.key, required this.planId});
 
@@ -18,126 +25,122 @@ class PlanDetailScreen extends ConsumerStatefulWidget {
 }
 
 class _PlanDetailScreenState extends ConsumerState<PlanDetailScreen> {
-  String? _error;
   bool _busy = false;
 
-  Future<void> _extend() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Extender plan'),
-        content: const Text('Se agregan otras 8 semanas.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(c).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(c).pop(true),
-            child: const Text('Extender'),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
+  Future<void> _run(Future<void> Function() action, String done) async {
+    setState(() => _busy = true);
     try {
-      await ref.read(extendPlanProvider.notifier).extend(widget.planId);
-      if (mounted) showAppSnack(context, 'Plan extendido.');
+      await action();
+      if (mounted) showAppSnack(context, done);
     } on ApiException catch (e) {
-      setState(() => _error = e.message);
+      if (mounted) showAppSnack(context, e.message);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
   }
 
-  Future<void> _cancel() async {
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (c) => AlertDialog(
-        title: const Text('Cancelar plan'),
-        content: const Text(
-          'Las entregas que siguen en recibido quedan canceladas.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(c).pop(false),
-            child: const Text('Volver'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(c).pop(true),
-            child: const Text('Cancelar plan'),
-          ),
-        ],
-      ),
+  Future<void> _extend(DeliveryPlan plan) async {
+    final ok = await showConfirmSheet(
+      context,
+      title: 'Extender el plan',
+      message: 'Se agregan otras 8 semanas de entregas.',
+      confirmLabel: 'Extender',
+      icon: Icons.event_repeat_rounded,
+      destructive: false,
+      subject: PlanTile(plan: plan, onTap: () {}),
     );
-    if (ok != true) return;
-    setState(() {
-      _busy = true;
-      _error = null;
-    });
-    try {
-      await ref.read(cancelPlanProvider.notifier).cancel(widget.planId);
-      if (mounted) showAppSnack(context, 'Plan cancelado.');
-    } on ApiException catch (e) {
-      setState(() => _error = e.message);
-    } finally {
-      if (mounted) setState(() => _busy = false);
-    }
+    if (!ok) return;
+    await _run(
+      () => ref.read(extendPlanProvider.notifier).extend(widget.planId),
+      'Plan extendido.',
+    );
+  }
+
+  Future<void> _cancel(DeliveryPlan plan) async {
+    final ok = await showConfirmSheet(
+      context,
+      title: 'Cancelar el plan',
+      message: 'Las entregas que siguen en recibido quedan canceladas.',
+      confirmLabel: 'Cancelar plan',
+      icon: Icons.event_busy_rounded,
+      subject: PlanTile(plan: plan, onTap: () {}),
+    );
+    if (!ok) return;
+    await _run(
+      () => ref.read(cancelPlanProvider.notifier).cancel(widget.planId),
+      'Plan cancelado.',
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final detail = ref.watch(planDetailProvider(widget.planId));
+    final plan = detail.asData?.value.plan;
     return Scaffold(
-      appBar: AppBar(title: const Text('Detalle del plan')),
-      body: detail.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('$e')),
-        data: (value) {
-          final plan = value.plan;
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              if (_error != null) ...[
-                ErrorBanner(message: _error!),
-                const SizedBox(height: 12),
-              ],
-              Text(plan.medicationName,
-                  style: Theme.of(context).textTheme.titleLarge),
-              Text(
-                '${plan.frequency.label} · ${plan.startDate} - ${plan.windowEndsOn} · ${plan.status.label}',
+      body: Column(
+        children: [
+          SectionHeader(
+            title: plan?.medicationName ?? 'Plan',
+            subtitle: plan == null
+                ? 'Detalle del plan'
+                : '${plan.frequency.label} · ${plan.status.label}',
+            onBack: () => SectionHeader.backOrHome(context),
+          ),
+          Expanded(
+            child: switch (detail) {
+              AsyncData(:final value) => _content(value),
+              AsyncError(:final error) => MessageView(
+                icon: Icons.cloud_off_rounded,
+                message: ApiException.messageOf(error),
               ),
-              const SizedBox(height: 12),
-              for (final o in value.occurrences)
-                ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(o.scheduledFor),
-                  subtitle: Text(o.status.label),
-                  trailing: Text(
-                    o.droneId == null ? 'Sin dron asignado' : o.droneId!,
-                  ),
-                ),
-              const SizedBox(height: 12),
-              if (plan.renewalDue)
-                FilledButton(
-                  onPressed: _busy ? null : _extend,
-                  child: const Text('Extender'),
-                ),
-              if (plan.status == PlanStatus.active) ...[
-                const SizedBox(height: 8),
-                OutlinedButton(
-                  onPressed: _busy ? null : _cancel,
-                  child: const Text('Cancelar'),
-                ),
-              ],
-            ],
-          );
-        },
+              _ => const Center(child: CircularProgressIndicator()),
+            },
+          ),
+        ],
       ),
     );
   }
+
+  Widget _content(PlanDetail detail) {
+    final plan = detail.plan;
+    final blocks = [
+      PlanSummary(plan: plan),
+      PlanOccurrences(
+        occurrences: detail.occurrences,
+        onOpen: (id) => context.push('/orders/$id'),
+      ),
+      if (plan.renewalDue)
+        FilledButton.icon(
+          onPressed: _busy ? null : () => _extend(plan),
+          style: _buttonStyle(),
+          icon: const Icon(Icons.event_repeat_rounded),
+          label: const Text('Extender 8 semanas'),
+        ),
+      if (plan.status == PlanStatus.active)
+        OutlinedButton.icon(
+          onPressed: _busy ? null : () => _cancel(plan),
+          style: _buttonStyle().copyWith(
+            foregroundColor: WidgetStatePropertyAll(
+              Theme.of(context).colorScheme.error,
+            ),
+          ),
+          icon: const Icon(Icons.event_busy_rounded),
+          label: const Text('Cancelar plan'),
+        ),
+    ];
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
+      itemCount: blocks.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 12),
+      itemBuilder: (context, i) =>
+          RiseIn(delay: RiseIn.stagger(i), child: blocks[i]),
+    );
+  }
+
+  static ButtonStyle _buttonStyle() => ButtonStyle(
+    minimumSize: const WidgetStatePropertyAll(Size.fromHeight(52)),
+    shape: WidgetStatePropertyAll(
+      RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+  );
 }
