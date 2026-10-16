@@ -80,4 +80,27 @@ void main() {
     final past = _order(scheduledFor: '2000-01-01');
     expect(DispatcherPermissions(order: past, myHubId: 'h1').notYet, isFalse);
   });
+
+  test('hay vuelo desde que se confirma la carga hasta el destino', () {
+    expect(_order(status: OrderStatus.pendingLoad).hasFlight, isFalse);
+    final loaded = _order(
+      status: OrderStatus.pendingLoad,
+      loadConfirmedAt: DateTime.utc(2026),
+    );
+    expect(loaded.hasFlight, isTrue);
+    expect(_order(status: OrderStatus.inFlight).hasFlight, isTrue);
+    expect(_order(status: OrderStatus.awaitingDelivery).hasFlight, isTrue);
+  });
+
+  test('solo la central de origen ve el vuelo', () {
+    final flying = _order(status: OrderStatus.inFlight, originHubId: 'h1');
+    expect(
+      DispatcherPermissions(order: flying, myHubId: 'h1').canWatchFlight,
+      isTrue,
+    );
+    expect(
+      DispatcherPermissions(order: flying, myHubId: 'h2').canWatchFlight,
+      isFalse,
+    );
+  });
 }

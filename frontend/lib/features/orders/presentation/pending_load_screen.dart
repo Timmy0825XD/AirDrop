@@ -28,8 +28,15 @@ class _PendingLoadScreenState extends ConsumerState<PendingLoadScreen> {
     setState(() => _confirming.add(id));
     try {
       await ref.read(orderDispatchProvider.notifier).confirmLoad(id);
+      // Apenas despega, el pedido sale de esta bandeja y no hay otra lista
+      // de vuelos del despachador: el aviso lleva directo al mapa.
       if (mounted) {
-        showAppSnack(context, 'Carga confirmada. El vuelo arranca en segundos.');
+        showAppSnack(
+          context,
+          'Carga confirmada. El vuelo arranca en segundos.',
+          actionLabel: 'Ver vuelo',
+          onAction: () => context.go('/tracking/$id'),
+        );
       }
     } on ApiException catch (e) {
       if (mounted) showAppSnack(context, e.message);

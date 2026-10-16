@@ -219,6 +219,21 @@ La fuente de verdad ejecutable es [`lib/theme/app_theme.dart`](lib/theme/app_the
 - Referencia visual de auth: canvas "AirDrop · Auth transiciones" en Claude Design (<https://claude.ai/artifact/93zRSvo1BoLixvXs9dzjqC>). La app conserva tema claro y oscuro porque el tema sigue el sistema.
 - Curvas de animación: nunca `Curves.linear` ni `Curves.ease`. Se usan `fastOutSlowIn`, `easeOutBack` (rebotes) y `easeInOutCubic`; se anima con `Transform`, `Opacity` y recortes, no con márgenes.
 
+## Telemetría y mapa (`features/tracking/`)
+
+- `TelemetryClient` hace el `GET /telemetry/orders/:id` para el primer dibujo
+  y abre el socket `/telemetry` (token crudo en `auth.token`). Un socket por
+  pantalla: se cierra al salir; no hay socket global.
+- Nest contesta `subscribe` con los eventos `subscribed` o `error` (no con
+  ack). Con `error` se muestra el mensaje y no se reintenta.
+- El 404 `Todavía no hay vuelo para este pedido.` no es un error: la pantalla
+  dice "El vuelo está por empezar".
+- La ruta llega `[lng, lat]`; `FlightMap` la voltea a `LatLng(lat, lng)`.
+  Tiles de OpenStreetMap con `userAgentPackageName`.
+- "Ver vuelo" (`WatchFlightButton`) aparece cuando `Order.hasFlight`: carga
+  confirmada, en vuelo o esperando la entrega. El despachador solo si su
+  central es el origen. El operador no tiene entrada al mapa.
+
 ## Origen de datos (local | remote)
 
 El front no depende de que el backend ya exista. Cada feature habla con un **repositorio** (contrato). El origen se elige en **un** sitio (`lib/core/data`):

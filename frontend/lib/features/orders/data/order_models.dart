@@ -284,6 +284,13 @@ class Order {
   bool get awaitsLoad =>
       status == OrderStatus.pendingLoad && loadConfirmedAt == null;
 
+  /// Ya hay (o está por haber) un vuelo que seguir en el mapa: carga
+  /// confirmada, en vuelo o esperando la entrega en destino.
+  bool get hasFlight =>
+      status == OrderStatus.inFlight ||
+      status == OrderStatus.awaitingDelivery ||
+      (status == OrderStatus.pendingLoad && loadConfirmedAt != null);
+
   final String id;
   final MissionType missionType;
   final DestinationKind destinationKind;

@@ -30,6 +30,11 @@ class DispatcherPermissions {
   bool get canConfirmLoad =>
       order.awaitsLoad && myHubId != null && order.originHubId == myHubId;
 
+  /// Ver el vuelo: solo la central de origen. La de destino no tiene mapa
+  /// (Nest respondería 404).
+  bool get canWatchFlight =>
+      order.hasFlight && myHubId != null && order.originHubId == myHubId;
+
   /// Persona + bajo fórmula: Nest exige `prescriptionVerified: true`.
   bool get needsPrescriptionCheck =>
       order.destinationKind == DestinationKind.person &&

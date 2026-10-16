@@ -30,6 +30,7 @@ import '../features/orders/presentation/plan_form_screen.dart';
 import '../features/orders/presentation/plans_screen.dart';
 import '../features/orders/presentation/queue_screen.dart';
 import '../features/orders/presentation/scheduled_screen.dart';
+import '../features/tracking/presentation/tracking_screen.dart';
 import '../features/users/presentation/user_form_screen.dart';
 import '../features/users/presentation/users_screen.dart';
 import 'placeholder_screen.dart';
@@ -62,6 +63,9 @@ const _roleRoutes = <String, Set<UserRole>>{
   '/orders/hub-plans/new': {UserRole.dispatcher},
   '/orders/plans/:id': {UserRole.requester, UserRole.dispatcher},
   '/orders/:id': {UserRole.requester, UserRole.dispatcher},
+  // El operador podría ver la telemetría, pero la API no le lista pedidos:
+  // no hay desde dónde abrir el mapa, así que no se le da la ruta.
+  '/tracking/:orderId': {UserRole.requester, UserRole.dispatcher},
 };
 
 const _fixedOrderRoutes = {
@@ -76,13 +80,15 @@ const _fixedOrderRoutes = {
 
 /// Rol que exige una ruta con parámetro. Las rutas fijas se resuelven
 /// primero en el `redirect`; este camino cubre `/inventory/<id>`,
-/// `/geofences/<id>`, `/orders/<id>` y `/orders/plans/<id>`.
+/// `/geofences/<id>`, `/orders/<id>`, `/tracking/<id>` y
+/// `/orders/plans/<id>`.
 Set<UserRole>? _parameterizedRole(String location) {
   final segments = location.split('/');
   if (segments.length == 3 && segments[2].isNotEmpty) {
     return switch (segments[1]) {
       'inventory' => _roleRoutes['/inventory/:id'],
       'geofences' => _roleRoutes['/geofences/:id'],
+      'tracking' => _roleRoutes['/tracking/:orderId'],
       'orders' when !_fixedOrderRoutes.contains(segments[2]) =>
         _roleRoutes['/orders/:id'],
       _ => null,
@@ -251,6 +257,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/orders/:id',
         builder: (_, state) =>
             OrderDetailScreen(orderId: state.pathParameters['id'] ?? ''),
+      ),
+      GoRoute(
+        path: '/tracking/:orderId',
+        builder: (_, state) =>
+            TrackingScreen(orderId: state.pathParameters['orderId'] ?? ''),
       ),
     ],
     errorBuilder: (_, _) => const PlaceholderScreen(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../data/order_models.dart';
 import '../../order_format.dart';
+import '../watch_flight_button.dart';
 
 /// Una fila de la bandeja "Pendiente de carga": qué insumo va, en qué dron
 /// y qué tan lejos, con el botón para confirmar la carga.
@@ -68,8 +69,9 @@ String _routeLine(OrderAssignment? a) {
       '${a.altitudeM.round()} m';
 }
 
-/// Ya confirmado, Nest lo deja en la bandeja hasta el primer tick del reloj
-/// (unos 2 s), cuando pasa a "En vuelo": el botón dice "Despegando…".
+/// Mientras falta la carga, "Confirmar carga". Ya confirmado, Nest lo deja
+/// en la bandeja hasta el primer tick del reloj (unos 2 s): ahí el botón
+/// pasa a "Ver vuelo".
 class _ConfirmButton extends StatelessWidget {
   const _ConfirmButton({
     required this.order,
@@ -83,15 +85,11 @@ class _ConfirmButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final waiting = order.awaitsLoad;
+    if (!order.awaitsLoad) return WatchFlightButton(orderId: order.id);
     return FilledButton.icon(
-      onPressed: confirming || !waiting ? null : onConfirm,
+      onPressed: confirming ? null : onConfirm,
       icon: const Icon(Icons.check_rounded),
-      label: Text(
-        !waiting
-            ? 'Despegando…'
-            : (confirming ? 'Confirmando…' : 'Confirmar carga'),
-      ),
+      label: Text(confirming ? 'Confirmando…' : 'Confirmar carga'),
     );
   }
 }
