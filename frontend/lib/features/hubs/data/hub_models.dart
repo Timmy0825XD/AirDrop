@@ -40,7 +40,8 @@ enum HubType {
   static HubType fromJson(String value) {
     return HubType.values.firstWhere(
       (type) => type.apiValue == value,
-      orElse: () => throw FormatException('Tipo de central desconocido: $value'),
+      orElse: () =>
+          throw FormatException('Tipo de central desconocido: $value'),
     );
   }
 }

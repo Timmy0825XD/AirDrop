@@ -4,8 +4,9 @@ import '../../../../core/field_limits.dart';
 import '../../../../core/validators.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/primary_button.dart';
+import '../../../../core/widgets/status_pill.dart';
 import '../../../hubs/data/hub_models.dart';
-import '../../../hubs/presentation/widgets/hub_status_chip.dart';
+import '../../../hubs/presentation/widgets/hub_labels.dart';
 import '../../data/fleet_models.dart';
 import 'drone_form_values.dart';
 import 'drone_model_field.dart';
@@ -121,7 +122,10 @@ class _HubSummary extends StatelessWidget {
                 ],
               ),
             ),
-            HubStatusChip(status: hub.status),
+            StatusPill(
+              label: HubLabels.status(hub.status),
+              tone: HubLabels.tone(hub.status),
+            ),
           ],
         ),
       ),

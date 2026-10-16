@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/press_scale.dart';
+
 import 'drone_glyph.dart';
 
 /// Botón principal de auth. Al cargar se encoge de ancho completo a un
@@ -29,7 +31,8 @@ class AuthMorphButton extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) => Semantics(
         label: isLoading ? loadingLabel : null,
-        child: _PressScale(
+        child: PressScale(
+          scale: 0.98,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 480),
             curve: Curves.fastOutSlowIn,
@@ -94,39 +97,6 @@ class _ButtonFace extends StatelessWidget {
                 ],
               ),
             ),
-    );
-  }
-}
-
-/// Encoge a su hijo mientras el dedo está encima.
-class _PressScale extends StatefulWidget {
-  const _PressScale({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_PressScale> createState() => _PressScaleState();
-}
-
-class _PressScaleState extends State<_PressScale> {
-  bool _pressed = false;
-
-  void _set(bool value) {
-    if (_pressed != value) setState(() => _pressed = value);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Listener(
-      onPointerDown: (_) => _set(true),
-      onPointerUp: (_) => _set(false),
-      onPointerCancel: (_) => _set(false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.98 : 1,
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.fastOutSlowIn,
-        child: widget.child,
-      ),
     );
   }
 }

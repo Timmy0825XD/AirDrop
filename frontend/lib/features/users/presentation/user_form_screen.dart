@@ -4,12 +4,18 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
+import '../../../core/widgets/message_view.dart';
+import '../../../core/widgets/rise_in.dart';
+import '../../auth/presentation/widgets/auth_morph_button.dart';
+import '../../home/presentation/widgets/section_header.dart';
+import '../../hubs/data/hub_models.dart';
 import '../data/user_providers.dart';
-import 'widgets/user_form_content.dart';
+import 'widgets/user_form/user_form_sheet.dart';
 import 'widgets/user_form_values.dart';
 
 /// Alta de cuenta institucional, solo del administrador (`POST /users`).
-/// La cuenta nace `active` y sin OTP: el nuevo entra con su contraseña.
+/// La cuenta nace `active` y sin OTP: entra con su correo y la contraseña
+/// que se le pone aquí.
 class UserFormScreen extends ConsumerStatefulWidget {
   const UserFormScreen({super.key});
 
@@ -18,8 +24,9 @@ class UserFormScreen extends ConsumerStatefulWidget {
 }
 
 class _UserFormScreenState extends ConsumerState<UserFormScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _values = UserFormValues();
+  Map<UserInput, String> _errors = const {};
+  int _shakeCount = 0;
   bool _isLoading = false;
 
   @override
@@ -29,10 +36,12 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
   }
 
   Future<void> _submit() async {
-    final formOk = _formKey.currentState?.validate() ?? false;
-    final hubError = hubSelectionError(_values.role, _values.hubIds);
-    setState(() => _values.hubError = hubError);
-    if (!formOk || hubError != null) return;
+    final errors = _values.validate();
+    setState(() {
+      _errors = errors;
+      if (errors.isNotEmpty) _shakeCount++;
+    });
+    if (errors.isNotEmpty) return;
 
     FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
@@ -51,26 +60,53 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
   @override
   Widget build(BuildContext context) {
     final hubs = ref.watch(assignableHubsProvider);
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Nueva cuenta')),
       body: hubs.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
+        error: (error, _) => MessageView(message: '$error'),
+        data: _form,
+      ),
+    );
+  }
+
+  Widget _form(List<Hub> hubs) {
+    final bottom = MediaQuery.paddingOf(context).bottom;
+    return ListView(
+      padding: EdgeInsets.only(bottom: bottom + 24),
+      children: [
+        SectionHeader(
+          title: 'Nueva cuenta',
+          subtitle: 'Entra con su correo y esta contraseña.',
+          onBack: () => context.go('/users'),
+        ),
+        Transform.translate(
+          offset: const Offset(0, -24),
           child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text('$error', textAlign: TextAlign.center),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: RiseIn(
+              child: UserFormSheet(
+                values: _values,
+                hubs: hubs,
+                errors: _errors,
+                shakeCount: _shakeCount,
+                onChanged: () => setState(
+                  () => _errors = {..._errors}..remove(UserInput.hubs),
+                ),
+                onCreateHub: () => context.go('/hubs/new'),
+              ),
+            ),
           ),
         ),
-        data: (rows) => UserFormContent(
-          formKey: _formKey,
-          values: _values,
-          hubs: rows,
-          onChanged: () => setState(() {}),
-          onSubmit: _submit,
-          isLoading: _isLoading,
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: AuthMorphButton(
+            label: 'Crear cuenta',
+            loadingLabel: 'Creando la cuenta',
+            isLoading: _isLoading,
+            onPressed: hubs.isEmpty ? null : _submit,
+          ),
         ),
-      ),
+      ],
     );
   }
 }

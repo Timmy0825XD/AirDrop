@@ -4,53 +4,112 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
+import '../../../core/widgets/message_view.dart';
+import '../../../core/widgets/rise_in.dart';
+import '../../../core/widgets/sliding_segmented.dart';
 import '../../auth/data/auth_models.dart';
-import '../../auth/presentation/auth_controller.dart';
+import '../../home/presentation/widgets/section_header.dart';
+import '../../hubs/data/hub_providers.dart';
 import '../data/user_providers.dart';
-import 'widgets/user_filter_tabs.dart';
+import 'widgets/user_confirm.dart';
+import 'widgets/user_labels.dart';
+import 'widgets/user_status_filter.dart';
 import 'widgets/user_tile.dart';
-import 'widgets/user_toggle_confirm.dart';
 
 /// Listado de cuentas institucionales del administrador. Los filtros viven
 /// en providers, así que tras suspender basta con invalidar `usersProvider`
-/// (lo hace el repositorio) y la fila se refresca sola.
+/// (lo hace el notifier) y la tarjeta se refresca sola. Nest solo lista
+/// despachadores y operadores: el administrador nunca aparece aquí.
 class UsersScreen extends ConsumerWidget {
   const UsersScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final role = ref.watch(userRoleFilterProvider);
-    final status = ref.watch(userStatusFilterProvider);
-    final me = ref.watch(authControllerProvider).asData?.value.user;
-
     return Scaffold(
-      appBar: AppBar(title: const Text('Cuentas institucionales')),
       body: Column(
         children: [
+          SectionHeader(
+            title: 'Cuentas',
+            subtitle: 'Despachadores y operadores',
+            onBack: () => context.go('/home'),
+            bottom: SlidingSegmented<UserRole?>(
+              options: const [
+                SegmentOption(null, 'Todos'),
+                SegmentOption(UserRole.dispatcher, 'Despachadores'),
+                SegmentOption(UserRole.fleetOperator, 'Operadores'),
+              ],
+              selected: ref.watch(userRoleFilterProvider),
+              onChanged: ref.read(userRoleFilterProvider.notifier).select,
+            ),
+          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: UserFilterTabs(
-              role: role,
-              status: status,
-              onRoleChanged: (value) =>
-                  ref.read(userRoleFilterProvider.notifier).select(value),
-              onStatusChanged: (value) =>
-                  ref.read(userStatusFilterProvider.notifier).select(value),
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: UserStatusFilter(
+                selected: ref.watch(userStatusFilterProvider),
+                onChanged: ref.read(userStatusFilterProvider.notifier).select,
+              ),
             ),
           ),
-          Expanded(
-            child: _UserList(
-              meId: me?.id,
-              onToggle: (user) => _toggleUserAccount(context, ref, user),
-            ),
-          ),
+          const Expanded(child: _UserList()),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.go('/users/new'),
-        icon: const Icon(Icons.add),
+        icon: const Icon(Icons.add_rounded),
         label: const Text('Nueva cuenta'),
       ),
+    );
+  }
+}
+
+class _UserList extends ConsumerWidget {
+  const _UserList();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final users = ref.watch(usersProvider);
+    final hubs = ref.watch(allHubsProvider).asData?.value ?? const [];
+    final hubNames = {for (final hub in hubs) hub.id: hub.name};
+
+    return users.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) => MessageView(message: '$error'),
+      data: (rows) => rows.isEmpty
+          ? const MessageView(
+              icon: Icons.groups_outlined,
+              message: 'No hay cuentas con esos filtros.',
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.fromLTRB(20, 14, 20, 96),
+              itemCount: rows.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemBuilder: (context, index) => RiseIn(
+                key: ValueKey(rows[index].id),
+                delay: RiseIn.stagger(index),
+                child: _UserRow(user: rows[index], hubNames: hubNames),
+              ),
+            ),
+    );
+  }
+}
+
+/// Una cuenta con los nombres de sus centrales y su acción.
+class _UserRow extends ConsumerWidget {
+  const _UserRow({required this.user, required this.hubNames});
+
+  final PublicUser user;
+
+  /// Nombre de cada central por id; las que no estén se omiten.
+  final Map<String, String> hubNames;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return UserTile(
+      user: user,
+      hubNames: [for (final id in user.hubIds) ?hubNames[id]],
+      onToggle: () => _toggleUserAccount(context, ref, user),
     );
   }
 }
@@ -65,7 +124,7 @@ Future<void> _toggleUserAccount(
   if (!await confirmUserSuspension(context, user: user)) return;
   if (!context.mounted) return;
 
-  final suspend = user.status == UserStatus.active;
+  final suspend = !UserLabels.canReactivate(user.status);
   try {
     await ref
         .read(setUserSuspensionProvider.notifier)
@@ -78,68 +137,5 @@ Future<void> _toggleUserAccount(
     }
   } on ApiException catch (error) {
     if (context.mounted) showAppSnack(context, error.message);
-  }
-}
-
-class _UserList extends ConsumerWidget {
-  const _UserList({required this.meId, required this.onToggle});
-
-  final String? meId;
-  final void Function(PublicUser) onToggle;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final users = ref.watch(usersProvider);
-
-    return users.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => _UsersError(message: error.toString()),
-      data: (rows) => rows.isEmpty
-          ? const _UsersEmpty()
-          : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-              itemCount: rows.length,
-              separatorBuilder: (_, _) => const SizedBox(height: 10),
-              itemBuilder: (context, index) => UserTile(
-                user: rows[index],
-                isSelf: rows[index].id == meId,
-                onToggle: () => onToggle(rows[index]),
-              ),
-            ),
-    );
-  }
-}
-
-class _UsersEmpty extends StatelessWidget {
-  const _UsersEmpty();
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(
-          'No hay cuentas con esos filtros.',
-          textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
-      ),
-    );
-  }
-}
-
-class _UsersError extends StatelessWidget {
-  const _UsersError({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Text(message, textAlign: TextAlign.center),
-      ),
-    );
   }
 }

@@ -13,6 +13,8 @@ class AppMap extends StatelessWidget {
     this.fit = const [],
     this.onTap,
     this.interactive = true,
+    this.interactionFlags,
+    this.zoom = 14,
   });
 
   /// Centro por defecto: el caso de estudio es Valledupar.
@@ -30,12 +32,18 @@ class AppMap extends StatelessWidget {
   /// `false` deja el mapa quieto (vista previa dentro de un formulario).
   final bool interactive;
 
+  /// Gestos permitidos, si no bastan todos o ninguno. Dentro de un scroll
+  /// conviene dejar solo el zoom para que arrastrar no pelee con el scroll.
+  final int? interactionFlags;
+
+  final double zoom;
+
   @override
   Widget build(BuildContext context) {
     return FlutterMap(
       options: MapOptions(
         initialCenter: center,
-        initialZoom: 14,
+        initialZoom: zoom,
         initialCameraFit: fit.length < 2
             ? null
             : CameraFit.coordinates(
@@ -43,7 +51,9 @@ class AppMap extends StatelessWidget {
                 padding: const EdgeInsets.all(48),
               ),
         interactionOptions: InteractionOptions(
-          flags: interactive ? InteractiveFlag.all : InteractiveFlag.none,
+          flags:
+              interactionFlags ??
+              (interactive ? InteractiveFlag.all : InteractiveFlag.none),
         ),
         onTap: onTap == null ? null : (_, point) => onTap!(point),
       ),

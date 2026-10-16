@@ -1,5 +1,5 @@
-import '../../../../core/api_exception.dart';
-import '../../../../core/network/api_client.dart';
+import '../../../core/api_exception.dart';
+import '../../../core/network/api_client.dart';
 import 'hub_models.dart';
 import 'hub_repository.dart';
 
@@ -29,9 +29,9 @@ class RemoteHubRepository implements HubRepository {
       '/hubs',
       query: {if (status != null) 'status': status.apiValue},
     );
-    return _asJsonList(data)
-        .map((row) => Hub.fromJson(_asJsonMap(row)))
-        .toList(growable: false);
+    return _asJsonList(
+      data,
+    ).map((row) => Hub.fromJson(_asJsonMap(row))).toList(growable: false);
   }
 
   @override
@@ -52,11 +52,15 @@ class RemoteHubRepository implements HubRepository {
   Map<String, dynamic> _asJsonMap(Object? data) {
     if (data is Map<String, dynamic>) return data;
     if (data is Map<Object?, Object?>) return Map<String, dynamic>.from(data);
-    throw const FormatException('La respuesta de la central no es un objeto JSON.');
+    throw const FormatException(
+      'La respuesta de la central no es un objeto JSON.',
+    );
   }
 
   List<Object?> _asJsonList(Object? data) {
     if (data is List<Object?>) return data;
-    throw const FormatException('La respuesta de las centrales no es una lista JSON.');
+    throw const FormatException(
+      'La respuesta de las centrales no es una lista JSON.',
+    );
   }
 }

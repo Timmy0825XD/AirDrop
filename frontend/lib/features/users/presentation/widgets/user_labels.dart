@@ -1,3 +1,4 @@
+import '../../../../core/widgets/status_pill.dart';
 import '../../../auth/data/auth_models.dart';
 
 /// Copy de los estados de cuenta en español de Colombia.
@@ -14,5 +15,25 @@ class UserLabels {
     UserStatus.active => 'Activa',
     UserStatus.locked => 'Bloqueada',
     UserStatus.suspended => 'Suspendida',
+  };
+
+  static PillTone tone(UserStatus status) => switch (status) {
+    UserStatus.active => PillTone.positive,
+    UserStatus.unverified => PillTone.attention,
+    UserStatus.suspended || UserStatus.locked => PillTone.negative,
+  };
+
+  /// Lo que se le puede hacer a la cuenta, igual que en
+  /// `UsersService.setSuspension`: solo una suspendida se reactiva; una
+  /// activa o una bloqueada por intentos fallidos se suspende. Ofrecer
+  /// "Activar" a una bloqueada daba 409 ("Esta cuenta no está suspendida.").
+  static bool canReactivate(UserStatus status) =>
+      status == UserStatus.suspended;
+
+  /// Qué significa cada rol al crear la cuenta.
+  static String roleHint(UserRole role) => switch (role) {
+    UserRole.dispatcher => 'Trabaja en una sola central',
+    UserRole.fleetOperator => 'Una o varias centrales',
+    _ => '',
   };
 }

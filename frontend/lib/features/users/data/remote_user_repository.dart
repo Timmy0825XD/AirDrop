@@ -1,5 +1,5 @@
-import '../../../../core/api_exception.dart';
-import '../../../../core/network/api_client.dart';
+import '../../../core/api_exception.dart';
+import '../../../core/network/api_client.dart';
 import '../../auth/data/auth_models.dart';
 import 'user_models.dart';
 import 'user_repository.dart';
@@ -44,11 +44,15 @@ class RemoteUserRepository implements UserRepository {
   Map<String, dynamic> _asJsonMap(Object? data) {
     if (data is Map<String, dynamic>) return data;
     if (data is Map<Object?, Object?>) return Map<String, dynamic>.from(data);
-    throw const FormatException('La respuesta del usuario no es un objeto JSON.');
+    throw const FormatException(
+      'La respuesta del usuario no es un objeto JSON.',
+    );
   }
 
   List<Object?> _asJsonList(Object? data) {
     if (data is List<Object?>) return data;
-    throw const FormatException('La respuesta de los usuarios no es una lista JSON.');
+    throw const FormatException(
+      'La respuesta de los usuarios no es una lista JSON.',
+    );
   }
 }

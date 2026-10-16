@@ -1,27 +1,28 @@
 import 'package:flutter/material.dart';
 
-import '../../../auth/data/auth_models.dart';
 import '../../../../core/colombian_phone.dart';
+import '../../../../core/validators.dart';
+import '../../../auth/data/auth_models.dart';
 import '../../data/user_models.dart';
 
-/// Los campos del alta de cuenta en un solo objeto, más el estado del
-/// selector de rol y de centrales.
+/// Los campos del alta de cuenta.
+enum UserInput { name, email, phone, password, hubs }
+
+/// Los campos del alta de cuenta en un solo objeto, más el rol y las
+/// centrales elegidas.
 ///
-/// No pinta nada: conserva los controladores, los libera y arma el body de
-/// `POST /users`. Existe para no arrastrar siete parámetros por cada
-/// widget del formulario.
+/// No pinta nada: conserva los controladores, valida con `Validators`
+/// (los mismos mensajes de Nest) y arma el body de `POST /users`.
 class UserFormValues {
   final name = TextEditingController();
   final email = TextEditingController();
   final phone = TextEditingController();
   final password = TextEditingController();
 
-  /// Rol elegido y centrales seleccionadas: una sola para el despachador,
-  /// una o más para el operador. [hubError] es el mensaje que pinta el
-  /// formulario cuando esa regla no se cumple.
   UserRole role = UserRole.dispatcher;
+
+  /// Una sola para el despachador, una o más para el operador.
   List<String> hubIds = const [];
-  String? hubError;
 
   void dispose() {
     for (final controller in [name, email, phone, password]) {
@@ -29,10 +30,47 @@ class UserFormValues {
     }
   }
 
+  /// Cambia el rol; al volver a despachador solo cabe una central.
+  void selectRole(UserRole value) {
+    role = value;
+    if (role == UserRole.dispatcher && hubIds.length > 1) {
+      hubIds = [hubIds.first];
+    }
+  }
+
+  /// Toca una central: el despachador la cambia, el operador la suma o
+  /// la quita.
+  void toggleHub(String id) {
+    if (role == UserRole.dispatcher) {
+      hubIds = [id];
+    } else {
+      hubIds = hubIds.contains(id)
+          ? hubIds.where((hubId) => hubId != id).toList()
+          : [...hubIds, id];
+    }
+  }
+
+  /// Un mensaje por campo con error; vacío si todo está bien. El celular
+  /// es opcional.
+  Map<UserInput, String> validate() {
+    final errors = <UserInput, String?>{
+      UserInput.name: Validators.name(name.text),
+      UserInput.email: Validators.email(email.text),
+      UserInput.phone: phone.text.trim().isEmpty
+          ? null
+          : Validators.phone(phone.text),
+      UserInput.password: Validators.password(password.text),
+      UserInput.hubs: hubSelectionError(role, hubIds),
+    };
+    return {
+      for (final entry in errors.entries)
+        if (entry.value != null) entry.key: entry.value!,
+    };
+  }
+
   /// El celular se normaliza aquí, igual que en el registro: Nest solo
-  /// quita lo que no es dígito y exige 10 dígitos. El campo es opcional,
-  /// así que vacío se envía como `null`. El correo baja a minúsculas,
-  /// como el `@Transform` del DTO.
+  /// quita lo que no es dígito y exige 10 dígitos; vacío se envía como
+  /// `null`. El correo baja a minúsculas, como el `@Transform` del DTO.
   CreateUserRequest request() {
     final phoneDigits = normalizeColombianPhone(phone.text);
     return CreateUserRequest(

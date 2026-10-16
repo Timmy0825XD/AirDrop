@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/status_pill.dart';
+
 import '../../data/hub_models.dart';
 import 'hub_detail_row.dart';
 import 'hub_labels.dart';
-import 'hub_status_chip.dart';
 
 /// Contenido de solo lectura de una central. Sin acciones: el despachador
 /// consulta su central, no la administra.
@@ -24,7 +25,10 @@ class HubDetailContent extends StatelessWidget {
             Expanded(
               child: Text(hub.name, style: theme.textTheme.headlineSmall),
             ),
-            HubStatusChip(status: hub.status),
+            StatusPill(
+              label: HubLabels.status(hub.status),
+              tone: HubLabels.tone(hub.status),
+            ),
           ],
         ),
         const SizedBox(height: 4),
@@ -52,9 +56,15 @@ class HubDetailContent extends StatelessWidget {
                   label: 'Correo de contacto',
                   value: hub.contactEmail ?? 'Sin correo registrado',
                 ),
-                HubDetailRow(label: 'Estado', value: HubLabels.status(hub.status)),
+                HubDetailRow(
+                  label: 'Estado',
+                  value: HubLabels.status(hub.status),
+                ),
                 HubDetailRow(label: 'Latitud', value: hub.latitude.toString()),
-                HubDetailRow(label: 'Longitud', value: hub.longitude.toString()),
+                HubDetailRow(
+                  label: 'Longitud',
+                  value: hub.longitude.toString(),
+                ),
               ],
             ),
           ),

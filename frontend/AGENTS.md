@@ -250,6 +250,29 @@ La fuente de verdad ejecutable es [`lib/theme/app_theme.dart`](lib/theme/app_the
 - `GeofenceFormValues.vertices` guarda `[lng, lat]` sin el cierre; el
   anillo se cierra al armar el body (`GeoJsonPolygon.fromVertices`).
 
+## Pantallas de trabajo (desde la Fase 6)
+
+Las pantallas de los roles usan las piezas de auth (`AuthCurvedHeader`,
+`AuthField`, `AuthMorphButton`, `AuthGlass`, `AuthPill`, `AuthBackButton`,
+`ResetPasswordStrength`) y estas, compartidas:
+
+| Widget | Dónde | Para qué |
+| --- | --- | --- |
+| `SectionHeader` | `home/presentation/widgets` | Encabezado curvo compacto con volver, título y subtítulo; `bottom` queda montado sobre la curva. |
+| `signOut` | `home/presentation/widgets` | Cerrar sesión y volver al login, para todos los inicios. |
+| `StatusPill` / `PillTone` | `core/widgets` | Estado en pastilla (positivo, atención, negativo) con rebote al cambiar. |
+| `StatusCard` + `RowActionButton` | `core/widgets` | Tarjeta de lista con estado y acción a la derecha. |
+| `ChoicePill` | `core/widgets` | Chip elegible (relleno o teñido, con ícono o check). |
+| `SlidingSegmented` | `core/widgets` | Filtro con pastilla que se desliza (`null` = "Todas"). |
+| `showConfirmSheet` | `core/widgets` | Hoja inferior para confirmar suspender o reactivar. |
+| `FormSheetCard` | `core/widgets` | Tarjeta del formulario sobre la curva. |
+| `MessageView` | `core/widgets` | Lista vacía o error de Nest, centrado. |
+| `RiseIn` (`RiseIn.stagger`) / `PressScale` / `CountUpText` | `core/widgets` | Entrada en cascada, hundirse al tocar y números que cuentan. Respetan "reducir movimiento". |
+
+Los formularios validan en la pantalla con `Validators` y pasan
+`errorText` + `shakeCount` a cada `AuthField`, igual que el login
+(`HubFormValues.validate`, `UserFormValues.validate`).
+
 ## Origen de datos (local | remote)
 
 El front no depende de que el backend ya exista. Cada feature habla con un **repositorio** (contrato). El origen se elige en **un** sitio (`lib/core/data`):

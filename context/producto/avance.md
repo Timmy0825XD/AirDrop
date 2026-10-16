@@ -16,12 +16,13 @@ Plan por fases del frontend Flutter a partir de la guía 25 (`learning/25-front-
 | 1 | Rediseño de auth con transiciones | `style/rediseno-auth` | Hecha (PR #40) |
 | 2 | Autorizar y confirmar carga (HU-21, HU-35) | `feature/autorizar-carga-front` | Hecha (PR #41) |
 | 3 | Telemetría y mapa en vivo (HU-26 a HU-28) | `feature/tracking-front` | Hecha (PR #43) |
-| 4 | Geovalla sobre el mapa (HU-14) | `feature/geovalla-mapa` | Hecha (PR pendiente) |
-| 5 | Revisión y rediseño del administrador | `style/rediseno-admin` | Pendiente |
-| 6 | Revisión y rediseño del despachador | `style/rediseno-despachador` | Pendiente |
-| 7 | Revisión y rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Pendiente |
-| 8 | Limpieza antes de la revisión | `refactor/limpieza-front` | Pendiente |
-| 9 | Cierre y pruebas de punta a punta | `test/flujos-front` | Pendiente |
+| 4 | Geovalla sobre el mapa (HU-14) | `feature/geovalla-mapa` | Hecha (PR #45) |
+| 5 | Entrega del pedido y retorno del dron | — | Bloqueada (backend) |
+| 6 | Revisión y rediseño del administrador | `style/rediseno-admin` | Hecha (PR pendiente) |
+| 7 | Revisión y rediseño del despachador | `style/rediseno-despachador` | Pendiente |
+| 8 | Revisión y rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Pendiente |
+| 9 | Limpieza antes de la revisión | `refactor/limpieza-front` | Pendiente |
+| 10 | Cierre y pruebas de punta a punta | `test/flujos-front` | Pendiente |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -126,31 +127,115 @@ Resultado (2026-10-16):
 - Limpieza: se borraron `PolygonPointFields` y `GeofenceVertex` (las filas de longitud y latitud a mano); `GeofenceFormValues` guarda los vértices como lista.
 - `flutter analyze` sin issues; 154 tests en verde.
 
-## Fases 5 a 7 — Revisión a fondo y rediseño por rol
+## Fase 5 — Entrega del pedido y retorno del dron
+
+Bloqueada: todo es del backend y lo hace otra persona del equipo. El detalle
+de lo que falta está en [`pendientes-backend.md`](pendientes-backend.md)
+(punto 1). Cuando Nest lo tenga, esta fase hace la parte de la app: el código
+para el que recibe, la pantalla para ingresarlo con la cuenta regresiva de
+5 min, la vuelta del dron en el mapa y la marca del empaque al recibir un
+retorno.
+
+## Fases 6 a 8 — Revisión a fondo y rediseño por rol
 
 Muchas pantallas de los roles vienen de una versión anterior y tienen errores
 (Oscar encontró varios al probar la Fase 3). Por eso cada una de estas fases
 **primero revisa y corrige**, y después rediseña. Mismo lenguaje visual de la
-Fase 1. Una rama por rol para que cada PR sea revisable.
+Fase 1: animaciones fluidas y limpias, que se noten sin recargar. Una rama
+por rol para que cada PR sea revisable. Se revisa **carpeta por carpeta**
+todo lo del rol: errores, código repetido o sin uso, comentarios viejos.
 
 - Paso 1: Revisión rincón por rincón de cada pantalla del rol, contra el
   backend real: cada lista, cada detalle, cada botón y cada mensaje. Anotar
   cada error con cómo reproducirlo.
-- Paso 2: Mostrarle a Oscar la lista de errores y acordar cuáles se corrigen
-  aquí y cuáles son del backend.
-- Paso 3: Corregir los errores del frontend, con un test por cada uno cuando
+- Paso 2: Diseño en Claude Design para que Oscar lo vea y lo apruebe antes
+  de tocar código.
+- Paso 3: Mostrarle a Oscar la lista de errores y acordar cuáles se corrigen
+  aquí y cuáles van a [`pendientes-backend.md`](pendientes-backend.md).
+- Paso 4: Corregir los errores del frontend, con un test por cada uno cuando
   se pueda.
-- Paso 4: Aplicar el diseño a los homes y pantallas del rol, sin cambiar
+- Paso 5: Aplicar el diseño a los homes y pantallas del rol, sin cambiar
   rutas ni bodies.
-- Paso 5: Partir los widgets de más de 60 líneas.
-- Paso 6: Actualizar los tests que verifican textos.
-- Paso 7: Cerrar la fase (resumen de errores corregidos incluido).
+- Paso 6: Partir los widgets de más de 60 líneas y limpiar lo que sobre.
+- Paso 7: Actualizar los tests que verifican textos.
+- Paso 8: Cerrar la fase (resumen de errores corregidos incluido).
 
-### Errores ya conocidos (para la revisión)
+### Fase 6 — Administrador
+
+Alcance: su inicio (`home/presentation/admin_home.dart` y el `HomeShell`
+que comparte), centrales (`features/hubs/`, menos `/hubs/me`, que es del
+despachador) y cuentas institucionales (`features/users/`).
+
+Diseño aprobado: la **primera versión** del canvas "AirDrop · Administrador"
+en Claude Design (https://claude.ai/artifact/98W1NSNrgPAayAVSvXgFyF). Las tres
+direcciones de la segunda fila (con Impeccable y Emil Kowalski) se probaron y
+Oscar no las eligió.
+
+Resultado (2026-10-16):
+
+- Inicio: encabezado curvo con marca, perfil y salir, pastilla
+  "Administrador" y el dron de fondo que se mece; tarjeta de números sobre la
+  curva (centrales activas, cuentas activas, suspendidas) que cuentan desde 0;
+  accesos con contador y Métricas en "Próximamente" (Nest no tiene el
+  módulo). Los números salen de `allHubsProvider` y `allUsersProvider`.
+- Centrales: `SectionHeader` con el filtro deslizante montado en la curva,
+  tarjetas con ícono por tipo, estado y acción, y la hoja de confirmación.
+- Nueva central: la ubicación se toca en el mapa (`HubLocationPicker`, con el
+  mismo `AppMap`); ya no se escriben latitud y longitud. Tipo en chips.
+- Cuentas: filtro de rol deslizante y chips de estado; tarjetas con iniciales,
+  rol y las centrales asignadas.
+- Nueva cuenta: tarjetas de rol, campos de auth, medidor de contraseña y
+  centrales en chips.
+
+Errores corregidos:
+
+1. Cuenta bloqueada: ofrecía "Activar" y Nest respondía 409; ahora ofrece
+   "Suspender" (`UserLabels.canReactivate`).
+2. Nueva cuenta decía "Sin él no llegan alertas por SMS" y Nest no manda SMS.
+3. Sin centrales activas, Nueva cuenta quedaba con un selector vacío; ahora lo
+   dice, ofrece "Crear central" y el botón queda apagado.
+4. La lista de cuentas no mostraba sus centrales; ahora las muestra.
+5. `assignableHubsProvider` nunca se refrescaba: una central recién creada
+   no salía en Nueva cuenta. Ahora sale de `allHubsProvider`.
+
+Limpieza:
+
+- Piezas compartidas nuevas en `core/widgets` (`StatusPill`, `StatusCard`,
+  `RowActionButton`, `ChoicePill`, `SlidingSegmented`, `showConfirmSheet`,
+  `FormSheetCard`, `MessageView`, `RiseIn`, `PressScale`, `CountUpText`) en
+  vez de dos o tres copias por feature. `AuthMorphButton` usa `PressScale`.
+- Cerrar sesión salió de `HomeShell` a `signOut`, que comparten los inicios.
+- Borrados: `HubFilterTabs`, `HubStatusChip`, `hub_toggle_confirm`,
+  `HubCoordinateFields`, `HubLocationFields`, `HubContactFields`,
+  `HubFormContent`, `UserFilterTabs`, `UserStatusChip`, `user_toggle_confirm`,
+  `UserRoleField` (repetía los nombres de rol de `ProfileLabels`),
+  `UserIdentityFields`, `UserFormContent`, `UserFormContentBody`,
+  `HubMultiSelect`, `isSelf` de `UserTile` (Nest no lista administradores) y
+  `Validators.latitude` / `longitude` con sus tests.
+- Imports que subían de más en `hubs/data` y `users/data` puestos a la
+  profundidad correcta. Comentarios del plan viejo quitados.
+- Pendiente para la Fase 7: `HubDetailContent` (`/hubs/me`, del despachador)
+  pasa de 60 líneas.
+- `flutter analyze` sin issues; 167 tests en verde.
+
+### Fase 7 — Despachador
+
+Además de la revisión: la bandeja **"Vuelos en curso"** con su tarjeta en
+el home (Nest ya tiene `GET /orders/in-flight`, PR #44) y quitar el
+reintento de 800 ms de `TelemetryClient`, que sobra desde ese PR.
+
+### Fase 8 — Solicitante y operador
+
+Además de la revisión: el **perfil** con diseño propio (y con él se borran
+`AuthPage`, `LoginGlassCard`, `LoginButton` y `LoginPalette`), la nueva
+animación de la ruta del splash del login y el logo definitivo si el equipo
+ya lo tiene. Operador: flota y geovallas.
+
+### Errores ya conocidos
 
 - ~~**Despachador:** pedidos de la cola que al abrirlos se quedan cargando y
   terminan en "El pedido no existe."~~ Corregido en
-  `fix/pedido-despachador-404` (2026-10-16): la cola muestra urgencias
+  `fix/pedido-despachador-404` (PR #46): la cola muestra urgencias
   civiles sin central de origen a toda central con stock, pero
   `GET /orders/:id` solo dejaba leer a la central de origen o destino. Ahora
   esa central también puede abrirlas mientras siguen en recibido. Además, un
@@ -164,35 +249,35 @@ Fase 1. Una rama por rol para que cada PR sea revisable.
   abriera, así que nunca se suscribía al canal y el socket no recibía ni la
   telemetría ni los cambios de estado. Ahora `TelemetryRedis` guarda quién
   escucha y se suscribe al conectar (test `telemetry.redis.spec`).
-- **Despachador:** no hay lista de vuelos en curso en el frontend; al
-  despegar, el pedido sale de la cola y de pending-load. Nest ya tiene
-  `GET /orders/in-flight` (rama `fix/socket-y-vuelos-en-curso`); falta la
-  bandeja con su tarjeta en el home.
+- **Despachador (Fase 7):** no hay lista de vuelos en curso en el frontend;
+  al despegar, el pedido sale de la cola y de pending-load.
 
-## Fase 8 — Limpieza antes de la revisión
+## Fase 9 — Limpieza antes de la revisión
 
 Va en su propia rama porque `AGENTS.md` pide no mezclar limpieza con una historia de usuario.
 
-- Paso 1: Buscar otra vez archivos, widgets, clases y paquetes sin uso (las fases 1 a 7 dejan cosas nuevas y viejas). Candidato ya visto: el paquete `cupertino_icons`.
+- Paso 1: Buscar otra vez archivos, widgets, clases y paquetes sin uso (las fases 1 a 8 dejan cosas nuevas y viejas). Candidato ya visto: el paquete `cupertino_icons`.
 - Paso 2: Mostrarle a Oscar la lista final para que apruebe cada borrado.
 - Paso 3: Borrar lo aprobado y quitar los paquetes sin uso.
-- Paso 4: Regenerar `frontend/docs/ui_inventory.md` con `frontend/tools/ui_inventory.ps1`.
-- Paso 5: `flutter analyze` y `flutter test`.
-- Paso 6: Cerrar la fase.
+- Paso 4: Agregar el permiso `INTERNET` al `AndroidManifest.xml` principal (sin él, un APK de release no carga ni el mapa ni la API).
+- Paso 5: Imports relativos que suben de más (`../../../../core` desde `data/`): resuelven solo porque Dart ignora los `..` que pasan de la raíz del paquete. Ponerlos a la profundidad correcta en las features que no toquen las fases 6 a 8.
+- Paso 6: Regenerar `frontend/docs/ui_inventory.md` con `frontend/tools/ui_inventory.ps1`.
+- Paso 7: `flutter analyze` y `flutter test`.
+- Paso 8: Cerrar la fase.
 
-## Fase 9 — Cierre y pruebas de punta a punta
+## Fase 10 — Cierre y pruebas de punta a punta
 
-- Paso 1: Recorrer con el backend real los flujos de la sección 10 de la guía 25.
+- Paso 1: Recorrer con el backend real los flujos de la sección 10 de la guía 25, de punta a punta en los cuatro roles.
 - Paso 2: Corregir lo que aparezca.
-- Paso 3: Anotar aquí lo que le falta al backend.
+- Paso 3: Anotar en [`pendientes-backend.md`](pendientes-backend.md) lo que le falta al backend.
 - Paso 4: Cerrar la fase.
 
-## Pendiente del backend (no lo resuelve el frontend)
+## Pendiente del backend
 
-- Fallback con estado `reasignado` (RF-18); hoy solo responde 409.
-- Código de entrega, espera de 5 min, retorno y cuarentena (Sprint 6).
-- Bandeja de telemetría del operador (RU-18, CU-19): la API no le dice qué pedido lleva su dron.
-## Arreglos del backend hechos por nosotros (`fix/socket-y-vuelos-en-curso`, 2026-10-16)
+Vive en [`pendientes-backend.md`](pendientes-backend.md), para que la persona
+del backend lo encuentre en un solo lugar. Cada fase lo va llenando.
 
-- Carrera en `TelemetryGateway`: `handleConnection` guarda la validación del token como promesa (`ready`) y `subscribe` la espera, así que un `subscribe` inmediato ya no responde "El pedido no existe.". El reintento de 800 ms del frontend (`TelemetryClient.retryDelay`) queda sobrando; se quita en la revisión del frontend.
-- `GET /orders/in-flight` (solo despachador): pedidos de su central en `in_flight` o `awaiting_delivery`, con `assignment`, del más reciente al más viejo. La bandeja del frontend llega en la Fase 6.
+## Arreglos del backend hechos por nosotros
+
+- PR #44 (`fix/socket-y-vuelos-en-curso`): carrera en `TelemetryGateway` (`subscribe` espera la validación del token) y `GET /orders/in-flight` para el despachador.
+- PR #46 (`fix/pedido-despachador-404`): `canRead` deja abrir las urgencias de la cola (`isWaitingForHub`) y `TelemetryRedis` se suscribe al canal al conectar.

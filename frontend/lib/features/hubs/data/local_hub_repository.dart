@@ -1,5 +1,5 @@
-import '../../../../core/api_exception.dart';
-import '../../../../core/auth/token_store.dart';
+import '../../../core/api_exception.dart';
+import '../../../core/auth/token_store.dart';
 import '../../auth/data/local/local_fixtures.dart';
 import 'hub_models.dart';
 import 'hub_repository.dart';
@@ -73,7 +73,9 @@ class LocalHubRepository implements HubRepository {
     final next = suspended ? HubStatus.suspended : HubStatus.active;
     if (current.status == next) {
       throw ApiException(
-        suspended ? 'Esta central ya está suspendida.' : 'Esta central ya está activa.',
+        suspended
+            ? 'Esta central ya está suspendida.'
+            : 'Esta central ya está activa.',
         statusCode: 409,
       );
     }

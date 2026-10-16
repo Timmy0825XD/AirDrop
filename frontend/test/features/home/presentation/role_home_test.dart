@@ -23,6 +23,39 @@ import 'package:frontend/features/inventory/data/inventory_models.dart';
 import 'package:frontend/features/inventory/data/inventory_providers.dart';
 import 'package:frontend/features/inventory/data/inventory_repository.dart';
 import 'package:frontend/features/inventory/presentation/inventory_screen.dart';
+import 'package:frontend/features/users/data/user_models.dart';
+import 'package:frontend/features/users/data/user_providers.dart';
+import 'package:frontend/features/users/data/user_repository.dart';
+
+class FakeUserRepository implements UserRepository {
+  FakeUserRepository(this.users);
+
+  final List<PublicUser> users;
+
+  @override
+  Future<List<PublicUser>> list({UserRole? role, UserStatus? status}) async =>
+      users;
+
+  @override
+  Future<PublicUser> create(CreateUserRequest request) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<PublicUser> setSuspension(
+    String id, {
+    required bool suspended,
+  }) async => throw UnimplementedError();
+}
+
+PublicUser _account(String id, UserStatus status) => PublicUser(
+  id: id,
+  fullName: 'Cuenta $id',
+  email: '$id@central.co',
+  phone: null,
+  role: UserRole.dispatcher,
+  status: status,
+  hubIds: const ['hub-1'],
+);
 
 class FakeTokenStore extends TokenStore {
   FakeTokenStore() : super();
@@ -220,13 +253,34 @@ void main() {
     final container = await _authenticatedContainer(
       email: 'admin@airdrop.local',
       password: 'Admin1234',
+      hubRepository: FakeHubRepository(_hub(status: HubStatus.suspended)),
+      userRepository: FakeUserRepository([
+        _account('a', UserStatus.active),
+        _account('b', UserStatus.active),
+        _account('c', UserStatus.suspended),
+      ]),
     );
     addTearDown(container.dispose);
 
-    await _pumpHome(tester, container);
+    final semantics = tester.ensureSemantics();
+    await _pumpHome(tester, container, settles: false);
 
+    expect(find.text('Hola, Admin'), findsOneWidget);
     expect(find.text('Centrales'), findsOneWidget);
     expect(find.text('Cuentas institucionales'), findsOneWidget);
+    expect(find.text('Métricas'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(RegExp('Centrales activas: 0')),
+      findsOneWidget,
+      reason: 'la única central está suspendida',
+    );
+    expect(find.bySemanticsLabel(RegExp('Cuentas activas: 2')), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(RegExp('Suspendidas: 2')),
+      findsOneWidget,
+      reason: '1 central y 1 cuenta',
+    );
+    semantics.dispose();
   });
 
   testWidgets('deshabilita inventario con central suspendida', (tester) async {
@@ -388,6 +442,7 @@ Future<ProviderContainer> _authenticatedContainer({
   InventoryRepository? inventoryRepository,
   FleetRepository? fleetRepository,
   GeofenceRepository? geofenceRepository,
+  UserRepository? userRepository,
 }) async {
   final tokenStore = FakeTokenStore();
   final authRepository = LocalAuthRepository(tokenStore: tokenStore);
@@ -403,6 +458,8 @@ Future<ProviderContainer> _authenticatedContainer({
         fleetRepositoryProvider.overrideWithValue(fleetRepository),
       if (geofenceRepository != null)
         geofenceRepositoryProvider.overrideWithValue(geofenceRepository),
+      if (userRepository != null)
+        userRepositoryProvider.overrideWithValue(userRepository),
     ],
   );
 
@@ -415,12 +472,26 @@ Future<ProviderContainer> _authenticatedContainer({
   return container;
 }
 
-Future<void> _pumpHome(WidgetTester tester, ProviderContainer container) async {
+/// Avanza unos cuadros para que lleguen las listas y terminen las entradas
+/// y el conteo de los números.
+Future<void> _pumpFrames(WidgetTester tester) async {
+  for (var i = 0; i < 8; i++) {
+    await tester.pump(const Duration(milliseconds: 250));
+  }
+}
+
+Future<void> _pumpHome(
+  WidgetTester tester,
+  ProviderContainer container, {
+  bool settles = true,
+}) async {
   await tester.pumpWidget(
     UncontrolledProviderScope(
       container: container,
       child: const MaterialApp(home: RoleHomeScreen()),
     ),
   );
-  await tester.pumpAndSettle();
+  // El inicio del administrador tiene un dron de fondo que flota en bucle:
+  // nunca "se asienta", así que se avanza un tiempo fijo.
+  settles ? await tester.pumpAndSettle() : await _pumpFrames(tester);
 }

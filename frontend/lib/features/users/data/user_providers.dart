@@ -56,12 +56,19 @@ final usersProvider = FutureProvider<List<PublicUser>>((ref) {
   return ref.watch(userRepositoryProvider).list(role: role, status: status);
 });
 
+/// Todas las cuentas institucionales, sin los filtros del listado: el
+/// inicio del administrador las cuenta.
+final allUsersProvider = FutureProvider<List<PublicUser>>((ref) {
+  return ref.watch(userRepositoryProvider).list();
+});
+
 /// Centrales que el formulario de cuentas puede ofrecer: solo las
 /// `active`, porque Nest rechaza cualquier otra con
-/// "Solo puedes asignar centrales activas.". Lee el repositorio de `hubs`
-/// directamente, sin pasar por el filtro del listado de esa pantalla.
-final assignableHubsProvider = FutureProvider<List<Hub>>((ref) {
-  return ref.watch(hubRepositoryProvider).list(status: HubStatus.active);
+/// "Solo puedes asignar centrales activas.". Sale de [allHubsProvider],
+/// así que una central recién creada o suspendida se refleja sin recargar.
+final assignableHubsProvider = FutureProvider<List<Hub>>((ref) async {
+  final hubs = await ref.watch(allHubsProvider.future);
+  return hubs.where((hub) => hub.isActive).toList(growable: false);
 });
 
 /// Alta de cuenta institucional. El resultado queda en el estado por si la
@@ -74,14 +81,16 @@ class CreateUserNotifier extends AsyncNotifier<PublicUser?> {
   Future<PublicUser> create(CreateUserRequest request) async {
     final user = await ref.read(userRepositoryProvider).create(request);
     ref.invalidate(usersProvider);
+    ref.invalidate(allUsersProvider);
     state = AsyncData(user);
     return user;
   }
 }
 
-final createUserProvider = AsyncNotifierProvider<CreateUserNotifier, PublicUser?>(
-  CreateUserNotifier.new,
-);
+final createUserProvider =
+    AsyncNotifierProvider<CreateUserNotifier, PublicUser?>(
+      CreateUserNotifier.new,
+    );
 
 /// Suspensión y reactivación de una cuenta. Tras el cambio se invalida el
 /// listado para que la fila se refresque sin reiniciar la app.
@@ -94,6 +103,7 @@ class SetUserSuspensionNotifier extends AsyncNotifier<PublicUser?> {
         .read(userRepositoryProvider)
         .setSuspension(id, suspended: suspended);
     ref.invalidate(usersProvider);
+    ref.invalidate(allUsersProvider);
     state = AsyncData(user);
     return user;
   }
