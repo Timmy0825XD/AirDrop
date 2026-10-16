@@ -76,4 +76,39 @@ void main() {
     expect(state.isAuthenticated, isTrue);
     expect(state.user?.email, 'demo@airdrop.local');
   });
+
+  test('login sin anunciar guarda el token y espera a announce', () async {
+    final tokenStore = FakeTokenStore();
+    final container = ProviderContainer(
+      overrides: [
+        tokenStoreProvider.overrideWithValue(tokenStore),
+        authRepositoryProvider.overrideWithValue(
+          LocalAuthRepository(tokenStore: tokenStore),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    await container.read(authControllerProvider.future);
+    final auth = container.read(authControllerProvider.notifier);
+
+    final session = await auth.login(
+      LoginRequest(
+        contact: AuthContact.email('demo@airdrop.local'),
+        password: 'Demo1234',
+      ),
+      announce: false,
+    );
+
+    expect(tokenStore.value, startsWith('local-session:'));
+    expect(
+      container.read(authControllerProvider).asData!.value.isAuthenticated,
+      isFalse,
+    );
+
+    auth.announce(session);
+    expect(
+      container.read(authControllerProvider).asData!.value.isAuthenticated,
+      isTrue,
+    );
+  });
 }

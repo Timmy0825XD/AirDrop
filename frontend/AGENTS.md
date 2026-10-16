@@ -130,6 +130,12 @@ Verificar el código abre la sesión (Nest devuelve `AuthSession`), así que tra
 el check el círculo de marca cubre la pantalla y se va a `/home`. El reenvío
 se habilita a los 45 s (espera solo de la app; el código dura 10 min).
 
+El router escucha `authControllerProvider` y, apenas hay sesión, saca al
+usuario de las pantallas públicas hacia `/home`. Por eso el login y el código
+llaman `login(..., announce: false)` / `verifyOtp(..., announce: false)`:
+guardan el token sin avisar, terminan su animación de salida y recién ahí
+llaman `announce(session)`. Así la pantalla no se cierra a mitad del círculo.
+
 Recuperar contraseña ya no salta sola a la siguiente pantalla: al enviar
 muestra el mensaje de Nest (que no dice si la cuenta existe) y el botón pasa
 a "Ingresar el código", que lleva a `/reset-password`.

@@ -55,9 +55,14 @@ class AuthController extends AsyncNotifier<AuthState> {
     return _repository.register(request);
   }
 
-  Future<AuthSession> verifyOtp(VerifyOtpRequest request) async {
+  /// Verifica el código y guarda la sesión. Con [announce] en `false` no
+  /// avisa todavía al router (ver [announce]).
+  Future<AuthSession> verifyOtp(
+    VerifyOtpRequest request, {
+    bool announce = true,
+  }) async {
     final session = await _repository.verifyOtp(request);
-    await _saveSession(session);
+    await _saveSession(session, announce: announce);
     return session;
   }
 
@@ -65,10 +70,20 @@ class AuthController extends AsyncNotifier<AuthState> {
     return _repository.resendOtp(request);
   }
 
-  Future<AuthSession> login(LoginRequest request) async {
+  /// Inicia sesión y guarda el token. Con [announce] en `false` no avisa
+  /// todavía al router (ver [announce]).
+  Future<AuthSession> login(LoginRequest request, {bool announce = true}) async {
     final session = await _repository.login(request);
-    await _saveSession(session);
+    await _saveSession(session, announce: announce);
     return session;
+  }
+
+  /// Publica la sesión ya guardada. El router escucha este estado y, apenas
+  /// cambia, saca al usuario de las pantallas públicas hacia `/home`. Por
+  /// eso el login y el código lo llaman al terminar su animación de salida:
+  /// si se publicara antes, la pantalla se cerraría a mitad del círculo.
+  void announce(AuthSession session) {
+    state = AsyncData(AuthState.authenticated(session.user));
   }
 
   Future<void> logout() async {
@@ -98,8 +113,8 @@ class AuthController extends AsyncNotifier<AuthState> {
     state = const AsyncData(AuthState.unauthenticated());
   }
 
-  Future<void> _saveSession(AuthSession session) async {
+  Future<void> _saveSession(AuthSession session, {required bool announce}) async {
     await _tokenStore.write(session.accessToken);
-    state = AsyncData(AuthState.authenticated(session.user));
+    if (announce) this.announce(session);
   }
 }
