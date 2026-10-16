@@ -338,6 +338,17 @@ class LocalOrderRepository implements OrderRepository {
         .toList(growable: false);
   }
 
+  @override
+  Future<List<Order>> listInFlight() async {
+    return _orders
+        .where(
+          (e) =>
+              e.status == OrderStatus.inFlight ||
+              e.status == OrderStatus.awaitingDelivery,
+        )
+        .toList(growable: false);
+  }
+
   Order _replace(Order updated) {
     final index = _orders.indexWhere((e) => e.id == updated.id);
     _orders[index] = updated;

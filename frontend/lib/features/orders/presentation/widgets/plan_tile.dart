@@ -1,38 +1,36 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/status_pill.dart';
 import '../../data/order_models.dart';
+import 'order_row_card.dart';
 
+/// Un plan en la lista: qué, cada cuánto, la ventana de fechas y su
+/// estado. Si ya se puede extender, lo dice.
 class PlanTile extends StatelessWidget {
   const PlanTile({super.key, required this.plan, required this.onTap});
 
   final DeliveryPlan plan;
   final VoidCallback onTap;
 
+  static Widget pillOf(DeliveryPlan plan) => StatusPill(
+    label: plan.status.label,
+    tone: plan.status == PlanStatus.active
+        ? PillTone.positive
+        : PillTone.negative,
+  );
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(plan.medicationName, style: theme.textTheme.titleMedium),
-              const SizedBox(height: 4),
-              Text(
-                '${plan.frequency.label} · ${plan.startDate} - ${plan.windowEndsOn}',
-                style: theme.textTheme.bodySmall,
-              ),
-              const SizedBox(height: 8),
-              Chip(label: Text(plan.status.label)),
-            ],
-          ),
-        ),
-      ),
+    return OrderRowCard(
+      icon: Icons.event_repeat_rounded,
+      tone: Theme.of(context).colorScheme.primary,
+      title: plan.medicationName,
+      accent: '${plan.frequency.label} · ${plan.quantity} und.',
+      detail: plan.renewalDue
+          ? 'Puedes extenderlo otras 8 semanas.'
+          : '${plan.startDate} al ${plan.windowEndsOn}',
+      pill: pillOf(plan),
+      onTap: onTap,
     );
   }
 }

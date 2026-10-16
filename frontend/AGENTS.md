@@ -268,10 +268,18 @@ Las pantallas de los roles usan las piezas de auth (`AuthCurvedHeader`,
 | `FormSheetCard` | `core/widgets` | Tarjeta del formulario sobre la curva. |
 | `MessageView` | `core/widgets` | Lista vacía o error de Nest, centrado. |
 | `RiseIn` (`RiseIn.stagger`) / `PressScale` / `CountUpText` | `core/widgets` | Entrada en cascada, hundirse al tocar y números que cuentan. Respetan "reducir movimiento". |
+| `RoleHero` / `HomeStatsCard` / `HomeAccessCard` | `home/presentation/widgets` | Inicio rediseñado: encabezado con rol, saludo y línea de contexto; números sobre la curva; accesos con contador (naranja con `urgent` si hay pendientes) y candado con `onTap: null`. Los usan admin y despachador. |
+| `SectionHeader.backOrHome` | `home/presentation/widgets` | Volver con `pop` si se llegó con `push`; si no, al inicio. Los detalles y el mapa se abren con `push`. |
+| `DetailSection` / `DetailLine` | `core/widgets` | Tarjeta con ícono teñido y rótulo, y filas "etiqueta … valor". |
+| `AuthDateField` + `pickIsoDate` / `AuthChoiceGroup` | `auth/presentation/widgets` | Fecha en calendario (AAAA-MM-DD) y grupo de chips con label y error que tiembla, con la forma de `AuthField`. |
+| `OrderTray` / `OrderRowCard` | `orders/presentation/widgets` | Andamiaje de las bandejas (encabezado con conteo, lista en cascada, recarga, vacío, error y refresco cada 10 s) y su tarjeta. |
 
 Los formularios validan en la pantalla con `Validators` y pasan
 `errorText` + `shakeCount` a cada `AuthField`, igual que el login
-(`HubFormValues.validate`, `UserFormValues.validate`).
+(`HubFormValues.validate`, `UserFormValues.validate`,
+`HubRequestValues.validate`, `InventoryFormValues.validate`). Los errores de
+un provider se muestran con `ApiException.messageOf(error)`, nunca con
+`'$error'`.
 
 ## Origen de datos (local | remote)
 
@@ -312,7 +320,8 @@ Reglas de los datos:
 - `ProviderScope` usa `retryOnlyWithoutResponse` (`lib/app/provider_retry.dart`):
   un error con código HTTP de Nest no se reintenta y se muestra de una vez;
   solo se reintenta (3 veces) cuando el servidor no respondió.
-- Las listas sin socket (cola, programados, pending-load, historial) se
+- Las listas sin socket (cola, programados, pending-load, vuelos en curso,
+  historial) y los números del inicio del despachador se
   envuelven en `AutoRefresh` (`lib/core/widgets/auto_refresh.dart`), que
   invalida su provider cada 10 s mientras la pantalla está abierta.
 

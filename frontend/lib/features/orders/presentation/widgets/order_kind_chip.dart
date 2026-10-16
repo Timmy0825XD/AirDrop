@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/status_pill.dart';
 import '../../data/order_models.dart';
 
+/// Urgencia (rojo) o programado (marca), en la misma pastilla del estado.
 class OrderKindChip extends StatelessWidget {
   const OrderKindChip({super.key, required this.missionType});
 
@@ -9,6 +11,11 @@ class OrderKindChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Chip(label: Text(missionType.label));
+    return StatusPill(
+      label: missionType.label,
+      tone: missionType == MissionType.emergency
+          ? PillTone.negative
+          : PillTone.neutral,
+    );
   }
 }

@@ -26,6 +26,13 @@ class ApiException implements Exception {
     return ApiException(_fallbackMessage(statusCode), statusCode: statusCode);
   }
 
+  /// El texto para mostrar de cualquier error de un provider: el mensaje de
+  /// Nest si lo hay; si no (un JSON raro, un fallo del cliente), uno
+  /// genérico en vez de `FormatException: …`.
+  static String messageOf(Object error) => error is ApiException
+      ? error.message
+      : 'No se pudo cargar la información. Intenta de nuevo.';
+
   factory ApiException.connection() =>
       const ApiException('No se pudo conectar con el servidor.');
 

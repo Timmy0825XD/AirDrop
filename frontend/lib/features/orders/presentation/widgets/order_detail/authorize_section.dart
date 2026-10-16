@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-import 'detail_section.dart';
+import '../../../../../core/widgets/choice_pill.dart';
+import '../../../../../core/widgets/detail_section.dart';
+import '../../../../auth/presentation/widgets/auth_morph_button.dart';
 
 /// Autorizar un pedido en `received`: el motor de decisión elige dron y
 /// ruta, y el pedido pasa a "Pendiente de carga" (todavía no despega).
@@ -17,6 +19,7 @@ class AuthorizeSection extends StatelessWidget {
     required this.onViewPrescription,
     required this.notYet,
     required this.busy,
+    required this.loading,
     required this.onAuthorize,
   });
 
@@ -29,7 +32,12 @@ class AuthorizeSection extends StatelessWidget {
 
   /// Programado con fecha futura: todavía no se autoriza.
   final bool notYet;
+
+  /// Hay alguna acción en curso: los botones se apagan.
   final bool busy;
+
+  /// La acción en curso es esta: el botón se vuelve el dron.
+  final bool loading;
   final VoidCallback onAuthorize;
 
   @override
@@ -49,10 +57,12 @@ class AuthorizeSection extends StatelessWidget {
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           if (needsPrescriptionCheck) _PrescriptionCheck(section: this),
-          const SizedBox(height: 8),
-          FilledButton(
+          const SizedBox(height: 14),
+          AuthMorphButton(
+            label: 'Autorizar',
+            loadingLabel: 'Autorizando el pedido',
+            isLoading: loading,
             onPressed: ready && !busy ? onAuthorize : null,
-            child: const Text('Autorizar'),
           ),
         ],
       ),
@@ -60,7 +70,7 @@ class AuthorizeSection extends StatelessWidget {
   }
 }
 
-/// "Ver fórmula" (si la imagen se puede bajar) y la casilla "Verifiqué la
+/// "Ver fórmula" (si la imagen se puede bajar) y el chip "Verifiqué la
 /// fórmula" que enciende el botón.
 class _PrescriptionCheck extends StatelessWidget {
   const _PrescriptionCheck({required this.section});
@@ -70,23 +80,30 @@ class _PrescriptionCheck extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = section;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (s.onViewPrescription != null)
-          TextButton.icon(
-            onPressed: s.busy ? null : s.onViewPrescription,
-            icon: const Icon(Icons.receipt_long_outlined, size: 18),
-            label: const Text('Ver fórmula'),
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          if (s.onViewPrescription != null)
+            OutlinedButton.icon(
+              onPressed: s.busy ? null : s.onViewPrescription,
+              icon: const Icon(Icons.receipt_long_outlined, size: 18),
+              label: const Text('Ver fórmula'),
+            ),
+          ChoicePill(
+            label: 'Verifiqué la fórmula',
+            selected: s.prescriptionVerified,
+            showCheck: true,
+            filled: false,
+            onTap: () {
+              if (!s.busy) s.onVerifiedChanged(!s.prescriptionVerified);
+            },
           ),
-        CheckboxListTile(
-          contentPadding: EdgeInsets.zero,
-          controlAffinity: ListTileControlAffinity.leading,
-          value: s.prescriptionVerified,
-          onChanged: s.busy ? null : (v) => s.onVerifiedChanged(v ?? false),
-          title: const Text('Verifiqué la fórmula'),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

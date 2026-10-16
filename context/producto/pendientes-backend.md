@@ -98,3 +98,21 @@ central no está asignada a tu cuenta.".
 
 **La app** hoy no la usa; si se abre, se mostraría en el detalle de una
 central.
+
+## 6. Lo que una central le pide a otra — Pendiente
+
+**Hoy.** El despachador puede pedir una urgencia a otra central
+(`POST /orders/hub-emergencies`), pero después no la encuentra en ninguna
+lista: `GET /orders/mine` es solo del solicitante y la cola, los
+programados y las bandejas listan lo que sale **de** su central, no lo que
+le llega. Solo la ve en el detalle que se abre al crearla. Los
+abastecimientos sí aparecen en `GET /orders/plans`.
+
+**Debería** ([`../entregas/centrales.md`](../entregas/centrales.md): la
+central de destino recibe el traslado): listar los pedidos cuyo destino es
+la central del despachador, con su estado (por ejemplo
+`GET /orders/incoming`), para seguirlos hasta que lleguen.
+
+**La app lo usará** en el inicio del despachador: una bandeja "Por recibir"
+junto a "Vuelos en curso", y más adelante para ingresar el código de
+entrega del traslado (punto 1).

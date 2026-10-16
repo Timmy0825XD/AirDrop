@@ -23,6 +23,8 @@ import 'package:frontend/features/inventory/data/inventory_models.dart';
 import 'package:frontend/features/inventory/data/inventory_providers.dart';
 import 'package:frontend/features/inventory/data/inventory_repository.dart';
 import 'package:frontend/features/inventory/presentation/inventory_screen.dart';
+import 'package:frontend/features/orders/data/local_order_repository.dart';
+import 'package:frontend/features/orders/data/order_providers.dart';
 import 'package:frontend/features/users/data/user_models.dart';
 import 'package:frontend/features/users/data/user_providers.dart';
 import 'package:frontend/features/users/data/user_repository.dart';
@@ -283,7 +285,9 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('deshabilita inventario con central suspendida', (tester) async {
+  testWidgets('con la central suspendida solo deja Mi central y Mis planes', (
+    tester,
+  ) async {
     final container = await _authenticatedContainer(
       email: 'despacho@airdrop.local',
       password: 'Despacho123',
@@ -291,26 +295,19 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    await _pumpHome(tester, container);
+    await _pumpHome(tester, container, settles: false);
 
-    final inventoryCard = find.ancestor(
-      of: find.text('Inventario'),
-      matching: find.byType(InkWell),
-    );
-    expect(tester.widget<InkWell>(inventoryCard).onTap, isNull);
-    expect(
-      find.textContaining('La central está suspendida.'),
-      // Inventario, cola, programados, pendiente de carga y pedir a otra.
-      findsNWidgets(5),
-    );
-    expect(find.textContaining('Suspendida'), findsWidgets);
-    expect(find.text('Cola de urgencias'), findsOneWidget);
-    expect(find.text('Programados'), findsOneWidget);
-    expect(find.text('Pedir a otra central'), findsOneWidget);
-    expect(find.text('Mis planes'), findsOneWidget);
+    expect(find.text('Central de prueba · Suspendida'), findsOneWidget);
+    expect(find.textContaining('Tu central está suspendida.'), findsOneWidget);
+    expect(_onTapOf(tester, 'Cola de urgencias'), isNull);
+    expect(await _scrolledOnTap(tester, 'Inventario'), isNull);
+    expect(_onTapOf(tester, 'Mi central'), isNotNull);
+    expect(await _scrolledOnTap(tester, 'Mis planes'), isNotNull);
   });
 
-  testWidgets('habilita inventario con central activa', (tester) async {
+  testWidgets('con la central activa abre todo y cuenta las bandejas', (
+    tester,
+  ) async {
     final container = await _authenticatedContainer(
       email: 'despacho@airdrop.local',
       password: 'Despacho123',
@@ -318,17 +315,19 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    await _pumpHome(tester, container);
+    final semantics = tester.ensureSemantics();
+    await _pumpHome(tester, container, settles: false);
 
-    final inventoryCard = find.ancestor(
-      of: find.text('Inventario'),
-      matching: find.byType(InkWell),
-    );
-    expect(tester.widget<InkWell>(inventoryCard).onTap, isNotNull);
-    expect(find.textContaining('Activa'), findsOneWidget);
+    expect(find.text('Hola, Diego'), findsOneWidget);
+    expect(find.text('Central de prueba · Activa'), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('Por cargar: 1')), findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp('En vuelo: 0')), findsOneWidget);
+    expect(_onTapOf(tester, 'Cola de urgencias'), isNotNull);
+    expect(await _scrolledOnTap(tester, 'Inventario'), isNotNull);
+    semantics.dispose();
   });
 
-  testWidgets('sin central asignada muestra el mensaje de Nest', (
+  testWidgets('sin central asignada lo dice y deja todo con candado', (
     tester,
   ) async {
     final container = await _authenticatedContainer(
@@ -338,14 +337,15 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    await _pumpHome(tester, container);
+    await _pumpHome(tester, container, settles: false);
 
+    expect(find.text('Sin central asignada'), findsOneWidget);
     expect(
       find.textContaining('No tienes una central asignada.'),
-      findsNWidgets(5),
+      findsOneWidget,
     );
-    expect(find.text('Cola de urgencias'), findsOneWidget);
-    expect(find.text('Programados'), findsOneWidget);
+    expect(_onTapOf(tester, 'Mi central'), isNull);
+    expect(_onTapOf(tester, 'Cola de urgencias'), isNull);
   });
 
   testWidgets('la tarjeta de flota navega al listado de drones', (
@@ -393,11 +393,15 @@ void main() {
         child: MaterialApp.router(routerConfig: container.read(routerProvider)),
       ),
     );
-    await tester.pumpAndSettle();
+    // El inicio tiene el dron de fondo en bucle: se avanza un tiempo fijo.
+    await _pumpFrames(tester);
     expect(find.byType(InventoryScreen), findsNothing);
 
+    await tester.scrollUntilVisible(find.text('Inventario'), 200);
+    await tester.ensureVisible(find.text('Inventario'));
+    await tester.pump();
     await tester.tap(find.text('Inventario'));
-    await tester.pumpAndSettle();
+    await _pumpFrames(tester);
 
     expect(find.byType(InventoryScreen), findsOneWidget);
     expect(find.text('Acetaminofén 500 mg'), findsOneWidget);
@@ -450,6 +454,8 @@ Future<ProviderContainer> _authenticatedContainer({
     overrides: [
       tokenStoreProvider.overrideWithValue(tokenStore),
       authRepositoryProvider.overrideWithValue(authRepository),
+      // Las bandejas del despachador se cuentan en su inicio.
+      orderRepositoryProvider.overrideWithValue(LocalOrderRepository()),
       if (hubRepository != null)
         hubRepositoryProvider.overrideWithValue(hubRepository),
       if (inventoryRepository != null)
@@ -494,4 +500,21 @@ Future<void> _pumpHome(
   // El inicio del administrador tiene un dron de fondo que flota en bucle:
   // nunca "se asienta", así que se avanza un tiempo fijo.
   settles ? await tester.pumpAndSettle() : await _pumpFrames(tester);
+}
+
+/// El `onTap` de la tarjeta del inicio que tiene ese título.
+VoidCallback? _onTapOf(WidgetTester tester, String title) {
+  final card = find.ancestor(
+    of: find.text(title),
+    matching: find.byType(InkWell),
+  );
+  return tester.widget<InkWell>(card.first).onTap;
+}
+
+/// Lo mismo, bajando primero hasta la tarjeta (el inicio es largo).
+Future<VoidCallback?> _scrolledOnTap(WidgetTester tester, String title) async {
+  await tester.scrollUntilVisible(find.text(title), 200);
+  await tester.ensureVisible(find.text(title));
+  await tester.pump();
+  return _onTapOf(tester, title);
 }

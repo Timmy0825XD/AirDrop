@@ -56,9 +56,6 @@ class TelemetryClient {
   /// El 404 que no es error: el pedido existe pero el reloj aún no publica.
   static const noFlightYet = 'Todavía no hay vuelo para este pedido.';
 
-  /// Espera antes de reintentar la suscripción (ver [watch]).
-  static const retryDelay = Duration(milliseconds: 800);
-
   final ApiClient apiClient;
   final String baseUrl;
 
@@ -95,15 +92,8 @@ class TelemetryClient {
       if (!events.isClosed) socket.emit('subscribe', {'orderId': orderId});
     }
 
-    // Nest valida el token de la conexión sin esperar (`handleConnection` es
-    // asíncrono): si el `subscribe` llega antes, responde "El pedido no
-    // existe." aunque sí exista. Un solo reintento lo resuelve; si vuelve a
-    // fallar, el rechazo es real.
-    var retried = false;
-
     socket
       ..onConnect((_) {
-        retried = false;
         add(const ConnectionChanged(connected: true));
         subscribe();
       })
@@ -122,15 +112,12 @@ class TelemetryClient {
         'alert',
         (data) => add(AlertReceived(FlightAlert.fromJson(_map(data)))),
       )
-      // Nest responde `subscribe` con un evento `error` (no con ack).
+      // Nest responde `subscribe` con un evento `error` (no con ack). Desde
+      // el PR #44 el `subscribe` espera la validación del token, así que un
+      // rechazo es real y no se reintenta.
       ..on('error', (data) {
         final message = data is Map ? data['message'] : null;
         if (message is! String) return;
-        if (!retried) {
-          retried = true;
-          Future<void>.delayed(retryDelay, subscribe);
-          return;
-        }
         add(SubscriptionRefused(message));
         socket.dispose();
       })

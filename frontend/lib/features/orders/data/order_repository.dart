@@ -64,4 +64,8 @@ abstract class OrderRepository {
 
   /// `GET /orders/pending-load` — despachador: la bandeja de su central.
   Future<List<Order>> listPendingLoad();
+
+  /// `GET /orders/in-flight` — despachador: lo que salió de su central y
+  /// está en vuelo o esperando la entrega.
+  Future<List<Order>> listInFlight();
 }

@@ -1,34 +1,51 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/confirm_sheet.dart';
 import '../../data/inventory_models.dart';
 
-/// Confirma la eliminación de un ítem del inventario.
+/// Confirma la eliminación de un ítem del inventario en la hoja inferior.
 ///
-/// Es definitivo (Nest no tiene papelera), así que pide confirmación con
-/// el nombre y el lote. Devuelve `true` solo si el despachador confirma.
+/// Es definitivo (Nest no tiene papelera), así que la hoja muestra el
+/// nombre, el lote y la cantidad. Devuelve `true` solo si se confirma.
 Future<bool> confirmInventoryDelete(
   BuildContext context, {
   required InventoryItem item,
-}) async {
-  final confirmed = await showDialog<bool>(
-    context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: const Text('Eliminar ítem'),
-      content: Text(
-        '¿Eliminar "${item.name}" (lote ${item.lot}) del inventario? '
-        'Esta acción no se puede deshacer.',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(dialogContext, false),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(
-          onPressed: () => Navigator.pop(dialogContext, true),
-          child: const Text('Eliminar'),
-        ),
-      ],
-    ),
+}) {
+  return showConfirmSheet(
+    context,
+    title: 'Eliminar ítem',
+    message: 'Sale del inventario de tu central. No se puede deshacer.',
+    confirmLabel: 'Eliminar',
+    icon: Icons.delete_outline_rounded,
+    subject: _ItemSummary(item: item),
   );
-  return confirmed ?? false;
+}
+
+class _ItemSummary extends StatelessWidget {
+  const _ItemSummary({required this.item});
+
+  final InventoryItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        children: [
+          Text(item.name, style: theme.textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text(
+            'Lote ${item.lot} · ${item.quantity} und.',
+            style: theme.textTheme.bodySmall,
+          ),
+        ],
+      ),
+    );
+  }
 }

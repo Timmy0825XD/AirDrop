@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../auth/presentation/widgets/auth_brand.dart';
 import '../../../auth/presentation/widgets/auth_curved_header.dart';
@@ -21,6 +22,11 @@ class SectionHeader extends StatelessWidget {
   final String subtitle;
   final VoidCallback onBack;
   final Widget? bottom;
+
+  /// Volver a la pantalla anterior si se llegó con `push`; si se llegó
+  /// directo (con `go`), al inicio.
+  static void backOrHome(BuildContext context) =>
+      context.canPop() ? context.pop() : context.go('/home');
 
   /// Cuánto del [bottom] cae debajo de la curva.
   static const double overlap = 26;

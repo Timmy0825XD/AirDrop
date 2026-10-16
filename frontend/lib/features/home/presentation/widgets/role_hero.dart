@@ -1,26 +1,37 @@
 import 'package:flutter/material.dart';
 
-import '../../../../auth/presentation/widgets/auth_brand.dart';
-import '../../../../auth/presentation/widgets/auth_curved_header.dart';
-import '../../../../auth/presentation/widgets/auth_glass.dart';
-import '../../../../auth/presentation/widgets/drone_glyph.dart';
+import '../../../auth/presentation/widgets/auth_brand.dart';
+import '../../../auth/presentation/widgets/auth_curved_header.dart';
+import '../../../auth/presentation/widgets/auth_glass.dart';
+import '../../../auth/presentation/widgets/drone_glyph.dart';
 
-/// El encabezado del inicio del administrador: marca, perfil y salir,
-/// la pastilla del rol y el saludo. El dron de fondo flota despacio.
-class AdminHero extends StatelessWidget {
-  const AdminHero({
+/// El encabezado de un inicio rediseñado: marca, perfil y salir, la
+/// pastilla del rol, el saludo y una línea de contexto. El dron de fondo
+/// flota despacio. Lo usan el administrador y el despachador.
+class RoleHero extends StatelessWidget {
+  const RoleHero({
     super.key,
+    required this.roleLabel,
     required this.firstName,
+    required this.tagline,
     required this.onProfile,
     required this.onSignOut,
   });
 
+  final String roleLabel;
   final String firstName;
+
+  /// La línea bajo el saludo ("Así va la operación…", la central).
+  final String tagline;
   final VoidCallback onProfile;
   final VoidCallback onSignOut;
 
   static double heightFor(BuildContext context) =>
       MediaQuery.paddingOf(context).top + 250;
+
+  /// El primer nombre para el saludo.
+  static String firstNameOf(String fullName) =>
+      fullName.trim().split(RegExp(r'\s+')).first;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +53,7 @@ class AdminHero extends StatelessWidget {
             left: 20,
             right: 20,
             top: top + 84,
-            child: _Greeting(firstName: firstName),
+            child: _Greeting(hero: this),
           ),
         ],
       ),
@@ -109,9 +120,9 @@ class _GlassIconButton extends StatelessWidget {
 }
 
 class _Greeting extends StatelessWidget {
-  const _Greeting({required this.firstName});
+  const _Greeting({required this.hero});
 
-  final String firstName;
+  final RoleHero hero;
 
   @override
   Widget build(BuildContext context) {
@@ -120,15 +131,17 @@ class _Greeting extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const AuthPill(text: 'Administrador'),
+        AuthPill(text: hero.roleLabel),
         const SizedBox(height: 12),
         Text(
-          'Hola, $firstName',
+          'Hola, ${hero.firstName}',
           style: theme.textTheme.headlineLarge?.copyWith(color: onBrand),
         ),
         const SizedBox(height: 4),
         Text(
-          'Así va la operación en Valledupar',
+          hero.tagline,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodyMedium?.copyWith(
             color: onBrand.withValues(alpha: 0.82),
           ),

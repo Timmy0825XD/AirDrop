@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/press_scale.dart';
+import '../../../../core/widgets/row_action_button.dart';
+import '../../../../core/widgets/status_card.dart';
+import '../../../../core/widgets/status_pill.dart';
 import '../../data/inventory_models.dart';
-import 'inventory_chips.dart';
 
-/// Fila del listado de inventario: nombre, lote, cantidad y vencimiento,
-/// con las marcas de tipo de venta y cadena de frío. Tocar abre la
-/// edición; el ícono elimina con confirmación (la decide la pantalla).
+/// Fila del inventario: nombre, lote, cantidad, tipo de venta y
+/// vencimiento, con la cadena de frío marcada en el ícono. A la derecha,
+/// si el lote está vencido o por vencer, y "Eliminar". Tocarla abre la
+/// edición.
 class InventoryTile extends StatelessWidget {
   const InventoryTile({
     super.key,
@@ -18,45 +22,36 @@ class InventoryTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback onDelete;
 
+  /// Días que se avisan antes del vencimiento.
+  static const warningDays = 30;
+
+  /// Vencido, por vencer o vigente, con la fecha de hoy.
+  static (String, PillTone) expiryOf(InventoryItem item, {DateTime? today}) {
+    final date = DateTime.tryParse(item.expirationDate);
+    final now = DateUtils.dateOnly(today ?? DateTime.now());
+    if (date == null) return ('Vigente', PillTone.positive);
+    if (date.isBefore(now)) return ('Vencido', PillTone.negative);
+    if (date.difference(now).inDays <= warningDays) {
+      return ('Por vencer', PillTone.attention);
+    }
+    return ('Vigente', PillTone.positive);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final mutedStyle = theme.textTheme.bodySmall?.copyWith(
-      color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-    );
-
-    return Card(
-      margin: EdgeInsets.zero,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
+    final (label, tone) = expiryOf(item);
+    return PressScale(
+      child: GestureDetector(
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(item.name, style: theme.textTheme.titleMedium),
-                    const SizedBox(height: 4),
-                    Text(
-                      'Lote ${item.lot} · ${item.quantity} und. · '
-                      'Vence ${item.expirationDate}',
-                      style: mutedStyle,
-                    ),
-                    _Marks(item: item),
-                  ],
-                ),
-              ),
-              IconButton(
-                tooltip: 'Eliminar',
-                color: theme.colorScheme.error,
-                onPressed: onDelete,
-                icon: const Icon(Icons.delete_outline),
-              ),
-            ],
+        behavior: HitTestBehavior.opaque,
+        child: StatusCard(
+          leading: _ItemIcon(coldChain: item.requiresColdChain),
+          body: _ItemInfo(item: item),
+          status: StatusPill(label: label, tone: tone),
+          action: RowActionButton(
+            label: 'Eliminar',
+            destructive: true,
+            onPressed: onDelete,
           ),
         ),
       ),
@@ -64,24 +59,72 @@ class InventoryTile extends StatelessWidget {
   }
 }
 
-/// Tipo de venta y, si aplica, cadena de frío.
-class _Marks extends StatelessWidget {
-  const _Marks({required this.item});
+/// El cuadro del ícono: copo de nieve si va en cadena de frío.
+class _ItemIcon extends StatelessWidget {
+  const _ItemIcon({required this.coldChain});
+
+  final bool coldChain;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final tone = coldChain ? colors.tertiary : colors.primary;
+    return Container(
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        color: tone.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Icon(
+        coldChain ? Icons.ac_unit_rounded : Icons.medication_outlined,
+        color: tone,
+        size: 22,
+        semanticLabel: coldChain ? 'Cadena de frío' : null,
+      ),
+    );
+  }
+}
+
+class _ItemInfo extends StatelessWidget {
+  const _ItemInfo({required this.item});
 
   final InventoryItem item;
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: Wrap(
-        spacing: 8,
-        runSpacing: 4,
-        children: [
-          SaleTypeChip(saleType: item.saleType),
-          if (item.requiresColdChain) const ColdChainChip(),
-        ],
-      ),
+    final theme = Theme.of(context);
+    final muted = theme.textTheme.bodySmall?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          item.name,
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontSize: 15,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          'Lote ${item.lot} · ${item.quantity} und.',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.primary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          [
+            item.saleType.label,
+            if (item.requiresColdChain) 'Cadena de frío',
+            'Vence ${item.expirationDate}',
+          ].join(' · '),
+          style: muted,
+        ),
+      ],
     );
   }
 }
