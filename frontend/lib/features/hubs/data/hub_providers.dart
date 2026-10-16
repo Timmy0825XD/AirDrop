@@ -26,14 +26,22 @@ class HubFilterNotifier extends Notifier<HubStatus?> {
   void select(HubStatus? status) => state = status;
 }
 
-final hubFilterProvider =
-    NotifierProvider<HubFilterNotifier, HubStatus?>(HubFilterNotifier.new);
+final hubFilterProvider = NotifierProvider<HubFilterNotifier, HubStatus?>(
+  HubFilterNotifier.new,
+);
 
 /// Listado de centrales. Sigue al filtro, así que un solo `invalidate`
 /// de este provider refresca lo que se vea en pantalla.
 final hubsProvider = FutureProvider<List<Hub>>((ref) {
   final status = ref.watch(hubFilterProvider);
   return ref.watch(hubRepositoryProvider).list(status: status);
+});
+
+/// Todas las centrales, sin el filtro del listado. Con ellas el inicio del
+/// administrador cuenta activas y suspendidas, y la lista de cuentas pinta
+/// el nombre de cada central asignada.
+final allHubsProvider = FutureProvider<List<Hub>>((ref) {
+  return ref.watch(hubRepositoryProvider).list();
 });
 
 /// Central del despachador. `null` cuando Nest responde 404.
@@ -51,6 +59,7 @@ class CreateHubNotifier extends AsyncNotifier<Hub?> {
   Future<Hub> create(CreateHubRequest request) async {
     final hub = await ref.read(hubRepositoryProvider).create(request);
     ref.invalidate(hubsProvider);
+    ref.invalidate(allHubsProvider);
     state = AsyncData(hub);
     return hub;
   }
@@ -72,6 +81,7 @@ class SetHubSuspensionNotifier extends AsyncNotifier<Hub?> {
         .read(hubRepositoryProvider)
         .setSuspension(id, suspended: suspended);
     ref.invalidate(hubsProvider);
+    ref.invalidate(allHubsProvider);
     ref.invalidate(myHubProvider);
     state = AsyncData(hub);
     return hub;

@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/api_exception.dart';
 import '../../../auth/data/auth_models.dart';
-import '../../../auth/presentation/auth_controller.dart';
+import 'sign_out.dart';
 
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.user, required this.body});
@@ -25,7 +24,7 @@ class HomeShell extends ConsumerWidget {
           ),
           IconButton(
             tooltip: 'Cerrar sesión',
-            onPressed: () => _logout(context, ref),
+            onPressed: () => signOut(context, ref),
             icon: const Icon(Icons.logout),
           ),
         ],
@@ -50,23 +49,6 @@ class HomeShell extends ConsumerWidget {
       ),
     );
   }
-
-  Future<void> _logout(BuildContext context, WidgetRef ref) async {
-    try {
-      await ref.read(authControllerProvider.notifier).logout();
-      if (context.mounted) context.go('/login');
-    } on ApiException catch (error) {
-      if (context.mounted) _showHomeError(context, error.message);
-    } catch (_) {
-      if (context.mounted) _showHomeError(context, 'No se pudo cerrar sesión.');
-    }
-  }
-}
-
-void _showHomeError(BuildContext context, String message) {
-  ScaffoldMessenger.of(
-    context,
-  ).showSnackBar(SnackBar(content: Text(message)));
 }
 
 class _WelcomeHeader extends StatelessWidget {

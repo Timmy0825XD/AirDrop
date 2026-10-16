@@ -1,5 +1,5 @@
-import '../../../../core/api_exception.dart';
-import '../../../../core/auth/token_store.dart';
+import '../../../core/api_exception.dart';
+import '../../../core/auth/token_store.dart';
 import '../../auth/data/auth_models.dart';
 import '../../auth/data/local/local_auth_rules.dart';
 import '../../auth/data/local/local_fixtures.dart';

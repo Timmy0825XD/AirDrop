@@ -113,26 +113,6 @@ class Validators {
     return null;
   }
 
-  static String? latitude(String? value) {
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) return 'Escribe la latitud.';
-    final parsed = double.tryParse(text);
-    if (parsed == null || parsed < -90 || parsed > 90) {
-      return 'La latitud no es válida.';
-    }
-    return null;
-  }
-
-  static String? longitude(String? value) {
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) return 'Escribe la longitud.';
-    final parsed = double.tryParse(text);
-    if (parsed == null || parsed < -180 || parsed > 180) {
-      return 'La longitud no es válida.';
-    }
-    return null;
-  }
-
   /// Motivo de geovalla o de mantenimiento.
   static String? reason(String? value, {bool required = true}) {
     final text = value?.trim() ?? '';

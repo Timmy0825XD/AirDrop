@@ -96,23 +96,6 @@ void main() {
     });
   });
 
-  group('coordenadas', () {
-    test('latitud entre -90 y 90', () {
-      expect(Validators.latitude('10.463140'), isNull);
-      expect(Validators.latitude('-90'), isNull);
-      expect(Validators.latitude('90.1'), 'La latitud no es válida.');
-      expect(Validators.latitude('norte'), 'La latitud no es válida.');
-      expect(Validators.latitude(''), 'Escribe la latitud.');
-    });
-
-    test('longitud entre -180 y 180', () {
-      expect(Validators.longitude('-73.253220'), isNull);
-      expect(Validators.longitude('180'), isNull);
-      expect(Validators.longitude('180.1'), 'La longitud no es válida.');
-      expect(Validators.longitude(''), 'Escribe la longitud.');
-    });
-  });
-
   group('motivo, identificador y nombres', () {
     test('motivo obligatorio y opcional', () {
       expect(Validators.reason(''), 'Escribe el motivo.');
