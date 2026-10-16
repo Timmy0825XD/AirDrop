@@ -1,214 +1,145 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../../../core/field_limits.dart';
-import '../login/login_alert.dart';
-import '../login/login_button.dart';
-import 'otp_boxes_input.dart';
-import 'otp_resend_section.dart';
-import 'otp_shield_badge.dart';
+import 'otp_resend_card.dart';
 
-/// Contenido de la verificación del código. No sabe de contactos ni de
-/// temporizadores: recibe el contacto ya formateado, el estado del
-/// reenvío y los callbacks.
-class OtpVerifyContent extends StatelessWidget {
-  const OtpVerifyContent({
-    super.key,
-    required this.contactLabel,
-    required this.onCodeChanged,
-    required this.onResend,
-    required this.onSubmit,
-    required this.errorMessage,
-    required this.noticeMessage,
-    required this.onDismissMessage,
-    this.secondsRemaining = 0,
-    this.countdownLabel = '',
-    this.canResend = false,
-    this.isLoading = false,
-  });
-
-  final String contactLabel;
-  final ValueChanged<String> onCodeChanged;
-  final VoidCallback? onResend;
-  final VoidCallback onSubmit;
-  final String? errorMessage;
-  final String? noticeMessage;
-  final VoidCallback onDismissMessage;
-  final int secondsRemaining;
-  final String countdownLabel;
-  final bool canResend;
-  final bool isLoading;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        _Heading(contactLabel: contactLabel),
-        const SizedBox(height: 24),
-        _Alert(
-          errorMessage: errorMessage,
-          noticeMessage: noticeMessage,
-          onDismiss: onDismissMessage,
-        ),
-        _CodeInputs(
-          onCodeChanged: onCodeChanged,
-          secondsRemaining: secondsRemaining,
-          countdownLabel: countdownLabel,
-          onResend: canResend ? onResend : null,
-        ),
-        const SizedBox(height: 24),
-        LoginButton(
-          label: 'Verificar',
-          isLoading: isLoading,
-          onPressed: onSubmit,
-        ),
-        const SizedBox(height: 24),
-        const _SupportRow(),
-      ],
-    );
-  }
-}
-
-/// Las seis cajas del código y el bloque de reenvío con su contador.
-class _CodeInputs extends StatelessWidget {
-  const _CodeInputs({
-    required this.onCodeChanged,
-    required this.secondsRemaining,
-    required this.countdownLabel,
-    required this.onResend,
-  });
-
-  final ValueChanged<String> onCodeChanged;
-  final int secondsRemaining;
-  final String countdownLabel;
-  final VoidCallback? onResend;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Center(child: OtpBoxesInput(onChanged: onCodeChanged)),
-        const SizedBox(height: 20),
-        Center(
-          child: OtpResendSection(
-            secondsRemaining: secondsRemaining,
-            countdownLabel: countdownLabel,
-            onResend: onResend,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-/// El escudo con el título y la bajada que explica a qué contacto llegó el
-/// código.
-class _Heading extends StatelessWidget {
-  const _Heading({required this.contactLabel});
+/// Título y a qué correo llegó el código.
+class OtpHeading extends StatelessWidget {
+  const OtpHeading({super.key, required this.contactLabel});
 
   final String contactLabel;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final muted = theme.textTheme.bodyLarge?.copyWith(
+      color: theme.colorScheme.onSurfaceVariant,
+      height: 1.55,
+    );
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Center(child: OtpShieldBadge()),
-        const SizedBox(height: 24),
-        Text(
-          'Verifica tu cuenta',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.headlineMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.2,
+        Semantics(
+          header: true,
+          child: Text(
+            'Verifica tu cuenta',
+            style: theme.textTheme.displayMedium,
           ),
         ),
         const SizedBox(height: 8),
-        Text(
-          'Enviamos un código de ${FieldLimits.otpDigits} dígitos a',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: colors.onSurface.withValues(alpha: 0.6),
+        Text.rich(
+          TextSpan(
+            text: 'Enviamos un código de ${FieldLimits.otpDigits} dígitos a\n',
+            children: [
+              TextSpan(
+                text: contactLabel,
+                style: TextStyle(
+                  color: theme.colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          contactLabel,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: colors.primary,
-            fontWeight: FontWeight.w600,
-          ),
+          style: muted,
         ),
       ],
     );
   }
 }
 
-class _Alert extends StatelessWidget {
-  const _Alert({
-    required this.errorMessage,
-    required this.noticeMessage,
-    required this.onDismiss,
+/// Debajo del código: mientras se espera, cuándo vence y el reenvío; ya
+/// verificado, la confirmación.
+class OtpStatus extends StatelessWidget {
+  const OtpStatus({
+    super.key,
+    required this.verified,
+    required this.secondsLeft,
+    required this.totalSeconds,
+    required this.onResend,
   });
 
-  final String? errorMessage;
-  final String? noticeMessage;
-  final VoidCallback onDismiss;
+  final bool verified;
+  final int secondsLeft;
+  final int totalSeconds;
+  final VoidCallback? onResend;
 
   @override
   Widget build(BuildContext context) {
-    final error = errorMessage;
-    final message = error ?? noticeMessage;
-    return AnimatedSize(
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.easeOut,
-      alignment: Alignment.topCenter,
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 250),
-        child: message == null
-            ? const SizedBox(width: double.infinity)
-            : Padding(
-                key: ValueKey(message),
-                padding: const EdgeInsets.only(bottom: 18),
-                child: LoginAlert(
-                  message: message,
-                  success: error == null,
-                  onDismiss: onDismiss,
-                ),
-              ),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 420),
+      switchInCurve: Curves.fastOutSlowIn,
+      switchOutCurve: Curves.fastOutSlowIn,
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation,
+        child: SlideTransition(
+          position: Tween(
+            begin: const Offset(0, 0.15),
+            end: Offset.zero,
+          ).animate(animation),
+          child: child,
+        ),
       ),
+      child: verified
+          ? const _Verified()
+          : _Pending(
+              secondsLeft: secondsLeft,
+              totalSeconds: totalSeconds,
+              onResend: onResend,
+            ),
     );
   }
 }
 
-class _SupportRow extends StatelessWidget {
-  const _SupportRow();
+class _Pending extends StatelessWidget {
+  const _Pending({
+    required this.secondsLeft,
+    required this.totalSeconds,
+    required this.onResend,
+  });
+
+  final int secondsLeft;
+  final int totalSeconds;
+  final VoidCallback? onResend;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text(
-          '¿Problemas con el código?',
+          'El código vence en 10 minutos.',
           style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            color: theme.colorScheme.onSurfaceVariant,
+            fontSize: 13,
           ),
         ),
-        TextButton(
-          onPressed: () => context.go('/forgot-password'),
-          child: Text(
-            'Recuperar acceso',
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.primary,
-            ),
-          ),
+        const SizedBox(height: 22),
+        OtpResendCard(
+          secondsLeft: secondsLeft,
+          totalSeconds: totalSeconds,
+          onResend: onResend,
         ),
       ],
+    );
+  }
+}
+
+class _Verified extends StatelessWidget {
+  const _Verified();
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      liveRegion: true,
+      child: SizedBox(
+        width: double.infinity,
+        child: Text(
+          'Cuenta verificada',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.headlineMedium,
+        ),
+      ),
     );
   }
 }

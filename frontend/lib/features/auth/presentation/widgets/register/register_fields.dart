@@ -1,72 +1,121 @@
 import 'package:flutter/material.dart';
 
-import '../login/login_button.dart';
-import 'register_contact_fields.dart';
-import 'register_consent_row.dart';
-import 'register_field_validators.dart';
-import 'register_name_field.dart';
+import '../../../../../core/field_limits.dart';
+import '../auth_field.dart';
 
-export 'register_field_validators.dart';
+/// Los campos del registro, para nombrar sus errores sin strings sueltos.
+enum RegisterInput { name, document, phone, email, password }
 
-/// Los campos del formulario de registro, en el orden en que aparecen.
-/// Solo arma la lista de widgets; la validación vive en la pantalla.
-class RegisterFields extends StatelessWidget {
-  const RegisterFields({
-    super.key,
-    required this.nameController,
-    required this.documentNumberController,
-    required this.phoneController,
-    required this.emailController,
-    required this.passwordController,
-    required this.documentSection,
-    required this.consentAccepted,
-    required this.onConsentChanged,
-    required this.onSubmit,
-    required this.validators,
-    this.isLoading = false,
+/// Los controladores del formulario. La pantalla los crea y los libera.
+class RegisterControllers {
+  final name = TextEditingController();
+  final document = TextEditingController();
+  final phone = TextEditingController();
+  final email = TextEditingController();
+  final password = TextEditingController();
+
+  void dispose() {
+    for (final c in [name, document, phone, email, password]) {
+      c.dispose();
+    }
+  }
+}
+
+/// Lo que todos los campos del registro necesitan de la pantalla: los
+/// controladores, los errores ya validados y cuándo temblar.
+class RegisterFormData {
+  const RegisterFormData({
+    required this.controllers,
+    required this.errors,
+    required this.shakeCount,
+    required this.onChanged,
   });
 
-  final TextEditingController nameController;
-  final TextEditingController documentNumberController;
-  final TextEditingController phoneController;
-  final TextEditingController emailController;
-  final TextEditingController passwordController;
+  final RegisterControllers controllers;
+  final Map<RegisterInput, String> errors;
+  final int shakeCount;
+  final ValueChanged<String> onChanged;
+}
 
-  /// Los arma la pantalla: el tipo de documento elegido decide el validador.
-  final Widget documentSection;
+/// Celular, correo y contraseña.
+class RegisterContactFields extends StatelessWidget {
+  const RegisterContactFields({super.key, required this.data});
 
-  final bool consentAccepted;
-  final ValueChanged<bool> onConsentChanged;
-  final VoidCallback onSubmit;
-  final RegisterFieldValidators validators;
-  final bool isLoading;
+  final RegisterFormData data;
 
   @override
   Widget build(BuildContext context) {
+    final c = data.controllers;
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        RegisterNameField(controller: nameController, validators: validators),
-        const SizedBox(height: 16),
-        documentSection,
-        const SizedBox(height: 16),
-        RegisterContactFields(
-          phoneController: phoneController,
-          emailController: emailController,
-          passwordController: passwordController,
-          validators: validators,
+        AuthField(
+          label: 'Celular',
+          hint: '300 123 4567',
+          prefix: const _CountryCode(),
+          controller: c.phone,
+          errorText: data.errors[RegisterInput.phone],
+          shakeCount: data.shakeCount,
+          keyboardType: TextInputType.phone,
+          autofillHints: const [AutofillHints.telephoneNumberNational],
+          onChanged: data.onChanged,
         ),
         const SizedBox(height: 18),
-        RegisterConsentRow(value: consentAccepted, onChanged: onConsentChanged),
+        AuthField(
+          label: 'Correo electrónico',
+          hint: 'nombre@correo.com',
+          icon: Icons.mail_outline_rounded,
+          trailing: const AuthFieldBadge('Recibe el código'),
+          controller: c.email,
+          errorText: data.errors[RegisterInput.email],
+          shakeCount: data.shakeCount,
+          keyboardType: TextInputType.emailAddress,
+          maxLength: FieldLimits.email,
+          autofillHints: const [AutofillHints.email],
+          onChanged: data.onChanged,
+        ),
         const SizedBox(height: 18),
-        LoginButton(
-          label: 'Crear cuenta',
-          icon: Icons.how_to_reg_outlined,
-          iconFirst: true,
-          isLoading: isLoading,
-          onPressed: onSubmit,
+        AuthField(
+          label: 'Contraseña',
+          hint: 'Crea una contraseña',
+          icon: Icons.lock_outline_rounded,
+          trailing: const AuthFieldNote('8 a 72 caracteres'),
+          controller: c.password,
+          errorText: data.errors[RegisterInput.password],
+          shakeCount: data.shakeCount,
+          obscureText: true,
+          maxLength: FieldLimits.passwordMax,
+          autofillHints: const [AutofillHints.newPassword],
+          onChanged: data.onChanged,
         ),
       ],
+    );
+  }
+}
+
+/// El indicativo `+57` dentro del campo de celular. Nest no lo quita, por
+/// eso el número se normaliza antes de enviarlo.
+class _CountryCode extends StatelessWidget {
+  const _CountryCode();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 10, 8),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        // widthFactor 1: la ficha mide lo que el texto, no todo el campo.
+        child: Center(
+          widthFactor: 1,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Text('+57', style: theme.textTheme.titleSmall),
+          ),
+        ),
+      ),
     );
   }
 }

@@ -6,15 +6,21 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/field_limits.dart';
+import '../../../core/widgets/app_snack.dart';
 import '../data/auth_models.dart';
 import 'auth_controller.dart';
-import 'widgets/auth_page.dart';
-import 'widgets/auth_top_bar.dart';
+import 'login_screen.dart';
+import 'widgets/auth_field.dart';
+import 'widgets/auth_morph_button.dart';
+import 'widgets/auth_step_scaffold.dart';
+import 'widgets/circle_reveal.dart';
+import 'widgets/otp/otp_code_field.dart';
 import 'widgets/otp/otp_verify_content.dart';
 
-/// Verificación del código de registro. La cuenta vive en `unverified`
-/// hasta que entra el código; el temporizador de 10 minutos es el TTL que
-/// usa Nest (`OTP_SIGNUP_TTL_MS`).
+/// Verificación del código de registro (paso 2 de 2). La cuenta vive en
+/// `unverified` hasta que entra el código, que dura 10 minutos en Nest
+/// (`OTP_SIGNUP_TTL_MS`). Verificar abre la sesión: tras el check, el círculo
+/// de marca cubre la pantalla y se entra al inicio.
 class VerifyOtpScreen extends ConsumerStatefulWidget {
   const VerifyOtpScreen({super.key, required this.contact});
 
@@ -24,110 +30,134 @@ class VerifyOtpScreen extends ConsumerStatefulWidget {
   ConsumerState<VerifyOtpScreen> createState() => _VerifyOtpScreenState();
 }
 
-class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
-  static const _ttlSeconds = 10 * 60;
-  String _code = '';
-  int _secondsRemaining = _ttlSeconds;
+class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen>
+    with TickerProviderStateMixin {
+  /// Espera antes de poder pedir otro código. Es solo del lado de la app.
+  static const _resendSeconds = 45;
+
+  final _code = TextEditingController();
+  final _fieldKey = GlobalKey();
+  late final _collapse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1250),
+  );
+  late final _reveal = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 720),
+  );
+  late final _revealCurve = CurvedAnimation(
+    parent: _reveal,
+    curve: Curves.easeInOutCubic,
+  );
+
+  Timer? _timer;
+  int _secondsLeft = _resendSeconds;
   bool _isLoading = false;
   bool _isResending = false;
+  bool _verified = false;
+  int _shakeCount = 0;
   String? _errorMessage;
-  String? _noticeMessage;
-  Timer? _timer;
+  Offset _revealCenter = Offset.zero;
 
   @override
   void initState() {
     super.initState();
+    _code.addListener(_onCodeChanged);
     _startCountdown();
   }
 
   @override
   void dispose() {
     _timer?.cancel();
+    _code.dispose();
+    _revealCurve.dispose();
+    _collapse.dispose();
+    _reveal.dispose();
     super.dispose();
+  }
+
+  bool get _reducedMotion => MediaQuery.disableAnimationsOf(context);
+  bool get _isComplete => _code.text.length == FieldLimits.otpDigits;
+
+  void _onCodeChanged() {
+    // Redibuja el botón (se enciende con 6 dígitos) y limpia el error.
+    setState(() => _errorMessage = null);
   }
 
   void _startCountdown() {
     _timer?.cancel();
-    _secondsRemaining = _ttlSeconds;
+    setState(() => _secondsLeft = _resendSeconds);
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (!mounted) {
-        timer.cancel();
-        return;
-      }
-      if (_secondsRemaining <= 1) {
-        timer.cancel();
-        setState(() => _secondsRemaining = 0);
-      } else {
-        setState(() => _secondsRemaining--);
-      }
+      if (!mounted || _secondsLeft <= 1) timer.cancel();
+      if (mounted) setState(() => _secondsLeft--);
     });
   }
 
-  String get _contactLabel =>
-      widget.contact?.email ?? widget.contact?.phone ?? 'tu contacto';
-
-  String get _countdownLabel {
-    final minutes = (_secondsRemaining ~/ 60).toString().padLeft(2, '0');
-    final seconds = (_secondsRemaining % 60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
-  }
-
-  Future<void> _submit() async {
+  Future<void> _verify() async {
     final contact = widget.contact;
+    if (_isLoading || _verified || !_isComplete) return;
     if (contact == null) {
       setState(
         () => _errorMessage = 'No encontramos el contacto de la cuenta.',
       );
       return;
     }
-    if (_code.length != FieldLimits.otpDigits) {
-      setState(
-        () =>
-            _errorMessage =
-                'Escribe los ${FieldLimits.otpDigits} dígitos del código.',
-      );
-      return;
-    }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-      _noticeMessage = null;
-    });
+    setState(() => _isLoading = true);
     try {
       await ref
           .read(authControllerProvider.notifier)
-          .verifyOtp(VerifyOtpRequest(contact: contact, code: _code));
+          .verifyOtp(VerifyOtpRequest(contact: contact, code: _code.text));
+      if (!mounted) return;
+      _timer?.cancel();
+      FocusScope.of(context).unfocus();
+      setState(() {
+        _isLoading = false;
+        _verified = true;
+      });
+      await _celebrate();
       if (mounted) context.go('/home');
     } on ApiException catch (error) {
-      if (mounted) setState(() => _errorMessage = error.message);
+      _fail(error.message);
     } catch (_) {
-      if (mounted) {
-        setState(
-          () => _errorMessage = 'No se pudo verificar el código. Intenta de nuevo.',
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+      _fail('No se pudo verificar el código. Intenta de nuevo.');
     }
+  }
+
+  void _fail(String message) {
+    if (!mounted) return;
+    setState(() {
+      _isLoading = false;
+      _errorMessage = message;
+      _shakeCount++;
+    });
+  }
+
+  /// Las cajas se juntan en el check y, tras un respiro, el círculo de
+  /// marca crece desde el check hasta cubrir la pantalla.
+  Future<void> _celebrate() async {
+    if (_reducedMotion) return;
+    await _collapse.forward();
+    await Future<void>.delayed(const Duration(milliseconds: 450));
+    final box = _fieldKey.currentContext?.findRenderObject() as RenderBox?;
+    if (!mounted || box == null) return;
+    setState(
+      () => _revealCenter = box.localToGlobal(box.size.center(Offset.zero)),
+    );
+    await _reveal.forward();
   }
 
   Future<void> _resend() async {
     final contact = widget.contact;
     if (contact == null || _isResending) return;
-
-    setState(() {
-      _isResending = true;
-      _errorMessage = null;
-      _noticeMessage = null;
-    });
+    setState(() => _isResending = true);
     try {
       final response = await ref
           .read(authControllerProvider.notifier)
           .resendOtp(ResendOtpRequest(contact: contact));
       if (!mounted) return;
       _startCountdown();
-      setState(() => _noticeMessage = response.message);
+      showAppSnack(context, response.message);
     } on ApiException catch (error) {
       if (mounted) setState(() => _errorMessage = error.message);
     } finally {
@@ -135,44 +165,57 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen> {
     }
   }
 
-  void _dismissMessage() {
-    setState(() {
-      if (_errorMessage != null) {
-        _errorMessage = null;
-      } else {
-        _noticeMessage = null;
-      }
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     ref.watch(authControllerProvider);
-
-    return AuthPage(
-      maxWidth: 440,
-      child: Column(
-        children: [
-          AuthTopBar(
-            onBack: () => context.go('/register'),
-            showTitle: true,
-          ),
-          const SizedBox(height: 12),
-          OtpVerifyContent(
-            contactLabel: _contactLabel,
-            onCodeChanged: (value) => setState(() => _code = value),
-            onResend: _resend,
-            onSubmit: _submit,
-            errorMessage: _errorMessage,
-            noticeMessage: _noticeMessage,
-            onDismissMessage: _dismissMessage,
-            secondsRemaining: _secondsRemaining,
-            countdownLabel: _countdownLabel,
-            canResend: _secondsRemaining == 0 && !_isResending,
+    return AuthStepScaffold(
+      pill: 'Paso 2 de 2',
+      icon: Icons.verified_user_outlined,
+      onBack: () => context.go('/login', extra: LoginScreen.returnExtra),
+      overlay: CircleReveal(progress: _revealCurve, center: _revealCenter),
+      body: _body(),
+      action: AnimatedOpacity(
+        opacity: _verified ? 0 : 1,
+        duration: const Duration(milliseconds: 320),
+        child: Center(
+          child: AuthMorphButton(
+            label: 'Verificar',
+            loadingLabel: 'Verificando',
             isLoading: _isLoading,
+            onPressed: _isComplete && !_verified ? _verify : null,
           ),
-        ],
+        ),
       ),
+    );
+  }
+
+  Widget _body() {
+    final contact = widget.contact;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        OtpHeading(
+          contactLabel: contact?.email ?? contact?.phone ?? 'tu correo',
+        ),
+        const SizedBox(height: 28),
+        OtpCodeField(
+          key: _fieldKey,
+          controller: _code,
+          collapse: _collapse,
+          hasError: _errorMessage != null,
+          shakeCount: _shakeCount,
+          enabled: !_verified && !_isLoading,
+          onSubmitted: _verify,
+        ),
+        AuthFieldError(message: _errorMessage),
+        const SizedBox(height: 16),
+        OtpStatus(
+          verified: _verified,
+          secondsLeft: _secondsLeft,
+          totalSeconds: _resendSeconds,
+          onResend: _isResending ? null : _resend,
+        ),
+      ],
     );
   }
 }

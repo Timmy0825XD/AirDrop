@@ -6,13 +6,19 @@ import '../../../core/api_exception.dart';
 import '../../../core/validators.dart';
 import '../data/auth_models.dart';
 import 'auth_controller.dart';
-import 'widgets/auth_page.dart';
+import 'login_screen.dart';
+import 'widgets/auth_morph_button.dart';
+import 'widgets/auth_step_scaffold.dart';
+import 'widgets/auth_text_link.dart';
 import 'widgets/forgot/forgot_password_content.dart';
-import 'widgets/login/login_form_alert.dart';
 
-/// Recuperación de contraseña. El backend siempre responde el mismo
-/// mensaje (`Si el contacto existe, te enviaremos un código.`), así que
-/// esta pantalla no revela si la cuenta existe.
+/// Recuperación de contraseña. Llega desde el login: el encabezado alto se
+/// encoge y la llave gira al entrar. Al enviar, el botón se vuelve el dron,
+/// aparece la confirmación y el botón vuelve como "Ingresar el código".
+///
+/// El backend siempre responde el mismo mensaje
+/// (`Si el contacto existe, te enviaremos un código.`), así que esta
+/// pantalla no revela si la cuenta existe.
 class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
@@ -22,10 +28,14 @@ class ForgotPasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _email = TextEditingController();
   bool _isLoading = false;
+  int _shakeCount = 0;
   String? _errorMessage;
+
+  /// Mensaje de Nest tras enviar; mientras sea `null` no se ha enviado.
+  String? _sentMessage;
+  AuthContact? _contact;
 
   @override
   void dispose() {
@@ -33,68 +43,96 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
-    FocusScope.of(context).unfocus();
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+  Future<void> _send() async {
+    if (_isLoading) return;
+    final error = Validators.email(_email.text);
+    if (error != null) {
+      setState(() {
+        _errorMessage = error;
+        _shakeCount++;
+      });
+      return;
+    }
 
+    FocusScope.of(context).unfocus();
+    setState(() => _isLoading = true);
+    final contact = AuthContact.email(_email.text.trim().toLowerCase());
     try {
-      final contact = AuthContact.email(_email.text.trim().toLowerCase());
-      await ref
+      final response = await ref
           .read(authControllerProvider.notifier)
           .forgotPassword(ForgotPasswordRequest(contact: contact));
-      if (mounted) context.go('/reset-password', extra: contact);
+      if (!mounted) return;
+      setState(() {
+        _contact = contact;
+        _sentMessage = response.message;
+      });
     } on ApiException catch (error) {
-      if (mounted) setState(() => _errorMessage = error.message);
+      _fail(error.message);
     } catch (_) {
-      if (mounted) {
-        setState(
-          () => _errorMessage = 'No se pudo enviar el código. Intenta de nuevo.',
-        );
-      }
+      _fail('No se pudo enviar el código. Intenta de nuevo.');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  String? _validateEmail(String? value) => Validators.email(value);
+  void _fail(String message) {
+    if (!mounted) return;
+    setState(() {
+      _errorMessage = message;
+      _shakeCount++;
+    });
+  }
 
   void _clearError(String _) {
     if (_errorMessage != null) setState(() => _errorMessage = null);
   }
 
+  void _toLogin() => context.go('/login', extra: LoginScreen.returnExtra);
+
   @override
   Widget build(BuildContext context) {
     ref.watch(authControllerProvider);
+    final sent = _sentMessage != null;
 
-    return AuthPage(
-      maxWidth: 440,
-      child: Form(
-        key: _formKey,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            ForgotPasswordContent(
-              onBack: () => context.go('/login'),
-              onReturnToLogin: () => context.go('/login'),
-              contactController: _email,
-              hint: 'nombre@correo.com',
-              keyboardType: TextInputType.emailAddress,
-              validator: _validateEmail,
-              onChanged: _clearError,
+    return AuthStepScaffold(
+      fromTall: true,
+      icon: Icons.key_rounded,
+      turnIcon: true,
+      onBack: _toLogin,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ForgotPasswordForm(
+            email: _email,
+            errorText: _errorMessage,
+            shakeCount: _shakeCount,
+            enabled: !sent,
+            onChanged: _clearError,
+            onSubmitted: _send,
+          ),
+          ForgotSentCard(message: _sentMessage),
+        ],
+      ),
+      action: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: AuthMorphButton(
+              label: sent ? 'Ingresar el código' : 'Enviar código',
+              loadingLabel: 'Enviando código',
               isLoading: _isLoading,
-              onSubmit: _submit,
+              onPressed: sent
+                  ? () => context.go('/reset-password', extra: _contact)
+                  : _send,
             ),
-            AuthFormAlert(
-              message: _errorMessage,
-              onDismiss: () => setState(() => _errorMessage = null),
-              topPadding: 16,
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 10),
+          AuthTextLink(
+            question: '¿La recordaste?',
+            action: 'Inicia sesión',
+            onPressed: _toLogin,
+          ),
+        ],
       ),
     );
   }

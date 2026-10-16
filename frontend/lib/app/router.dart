@@ -133,26 +133,43 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/', redirect: (_, _) => '/login'),
-      GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
-      GoRoute(path: '/register', builder: (_, _) => const RegisterScreen()),
+      // Las pantallas de auth rediseñadas animan su propia entrada (el
+      // encabezado cambia de forma), así que la ruta no agrega otra encima.
+      GoRoute(
+        path: '/login',
+        pageBuilder: (_, state) => NoTransitionPage(
+          child: LoginScreen(
+            returning: state.extra == LoginScreen.returnExtra,
+          ),
+        ),
+      ),
+      GoRoute(
+        path: '/register',
+        pageBuilder: (_, _) => const NoTransitionPage(child: RegisterScreen()),
+      ),
       GoRoute(
         path: '/forgot-password',
-        builder: (_, _) => const ForgotPasswordScreen(),
+        pageBuilder: (_, _) =>
+            const NoTransitionPage(child: ForgotPasswordScreen()),
       ),
       GoRoute(
         path: '/reset-password',
-        builder: (_, state) => ResetPasswordScreen(
-          contact: state.extra is AuthContact
-              ? state.extra as AuthContact
-              : null,
+        pageBuilder: (_, state) => NoTransitionPage(
+          child: ResetPasswordScreen(
+            contact: state.extra is AuthContact
+                ? state.extra as AuthContact
+                : null,
+          ),
         ),
       ),
       GoRoute(
         path: '/verify-otp',
-        builder: (_, state) => VerifyOtpScreen(
-          contact: state.extra is AuthContact
-              ? state.extra as AuthContact
-              : null,
+        pageBuilder: (_, state) => NoTransitionPage(
+          child: VerifyOtpScreen(
+            contact: state.extra is AuthContact
+                ? state.extra as AuthContact
+                : null,
+          ),
         ),
       ),
       GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),

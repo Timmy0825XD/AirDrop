@@ -2,59 +2,66 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/field_limits.dart';
 import '../../../data/auth_models.dart';
+import '../auth_field.dart';
 import '../document_type_labels.dart';
 import '../document_type_tabs.dart';
-import 'register_field.dart';
+import 'register_fields.dart';
 
-/// Bloque "Tipo de documento": el selector y el número. El tipo manda el
-/// hint y el patrón de validación, porque una cédula es solo dígitos y el
-/// PPT admite letras.
-class RegisterDocumentSection extends StatelessWidget {
-  const RegisterDocumentSection({
+/// Nombre, tipo de documento y número. El tipo manda el ejemplo, la nota y
+/// el teclado del número, porque una cédula es solo dígitos y el PPT
+/// admite letras.
+class RegisterIdentityFields extends StatelessWidget {
+  const RegisterIdentityFields({
     super.key,
-    required this.type,
-    required this.onTypeChanged,
-    required this.numberController,
-    required this.validator,
-    required this.onChanged,
+    required this.data,
+    required this.documentType,
+    required this.onDocumentTypeChanged,
   });
 
-  final DocumentType type;
-  final ValueChanged<DocumentType> onTypeChanged;
-  final TextEditingController numberController;
-  final String? Function(String?)? validator;
-  final ValueChanged<String> onChanged;
+  final RegisterFormData data;
+  final DocumentType documentType;
+  final ValueChanged<DocumentType> onDocumentTypeChanged;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
+    final c = data.controllers;
+    final digits = DocumentTypeLabels.usesDigits(documentType);
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        AuthField(
+          label: 'Nombre completo',
+          hint: 'Como aparece en tu documento',
+          icon: Icons.person_outline_rounded,
+          controller: c.name,
+          errorText: data.errors[RegisterInput.name],
+          shakeCount: data.shakeCount,
+          maxLength: FieldLimits.fullName,
+          autofillHints: const [AutofillHints.name],
+          onChanged: data.onChanged,
+        ),
+        const SizedBox(height: 18),
         Text(
-          'Tipo de documento',
-          style: theme.textTheme.labelLarge?.copyWith(
-            color: theme.colorScheme.onSurface,
-            fontWeight: FontWeight.w600,
-          ),
+          'TIPO DE DOCUMENTO',
+          style: Theme.of(context).textTheme.labelSmall,
         ),
         const SizedBox(height: 8),
-        DocumentTypeTabs(selected: type, onChanged: onTypeChanged),
-        const SizedBox(height: 16),
-        RegisterField(
+        DocumentTypeTabs(
+          selected: documentType,
+          onChanged: onDocumentTypeChanged,
+        ),
+        const SizedBox(height: 18),
+        AuthField(
           label: 'Número de documento',
-          badge: 'Requerido',
-          hint: DocumentTypeLabels.hint(type),
+          hint: DocumentTypeLabels.hint(documentType),
           icon: Icons.badge_outlined,
-          controller: numberController,
-          keyboardType: DocumentTypeLabels.usesDigits(type)
-              ? TextInputType.number
-              : TextInputType.text,
+          trailing: AuthFieldNote(DocumentTypeLabels.lengthNote(documentType)),
+          controller: c.document,
+          errorText: data.errors[RegisterInput.document],
+          shakeCount: data.shakeCount,
+          keyboardType: digits ? TextInputType.number : TextInputType.text,
           maxLength: FieldLimits.documentNumber,
-          textInputAction: TextInputAction.next,
-          validator: validator,
-          onChanged: onChanged,
+          onChanged: data.onChanged,
         ),
       ],
     );
