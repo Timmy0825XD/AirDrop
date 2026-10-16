@@ -143,22 +143,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       _errorMessage = null;
     });
     final email = _email.text.trim().toLowerCase();
+    final auth = ref.read(authControllerProvider.notifier);
     try {
       // El círculo con el dron se ve al menos un instante aunque la API
       // responda de inmediato.
-      await Future.wait([
-        ref
-            .read(authControllerProvider.notifier)
-            .login(
-              LoginRequest(
-                contact: AuthContact.email(email),
-                password: _password.text,
-              ),
-            ),
-        Future<void>.delayed(const Duration(milliseconds: 700)),
-      ]);
+      final minimum = Future<void>.delayed(const Duration(milliseconds: 700));
+      final session = await auth.login(
+        LoginRequest(contact: AuthContact.email(email), password: _password.text),
+        announce: false,
+      );
+      await minimum;
       await _playReveal();
-      if (mounted) context.go('/home');
+      // Publicar la sesión hace que el router lleve al inicio; antes del
+      // círculo la pantalla se habría cerrado a mitad de la salida.
+      auth.announce(session);
     } on ApiException catch (error) {
       if (!mounted) return;
       if (error.code == 'account_unverified') {

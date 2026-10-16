@@ -104,19 +104,24 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen>
     }
 
     setState(() => _isLoading = true);
+    final auth = ref.read(authControllerProvider.notifier);
     try {
-      await ref
-          .read(authControllerProvider.notifier)
-          .verifyOtp(VerifyOtpRequest(contact: contact, code: _code.text));
-      if (!mounted) return;
-      _timer?.cancel();
-      FocusScope.of(context).unfocus();
-      setState(() {
-        _isLoading = false;
-        _verified = true;
-      });
-      await _celebrate();
-      if (mounted) context.go('/home');
+      final session = await auth.verifyOtp(
+        VerifyOtpRequest(contact: contact, code: _code.text),
+        announce: false,
+      );
+      if (mounted) {
+        _timer?.cancel();
+        FocusScope.of(context).unfocus();
+        setState(() {
+          _isLoading = false;
+          _verified = true;
+        });
+        await _celebrate();
+      }
+      // Publicar la sesión hace que el router lleve al inicio. Va después
+      // del check y el círculo para que la pantalla no se cierre a mitad.
+      auth.announce(session);
     } on ApiException catch (error) {
       _fail(error.message);
     } catch (_) {
