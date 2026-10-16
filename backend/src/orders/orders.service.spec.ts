@@ -354,6 +354,35 @@ describe('OrdersService status', () => {
     ).rejects.toBeInstanceOf(NotFoundException);
   });
 
+  it('opens a civil emergency for the hub that sees it in its queue', async () => {
+    const { service, orders, stockForHub } = build();
+    orders.findOne.mockResolvedValue(receivedOrder());
+    stockForHub.mockResolvedValue([offer]);
+    const result = await service.findOne(dispatcher(), receivedOrder().id);
+    expect(result.id).toBe(receivedOrder().id);
+    expect(stockForHub).toHaveBeenCalledWith(destination.id);
+  });
+
+  it('hides a civil emergency from a hub without stock or once it is authorized', async () => {
+    const { service, orders, stockForHub } = build();
+    orders.findOne.mockResolvedValue(receivedOrder());
+    stockForHub.mockResolvedValue([]);
+    await expect(
+      service.findOne(dispatcher(), receivedOrder().id),
+    ).rejects.toBeInstanceOf(NotFoundException);
+
+    stockForHub.mockResolvedValue([offer]);
+    orders.findOne.mockResolvedValue(
+      receivedOrder({
+        status: OrderStatus.PENDING_LOAD,
+        originHubId: origin.id,
+      }),
+    );
+    await expect(
+      service.findOne(dispatcher(), receivedOrder().id),
+    ).rejects.toBeInstanceOf(NotFoundException);
+  });
+
   it('rejects a hub emergency from received without reserving a drone', async () => {
     const { service, orders } = build();
     const order = receivedOrder({

@@ -148,14 +148,22 @@ Fase 1. Una rama por rol para que cada PR sea revisable.
 
 ### Errores ya conocidos (para la revisión)
 
-- **Despachador (Fase 6):** dos pedidos aparecen en sus listas pero al
-  abrirlos el detalle se queda cargando y termina en "El pedido no existe."
-  (`GET /orders/:id` responde 404, por ejemplo
-  `39d04443-f6b1-4960-98df-7382118796fc` y
-  `861c71c7-7652-4576-93a2-5312db258548`). Revisar en qué lista salen y si
-  esa lista muestra pedidos que el despachador no puede leer (Nest solo deja
-  leer al creador o a la central de origen o destino). Además, el detalle no
-  debe quedarse cargando: tiene que mostrar el error enseguida.
+- ~~**Despachador:** pedidos de la cola que al abrirlos se quedan cargando y
+  terminan en "El pedido no existe."~~ Corregido en
+  `fix/pedido-despachador-404` (2026-10-16): la cola muestra urgencias
+  civiles sin central de origen a toda central con stock, pero
+  `GET /orders/:id` solo dejaba leer a la central de origen o destino. Ahora
+  esa central también puede abrirlas mientras siguen en recibido. Además, un
+  error de Nest ya no se reintenta 10 veces (`retryOnlyWithoutResponse`) y
+  la cola, los programados, pending-load y el historial se refrescan solos
+  cada 10 s (`AutoRefresh`).
+- ~~**Mapa en vivo:** "Ver vuelo" muestra el primer dato pero no se mueve;
+  hay que salir y volver.~~ Corregido en la misma rama: era del backend.
+  Nest arranca los `onModuleInit` del módulo en paralelo y
+  `TelemetryPublisher` se ponía a escuchar Redis antes de que la conexión
+  abriera, así que nunca se suscribía al canal y el socket no recibía ni la
+  telemetría ni los cambios de estado. Ahora `TelemetryRedis` guarda quién
+  escucha y se suscribe al conectar (test `telemetry.redis.spec`).
 - **Despachador:** no hay lista de vuelos en curso en el frontend; al
   despegar, el pedido sale de la cola y de pending-load. Nest ya tiene
   `GET /orders/in-flight` (rama `fix/socket-y-vuelos-en-curso`); falta la

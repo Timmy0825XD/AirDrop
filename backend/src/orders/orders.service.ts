@@ -441,13 +441,13 @@ export class OrdersService {
 
   private async requireReadable(user: User, id: string) {
     const order = await this.orders.findOne({ where: { id } });
-    if (!order || !this.canRead(user, order)) {
+    if (!order || !(await this.canRead(user, order))) {
       throw new NotFoundException('El pedido no existe.');
     }
     return order;
   }
 
-  private canRead(user: User, order: Order): boolean {
+  private async canRead(user: User, order: Order): Promise<boolean> {
     if (user.role === UserRole.REQUESTER) {
       return order.requesterId === user.id;
     }
@@ -459,11 +459,26 @@ export class OrdersService {
       return false;
     }
     const hubId = hubIds[0];
-    return (
+    if (
       order.createdByUserId === user.id ||
       order.originHubId === hubId ||
       order.destinationHubId === hubId
-    );
+    ) {
+      return true;
+    }
+    return this.isWaitingForHub(order, hubId);
+  }
+
+  /**
+   * Pedido civil que todavía no tiene central de origen (se la pone la
+   * autorización). La cola y los programados se lo muestran a toda central
+   * con stock suficiente, así que esa central también puede abrirlo.
+   */
+  private async isWaitingForHub(order: Order, hubId: string) {
+    if (order.originHubId || order.status !== OrderStatus.RECEIVED) {
+      return false;
+    }
+    return this.isDirectedToHub(order, hubId, await this.stockByKey(hubId));
   }
 
   private async stockByKey(hubId: string) {
