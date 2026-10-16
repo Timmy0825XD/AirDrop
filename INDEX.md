@@ -123,6 +123,8 @@ Scrum, 6 sprints de 2 semanas (1 sep – 22 nov 2026), 227 SP.
 
 Detalle: [`context/producto/backlog.md`](context/producto/backlog.md).
 
+Fase en curso del frontend y su rama: [`context/producto/avance.md`](context/producto/avance.md).
+
 ---
 
 ## 10. Principio rector (para la sustentación)
