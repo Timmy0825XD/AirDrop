@@ -77,25 +77,6 @@ void main() {
     });
   });
 
-  group('fecha AAAA-MM-DD', () {
-    test('acepta el formato estricto', () {
-      expect(Validators.isoDate('2027-01-31'), isNull);
-    });
-
-    test('rechaza otros formatos', () {
-      expect(Validators.isoDate('31/01/2027'), contains('AAAA-MM-DD'));
-      expect(Validators.isoDate('2027-1-31'), contains('AAAA-MM-DD'));
-      expect(Validators.isoDate(''), 'Escribe La fecha.');
-    });
-
-    test('acepta una etiqueta para la fecha', () {
-      expect(
-        Validators.isoDate('x', label: 'La fecha estimada'),
-        'La fecha estimada debe ser AAAA-MM-DD.',
-      );
-    });
-  });
-
   group('motivo, identificador y nombres', () {
     test('motivo obligatorio y opcional', () {
       expect(Validators.reason(''), 'Escribe el motivo.');
@@ -125,12 +106,11 @@ void main() {
   });
 
   group('los validadores existentes siguen igual', () {
-    test('nombre, correo, celular, contraseña y OTP', () {
+    test('nombre, correo, celular y contraseña', () {
       expect(Validators.name('Ana'), isNull);
       expect(Validators.email('a@b.co'), isNull);
       expect(Validators.phone('3001234567'), isNull);
       expect(Validators.password('Demo1234'), isNull);
-      expect(Validators.otp('123456'), isNull);
     });
 
     test('el celular con prefijo +57 se normaliza y se acepta', () {

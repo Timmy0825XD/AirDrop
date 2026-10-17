@@ -4,8 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../../../core/widgets/message_view.dart';
-import '../../../core/widgets/rise_in.dart';
 import '../../auth/presentation/widgets/auth_morph_button.dart';
+import '../../home/presentation/widgets/section_form_page.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../data/geofence_models.dart';
 import '../data/geofence_providers.dart';
@@ -113,59 +113,35 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
   }
 
   Widget _form(Geofence? original) {
-    return Scaffold(
-      body: ListView(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.paddingOf(context).bottom + 24,
-        ),
-        children: [
-          SectionHeader(
-            title: original == null ? 'Nueva geovalla' : 'Editar geovalla',
-            subtitle: original?.name ?? 'Una zona por donde el dron no pasa',
-            onBack: () => SectionHeader.backOrHome(context),
-          ),
-          Transform.translate(
-            offset: const Offset(0, -24),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: RiseIn(
-                child: GeofenceFormSheet(
-                  values: _values,
-                  errors: _errors,
-                  shakeCount: _shakeCount,
-                  onDraw: _draw,
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: AuthMorphButton(
-              label: original == null ? 'Crear geovalla' : 'Guardar cambios',
-              loadingLabel: 'Guardando la geovalla',
-              isLoading: _isLoading,
-              onPressed: () => _submit(original),
-            ),
-          ),
-        ],
+    return SectionFormPage(
+      header: SectionHeader(
+        title: original == null ? 'Nueva geovalla' : 'Editar geovalla',
+        subtitle: original?.name ?? 'Una zona por donde el dron no pasa',
+        onBack: () => SectionHeader.backOrHome(context),
+      ),
+      card: GeofenceFormSheet(
+        values: _values,
+        errors: _errors,
+        shakeCount: _shakeCount,
+        onDraw: _draw,
+      ),
+      button: AuthMorphButton(
+        label: original == null ? 'Crear geovalla' : 'Guardar cambios',
+        loadingLabel: 'Guardando la geovalla',
+        isLoading: _isLoading,
+        onPressed: () => _submit(original),
       ),
     );
   }
 
   Widget _message(String text) {
-    return Scaffold(
-      body: Column(
-        children: [
-          SectionHeader(
-            title: 'Geovalla',
-            subtitle: 'Editar geovalla',
-            onBack: () => SectionHeader.backOrHome(context),
-          ),
-          Expanded(
-            child: MessageView(icon: Icons.polyline_outlined, message: text),
-          ),
-        ],
+    return SectionStatePage(
+      header: SectionHeader(
+        title: 'Geovalla',
+        subtitle: 'Editar geovalla',
+        onBack: () => SectionHeader.backOrHome(context),
       ),
+      body: MessageView(icon: Icons.polyline_outlined, message: text),
     );
   }
 }

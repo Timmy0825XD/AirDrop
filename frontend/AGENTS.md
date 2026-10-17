@@ -85,7 +85,8 @@ controller de la feature.
 
 - Español de Colombia (RNF-15). Identificadores en inglés.
 - Contraste y tamaños legibles (RNF-10).
-- Reutilizar widgets. Ningún widget supera **60 líneas**; si pasa, se descompone.
+- Reutilizar widgets. Ningún widget supera **60 líneas**; si pasa, se descompone. Se mide la clase entera con `tools/ui_inventory.ps1` (escribe `docs/ui_inventory.md`); los `*_values.dart` guardan datos y validan, no pintan, y no entran en la regla.
+- `dart format` solo sobre los archivos que se tocaron: sobre carpetas enteras reformatea archivos ajenos y ensucia el PR.
 - Tema solo en `lib/theme/`. Las pantallas leen `Theme.of(context)`.
 - El mapa y el socket de telemetría se implementan **una vez** en `core` o `features/tracking` y se reutilizan.
 
@@ -257,6 +258,9 @@ Las pantallas de los roles usan las piezas de auth (`AuthCurvedHeader`,
 | `signOut` | `home/presentation/widgets` | Cerrar sesión y volver al login, para todos los inicios. |
 | `StatusPill` / `PillTone` | `core/widgets` | Estado en pastilla (positivo, atención, negativo) con rebote al cambiar. |
 | `StatusCard` + `RowActionButton` | `core/widgets` | Tarjeta de lista con estado y acción a la derecha. |
+| `ToneTile` (`ToneTile.icon`) | `core/widgets` | El cuadro teñido con ícono (o el dron) al frente de cada tarjeta. |
+| `SectionFormPage` / `SectionStatePage` | `home/presentation/widgets` | Pantalla de formulario (encabezado, tarjeta sobre la curva y botón) y su versión para carga, error o vacío. La usan todos los formularios. |
+| `FormBottomSheet` | `core/widgets` | Hoja inferior con título, campos y botón de guardar (editar perfil, mantenimiento). |
 | `ChoicePill` | `core/widgets` | Chip elegible (relleno o teñido, con ícono o check). |
 | `SlidingSegmented` | `core/widgets` | Filtro con pastilla que se desliza (`null` = "Todas"). |
 | `showConfirmSheet` | `core/widgets` | Hoja inferior para confirmar suspender o reactivar. |
@@ -269,7 +273,8 @@ Las pantallas de los roles usan las piezas de auth (`AuthCurvedHeader`,
 | `AuthDateField` + `pickIsoDate` / `AuthChoiceGroup` | `auth/presentation/widgets` | Fecha en calendario (AAAA-MM-DD) y grupo de chips con label y error que tiembla, con la forma de `AuthField`. |
 | `OrderTray` / `OrderRowCard` | `orders/presentation/widgets` | Andamiaje de las bandejas (encabezado con conteo, lista en cascada, recarga, vacío, error y refresco cada 10 s) y su tarjeta. |
 | `AuthLocationField` | `auth/presentation/widgets` | El punto en el mapa con pin que cae (nueva central, urgencia y entrega periódica del solicitante). |
-| `OrderFormScaffold` | `orders/presentation/widgets` | Andamiaje de los formularios de pedido: encabezado, tarjeta sobre la curva y botón; mientras su lista (catálogo o centrales) carga, falla o viene vacía, lo dice. |
+| `OrderFormScaffold` | `orders/presentation/widgets` | Formularios de pedido sobre `SectionFormPage`; mientras su lista (catálogo o centrales) carga, falla o viene vacía, lo dice. |
+| `pickFutureDate` | `auth/presentation/widgets/auth_date_field.dart` | El calendario de hoy a un año (inicio de planes, fecha estimada de mantenimiento). |
 | `RequesterOrderValues` / `RequesterOrderState` | `orders/presentation/widgets/requester_order` | Valores, validación y estado compartidos por la urgencia y la entrega periódica del solicitante. **La ubicación es obligatoria**: Nest no autoriza sin coordenadas. |
 
 Los formularios validan en la pantalla con `Validators` y pasan

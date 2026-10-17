@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- La API de Nest, el socket de telemetría y los tiles del mapa. Sin
+         esto un APK de release no carga nada: debug y profile ya lo traen
+         en su propio manifest. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="frontend"
         android:name="${applicationName}"

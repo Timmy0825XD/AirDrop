@@ -52,15 +52,6 @@ class Validators {
     return null;
   }
 
-  static String? otp(String? value) {
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) return 'Escribe el código.';
-    if (!RegExp(r'^\d{6}$').hasMatch(text)) {
-      return 'El código debe tener ${FieldLimits.otpDigits} dígitos.';
-    }
-    return null;
-  }
-
   /// Cédula de ciudadanía o de extranjería: 6 a 10 dígitos.
   static String? documentDigits(String? value) {
     final digits = value?.trim() ?? '';
@@ -99,16 +90,6 @@ class Validators {
     if (text.isEmpty) return 'Escribe el lote.';
     if (!FieldLimits.lotCodeRegex.hasMatch(text)) {
       return 'El lote debe tener entre 3 y 20 letras, números o guiones.';
-    }
-    return null;
-  }
-
-  /// Fechas de vencimiento y fechas estimadas: AAAA-MM-DD.
-  static String? isoDate(String? value, {String label = 'La fecha'}) {
-    final text = value?.trim() ?? '';
-    if (text.isEmpty) return 'Escribe $label.';
-    if (!FieldLimits.isoDateRegex.hasMatch(text)) {
-      return '$label debe ser AAAA-MM-DD.';
     }
     return null;
   }

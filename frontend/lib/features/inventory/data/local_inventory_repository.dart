@@ -1,4 +1,4 @@
-import '../../../../core/api_exception.dart';
+import '../../../core/api_exception.dart';
 import '../../auth/data/local/local_fixtures.dart';
 import '../../hubs/data/hub_repository.dart';
 import 'inventory_models.dart';

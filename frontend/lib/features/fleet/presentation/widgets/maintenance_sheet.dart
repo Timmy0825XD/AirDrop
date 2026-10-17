@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/field_limits.dart';
 import '../../../../core/validators.dart';
+import '../../../../core/widgets/form_bottom_sheet.dart';
 import '../../../auth/presentation/widgets/auth_date_field.dart';
 import '../../../auth/presentation/widgets/auth_field.dart';
 
@@ -34,6 +35,16 @@ Future<MaintenanceInput?> showMaintenanceSheet(
   );
 }
 
+/// Con [mandatory], motivo y fecha son obligatorios.
+({String? reason, String? date}) maintenanceErrors({
+  required String reason,
+  required String? date,
+  required bool mandatory,
+}) => (
+  reason: Validators.reason(reason, required: mandatory),
+  date: mandatory && date == null ? 'Elige la fecha estimada.' : null,
+);
+
 class MaintenanceSheet extends StatefulWidget {
   const MaintenanceSheet({
     super.key,
@@ -53,8 +64,7 @@ class MaintenanceSheet extends StatefulWidget {
 class _MaintenanceSheetState extends State<MaintenanceSheet> {
   late final _reason = TextEditingController(text: widget.initialReason);
   late String? _date = widget.initialDate.isEmpty ? null : widget.initialDate;
-  String? _reasonError;
-  String? _dateError;
+  ({String? reason, String? date}) _errors = (reason: null, date: null);
   int _shakeCount = 0;
 
   @override
@@ -64,30 +74,22 @@ class _MaintenanceSheetState extends State<MaintenanceSheet> {
   }
 
   Future<void> _pickDate() async {
-    final today = DateUtils.dateOnly(DateTime.now());
-    final picked = await pickIsoDate(
-      context,
-      current: _date,
-      first: today,
-      last: today.add(const Duration(days: 365)),
-    );
+    final picked = await pickFutureDate(context, current: _date);
     if (picked != null) setState(() => _date = picked);
   }
 
   void _save() {
-    final reasonError = Validators.reason(
-      _reason.text,
-      required: widget.mandatory,
+    final errors = maintenanceErrors(
+      reason: _reason.text,
+      date: _date,
+      mandatory: widget.mandatory,
     );
-    final dateError = widget.mandatory && _date == null
-        ? 'Elige la fecha estimada.'
-        : null;
+    final failed = errors.reason != null || errors.date != null;
     setState(() {
-      _reasonError = reasonError;
-      _dateError = dateError;
-      if (reasonError != null || dateError != null) _shakeCount++;
+      _errors = errors;
+      if (failed) _shakeCount++;
     });
-    if (reasonError != null || dateError != null) return;
+    if (failed) return;
     Navigator.pop(context, (
       reason: _reason.text.trim(),
       estimatedEndDate: _date ?? '',
@@ -96,61 +98,69 @@ class _MaintenanceSheetState extends State<MaintenanceSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final mandatory = widget.mandatory;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        0,
-        20,
-        20 + MediaQuery.viewInsetsOf(context).bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            mandatory ? 'Registrar mantenimiento' : 'Poner en mantenimiento',
-            style: theme.textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            mandatory
-                ? 'El dron queda fuera de servicio hasta que lo marques disponible.'
-                : 'Motivo y fecha son opcionales.',
-            style: theme.textTheme.bodyMedium,
-          ),
-          const SizedBox(height: 16),
-          AuthField(
-            label: 'Motivo',
-            hint: 'Cambio de hélices',
-            controller: _reason,
-            maxLength: FieldLimits.reason,
-            errorText: _reasonError,
-            shakeCount: _shakeCount,
-          ),
-          const SizedBox(height: 16),
-          AuthDateField(
-            label: 'Fecha estimada',
-            value: _date,
-            hint: mandatory ? 'Elige la fecha' : 'Opcional',
-            errorText: _dateError,
-            shakeCount: _shakeCount,
-            onTap: _pickDate,
-          ),
-          const SizedBox(height: 20),
-          FilledButton(
-            onPressed: _save,
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(54),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-            ),
-            child: Text(mandatory ? 'Registrar' : 'Guardar'),
-          ),
-        ],
-      ),
+    return FormBottomSheet(
+      title: mandatory ? 'Registrar mantenimiento' : 'Poner en mantenimiento',
+      subtitle: mandatory
+          ? 'El dron queda fuera de servicio hasta que lo marques disponible.'
+          : 'Motivo y fecha son opcionales.',
+      saveLabel: mandatory ? 'Registrar' : 'Guardar',
+      onSave: _save,
+      children: [
+        _MaintenanceFields(
+          reason: _reason,
+          date: _date,
+          mandatory: mandatory,
+          errors: _errors,
+          shakeCount: _shakeCount,
+          onPickDate: _pickDate,
+        ),
+      ],
+    );
+  }
+}
+
+/// El motivo y la fecha estimada, con sus errores.
+class _MaintenanceFields extends StatelessWidget {
+  const _MaintenanceFields({
+    required this.reason,
+    required this.date,
+    required this.mandatory,
+    required this.errors,
+    required this.shakeCount,
+    required this.onPickDate,
+  });
+
+  final TextEditingController reason;
+  final String? date;
+  final bool mandatory;
+  final ({String? reason, String? date}) errors;
+  final int shakeCount;
+  final VoidCallback onPickDate;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AuthField(
+          label: 'Motivo',
+          hint: 'Cambio de hélices',
+          controller: reason,
+          maxLength: FieldLimits.reason,
+          errorText: errors.reason,
+          shakeCount: shakeCount,
+        ),
+        const SizedBox(height: 16),
+        AuthDateField(
+          label: 'Fecha estimada',
+          value: date,
+          hint: mandatory ? 'Elige la fecha' : 'Opcional',
+          errorText: errors.date,
+          shakeCount: shakeCount,
+          onTap: onPickDate,
+        ),
+      ],
     );
   }
 }

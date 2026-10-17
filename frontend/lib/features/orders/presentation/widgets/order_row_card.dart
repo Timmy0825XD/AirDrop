@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/widgets/press_scale.dart';
+import '../../../../core/widgets/tone_tile.dart';
 
 /// Tarjeta de una bandeja de pedidos o planes: ícono teñido, título, una
 /// línea de color, una línea gris y, a la derecha, una pastilla opcional y
@@ -71,15 +72,7 @@ class _IconBox extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 46,
-      height: 46,
-      decoration: BoxDecoration(
-        color: tone.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Icon(icon, color: tone, size: 22),
-    );
+    return ToneTile.icon(icon: icon, tone: tone);
   }
 }
 

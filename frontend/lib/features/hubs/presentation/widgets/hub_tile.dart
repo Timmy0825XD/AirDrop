@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/widgets/row_action_button.dart';
 import '../../../../core/widgets/status_card.dart';
 import '../../../../core/widgets/status_pill.dart';
+import '../../../../core/widgets/tone_tile.dart';
 import '../../data/hub_models.dart';
 import 'hub_labels.dart';
 
@@ -56,15 +57,10 @@ class HubTypeTile extends StatelessWidget {
         : hub.type == HubType.bloodBank
         ? colors.error
         : colors.primary;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      width: 46,
-      height: 46,
-      decoration: BoxDecoration(
-        color: tone.withValues(alpha: hub.isActive ? 0.10 : 0.14),
-        borderRadius: BorderRadius.circular(14),
-      ),
-      child: Icon(HubLabels.icon(hub.type), color: tone, size: 22),
+    return ToneTile.icon(
+      icon: HubLabels.icon(hub.type),
+      tone: tone,
+      alpha: hub.isActive ? 0.10 : 0.14,
     );
   }
 }

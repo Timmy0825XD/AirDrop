@@ -51,8 +51,7 @@ class DroneStatusSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
+    final colors = Theme.of(context).colorScheme;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -60,17 +59,7 @@ class DroneStatusSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    drone.identifier,
-                    style: theme.textTheme.headlineMedium,
-                  ),
-                ),
-                DroneStatusChip(status: drone.status),
-              ],
-            ),
+            _SheetHeader(drone: drone),
             const SizedBox(height: 16),
             if (drone.status != DroneStatus.available)
               _ActionTile(
@@ -97,6 +86,28 @@ class DroneStatusSheet extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Identificador y estado actual, para no operar a ciegas.
+class _SheetHeader extends StatelessWidget {
+  const _SheetHeader({required this.drone});
+
+  final Drone drone;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            drone.identifier,
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+        ),
+        DroneStatusChip(status: drone.status),
+      ],
     );
   }
 }

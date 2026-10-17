@@ -14,13 +14,10 @@ class FieldLimits {
   static const int hubName = 80;
   static const int medicationName = 80;
   static const int geofenceName = 80;
-  static const int droneModelName = 80;
   static const int address = 160;
   static const int reason = 160;
   static const int orderDescription = 500;
-  static const int prescriptionMime = 32;
   static const int droneIdentifier = 32;
-  static const int droneModelCode = 32;
 
   /// Código de lote del empaque.
   static const int lotCode = 20;

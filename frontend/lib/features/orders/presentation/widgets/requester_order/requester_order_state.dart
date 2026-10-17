@@ -54,13 +54,7 @@ mixin RequesterOrderState<T extends ConsumerStatefulWidget>
   }
 
   Future<void> _pickDate() async {
-    final today = DateUtils.dateOnly(DateTime.now());
-    final picked = await pickIsoDate(
-      context,
-      current: values.startDate,
-      first: today,
-      last: today.add(const Duration(days: 365)),
-    );
+    final picked = await pickFutureDate(context, current: values.startDate);
     if (picked != null && mounted) setState(() => values.startDate = picked);
   }
 

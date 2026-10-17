@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-/// Aviso de error o de éxito con el mismo vidrio de la tarjeta.
-/// Mantiene la misma firma de antes, así que `AuthFormAlert` no cambia.
+/// Aviso de error o de éxito del login y el registro, en el color del
+/// tema; lo pinta `AuthFormAlert`.
 class LoginAlert extends StatelessWidget {
   const LoginAlert({
     super.key,
@@ -35,7 +35,6 @@ class LoginAlert extends StatelessWidget {
           border: Border.all(color: tone.withValues(alpha: 0.45)),
         ),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Icon(
               success
@@ -54,17 +53,30 @@ class LoginAlert extends StatelessWidget {
                 ),
               ),
             ),
-            IconButton(
-              tooltip: 'Cerrar aviso',
-              onPressed: onDismiss,
-              constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
-              iconSize: 18,
-              color: tone,
-              icon: const Icon(Icons.close),
-            ),
+            _CloseButton(tone: tone, onPressed: onDismiss),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// La X para cerrar el aviso, con área táctil de 44 px.
+class _CloseButton extends StatelessWidget {
+  const _CloseButton({required this.tone, required this.onPressed});
+
+  final Color tone;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: 'Cerrar aviso',
+      onPressed: onPressed,
+      constraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+      iconSize: 18,
+      color: tone,
+      icon: const Icon(Icons.close),
     );
   }
 }

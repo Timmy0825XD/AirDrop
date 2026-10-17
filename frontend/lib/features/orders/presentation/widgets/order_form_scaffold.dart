@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/api_exception.dart';
 import '../../../../core/widgets/form_sheet_card.dart';
 import '../../../../core/widgets/message_view.dart';
-import '../../../../core/widgets/rise_in.dart';
+import '../../../home/presentation/widgets/section_form_page.dart';
 import '../../../home/presentation/widgets/section_header.dart';
 
 /// El armado de un formulario de pedido: encabezado curvo, la tarjeta del
@@ -58,37 +58,12 @@ class OrderFormScaffold<T> extends StatelessWidget {
       onBack: () => context.go('/home'),
     );
     if (_stateView() case final body?) {
-      return Scaffold(
-        body: Column(
-          children: [
-            header,
-            Expanded(child: body),
-          ],
-        ),
-      );
+      return SectionStatePage(header: header, body: body);
     }
-    return Scaffold(
-      body: ListView(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.paddingOf(context).bottom + 24,
-        ),
-        children: [
-          header,
-          Transform.translate(
-            offset: const Offset(0, -24),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: RiseIn(
-                child: FormSheetCard(children: fields(source.value!)),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: button,
-          ),
-        ],
-      ),
+    return SectionFormPage(
+      header: header,
+      card: FormSheetCard(children: fields(source.value!)),
+      button: button,
     );
   }
 }

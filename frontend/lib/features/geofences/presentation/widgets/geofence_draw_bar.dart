@@ -35,23 +35,36 @@ class GeofenceDrawBar extends StatelessWidget {
         children: [
           Text(drawHint(count), style: theme.textTheme.bodyMedium),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              OutlinedButton.icon(
-                onPressed: count == 0 ? null : onUndo,
-                icon: const Icon(Icons.undo_rounded),
-                label: const Text('Deshacer'),
-              ),
-              const SizedBox(width: 12),
-              TextButton.icon(
-                onPressed: count == 0 ? null : onClear,
-                icon: const Icon(Icons.delete_outline_rounded),
-                label: const Text('Borrar todo'),
-              ),
-            ],
-          ),
+          _DrawButtons(bar: this),
         ],
       ),
+    );
+  }
+}
+
+/// Deshacer y Borrar todo, apagados mientras no haya vértices.
+class _DrawButtons extends StatelessWidget {
+  const _DrawButtons({required this.bar});
+
+  final GeofenceDrawBar bar;
+
+  @override
+  Widget build(BuildContext context) {
+    final empty = bar.count == 0;
+    return Row(
+      children: [
+        OutlinedButton.icon(
+          onPressed: empty ? null : bar.onUndo,
+          icon: const Icon(Icons.undo_rounded),
+          label: const Text('Deshacer'),
+        ),
+        const SizedBox(width: 12),
+        TextButton.icon(
+          onPressed: empty ? null : bar.onClear,
+          icon: const Icon(Icons.delete_outline_rounded),
+          label: const Text('Borrar todo'),
+        ),
+      ],
     );
   }
 }

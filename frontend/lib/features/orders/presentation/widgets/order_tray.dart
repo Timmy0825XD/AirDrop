@@ -6,6 +6,7 @@ import '../../../../core/api_exception.dart';
 import '../../../../core/widgets/auto_refresh.dart';
 import '../../../../core/widgets/message_view.dart';
 import '../../../../core/widgets/rise_in.dart';
+import '../../../home/presentation/widgets/section_form_page.dart';
 import '../../../home/presentation/widgets/section_header.dart';
 
 /// El andamiaje de una bandeja del despachador (cola, programados,
@@ -41,44 +42,50 @@ class OrderTray<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final count = rows.asData?.value.length;
-    return Scaffold(
-      body: Column(
-        children: [
-          SectionHeader(
-            title: title,
-            subtitle: count == null ? idleSubtitle : countLabel(count),
-            onBack: () => context.go('/home'),
+    return SectionStatePage(
+      header: SectionHeader(
+        title: title,
+        subtitle: count == null ? idleSubtitle : countLabel(count),
+        onBack: () => context.go('/home'),
+      ),
+      body: AutoRefresh(
+        onTick: onRefresh,
+        child: switch (rows) {
+          AsyncData(:final value) => _TrayList<T>(tray: this, items: value),
+          AsyncError(:final error) => MessageView(
+            icon: Icons.cloud_off_rounded,
+            message: ApiException.messageOf(error),
           ),
-          Expanded(
-            child: AutoRefresh(
-              onTick: onRefresh,
-              child: switch (rows) {
-                AsyncData(:final value) => _list(value),
-                AsyncError(:final error) => MessageView(
-                  icon: Icons.cloud_off_rounded,
-                  message: ApiException.messageOf(error),
-                ),
-                _ => const Center(child: CircularProgressIndicator()),
-              },
-            ),
-          ),
-        ],
+          _ => const Center(child: CircularProgressIndicator()),
+        },
       ),
     );
   }
+}
 
-  Widget _list(List<T> items) {
-    if (items.isEmpty) return MessageView(icon: emptyIcon, message: emptyText);
+/// La lista de la bandeja: vacía dice por qué; si no, las filas entran en
+/// cascada y se puede deslizar para recargar.
+class _TrayList<T> extends StatelessWidget {
+  const _TrayList({required this.tray, required this.items});
+
+  final OrderTray<T> tray;
+  final List<T> items;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return MessageView(icon: tray.emptyIcon, message: tray.emptyText);
+    }
     return RefreshIndicator(
-      onRefresh: () async => onRefresh(),
+      onRefresh: () async => tray.onRefresh(),
       child: ListView.separated(
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
         itemCount: items.length,
         separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, i) => RiseIn(
-          key: ValueKey(keyOf(items[i])),
+          key: ValueKey(tray.keyOf(items[i])),
           delay: RiseIn.stagger(i),
-          child: itemBuilder(context, items[i]),
+          child: tray.itemBuilder(context, items[i]),
         ),
       ),
     );
