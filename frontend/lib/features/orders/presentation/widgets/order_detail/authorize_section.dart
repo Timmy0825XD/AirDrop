@@ -33,12 +33,16 @@ class AuthorizeSection extends StatelessWidget {
   /// Programado con fecha futura: todavía no se autoriza.
   final bool notYet;
 
-  /// Hay alguna acción en curso: los botones se apagan.
+  /// [busy]: hay alguna acción en curso y los botones se apagan.
+  /// [loading]: la acción en curso es esta y el botón se vuelve el dron.
   final bool busy;
-
-  /// La acción en curso es esta: el botón se vuelve el dron.
   final bool loading;
   final VoidCallback onAuthorize;
+
+  String get _note => notYet
+      ? 'Este pedido programado todavía no llega a su fecha.'
+      : 'Se reserva el dron y la ruta. El vuelo arranca cuando confirmes '
+            'la carga.';
 
   @override
   Widget build(BuildContext context) {
@@ -49,13 +53,7 @@ class AuthorizeSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            notYet
-                ? 'Este pedido programado todavía no llega a su fecha.'
-                : 'Se reserva el dron y la ruta. El vuelo arranca cuando '
-                      'confirmes la carga.',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+          Text(_note, style: Theme.of(context).textTheme.bodyMedium),
           if (needsPrescriptionCheck) _PrescriptionCheck(section: this),
           const SizedBox(height: 14),
           AuthMorphButton(

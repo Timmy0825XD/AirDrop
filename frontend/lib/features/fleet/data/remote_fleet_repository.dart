@@ -1,4 +1,4 @@
-import '../../../../core/network/api_client.dart';
+import '../../../core/network/api_client.dart';
 import 'fleet_models.dart';
 import 'fleet_repository.dart';
 

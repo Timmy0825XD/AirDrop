@@ -1,5 +1,5 @@
-import '../../../../core/api_exception.dart';
-import '../../../../core/network/api_client.dart';
+import '../../../core/api_exception.dart';
+import '../../../core/network/api_client.dart';
 import 'geofence_models.dart';
 import 'geofence_repository.dart';
 

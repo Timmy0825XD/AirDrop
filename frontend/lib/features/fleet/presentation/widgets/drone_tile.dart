@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/widgets/row_action_button.dart';
 import '../../../../core/widgets/status_card.dart';
+import '../../../../core/widgets/tone_tile.dart';
 import '../../../auth/presentation/widgets/drone_glyph.dart';
 import '../../data/fleet_models.dart';
 import 'drone_status_chip.dart';
@@ -31,16 +32,8 @@ class DroneTile extends StatelessWidget {
     final colors = theme.colorScheme;
     final busy = drone.status.isInMission;
     return StatusCard(
-      leading: Container(
-        width: 46,
-        height: 46,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: (busy ? colors.secondary : colors.primary).withValues(
-            alpha: 0.12,
-          ),
-          borderRadius: BorderRadius.circular(14),
-        ),
+      leading: ToneTile(
+        tone: busy ? colors.secondary : colors.primary,
         child: DroneGlyph(
           color: busy ? colors.secondary : colors.primary,
           size: 28,

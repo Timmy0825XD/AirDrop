@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../core/widgets/form_bottom_sheet.dart';
 import '../../../data/auth_models.dart';
 import '../auth_field.dart';
 import 'profile_document_editor.dart';
@@ -70,54 +71,31 @@ class _ProfileEditSheetState extends State<ProfileEditSheet> {
   @override
   Widget build(BuildContext context) {
     final type = widget.type;
-    return Padding(
-      padding: EdgeInsets.fromLTRB(
-        20,
-        0,
-        20,
-        20 + MediaQuery.viewInsetsOf(context).bottom,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Editar ${type.label.toLowerCase()}',
-            style: Theme.of(context).textTheme.headlineMedium,
+    return FormBottomSheet(
+      title: 'Editar ${type.label.toLowerCase()}',
+      saveLabel: 'Guardar',
+      onSave: _save,
+      children: [
+        if (type == ProfileFieldType.document)
+          ProfileDocumentEditor(
+            type: _documentType,
+            onTypeChanged: (value) => setState(() => _documentType = value),
+            numberController: _controller,
+            errorText: _error,
+            shakeCount: _shakeCount,
+          )
+        else
+          AuthField(
+            label: type.label,
+            hint: type.label,
+            controller: _controller,
+            keyboardType: type.keyboardType,
+            maxLength: type.maxLength,
+            errorText: _error,
+            shakeCount: _shakeCount,
+            onSubmitted: (_) => _save(),
           ),
-          const SizedBox(height: 16),
-          if (type == ProfileFieldType.document)
-            ProfileDocumentEditor(
-              type: _documentType,
-              onTypeChanged: (value) => setState(() => _documentType = value),
-              numberController: _controller,
-              errorText: _error,
-              shakeCount: _shakeCount,
-            )
-          else
-            AuthField(
-              label: type.label,
-              hint: type.label,
-              controller: _controller,
-              keyboardType: type.keyboardType,
-              maxLength: type.maxLength,
-              errorText: _error,
-              shakeCount: _shakeCount,
-              onSubmitted: (_) => _save(),
-            ),
-          const SizedBox(height: 20),
-          FilledButton(
-            onPressed: _save,
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(54),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(18),
-              ),
-            ),
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }

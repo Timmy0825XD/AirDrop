@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/widgets/row_action_button.dart';
 import '../../../../../core/widgets/status_card.dart';
 import '../../../../../core/widgets/status_pill.dart';
+import '../../../../../core/widgets/tone_tile.dart';
 import '../../../../auth/presentation/widgets/drone_glyph.dart';
 import '../../../data/order_models.dart';
 import '../../order_format.dart';
@@ -37,14 +38,8 @@ class _DroneTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    return Container(
-      width: 46,
-      height: 46,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: colors.secondary.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(14),
-      ),
+    return ToneTile(
+      tone: colors.secondary,
       child: DroneGlyph(color: colors.secondary, size: 28),
     );
   }

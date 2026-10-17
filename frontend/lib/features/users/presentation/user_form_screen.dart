@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../../../core/widgets/message_view.dart';
-import '../../../core/widgets/rise_in.dart';
 import '../../auth/presentation/widgets/auth_morph_button.dart';
+import '../../home/presentation/widgets/section_form_page.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../../hubs/data/hub_models.dart';
 import '../data/user_providers.dart';
@@ -59,54 +59,42 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hubs = ref.watch(assignableHubsProvider);
-    return Scaffold(
-      body: hubs.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => MessageView(message: ApiException.messageOf(error)),
-        data: _form,
-      ),
+    final header = SectionHeader(
+      title: 'Nueva cuenta',
+      subtitle: 'Entra con su correo y esta contraseña.',
+      onBack: () => context.go('/users'),
     );
+    return switch (ref.watch(assignableHubsProvider)) {
+      AsyncData(:final value) => _form(header, value),
+      AsyncError(:final error) => SectionStatePage(
+        header: header,
+        body: MessageView(message: ApiException.messageOf(error)),
+      ),
+      _ => SectionStatePage(
+        header: header,
+        body: const Center(child: CircularProgressIndicator()),
+      ),
+    };
   }
 
-  Widget _form(List<Hub> hubs) {
-    final bottom = MediaQuery.paddingOf(context).bottom;
-    return ListView(
-      padding: EdgeInsets.only(bottom: bottom + 24),
-      children: [
-        SectionHeader(
-          title: 'Nueva cuenta',
-          subtitle: 'Entra con su correo y esta contraseña.',
-          onBack: () => context.go('/users'),
-        ),
-        Transform.translate(
-          offset: const Offset(0, -24),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: RiseIn(
-              child: UserFormSheet(
-                values: _values,
-                hubs: hubs,
-                errors: _errors,
-                shakeCount: _shakeCount,
-                onChanged: () => setState(
-                  () => _errors = {..._errors}..remove(UserInput.hubs),
-                ),
-                onCreateHub: () => context.go('/hubs/new'),
-              ),
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: AuthMorphButton(
-            label: 'Crear cuenta',
-            loadingLabel: 'Creando la cuenta',
-            isLoading: _isLoading,
-            onPressed: hubs.isEmpty ? null : _submit,
-          ),
-        ),
-      ],
+  Widget _form(Widget header, List<Hub> hubs) {
+    return SectionFormPage(
+      header: header,
+      card: UserFormSheet(
+        values: _values,
+        hubs: hubs,
+        errors: _errors,
+        shakeCount: _shakeCount,
+        onChanged: () =>
+            setState(() => _errors = {..._errors}..remove(UserInput.hubs)),
+        onCreateHub: () => context.go('/hubs/new'),
+      ),
+      button: AuthMorphButton(
+        label: 'Crear cuenta',
+        loadingLabel: 'Creando la cuenta',
+        isLoading: _isLoading,
+        onPressed: hubs.isEmpty ? null : _submit,
+      ),
     );
   }
 }

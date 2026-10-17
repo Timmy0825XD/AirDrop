@@ -4,6 +4,7 @@ import '../../../../core/widgets/press_scale.dart';
 import '../../../../core/widgets/row_action_button.dart';
 import '../../../../core/widgets/status_card.dart';
 import '../../../../core/widgets/status_pill.dart';
+import '../../../../core/widgets/tone_tile.dart';
 import '../../data/geofence_models.dart';
 
 /// Tarjeta de una geovalla: nombre, motivo y cuántos vértices tiene, con
@@ -29,14 +30,10 @@ class GeofenceTile extends StatelessWidget {
         onTap: onTap,
         behavior: HitTestBehavior.opaque,
         child: StatusCard(
-          leading: Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: colors.error.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(Icons.polyline_outlined, color: colors.error),
+          leading: ToneTile.icon(
+            icon: Icons.polyline_outlined,
+            tone: colors.error,
+            alpha: 0.10,
           ),
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

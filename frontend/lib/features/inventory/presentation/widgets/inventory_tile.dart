@@ -4,6 +4,7 @@ import '../../../../core/widgets/press_scale.dart';
 import '../../../../core/widgets/row_action_button.dart';
 import '../../../../core/widgets/status_card.dart';
 import '../../../../core/widgets/status_pill.dart';
+import '../../../../core/widgets/tone_tile.dart';
 import '../../data/inventory_models.dart';
 
 /// Fila del inventario: nombre, lote, cantidad, tipo de venta y
@@ -69,13 +70,8 @@ class _ItemIcon extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final tone = coldChain ? colors.tertiary : colors.primary;
-    return Container(
-      width: 46,
-      height: 46,
-      decoration: BoxDecoration(
-        color: tone.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(14),
-      ),
+    return ToneTile(
+      tone: tone,
       child: Icon(
         coldChain ? Icons.ac_unit_rounded : Icons.medication_outlined,
         color: tone,

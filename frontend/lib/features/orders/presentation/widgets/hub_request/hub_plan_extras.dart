@@ -23,13 +23,7 @@ class HubPlanExtras extends StatelessWidget {
   final VoidCallback onChanged;
 
   Future<void> _pickStart(BuildContext context) async {
-    final today = DateUtils.dateOnly(DateTime.now());
-    final picked = await pickIsoDate(
-      context,
-      current: values.startDate,
-      first: today,
-      last: today.add(const Duration(days: 365)),
-    );
+    final picked = await pickFutureDate(context, current: values.startDate);
     if (picked == null) return;
     values.startDate = picked;
     onChanged();

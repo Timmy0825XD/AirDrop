@@ -7,9 +7,9 @@ import '../../../core/validators.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../../../core/widgets/form_sheet_card.dart';
 import '../../../core/widgets/message_view.dart';
-import '../../../core/widgets/rise_in.dart';
 import '../../auth/presentation/widgets/auth_field.dart';
 import '../../auth/presentation/widgets/auth_morph_button.dart';
+import '../../home/presentation/widgets/section_form_page.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../../hubs/data/hub_models.dart';
 import '../data/fleet_models.dart';
@@ -84,69 +84,44 @@ class _DroneFormScreenState extends ConsumerState<DroneFormScreen> {
       _ => null,
     };
     if (message != null || models.value == null) {
-      return Scaffold(
-        body: Column(
-          children: [
-            header,
-            Expanded(
-              child: message == null
-                  ? const Center(child: CircularProgressIndicator())
-                  : MessageView(icon: Icons.flight_rounded, message: message),
-            ),
-          ],
-        ),
+      return SectionStatePage(
+        header: header,
+        body: message == null
+            ? const Center(child: CircularProgressIndicator())
+            : MessageView(icon: Icons.flight_rounded, message: message),
       );
     }
     return _form(header, hub!, models.value!);
   }
 
   Widget _form(Widget header, Hub hub, List<DroneModel> models) {
-    return Scaffold(
-      body: ListView(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.paddingOf(context).bottom + 24,
-        ),
+    return SectionFormPage(
+      header: header,
+      card: FormSheetCard(
         children: [
-          header,
-          Transform.translate(
-            offset: const Offset(0, -24),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: RiseIn(
-                child: FormSheetCard(
-                  children: [
-                    AuthField(
-                      label: 'Identificador',
-                      hint: 'D-07',
-                      controller: _values.identifier,
-                      maxLength: FieldLimits.droneIdentifier,
-                      errorText: _identifierError,
-                      shakeCount: _shakeCount,
-                    ),
-                    const SizedBox(height: 16),
-                    DroneModelField(
-                      models: models,
-                      selectedId: _values.droneModelId,
-                      errorText: _modelError,
-                      shakeCount: _shakeCount,
-                      onChanged: (id) =>
-                          setState(() => _values.droneModelId = id),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+          AuthField(
+            label: 'Identificador',
+            hint: 'D-07',
+            controller: _values.identifier,
+            maxLength: FieldLimits.droneIdentifier,
+            errorText: _identifierError,
+            shakeCount: _shakeCount,
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: AuthMorphButton(
-              label: 'Agregar dron',
-              loadingLabel: 'Agregando el dron',
-              isLoading: _isLoading,
-              onPressed: hub.isActive ? () => _submit(hub) : null,
-            ),
+          const SizedBox(height: 16),
+          DroneModelField(
+            models: models,
+            selectedId: _values.droneModelId,
+            errorText: _modelError,
+            shakeCount: _shakeCount,
+            onChanged: (id) => setState(() => _values.droneModelId = id),
           ),
         ],
+      ),
+      button: AuthMorphButton(
+        label: 'Agregar dron',
+        loadingLabel: 'Agregando el dron',
+        isLoading: _isLoading,
+        onPressed: hub.isActive ? () => _submit(hub) : null,
       ),
     );
   }

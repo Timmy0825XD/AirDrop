@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/widgets/press_scale.dart';
+import '../../../../core/widgets/tone_tile.dart';
 
 /// Un acceso de un inicio rediseñado: ícono, título, descripción, cuántos
 /// hay y la flecha. Se hunde al tocarlo. Con [onTap] en `null` queda
@@ -104,15 +105,7 @@ class _IconTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 52,
-      height: 52,
-      decoration: BoxDecoration(
-        color: tone.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Icon(icon, color: tone, size: 26),
-    );
+    return ToneTile.icon(icon: icon, tone: tone, size: 52);
   }
 }
 

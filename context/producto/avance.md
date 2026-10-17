@@ -20,8 +20,8 @@ Plan por fases del frontend Flutter a partir de la guía 25 (`learning/25-front-
 | 5 | Entrega del pedido y retorno del dron | — | Bloqueada (backend) |
 | 6 | Revisión y rediseño del administrador | `style/rediseno-admin` | Hecha (PR #47) |
 | 7 | Revisión y rediseño del despachador | `style/rediseno-despachador` | Hecha (PR #48) |
-| 8 | Revisión y rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Hecha (PR pendiente) |
-| 9 | Limpieza antes de la revisión | `refactor/limpieza-front` | Pendiente |
+| 8 | Revisión y rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Hecha (PR #49) |
+| 9 | Limpieza antes de la revisión | `refactor/limpieza-front` | Hecha (PR pendiente) |
 | 10 | Cierre y pruebas de punta a punta | `test/flujos-front` | Pendiente |
 
 ## Fase 0 — Preparación y documento de avance
@@ -421,6 +421,52 @@ Va en su propia rama porque `AGENTS.md` pide no mezclar limpieza con una histori
 - Paso 6: Regenerar `frontend/docs/ui_inventory.md` con `frontend/tools/ui_inventory.ps1`.
 - Paso 7: `flutter analyze` y `flutter test`.
 - Paso 8: Cerrar la fase.
+
+Oscar dejó la fase andando sin estar (2026-10-16) y aprobó por adelantado
+los borrados del Paso 2: el listado queda abajo para revisarlo en el PR.
+
+Resultado (2026-10-16):
+
+- **Archivos sin uso:** ninguno. Cada `.dart` de `lib/` lo importa otro
+  archivo de `lib/` (no solo un test).
+- **Borrado por no tener uso:** `Validators.isoDate` y `Validators.otp`
+  (con sus tests; las fechas van en calendario y el código en
+  `OtpCodeField`), y `FieldLimits.droneModelName`, `prescriptionMime` y
+  `droneModelCode`.
+- **Paquete quitado:** `cupertino_icons` (nadie usa `CupertinoIcons`).
+- **`INTERNET`** en el `AndroidManifest.xml` principal; debug y profile ya
+  lo traían.
+- **Imports:** 12 imports en `fleet/data`, `geofences/data` e
+  `inventory/data` subían un `../` de más; quedaron a la profundidad
+  correcta. Ningún otro archivo sale de `lib/`.
+- **`frontend/.gitattributes`:** los archivos que regenera `flutter pub
+  get` (`generated_plugin*` de Linux y Windows y el `.swift` de macOS) se
+  marcan `eol=lf`. Sin esto, en Windows salían como modificados en cada
+  fase aunque no cambiaran (el pendiente del Paso 1 de la Fase 0).
+- **Código repetido unificado:**
+  - `ToneTile` (`core/widgets`): el cuadro de ícono teñido que repetían 7
+    tarjetas (centrales, dron, geovalla, inventario, vuelo, bandejas,
+    accesos del inicio).
+  - `SectionFormPage` / `SectionStatePage` (`home/presentation/widgets`):
+    encabezado + tarjeta sobre la curva + botón, que repetían los
+    formularios de central, cuenta, inventario, geovalla, dron y los
+    cuatro de pedidos.
+  - `FormBottomSheet` (`core/widgets`): la hoja con formulario de editar
+    perfil y de mantenimiento.
+  - `pickFutureDate`: el calendario "de hoy a un año" que repetían
+    abastecimiento, entrega periódica y mantenimiento.
+- **Widgets de más de 60 líneas partidos** (según `ui_inventory.ps1`, que
+  mide la clase entera): `AuthDateField`, `LoginAlert`, `DroneModelField`,
+  `DroneStatusSheet`, `MaintenanceSheet`, `ProfileEditSheet`,
+  `GeofenceDrawBar`, `DispatcherActions` (sus tarjetas pasaron a
+  `dispatcher_cards.dart`), `AuthorizeSection`, `HubRequestFields`,
+  `OrderFormScaffold` y `OrderTray`. Solo quedan sobre 60 los
+  `*_values.dart` (`InventoryFormValues`, `HubRequestValues`,
+  `RequesterOrderValues`, `UserFormValues`): guardan datos y validan, no
+  pintan.
+- `docs/ui_inventory.md` regenerado: 31 pantallas, 117 archivos de widgets.
+- `flutter analyze` sin issues; 186 tests en verde (3 menos: eran de
+  `Validators.isoDate`).
 
 ## Fase 10 — Cierre y pruebas de punta a punta
 

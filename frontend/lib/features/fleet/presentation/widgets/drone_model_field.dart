@@ -26,7 +26,6 @@ class DroneModelField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final selected = models.where((m) => m.id == selectedId).firstOrNull;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -49,19 +48,32 @@ class DroneModelField extends StatelessWidget {
           curve: Curves.fastOutSlowIn,
           child: selected == null
               ? const SizedBox(width: double.infinity)
-              : Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    '${_number(selected.maxSpeedKmh)} km/h · '
-                    '${_number(selected.maxPayloadKg)} kg de carga · '
-                    '${_number(selected.maxRangeKm)} km de alcance',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ),
+              : _ModelSpecs(model: selected),
         ),
       ],
+    );
+  }
+}
+
+/// Velocidad, carga y alcance del modelo elegido.
+class _ModelSpecs extends StatelessWidget {
+  const _ModelSpecs({required this.model});
+
+  final DroneModel model;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Text(
+        '${_number(model.maxSpeedKmh)} km/h · '
+        '${_number(model.maxPayloadKg)} kg de carga · '
+        '${_number(model.maxRangeKm)} km de alcance',
+        style: theme.textTheme.bodySmall?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+      ),
     );
   }
 }

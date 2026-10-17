@@ -62,23 +62,33 @@ class HubRequestFields extends StatelessWidget {
               : _OfferPicker(fields: this),
         ),
         const SizedBox(height: 16),
-        AuthField(
-          label: 'Cantidad',
-          hint: '1',
-          controller: values.quantity,
-          keyboardType: TextInputType.number,
-          // Hasta 100000, el máximo del DTO.
-          maxLength: 6,
-          trailing: values.offer?.availableQuantity == null
-              ? null
-              : Text(
-                  'Máx. ${values.offer!.availableQuantity}',
-                  style: Theme.of(context).textTheme.labelSmall,
-                ),
-          errorText: errors[HubRequestInput.quantity],
-          shakeCount: shakeCount,
-        ),
+        _QuantityField(fields: this),
       ],
+    );
+  }
+}
+
+/// La cantidad, con el stock de la central de origen como máximo.
+class _QuantityField extends StatelessWidget {
+  const _QuantityField({required this.fields});
+
+  final HubRequestFields fields;
+
+  @override
+  Widget build(BuildContext context) {
+    final stock = fields.values.offer?.availableQuantity;
+    return AuthField(
+      label: 'Cantidad',
+      hint: '1',
+      controller: fields.values.quantity,
+      keyboardType: TextInputType.number,
+      // Hasta 100000, el máximo del DTO.
+      maxLength: 6,
+      trailing: stock == null
+          ? null
+          : Text('Máx. $stock', style: Theme.of(context).textTheme.labelSmall),
+      errorText: fields.errors[HubRequestInput.quantity],
+      shakeCount: fields.shakeCount,
     );
   }
 }

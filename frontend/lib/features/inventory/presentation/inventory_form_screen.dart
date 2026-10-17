@@ -5,9 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../../../core/widgets/message_view.dart';
-import '../../../core/widgets/rise_in.dart';
 import '../../auth/presentation/widgets/auth_date_field.dart';
 import '../../auth/presentation/widgets/auth_morph_button.dart';
+import '../../home/presentation/widgets/section_form_page.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../data/inventory_models.dart';
 import '../data/inventory_providers.dart';
@@ -121,64 +121,38 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
   }
 
   Widget _form(InventoryItem? original) {
-    return Scaffold(
-      body: ListView(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.paddingOf(context).bottom + 24,
-        ),
-        children: [
-          SectionHeader(
-            title: original == null ? 'Nuevo ítem' : 'Editar ítem',
-            subtitle: original == null
-                ? 'Entra al inventario de tu central'
-                : 'Lote ${original.lot}',
-            onBack: () => context.go('/inventory'),
-          ),
-          Transform.translate(
-            offset: const Offset(0, -24),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: RiseIn(
-                child: InventoryFormSheet(
-                  values: _values,
-                  errors: _errors,
-                  shakeCount: _shakeCount,
-                  onPickDate: _pickDate,
-                  onChanged: () => setState(() {}),
-                ),
-              ),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: AuthMorphButton(
-              label: original == null
-                  ? 'Agregar al inventario'
-                  : 'Guardar cambios',
-              loadingLabel: 'Guardando el ítem',
-              isLoading: _isLoading,
-              onPressed: () => _submit(original),
-            ),
-          ),
-        ],
+    return SectionFormPage(
+      header: SectionHeader(
+        title: original == null ? 'Nuevo ítem' : 'Editar ítem',
+        subtitle: original == null
+            ? 'Entra al inventario de tu central'
+            : 'Lote ${original.lot}',
+        onBack: () => context.go('/inventory'),
+      ),
+      card: InventoryFormSheet(
+        values: _values,
+        errors: _errors,
+        shakeCount: _shakeCount,
+        onPickDate: _pickDate,
+        onChanged: () => setState(() {}),
+      ),
+      button: AuthMorphButton(
+        label: original == null ? 'Agregar al inventario' : 'Guardar cambios',
+        loadingLabel: 'Guardando el ítem',
+        isLoading: _isLoading,
+        onPressed: () => _submit(original),
       ),
     );
   }
 
   Widget _message(String text) {
-    return Scaffold(
-      body: Column(
-        children: [
-          SectionHeader(
-            title: 'Inventario',
-            subtitle: 'Editar ítem',
-            onBack: () => context.go('/inventory'),
-          ),
-          Expanded(
-            child: MessageView(icon: Icons.inventory_2_outlined, message: text),
-          ),
-        ],
+    return SectionStatePage(
+      header: SectionHeader(
+        title: 'Inventario',
+        subtitle: 'Editar ítem',
+        onBack: () => context.go('/inventory'),
       ),
+      body: MessageView(icon: Icons.inventory_2_outlined, message: text),
     );
   }
 }
