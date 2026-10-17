@@ -54,7 +54,13 @@ class AppTheme {
 
     return base.copyWith(
       scaffoldBackgroundColor: p.background,
-      colorScheme: base.colorScheme.copyWith(
+      // El esquema sale del verde de marca y no del morado por defecto de
+      // Material: así los "container" (botón flotante, botones tonales,
+      // hojas inferiores) quedan en la paleta.
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: p.primary,
+        brightness: p.brightness,
+      ).copyWith(
         primary: p.primary,
         onPrimary: p.onPrimary,
         secondary: signal,
@@ -69,6 +75,15 @@ class AppTheme {
       ),
       textTheme: _textTheme(base.textTheme, font, p.muted),
       inputDecorationTheme: _inputTheme(p),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: p.primary,
+        foregroundColor: p.onPrimary,
+        elevation: 2,
+        extendedTextStyle: font.copyWith(fontWeight: FontWeight.w700),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radius),
+        ),
+      ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: p.primary,

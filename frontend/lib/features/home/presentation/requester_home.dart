@@ -31,8 +31,8 @@ class RequesterHome extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final orders = ref.watch(mineProvider).asData?.value;
-    final plans = ref.watch(plansProvider).asData?.value;
+    final orders = ref.watch(mineProvider).value;
+    final plans = ref.watch(plansProvider).value;
     final flying = orders?.where((o) => o.hasFlight).length;
     return Scaffold(
       body: AutoRefresh(

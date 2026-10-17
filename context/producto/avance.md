@@ -21,8 +21,8 @@ Plan por fases del frontend Flutter a partir de la guía 25 (`learning/25-front-
 | 6 | Revisión y rediseño del administrador | `style/rediseno-admin` | Hecha (PR #47) |
 | 7 | Revisión y rediseño del despachador | `style/rediseno-despachador` | Hecha (PR #48) |
 | 8 | Revisión y rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Hecha (PR #49) |
-| 9 | Limpieza antes de la revisión | `refactor/limpieza-front` | Hecha (PR pendiente) |
-| 10 | Cierre y pruebas de punta a punta | `test/flujos-front` | Pendiente |
+| 9 | Limpieza antes de la revisión | `refactor/limpieza-front` | Hecha (PR #50) |
+| 10 | Cierre y pruebas de punta a punta | `test/flujos-front` | Hecha (PR pendiente) |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -474,6 +474,79 @@ Resultado (2026-10-16):
 - Paso 2: Corregir lo que aparezca.
 - Paso 3: Anotar en [`pendientes-backend.md`](pendientes-backend.md) lo que le falta al backend.
 - Paso 4: Cerrar la fase.
+
+Resultado (2026-10-16):
+
+Recorrido con Nest real (Oscar dejó el backend corriendo) y la app en web
+(`flutter run -d web-server`, viewport de teléfono) en los cuatro roles.
+Datos de prueba con sufijo "F10": centrales Hospital Rosario F10 y Clínica
+Norte F10; Ana (despachadora del hospital), Luis (de la clínica), Sara
+(operadora de las dos) y Carla (solicitante registrada desde la app).
+
+Probado y funcionando:
+
+- **Admin:** inicio con números reales, centrales (lista y Nueva central
+  con el mapa), cuentas (Nueva cuenta). Nest rechaza un despachador con dos
+  centrales con su mensaje.
+- **Operador:** inicio, flota con chips de central, Nuevo dron (validación
+  y alta), Gestionar → mantenimiento y disponible; un dron en misión no se
+  puede tocar (409). Geovallas: crear dibujando, eliminar con la hoja.
+- **Solicitante:** registro completo (datos, código, verificación, inicio),
+  urgencia con el punto en el mapa, entrega periódica (8 entregas
+  semanales), Mis pedidos y el mapa sin batería ni carga.
+- **Despachador:** cola, fórmula (visor con la imagen y lista), autorizar
+  (con y sin dron: el 409 "Ningún dron…" se muestra), rechazar con motivo,
+  confirmar carga, mapa en vivo (fase, velocidad, altitud, batería, carga y
+  latencia se actualizan), Vuelos en curso.
+- **Reglas de Nest verificadas** (guía, sección 10): la Morfina no se
+  ofrece; fórmula con otro documento y venta libre con foto se rechazan;
+  sin "Verifiqué la fórmula" no se autoriza; una urgencia le quita el dron
+  al programado y la ocurrencia vuelve a Recibido; un programado futuro no
+  se autoriza; entre centrales: la propia no es origen, Luis no autoriza
+  (403), el pedido llega a la cola de Ana y pedir más que el stock da 400.
+
+Errores encontrados y corregidos:
+
+1. **Datos de la cuenta anterior al cambiar de sesión** (el más serio): los
+   providers no se limpiaban al cerrar sesión; quien entraba después veía un
+   rato la cola, la central o los pedidos del anterior. Ahora
+   `sessionUserIdProvider` (en `auth_controller.dart`) lo miran los seis
+   repositorios: otra cuenta, todo se vuelve a pedir.
+2. **Pantallas en blanco al recargar**: los `switch` sobre `AsyncValue`
+   trataban la recarga (cada 10 s en las bandejas) como "cargando". Ahora
+   `AsyncValue(hasValue: true, hasError: false, …)` sigue mostrando lo que
+   había; un error sí se muestra. Números y subtítulos usan `.value` (el
+   último conocido) y ya no parpadean a "—".
+3. **Morado de Material**: el botón flotante, "Ver vuelo" y las hojas
+   salían en el morado por defecto. El esquema sale ahora de
+   `ColorScheme.fromSeed` con el verde de marca y el botón flotante tiene
+   tema propio.
+4. **Detalle desactualizado**: seguía en "Pendiente de carga" con el dron
+   volando. Se refresca cada 10 s; al rechazar se vuelve a la lista (la
+   central ya no puede abrir el pedido).
+5. **Nueva cuenta sin las centrales recientes**: ahora pide las centrales
+   al abrirse.
+6. **Calendario en 2021**: sin fecha, el de vencimiento abría en la primera
+   permitida; ahora abre en hoy. Elegir la fecha borra su aviso.
+7. **Mapa del vuelo sin encuadre**: se creaba antes de llegar la ruta;
+   ahora se vuelve a montar al llegar y muestra el pin del destino.
+8. **Fórmula ilegible**: el visor mostraba el error técnico; ahora explica
+   qué hacer.
+9. **Textos**: "Te avisamos cuando despegue" (no hay notificaciones) pasó a
+   "Síguela en Mis pedidos"; subtítulo de Nueva central que se cortaba.
+10. **Pequeños**: con un solo modelo de dron viene elegido; la pastilla de
+    ayuda del mapa ya no tapa el crédito de OpenStreetMap.
+
+Lo que no se pudo probar aquí (va a la lista de Oscar en el emulador): el
+botón físico de volver de Android, el teclado del teléfono, adjuntar una
+foto desde la galería y la app de release con el permiso `INTERNET`.
+
+Para el backend (en [`pendientes-backend.md`](pendientes-backend.md)): el
+dron se queda "en misión" para siempre tras llegar (punto 1, ya anotado) y
+el administrador no puede editar una central (punto 8, nuevo).
+
+- `flutter analyze` sin issues; 189 tests en verde (3 nuevos en
+  `fase10_fixes_test`).
 
 ## Pendiente del backend
 

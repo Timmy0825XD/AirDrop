@@ -78,7 +78,7 @@ class _DroneFormScreenState extends ConsumerState<DroneFormScreen> {
     );
     final message = switch (models) {
       _ when hub == null => 'No tienes centrales asignadas.',
-      AsyncData(:final value) when value.isEmpty =>
+      AsyncValue(hasValue: true, hasError: false, :final value?) when value.isEmpty =>
         'No hay modelos de dron disponibles.',
       AsyncError(:final error) => ApiException.messageOf(error),
       _ => null,
@@ -95,6 +95,8 @@ class _DroneFormScreenState extends ConsumerState<DroneFormScreen> {
   }
 
   Widget _form(Widget header, Hub hub, List<DroneModel> models) {
+    // Con un solo modelo sembrado (Wingcopter 198) no hay nada que elegir.
+    if (models.length == 1) _values.droneModelId ??= models.single.id;
     return SectionFormPage(
       header: header,
       card: FormSheetCard(
@@ -113,7 +115,10 @@ class _DroneFormScreenState extends ConsumerState<DroneFormScreen> {
             selectedId: _values.droneModelId,
             errorText: _modelError,
             shakeCount: _shakeCount,
-            onChanged: (id) => setState(() => _values.droneModelId = id),
+            onChanged: (id) => setState(() {
+              _values.droneModelId = id;
+              _modelError = null;
+            }),
           ),
         ],
       ),

@@ -59,7 +59,12 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
       first: DateTime(now.year - 5),
       last: DateTime(now.year + 10, 12, 31),
     );
-    if (picked != null) setState(() => _values.expirationDate.text = picked);
+    if (picked == null) return;
+    // Elegida la fecha, su aviso de error ya no aplica.
+    setState(() {
+      _values.expirationDate.text = picked;
+      _errors = {..._errors}..remove(InventoryInput.expirationDate);
+    });
   }
 
   Future<void> _submit(InventoryItem? original) async {
@@ -110,7 +115,7 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
     if (state case AsyncError(:final error)) {
       return _message(ApiException.messageOf(error));
     }
-    final rows = state.asData?.value;
+    final rows = state.value;
     if (rows == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }

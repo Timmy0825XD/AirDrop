@@ -25,7 +25,7 @@ class FleetScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hub = ref.watch(effectiveHubProvider);
-    final count = ref.watch(dronesProvider).asData?.value.length;
+    final count = ref.watch(dronesProvider).value?.length;
     return Scaffold(
       body: Column(
         children: [
@@ -52,11 +52,11 @@ class _FleetBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return switch (ref.watch(assignedHubsProvider)) {
-      AsyncData(:final value) when value.isEmpty => const MessageView(
+      AsyncValue(hasValue: true, hasError: false, :final value?) when value.isEmpty => const MessageView(
         icon: Icons.domain_disabled_outlined,
         message: 'No tienes centrales asignadas.',
       ),
-      AsyncData(:final value) => _FleetPane(hubs: value),
+      AsyncValue(hasValue: true, hasError: false, :final value?) => _FleetPane(hubs: value),
       AsyncError(:final error) => MessageView(
         icon: Icons.cloud_off_rounded,
         message: ApiException.messageOf(error),
@@ -111,13 +111,13 @@ class _DroneList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final models = ref.watch(fleetModelsProvider).asData?.value;
+    final models = ref.watch(fleetModelsProvider).value;
     return switch (ref.watch(dronesProvider)) {
-      AsyncData(:final value) when value.isEmpty => const MessageView(
+      AsyncValue(hasValue: true, hasError: false, :final value?) when value.isEmpty => const MessageView(
         icon: Icons.flight_land_rounded,
         message: 'Aún no hay drones en esta central.',
       ),
-      AsyncData(:final value) => ListView.separated(
+      AsyncValue(hasValue: true, hasError: false, :final value?) => ListView.separated(
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 96),
         itemCount: value.length,
         separatorBuilder: (_, _) => const SizedBox(height: 10),

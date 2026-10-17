@@ -101,8 +101,11 @@ Future<String?> pickIsoDate(
   required DateTime first,
   required DateTime last,
 }) async {
+  // Sin fecha previa abre en hoy (no en la primera permitida, que para
+  // un vencimiento era hace cinco años).
   final parsed = current == null ? null : DateTime.tryParse(current);
-  final initial = parsed == null || parsed.isBefore(first) ? first : parsed;
+  final wanted = parsed ?? DateUtils.dateOnly(DateTime.now());
+  final initial = wanted.isBefore(first) ? first : wanted;
   final picked = await showDatePicker(
     context: context,
     initialDate: initial.isAfter(last) ? last : initial,

@@ -9,6 +9,7 @@ import '../../auth/presentation/widgets/auth_morph_button.dart';
 import '../../home/presentation/widgets/section_form_page.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../../hubs/data/hub_models.dart';
+import '../../hubs/data/hub_providers.dart';
 import '../data/user_providers.dart';
 import 'widgets/user_form/user_form_sheet.dart';
 import 'widgets/user_form_values.dart';
@@ -28,6 +29,15 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
   Map<UserInput, String> _errors = const {};
   int _shakeCount = 0;
   bool _isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Las centrales se vuelven a pedir al abrir: una creada desde otra
+    // sesión no salía hasta reiniciar la app. Mientras llegan se ven las
+    // que ya había.
+    Future.microtask(() => ref.invalidate(allHubsProvider));
+  }
 
   @override
   void dispose() {
@@ -65,7 +75,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
       onBack: () => context.go('/users'),
     );
     return switch (ref.watch(assignableHubsProvider)) {
-      AsyncData(:final value) => _form(header, value),
+      AsyncValue(hasValue: true, hasError: false, :final value?) => _form(header, value),
       AsyncError(:final error) => SectionStatePage(
         header: header,
         body: MessageView(message: ApiException.messageOf(error)),

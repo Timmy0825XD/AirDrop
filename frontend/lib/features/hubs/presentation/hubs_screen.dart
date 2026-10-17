@@ -23,7 +23,7 @@ class HubsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filter = ref.watch(hubFilterProvider);
-    final all = ref.watch(allHubsProvider).asData?.value;
+    final all = ref.watch(allHubsProvider).value;
     final subtitle = all == null
         ? 'Red de centrales'
         : '${all.length} registradas · '

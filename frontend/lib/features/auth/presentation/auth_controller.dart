@@ -10,6 +10,16 @@ final authControllerProvider = AsyncNotifierProvider<AuthController, AuthState>(
   AuthController.new,
 );
 
+/// La cuenta con sesión abierta (`null` sin sesión). Los repositorios de
+/// cada feature la miran: al cambiar de cuenta se reconstruyen y, con ellos,
+/// todo lo que se había cargado. Sin esto, quien entraba después en el
+/// mismo teléfono veía un rato los datos de la cuenta anterior.
+final sessionUserIdProvider = Provider<String?>(
+  (ref) => ref.watch(
+    authControllerProvider.select((state) => state.value?.user?.id),
+  ),
+);
+
 enum AuthStatus { unauthenticated, authenticated }
 
 class AuthState {

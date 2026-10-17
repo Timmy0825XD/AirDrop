@@ -20,7 +20,7 @@ class HubDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(myHubProvider);
-    final hub = state.asData?.value;
+    final hub = state.value;
     return Scaffold(
       body: Column(
         children: [
@@ -33,11 +33,11 @@ class HubDetailScreen extends ConsumerWidget {
           ),
           Expanded(
             child: switch (state) {
-              AsyncData(value: final hub?) => ListView(
+              AsyncValue(hasValue: true, hasError: false, value: final hub?) => ListView(
                 padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
                 children: [HubDetailContent(hub: hub)],
               ),
-              AsyncData() => const MessageView(
+              AsyncValue(hasValue: true, hasError: false) => const MessageView(
                 icon: Icons.domain_disabled_outlined,
                 message: 'No tienes una central asignada.',
               ),

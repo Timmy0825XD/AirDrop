@@ -70,7 +70,7 @@ class _UserList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final users = ref.watch(usersProvider);
-    final hubs = ref.watch(allHubsProvider).asData?.value ?? const [];
+    final hubs = ref.watch(allHubsProvider).value ?? const [];
     final hubNames = {for (final hub in hubs) hub.id: hub.name};
 
     return users.when(

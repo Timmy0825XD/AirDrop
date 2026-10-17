@@ -106,7 +106,7 @@ class _OfferPicker extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 16),
       child: switch (f.catalog!) {
-        AsyncData(:final value) => AuthChoiceGroup(
+        AsyncValue(hasValue: true, hasError: false, :final value?) => AuthChoiceGroup(
           label: 'Medicamento',
           errorText: f.errors[HubRequestInput.offer],
           shakeCount: f.shakeCount,

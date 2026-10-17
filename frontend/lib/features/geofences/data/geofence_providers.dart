@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/providers.dart';
 import '../../../core/data/data_source.dart';
 import '../../../core/data/data_source_config.dart';
+import '../../auth/presentation/auth_controller.dart';
 import 'geofence_models.dart';
 import 'geofence_repository.dart';
 import 'local_geofence_repository.dart';
@@ -11,6 +12,8 @@ import 'remote_geofence_repository.dart';
 /// Único sitio donde se decide si la feature habla con Nest o con los
 /// fixtures locales.
 final geofenceRepositoryProvider = Provider<GeofenceRepository>((ref) {
+  // Otra cuenta, otro repositorio: lo cargado por la anterior se descarta.
+  ref.watch(sessionUserIdProvider);
   final apiClient = ref.watch(apiClientProvider);
   final tokenStore = ref.watch(tokenStoreProvider);
 

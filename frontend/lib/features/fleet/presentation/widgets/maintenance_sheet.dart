@@ -35,15 +35,19 @@ Future<MaintenanceInput?> showMaintenanceSheet(
   );
 }
 
-/// Con [mandatory], motivo y fecha son obligatorios.
-({String? reason, String? date}) maintenanceErrors({
-  required String reason,
-  required String? date,
-  required bool mandatory,
-}) => (
-  reason: Validators.reason(reason, required: mandatory),
-  date: mandatory && date == null ? 'Elige la fecha estimada.' : null,
-);
+/// Los avisos del formulario; sin [tried] (antes de guardar) no hay
+/// ninguno. Con [mandatory], motivo y fecha son obligatorios.
+({String? reason, String? date}) maintenanceErrors(
+  String reason,
+  String? date,
+  bool mandatory, {
+  required bool tried,
+}) => !tried
+    ? (reason: null, date: null)
+    : (
+        reason: Validators.reason(reason, required: mandatory),
+        date: mandatory && date == null ? 'Elige la fecha estimada.' : null,
+      );
 
 class MaintenanceSheet extends StatefulWidget {
   const MaintenanceSheet({
@@ -64,8 +68,12 @@ class MaintenanceSheet extends StatefulWidget {
 class _MaintenanceSheetState extends State<MaintenanceSheet> {
   late final _reason = TextEditingController(text: widget.initialReason);
   late String? _date = widget.initialDate.isEmpty ? null : widget.initialDate;
-  ({String? reason, String? date}) _errors = (reason: null, date: null);
+  bool _tried = false;
   int _shakeCount = 0;
+
+  // Se calculan con lo que hay: elegir la fecha borra su aviso solo.
+  ({String? reason, String? date}) get _errors =>
+      maintenanceErrors(_reason.text, _date, widget.mandatory, tried: _tried);
 
   @override
   void dispose() {
@@ -79,17 +87,12 @@ class _MaintenanceSheetState extends State<MaintenanceSheet> {
   }
 
   void _save() {
-    final errors = maintenanceErrors(
-      reason: _reason.text,
-      date: _date,
-      mandatory: widget.mandatory,
-    );
-    final failed = errors.reason != null || errors.date != null;
-    setState(() {
-      _errors = errors;
-      if (failed) _shakeCount++;
-    });
-    if (failed) return;
+    setState(() => _tried = true);
+    final errors = _errors;
+    if (errors.reason != null || errors.date != null) {
+      setState(() => _shakeCount++);
+      return;
+    }
     Navigator.pop(context, (
       reason: _reason.text.trim(),
       estimatedEndDate: _date ?? '',

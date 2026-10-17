@@ -19,7 +19,7 @@ class GeofencesScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final count = ref.watch(geofencesProvider).asData?.value.length;
+    final count = ref.watch(geofencesProvider).value?.length;
     return Scaffold(
       body: Column(
         children: [
@@ -50,11 +50,11 @@ class _GeofenceList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return switch (ref.watch(geofencesProvider)) {
-      AsyncData(:final value) when value.isEmpty => const MessageView(
+      AsyncValue(hasValue: true, hasError: false, :final value?) when value.isEmpty => const MessageView(
         icon: Icons.polyline_outlined,
         message: 'Aún no hay geovallas registradas.',
       ),
-      AsyncData(:final value) => ListView.separated(
+      AsyncValue(hasValue: true, hasError: false, :final value?) => ListView.separated(
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 96),
         itemCount: value.length,
         separatorBuilder: (_, _) => const SizedBox(height: 10),

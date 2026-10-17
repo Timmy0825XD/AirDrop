@@ -24,8 +24,8 @@ class AdminHome extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hubs = ref.watch(allHubsProvider).asData?.value;
-    final users = ref.watch(allUsersProvider).asData?.value;
+    final hubs = ref.watch(allHubsProvider).value;
+    final users = ref.watch(allUsersProvider).value;
     final heroHeight = RoleHero.heightFor(context);
 
     return Scaffold(

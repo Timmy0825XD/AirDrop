@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-10-16 18:19
+Generado: 2026-10-16 23:08
 
 ## auth
 
@@ -47,7 +47,7 @@ Generado: 2026-10-16 18:19
 | `auth_form_sheet.dart` | AuthFormSheet | 43 | ok |
 | `auth_glass.dart` | AuthGlass | 58 | ok |
 | `auth_glass.dart` | AuthGlassPanel | 29 | ok |
-| `auth_location_field.dart` | AuthLocationField | 59 | ok |
+| `auth_location_field.dart` | AuthLocationField | 60 | ok |
 | `auth_location_field.dart` | _LocationHeader | 29 | ok |
 | `auth_location_field.dart` | _PinLayer | 42 | ok |
 | `auth_location_field.dart` | _MapHint | 24 | ok |
@@ -163,7 +163,7 @@ Generado: 2026-10-16 18:19
 
 | Archivo | Lineas |
 | --- | --- |
-| `auth_controller.dart` | 120 |
+| `auth_controller.dart` | 130 |
 
 ## fleet
 
@@ -171,7 +171,7 @@ Generado: 2026-10-16 18:19
 
 | Archivo | Lineas |
 | --- | --- |
-| `drone_form_screen.dart` | 128 |
+| `drone_form_screen.dart` | 133 |
 | `fleet_screen.dart` | 273 |
 
 ### Widgets
@@ -189,7 +189,7 @@ Generado: 2026-10-16 18:19
 | `drone_tile.dart` | _DroneInfo | 44 | ok |
 | `fleet_hub_selector.dart` | FleetHubSelector | 34 | ok |
 | `maintenance_sheet.dart` | MaintenanceSheet | 16 | ok |
-| `maintenance_sheet.dart` | _MaintenanceSheetState | 60 | ok |
+| `maintenance_sheet.dart` | _MaintenanceSheetState | 59 | ok |
 | `maintenance_sheet.dart` | _MaintenanceFields | 43 | ok |
 
 ## geofences
@@ -291,7 +291,7 @@ Generado: 2026-10-16 18:19
 
 | Archivo | Lineas |
 | --- | --- |
-| `inventory_form_screen.dart` | 158 |
+| `inventory_form_screen.dart` | 163 |
 | `inventory_screen.dart` | 104 |
 
 ### Widgets
@@ -318,7 +318,7 @@ Generado: 2026-10-16 18:19
 | `hub_emergency_screen.dart` | 89 |
 | `hub_plan_form_screen.dart` | 100 |
 | `in_flight_screen.dart` | 36 |
-| `order_detail_screen.dart` | 209 |
+| `order_detail_screen.dart` | 220 |
 | `order_history_screen.dart` | 33 |
 | `pending_load_screen.dart` | 67 |
 | `plan_detail_screen.dart` | 146 |
@@ -365,7 +365,7 @@ Generado: 2026-10-16 18:19
 | `prescription_checklist.dart` | PrescriptionChecklist | 24 | ok |
 | `prescription_picker.dart` | PrescriptionPicker | 52 | ok |
 | `prescription_picker.dart` | _Preview | 34 | ok |
-| `prescription_viewer.dart` | (sin clases) | 32 | ok |
+| `prescription_viewer.dart` | (sin clases) | 45 | ok |
 | `reject_section.dart` | RejectSection | 20 | ok |
 | `reject_section.dart` | _RejectSectionState | 50 | ok |
 | `requester_order_fields.dart` | RequesterOrderForm | 22 | ok |
@@ -397,8 +397,9 @@ Generado: 2026-10-16 18:19
 | --- | --- | --- | --- |
 | `flight_card.dart` | FlightCard | 41 | ok |
 | `flight_card.dart` | _Stat | 27 | ok |
-| `flight_map.dart` | FlightMap | 42 | ok |
-| `flight_map.dart` | _DroneMarker | 25 | ok |
+| `flight_map.dart` | FlightMap | 57 | ok |
+| `flight_map.dart` | _DroneMarker | 27 | ok |
+| `flight_map.dart` | _DestinationPin | 13 | ok |
 | `flight_notice.dart` | FlightNotice | 35 | ok |
 
 ## users
@@ -407,7 +408,7 @@ Generado: 2026-10-16 18:19
 
 | Archivo | Lineas |
 | --- | --- |
-| `user_form_screen.dart` | 100 |
+| `user_form_screen.dart` | 110 |
 | `users_screen.dart` | 141 |
 
 ### Widgets
@@ -437,7 +438,7 @@ Generado: 2026-10-16 18:19
 ## Resumen
 
 - Pantallas (31 archivos): 31
-- Archivos de widgets: 117 - clases de widget medidas: 265
+- Archivos de widgets: 117 - clases de widget medidas: 266
 - Widgets sobre 60 lineas: 4
 
 Detalle de los que exceden 60 lineas (candidatos a partir):
