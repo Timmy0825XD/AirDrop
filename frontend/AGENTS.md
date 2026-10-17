@@ -324,8 +324,18 @@ Reglas de los datos:
 - `ProviderScope` usa `retryOnlyWithoutResponse` (`lib/app/provider_retry.dart`):
   un error con código HTTP de Nest no se reintenta y se muestra de una vez;
   solo se reintenta (3 veces) cuando el servidor no respondió.
+- Cada `<dominio>RepositoryProvider` hace `ref.watch(sessionUserIdProvider)`
+  (`auth/presentation/auth_controller.dart`): al cambiar de cuenta se
+  reconstruye y todo lo cargado se vuelve a pedir. Un repositorio nuevo
+  tiene que hacer lo mismo, o la cuenta siguiente verá datos ajenos.
+- Al pintar un `AsyncValue` con `switch`, el caso de datos es
+  `AsyncValue(hasValue: true, hasError: false, :final value?)`, no
+  `AsyncData(...)`: durante una recarga el estado es `AsyncLoading` con el
+  valor anterior y la pantalla no debe quedar en blanco. Para leer un número
+  o un título se usa `.value` (el último conocido), no `.asData?.value`.
 - Las listas sin socket (cola, programados, pending-load, vuelos en curso,
-  mis pedidos) y los números del inicio del despachador y del solicitante se
+  mis pedidos, el detalle del pedido) y los números del inicio del
+  despachador y del solicitante se
   envuelven en `AutoRefresh` (`lib/core/widgets/auto_refresh.dart`), que
   invalida su provider cada 10 s mientras la pantalla está abierta.
 

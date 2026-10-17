@@ -32,7 +32,7 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen>
           .read(createEmergencyProvider.notifier)
           .create(values.emergency(user));
       if (!mounted) return;
-      showAppSnack(context, 'Urgencia enviada. Te avisamos cuando despegue.');
+      showAppSnack(context, 'Urgencia enviada. Síguela en Mis pedidos.');
       context.go('/orders/${order.id}');
     },
   );

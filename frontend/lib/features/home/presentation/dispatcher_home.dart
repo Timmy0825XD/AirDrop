@@ -28,7 +28,7 @@ class DispatcherHome extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hubState = ref.watch(myHubProvider);
-    final hub = hubState.asData?.value;
+    final hub = hubState.value;
     final active = hub?.isActive ?? false;
     final counts = active ? DispatcherCounts.watch(ref) : null;
     return Scaffold(
@@ -120,9 +120,9 @@ class _Hero extends ConsumerWidget {
   }
 
   static String _tagline(AsyncValue<Hub?> state) => switch (state) {
-    AsyncData(value: final hub?) =>
+    AsyncValue(hasValue: true, hasError: false, value: final hub?) =>
       '${hub.name} · ${hub.isActive ? 'Activa' : 'Suspendida'}',
-    AsyncData() => 'Sin central asignada',
+    AsyncValue(hasValue: true, hasError: false) => 'Sin central asignada',
     AsyncError(:final error) => ApiException.messageOf(error),
     _ => 'Cargando tu central…',
   };

@@ -38,11 +38,11 @@ class OrderFormScaffold<T> extends StatelessWidget {
   /// Lo que va en vez del formulario mientras la lista no sirve; `null`
   /// cuando ya llegó con algo.
   Widget? _stateView() => switch (source) {
-    AsyncData(:final value) when value.isEmpty => MessageView(
+    AsyncValue(hasValue: true, hasError: false, :final value?) when value.isEmpty => MessageView(
       icon: emptyIcon,
       message: emptyText,
     ),
-    AsyncData() => null,
+    AsyncValue(hasValue: true, hasError: false) => null,
     AsyncError(:final error) => MessageView(
       icon: Icons.cloud_off_rounded,
       message: ApiException.messageOf(error),

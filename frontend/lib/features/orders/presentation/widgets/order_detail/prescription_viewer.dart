@@ -21,7 +21,20 @@ Future<void> showPrescription(BuildContext context, PrescriptionFile file) {
         body: ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            InteractiveViewer(child: Image.memory(file.bytes)),
+            InteractiveViewer(
+              child: Image.memory(
+                file.bytes,
+                // Una imagen dañada no muestra el error técnico del motor.
+                errorBuilder: (context, _, _) => const Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Text(
+                    'No se pudo mostrar la imagen de la fórmula. Si no se '
+                    'puede verificar, rechaza el pedido con ese motivo.',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
             const SizedBox(height: 12),
             const PrescriptionChecklist(),
           ],

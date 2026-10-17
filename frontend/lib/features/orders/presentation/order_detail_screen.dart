@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api_exception.dart';
 import '../../../core/field_limits.dart';
 import '../../../core/widgets/app_snack.dart';
+import '../../../core/widgets/auto_refresh.dart';
 import '../../../core/widgets/error_banner.dart';
 import '../../../core/widgets/message_view.dart';
 import '../../../core/widgets/rise_in.dart';
@@ -103,7 +104,10 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     if (error != null) return;
     await _act(_Action.reject, () async {
       await _dispatch.reject(widget.orderId, reason);
-      if (mounted) showAppSnack(context, 'Pedido rechazado.');
+      if (!mounted) return;
+      showAppSnack(context, 'Pedido rechazado.');
+      // Rechazado, sale de la cola y la central ya no lo puede abrir.
+      SectionHeader.backOrHome(context);
     });
   }
 
@@ -117,7 +121,8 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final detail = ref.watch(orderDetailProvider(widget.orderId));
-    final order = detail.asData?.value;
+    // El último pedido leído, también mientras recarga.
+    final order = detail.value;
     return Scaffold(
       body: Column(
         children: [
@@ -129,14 +134,20 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
             onBack: () => SectionHeader.backOrHome(context),
           ),
           Expanded(
-            child: switch (detail) {
-              AsyncData(:final value) => _content(value),
-              AsyncError(:final error) => MessageView(
-                icon: Icons.cloud_off_rounded,
-                message: ApiException.messageOf(error),
-              ),
-              _ => const Center(child: CircularProgressIndicator()),
-            },
+            // Sin socket en el detalle: se pide de nuevo cada 10 s, así el
+            // estado no se queda en "Pendiente de carga" con el dron volando.
+            child: AutoRefresh(
+              onTick: () => ref.invalidate(orderDetailProvider(widget.orderId)),
+              child: switch (detail) {
+                AsyncValue(hasValue: true, hasError: false, :final value?) =>
+                  _content(value),
+                AsyncError(:final error) => MessageView(
+                  icon: Icons.cloud_off_rounded,
+                  message: ApiException.messageOf(error),
+                ),
+                _ => const Center(child: CircularProgressIndicator()),
+              },
+            ),
           ),
         ],
       ),
@@ -144,7 +155,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   }
 
   Widget _content(Order order) {
-    final user = ref.watch(authControllerProvider).asData?.value.user;
+    final user = ref.watch(authControllerProvider).value?.user;
     final isDispatcher = user?.role == UserRole.dispatcher;
     final blocks = <Widget>[
       if (_error != null) ErrorBanner(message: _error!),

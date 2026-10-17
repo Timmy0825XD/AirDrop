@@ -102,7 +102,7 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
     if (state case AsyncError(:final error)) {
       return _message(ApiException.messageOf(error));
     }
-    final rows = state.asData?.value;
+    final rows = state.value;
     if (rows == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }

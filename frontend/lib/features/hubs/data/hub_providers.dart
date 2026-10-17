@@ -3,12 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/providers.dart';
 import '../../../core/data/data_source.dart';
 import '../../../core/data/data_source_config.dart';
+import '../../auth/presentation/auth_controller.dart';
 import 'hub_models.dart';
 import 'hub_repository.dart';
 import 'local_hub_repository.dart';
 import 'remote_hub_repository.dart';
 
 final hubRepositoryProvider = Provider<HubRepository>((ref) {
+  // Otra cuenta, otro repositorio: lo cargado por la anterior se descarta.
+  ref.watch(sessionUserIdProvider);
   final apiClient = ref.watch(apiClientProvider);
   final tokenStore = ref.watch(tokenStoreProvider);
 

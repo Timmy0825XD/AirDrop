@@ -25,7 +25,7 @@ class ProfileScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(authControllerProvider).asData?.value.user;
+    final user = ref.watch(authControllerProvider).value?.user;
     if (user == null) {
       return Scaffold(
         body: MessageView(
@@ -92,7 +92,7 @@ class ProfileScreen extends ConsumerWidget {
       final hub = ref.watch(myHubProvider);
       return hub.hasValue ? [hub.value?.name ?? 'Sin central'] : null;
     }
-    return ref.watch(allHubsProvider).asData?.value.map((h) => h.name).toList();
+    return ref.watch(allHubsProvider).value?.map((h) => h.name).toList();
   }
 
   Future<void> _edit(

@@ -20,10 +20,10 @@ class DispatcherCounts {
   /// Lee las cuatro bandejas. Solo se llama con la central activa: con la
   /// central suspendida Nest las rechaza todas.
   static DispatcherCounts watch(WidgetRef ref) => DispatcherCounts(
-    queue: ref.watch(queueProvider).asData?.value.length,
-    scheduled: ref.watch(scheduledProvider).asData?.value.length,
-    pendingLoad: ref.watch(pendingLoadProvider).asData?.value.length,
-    inFlight: ref.watch(inFlightProvider).asData?.value.length,
+    queue: ref.watch(queueProvider).value?.length,
+    scheduled: ref.watch(scheduledProvider).value?.length,
+    pendingLoad: ref.watch(pendingLoadProvider).value?.length,
+    inFlight: ref.watch(inFlightProvider).value?.length,
   );
 
   static void refresh(WidgetRef ref) => ref

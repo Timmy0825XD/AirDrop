@@ -22,7 +22,7 @@ class TrackingScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final order = ref.watch(orderDetailProvider(orderId)).asData?.value;
+    final order = ref.watch(orderDetailProvider(orderId)).value;
     final flight = ref.watch(trackingProvider(orderId));
     final t = flight.telemetry;
     return Scaffold(

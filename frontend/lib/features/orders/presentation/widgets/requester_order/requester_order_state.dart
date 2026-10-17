@@ -27,7 +27,7 @@ mixin RequesterOrderState<T extends ConsumerStatefulWidget>
     super.dispose();
   }
 
-  PublicUser? get user => ref.watch(authControllerProvider).asData?.value.user;
+  PublicUser? get user => ref.watch(authControllerProvider).value?.user;
 
   RequesterOrderForm get form => RequesterOrderForm(
     values: values,
@@ -69,7 +69,7 @@ mixin RequesterOrderState<T extends ConsumerStatefulWidget>
       errors = found;
       if (found.isNotEmpty) shakeCount++;
     });
-    final account = ref.read(authControllerProvider).asData?.value.user;
+    final account = ref.read(authControllerProvider).value?.user;
     if (found.isNotEmpty || account == null) return;
     FocusScope.of(context).unfocus();
     setState(() => sending = true);

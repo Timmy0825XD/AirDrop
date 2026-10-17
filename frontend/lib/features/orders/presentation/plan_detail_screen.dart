@@ -75,7 +75,7 @@ class _PlanDetailScreenState extends ConsumerState<PlanDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final detail = ref.watch(planDetailProvider(widget.planId));
-    final plan = detail.asData?.value.plan;
+    final plan = detail.value?.plan;
     return Scaffold(
       body: Column(
         children: [
@@ -88,7 +88,7 @@ class _PlanDetailScreenState extends ConsumerState<PlanDetailScreen> {
           ),
           Expanded(
             child: switch (detail) {
-              AsyncData(:final value) => _content(value),
+              AsyncValue(hasValue: true, hasError: false, :final value?) => _content(value),
               AsyncError(:final error) => MessageView(
                 icon: Icons.cloud_off_rounded,
                 message: ApiException.messageOf(error),

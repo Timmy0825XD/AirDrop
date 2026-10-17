@@ -4,6 +4,7 @@ import '../../../app/providers.dart';
 import '../../../core/data/data_source.dart';
 import '../../../core/data/data_source_config.dart';
 import '../../auth/data/auth_models.dart';
+import '../../auth/presentation/auth_controller.dart';
 import '../../hubs/data/hub_models.dart';
 import '../../hubs/data/hub_providers.dart';
 import 'local_user_repository.dart';
@@ -12,6 +13,8 @@ import 'user_models.dart';
 import 'user_repository.dart';
 
 final userRepositoryProvider = Provider<UserRepository>((ref) {
+  // Otra cuenta, otro repositorio: lo cargado por la anterior se descarta.
+  ref.watch(sessionUserIdProvider);
   final apiClient = ref.watch(apiClientProvider);
   final tokenStore = ref.watch(tokenStoreProvider);
 

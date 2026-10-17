@@ -41,7 +41,7 @@ class OrderTray<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final count = rows.asData?.value.length;
+    final count = rows.value?.length;
     return SectionStatePage(
       header: SectionHeader(
         title: title,
@@ -51,7 +51,7 @@ class OrderTray<T> extends StatelessWidget {
       body: AutoRefresh(
         onTick: onRefresh,
         child: switch (rows) {
-          AsyncData(:final value) => _TrayList<T>(tray: this, items: value),
+          AsyncValue(hasValue: true, hasError: false, :final value?) => _TrayList<T>(tray: this, items: value),
           AsyncError(:final error) => MessageView(
             icon: Icons.cloud_off_rounded,
             message: ApiException.messageOf(error),

@@ -60,7 +60,7 @@ class _HubFormScreenState extends ConsumerState<HubFormScreen> {
     return SectionFormPage(
       header: SectionHeader(
         title: 'Nueva central',
-        subtitle: 'Nace activa. Puedes suspenderla después.',
+        subtitle: 'Nace activa y lista para operar.',
         onBack: () => context.go('/hubs'),
       ),
       card: HubFormSheet(

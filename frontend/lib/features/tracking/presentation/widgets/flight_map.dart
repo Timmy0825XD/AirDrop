@@ -22,6 +22,9 @@ class FlightMap extends StatelessWidget {
     final points = route.map(latLngFromGeoJson).toList();
     final colors = Theme.of(context).colorScheme;
     return AppMap(
+      // El encuadre solo aplica al crear el mapa: si la ruta llega después
+      // (el pedido aún cargaba), se vuelve a montar para encuadrarla.
+      key: ValueKey(points.length >= 2),
       center: drone ?? (points.isEmpty ? AppMap.valledupar : points.first),
       // Encuadra la ruta completa al abrir, con aire alrededor.
       fit: points,
@@ -31,6 +34,18 @@ class FlightMap extends StatelessWidget {
           PolylineLayer(
             polylines: [
               Polyline(points: points, strokeWidth: 4, color: colors.primary),
+            ],
+          ),
+        if (points.length >= 2)
+          MarkerLayer(
+            markers: [
+              Marker(
+                point: points.last,
+                width: 36,
+                height: 36,
+                alignment: Alignment.topCenter,
+                child: const _DestinationPin(),
+              ),
             ],
           ),
         if (drone != null)
@@ -72,6 +87,21 @@ class _DroneMarker extends StatelessWidget {
         ),
         child: const Icon(Icons.flight_rounded, size: 18, color: Colors.white),
       ),
+    );
+  }
+}
+
+/// El pin del destino, al final de la ruta.
+class _DestinationPin extends StatelessWidget {
+  const _DestinationPin();
+
+  @override
+  Widget build(BuildContext context) {
+    return Icon(
+      Icons.location_on_rounded,
+      size: 36,
+      color: Theme.of(context).colorScheme.primary,
+      semanticLabel: 'Destino',
     );
   }
 }

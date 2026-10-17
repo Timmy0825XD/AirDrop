@@ -52,9 +52,10 @@ class AuthLocationField extends StatelessWidget {
                 onTap: onChanged,
                 layers: [if (point != null) _PinLayer(point: point)],
               ),
+              // Arriba: abajo va el crédito de OpenStreetMap, que no se tapa.
               Positioned(
                 left: 10,
-                bottom: 10,
+                top: 10,
                 child: _MapHint(hasPin: point != null, emptyHint: emptyHint),
               ),
             ],

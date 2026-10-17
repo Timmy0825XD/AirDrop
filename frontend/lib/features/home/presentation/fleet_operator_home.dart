@@ -23,9 +23,9 @@ class FleetOperatorHome extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hub = ref.watch(effectiveHubProvider);
-    final hubs = ref.watch(assignedHubsProvider).asData?.value;
-    final drones = ref.watch(dronesProvider).asData?.value;
-    final geofences = ref.watch(geofencesProvider).asData?.value;
+    final hubs = ref.watch(assignedHubsProvider).value;
+    final drones = ref.watch(dronesProvider).value;
+    final geofences = ref.watch(geofencesProvider).value;
     return Scaffold(
       body: ListView(
         padding: EdgeInsets.zero,

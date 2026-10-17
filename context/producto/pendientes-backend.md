@@ -129,3 +129,17 @@ registro.
 
 **La app lo usará** en el perfil: al guardar un correo nuevo, la misma
 pantalla de seis cajas del registro para confirmarlo.
+
+## 8. Editar una central — Pendiente
+
+**Hoy.** Una central solo se crea y se suspende o reactiva. Si el nombre,
+la dirección o el contacto quedan mal escritos (pasó en las pruebas de la
+Fase 10), no hay forma de corregirlos: hay que crear otra y suspender la
+mala.
+
+**Debería** ([`../app/roles.md`](../app/roles.md): el administrador
+gestiona las centrales): `PATCH /hubs/:id` para nombre, tipo, dirección,
+ubicación y contacto, con las mismas validaciones del alta.
+
+**La app lo usará** en la tarjeta de cada central del administrador
+("Editar"), reusando el formulario de Nueva central.

@@ -21,7 +21,7 @@ class InventoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rows = ref.watch(inventoryProvider).asData?.value;
+    final rows = ref.watch(inventoryProvider).value;
     return Scaffold(
       body: Column(
         children: [
@@ -56,11 +56,11 @@ class _InventoryList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return switch (ref.watch(inventoryProvider)) {
-      AsyncData(:final value) when value.isEmpty => const MessageView(
+      AsyncValue(hasValue: true, hasError: false, :final value?) when value.isEmpty => const MessageView(
         icon: Icons.inventory_2_outlined,
         message: 'Aún no hay insumos en el inventario.',
       ),
-      AsyncData(:final value) => ListView.separated(
+      AsyncValue(hasValue: true, hasError: false, :final value?) => ListView.separated(
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 96),
         itemCount: value.length,
         separatorBuilder: (_, _) => const SizedBox(height: 10),

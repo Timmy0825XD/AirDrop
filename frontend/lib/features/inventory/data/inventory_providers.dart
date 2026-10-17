@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../app/providers.dart';
 import '../../../core/data/data_source.dart';
 import '../../../core/data/data_source_config.dart';
+import '../../auth/presentation/auth_controller.dart';
 import '../../hubs/data/hub_providers.dart';
 import 'inventory_models.dart';
 import 'inventory_repository.dart';
@@ -10,6 +11,8 @@ import 'local_inventory_repository.dart';
 import 'remote_inventory_repository.dart';
 
 final inventoryRepositoryProvider = Provider<InventoryRepository>((ref) {
+  // Otra cuenta, otro repositorio: lo cargado por la anterior se descarta.
+  ref.watch(sessionUserIdProvider);
   final apiClient = ref.watch(apiClientProvider);
 
   return switch (appDataSource) {
