@@ -4,6 +4,7 @@ import {
   IsEnum,
   IsLatitude,
   IsLongitude,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
@@ -14,7 +15,11 @@ import { HubType } from '../../common/enums/hub-type.enum';
 import { COLOMBIA_PHONE_REGEX, FIELD_LIMITS } from '../../common/field-limits';
 
 export class CreateHubDto {
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   @IsString({ message: 'El nombre es obligatorio.' })
+  @IsNotEmpty({ message: 'El nombre es obligatorio.' })
   @MaxLength(FIELD_LIMITS.hubName, {
     message: `El nombre no puede superar ${FIELD_LIMITS.hubName} caracteres.`,
   })
@@ -23,7 +28,11 @@ export class CreateHubDto {
   @IsEnum(HubType, { message: 'El tipo de central no es válido.' })
   type: HubType;
 
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   @IsString({ message: 'La dirección es obligatoria.' })
+  @IsNotEmpty({ message: 'La dirección es obligatoria.' })
   @MaxLength(FIELD_LIMITS.address, {
     message: `La dirección no puede superar ${FIELD_LIMITS.address} caracteres.`,
   })
