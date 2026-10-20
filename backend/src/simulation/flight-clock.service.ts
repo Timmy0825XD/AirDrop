@@ -9,6 +9,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { OrderStatus } from '../common/enums/order-status.enum';
+import { isDeliveryWaitOver } from '../delivery/delivery.rules';
 import { Drone } from '../fleet/drone.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Order } from '../orders/order.entity';
@@ -45,6 +46,8 @@ type FlightSession = {
 export class FlightClockService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(FlightClockService.name);
   private readonly active = new Map<string, FlightSession>();
+  /** Pedidos aterrizados que esperan el código de entrega. */
+  private readonly waiting = new Map<string, Date>();
   private timer: NodeJS.Timeout | null = null;
   private ticking = false;
 
@@ -68,6 +71,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       return;
     }
     await this.resume();
+    await this.resumeWaiting();
     this.timer = setInterval(() => {
       void this.tickAll();
     }, TICK_MS);
@@ -105,6 +109,43 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       .getMany();
     for (const order of orders) {
       await this.activate(order.id);
+    }
+  }
+
+  private async resumeWaiting(): Promise<void> {
+    const missions = await this.missions
+      .createQueryBuilder('mission')
+      .innerJoin(Order, 'order', 'order.id = mission.orderId')
+      .where('order.status = :status', {
+        status: OrderStatus.AWAITING_DELIVERY,
+      })
+      .andWhere('mission.landedAt IS NOT NULL')
+      .getMany();
+    for (const mission of missions) {
+      if (mission.landedAt) {
+        this.waiting.set(mission.orderId, mission.landedAt);
+      }
+    }
+  }
+
+  /**
+   * CU-29: sin código válido a tiempo, el pedido pasa a `returning`.
+   * El UPDATE condicionado al estado evita pisar una entrega que se esté
+   * validando en ese instante.
+   */
+  async expireDeliveryWaits(now = new Date()): Promise<void> {
+    for (const [orderId, landedAt] of [...this.waiting]) {
+      if (!isDeliveryWaitOver(landedAt, now)) {
+        continue;
+      }
+      this.waiting.delete(orderId);
+      const result = await this.orders.update(
+        { id: orderId, status: OrderStatus.AWAITING_DELIVERY },
+        { status: OrderStatus.RETURNING },
+      );
+      if (result.affected) {
+        await this.notifications.statusChanged(orderId, OrderStatus.RETURNING);
+      }
     }
   }
 
@@ -174,6 +215,12 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
           );
         }
       }
+      try {
+        await this.expireDeliveryWaits();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'espera';
+        this.logger.error(`No se pudo vencer la espera: ${message}`);
+      }
     } finally {
       this.ticking = false;
     }
@@ -211,12 +258,15 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
         await this.orders.update({ id: orderId }, { status });
         await this.notifications.statusChanged(orderId, status);
       }
-      await this.syncMission(session, step);
+      const landedAt = await this.syncMission(session, step);
       for (const kind of step.alerts) {
         await this.notifications.alert(orderId, session.droneId, kind);
       }
       if (step.progress.phase === FlightPhase.LANDED) {
         this.active.delete(orderId);
+        if (landedAt) {
+          this.waiting.set(orderId, landedAt);
+        }
       }
     } catch (error) {
       session.progress = previous;
@@ -227,12 +277,12 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
   private async syncMission(
     session: FlightSession,
     step: FlightStep,
-  ): Promise<void> {
+  ): Promise<Date | null> {
     const flying =
       step.progress.orderStatus === OrderStatus.IN_FLIGHT ||
       step.progress.orderStatus === OrderStatus.AWAITING_DELIVERY;
     if (!flying) {
-      return;
+      return null;
     }
     let mission = await this.missions.findOne({
       where: { orderId: session.orderId },
@@ -260,5 +310,6 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       mission.landedAt = new Date();
     }
     await this.missions.save(mission);
+    return mission.landedAt;
   }
 }
