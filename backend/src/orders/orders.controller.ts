@@ -49,6 +49,13 @@ export class OrdersController {
     return this.decisionService.attachAssignments(rows);
   }
 
+  @Get('incoming')
+  @Roles(UserRole.DISPATCHER)
+  async incoming(@CurrentUser() user: User) {
+    const rows = await this.ordersService.listIncoming(user);
+    return this.decisionService.attachAssignments(rows);
+  }
+
   @Get('origin-hubs')
   @Roles(UserRole.DISPATCHER)
   originHubs(@CurrentUser() user: User) {
