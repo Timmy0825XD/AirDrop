@@ -123,7 +123,7 @@ Scrum, 6 sprints de 2 semanas (1 sep – 22 nov 2026), 227 SP.
 
 Detalle: [`context/producto/backlog.md`](context/producto/backlog.md).
 
-Fase en curso del frontend y su rama: [`context/producto/avance.md`](context/producto/avance.md).
+Fase en curso del frontend, su rama y qué historias están hechas: [`context/producto/avance.md`](context/producto/avance.md). Lo que falta en el backend: [`context/producto/pendientes-backend.md`](context/producto/pendientes-backend.md).
 
 ---
 

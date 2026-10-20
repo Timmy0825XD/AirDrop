@@ -38,7 +38,7 @@ La arquitectura prevista multi-ciudad (varias centrales, varios drones) se **mod
 Los mismos nombres en backend (módulos Nest) y, en lo posible, en frontend (features):
 
 1. **Auth** — registro solo del solicitante, OTP, JWT, roles. Despachador y operador los crea el admin.
-2. **Hubs (centrales)** — registro, aprobación, perfil.
+2. **Hubs (centrales)** — alta y suspensión por el administrador, perfil.
 3. **Inventory** — existencias, lote, vencimiento, cadena de frío y tipo de venta.
 4. **Fleet** — drones, `DroneModel`, estados, mantenimiento.
 5. **Geofences** — polígonos PostGIS.

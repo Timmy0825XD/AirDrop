@@ -143,3 +143,26 @@ ubicación y contacto, con las mismas validaciones del alta.
 
 **La app lo usará** en la tarjeta de cada central del administrador
 ("Editar"), reusando el formulario de Nueva central.
+
+## 9. Alerta de temperatura fuera de rango (RF-17, HU-32) — Pendiente
+
+**Hoy.** Si el ítem lleva frío, el reloj publica `temperatureC` fija en 5 °C
+durante todo el vuelo. Nunca sale de rango y no hay alerta, así que la
+cuarentena del punto 1 no tiene en qué apoyarse.
+
+**Debería** ([`../entregas/productos.md`](../entregas/productos.md),
+[`requisitos.md`](requisitos.md) RF-17): comparar la temperatura simulada con
+el rango en ida, espera y retorno; fuera de rango, emitir una alerta por el
+socket (`alert`) y dejar marcado el pedido para la cuarentena.
+
+**La app lo usará** en la ficha del vuelo y al marcar el empaque.
+
+## 10. Vencimiento del token (`JWT_EXPIRES_IN`) — Pendiente
+
+**Hoy.** `auth.module.ts` fija el token en 8 horas y no lee `JWT_EXPIRES_IN`
+(`.env.example` dice `2h`).
+
+**Debería** ([`../../AGENTS.md`](../../AGENTS.md): "JWT con expiración"): leer
+la variable, o quitarla de `.env.example` y dejar las 8 horas documentadas.
+
+**La app** no depende del valor: ante un `401` cierra sesión.

@@ -8,7 +8,7 @@ Una **sola** aplicación Flutter. Tras autenticarse, el usuario ve el flujo de *
 
 ## Contexto de negocio que el frontend no debe perder
 
-AirDrop simula logística aérea médica para Valledupar y zonas cercanas. El frontend representa cuatro roles: **solicitante** (persona civil, único registro público), **despachador** (una central, lo crea el admin), **operador de flota** (una o varias centrales, lo crea el admin) y **administrador**. La central no es un rol. No existe un rol receptor: la entrega se confirma con un código de un uso. La definición vigente está en [`../context/app/roles.md`](../context/app/roles.md). El contrato de `/auth` de abajo describe el código actual y se actualiza cuando el registro quede solo para el solicitante.
+AirDrop simula logística aérea médica para Valledupar y zonas cercanas. El frontend representa cuatro roles: **solicitante** (persona civil, único registro público), **despachador** (una central, lo crea el admin), **operador de flota** (una o varias centrales, lo crea el admin) y **administrador**. La central no es un rol. No existe un rol receptor: la entrega se confirma con un código de un uso. La definición vigente está en [`../context/app/roles.md`](../context/app/roles.md). El contrato de `/auth` de abajo ya refleja ese registro solo del solicitante.
 
 Flujo central que las pantallas deben respetar:
 
@@ -50,10 +50,11 @@ lib/
     geofences/
     users/
     orders/
-    tracking/    # mapa + telemetría (solicitante, operador)
-    delivery/    # código de entrega (sin rol receptor)
-    analytics/
+    home/        # inicios por rol y andamiaje compartido (solo presentation/)
+    tracking/    # mapa + telemetría en vivo (solicitante y despachador)
 ```
+
+Todavía **no existen** `delivery/` (código de entrega, sin rol receptor; Fase 5, bloqueada por el backend) ni `analytics/` (métricas del administrador). Se crean cuando Nest tenga sus endpoints ([`../context/producto/pendientes-backend.md`](../context/producto/pendientes-backend.md)).
 
 No Clean Architecture de tres capas por feature “porque sí”. Suficiente:
 
@@ -70,8 +71,6 @@ Cada feature sigue el mismo patrón, y vale repetirlo en todas:
 presentation/
   <screen>_screen.dart      # estado, llamadas y armado del scaffold
   widgets/
-    auth_page.dart          # andamiaje: fondo, SafeArea, ancho máximo
-    auth_ambience.dart      # brillo y animación de entrada
     <subcarpeta>/           # un folder por pantalla
       <screen>_content.dart # el cuerpo visual, sin estado
       <screen>_fields.dart  # los campos del formulario
@@ -317,8 +316,7 @@ Reglas de los datos:
   `<dominio>_providers.dart` de la feature.
 - Los repositorios no importan Riverpod ni `TokenStore`, salvo el local (que
   necesita el token para simular la sesión).
-- Los fixtures van en su propio archivo (`local_fixtures.dart`) o en el
-  repositorio local si son pocos.
+- Los fixtures van dentro del repositorio local de cada feature.
 - `mine()` es el único método que convierte un 404 en `null`; el resto relanza
   para que la UI muestre el mensaje de Nest.
 - `ProviderScope` usa `retryOnlyWithoutResponse` (`lib/app/provider_retry.dart`):
@@ -370,7 +368,7 @@ Para una maqueta sin NestJS:
 
 1. Cambiar temporalmente `appDataSource` en [`lib/core/data/data_source_config.dart`](lib/core/data/data_source_config.dart) de `DataSource.remote` a `DataSource.local`.
 2. Ejecutar la app.
-3. Usar los fixtures documentados abajo.
+3. Usar los fixtures de cada `local_<dominio>_repository.dart`.
 4. Volver a `DataSource.remote` antes de probar contra la API real.
 
 No se debe usar una implementación local accidentalmente contra la API real; la selección se hace en un solo lugar.
