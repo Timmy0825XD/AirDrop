@@ -1,6 +1,7 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { OneTimeCode } from '../auth/one-time-code.entity';
+import { DeliveryCode } from '../delivery/delivery-code.entity';
 import { Drone } from '../fleet/drone.entity';
 import { DroneModel } from '../fleet/drone-model.entity';
 import { Hub } from '../hubs/hub.entity';
@@ -42,6 +43,7 @@ export function typeOrmOptions(config: ConfigService): TypeOrmModuleOptions {
       Order,
       DeliveryPlan,
       PrescriptionImage,
+      DeliveryCode,
     ],
     synchronize: config.get<string>('NODE_ENV') !== 'production',
     dropSchema: isTest && config.get<string>('E2E_DROP_SCHEMA') === 'true',

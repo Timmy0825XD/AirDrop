@@ -9,6 +9,7 @@ import { enablePostgis } from './database/enable-postgis';
 import { removeRetiredUserRoles } from './database/remove-retired-user-roles';
 import { typeOrmOptions } from './database/typeorm.config';
 import { DecisionModule } from './decision/decision.module';
+import { DeliveryModule } from './delivery/delivery.module';
 import { FleetModule } from './fleet/fleet.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SimulationModule } from './simulation/simulation.module';
@@ -49,6 +50,7 @@ import { UsersModule } from './users/users.module';
     SimulationModule,
     DecisionModule,
     OrdersModule,
+    DeliveryModule,
   ],
 })
 export class AppModule {}
