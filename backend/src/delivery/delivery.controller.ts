@@ -26,7 +26,7 @@ export class DeliveryController {
 
   @Post(':id/delivery-code')
   @HttpCode(200)
-  @Roles(UserRole.REQUESTER)
+  @Roles(UserRole.REQUESTER, UserRole.DISPATCHER)
   generate(
     @CurrentUser() user: User,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
@@ -36,7 +36,7 @@ export class DeliveryController {
 
   @Post(':id/delivery-code/validate')
   @HttpCode(200)
-  @Roles(UserRole.REQUESTER)
+  @Roles(UserRole.REQUESTER, UserRole.DISPATCHER)
   validate(
     @CurrentUser() user: User,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,

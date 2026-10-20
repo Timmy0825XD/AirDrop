@@ -6,12 +6,15 @@ import {
 import { DataSource, EntityManager } from 'typeorm';
 import { generateOtp, hashOtp } from '../auth/auth.rules';
 import { DroneStatus } from '../common/enums/drone-status.enum';
+import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
+import { UserRole } from '../common/enums/user-role.enum';
 import { Drone } from '../fleet/drone.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Order } from '../orders/order.entity';
 import { presentOrder } from '../orders/order.presenter';
 import { Mission } from '../simulation/mission.entity';
+import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
 import { DeliveryCode } from './delivery-code.entity';
 import {
@@ -34,7 +37,7 @@ export class DeliveryService {
   /** CU-19: el solicitante pide el código cuando el dron ya aterrizó. */
   async generate(user: User, orderId: string) {
     return this.dataSource.transaction(async (manager) => {
-      const order = await this.lockOwnOrder(manager, user, orderId);
+      const order = await this.lockRecipientOrder(manager, user, orderId);
       if (order.status === OrderStatus.DELIVERED) {
         throw new BadRequestException(ORDER_ALREADY_DELIVERED);
       }
@@ -63,7 +66,7 @@ export class DeliveryService {
   /** Cierra la entrega: marca el código usado, entrega el pedido y libera el dron. */
   async validate(user: User, orderId: string, code: string) {
     const delivered = await this.dataSource.transaction(async (manager) => {
-      const order = await this.lockOwnOrder(manager, user, orderId);
+      const order = await this.lockRecipientOrder(manager, user, orderId);
       if (order.status === OrderStatus.DELIVERED) {
         throw new BadRequestException(DELIVERY_CODE_REJECTED);
       }
@@ -98,7 +101,11 @@ export class DeliveryService {
     return presentOrder(delivered);
   }
 
-  private async lockOwnOrder(
+  /**
+   * Quien recibe ingresa el código: el solicitante si el destino es una
+   * persona, o el despachador de la central de destino si es una central.
+   */
+  private async lockRecipientOrder(
     manager: EntityManager,
     user: User,
     orderId: string,
@@ -107,9 +114,20 @@ export class DeliveryService {
       where: { id: orderId },
       lock: { mode: 'pessimistic_write' },
     });
-    if (!order || order.requesterId !== user.id) {
+    if (!order || !isRecipient(user, order)) {
       throw new NotFoundException('El pedido no existe.');
     }
     return order;
   }
+}
+
+function isRecipient(user: User, order: Order): boolean {
+  if (order.destinationKind === DestinationKind.HUB) {
+    return (
+      user.role === UserRole.DISPATCHER &&
+      order.destinationHubId !== null &&
+      assignedHubIds(user).includes(order.destinationHubId)
+    );
+  }
+  return user.role === UserRole.REQUESTER && order.requesterId === user.id;
 }
