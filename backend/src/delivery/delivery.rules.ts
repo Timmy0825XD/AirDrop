@@ -26,6 +26,11 @@ export function deliveryExpiresAt(landedAt: Date): Date {
   return new Date(landedAt.getTime() + deliveryWaitMs());
 }
 
+/** CU-30: pasada la espera sin código, el dron vuelve con el paquete. */
+export function isDeliveryWaitOver(landedAt: Date, now: Date): boolean {
+  return now.getTime() >= deliveryExpiresAt(landedAt).getTime();
+}
+
 export function isDeliveryCodeUsable(
   code: { usedAt: Date | null; expiresAt: Date },
   now: Date,
