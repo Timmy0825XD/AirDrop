@@ -197,6 +197,7 @@ function build(state?: {
     saveOutbound: jest.fn(),
     deleteOutbound: jest.fn(),
     findOutboundMany: jest.fn().mockResolvedValue(new Map()),
+    findReturnMany: jest.fn().mockResolvedValue(new Map()),
   };
   const hubsService = {
     requireActive: jest.fn().mockResolvedValue(hub()),
@@ -236,6 +237,7 @@ describe('DecisionService.authorize', () => {
       identifier: 'WC-01',
       modelName: 'Wingcopter 198',
       route: corridor,
+      returnRoute: null,
     });
     expect(drones[0].status).toBe(DroneStatus.IN_MISSION);
     expect(currentLot?.quantity).toBe(8);
@@ -403,6 +405,11 @@ describe('DecisionService.listInFlight', () => {
       throw new Error('Repositorio inesperado');
     });
     routes.findOutboundMany.mockResolvedValue(new Map([[flying.id, corridor]]));
+    const back = {
+      ...corridor,
+      coordinates: [...corridor.coordinates].reverse(),
+    };
+    routes.findReturnMany.mockResolvedValue(new Map([[flying.id, back]]));
     const rows = await service.listInFlight(dispatcher());
     expect(orders.find).toHaveBeenCalledWith({
       where: {
@@ -417,6 +424,7 @@ describe('DecisionService.listInFlight', () => {
     });
     expect(rows[0].status).toBe(OrderStatus.IN_FLIGHT);
     expect(rows[0].assignment?.identifier).toBe('WC-01');
+    expect(rows[0].assignment?.returnRoute).toEqual(back);
   });
 });
 
