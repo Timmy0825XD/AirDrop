@@ -2,6 +2,7 @@ import {
   BadRequestException,
   ForbiddenException,
   NotFoundException,
+  ServiceUnavailableException,
 } from '@nestjs/common';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { DocumentType } from '../common/enums/document-type.enum';
@@ -130,6 +131,7 @@ function build(options?: {
     find: jest.fn(),
     findOne: jest.fn(),
     update: jest.fn(),
+    delete: jest.fn(),
     save: jest.fn((value: Order) => {
       value.id = '11111111-1111-4111-8111-111111111111';
       value.createdAt = new Date('2026-10-03T15:00:00.000Z');
@@ -259,6 +261,29 @@ describe('OrdersService emergencies', () => {
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(orders.save).not.toHaveBeenCalled();
+  });
+
+  it('CH-08 descarta el pedido si la fórmula no se puede subir', async () => {
+    const { service, orders, images, storage } = build();
+    storage.upload.mockRejectedValueOnce(
+      new ServiceUnavailableException('No se pudo guardar la fórmula.'),
+    );
+    await expect(
+      service.createEmergency(
+        requester(),
+        emergencyDto({
+          saleType: SaleType.PRESCRIPTION,
+          patientDocumentType: DocumentType.CITIZENSHIP_ID,
+          patientDocumentNumber: '1098765432',
+          prescriptionMime: 'image/jpeg',
+          prescriptionImageBase64: Buffer.from('formula').toString('base64'),
+        }),
+      ),
+    ).rejects.toBeInstanceOf(ServiceUnavailableException);
+    expect(orders.delete).toHaveBeenCalledWith({
+      id: '11111111-1111-4111-8111-111111111111',
+    });
+    expect(images.save).not.toHaveBeenCalled();
   });
 
   it('stores a matching formula in the bucket and keeps only the object key', async () => {
