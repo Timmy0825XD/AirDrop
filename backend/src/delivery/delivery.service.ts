@@ -1,18 +1,18 @@
 import {
   BadRequestException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { generateOtp, hashOtp } from '../auth/auth.rules';
-import { DroneStatus } from '../common/enums/drone-status.enum';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
-import { Drone } from '../fleet/drone.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Order } from '../orders/order.entity';
 import { presentOrder } from '../orders/order.presenter';
+import { FlightClockService } from '../simulation/flight-clock.service';
 import { Mission } from '../simulation/mission.entity';
 import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
@@ -29,9 +29,12 @@ import {
 
 @Injectable()
 export class DeliveryService {
+  private readonly logger = new Logger(DeliveryService.name);
+
   constructor(
     private readonly dataSource: DataSource,
     private readonly notifications: NotificationsService,
+    private readonly flights: FlightClockService,
   ) {}
 
   /** CU-19: el solicitante pide el código cuando el dron ya aterrizó. */
@@ -63,7 +66,10 @@ export class DeliveryService {
     });
   }
 
-  /** Cierra la entrega: marca el código usado, entrega el pedido y libera el dron. */
+  /**
+   * Cierra la entrega: marca el código usado y entrega el pedido. El dron no
+   * queda libre en destino: vuelve a su central y se libera al aterrizar.
+   */
   async validate(user: User, orderId: string, code: string) {
     const delivered = await this.dataSource.transaction(async (manager) => {
       const order = await this.lockRecipientOrder(manager, user, orderId);
@@ -87,17 +93,17 @@ export class DeliveryService {
       stored.usedAt = now;
       await manager.save(stored);
       order.status = OrderStatus.DELIVERED;
-      const saved = await manager.save(order);
-      if (order.droneId) {
-        await manager.update(
-          Drone,
-          { id: order.droneId },
-          { status: DroneStatus.AVAILABLE },
-        );
-      }
-      return saved;
+      return manager.save(order);
     });
     await this.notifications.statusChanged(orderId, OrderStatus.DELIVERED);
+    try {
+      await this.flights.startReturn(orderId);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'regreso';
+      this.logger.error(
+        `No se pudo iniciar el regreso del dron ${orderId}: ${message}. Se reintenta al reiniciar.`,
+      );
+    }
     return presentOrder(delivered);
   }
 

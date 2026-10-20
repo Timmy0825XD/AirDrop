@@ -2,12 +2,11 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { hashOtp } from '../auth/auth.rules';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
-import { DroneStatus } from '../common/enums/drone-status.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
-import { Drone } from '../fleet/drone.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Order } from '../orders/order.entity';
+import { FlightClockService } from '../simulation/flight-clock.service';
 import { Mission } from '../simulation/mission.entity';
 import { User } from '../users/user.entity';
 import { DeliveryCode } from './delivery-code.entity';
@@ -72,6 +71,7 @@ describe('DeliveryService', () => {
     update: jest.Mock;
   };
   let notifications: { statusChanged: jest.Mock };
+  let flights: { startReturn: jest.Mock };
   let service: DeliveryService;
 
   beforeEach(() => {
@@ -95,9 +95,11 @@ describe('DeliveryService', () => {
       ),
     } as unknown as DataSource;
     notifications = { statusChanged: jest.fn().mockResolvedValue(undefined) };
+    flights = { startReturn: jest.fn().mockResolvedValue(undefined) };
     service = new DeliveryService(
       dataSource,
       notifications as unknown as NotificationsService,
+      flights as unknown as FlightClockService,
     );
   });
 
@@ -158,22 +160,28 @@ describe('DeliveryService', () => {
   });
 
   describe('validate', () => {
-    it('entrega el pedido, usa el código, libera el dron y avisa', async () => {
+    it('entrega el pedido, usa el código, avisa y manda al dron de vuelta', async () => {
       code = storedCode();
 
       const result = await service.validate(requester, ORDER_ID, CODE);
 
       expect(result.status).toBe(OrderStatus.DELIVERED);
       expect(code.usedAt).toBeInstanceOf(Date);
-      expect(manager.update).toHaveBeenCalledWith(
-        Drone,
-        { id: DRONE_ID },
-        { status: DroneStatus.AVAILABLE },
-      );
+      expect(manager.update).not.toHaveBeenCalled();
+      expect(flights.startReturn).toHaveBeenCalledWith(ORDER_ID);
       expect(notifications.statusChanged).toHaveBeenCalledWith(
         ORDER_ID,
         OrderStatus.DELIVERED,
       );
+    });
+
+    it('la entrega sigue valiendo aunque no arranque el regreso', async () => {
+      code = storedCode();
+      flights.startReturn.mockRejectedValueOnce(new Error('sin Redis'));
+
+      const result = await service.validate(requester, ORDER_ID, CODE);
+
+      expect(result.status).toBe(OrderStatus.DELIVERED);
     });
 
     it('rechaza un código incorrecto sin cambiar nada', async () => {
@@ -185,7 +193,7 @@ describe('DeliveryService', () => {
 
       expect(code.usedAt).toBeNull();
       expect(current!.status).toBe(OrderStatus.AWAITING_DELIVERY);
-      expect(manager.update).not.toHaveBeenCalled();
+      expect(flights.startReturn).not.toHaveBeenCalled();
       expect(notifications.statusChanged).not.toHaveBeenCalled();
     });
 
