@@ -13,42 +13,56 @@ Estado: `Pendiente` · `En curso (rama)` · `Hecho (PR)`.
 
 ---
 
-## 1. Entrega, retorno y cuarentena — Pendiente
+## 1. Entrega, retorno y cuarentena — Parcial
 
-La pieza más importante: sin ella el ciclo de la sustentación se corta.
+Hecho en el backend (código, espera, retorno). Falta la cuarentena y el
+ingreso al inventario de destino.
 
-**Hoy.** Al aterrizar, el pedido queda en `awaiting_delivery` y el dron en
-`in_mission` para siempre. No hay código de entrega ni endpoint para
-ingresarlo, y el operador tampoco puede liberar el dron (`FleetService`
-responde "No puedes cambiar el estado de un dron en misión.").
+**Hecho.**
 
-**Debería** ([`entregas/persona.md`](../entregas/persona.md),
-[`entregas/centrales.md`](../entregas/centrales.md),
-[`entregas/productos.md`](../entregas/productos.md)):
+- **Código de un uso.** Existe desde que el despachador de origen confirma la
+  carga: se deriva (HMAC) del pedido y de ese instante, no se guarda en claro.
+  Lo ve quien recibe con `GET /orders/:id/delivery-code` (`{ code, expiresAt }`;
+  `expiresAt` es `null` hasta que el dron aterriza). Recibe el solicitante si
+  el destino es una persona y el despachador de la central de destino si es un
+  traslado.
+- **Ingreso del código.** `POST /orders/:id/delivery-code/validate` con
+  `{ code }`: válido → pedido `delivered`. El dron no queda libre en destino:
+  vuela de regreso a su central (el pedido sigue `delivered`) y queda
+  `available` al aterrizar. Tope de **5 intentos** equivocados por pedido; al
+  quinto el pedido queda bloqueado.
+- **Espera de 5 minutos** desde el aterrizaje (`DELIVERY_WAIT_MS` la acorta en
+  pruebas). Sin código válido: pedido `returning`, el dron vuela de regreso
+  **con el paquete** (ruta de retorno con las reglas de geovalla, o la ida al
+  revés si una geovalla nueva la bloquea); al aterrizar, pedido `returned` y
+  dron `available`. Se retoma tras reiniciar el servidor.
+- **Estados por el socket** (`order-status`) y telemetría del retorno
+  (`leg: return`). La asignación del pedido trae `returnRoute` cuando hay
+  regreso.
 
-1. Al confirmar la carga se genera un **código de un uso** para el pedido.
-   Lo ve quien recibe: el solicitante (entrega a persona) o el despachador de
-   la central de destino (traslado entre centrales).
-2. Un endpoint para ingresar el código en destino. Válido → pedido
-   `delivered`, el dron vuelve a su central (tramo de retorno) y al aterrizar
-   queda `available`.
-3. Si en **5 minutos** no llega un código válido: pedido `returning`, el dron
-   vuelve **con el paquete**; al aterrizar, pedido `returned` y dron
-   `available`.
-4. **Cuarentena** al volver: sin alerta de frío y con el empaque íntegro, el
+**Falta.**
+
+1. **Cuarentena** al volver: sin alerta de frío y con el empaque íntegro, el
    lote puede reingresar al inventario de origen; con alerta de frío o si el
-   despachador marca el empaque comprometido, no reingresa.
-5. En un traslado recibido bien (remisión que coincide y sin alerta de frío),
-   el lote entra al inventario de la central de destino.
-6. El reloj publica por el socket los estados nuevos (`order-status`) y la
-   telemetría del retorno, igual que en la ida.
+   despachador marca el empaque comprometido, no reingresa
+   ([`../entregas/productos.md`](../entregas/productos.md)). Hoy un pedido
+   `returned` no vuelve a sumar stock ni hay endpoint para decidirlo.
+2. **Ingreso al inventario de destino** en un traslado recibido bien (remisión
+   que coincide y sin alerta de frío)
+   ([`../entregas/centrales.md`](../entregas/centrales.md)). Hoy el traslado
+   queda `delivered` pero el stock de destino no cambia.
+3. El operador no puede liberar un dron en misión (`FleetService` responde "No
+   puedes cambiar el estado de un dron en misión.").
 
-**Tests** que pide `AGENTS.md`: código a tiempo, timeout de 5 min con
-retorno y paquete, cuarentena con y sin alerta de frío.
+**Tests** de lo hecho: código visible desde la confirmación de carga, entrega
+a una persona y a una central, tope de intentos, vencimiento con retorno,
+regreso del dron tras la entrega. Pendientes: cuarentena con y sin alerta de
+frío.
 
-**La app lo usará** para: mostrar el código al que recibe, la pantalla para
-ingresarlo con la cuenta regresiva, la vuelta del dron en el mapa y la
-marca del empaque al recibir un retorno.
+**La app lo usará** para: mostrar el código al que recibe desde que el dron
+vuela, ingresarlo con la cuenta regresiva de 5 min, la vuelta del dron en el
+mapa (`assignment.returnRoute`) y, más adelante, la marca del empaque al
+recibir un retorno.
 
 ## 2. Fallback con estado `reasignado` (RF-18) — Pendiente
 
@@ -99,23 +113,15 @@ central no está asignada a tu cuenta.".
 **La app** hoy no la usa; si se abre, se mostraría en el detalle de una
 central.
 
-## 6. Lo que una central le pide a otra — Pendiente
+## 6. Lo que una central le pide a otra — Hecho
 
-**Hoy.** El despachador puede pedir una urgencia a otra central
-(`POST /orders/hub-emergencies`), pero después no la encuentra en ninguna
-lista: `GET /orders/mine` es solo del solicitante y la cola, los
-programados y las bandejas listan lo que sale **de** su central, no lo que
-le llega. Solo la ve en el detalle que se abre al crearla. Los
-abastecimientos sí aparecen en `GET /orders/plans`.
-
-**Debería** ([`../entregas/centrales.md`](../entregas/centrales.md): la
-central de destino recibe el traslado): listar los pedidos cuyo destino es
-la central del despachador, con su estado (por ejemplo
-`GET /orders/incoming`), para seguirlos hasta que lleguen.
+`GET /orders/incoming` (despachador) lista los pedidos cuyo destino es su
+central, del más nuevo al más viejo, con su estado y la asignación del dron.
+Con el punto 1, el despachador que pidió el traslado ve el código y lo
+ingresa al llegar.
 
 **La app lo usará** en el inicio del despachador: una bandeja "Por recibir"
-junto a "Vuelos en curso", y más adelante para ingresar el código de
-entrega del traslado (punto 1).
+junto a "Vuelos en curso".
 
 ## 7. Cambiar el correo sin verificarlo — Pendiente
 
@@ -148,7 +154,7 @@ ubicación y contacto, con las mismas validaciones del alta.
 
 **Hoy.** Si el ítem lleva frío, el reloj publica `temperatureC` fija en 5 °C
 durante todo el vuelo. Nunca sale de rango y no hay alerta, así que la
-cuarentena del punto 1 no tiene en qué apoyarse.
+cuarentena del punto 1 (cuando exista) no tiene en qué apoyarse.
 
 **Debería** ([`../entregas/productos.md`](../entregas/productos.md),
 [`requisitos.md`](requisitos.md) RF-17): comparar la temperatura simulada con

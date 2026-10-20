@@ -9,10 +9,11 @@ Plan por fases del frontend Flutter a partir de la guía 25 (`learning/25-front-
 | HU-01 a HU-05 (auth), HU-06 a HU-10 (centrales, inventario, cuentas), HU-11 a HU-14 (flota y geovallas) | Backend y frontend hechos |
 | HU-15 a HU-20 (pedidos, planes, cola, historial) | Backend y frontend hechos |
 | HU-21 a HU-23 (decisión, prioridad, rutas) | Backend y frontend hechos |
-| HU-25 a HU-28, HU-35 (simulación, telemetría, mapa, confirmar carga) | Hechos hasta que el dron llega al destino |
+| HU-25 a HU-28, HU-35 (simulación, telemetría, mapa, confirmar carga) | Backend hecho, incluido el regreso del dron; el mapa de regreso falta en la app |
 | HU-29, HU-30 (avisos de estado y batería) | Backend publica `order-status` y `alert` por el socket; no hay push |
 | HU-31 (flag de frío) | Hecho; la temperatura simulada es fija (5 °C), sin alerta de rango |
-| HU-24 (fallback), HU-32 a HU-34 (alerta de frío, código, espera de 5 min, retorno y cuarentena), HU-36 a HU-38 (histórico de central, dashboard, métricas) | **Sin hacer en backend**; el frontend espera (Fase 5 y Métricas) |
+| HU-33 (código de entrega, espera de 5 min y retorno con el paquete) | **Backend hecho**: código desde la confirmación de carga, tope de 5 intentos, vencimiento con retorno y regreso del dron tras entregar. Falta la app (Fase 5) |
+| HU-24 (fallback), HU-32 (alerta de frío), cuarentena e ingreso al inventario de destino, HU-36 a HU-38 (histórico de central, dashboard, métricas) | **Sin hacer en backend** |
 
 Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-backend.md`](pendientes-backend.md). Las reglas de `context/` describen el MVP completo: donde el código va atrás, manda el contexto y se anota aquí o en esos pendientes, no se reescribe el contexto.
 
@@ -31,7 +32,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 2 | Autorizar y confirmar carga (HU-21, HU-35) | `feature/autorizar-carga-front` | Hecha (PR #41) |
 | 3 | Telemetría y mapa en vivo (HU-26 a HU-28) | `feature/tracking-front` | Hecha (PR #43) |
 | 4 | Geovalla sobre el mapa (HU-14) | `feature/geovalla-mapa` | Hecha (PR #45) |
-| 5 | Entrega del pedido y retorno del dron | — | Bloqueada (backend) |
+| 5 | Entrega del pedido y retorno del dron | — | Desbloqueada: el backend tiene el código, la espera y el retorno. Falta la app |
 | 6 | Revisión y rediseño del administrador | `style/rediseno-admin` | Hecha (PR #47) |
 | 7 | Revisión y rediseño del despachador | `style/rediseno-despachador` | Hecha (PR #48) |
 | 8 | Revisión y rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Hecha (PR #49) |
@@ -143,12 +144,24 @@ Resultado (2026-10-16):
 
 ## Fase 5 — Entrega del pedido y retorno del dron
 
-Bloqueada: todo es del backend y lo hace otra persona del equipo. El detalle
-de lo que falta está en [`pendientes-backend.md`](pendientes-backend.md)
-(punto 1). Cuando Nest lo tenga, esta fase hace la parte de la app: el código
-para el que recibe, la pantalla para ingresarlo con la cuenta regresiva de
-5 min, la vuelta del dron en el mapa y la marca del empaque al recibir un
-retorno.
+Desbloqueada: el backend ya tiene lo esencial ([`pendientes-backend.md`](pendientes-backend.md),
+punto 1). Esta fase hace la parte de la app:
+
+- El código para quien recibe (`GET /orders/:id/delivery-code`), visible desde
+  que el dron vuela, y la pantalla para ingresarlo
+  (`POST /orders/:id/delivery-code/validate`) con la cuenta regresiva de
+  5 min. Recibe el solicitante, o el despachador de la central de destino en
+  un traslado.
+- La bandeja "Por recibir" del despachador (`GET /orders/incoming`).
+- El retorno: estados `returning` y `returned`, `Order.hasFlight` con
+  `returning`, la telemetría con `leg` y el mapa con `assignment.returnRoute`.
+  Tras una entrega con código el dron también vuelve a su central: el pedido
+  sigue `delivered`.
+- Las validaciones nuevas del inventario (cantidad mínima 1 al crear;
+  vencimiento posterior a hoy).
+
+Sigue sin existir en Nest, y la app no debe prometerlo: la cuarentena al
+recibir un retorno y el ingreso del lote al inventario de destino.
 
 ## Fases 6 a 8 — Revisión a fondo y rediseño por rol
 

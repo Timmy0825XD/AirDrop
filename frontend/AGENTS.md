@@ -54,7 +54,7 @@ lib/
     tracking/    # mapa + telemetría en vivo (solicitante y despachador)
 ```
 
-Todavía **no existen** `delivery/` (código de entrega, sin rol receptor; Fase 5, bloqueada por el backend) ni `analytics/` (métricas del administrador). Se crean cuando Nest tenga sus endpoints ([`../context/producto/pendientes-backend.md`](../context/producto/pendientes-backend.md)).
+Todavía **no existen** `delivery/` (código de entrega, sin rol receptor; Fase 5: el backend ya tiene `GET /orders/:id/delivery-code`, `POST /orders/:id/delivery-code/validate` y `GET /orders/incoming`) ni `analytics/` (métricas del administrador, aún sin endpoints). Detalle en [`../context/producto/pendientes-backend.md`](../context/producto/pendientes-backend.md).
 
 No Clean Architecture de tres capas por feature “porque sí”. Suficiente:
 
