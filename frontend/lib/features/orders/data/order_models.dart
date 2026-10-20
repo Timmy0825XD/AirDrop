@@ -284,6 +284,13 @@ class Order {
   bool get awaitsLoad =>
       status == OrderStatus.pendingLoad && loadConfirmedAt == null;
 
+  /// Quien recibe ya puede ver su código: desde que se confirma la carga
+  /// hasta que el dron espera en destino.
+  bool get deliveryCodeVisible =>
+      status == OrderStatus.inFlight ||
+      status == OrderStatus.awaitingDelivery ||
+      (status == OrderStatus.pendingLoad && loadConfirmedAt != null);
+
   /// Ya hay (o está por haber) un vuelo que seguir en el mapa: carga
   /// confirmada, en vuelo, esperando la entrega en destino o volviendo con
   /// el paquete.

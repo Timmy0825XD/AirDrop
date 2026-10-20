@@ -177,9 +177,13 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         )
       // El solicitante solo abre sus pedidos: el vuelo y la entrega son suyos.
       else ...[
-        if (order.status == OrderStatus.awaitingDelivery)
-          ReceiveOrderButton(orderId: order.id),
-        if (order.hasFlight) WatchFlightButton(orderId: order.id),
+        if (order.deliveryCodeVisible)
+          ReceiveOrderButton(
+            orderId: order.id,
+            landed: order.status == OrderStatus.awaitingDelivery,
+          ),
+        if (order.hasFlight || order.status == OrderStatus.delivered)
+          WatchFlightButton(orderId: order.id),
       ],
     ];
     return ListView.separated(
@@ -220,7 +224,11 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           loading: _running == _Action.confirmLoad,
           onConfirm: _confirmLoad,
         ),
-      if (can.canReceive) ReceiveOrderButton(orderId: can.order.id),
+      if (can.canReceive)
+        ReceiveOrderButton(
+          orderId: can.order.id,
+          landed: can.order.status == OrderStatus.awaitingDelivery,
+        ),
       if (can.canWatchFlight) WatchFlightButton(orderId: can.order.id),
     ];
   }

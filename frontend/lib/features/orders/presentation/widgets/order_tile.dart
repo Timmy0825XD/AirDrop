@@ -46,7 +46,7 @@ class OrderTile extends StatelessWidget {
         ),
         if (canReceive) ...[
           const SizedBox(height: 8),
-          ReceiveOrderButton(orderId: order.id),
+          ReceiveOrderButton(orderId: order.id, landed: true),
         ],
         if (canWatch && order.hasFlight) ...[
           const SizedBox(height: 8),

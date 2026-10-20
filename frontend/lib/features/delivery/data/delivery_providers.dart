@@ -24,14 +24,14 @@ final deliveryRepositoryProvider = Provider<DeliveryRepository>((ref) {
   };
 });
 
-/// Recibir un pedido: pedir el código y validarlo. Al entregar refresca las
+/// Recibir un pedido: leer el código y validarlo. Al entregar refresca las
 /// listas donde aparecía el pedido y su detalle.
 class ReceiveOrderNotifier extends AsyncNotifier<Order?> {
   @override
   Future<Order?> build() async => null;
 
-  Future<DeliveryCode> generate(String orderId) =>
-      ref.read(deliveryRepositoryProvider).generate(orderId);
+  Future<DeliveryCode> code(String orderId) =>
+      ref.read(deliveryRepositoryProvider).code(orderId);
 
   Future<Order> validate(String orderId, String code) async {
     final order = await ref

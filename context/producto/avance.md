@@ -32,7 +32,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 2 | Autorizar y confirmar carga (HU-21, HU-35) | `feature/autorizar-carga-front` | Hecha (PR #41) |
 | 3 | Telemetría y mapa en vivo (HU-26 a HU-28) | `feature/tracking-front` | Hecha (PR #43) |
 | 4 | Geovalla sobre el mapa (HU-14) | `feature/geovalla-mapa` | Hecha (PR #45) |
-| 5 | Entrega del pedido y retorno del dron | `feature/entrega-fase5` | Hecha (PR pendiente) |
+| 5 | Entrega del pedido y retorno del dron | `feature/entrega-fase5`, `fix/entrega-demo` | Hecha (PR #72); ajustes para la demo (PR pendiente) |
 | 6 | Revisión y rediseño del administrador | `style/rediseno-admin` | Hecha (PR #47) |
 | 7 | Revisión y rediseño del despachador | `style/rediseno-despachador` | Hecha (PR #48) |
 | 8 | Revisión y rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Hecha (PR #49) |
@@ -200,6 +200,44 @@ limpieza (punto 11, nuevo). El punto 6 (traslados entrantes) quedó hecho.
 
 Falta probar en el emulador: el teclado numérico del teléfono en el
 "teclado del dron" y la cuenta regresiva con la app en segundo plano.
+
+### Ajustes para la demo (`fix/entrega-demo`)
+
+Mientras se mezclaba el PR #72, el backend cambió el contrato de la entrega
+(PR #68, #70 y #71) y la app quedó desfasada: pedía el código con `POST`, y
+Nest ahora lo da con `GET`. Este ajuste sigue el documento de la demo
+(`DEMO_01_CAMBIOS_FRONTEND.md`):
+
+- **Código de entrega**: `GET /orders/:id/delivery-code`, visible desde que
+  se confirma la carga (`Order.deliveryCodeVisible`). `expiresAt` puede
+  llegar `null` (dron en vuelo): la pantalla muestra el código, dice que el
+  dron va en camino y lo vuelve a leer cada 10 s; al aterrizar arranca la
+  cuenta y aparece el teclado con "Confirmar entrega". El botón dice "Ver
+  código de entrega" en vuelo y "Recibir pedido" en tierra.
+- **Intentos agotados**: al quinto código equivocado se muestra el mensaje
+  de Nest, se esconde el código y se apaga el botón.
+- **Regreso tras entregar**: "Ver vuelo" sigue en el detalle de un pedido
+  entregado y el mapa dice "Pedido entregado. El dron vuelve a su central".
+- **Inventario**: al crear la cantidad mínima es 1 (al editar se permite 0)
+  y el vencimiento debe ser posterior a hoy; el calendario empieza mañana.
+  Mismos mensajes que Nest.
+- Tests: 6 nuevos (código en vuelo y al aterrizar, intentos agotados, código
+  sin límite, reglas de inventario) y los de entrega ajustados al contrato.
+  `flutter analyze` sin issues; 202 tests en verde.
+
+Probado contra Nest real (`DELIVERY_WAIT_MS=60000`, datos `PRUEBA-`
+borrados al terminar), 23 comprobaciones en verde: inventario con cantidad 0
+y vencimiento de hoy rechazados; sin carga no hay código; en vuelo el código
+llega con `expiresAt: null` y en tierra es el mismo con hora límite;
+equivocado da 400 y el correcto entrega; tras entregar el dron sigue en
+misión, la telemetría marca `leg: return` con el pedido entregado y al
+aterrizar queda disponible; cinco equivocados bloquean (ni el correcto
+entrega), vence, vuelve y queda devuelto; el traslado lo ve la central de
+destino en vuelo, la de origen no (404), y la de destino lo recibe.
+
+No se cambió: la tarjeta "Traslados entrantes" (el documento la llama "Por
+recibir") ni la ruta de regreso en el mapa, porque Nest no envía
+`returnRoute` (pendiente 1.3).
 
 ## Fases 6 a 8 — Revisión a fondo y rediseño por rol
 

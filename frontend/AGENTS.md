@@ -236,7 +236,8 @@ La fuente de verdad ejecutable es [`lib/theme/app_theme.dart`](lib/theme/app_the
   despachador solo si su central es el origen. El operador no tiene entrada
   al mapa.
 - La telemetría trae `leg`: `outbound` (ida) o `return` (`FlightLeg.back`,
-  el regreso con el paquete cuando nadie recibió a tiempo).
+  el regreso a su central: con el paquete si nadie recibió, o vacío tras
+  entregar).
   `Telemetry.arrived` es solo la ida en tierra. `FlightNotice` avisa
   entregado, de regreso y devuelto según el `order-status` del socket. El
   mapa pinta la ruta de ida también en el regreso: Nest no expone la de
@@ -244,21 +245,29 @@ La fuente de verdad ejecutable es [`lib/theme/app_theme.dart`](lib/theme/app_the
 
 ## Entrega (`features/delivery/`)
 
-- `POST /orders/:id/delivery-code` da `{ code, expiresAt }`; solo con el
-  dron en tierra (`awaiting_delivery`). Nest guarda el hash: el código se
-  ve una sola vez. Pedirlo otra vez lo reemplaza con el mismo vencimiento.
+- `GET /orders/:id/delivery-code` da `{ code, expiresAt }` desde que se
+  confirma la carga (`Order.deliveryCodeVisible`) y siempre es el mismo.
+  `expiresAt` llega `null` mientras el dron vuela; al aterrizar trae la
+  hora límite (aterrizaje + 5 min). El código solo vive en memoria.
 - `POST /orders/:id/delivery-code/validate` con `{ code }` deja el pedido
-  `delivered`. Errores de Nest tal cual (inválido, usado o vencido).
+  `delivered` y el dron vuelve solo a su central (el pedido sigue
+  entregado; la telemetría marca `leg: return`). Al quinto código
+  equivocado Nest responde `ReceiveOrderScreen.lockedMessage` y el pedido
+  ya no se entrega. Errores de Nest tal cual.
 - Recibe el solicitante (persona) o el despachador de la central de
   destino (traslado, `DispatcherPermissions.canReceive`); a cualquier otro
   Nest responde 404.
-- `ReceiveOrderScreen` (`/delivery/:orderId`, con `push`) pide el código al
-  abrir, cuenta hasta `expiresAt` cada segundo y ofrece el "teclado del
-  dron" simulado (`OtpCodeField`). Al vencer muestra
-  `ReceiveOrderScreen.expiredMessage` y apaga el botón; al entregar, las
-  cajas se juntan en el check y vuelve a la pantalla anterior.
-- "Recibir pedido" (`ReceiveOrderButton`) sale en el detalle, en Mis
-  pedidos, en Traslados entrantes y en el mapa del solicitante.
+- `ReceiveOrderScreen` (`/delivery/:orderId`, con `push`) lee el código al
+  abrir. En vuelo lo muestra y lo vuelve a leer cada 10 s hasta que llega
+  `expiresAt`; en tierra cuenta cada segundo y abre el "teclado del dron"
+  simulado (`OtpCodeField`) con "Confirmar entrega". Al vencer o agotar
+  intentos esconde el código y apaga el botón; al entregar, las cajas se
+  juntan en el check y vuelve a la pantalla anterior.
+- `ReceiveOrderButton` dice "Ver código de entrega" en vuelo y "Recibir
+  pedido" en tierra. Sale en el detalle, en el mapa del solicitante y, ya
+  aterrizado, en Mis pedidos y Traslados entrantes.
+- "Ver vuelo" sigue en el detalle de un pedido entregado para ver el
+  regreso del dron.
 - `GET /orders/incoming` (`incomingProvider`) alimenta "Traslados
   entrantes" del despachador y el contador "por recibir" de su inicio.
 

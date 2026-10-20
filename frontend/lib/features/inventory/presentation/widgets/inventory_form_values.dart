@@ -29,28 +29,43 @@ class InventoryFormValues {
   }
 
   /// Un mensaje por campo con error; vacío si todo está bien. Mismos
-  /// mensajes que `CreateInventoryItemDto` de Nest.
-  Map<InventoryInput, String> validate() {
+  /// mensajes que los DTO de Nest. Al crear ([original] `null`) la cantidad
+  /// mínima es 1; al editar se permite 0 para agotar el ítem. El
+  /// vencimiento debe ser posterior a hoy, salvo que al editar no cambie.
+  Map<InventoryInput, String> validate({InventoryItem? original}) {
     final qty = int.tryParse(quantity.text.trim());
     final date = expirationDate.text.trim();
+    final minimum = original == null ? 1 : 0;
     final errors = <InventoryInput, String?>{
       InventoryInput.name: Validators.medicationName(name.text),
       InventoryInput.lot: Validators.lotCode(lot.text),
       InventoryInput.quantity: qty == null
           ? 'La cantidad debe ser un entero.'
-          : qty < 0
-          ? 'La cantidad no puede ser negativa.'
+          : qty < minimum
+          ? (minimum == 1
+                ? 'La cantidad debe ser mayor que cero.'
+                : 'La cantidad no puede ser negativa.')
           : null,
       InventoryInput.expirationDate: date.isEmpty
           ? 'Elige la fecha de vencimiento.'
           : !FieldLimits.isoDateRegex.hasMatch(date)
           ? 'La fecha de vencimiento debe ser AAAA-MM-DD.'
+          : date != original?.expirationDate && !isAfterToday(date)
+          ? 'La fecha de vencimiento debe ser posterior a hoy.'
           : null,
     };
     return {
       for (final entry in errors.entries)
         if (entry.value != null) entry.key: entry.value!,
     };
+  }
+
+  /// AAAA-MM-DD estrictamente después de hoy (fecha local), como
+  /// `IsAfterToday` de Nest.
+  static bool isAfterToday(String isoDate, {DateTime? now}) {
+    final date = DateTime.tryParse(isoDate);
+    if (date == null) return false;
+    return date.isAfter(DateUtils.dateOnly(now ?? DateTime.now()));
   }
 
   /// Rellena el formulario al editar. Solo corre la primera vez: si el

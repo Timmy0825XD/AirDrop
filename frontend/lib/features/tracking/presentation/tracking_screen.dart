@@ -32,10 +32,15 @@ class TrackingScreen extends ConsumerWidget {
     final flight = ref.watch(trackingProvider(orderId));
     final role = ref.watch(authControllerProvider).value?.user?.role;
     final t = flight.telemetry;
+    // El código se ve desde el despegue; el estado del socket manda sobre
+    // el del detalle, que se lee una sola vez.
+    final status = flight.status ?? order?.status;
     final canReceive =
         role == UserRole.requester &&
-        (t?.arrived ?? false) &&
-        flight.status == OrderStatus.awaitingDelivery;
+        (status == OrderStatus.inFlight ||
+            status == OrderStatus.awaitingDelivery ||
+            (status == OrderStatus.pendingLoad &&
+                order?.loadConfirmedAt != null));
     return Scaffold(
       appBar: AppBar(
         // Se abre con `push` desde las listas; si se llegó directo, la
@@ -53,7 +58,12 @@ class TrackingScreen extends ConsumerWidget {
           ),
           _FlightPanel(
             state: flight,
-            receive: canReceive ? ReceiveOrderButton(orderId: orderId) : null,
+            receive: canReceive
+                ? ReceiveOrderButton(
+                    orderId: orderId,
+                    landed: t?.arrived ?? false,
+                  )
+                : null,
           ),
         ],
       ),

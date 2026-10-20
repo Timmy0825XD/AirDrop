@@ -37,17 +37,21 @@ Order _order({
   );
 }
 
-/// Nest de mentira: el código es `135790` y vence cuando diga el test.
+/// Nest de mentira: el código es `135790`. [expiresAt] `null` = el dron
+/// todavía vuela. Al quinto código equivocado se bloquea, como Nest.
 class _FakeDelivery implements DeliveryRepository {
-  _FakeDelivery({required this.expiresAt, this.generateError});
+  _FakeDelivery({this.expiresAt, this.codeError});
 
-  final DateTime expiresAt;
-  final String? generateError;
+  DateTime? expiresAt;
+  final String? codeError;
   final validated = <String>[];
+  int reads = 0;
+  int _wrong = 0;
 
   @override
-  Future<DeliveryCode> generate(String orderId) async {
-    if (generateError case final message?) {
+  Future<DeliveryCode> code(String orderId) async {
+    reads++;
+    if (codeError case final message?) {
       throw ApiException(message, statusCode: 400);
     }
     return DeliveryCode(code: '135790', expiresAt: expiresAt);
@@ -56,14 +60,30 @@ class _FakeDelivery implements DeliveryRepository {
   @override
   Future<Order> validate(String orderId, String code) async {
     validated.add(code);
-    if (code != '135790') {
+    if (_wrong >= 5) {
       throw const ApiException(
-        'El código es inválido, ya se usó o venció.',
+        ReceiveOrderScreen.lockedMessage,
+        statusCode: 400,
+      );
+    }
+    if (code != '135790') {
+      _wrong++;
+      throw ApiException(
+        _wrong >= 5
+            ? ReceiveOrderScreen.lockedMessage
+            : 'El código es inválido, ya se usó o venció.',
         statusCode: 400,
       );
     }
     return _order(status: OrderStatus.delivered);
   }
+}
+
+Future<void> _type(WidgetTester tester, String code) async {
+  await tester.enterText(find.byType(TextField), code);
+  await tester.tap(find.text('Confirmar entrega'));
+  await tester.pump();
+  await tester.pump();
 }
 
 Future<void> _openReceive(WidgetTester tester, _FakeDelivery fake) async {
@@ -131,11 +151,11 @@ void main() {
     );
     expect(
       DispatcherPermissions(
-        order: _order(status: OrderStatus.inFlight),
+        order: _order(status: OrderStatus.received),
         myHubId: 'h2',
       ).canReceive,
       isFalse,
-      reason: 'todavía no aterriza',
+      reason: 'sin carga confirmada no hay código',
     );
   });
 
@@ -154,6 +174,26 @@ void main() {
     expect(find.textContaining('vuelve a la central con'), findsOneWidget);
   });
 
+  testWidgets('en vuelo se ve el código; al aterrizar se puede escribir', (
+    tester,
+  ) async {
+    final fake = _FakeDelivery();
+    await _openReceive(tester, fake);
+
+    expect(find.text('1 3 5 7 9 0'), findsOneWidget);
+    expect(find.textContaining('va en camino'), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+
+    // El dron aterriza: la siguiente lectura (cada 10 s) trae el límite.
+    fake.expiresAt = DateTime.now().add(const Duration(minutes: 4));
+    await tester.pump(const Duration(seconds: 10));
+    await tester.pump();
+
+    expect(fake.reads, 2);
+    expect(find.textContaining('Vence en'), findsOneWidget);
+    expect(find.byType(TextField), findsOneWidget);
+  });
+
   testWidgets('código equivocado avisa; el correcto entrega el pedido', (
     tester,
   ) async {
@@ -162,23 +202,32 @@ void main() {
     );
     await _openReceive(tester, fake);
 
-    expect(find.text('1 3 5 7 9 0'), findsOneWidget);
-    expect(find.textContaining('Vence en'), findsOneWidget);
-
-    await tester.enterText(find.byType(TextField), '111111');
-    await tester.tap(find.text('Recibir pedido').last);
-    await tester.pump();
-    await tester.pump();
+    await _type(tester, '111111');
     expect(find.text('El código es inválido, ya se usó o venció.'), findsOne);
 
-    await tester.enterText(find.byType(TextField), '135790');
-    await tester.tap(find.text('Recibir pedido').last);
-    await tester.pump();
+    await _type(tester, '135790');
     await tester.pump(const Duration(seconds: 1));
     await tester.pump(const Duration(seconds: 1));
 
     expect(fake.validated, ['111111', '135790']);
     expect(find.text('INICIO'), findsOneWidget);
+  });
+
+  testWidgets('al quinto código equivocado se apaga el botón', (tester) async {
+    final fake = _FakeDelivery(
+      expiresAt: DateTime.now().add(const Duration(minutes: 4)),
+    );
+    await _openReceive(tester, fake);
+
+    for (var i = 0; i < 5; i++) {
+      await _type(tester, '00000$i');
+    }
+
+    expect(find.text(ReceiveOrderScreen.lockedMessage), findsOneWidget);
+    expect(find.byType(TextField), findsNothing);
+    await tester.tap(find.text('Confirmar entrega'));
+    await tester.pump();
+    expect(fake.validated, hasLength(5));
   });
 
   testWidgets('sin código a tiempo la espera vence y no deja recibir', (
@@ -197,20 +246,25 @@ void main() {
 
     expect(find.text(ReceiveOrderScreen.expiredMessage), findsOneWidget);
     expect(find.text('1 3 5 7 9 0'), findsNothing);
-    await tester.tap(find.text('Recibir pedido').last);
+    await tester.tap(find.text('Confirmar entrega'));
     await tester.pump();
     expect(fake.validated, isEmpty);
   });
 
   testWidgets('si Nest no da el código, se ve su mensaje', (tester) async {
     final fake = _FakeDelivery(
-      expiresAt: DateTime.now(),
-      generateError: 'El tiempo para recibir el pedido venció.',
+      codeError: 'El código aparece cuando el despachador confirma la carga.',
     );
     await _openReceive(tester, fake);
     expect(
-      find.text('El tiempo para recibir el pedido venció.'),
+      find.text('El código aparece cuando el despachador confirma la carga.'),
       findsOneWidget,
     );
+  });
+
+  test('el código en vuelo no trae límite', () {
+    final code = DeliveryCode.fromJson({'code': '123456', 'expiresAt': null});
+    expect(code.landed, isFalse);
+    expect(code.remaining(DateTime.now()), isNull);
   });
 }
