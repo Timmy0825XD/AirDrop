@@ -344,7 +344,19 @@ class LocalOrderRepository implements OrderRepository {
         .where(
           (e) =>
               e.status == OrderStatus.inFlight ||
-              e.status == OrderStatus.awaitingDelivery,
+              e.status == OrderStatus.awaitingDelivery ||
+              e.status == OrderStatus.returning,
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  Future<List<Order>> listIncoming() async {
+    return _orders
+        .where(
+          (e) =>
+              e.destinationKind == DestinationKind.hub &&
+              e.destinationHubId == _localHubId,
         )
         .toList(growable: false);
   }

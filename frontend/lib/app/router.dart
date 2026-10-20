@@ -9,6 +9,7 @@ import '../features/auth/presentation/profile_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/reset_password_screen.dart';
 import '../features/auth/presentation/verify_otp_screen.dart';
+import '../features/delivery/presentation/receive_order_screen.dart';
 import '../features/fleet/presentation/drone_form_screen.dart';
 import '../features/fleet/presentation/fleet_screen.dart';
 import '../features/geofences/presentation/geofence_form_screen.dart';
@@ -23,6 +24,7 @@ import '../features/orders/presentation/emergency_screen.dart';
 import '../features/orders/presentation/hub_emergency_screen.dart';
 import '../features/orders/presentation/hub_plan_form_screen.dart';
 import '../features/orders/presentation/in_flight_screen.dart';
+import '../features/orders/presentation/incoming_screen.dart';
 import '../features/orders/presentation/order_detail_screen.dart';
 import '../features/orders/presentation/order_history_screen.dart';
 import '../features/orders/presentation/pending_load_screen.dart';
@@ -61,6 +63,7 @@ const _roleRoutes = <String, Set<UserRole>>{
   '/orders/scheduled': {UserRole.dispatcher},
   '/orders/pending-load': {UserRole.dispatcher},
   '/orders/in-flight': {UserRole.dispatcher},
+  '/orders/incoming': {UserRole.dispatcher},
   '/orders/hub-emergency': {UserRole.dispatcher},
   '/orders/hub-plans/new': {UserRole.dispatcher},
   '/orders/plans/:id': {UserRole.requester, UserRole.dispatcher},
@@ -68,6 +71,8 @@ const _roleRoutes = <String, Set<UserRole>>{
   // El operador podría ver la telemetría, pero la API no le lista pedidos:
   // no hay desde dónde abrir el mapa, así que no se le da la ruta.
   '/tracking/:orderId': {UserRole.requester, UserRole.dispatcher},
+  // Recibe el solicitante (persona) o el despachador de destino (traslado).
+  '/delivery/:orderId': {UserRole.requester, UserRole.dispatcher},
 };
 
 const _fixedOrderRoutes = {
@@ -77,13 +82,14 @@ const _fixedOrderRoutes = {
   'scheduled',
   'pending-load',
   'in-flight',
+  'incoming',
   'hub-emergency',
   'plans',
 };
 
 /// Rol que exige una ruta con parámetro. Las rutas fijas se resuelven
 /// primero en el `redirect`; este camino cubre `/inventory/<id>`,
-/// `/geofences/<id>`, `/orders/<id>`, `/tracking/<id>` y
+/// `/geofences/<id>`, `/orders/<id>`, `/tracking/<id>`, `/delivery/<id>` y
 /// `/orders/plans/<id>`.
 Set<UserRole>? _parameterizedRole(String location) {
   final segments = location.split('/');
@@ -92,6 +98,7 @@ Set<UserRole>? _parameterizedRole(String location) {
       'inventory' => _roleRoutes['/inventory/:id'],
       'geofences' => _roleRoutes['/geofences/:id'],
       'tracking' => _roleRoutes['/tracking/:orderId'],
+      'delivery' => _roleRoutes['/delivery/:orderId'],
       'orders' when !_fixedOrderRoutes.contains(segments[2]) =>
         _roleRoutes['/orders/:id'],
       _ => null,
@@ -260,6 +267,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const InFlightScreen(),
       ),
       GoRoute(
+        path: '/orders/incoming',
+        builder: (_, _) => const IncomingScreen(),
+      ),
+      GoRoute(
         path: '/orders/:id',
         builder: (_, state) =>
             OrderDetailScreen(orderId: state.pathParameters['id'] ?? ''),
@@ -268,6 +279,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/tracking/:orderId',
         builder: (_, state) =>
             TrackingScreen(orderId: state.pathParameters['orderId'] ?? ''),
+      ),
+      GoRoute(
+        path: '/delivery/:orderId',
+        builder: (_, state) =>
+            ReceiveOrderScreen(orderId: state.pathParameters['orderId'] ?? ''),
       ),
     ],
     errorBuilder: (_, _) => const PlaceholderScreen(
