@@ -8,12 +8,15 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { DroneStatus } from '../common/enums/drone-status.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
+import { RouteLeg } from '../common/enums/route-leg.enum';
 import { isDeliveryWaitOver } from '../delivery/delivery.rules';
 import { Drone } from '../fleet/drone.entity';
+import { Hub } from '../hubs/hub.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Order } from '../orders/order.entity';
-import { PlannedCorridor } from '../routing/routing.rules';
+import { PlannedCorridor, reverseCorridor } from '../routing/routing.rules';
 import { RoutePlannerService } from '../routing/route-planner.service';
 import { TELEMETRY_UNAVAILABLE } from '../telemetry/telemetry.rules';
 import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
@@ -27,10 +30,12 @@ import {
   advanceFlight,
   buildLiveFlight,
   initialProgress,
+  returnProgress,
   FlightPhase,
 } from './simulation.rules';
 
 type FlightSession = {
+  leg: RouteLeg;
   orderId: string;
   droneId: string;
   identifier: string;
@@ -104,7 +109,11 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       .createQueryBuilder('order')
       .where('order.loadConfirmedAt IS NOT NULL')
       .andWhere('order.status IN (:...statuses)', {
-        statuses: [OrderStatus.PENDING_LOAD, OrderStatus.IN_FLIGHT],
+        statuses: [
+          OrderStatus.PENDING_LOAD,
+          OrderStatus.IN_FLIGHT,
+          OrderStatus.RETURNING,
+        ],
       })
       .getMany();
     for (const order of orders) {
@@ -145,6 +154,14 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       );
       if (result.affected) {
         await this.notifications.statusChanged(orderId, OrderStatus.RETURNING);
+        try {
+          await this.activate(orderId);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : 'regreso';
+          this.logger.error(
+            `No se pudo iniciar el regreso ${orderId}: ${message}. Se reintenta al reiniciar.`,
+          );
+        }
       }
     }
   }
@@ -158,17 +175,20 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       !order?.loadConfirmedAt ||
       !order.droneId ||
       (order.status !== OrderStatus.PENDING_LOAD &&
-        order.status !== OrderStatus.IN_FLIGHT)
+        order.status !== OrderStatus.IN_FLIGHT &&
+        order.status !== OrderStatus.RETURNING)
     ) {
       return;
     }
+    const returning = order.status === OrderStatus.RETURNING;
+    const leg = returning ? RouteLeg.RETURN : RouteLeg.OUTBOUND;
     const drone = await this.drones.findOne({
       where: { id: order.droneId },
       relations: { droneModel: true },
     });
-    const corridor = (await this.routes.findOutboundMany([orderId])).get(
-      orderId,
-    );
+    const corridor = returning
+      ? await this.returnCorridor(order)
+      : (await this.routes.findOutboundMany([orderId])).get(orderId);
     if (!drone?.droneModel || !corridor) {
       this.logger.error(
         `El pedido ${orderId} no tiene dron o corredor para volar.`,
@@ -176,14 +196,19 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       return;
     }
     const stored = await this.telemetry.readFlight(orderId);
-    const progress = stored?.progress ?? {
-      ...initialProgress(),
-      orderStatus:
-        order.status === OrderStatus.IN_FLIGHT
-          ? OrderStatus.IN_FLIGHT
-          : OrderStatus.PENDING_LOAD,
-    };
+    const progress = returning
+      ? stored?.leg === RouteLeg.RETURN
+        ? stored.progress
+        : returnProgress(stored?.progress ?? null)
+      : (stored?.progress ?? {
+          ...initialProgress(),
+          orderStatus:
+            order.status === OrderStatus.IN_FLIGHT
+              ? OrderStatus.IN_FLIGHT
+              : OrderStatus.PENDING_LOAD,
+        });
     this.active.set(orderId, {
+      leg,
       orderId,
       droneId: drone.id,
       identifier: drone.identifier,
@@ -197,6 +222,41 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       progress,
       loadConfirmedAt: order.loadConfirmedAt,
     });
+  }
+
+  /**
+   * Ruta de regreso con las mismas reglas de geovalla que la ida. Si una
+   * geovalla nueva la bloquea, el dron vuelve por donde vino.
+   */
+  private async returnCorridor(
+    order: Order,
+  ): Promise<PlannedCorridor | undefined> {
+    const saved = await this.routes.findReturn(order.id);
+    if (saved) {
+      return saved;
+    }
+    const manager = this.orders.manager;
+    const origin = order.originHubId
+      ? await manager.findOne(Hub, { where: { id: order.originHubId } })
+      : null;
+    const outbound = (await this.routes.findOutboundMany([order.id])).get(
+      order.id,
+    );
+    if (!origin || order.latitude == null || order.longitude == null) {
+      return undefined;
+    }
+    const polygons = await this.routes.loadPolygons(manager);
+    const planned =
+      this.routes.plan(
+        { longitude: order.longitude, latitude: order.latitude },
+        { longitude: origin.longitude, latitude: origin.latitude },
+        polygons,
+      ) ?? (outbound ? reverseCorridor(outbound) : null);
+    if (!planned) {
+      return undefined;
+    }
+    await this.routes.saveReturn(order.id, planned, manager);
+    return planned;
   }
 
   private async tickAll(): Promise<void> {
@@ -232,6 +292,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       return;
     }
     const step = advanceFlight({
+      leg: session.leg,
       progress: session.progress,
       elapsedMs: TICK_MS,
       corridor: session.corridor,
@@ -246,6 +307,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     try {
       await this.telemetry.publishFlight(
         buildLiveFlight({
+          leg: session.leg,
           orderId: session.orderId,
           droneId: session.droneId,
           identifier: session.identifier,
@@ -264,7 +326,12 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       }
       if (step.progress.phase === FlightPhase.LANDED) {
         this.active.delete(orderId);
-        if (landedAt) {
+        if (session.leg === RouteLeg.RETURN) {
+          await this.drones.update(
+            { id: session.droneId },
+            { status: DroneStatus.AVAILABLE },
+          );
+        } else if (landedAt) {
           this.waiting.set(orderId, landedAt);
         }
       }

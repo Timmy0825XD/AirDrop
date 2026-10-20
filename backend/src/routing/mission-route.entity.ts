@@ -8,12 +8,13 @@ import {
 import { RouteLeg } from '../common/enums/route-leg.enum';
 import { NUMERIC_TRANSFORMER } from '../common/numeric.transformer';
 
+/** Una ida y un regreso por pedido. */
+@Index(['orderId', 'leg'], { unique: true })
 @Entity({ name: 'mission_routes' })
 export class MissionRoute {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index({ unique: true })
   @Column({ type: 'uuid' })
   orderId: string;
 

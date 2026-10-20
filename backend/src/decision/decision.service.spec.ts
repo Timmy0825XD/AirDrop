@@ -382,7 +382,7 @@ describe('DecisionService.listPendingLoad', () => {
 });
 
 describe('DecisionService.listInFlight', () => {
-  it('lists the flights in the air or awaiting delivery of the dispatcher hub', async () => {
+  it('lists the flights in the air, awaiting delivery or returning of the dispatcher hub', async () => {
     const flying = received({
       status: OrderStatus.IN_FLIGHT,
       originHubId: HUB_ID,
@@ -407,7 +407,11 @@ describe('DecisionService.listInFlight', () => {
     expect(orders.find).toHaveBeenCalledWith({
       where: {
         originHubId: HUB_ID,
-        status: In([OrderStatus.IN_FLIGHT, OrderStatus.AWAITING_DELIVERY]),
+        status: In([
+          OrderStatus.IN_FLIGHT,
+          OrderStatus.AWAITING_DELIVERY,
+          OrderStatus.RETURNING,
+        ]),
       },
       order: { updatedAt: 'DESC' },
     });

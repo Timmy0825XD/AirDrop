@@ -30,8 +30,25 @@ export class RoutePlannerService {
     return rows.map((row) => JSON.parse(row.polygon) as GeoJsonPolygon);
   }
 
-  async saveOutbound(
+  saveOutbound(
     orderId: string,
+    corridor: PlannedCorridor,
+    manager: EntityManager,
+  ): Promise<void> {
+    return this.saveLeg(orderId, RouteLeg.OUTBOUND, corridor, manager);
+  }
+
+  saveReturn(
+    orderId: string,
+    corridor: PlannedCorridor,
+    manager: EntityManager,
+  ): Promise<void> {
+    return this.saveLeg(orderId, RouteLeg.RETURN, corridor, manager);
+  }
+
+  private async saveLeg(
+    orderId: string,
+    leg: RouteLeg,
     corridor: PlannedCorridor,
     manager: EntityManager,
   ): Promise<void> {
@@ -49,13 +66,7 @@ export class RoutePlannerService {
          $4,
          ST_SetSRID(ST_GeomFromGeoJSON($5), 4326)
        )`,
-      [
-        orderId,
-        RouteLeg.OUTBOUND,
-        corridor.altitudeM,
-        corridor.distanceKm,
-        path,
-      ],
+      [orderId, leg, corridor.altitudeM, corridor.distanceKm, path],
     );
   }
 
@@ -66,8 +77,18 @@ export class RoutePlannerService {
     );
   }
 
-  async findOutboundMany(
+  findOutboundMany(orderIds: string[]): Promise<Map<string, PlannedCorridor>> {
+    return this.findLegMany(orderIds, RouteLeg.OUTBOUND);
+  }
+
+  async findReturn(orderId: string): Promise<PlannedCorridor | null> {
+    const routes = await this.findLegMany([orderId], RouteLeg.RETURN);
+    return routes.get(orderId) ?? null;
+  }
+
+  private async findLegMany(
     orderIds: string[],
+    leg: RouteLeg,
   ): Promise<Map<string, PlannedCorridor>> {
     const routes = new Map<string, PlannedCorridor>();
     if (!orderIds.length) {
@@ -80,7 +101,7 @@ export class RoutePlannerService {
               ST_AsGeoJSON(path) AS path
        FROM mission_routes
        WHERE "orderId" = ANY($1::uuid[]) AND leg = $2`,
-      [orderIds, RouteLeg.OUTBOUND],
+      [orderIds, leg],
     );
     for (const row of rows) {
       const parsed = JSON.parse(row.path) as {

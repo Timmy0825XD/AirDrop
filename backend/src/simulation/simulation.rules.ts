@@ -86,7 +86,7 @@ export type LiveFlight = {
   temperatureC: number | null;
   latencyMs: number;
   phase: FlightPhase;
-  leg: RouteLeg.OUTBOUND;
+  leg: RouteLeg;
   status: OrderStatus;
   etaSeconds: number | null;
   progress: FlightProgress;
@@ -109,8 +109,25 @@ export function initialProgress(): FlightProgress {
   };
 }
 
+/**
+ * El regreso arranca con la batería y las alertas con que terminó la ida:
+ * el dron no se recarga en el aire.
+ */
+export function returnProgress(
+  outbound: FlightProgress | null,
+): FlightProgress {
+  return {
+    ...initialProgress(),
+    batteryPercent: outbound?.batteryPercent ?? 100,
+    batteryAlertSent: outbound?.batteryAlertSent ?? false,
+    failureAlertSent: outbound?.failureAlertSent ?? false,
+    orderStatus: OrderStatus.RETURNING,
+  };
+}
+
 /** Sin confirmación de carga no hay tick. El objeto de entrada no se muta. */
 export function advanceFlight(input: {
+  leg?: RouteLeg;
   progress: FlightProgress;
   elapsedMs: number;
   corridor: PlannedCorridor;
@@ -123,6 +140,7 @@ export function advanceFlight(input: {
   const progress: FlightProgress = { ...input.progress };
   const alerts: FlightAlertKind[] = [];
   const statusChanges: OrderStatus[] = [];
+  const leg = input.leg ?? RouteLeg.OUTBOUND;
   let elapsed = input.elapsedMs;
   if (
     elapsed > 0 &&
@@ -140,7 +158,7 @@ export function advanceFlight(input: {
     );
     const remaining = duration - progress.phaseElapsedMs;
     if (remaining <= 0) {
-      finishPhase(progress, statusChanges);
+      finishPhase(progress, statusChanges, leg);
       continue;
     }
     const step = Math.min(elapsed, remaining);
@@ -148,7 +166,7 @@ export function advanceFlight(input: {
     progress.phaseElapsedMs += step;
     elapsed -= step;
     if (progress.phaseElapsedMs >= duration) {
-      finishPhase(progress, statusChanges);
+      finishPhase(progress, statusChanges, leg);
     }
   }
   const pose = poseOf(progress, input.corridor, input.model);
@@ -156,6 +174,7 @@ export function advanceFlight(input: {
 }
 
 export function buildLiveFlight(input: {
+  leg?: RouteLeg;
   orderId: string;
   droneId: string;
   identifier: string;
@@ -176,7 +195,7 @@ export function buildLiveFlight(input: {
     temperatureC: input.requiresColdChain ? COLD_CHAIN_TEMPERATURE_C : null,
     latencyMs: SIMULATED_LATENCY_MS,
     phase: input.step.progress.phase,
-    leg: RouteLeg.OUTBOUND,
+    leg: input.leg ?? RouteLeg.OUTBOUND,
     status: input.step.progress.orderStatus,
     etaSeconds: input.step.etaSeconds,
     progress: input.step.progress,
@@ -186,14 +205,19 @@ export function buildLiveFlight(input: {
 function finishPhase(
   progress: FlightProgress,
   statusChanges: OrderStatus[],
+  leg: RouteLeg,
 ): void {
   const finished = progress.phase;
   const index = PHASE_SEQUENCE.indexOf(finished);
   progress.phase = PHASE_SEQUENCE[index + 1] ?? FlightPhase.LANDED;
   progress.phaseElapsedMs = 0;
   if (finished === FlightPhase.LANDING) {
-    progress.orderStatus = OrderStatus.AWAITING_DELIVERY;
-    statusChanges.push(OrderStatus.AWAITING_DELIVERY);
+    const arrived =
+      leg === RouteLeg.RETURN
+        ? OrderStatus.RETURNED
+        : OrderStatus.AWAITING_DELIVERY;
+    progress.orderStatus = arrived;
+    statusChanges.push(arrived);
   }
 }
 
