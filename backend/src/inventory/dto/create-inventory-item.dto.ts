@@ -11,6 +11,7 @@ import {
 } from 'class-validator';
 import { SaleType } from '../../common/enums/sale-type.enum';
 import { FIELD_LIMITS } from '../../common/field-limits';
+import { IsAfterToday } from './is-after-today.validator';
 
 export class CreateInventoryItemDto {
   @Transform(({ value }: { value: unknown }) =>
@@ -24,7 +25,7 @@ export class CreateInventoryItemDto {
 
   @Type(() => Number)
   @IsInt({ message: 'La cantidad debe ser un entero.' })
-  @Min(0, { message: 'La cantidad no puede ser negativa.' })
+  @Min(1, { message: 'La cantidad debe ser mayor que cero.' })
   quantity: number;
 
   @Transform(({ value }: { value: unknown }) =>
@@ -46,6 +47,7 @@ export class CreateInventoryItemDto {
   @Matches(/^\d{4}-\d{2}-\d{2}$/, {
     message: 'La fecha de vencimiento debe ser AAAA-MM-DD.',
   })
+  @IsAfterToday()
   expirationDate: string;
 
   @IsBoolean({ message: 'Debes indicar si exige cadena de frío.' })
