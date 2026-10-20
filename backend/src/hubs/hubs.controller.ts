@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '../common/enums/user-role.enum';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -20,6 +21,8 @@ import { ListHubsQueryDto } from './dto/list-hubs-query.dto';
 import { SetHubSuspensionDto } from './dto/set-hub-suspension.dto';
 import { HubsService } from './hubs.service';
 
+@ApiTags('Centrales')
+@ApiBearerAuth()
 @Controller('hubs')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class HubsController {

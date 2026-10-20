@@ -6,6 +6,7 @@ import {
   ParseUUIDPipe,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -16,6 +17,8 @@ import { TelemetryAccessService } from './telemetry-access.service';
 import { TelemetryPublisher } from './telemetry.publisher';
 import { presentTelemetry } from './telemetry.rules';
 
+@ApiTags('Telemetría')
+@ApiBearerAuth()
 @Controller('telemetry')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class TelemetryController {

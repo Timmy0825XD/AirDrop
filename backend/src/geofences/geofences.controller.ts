@@ -10,6 +10,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -20,6 +21,8 @@ import { CreateGeofenceDto } from './dto/create-geofence.dto';
 import { UpdateGeofenceDto } from './dto/update-geofence.dto';
 import { GeofencesService } from './geofences.service';
 
+@ApiTags('Geovallas')
+@ApiBearerAuth()
 @Controller('geofences')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.FLEET_OPERATOR)

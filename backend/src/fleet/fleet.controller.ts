@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { UserRole } from '../common/enums/user-role.enum';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -21,6 +22,8 @@ import { RegisterMaintenanceDto } from './dto/register-maintenance.dto';
 import { UpdateDroneStatusDto } from './dto/update-drone-status.dto';
 import { FleetService } from './fleet.service';
 
+@ApiTags('Flota')
+@ApiBearerAuth()
 @Controller('fleet')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class FleetController {

@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -20,6 +21,8 @@ import { ListInstitutionalUsersQueryDto } from './dto/list-institutional-users-q
 import { SetUserSuspensionDto } from './dto/set-user-suspension.dto';
 import { UsersService } from './users.service';
 
+@ApiTags('Usuarios')
+@ApiBearerAuth()
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.ADMIN)
