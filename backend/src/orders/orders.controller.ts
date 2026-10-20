@@ -9,6 +9,7 @@ import {
   StreamableFile,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
@@ -25,6 +26,8 @@ import { CreatePlanDto } from './dto/create-plan.dto';
 import { RejectOrderDto } from './dto/reject-order.dto';
 import { OrdersService } from './orders.service';
 
+@ApiTags('Pedidos')
+@ApiBearerAuth()
 @Controller('orders')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class OrdersController {
