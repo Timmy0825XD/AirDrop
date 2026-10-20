@@ -1,8 +1,10 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { hashOtp } from '../auth/auth.rules';
+import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { DroneStatus } from '../common/enums/drone-status.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
+import { UserRole } from '../common/enums/user-role.enum';
 import { Drone } from '../fleet/drone.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Order } from '../orders/order.entity';
@@ -24,12 +26,24 @@ const DRONE_ID = '33333333-3333-4333-8333-333333333333';
 const REQUESTER_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const CODE = '123456';
 
-const requester = { id: REQUESTER_ID } as User;
+const HUB_ID = 'dddddddd-dddd-4ddd-8ddd-dddddddddddd';
+
+const requester = { id: REQUESTER_ID, role: UserRole.REQUESTER } as User;
+
+function dispatcherOf(hubId: string): User {
+  return {
+    id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+    role: UserRole.DISPATCHER,
+    hubAssignments: [{ hubId }],
+  } as unknown as User;
+}
 
 function order(overrides: Partial<Order> = {}): Order {
   return {
     id: ORDER_ID,
     requesterId: REQUESTER_ID,
+    destinationKind: DestinationKind.PERSON,
+    destinationHubId: null,
     droneId: DRONE_ID,
     status: OrderStatus.AWAITING_DELIVERY,
     ...overrides,
@@ -217,6 +231,50 @@ describe('DeliveryService', () => {
       await expect(service.validate(requester, ORDER_ID, CODE)).rejects.toThrow(
         NotFoundException,
       );
+    });
+  });
+
+  describe('entrega a una central', () => {
+    const hubOrder = () =>
+      order({
+        requesterId: null,
+        destinationKind: DestinationKind.HUB,
+        destinationHubId: HUB_ID,
+      });
+
+    it('el despachador de la central de destino genera y valida el código', async () => {
+      current = hubOrder();
+      const dispatcher = dispatcherOf(HUB_ID);
+
+      const generated = await service.generate(dispatcher, ORDER_ID);
+      code = storedCode({ codeHash: hashOtp(generated.code) });
+      const result = await service.validate(
+        dispatcher,
+        ORDER_ID,
+        generated.code,
+      );
+
+      expect(result.status).toBe(OrderStatus.DELIVERED);
+    });
+
+    it('un despachador de otra central recibe 404', async () => {
+      current = hubOrder();
+      await expect(
+        service.generate(dispatcherOf('otra-central'), ORDER_ID),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('el solicitante no entrega un pedido cuyo destino es una central', async () => {
+      current = hubOrder();
+      await expect(service.generate(requester, ORDER_ID)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('un despachador no entrega un pedido cuyo destino es una persona', async () => {
+      await expect(
+        service.generate(dispatcherOf(HUB_ID), ORDER_ID),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });
