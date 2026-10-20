@@ -116,7 +116,11 @@ export class DecisionService {
     const rows = await this.dataSource.getRepository(Order).find({
       where: {
         originHubId: hub.id,
-        status: In([OrderStatus.IN_FLIGHT, OrderStatus.AWAITING_DELIVERY]),
+        status: In([
+          OrderStatus.IN_FLIGHT,
+          OrderStatus.AWAITING_DELIVERY,
+          OrderStatus.RETURNING,
+        ]),
       },
       order: { updatedAt: 'DESC' },
     });

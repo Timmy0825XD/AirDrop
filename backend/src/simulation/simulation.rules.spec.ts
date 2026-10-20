@@ -1,9 +1,12 @@
 import { OrderStatus } from '../common/enums/order-status.enum';
+import { RouteLeg } from '../common/enums/route-leg.enum';
 import { PlannedCorridor } from '../routing/routing.rules';
 import {
   FlightPhase,
   advanceFlight,
+  buildLiveFlight,
   initialProgress,
+  returnProgress,
 } from './simulation.rules';
 
 const confirmed = new Date('2026-10-11T18:00:00.000Z');
@@ -130,5 +133,69 @@ describe('advanceFlight', () => {
       loadConfirmedAt: confirmed,
     });
     expect(failureAgain!.alerts).not.toContain('failure');
+  });
+});
+
+describe('vuelo de regreso', () => {
+  it('termina en returned, no en awaiting_delivery', () => {
+    const step = advanceFlight({
+      leg: RouteLeg.RETURN,
+      progress: returnProgress(null),
+      elapsedMs: 3_600_000,
+      corridor,
+      model,
+      loadConfirmedAt: confirmed,
+    });
+    expect(step?.progress.phase).toBe(FlightPhase.LANDED);
+    expect(step?.progress.orderStatus).toBe(OrderStatus.RETURNED);
+    expect(step?.statusChanges).toEqual([OrderStatus.RETURNED]);
+  });
+
+  it('mantiene returning mientras vuela', () => {
+    const step = advanceFlight({
+      leg: RouteLeg.RETURN,
+      progress: returnProgress(null),
+      elapsedMs: 2_000,
+      corridor,
+      model,
+      loadConfirmedAt: confirmed,
+    });
+    expect(step?.progress.orderStatus).toBe(OrderStatus.RETURNING);
+    expect(step?.statusChanges).toEqual([]);
+  });
+
+  it('sigue con la batería con que terminó la ida', () => {
+    const outbound = {
+      ...initialProgress(),
+      batteryPercent: 62,
+      batteryAlertSent: true,
+    };
+    const progress = returnProgress(outbound);
+    expect(progress.batteryPercent).toBe(62);
+    expect(progress.batteryAlertSent).toBe(true);
+    expect(progress.phase).toBe(FlightPhase.TAKEOFF);
+    expect(progress.orderStatus).toBe(OrderStatus.RETURNING);
+  });
+
+  it('publica la telemetría con el tramo de regreso', () => {
+    const step = advanceFlight({
+      leg: RouteLeg.RETURN,
+      progress: returnProgress(null),
+      elapsedMs: 2_000,
+      corridor,
+      model,
+      loadConfirmedAt: confirmed,
+    })!;
+    const live = buildLiveFlight({
+      leg: RouteLeg.RETURN,
+      orderId: 'o',
+      droneId: 'd',
+      identifier: 'WG-1',
+      quantity: 1,
+      requiresColdChain: false,
+      step,
+    });
+    expect(live.leg).toBe(RouteLeg.RETURN);
+    expect(live.status).toBe(OrderStatus.RETURNING);
   });
 });

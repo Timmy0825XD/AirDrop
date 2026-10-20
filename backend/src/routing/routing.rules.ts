@@ -1,6 +1,6 @@
 import { GeoJsonPolygon } from '../geofences/geofences.rules';
 
-/** RF-12: el corredor de ida va a una altitud fija. El regreso se calcula después. */
+/** RF-12: el corredor va a una altitud fija, tanto de ida como de regreso. */
 export const CORRIDOR_ALTITUDE_M = 100;
 
 /** Separación mínima, en grados, para salir del bounding box de una geovalla. */
@@ -175,6 +175,11 @@ function boundingBox(ring: number[][]): Box {
     box.maxLat = Math.max(box.maxLat, latitude);
   }
   return box;
+}
+
+/** Regreso por donde vino: mismo corredor, recorrido al revés. */
+export function reverseCorridor(corridor: PlannedCorridor): PlannedCorridor {
+  return { ...corridor, coordinates: [...corridor.coordinates].reverse() };
 }
 
 function toCorridor(path: LngLat[]): PlannedCorridor {

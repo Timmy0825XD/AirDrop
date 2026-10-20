@@ -1,5 +1,9 @@
 import { GeoJsonPolygon } from '../geofences/geofences.rules';
-import { CORRIDOR_ALTITUDE_M, planOutboundCorridor } from './routing.rules';
+import {
+  CORRIDOR_ALTITUDE_M,
+  planOutboundCorridor,
+  reverseCorridor,
+} from './routing.rules';
 
 const square = (west: number, south: number, east: number, north: number) =>
   ({
@@ -60,5 +64,27 @@ describe('planOutboundCorridor', () => {
         square(-73.31, 10.39, -73.29, 10.41),
       ]),
     ).toBeNull();
+  });
+});
+
+describe('reverseCorridor', () => {
+  it('recorre el mismo corredor al revés sin tocar el original', () => {
+    const corridor = {
+      altitudeM: CORRIDOR_ALTITUDE_M,
+      distanceKm: 3,
+      coordinates: [
+        [-73.26, 10.47],
+        [-73.25, 10.49],
+        [-73.24, 10.46],
+      ] as Array<[number, number]>,
+    };
+    const back = reverseCorridor(corridor);
+    expect(back.coordinates).toEqual([
+      [-73.24, 10.46],
+      [-73.25, 10.49],
+      [-73.26, 10.47],
+    ]);
+    expect(back.distanceKm).toBe(3);
+    expect(corridor.coordinates[0]).toEqual([-73.26, 10.47]);
   });
 });
