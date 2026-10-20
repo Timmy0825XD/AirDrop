@@ -3,14 +3,19 @@ import { ValidationPipe } from '@nestjs/common';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { json, urlencoded } from 'express';
+import helmet from 'helmet';
 import { AppModule } from './app.module';
+import { corsOrigins } from './common/cors.rules';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
   app.useWebSocketAdapter(new IoAdapter(app));
+  app.use(helmet());
   app.use(json({ limit: '3mb' }));
   app.use(urlencoded({ extended: true, limit: '3mb' }));
-  app.enableCors();
+  app.enableCors({
+    origin: corsOrigins(process.env.CORS_ORIGINS, process.env.NODE_ENV),
+  });
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
