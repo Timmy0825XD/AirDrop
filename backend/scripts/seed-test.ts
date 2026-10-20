@@ -6,14 +6,6 @@
  *
  * Usa DATABASE_URL del .env: apúntalo a una base solo para pruebas.
  */
-import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
-import request from 'supertest';
-import { App } from 'supertest/types';
-import { DataSource } from 'typeorm';
-import { AppModule } from '../src/app.module';
 import { DocumentType } from '../src/common/enums/document-type.enum';
 import { DroneStatus } from '../src/common/enums/drone-status.enum';
 import { HubType } from '../src/common/enums/hub-type.enum';
@@ -26,152 +18,24 @@ import {
   registerRequester,
   TEST_PASSWORD,
 } from '../test/e2e-helpers';
+import {
+  cleanScope,
+  createApp,
+  createDrone,
+  createHub,
+  createInventoryItem,
+} from './seed-shared';
+import request from 'supertest';
 
 const TEST_PREFIX = 'PRUEBA-';
 const TEST_EMAIL_DOMAIN = '@prueba.co';
 
-const envFile = resolve(__dirname, '..', '.env');
-if (existsSync(envFile)) {
-  process.loadEnvFile(envFile);
-}
-
-function assertNotProduction(): void {
-  if (process.env.NODE_ENV === 'production') {
-    throw new Error('Este script no se ejecuta con NODE_ENV=production.');
-  }
-  if (!process.env.DATABASE_URL) {
-    throw new Error('Falta DATABASE_URL en backend/.env.');
-  }
-}
-
-/** Tablas que aún no existen (p. ej. delivery_codes) se omiten. */
-async function deleteIfTableExists(
-  db: DataSource,
-  table: string,
-  sql: string,
-  params: unknown[],
-): Promise<void> {
-  const exists: Array<{ found: string | null }> = await db.query(
-    `SELECT to_regclass($1) AS found`,
-    [`public.${table}`],
-  );
-  if (exists[0].found) {
-    await db.query(sql, params);
-  }
-}
-
-export async function cleanTestData(): Promise<void> {
-  assertNotProduction();
-  const db = new DataSource({
-    type: 'postgres',
-    url: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false },
+export function cleanTestData(): Promise<void> {
+  return cleanScope({
+    hubsSql: `SELECT id FROM hubs WHERE name LIKE $1`,
+    usersSql: `SELECT id FROM users WHERE email LIKE $2`,
+    params: [`${TEST_PREFIX}%`, `%${TEST_EMAIL_DOMAIN}`],
   });
-  await db.initialize();
-  try {
-    const hubs = `(SELECT id FROM hubs WHERE name LIKE $1)`;
-    const users = `(SELECT id FROM users WHERE email LIKE $2)`;
-    const params = [`${TEST_PREFIX}%`, `%${TEST_EMAIL_DOMAIN}`];
-    const orders = `(SELECT id FROM orders
-       WHERE "originHubId" IN ${hubs} OR "destinationHubId" IN ${hubs}
-          OR "requesterId" IN ${users} OR "createdByUserId" IN ${users})`;
-
-    await deleteIfTableExists(
-      db,
-      'delivery_codes',
-      `DELETE FROM delivery_codes WHERE "orderId" IN ${orders}`,
-      params,
-    );
-    await db.query(
-      `DELETE FROM prescription_images WHERE "orderId" IN ${orders}`,
-      params,
-    );
-    await db.query(
-      `DELETE FROM mission_routes WHERE "orderId" IN ${orders}`,
-      params,
-    );
-    await db.query(`DELETE FROM missions WHERE "orderId" IN ${orders}`, params);
-    await db.query(`DELETE FROM orders WHERE id IN ${orders}`, params);
-    await db.query(
-      `DELETE FROM delivery_plans
-       WHERE "originHubId" IN ${hubs} OR "destinationHubId" IN ${hubs}
-          OR "requesterId" IN ${users} OR "createdByUserId" IN ${users}`,
-      params,
-    );
-    await db.query(
-      `DELETE FROM inventory_items WHERE "hubId" IN ${hubs}`,
-      params,
-    );
-    await db.query(`DELETE FROM drones WHERE "hubId" IN ${hubs}`, params);
-    await db.query(
-      `DELETE FROM user_hubs WHERE "hubId" IN ${hubs} OR "userId" IN ${users}`,
-      params,
-    );
-    await db.query(
-      `DELETE FROM one_time_codes WHERE "userId" IN ${users}`,
-      params,
-    );
-    await db.query(`DELETE FROM users WHERE email LIKE $2`, params);
-    await db.query(`DELETE FROM hubs WHERE name LIKE $1`, params);
-  } finally {
-    await db.destroy();
-  }
-}
-
-async function createApp(): Promise<INestApplication<App>> {
-  process.env.JWT_SECRET = process.env.JWT_SECRET ?? 'seed-jwt-secret';
-  const moduleRef = await Test.createTestingModule({
-    imports: [AppModule],
-  }).compile();
-  const app = moduleRef.createNestApplication<INestApplication<App>>();
-  app.useGlobalPipes(
-    new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
-      transformOptions: { enableImplicitConversion: true },
-    }),
-  );
-  await app.init();
-  return app;
-}
-
-async function createHub(
-  app: INestApplication<App>,
-  adminToken: string,
-  payload: Record<string, unknown>,
-): Promise<string> {
-  const response = await request(app.getHttpServer())
-    .post('/hubs')
-    .set('Authorization', `Bearer ${adminToken}`)
-    .send(payload)
-    .expect(201);
-  return (response.body as { id: string }).id;
-}
-
-async function createInventoryItem(
-  app: INestApplication<App>,
-  token: string,
-  payload: Record<string, unknown>,
-): Promise<void> {
-  await request(app.getHttpServer())
-    .post('/inventory')
-    .set('Authorization', `Bearer ${token}`)
-    .send(payload)
-    .expect(201);
-}
-
-async function createDrone(
-  app: INestApplication<App>,
-  token: string,
-  payload: Record<string, unknown>,
-): Promise<string> {
-  const response = await request(app.getHttpServer())
-    .post('/fleet/drones')
-    .set('Authorization', `Bearer ${token}`)
-    .send(payload)
-    .expect(201);
-  return (response.body as { id: string }).id;
 }
 
 async function seedTestData(): Promise<void> {
