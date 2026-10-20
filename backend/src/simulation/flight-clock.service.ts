@@ -36,6 +36,8 @@ import {
 
 type FlightSession = {
   leg: RouteLeg;
+  /** Regreso del dron tras una entrega: el pedido se queda `delivered`. */
+  keepStatus: boolean;
   orderId: string;
   droneId: string;
   identifier: string;
@@ -104,6 +106,11 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /** Tras una entrega recibida, el dron vuelve solo a su central. */
+  async startReturn(orderId: string): Promise<void> {
+    await this.activate(orderId);
+  }
+
   private async resume(): Promise<void> {
     const orders = await this.orders
       .createQueryBuilder('order')
@@ -116,7 +123,15 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
         ],
       })
       .getMany();
-    for (const order of orders) {
+    const deliveredFlying = await this.orders
+      .createQueryBuilder('order')
+      .innerJoin(Drone, 'drone', 'drone.id = order.droneId')
+      .where('order.status = :status', { status: OrderStatus.DELIVERED })
+      .andWhere('drone.status = :droneStatus', {
+        droneStatus: DroneStatus.IN_MISSION,
+      })
+      .getMany();
+    for (const order of [...orders, ...deliveredFlying]) {
       await this.activate(order.id);
     }
   }
@@ -176,11 +191,13 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       !order.droneId ||
       (order.status !== OrderStatus.PENDING_LOAD &&
         order.status !== OrderStatus.IN_FLIGHT &&
-        order.status !== OrderStatus.RETURNING)
+        order.status !== OrderStatus.RETURNING &&
+        order.status !== OrderStatus.DELIVERED)
     ) {
       return;
     }
-    const returning = order.status === OrderStatus.RETURNING;
+    const delivered = order.status === OrderStatus.DELIVERED;
+    const returning = delivered || order.status === OrderStatus.RETURNING;
     const leg = returning ? RouteLeg.RETURN : RouteLeg.OUTBOUND;
     const drone = await this.drones.findOne({
       where: { id: order.droneId },
@@ -199,7 +216,12 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     const progress = returning
       ? stored?.leg === RouteLeg.RETURN
         ? stored.progress
-        : returnProgress(stored?.progress ?? null)
+        : {
+            ...returnProgress(stored?.progress ?? null),
+            orderStatus: delivered
+              ? OrderStatus.DELIVERED
+              : OrderStatus.RETURNING,
+          }
       : (stored?.progress ?? {
           ...initialProgress(),
           orderStatus:
@@ -209,6 +231,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
         });
     this.active.set(orderId, {
       leg,
+      keepStatus: delivered,
       orderId,
       droneId: drone.id,
       identifier: drone.identifier,
@@ -301,6 +324,11 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     });
     if (!step) {
       return;
+    }
+    if (session.keepStatus) {
+      // Entregado es definitivo: el regreso solo mueve al dron.
+      step.progress.orderStatus = OrderStatus.DELIVERED;
+      step.statusChanges = [];
     }
     const previous = session.progress;
     session.progress = step.progress;

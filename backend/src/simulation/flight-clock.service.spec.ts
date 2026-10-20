@@ -226,3 +226,52 @@ describe('FlightClockService regreso', () => {
     expect(service['waiting'].has(ORDER_ID)).toBe(false);
   });
 });
+
+describe('FlightClockService regreso tras la entrega', () => {
+  function buildDelivered() {
+    const built = build();
+    built.orders.findOne.mockResolvedValue(order(OrderStatus.DELIVERED));
+    return built;
+  }
+
+  it('el dron vuelve a su central y el pedido sigue entregado', async () => {
+    const { service, orders, routes } = buildDelivered();
+
+    await service.startReturn(ORDER_ID);
+
+    const session = service['active'].get(ORDER_ID)!;
+    expect(session.leg).toBe(RouteLeg.RETURN);
+    expect(session.keepStatus).toBe(true);
+    expect(session.progress.orderStatus).toBe(OrderStatus.DELIVERED);
+    expect(routes.saveReturn).toHaveBeenCalled();
+    expect(orders.update).not.toHaveBeenCalled();
+  });
+
+  it('al aterrizar libera el dron sin tocar el estado del pedido', async () => {
+    const { service, orders, drones, notifications, telemetry } =
+      buildDelivered();
+    await service.startReturn(ORDER_ID);
+    const session = service['active'].get(ORDER_ID)!;
+    session.progress = {
+      ...returnProgress(null),
+      orderStatus: OrderStatus.DELIVERED,
+      phase: FlightPhase.LANDING,
+      phaseElapsedMs: LANDING_MS - 1,
+    };
+
+    await service['tick'](ORDER_ID);
+
+    expect(drones.update).toHaveBeenCalledWith(
+      { id: DRONE_ID },
+      { status: DroneStatus.AVAILABLE },
+    );
+    expect(orders.update).not.toHaveBeenCalled();
+    expect(notifications.statusChanged).not.toHaveBeenCalled();
+    const [published] = telemetry.publishFlight.mock.calls.at(-1) as [
+      { status: OrderStatus; leg: RouteLeg },
+    ];
+    expect(published.status).toBe(OrderStatus.DELIVERED);
+    expect(published.leg).toBe(RouteLeg.RETURN);
+    expect(service['active'].has(ORDER_ID)).toBe(false);
+  });
+});
