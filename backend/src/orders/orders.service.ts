@@ -605,15 +605,25 @@ export class OrdersService {
     return saved;
   }
 
+  /**
+   * El nombre del objeto lleva el id del pedido, así que el pedido se guarda
+   * antes. Si la fórmula no queda guardada, el pedido se descarta para no dejar
+   * una urgencia bajo fórmula sin imagen.
+   */
   private async attachFormula(orderId: string, content: Buffer, mime: string) {
-    const objectKey = await this.storage.upload(orderId, content, mime);
-    await this.images.save(
-      this.images.create({
-        orderId,
-        objectKey,
-        mime,
-      }),
-    );
+    try {
+      const objectKey = await this.storage.upload(orderId, content, mime);
+      await this.images.save(
+        this.images.create({
+          orderId,
+          objectKey,
+          mime,
+        }),
+      );
+    } catch (error) {
+      await this.orders.delete({ id: orderId });
+      throw error;
+    }
   }
 
   private async formulaForPlan(plan: DeliveryPlan) {
