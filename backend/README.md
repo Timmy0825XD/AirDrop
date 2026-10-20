@@ -35,6 +35,8 @@ Otras variables de `.env.example`:
 | `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Bucket privado `prescriptions` (foto de la fórmula). La clave `service_role` solo vive aquí |
 | `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME` | Envío del OTP por correo |
 | `REDIS_URL` | Snapshot de telemetría y pub/sub hacia el socket |
+| `DELIVERY_WAIT_MS` | Espera del código de entrega en milisegundos (por defecto 300000 = 5 min). Solo para acortarla en pruebas |
+| `CORS_ORIGINS` | Orígenes de navegador permitidos, separados por comas. Sin ella: localhost en desarrollo y ninguno en producción |
 
 No subas `.env` a GitHub. Compártelo por un canal privado del equipo.
 
@@ -134,6 +136,7 @@ Todas del operador de flota.
 | GET | `/orders/scheduled` | despachador |
 | GET | `/orders/pending-load` | despachador |
 | GET | `/orders/in-flight` | despachador |
+| GET | `/orders/incoming` | despachador (traslados cuyo destino es su central) |
 | POST | `/orders/emergencies` | solicitante |
 | POST | `/orders/hub-emergencies` | despachador |
 | POST | `/orders/plans` | solicitante |
@@ -147,6 +150,8 @@ Todas del operador de flota.
 | POST | `/orders/:id/authorize` | despachador (motor de decisión: reserva dron y ruta, no despega) |
 | POST | `/orders/:id/confirm-load` | despachador (arranca la simulación) |
 | POST | `/orders/:id/reject` | despachador |
+| GET | `/orders/:id/delivery-code` | quien recibe: solicitante, o despachador de la central de destino (el código existe desde confirmar la carga) |
+| POST | `/orders/:id/delivery-code/validate` | quien recibe (entrega el pedido; 5 intentos) |
 
 ### Telemetría (HU-26 a HU-28)
 
@@ -157,15 +162,33 @@ Todas del operador de flota.
 
 El gateway responde `subscribe` con los eventos `subscribed` o `error` (no con ack) y empuja `telemetry`, `order-status` y `alert`. Tick de 2 s en vuelo (RNF-08).
 
+## Entrega y retorno
+
+El código de entrega existe desde que se confirma la carga y lo ve quien recibe. Al aterrizar el dron hay **5 minutos** (`DELIVERY_WAIT_MS` los acorta en pruebas) para ingresarlo: válido → `delivered`, y el dron vuela de regreso a su central. Sin código → `returning`, el dron vuelve con el paquete y al aterrizar el pedido queda `returned`. Cada pedido admite 5 códigos equivocados.
+
 ## Lo que todavía no hay
 
-Entrega con código, espera de 5 minutos, retorno y cuarentena; fallback `reasignado`; módulo `Analytics`; vuelos en curso para el operador; pedidos entrantes de una central; verificar el correo nuevo; editar una central. El detalle de cada uno, con el documento que lo pide, está en [`pendientes-backend.md`](../context/producto/pendientes-backend.md).
+Cuarentena al volver el paquete e ingreso del lote al inventario de destino; fallback `reasignado`; módulo `Analytics`; vuelos en curso para el operador; verificar el correo nuevo; editar una central. El detalle de cada uno, con el documento que lo pide, está en [`pendientes-backend.md`](../context/producto/pendientes-backend.md).
+
+## Documentación interactiva
+
+Con el servidor arriba, Swagger está en `http://localhost:3000/api` (usa **Authorize** con el token del login) y la definición OpenAPI en `/api-json`.
 
 ## Pruebas
 
 ```bash
 pnpm test
 pnpm test:e2e
+pnpm lint:check   # ESLint sin modificar archivos
+```
+
+Datos de ejemplo (usan `DATABASE_URL`, así que apúntalo a una base de pruebas):
+
+```bash
+pnpm seed:test    # cuentas @prueba.co, centrales PRUEBA-, inventario y drones
+pnpm seed:clean
+pnpm seed:demo    # 3 centrales, 15 drones, cuentas, inventario y geovallas de Valledupar para una demostración
+pnpm seed:demo:clean
 ```
 
 El e2e usa el mismo `DATABASE_URL`. **No** borra el esquema (no pongas `E2E_DROP_SCHEMA=true` contra la BD del equipo).

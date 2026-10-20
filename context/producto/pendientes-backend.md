@@ -114,14 +114,13 @@ programados y las bandejas listan lo que sale **de** su central, no lo que
 le llega. Solo la ve en el detalle que se abre al crearla. Los
 abastecimientos sí aparecen en `GET /orders/plans`.
 
-**Debería** ([`../entregas/centrales.md`](../entregas/centrales.md): la
-central de destino recibe el traslado): listar los pedidos cuyo destino es
-la central del despachador, con su estado (por ejemplo
-`GET /orders/incoming`), para seguirlos hasta que lleguen.
+`GET /orders/incoming` (despachador) lista los pedidos cuyo destino es su
+central, del más nuevo al más viejo, con su estado y la asignación del dron.
+Con el punto 1, el despachador que pidió el traslado ve el código y lo
+ingresa al llegar.
 
 **La app lo usará** en el inicio del despachador: una bandeja "Por recibir"
-junto a "Vuelos en curso", y más adelante para ingresar el código de
-entrega del traslado (punto 1).
+junto a "Vuelos en curso".
 
 **Hecho.** `GET /orders/incoming` lista los traslados hacia la central del
 despachador. La app los muestra en "Traslados entrantes" (Fase 5), con
@@ -158,7 +157,7 @@ ubicación y contacto, con las mismas validaciones del alta.
 
 **Hoy.** Si el ítem lleva frío, el reloj publica `temperatureC` fija en 5 °C
 durante todo el vuelo. Nunca sale de rango y no hay alerta, así que la
-cuarentena del punto 1 no tiene en qué apoyarse.
+cuarentena del punto 1 (cuando exista) no tiene en qué apoyarse.
 
 **Debería** ([`../entregas/productos.md`](../entregas/productos.md),
 [`requisitos.md`](requisitos.md) RF-17): comparar la temperatura simulada con
