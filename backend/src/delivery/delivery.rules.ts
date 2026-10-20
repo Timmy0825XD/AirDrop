@@ -8,6 +8,11 @@ export const ONLY_AWAITING_DELIVERY_IS_DELIVERED =
   'Solo se entrega un pedido en espera de entrega.';
 export const ORDER_ALREADY_DELIVERED = 'Este pedido ya fue entregado.';
 export const DELIVERY_WAIT_EXPIRED = 'El tiempo para recibir el pedido venció.';
+/** Tope de códigos equivocados por pedido, como el login (RNF-04). */
+export const DELIVERY_CODE_MAX_ATTEMPTS = 5;
+
+export const DELIVERY_CODE_LOCKED =
+  'Se agotaron los intentos. El dron regresa con el paquete.';
 export const DELIVERY_CODE_REJECTED =
   'El código es inválido, ya se usó o venció.';
 
@@ -29,6 +34,10 @@ export function deliveryExpiresAt(landedAt: Date): Date {
 /** CU-30: pasada la espera sin código, el dron vuelve con el paquete. */
 export function isDeliveryWaitOver(landedAt: Date, now: Date): boolean {
   return now.getTime() >= deliveryExpiresAt(landedAt).getTime();
+}
+
+export function isDeliveryCodeLocked(code: { attempts: number }): boolean {
+  return code.attempts >= DELIVERY_CODE_MAX_ATTEMPTS;
 }
 
 export function isDeliveryCodeUsable(

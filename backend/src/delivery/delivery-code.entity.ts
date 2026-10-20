@@ -24,4 +24,8 @@ export class DeliveryCode {
 
   @Column({ type: 'timestamptz', nullable: true })
   usedAt: Date | null;
+
+  /** Códigos equivocados. No se reinicia al pedir un código nuevo. */
+  @Column({ type: 'int', default: 0 })
+  attempts: number;
 }
