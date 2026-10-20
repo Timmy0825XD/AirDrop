@@ -146,6 +146,12 @@ final inFlightProvider = FutureProvider<List<Order>>((ref) {
   return ref.watch(orderRepositoryProvider).listInFlight();
 });
 
+/// Bandeja "Traslados entrantes" del despachador: lo que otras centrales le
+/// envían. Los que esperan la entrega se reciben con el código.
+final incomingProvider = FutureProvider<List<Order>>((ref) {
+  return ref.watch(orderRepositoryProvider).listIncoming();
+});
+
 /// Lo que el despachador hace sobre un pedido: rechazar, autorizar y
 /// confirmar la carga. Cada acción mueve el pedido entre listas, así que
 /// al terminar refresca la cola, los programados, las bandejas y el detalle.

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../orders/data/order_models.dart';
 import '../../../../orders/data/order_providers.dart';
 
 /// Cuántos pedidos hay en cada bandeja del despachador. `null` en un
@@ -10,6 +11,7 @@ class DispatcherCounts {
     required this.scheduled,
     required this.pendingLoad,
     required this.inFlight,
+    required this.toReceive,
   });
 
   final int? queue;
@@ -17,18 +19,27 @@ class DispatcherCounts {
   final int? pendingLoad;
   final int? inFlight;
 
-  /// Lee las cuatro bandejas. Solo se llama con la central activa: con la
-  /// central suspendida Nest las rechaza todas.
+  /// Traslados entrantes con el dron ya en su central, esperando el código.
+  final int? toReceive;
+
+  /// Lee las bandejas. Solo se llama con la central activa: con la central
+  /// suspendida Nest las rechaza todas.
   static DispatcherCounts watch(WidgetRef ref) => DispatcherCounts(
     queue: ref.watch(queueProvider).value?.length,
     scheduled: ref.watch(scheduledProvider).value?.length,
     pendingLoad: ref.watch(pendingLoadProvider).value?.length,
     inFlight: ref.watch(inFlightProvider).value?.length,
+    toReceive: ref
+        .watch(incomingProvider)
+        .value
+        ?.where((o) => o.status == OrderStatus.awaitingDelivery)
+        .length,
   );
 
   static void refresh(WidgetRef ref) => ref
     ..invalidate(queueProvider)
     ..invalidate(scheduledProvider)
     ..invalidate(pendingLoadProvider)
-    ..invalidate(inFlightProvider);
+    ..invalidate(inFlightProvider)
+    ..invalidate(incomingProvider);
 }

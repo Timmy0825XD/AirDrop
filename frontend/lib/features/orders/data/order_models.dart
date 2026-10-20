@@ -285,10 +285,12 @@ class Order {
       status == OrderStatus.pendingLoad && loadConfirmedAt == null;
 
   /// Ya hay (o está por haber) un vuelo que seguir en el mapa: carga
-  /// confirmada, en vuelo o esperando la entrega en destino.
+  /// confirmada, en vuelo, esperando la entrega en destino o volviendo con
+  /// el paquete.
   bool get hasFlight =>
       status == OrderStatus.inFlight ||
       status == OrderStatus.awaitingDelivery ||
+      status == OrderStatus.returning ||
       (status == OrderStatus.pendingLoad && loadConfirmedAt != null);
 
   final String id;

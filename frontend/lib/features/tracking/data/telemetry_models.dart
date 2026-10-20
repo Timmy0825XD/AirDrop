@@ -31,6 +31,25 @@ enum FlightPhase {
   }
 }
 
+/// Tramo del vuelo: la ida al destino o el regreso a la central con el
+/// paquete, cuando nadie lo recibió a tiempo (CU-30).
+enum FlightLeg {
+  outbound('outbound'),
+  back('return');
+
+  const FlightLeg(this.apiValue);
+
+  final String apiValue;
+
+  /// Sin `leg` (versiones viejas de Nest) es la ida.
+  static FlightLeg fromJson(Object? value) {
+    return FlightLeg.values.firstWhere(
+      (e) => e.apiValue == value,
+      orElse: () => FlightLeg.outbound,
+    );
+  }
+}
+
 /// Una foto del vuelo: dónde va el dron y cómo va.
 class Telemetry {
   const Telemetry({
@@ -43,6 +62,7 @@ class Telemetry {
     required this.speedKmh,
     required this.phase,
     required this.status,
+    this.leg = FlightLeg.outbound,
     this.etaSeconds,
     this.vitals,
   });
@@ -58,6 +78,7 @@ class Telemetry {
       speedKmh: _asDouble(json['speedKmh']),
       phase: FlightPhase.fromJson(json['phase'] as String),
       status: OrderStatus.fromJson(json['status'] as String),
+      leg: FlightLeg.fromJson(json['leg']),
       etaSeconds: (json['etaSeconds'] as num?)?.toInt(),
       // Solo la vista `full` trae la batería.
       vitals: json.containsKey('batteryPercent')
@@ -77,6 +98,7 @@ class Telemetry {
   final double speedKmh;
   final FlightPhase phase;
   final OrderStatus status;
+  final FlightLeg leg;
 
   /// `null` cuando ya está en tierra.
   final int? etaSeconds;
@@ -87,10 +109,14 @@ class Telemetry {
   /// Minutos que faltan, redondeados hacia arriba; `null` en destino.
   int? get etaMinutes => etaSeconds == null ? null : (etaSeconds! / 60).ceil();
 
-  /// El dron aterrizó y el pedido espera la entrega. Ahí se detiene el
-  /// reloj: no hay código ni retorno en la API todavía.
+  /// El dron aterrizó en destino y el pedido espera el código (5 minutos).
   bool get arrived =>
-      phase == FlightPhase.landed && status == OrderStatus.awaitingDelivery;
+      leg == FlightLeg.outbound &&
+      phase == FlightPhase.landed &&
+      status == OrderStatus.awaitingDelivery;
+
+  /// El dron vuelve a la central con el paquete.
+  bool get returning => leg == FlightLeg.back;
 }
 
 /// Lo que solo ve la central de origen.

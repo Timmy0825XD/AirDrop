@@ -52,9 +52,10 @@ lib/
     orders/
     home/        # inicios por rol y andamiaje compartido (solo presentation/)
     tracking/    # mapa + telemetría en vivo (solicitante y despachador)
+    delivery/    # recibir el pedido con el código de un uso (sin rol receptor)
 ```
 
-Todavía **no existen** `delivery/` (código de entrega, sin rol receptor; Fase 5, bloqueada por el backend) ni `analytics/` (métricas del administrador). Se crean cuando Nest tenga sus endpoints ([`../context/producto/pendientes-backend.md`](../context/producto/pendientes-backend.md)).
+Todavía **no existe** `analytics/` (métricas del administrador). Se crea cuando Nest tenga sus endpoints ([`../context/producto/pendientes-backend.md`](../context/producto/pendientes-backend.md)).
 
 No Clean Architecture de tres capas por feature “porque sí”. Suficiente:
 
@@ -231,8 +232,35 @@ La fuente de verdad ejecutable es [`lib/theme/app_theme.dart`](lib/theme/app_the
 - `flutter_map` revienta con una `Polyline` sin puntos: la línea solo se
   agrega con 2 puntos o más.
 - "Ver vuelo" (`WatchFlightButton`) aparece cuando `Order.hasFlight`: carga
-  confirmada, en vuelo o esperando la entrega. El despachador solo si su
-  central es el origen. El operador no tiene entrada al mapa.
+  confirmada, en vuelo, esperando la entrega o de regreso con el paquete. El
+  despachador solo si su central es el origen. El operador no tiene entrada
+  al mapa.
+- La telemetría trae `leg`: `outbound` (ida) o `return` (`FlightLeg.back`,
+  el regreso con el paquete cuando nadie recibió a tiempo).
+  `Telemetry.arrived` es solo la ida en tierra. `FlightNotice` avisa
+  entregado, de regreso y devuelto según el `order-status` del socket. El
+  mapa pinta la ruta de ida también en el regreso: Nest no expone la de
+  vuelta.
+
+## Entrega (`features/delivery/`)
+
+- `POST /orders/:id/delivery-code` da `{ code, expiresAt }`; solo con el
+  dron en tierra (`awaiting_delivery`). Nest guarda el hash: el código se
+  ve una sola vez. Pedirlo otra vez lo reemplaza con el mismo vencimiento.
+- `POST /orders/:id/delivery-code/validate` con `{ code }` deja el pedido
+  `delivered`. Errores de Nest tal cual (inválido, usado o vencido).
+- Recibe el solicitante (persona) o el despachador de la central de
+  destino (traslado, `DispatcherPermissions.canReceive`); a cualquier otro
+  Nest responde 404.
+- `ReceiveOrderScreen` (`/delivery/:orderId`, con `push`) pide el código al
+  abrir, cuenta hasta `expiresAt` cada segundo y ofrece el "teclado del
+  dron" simulado (`OtpCodeField`). Al vencer muestra
+  `ReceiveOrderScreen.expiredMessage` y apaga el botón; al entregar, las
+  cajas se juntan en el check y vuelve a la pantalla anterior.
+- "Recibir pedido" (`ReceiveOrderButton`) sale en el detalle, en Mis
+  pedidos, en Traslados entrantes y en el mapa del solicitante.
+- `GET /orders/incoming` (`incomingProvider`) alimenta "Traslados
+  entrantes" del despachador y el contador "por recibir" de su inicio.
 
 ## Geovallas sobre el mapa (`features/geofences/`)
 
@@ -331,7 +359,7 @@ Reglas de los datos:
   `AsyncData(...)`: durante una recarga el estado es `AsyncLoading` con el
   valor anterior y la pantalla no debe quedar en blanco. Para leer un número
   o un título se usa `.value` (el último conocido), no `.asData?.value`.
-- Las listas sin socket (cola, programados, pending-load, vuelos en curso,
+- Las listas sin socket (cola, programados, pending-load, vuelos en curso, traslados entrantes,
   mis pedidos, el detalle del pedido) y los números del inicio del
   despachador y del solicitante se
   envuelven en `AutoRefresh` (`lib/core/widgets/auto_refresh.dart`), que

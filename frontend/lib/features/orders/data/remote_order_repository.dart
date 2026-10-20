@@ -163,6 +163,12 @@ class RemoteOrderRepository implements OrderRepository {
     return _asJsonList(data).map((row) => Order.fromJson(_asMap(row))).toList();
   }
 
+  @override
+  Future<List<Order>> listIncoming() async {
+    final data = await apiClient.getJson('/orders/incoming');
+    return _asJsonList(data).map((row) => Order.fromJson(_asMap(row))).toList();
+  }
+
   Map<String, dynamic> _asMap(Object? data) {
     if (data is Map<String, dynamic>) return data;
     if (data is Map<Object?, Object?>) return Map<String, dynamic>.from(data);

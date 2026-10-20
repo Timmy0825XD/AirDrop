@@ -10,6 +10,7 @@ import '../../../core/widgets/message_view.dart';
 import '../../../core/widgets/rise_in.dart';
 import '../../auth/data/auth_models.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../delivery/presentation/widgets/receive_order_button.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
@@ -31,7 +32,9 @@ enum _Action { authorize, reject, confirmLoad, prescription }
 ///
 /// El solicitante solo lo ve. El despachador, según el estado y su central:
 /// en `received` autoriza (revisando la fórmula si aplica) o rechaza; en
-/// "Pendiente de carga" confirma la carga para que arranque el vuelo.
+/// "Pendiente de carga" confirma la carga para que arranque el vuelo. Con
+/// el dron en destino, quien recibe (el solicitante o el despachador de la
+/// central de destino) tiene "Recibir pedido".
 class OrderDetailScreen extends ConsumerStatefulWidget {
   const OrderDetailScreen({super.key, required this.orderId});
 
@@ -172,9 +175,12 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
             myHubId: user!.hubIds.firstOrNull,
           ),
         )
-      // El solicitante solo abre sus pedidos, así que el vuelo es suyo.
-      else if (order.hasFlight)
-        WatchFlightButton(orderId: order.id),
+      // El solicitante solo abre sus pedidos: el vuelo y la entrega son suyos.
+      else ...[
+        if (order.status == OrderStatus.awaitingDelivery)
+          ReceiveOrderButton(orderId: order.id),
+        if (order.hasFlight) WatchFlightButton(orderId: order.id),
+      ],
     ];
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
@@ -214,6 +220,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           loading: _running == _Action.confirmLoad,
           onConfirm: _confirmLoad,
         ),
+      if (can.canReceive) ReceiveOrderButton(orderId: can.order.id),
       if (can.canWatchFlight) WatchFlightButton(orderId: can.order.id),
     ];
   }
