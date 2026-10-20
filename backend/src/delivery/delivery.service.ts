@@ -18,12 +18,14 @@ import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
 import { DeliveryCode } from './delivery-code.entity';
 import {
+  DELIVERY_CODE_LOCKED,
   DELIVERY_CODE_REJECTED,
   DELIVERY_WAIT_EXPIRED,
   ONLY_AWAITING_DELIVERY_IS_DELIVERED,
   ORDER_ALREADY_DELIVERED,
   deliveryCodeMatches,
   deliveryExpiresAt,
+  isDeliveryCodeLocked,
   isDeliveryCodeUsable,
 } from './delivery.rules';
 
@@ -58,7 +60,7 @@ export class DeliveryService {
       const code = generateOtp();
       const stored =
         (await manager.findOne(DeliveryCode, { where: { orderId } })) ??
-        manager.create(DeliveryCode, { orderId, usedAt: null });
+        manager.create(DeliveryCode, { orderId, usedAt: null, attempts: 0 });
       stored.codeHash = hashOtp(code);
       stored.expiresAt = expiresAt;
       await manager.save(stored);
@@ -71,7 +73,7 @@ export class DeliveryService {
    * queda libre en destino: vuelve a su central y se libera al aterrizar.
    */
   async validate(user: User, orderId: string, code: string) {
-    const delivered = await this.dataSource.transaction(async (manager) => {
+    const result = await this.dataSource.transaction(async (manager) => {
       const order = await this.lockRecipientOrder(manager, user, orderId);
       if (order.status === OrderStatus.DELIVERED) {
         throw new BadRequestException(DELIVERY_CODE_REJECTED);
@@ -83,18 +85,31 @@ export class DeliveryService {
         where: { orderId },
       });
       const now = new Date();
-      if (
-        !stored ||
-        !isDeliveryCodeUsable(stored, now) ||
-        !deliveryCodeMatches(code, stored.codeHash)
-      ) {
+      if (!stored || !isDeliveryCodeUsable(stored, now)) {
         throw new BadRequestException(DELIVERY_CODE_REJECTED);
+      }
+      if (isDeliveryCodeLocked(stored)) {
+        throw new BadRequestException(DELIVERY_CODE_LOCKED);
+      }
+      if (!deliveryCodeMatches(code, stored.codeHash)) {
+        // El intento queda guardado: por eso no se lanza dentro de la transacción.
+        stored.attempts += 1;
+        await manager.save(stored);
+        return {
+          rejection: isDeliveryCodeLocked(stored)
+            ? DELIVERY_CODE_LOCKED
+            : DELIVERY_CODE_REJECTED,
+        };
       }
       stored.usedAt = now;
       await manager.save(stored);
       order.status = OrderStatus.DELIVERED;
-      return manager.save(order);
+      return { delivered: await manager.save(order) };
     });
+    if ('rejection' in result) {
+      throw new BadRequestException(result.rejection);
+    }
+    const { delivered } = result;
     await this.notifications.statusChanged(orderId, OrderStatus.DELIVERED);
     try {
       await this.flights.startReturn(orderId);

@@ -12,6 +12,8 @@ import { User } from '../users/user.entity';
 import { DeliveryCode } from './delivery-code.entity';
 import { DeliveryService } from './delivery.service';
 import {
+  DELIVERY_CODE_LOCKED,
+  DELIVERY_CODE_MAX_ATTEMPTS,
   DELIVERY_CODE_REJECTED,
   DELIVERY_WAIT_EXPIRED,
   DEFAULT_DELIVERY_WAIT_MS,
@@ -56,6 +58,7 @@ function storedCode(overrides: Partial<DeliveryCode> = {}): DeliveryCode {
     codeHash: hashOtp(CODE),
     expiresAt: new Date(Date.now() + 60_000),
     usedAt: null,
+    attempts: 0,
     ...overrides,
   };
 }
@@ -108,6 +111,14 @@ describe('DeliveryService', () => {
   });
 
   describe('generate', () => {
+    it('pedir un código nuevo no reinicia los intentos', async () => {
+      code = storedCode({ attempts: 3 });
+
+      await service.generate(requester, ORDER_ID);
+
+      expect(code.attempts).toBe(3);
+    });
+
     it('devuelve un código de 6 dígitos y guarda solo su hash', async () => {
       const result = await service.generate(requester, ORDER_ID);
 
@@ -195,6 +206,57 @@ describe('DeliveryService', () => {
       expect(current!.status).toBe(OrderStatus.AWAITING_DELIVERY);
       expect(flights.startReturn).not.toHaveBeenCalled();
       expect(notifications.statusChanged).not.toHaveBeenCalled();
+    });
+
+    it('cuenta cada código equivocado y lo guarda', async () => {
+      code = storedCode();
+
+      await expect(
+        service.validate(requester, ORDER_ID, '000000'),
+      ).rejects.toThrow(DELIVERY_CODE_REJECTED);
+
+      expect(code.attempts).toBe(1);
+      expect(manager.save).toHaveBeenCalledWith(code);
+    });
+
+    it('bloquea el pedido al agotar los intentos', async () => {
+      code = storedCode({ attempts: DELIVERY_CODE_MAX_ATTEMPTS - 1 });
+
+      await expect(
+        service.validate(requester, ORDER_ID, '000000'),
+      ).rejects.toThrow(new BadRequestException(DELIVERY_CODE_LOCKED));
+
+      expect(code.attempts).toBe(DELIVERY_CODE_MAX_ATTEMPTS);
+    });
+
+    it('con el pedido bloqueado ni el código correcto entrega', async () => {
+      code = storedCode({ attempts: DELIVERY_CODE_MAX_ATTEMPTS });
+
+      await expect(service.validate(requester, ORDER_ID, CODE)).rejects.toThrow(
+        new BadRequestException(DELIVERY_CODE_LOCKED),
+      );
+
+      expect(code.usedAt).toBeNull();
+      expect(current!.status).toBe(OrderStatus.AWAITING_DELIVERY);
+      expect(flights.startReturn).not.toHaveBeenCalled();
+    });
+
+    it('el código correcto entrega aunque haya intentos fallidos previos', async () => {
+      code = storedCode({ attempts: DELIVERY_CODE_MAX_ATTEMPTS - 1 });
+
+      const result = await service.validate(requester, ORDER_ID, CODE);
+
+      expect(result.status).toBe(OrderStatus.DELIVERED);
+    });
+
+    it('un código vencido o ya usado no cuenta como intento', async () => {
+      code = storedCode({ expiresAt: new Date(Date.now() - 1000) });
+
+      await expect(
+        service.validate(requester, ORDER_ID, '000000'),
+      ).rejects.toThrow(DELIVERY_CODE_REJECTED);
+
+      expect(code.attempts).toBe(0);
     });
 
     it('rechaza un código vencido', async () => {
