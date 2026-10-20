@@ -1,25 +1,41 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
+import { OrderStatus } from '../common/enums/order-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { HubsService } from '../hubs/hubs.service';
+import { Order } from '../orders/order.entity';
 import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
 import { CreateInventoryItemDto } from './dto/create-inventory-item.dto';
 import { UpdateInventoryItemDto } from './dto/update-inventory-item.dto';
 import { InventoryItem } from './inventory-item.entity';
 
+/** Pedidos que ya salieron de la central con este lote. */
+const COMMITTED_STATUSES = [
+  OrderStatus.PENDING_LOAD,
+  OrderStatus.IN_FLIGHT,
+  OrderStatus.AWAITING_DELIVERY,
+  OrderStatus.RETURNING,
+];
+
+export const ITEM_COMMITTED_IN_MISSION =
+  'El ítem está comprometido en una misión.';
+
 @Injectable()
 export class InventoryService {
   constructor(
     @InjectRepository(InventoryItem)
     private readonly items: Repository<InventoryItem>,
+    @InjectRepository(Order)
+    private readonly orders: Repository<Order>,
     private readonly hubsService: HubsService,
   ) {}
 
@@ -85,6 +101,12 @@ export class InventoryService {
 
   async remove(user: User, id: string) {
     const item = await this.requireOwnItem(user, id);
+    const committed = await this.orders.exists({
+      where: { inventoryItemId: item.id, status: In(COMMITTED_STATUSES) },
+    });
+    if (committed) {
+      throw new ConflictException(ITEM_COMMITTED_IN_MISSION);
+    }
     await this.items.remove(item);
   }
 
