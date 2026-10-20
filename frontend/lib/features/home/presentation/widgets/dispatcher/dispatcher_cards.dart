@@ -11,7 +11,8 @@ typedef AccessOpener = VoidCallback? Function(String path, {bool always});
 // funciones y no widgets: `DispatcherActions` las junta en una sola lista
 // para que entren en cascada.
 
-/// Lo que hay que atender: cola, programados, por cargar y en vuelo.
+/// Lo que hay que atender: cola, programados, por cargar, en vuelo y lo
+/// que llega de otra central.
 List<Widget> operationCards(
   BuildContext context,
   AccessOpener open,
@@ -54,6 +55,15 @@ List<Widget> operationCards(
       tone: colors.secondary,
       count: c?.inFlight,
       onTap: open('/orders/in-flight'),
+    ),
+    HomeAccessCard(
+      title: 'Traslados entrantes',
+      subtitle: 'Lo que otras centrales te envían. Recíbelo con el código.',
+      icon: Icons.move_to_inbox_outlined,
+      tone: colors.tertiary,
+      count: c?.toReceive,
+      urgent: true,
+      onTap: open('/orders/incoming'),
     ),
   ];
 }

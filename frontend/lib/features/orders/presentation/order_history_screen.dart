@@ -8,8 +8,8 @@ import 'widgets/order_tile.dart';
 import 'widgets/order_tray.dart';
 
 /// "Mis pedidos" del solicitante (`GET /orders/mine`): lo más nuevo
-/// primero, con su estado y "Ver vuelo" cuando el dron va en camino. Se
-/// refresca cada 10 s.
+/// primero, con su estado, "Ver vuelo" cuando el dron va en camino y
+/// "Recibir pedido" cuando ya llegó. Se refresca cada 10 s.
 class OrderHistoryScreen extends ConsumerWidget {
   const OrderHistoryScreen({super.key});
 
@@ -26,6 +26,7 @@ class OrderHistoryScreen extends ConsumerWidget {
       keyOf: (order) => order.id,
       itemBuilder: (context, order) => OrderTile(
         order: order,
+        canReceive: order.status == OrderStatus.awaitingDelivery,
         onTap: () => context.push('/orders/${order.id}'),
       ),
     );

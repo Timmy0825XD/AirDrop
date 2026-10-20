@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-10-16 23:08
+Generado: 2026-10-19 22:34
 
 ## auth
 
@@ -165,6 +165,23 @@ Generado: 2026-10-16 23:08
 | --- | --- |
 | `auth_controller.dart` | 130 |
 
+## delivery
+
+### Pantallas
+
+| Archivo | Lineas |
+| --- | --- |
+| `receive_order_screen.dart` | 160 |
+
+### Widgets
+
+| Archivo | Widget/clase | Lineas | Estado |
+| --- | --- | --- | --- |
+| `delivery_code_badge.dart` | DeliveryCodeBadge | 52 | ok |
+| `receive_order_button.dart` | ReceiveOrderButton | 18 | ok |
+| `receive_order_card.dart` | ReceiveOrderView | 23 | ok |
+| `receive_order_card.dart` | ReceiveOrderCard | 49 | ok |
+
 ## fleet
 
 ### Pantallas
@@ -226,7 +243,7 @@ Generado: 2026-10-16 23:08
 | `admin_metrics_card.dart` | _DashedBorderPainter | 27 | ok |
 | `dispatcher_actions.dart` | DispatcherActions | 31 | ok |
 | `dispatcher_cards.dart` | AccessGroup | 11 | ok |
-| `dispatcher_counts.dart` | DispatcherCounts | 28 | ok |
+| `dispatcher_counts.dart` | DispatcherCounts | 38 | ok |
 | `home_access_card.dart` | HomeAccessCard | 54 | ok |
 | `home_access_card.dart` | _CardRow | 37 | ok |
 | `home_access_card.dart` | _IconTile | 13 | ok |
@@ -318,8 +335,9 @@ Generado: 2026-10-16 23:08
 | `hub_emergency_screen.dart` | 89 |
 | `hub_plan_form_screen.dart` | 100 |
 | `in_flight_screen.dart` | 36 |
-| `order_detail_screen.dart` | 220 |
-| `order_history_screen.dart` | 33 |
+| `incoming_screen.dart` | 36 |
+| `order_detail_screen.dart` | 227 |
+| `order_history_screen.dart` | 34 |
 | `pending_load_screen.dart` | 67 |
 | `plan_detail_screen.dart` | 146 |
 | `plan_form_screen.dart` | 62 |
@@ -334,7 +352,7 @@ Generado: 2026-10-16 23:08
 | `authorize_section.dart` | AuthorizeSection | 60 | ok |
 | `authorize_section.dart` | _PrescriptionCheck | 35 | ok |
 | `confirm_load_section.dart` | ConfirmLoadSection | 37 | ok |
-| `dispatcher_permissions.dart` | DispatcherPermissions | 41 | ok |
+| `dispatcher_permissions.dart` | DispatcherPermissions | 48 | ok |
 | `hub_plan_extras.dart` | HubPlanExtras | 53 | ok |
 | `hub_request_fields.dart` | HubRequestFields | 56 | ok |
 | `hub_request_fields.dart` | _QuantityField | 25 | ok |
@@ -353,7 +371,7 @@ Generado: 2026-10-16 23:08
 | `order_status_chip.dart` | OrderStatusChip | 19 | ok |
 | `order_summary.dart` | OrderSummary | 36 | ok |
 | `order_summary.dart` | _SummaryLines | 33 | ok |
-| `order_tile.dart` | OrderTile | 34 | ok |
+| `order_tile.dart` | OrderTile | 46 | ok |
 | `order_tray.dart` | OrderTray | 52 | ok |
 | `order_tray.dart` | _TrayList | 26 | ok |
 | `pending_load_tile.dart` | PendingLoadTile | 44 | ok |
@@ -389,7 +407,7 @@ Generado: 2026-10-16 23:08
 
 | Archivo | Lineas |
 | --- | --- |
-| `tracking_screen.dart` | 87 |
+| `tracking_screen.dart` | 109 |
 
 ### Widgets
 
@@ -400,7 +418,7 @@ Generado: 2026-10-16 23:08
 | `flight_map.dart` | FlightMap | 57 | ok |
 | `flight_map.dart` | _DroneMarker | 27 | ok |
 | `flight_map.dart` | _DestinationPin | 13 | ok |
-| `flight_notice.dart` | FlightNotice | 35 | ok |
+| `flight_notice.dart` | FlightNotice | 53 | ok |
 
 ## users
 
@@ -437,8 +455,8 @@ Generado: 2026-10-16 23:08
 
 ## Resumen
 
-- Pantallas (31 archivos): 31
-- Archivos de widgets: 117 - clases de widget medidas: 266
+- Pantallas (33 archivos): 33
+- Archivos de widgets: 120 - clases de widget medidas: 270
 - Widgets sobre 60 lineas: 4
 
 Detalle de los que exceden 60 lineas (candidatos a partir):

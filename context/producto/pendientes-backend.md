@@ -13,56 +13,48 @@ Estado: `Pendiente` · `En curso (rama)` · `Hecho (PR)`.
 
 ---
 
-## 1. Entrega, retorno y cuarentena — Parcial
+## 1. Entrega, retorno y cuarentena — En parte hecho (PR #56, #62, #63, #65, #66)
 
-Hecho en el backend (código, espera, retorno). Falta la cuarentena y el
-ingreso al inventario de destino.
+**Ya funciona** (probado de punta a punta en la Fase 5 del frontend):
+código de un uso (`POST /orders/:id/delivery-code` y `.../validate`), quien
+recibe es el solicitante o el despachador de la central de destino, la
+espera de 5 min (`DELIVERY_WAIT_MS` la acorta en pruebas) pasa el pedido a
+`returning`, el dron vuelve con el paquete publicando `leg: 'return'` por el
+socket y al aterrizar queda `returned` y el dron `available`. También
+`GET /orders/incoming` para los traslados que llegan a una central.
 
-**Hecho.**
+**Falta:**
 
-- **Código de un uso.** Existe desde que el despachador de origen confirma la
-  carga: se deriva (HMAC) del pedido y de ese instante, no se guarda en claro.
-  Lo ve quien recibe con `GET /orders/:id/delivery-code` (`{ code, expiresAt }`;
-  `expiresAt` es `null` hasta que el dron aterriza). Recibe el solicitante si
-  el destino es una persona y el despachador de la central de destino si es un
-  traslado.
-- **Ingreso del código.** `POST /orders/:id/delivery-code/validate` con
-  `{ code }`: válido → pedido `delivered`. El dron no queda libre en destino:
-  vuela de regreso a su central (el pedido sigue `delivered`) y queda
-  `available` al aterrizar. Tope de **5 intentos** equivocados por pedido; al
-  quinto el pedido queda bloqueado.
-- **Espera de 5 minutos** desde el aterrizaje (`DELIVERY_WAIT_MS` la acorta en
-  pruebas). Sin código válido: pedido `returning`, el dron vuela de regreso
-  **con el paquete** (ruta de retorno con las reglas de geovalla, o la ida al
-  revés si una geovalla nueva la bloquea); al aterrizar, pedido `returned` y
-  dron `available`. Se retoma tras reiniciar el servidor.
-- **Estados por el socket** (`order-status`) y telemetría del retorno
-  (`leg: return`). La asignación del pedido trae `returnRoute` cuando hay
-  regreso.
+1. **El dron no vuelve después de una entrega correcta.** Al validar el
+   código, `DeliveryService.validate` pone el dron `available` de una vez,
+   parado en el destino. Debería
+   ([`entregas/persona.md`](../entregas/persona.md),
+   [`entregas/centrales.md`](../entregas/centrales.md)) volar el tramo de
+   regreso a su central (como cuando vence la espera, pero sin paquete) y
+   quedar `available` al aterrizar.
+2. **Sin límite de intentos del código.** `validate` acepta intentos sin
+   tope durante los 5 minutos; con 6 dígitos se puede probar a fuerza bruta.
+   Igual que el login (RNF-04), debería bloquear tras unos cuantos intentos
+   fallidos (por ejemplo 5) y responder un mensaje claro.
+3. **El código lo ve y lo escribe la misma cuenta.** El contexto dice que
+   se genera al confirmar la carga y lo ve quien recibe; Nest lo genera
+   cuando el dron ya aterrizó, a pedido de quien recibe. La app lo muestra
+   y ofrece el "teclado del dron" simulado para escribirlo. Si el equipo
+   decide otra cosa, la app se ajusta.
+4. **Cuarentena al volver** (sin hacer): sin alerta de frío y con el
+   empaque íntegro, el lote reingresa al inventario de origen; con alerta de
+   frío o si el despachador marca el empaque comprometido, no. Depende
+   también del punto 9 (temperatura).
+5. **Traslado recibido** (sin hacer): el lote entra al inventario de la
+   central de destino.
+6. **La ruta de regreso no viaja en el pedido.** `assignment.coordinates`
+   es solo la ida; en el regreso la app pinta esa misma línea. Si el
+   regreso esquiva una geovalla nueva, el mapa no lo muestra.
 
-**Falta.**
+**Tests** que pide `AGENTS.md` y faltan: cuarentena con y sin alerta de frío.
 
-1. **Cuarentena** al volver: sin alerta de frío y con el empaque íntegro, el
-   lote puede reingresar al inventario de origen; con alerta de frío o si el
-   despachador marca el empaque comprometido, no reingresa
-   ([`../entregas/productos.md`](../entregas/productos.md)). Hoy un pedido
-   `returned` no vuelve a sumar stock ni hay endpoint para decidirlo.
-2. **Ingreso al inventario de destino** en un traslado recibido bien (remisión
-   que coincide y sin alerta de frío)
-   ([`../entregas/centrales.md`](../entregas/centrales.md)). Hoy el traslado
-   queda `delivered` pero el stock de destino no cambia.
-3. El operador no puede liberar un dron en misión (`FleetService` responde "No
-   puedes cambiar el estado de un dron en misión.").
-
-**Tests** de lo hecho: código visible desde la confirmación de carga, entrega
-a una persona y a una central, tope de intentos, vencimiento con retorno,
-regreso del dron tras la entrega. Pendientes: cuarentena con y sin alerta de
-frío.
-
-**La app lo usará** para: mostrar el código al que recibe desde que el dron
-vuela, ingresarlo con la cuenta regresiva de 5 min, la vuelta del dron en el
-mapa (`assignment.returnRoute`) y, más adelante, la marca del empaque al
-recibir un retorno.
+**La app lo usará** para: el regreso tras entregar en el mapa, el aviso de
+intentos agotados y la marca del empaque al recibir un retorno.
 
 ## 2. Fallback con estado `reasignado` (RF-18) — Pendiente
 
@@ -113,7 +105,14 @@ central no está asignada a tu cuenta.".
 **La app** hoy no la usa; si se abre, se mostraría en el detalle de una
 central.
 
-## 6. Lo que una central le pide a otra — Hecho
+## 6. Lo que una central le pide a otra — Hecho (PR #66)
+
+**Hoy.** El despachador puede pedir una urgencia a otra central
+(`POST /orders/hub-emergencies`), pero después no la encuentra en ninguna
+lista: `GET /orders/mine` es solo del solicitante y la cola, los
+programados y las bandejas listan lo que sale **de** su central, no lo que
+le llega. Solo la ve en el detalle que se abre al crearla. Los
+abastecimientos sí aparecen en `GET /orders/plans`.
 
 `GET /orders/incoming` (despachador) lista los pedidos cuyo destino es su
 central, del más nuevo al más viejo, con su estado y la asignación del dron.
@@ -122,6 +121,10 @@ ingresa al llegar.
 
 **La app lo usará** en el inicio del despachador: una bandeja "Por recibir"
 junto a "Vuelos en curso".
+
+**Hecho.** `GET /orders/incoming` lista los traslados hacia la central del
+despachador. La app los muestra en "Traslados entrantes" (Fase 5), con
+"Recibir pedido" cuando el dron aterriza.
 
 ## 7. Cambiar el correo sin verificarlo — Pendiente
 
@@ -172,3 +175,18 @@ socket (`alert`) y dejar marcado el pedido para la cuarentena.
 la variable, o quitarla de `.env.example` y dejar las 8 horas documentadas.
 
 **La app** no depende del valor: ante un `401` cierra sesión.
+
+## 11. El seed de pruebas no corre (`pnpm seed:test`) — Pendiente
+
+**Hoy.** `cleanTestData` en `backend/scripts/seed-test.ts` manda los dos
+parámetros (`$1` prefijo de central, `$2` dominio de correo) a todas las
+consultas, pero varias usan solo uno (`inventory_items`, `drones`, `hubs`,
+`one_time_codes`, `users`). Postgres responde `bind message supplies 2
+parameters, but prepared statement "" requires 1` y fallan tanto
+`seed:test` como `seed:clean`.
+
+**Debería**: pasar a cada consulta solo los parámetros que usa (por ejemplo
+`[params[0]]` para las de centrales y `[params[1]]` para las de usuarios).
+
+**La app** lo necesita para probar contra datos conocidos sin tocar los de
+la demostración.

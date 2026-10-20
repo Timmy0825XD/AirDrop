@@ -35,6 +35,13 @@ class DispatcherPermissions {
   bool get canWatchFlight =>
       order.hasFlight && myHubId != null && order.originHubId == myHubId;
 
+  /// Recibir un traslado: el dron llegó a su central y espera el código.
+  bool get canReceive =>
+      order.status == OrderStatus.awaitingDelivery &&
+      order.destinationKind == DestinationKind.hub &&
+      myHubId != null &&
+      order.destinationHubId == myHubId;
+
   /// Persona + bajo fórmula: Nest exige `prescriptionVerified: true`.
   bool get needsPrescriptionCheck =>
       order.destinationKind == DestinationKind.person &&

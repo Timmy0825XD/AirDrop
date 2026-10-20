@@ -9,11 +9,11 @@ Plan por fases del frontend Flutter a partir de la guía 25 (`learning/25-front-
 | HU-01 a HU-05 (auth), HU-06 a HU-10 (centrales, inventario, cuentas), HU-11 a HU-14 (flota y geovallas) | Backend y frontend hechos |
 | HU-15 a HU-20 (pedidos, planes, cola, historial) | Backend y frontend hechos |
 | HU-21 a HU-23 (decisión, prioridad, rutas) | Backend y frontend hechos |
-| HU-25 a HU-28, HU-35 (simulación, telemetría, mapa, confirmar carga) | Backend hecho, incluido el regreso del dron; el mapa de regreso falta en la app |
+| HU-25 a HU-28, HU-35 (simulación, telemetría, mapa, confirmar carga) | Backend y frontend hechos, con el tramo de regreso |
+| HU-33, HU-34 (código de entrega, espera de 5 min y retorno con el paquete) | Backend (PR #56, #62, #63, #65, #66) y frontend (Fase 5) hechos; falta la cuarentena |
 | HU-29, HU-30 (avisos de estado y batería) | Backend publica `order-status` y `alert` por el socket; no hay push |
 | HU-31 (flag de frío) | Hecho; la temperatura simulada es fija (5 °C), sin alerta de rango |
-| HU-33 (código de entrega, espera de 5 min y retorno con el paquete) | **Backend hecho**: código desde la confirmación de carga, tope de 5 intentos, vencimiento con retorno y regreso del dron tras entregar. Falta la app (Fase 5) |
-| HU-24 (fallback), HU-32 (alerta de frío), cuarentena e ingreso al inventario de destino, HU-36 a HU-38 (histórico de central, dashboard, métricas) | **Sin hacer en backend** |
+| HU-24 (fallback), HU-32 (alerta de frío), la cuarentena de HU-34, HU-36 a HU-38 (histórico de central, dashboard, métricas) | **Sin hacer en backend**; el frontend espera (Métricas) |
 
 Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-backend.md`](pendientes-backend.md). Las reglas de `context/` describen el MVP completo: donde el código va atrás, manda el contexto y se anota aquí o en esos pendientes, no se reescribe el contexto.
 
@@ -32,7 +32,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 2 | Autorizar y confirmar carga (HU-21, HU-35) | `feature/autorizar-carga-front` | Hecha (PR #41) |
 | 3 | Telemetría y mapa en vivo (HU-26 a HU-28) | `feature/tracking-front` | Hecha (PR #43) |
 | 4 | Geovalla sobre el mapa (HU-14) | `feature/geovalla-mapa` | Hecha (PR #45) |
-| 5 | Entrega del pedido y retorno del dron | — | Desbloqueada: el backend tiene el código, la espera y el retorno. Falta la app |
+| 5 | Entrega del pedido y retorno del dron | `feature/entrega-fase5` | Hecha (PR pendiente) |
 | 6 | Revisión y rediseño del administrador | `style/rediseno-admin` | Hecha (PR #47) |
 | 7 | Revisión y rediseño del despachador | `style/rediseno-despachador` | Hecha (PR #48) |
 | 8 | Revisión y rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Hecha (PR #49) |
@@ -144,24 +144,62 @@ Resultado (2026-10-16):
 
 ## Fase 5 — Entrega del pedido y retorno del dron
 
-Desbloqueada: el backend ya tiene lo esencial ([`pendientes-backend.md`](pendientes-backend.md),
-punto 1). Esta fase hace la parte de la app:
+Rama `feature/entrega-fase5`. Se desbloqueó con los PR #56, #62, #63, #65 y
+#66 del backend (código de entrega, espera de 5 min, vuelo de regreso,
+entrega en la central de destino y traslados entrantes).
 
-- El código para quien recibe (`GET /orders/:id/delivery-code`), visible desde
-  que el dron vuela, y la pantalla para ingresarlo
-  (`POST /orders/:id/delivery-code/validate`) con la cuenta regresiva de
-  5 min. Recibe el solicitante, o el despachador de la central de destino en
-  un traslado.
-- La bandeja "Por recibir" del despachador (`GET /orders/incoming`).
-- El retorno: estados `returning` y `returned`, `Order.hasFlight` con
-  `returning`, la telemetría con `leg` y el mapa con `assignment.returnRoute`.
-  Tras una entrega con código el dron también vuelve a su central: el pedido
-  sigue `delivered`.
-- Las validaciones nuevas del inventario (cantidad mínima 1 al crear;
-  vencimiento posterior a hoy).
+Lo que hace la app:
 
-Sigue sin existir en Nest, y la app no debe prometerlo: la cuarentena al
-recibir un retorno y el ingreso del lote al inventario de destino.
+- **`features/delivery/`** (nueva): `DeliveryRepository` (local y remoto)
+  con `generate` y `validate`, y `ReceiveOrderScreen` en
+  `/delivery/:orderId`. Al abrir pide el código, lo muestra con la cuenta
+  regresiva hasta `expiresAt` y ofrece el "teclado del dron" simulado. Con
+  el código correcto las cajas se juntan en el check y el pedido queda
+  entregado; al vencer avisa que el dron vuelve con el paquete y apaga el
+  botón. Los errores de Nest salen tal cual.
+- **"Recibir pedido"** en el detalle (solicitante, y despachador de la
+  central de destino con `DispatcherPermissions.canReceive`), en Mis
+  pedidos, en Traslados entrantes y en el mapa del solicitante cuando el
+  dron aterriza.
+- **Traslados entrantes** (`/orders/incoming`): bandeja nueva del
+  despachador con lo que otras centrales le envían, y tarjeta en su inicio
+  con el contador de lo que está por recibir.
+- **Regreso en el mapa**: la telemetría lee `leg` (`FlightLeg`), "Ver vuelo"
+  sigue disponible en `returning` y el aviso del mapa dice entregado, de
+  regreso con el paquete o devuelto según el estado del socket.
+- 7 tests nuevos en `test/features/delivery/delivery_test.dart`: código y
+  vencimiento, el tramo de regreso no cuenta como llegada, solo la central
+  de destino recibe, aviso de retorno, código equivocado y correcto, espera
+  vencida y error de Nest al pedir el código.
+
+Probado contra Nest real (con `DELIVERY_WAIT_MS=60000` y datos `PRUEBA-`
+que se borraron al terminar):
+
+- **Entrega a tiempo**: el dron aterriza (`awaiting_delivery`); validar sin
+  pedir código falla; el código trae 6 dígitos y vencimiento; otra central
+  no puede pedirlo (404); el equivocado da 400 con el mensaje de Nest; el
+  correcto deja `delivered`; no sirve dos veces; el dron queda disponible.
+- **Espera vencida**: a los 60 s pasa a `returning`, la telemetría trae
+  `leg: return`, ya no se puede pedir código, al aterrizar queda `returned`
+  y el dron disponible.
+- **Traslado**: aparece en entrantes de la central de destino, aterriza
+  allí, la central de origen no puede recibirlo (404) y la de destino lo
+  recibe con el código.
+
+19 comprobaciones en verde. El primer intento falló porque la central de
+prueba quedó dentro de la geovalla "Parque de la Leyenda": Nest hizo bien en
+no autorizar.
+
+- `flutter analyze` sin issues; 196 tests en verde.
+
+Para el backend (en [`pendientes-backend.md`](pendientes-backend.md)): el
+dron no vuela de regreso tras una entrega correcta, el código no tiene
+límite de intentos, falta la cuarentena y el ingreso del traslado al
+inventario (punto 1), y el seed de pruebas falla por los parámetros de la
+limpieza (punto 11, nuevo). El punto 6 (traslados entrantes) quedó hecho.
+
+Falta probar en el emulador: el teclado numérico del teléfono en el
+"teclado del dron" y la cuenta regresiva con la app en segundo plano.
 
 ## Fases 6 a 8 — Revisión a fondo y rediseño por rol
 
