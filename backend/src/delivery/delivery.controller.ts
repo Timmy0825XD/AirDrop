@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   Param,
   ParseUUIDPipe,
@@ -24,14 +25,13 @@ import { DeliveryService } from './delivery.service';
 export class DeliveryController {
   constructor(private readonly deliveryService: DeliveryService) {}
 
-  @Post(':id/delivery-code')
-  @HttpCode(200)
+  @Get(':id/delivery-code')
   @Roles(UserRole.REQUESTER, UserRole.DISPATCHER)
-  generate(
+  show(
     @CurrentUser() user: User,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ) {
-    return this.deliveryService.generate(user, id);
+    return this.deliveryService.show(user, id);
   }
 
   @Post(':id/delivery-code/validate')
