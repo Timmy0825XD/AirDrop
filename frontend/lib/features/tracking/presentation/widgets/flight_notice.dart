@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/widgets/error_banner.dart';
 import '../../../orders/data/order_models.dart' show OrderStatus;
+import '../../data/telemetry_models.dart';
 import '../../data/tracking_providers.dart';
 
 /// El aviso que corresponde arriba de la ficha, si hay alguno: problema,
@@ -35,8 +36,13 @@ class FlightNotice extends StatelessWidget {
     if (s.waitingForFlight) return ('El vuelo está por empezar.', false);
     // El estado del socket manda: llega antes que la foto siguiente.
     switch (s.status) {
+      // Tras entregar el dron vuelve solo; el pedido sigue entregado.
       case OrderStatus.delivered:
-        return ('Pedido entregado.', false);
+        final t = s.telemetry;
+        if (t == null || !t.returning) return ('Pedido entregado.', false);
+        return t.phase == FlightPhase.landed
+            ? ('Pedido entregado. El dron ya volvió a su central.', false)
+            : ('Pedido entregado. El dron vuelve a su central.', false);
       case OrderStatus.returned:
         return ('El dron volvió a la central con el paquete.', false);
       case OrderStatus.returning:

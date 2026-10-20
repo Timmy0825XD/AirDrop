@@ -56,7 +56,8 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
     final picked = await pickIsoDate(
       context,
       current: _values.expirationDate.text,
-      first: DateTime(now.year - 5),
+      // Nest exige un vencimiento posterior a hoy.
+      first: DateUtils.dateOnly(now).add(const Duration(days: 1)),
       last: DateTime(now.year + 10, 12, 31),
     );
     if (picked == null) return;
@@ -68,7 +69,7 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
   }
 
   Future<void> _submit(InventoryItem? original) async {
-    final errors = _values.validate();
+    final errors = _values.validate(original: original);
     setState(() {
       _errors = errors;
       if (errors.isNotEmpty) _shakeCount++;

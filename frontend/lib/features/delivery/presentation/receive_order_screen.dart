@@ -13,20 +13,26 @@ import '../data/delivery_models.dart';
 import '../data/delivery_providers.dart';
 import 'widgets/receive/receive_order_card.dart';
 
-/// Recibir un pedido en destino (`/delivery/:orderId`), CU-19 y CU-29.
+/// El código de entrega y recibir el pedido (`/delivery/:orderId`), CU-19 y
+/// CU-29.
 ///
-/// Al abrir pide el código a Nest (solo sale con el dron en tierra) y cuenta
-/// los 5 minutos de espera. Quien recibe lo escribe en el teclado del dron
-/// (simulado): válido, el pedido queda entregado. Si la cuenta llega a cero,
-/// el dron vuelve con el paquete y aquí ya no hay nada que hacer.
+/// El código se ve desde que se confirma la carga (`GET`, siempre el mismo).
+/// Mientras el dron vuela se vuelve a pedir cada 10 s para saber cuándo
+/// aterriza: ahí llega `expiresAt` y arranca la cuenta de 5 minutos. Quien
+/// recibe lo escribe en el teclado del dron (simulado). Si la cuenta llega a
+/// cero o se agotan los intentos, el dron vuelve con el paquete y aquí ya no
+/// hay nada que hacer.
 class ReceiveOrderScreen extends ConsumerStatefulWidget {
   const ReceiveOrderScreen({super.key, required this.orderId});
 
   final String orderId;
 
   static const expiredMessage =
-      'El tiempo para recibir el pedido venció. El dron vuelve a la central '
-      'con el paquete.';
+      'El tiempo venció. El dron regresa con el paquete.';
+
+  /// Texto de Nest al quinto código equivocado (`DELIVERY_CODE_LOCKED`).
+  static const lockedMessage =
+      'Se agotaron los intentos. El dron regresa con el paquete.';
 
   @override
   ConsumerState<ReceiveOrderScreen> createState() => _ReceiveOrderScreenState();
@@ -39,39 +45,50 @@ class _ReceiveOrderScreenState extends ConsumerState<ReceiveOrderScreen>
     vsync: this,
     duration: const Duration(milliseconds: 700),
   );
-  Timer? _ticker;
+  Timer? _timer;
   DeliveryCode? _code;
-  Duration _remaining = Duration.zero;
+  Duration? _remaining;
   String? _error;
+  bool _closed = false;
   bool _validating = false;
   bool _delivered = false;
   int _shakeCount = 0;
 
-  bool get _expired => _code != null && _remaining == Duration.zero;
+  bool get _canType => (_code?.landed ?? false) && !_closed && !_delivered;
 
   @override
   void initState() {
     super.initState();
-    Future.microtask(_requestCode);
+    Future.microtask(_loadCode);
   }
 
   @override
   void dispose() {
-    _ticker?.cancel();
+    _timer?.cancel();
     _collapse.dispose();
     _input.dispose();
     super.dispose();
   }
 
-  Future<void> _requestCode() async {
+  /// Lee el código. En vuelo vuelve a mirar cada 10 s; en tierra cuenta
+  /// cada segundo hasta `expiresAt`.
+  Future<void> _loadCode() async {
     try {
       final code = await ref
           .read(receiveOrderProvider.notifier)
-          .generate(widget.orderId);
+          .code(widget.orderId);
       if (!mounted) return;
-      setState(() => _code = code);
-      _tick();
-      _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+      setState(() {
+        _code = code;
+        _error = null;
+      });
+      _timer?.cancel();
+      if (code.landed) {
+        _tick();
+        _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+      } else {
+        _timer = Timer(const Duration(seconds: 10), _loadCode);
+      }
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.message);
     }
@@ -79,12 +96,18 @@ class _ReceiveOrderScreenState extends ConsumerState<ReceiveOrderScreen>
 
   void _tick() {
     final left = _code!.remaining(DateTime.now());
+    setState(() => _remaining = left);
+    if (left == Duration.zero && !_delivered) {
+      _close(ReceiveOrderScreen.expiredMessage);
+    }
+  }
+
+  /// Venció la espera o se agotaron los intentos: no se puede recibir.
+  void _close(String message) {
+    _timer?.cancel();
     setState(() {
-      _remaining = left;
-      if (left == Duration.zero && !_delivered) {
-        _ticker?.cancel();
-        _error = ReceiveOrderScreen.expiredMessage;
-      }
+      _closed = true;
+      _error = message;
     });
   }
 
@@ -105,7 +128,7 @@ class _ReceiveOrderScreenState extends ConsumerState<ReceiveOrderScreen>
       await ref
           .read(receiveOrderProvider.notifier)
           .validate(widget.orderId, code);
-      _ticker?.cancel();
+      _timer?.cancel();
       setState(() => _delivered = true);
       await _collapse.forward();
       if (!mounted) return;
@@ -113,11 +136,13 @@ class _ReceiveOrderScreenState extends ConsumerState<ReceiveOrderScreen>
       SectionHeader.backOrHome(context);
     } on ApiException catch (e) {
       if (!mounted) return;
-      setState(() {
-        _error = e.message;
-        _shakeCount++;
-        _input.clear();
-      });
+      _input.clear();
+      setState(() => _shakeCount++);
+      if (e.message == ReceiveOrderScreen.lockedMessage) {
+        _close(e.message);
+      } else {
+        setState(() => _error = e.message);
+      }
     } finally {
       if (mounted) setState(() => _validating = false);
     }
@@ -125,7 +150,7 @@ class _ReceiveOrderScreenState extends ConsumerState<ReceiveOrderScreen>
 
   @override
   Widget build(BuildContext context) {
-    final ready = _code != null && !_expired && !_delivered;
+    final ready = _canType && !_validating;
     return SectionFormPage(
       header: SectionHeader(
         title: 'Recibir pedido',
@@ -134,13 +159,13 @@ class _ReceiveOrderScreenState extends ConsumerState<ReceiveOrderScreen>
       ),
       card: ReceiveOrderCard(
         view: ReceiveOrderView(
-          code: _code,
+          // Cerrada la entrega, el código ya no sirve: no se muestra.
+          code: _closed ? null : _code,
           remaining: _remaining,
           error: _error,
-          expired: _expired,
-          hasError: _error != null,
+          canType: _canType,
           shakeCount: _shakeCount,
-          enabled: ready && !_validating,
+          enabled: ready,
         ),
         input: _input,
         collapse: _collapse,
@@ -149,10 +174,10 @@ class _ReceiveOrderScreenState extends ConsumerState<ReceiveOrderScreen>
       button: Padding(
         padding: const EdgeInsets.only(top: 4),
         child: AuthMorphButton(
-          label: 'Recibir pedido',
+          label: 'Confirmar entrega',
           loadingLabel: 'Validando el código',
           isLoading: _validating,
-          onPressed: ready && !_validating ? _submit : null,
+          onPressed: ready ? _submit : null,
         ),
       ),
     );

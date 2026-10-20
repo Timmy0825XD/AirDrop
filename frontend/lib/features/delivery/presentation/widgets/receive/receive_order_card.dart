@@ -12,24 +12,32 @@ class ReceiveOrderView {
     required this.code,
     required this.remaining,
     required this.error,
-    required this.expired,
-    required this.hasError,
+    required this.canType,
     required this.shakeCount,
     required this.enabled,
   });
 
-  /// `null` mientras Nest lo genera o si no lo pudo generar.
+  /// `null` mientras llega de Nest o si Nest no lo dio.
   final DeliveryCode? code;
-  final Duration remaining;
+
+  /// `null` mientras el dron vuela.
+  final Duration? remaining;
   final String? error;
-  final bool expired;
-  final bool hasError;
+
+  /// El dron está en tierra, no venció la espera y quedan intentos.
+  final bool canType;
   final int shakeCount;
   final bool enabled;
+
+  String get caption => switch (remaining) {
+    null => 'El dron va en camino. Lo escribes cuando aterrice.',
+    final left => 'Vence en ${DeliveryCodeBadge.clock(left)}',
+  };
 }
 
-/// La tarjeta de recibir: el aviso, el código con su cuenta regresiva y el
-/// teclado del dron (simulado) donde se escribe para cerrar la entrega.
+/// La tarjeta de recibir: el aviso, el código (visible desde que el dron
+/// despega) y, con el dron en tierra, el teclado del dron (simulado) donde
+/// se escribe para cerrar la entrega.
 class ReceiveOrderCard extends StatelessWidget {
   const ReceiveOrderCard({
     super.key,
@@ -48,6 +56,7 @@ class ReceiveOrderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final code = view.code;
+    final hurry = (view.remaining?.inSeconds ?? 60) < 60;
     return FormSheetCard(
       children: [
         if (view.error case final error?) ...[
@@ -55,9 +64,14 @@ class ReceiveOrderCard extends StatelessWidget {
           const SizedBox(height: 14),
         ],
         if (code == null && view.error == null)
-          const Center(child: CircularProgressIndicator())
-        else if (code != null && !view.expired) ...[
-          DeliveryCodeBadge(code: code.code, remaining: view.remaining),
+          const Center(child: CircularProgressIndicator()),
+        if (code != null)
+          DeliveryCodeBadge(
+            code: code.code,
+            caption: view.caption,
+            hurry: hurry,
+          ),
+        if (view.canType) ...[
           const SizedBox(height: 16),
           Text('TECLADO DEL DRON', style: theme.textTheme.labelSmall),
           const SizedBox(height: 4),
@@ -69,7 +83,7 @@ class ReceiveOrderCard extends StatelessWidget {
           OtpCodeField(
             controller: input,
             collapse: collapse,
-            hasError: view.hasError,
+            hasError: view.error != null,
             shakeCount: view.shakeCount,
             enabled: view.enabled,
             onSubmitted: onSubmitted,

@@ -1,26 +1,32 @@
-/// Código de entrega (`POST /orders/:id/delivery-code`).
+/// Código de entrega (`GET /orders/:id/delivery-code`).
 ///
-/// Nest lo genera cuando el dron ya aterrizó y solo guarda su hash: este es
-/// el único momento en que se ve. Vence a los 5 minutos del aterrizaje
-/// (CU-29); pedirlo otra vez reemplaza el anterior, con el mismo
-/// vencimiento.
+/// Existe desde que el despachador de origen confirma la carga y es siempre
+/// el mismo para el pedido. [expiresAt] llega `null` mientras el dron vuela;
+/// cuando aterriza trae la hora límite (aterrizaje + 5 minutos, CU-29).
 class DeliveryCode {
-  const DeliveryCode({required this.code, required this.expiresAt});
+  const DeliveryCode({required this.code, this.expiresAt});
 
   factory DeliveryCode.fromJson(Map<String, dynamic> json) {
+    final expires = json['expiresAt'] as String?;
     return DeliveryCode(
       code: json['code'] as String,
-      expiresAt: DateTime.parse(json['expiresAt'] as String),
+      expiresAt: expires == null ? null : DateTime.parse(expires),
     );
   }
 
   /// Seis dígitos.
   final String code;
-  final DateTime expiresAt;
+  final DateTime? expiresAt;
 
-  /// Lo que falta para que venza; cero si ya venció.
-  Duration remaining(DateTime now) {
-    final left = expiresAt.difference(now);
+  /// El dron ya aterrizó y corre la espera.
+  bool get landed => expiresAt != null;
+
+  /// Lo que falta para que venza; `null` mientras el dron vuela y cero si
+  /// ya venció.
+  Duration? remaining(DateTime now) {
+    final limit = expiresAt;
+    if (limit == null) return null;
+    final left = limit.difference(now);
     return left.isNegative ? Duration.zero : left;
   }
 }

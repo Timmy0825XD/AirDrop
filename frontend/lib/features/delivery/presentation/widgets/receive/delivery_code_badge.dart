@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
 
-/// El código de entrega en grande y lo que falta para que venza. En el
-/// último minuto la cuenta pasa a rojo.
+/// El código de entrega en grande y, debajo, [caption]: que el dron va en
+/// camino o cuánto falta para que venza. Con [hurry] la línea va en rojo.
 class DeliveryCodeBadge extends StatelessWidget {
   const DeliveryCodeBadge({
     super.key,
     required this.code,
-    required this.remaining,
+    required this.caption,
+    this.hurry = false,
   });
 
   final String code;
-  final Duration remaining;
+  final String caption;
+  final bool hurry;
 
   /// `4:05`: minutos y segundos.
   static String clock(Duration d) {
@@ -22,7 +24,6 @@ class DeliveryCodeBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
-    final hurry = remaining.inSeconds < 60;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       decoration: BoxDecoration(
@@ -31,9 +32,9 @@ class DeliveryCodeBadge extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text('TU CÓDIGO', style: theme.textTheme.labelSmall),
+          Text('TU CÓDIGO DE ENTREGA', style: theme.textTheme.labelSmall),
           const SizedBox(height: 6),
-          SelectableText(
+          Text(
             code.split('').join(' '),
             style: theme.textTheme.headlineMedium?.copyWith(
               fontWeight: FontWeight.w800,
@@ -43,7 +44,8 @@ class DeliveryCodeBadge extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           Text(
-            'Vence en ${clock(remaining)}',
+            caption,
+            textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w700,
               color: hurry ? colors.error : colors.onSurfaceVariant,

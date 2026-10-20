@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-10-19 22:34
+Generado: 2026-10-19 23:37
 
 ## auth
 
@@ -171,16 +171,16 @@ Generado: 2026-10-19 22:34
 
 | Archivo | Lineas |
 | --- | --- |
-| `receive_order_screen.dart` | 160 |
+| `receive_order_screen.dart` | 185 |
 
 ### Widgets
 
 | Archivo | Widget/clase | Lineas | Estado |
 | --- | --- | --- | --- |
-| `delivery_code_badge.dart` | DeliveryCodeBadge | 52 | ok |
-| `receive_order_button.dart` | ReceiveOrderButton | 18 | ok |
-| `receive_order_card.dart` | ReceiveOrderView | 23 | ok |
-| `receive_order_card.dart` | ReceiveOrderCard | 49 | ok |
+| `delivery_code_badge.dart` | DeliveryCodeBadge | 54 | ok |
+| `receive_order_button.dart` | ReceiveOrderButton | 23 | ok |
+| `receive_order_card.dart` | ReceiveOrderView | 31 | ok |
+| `receive_order_card.dart` | ReceiveOrderCard | 55 | ok |
 
 ## fleet
 
@@ -308,7 +308,7 @@ Generado: 2026-10-19 22:34
 
 | Archivo | Lineas |
 | --- | --- |
-| `inventory_form_screen.dart` | 163 |
+| `inventory_form_screen.dart` | 164 |
 | `inventory_screen.dart` | 104 |
 
 ### Widgets
@@ -318,7 +318,7 @@ Generado: 2026-10-19 22:34
 | `inventory_delete_confirm.dart` | _ItemSummary | 28 | ok |
 | `inventory_form_sheet.dart` | InventoryFormSheet | 51 | ok |
 | `inventory_form_sheet.dart` | _LotAndQuantity | 36 | ok |
-| `inventory_form_values.dart` | InventoryFormValues | 84 | **>60** |
+| `inventory_form_values.dart` | InventoryFormValues | 99 | **>60** |
 | `inventory_kind_fields.dart` | InventoryKindFields | 45 | ok |
 | `inventory_kind_fields.dart` | _ColdChainToggle | 40 | ok |
 | `inventory_tile.dart` | InventoryTile | 50 | ok |
@@ -336,7 +336,7 @@ Generado: 2026-10-19 22:34
 | `hub_plan_form_screen.dart` | 100 |
 | `in_flight_screen.dart` | 36 |
 | `incoming_screen.dart` | 36 |
-| `order_detail_screen.dart` | 227 |
+| `order_detail_screen.dart` | 235 |
 | `order_history_screen.dart` | 34 |
 | `pending_load_screen.dart` | 67 |
 | `plan_detail_screen.dart` | 146 |
@@ -352,7 +352,7 @@ Generado: 2026-10-19 22:34
 | `authorize_section.dart` | AuthorizeSection | 60 | ok |
 | `authorize_section.dart` | _PrescriptionCheck | 35 | ok |
 | `confirm_load_section.dart` | ConfirmLoadSection | 37 | ok |
-| `dispatcher_permissions.dart` | DispatcherPermissions | 48 | ok |
+| `dispatcher_permissions.dart` | DispatcherPermissions | 51 | ok |
 | `hub_plan_extras.dart` | HubPlanExtras | 53 | ok |
 | `hub_request_fields.dart` | HubRequestFields | 56 | ok |
 | `hub_request_fields.dart` | _QuantityField | 25 | ok |
@@ -407,7 +407,7 @@ Generado: 2026-10-19 22:34
 
 | Archivo | Lineas |
 | --- | --- |
-| `tracking_screen.dart` | 109 |
+| `tracking_screen.dart` | 119 |
 
 ### Widgets
 
@@ -418,7 +418,7 @@ Generado: 2026-10-19 22:34
 | `flight_map.dart` | FlightMap | 57 | ok |
 | `flight_map.dart` | _DroneMarker | 27 | ok |
 | `flight_map.dart` | _DestinationPin | 13 | ok |
-| `flight_notice.dart` | FlightNotice | 53 | ok |
+| `flight_notice.dart` | FlightNotice | 58 | ok |
 
 ## users
 
@@ -461,7 +461,7 @@ Generado: 2026-10-19 22:34
 
 Detalle de los que exceden 60 lineas (candidatos a partir):
 
-- inventory/inventory_form_values.dart :: InventoryFormValues = 84
+- inventory/inventory_form_values.dart :: InventoryFormValues = 99
 - orders/hub_request_values.dart :: HubRequestValues = 64
 - orders/requester_order_values.dart :: RequesterOrderValues = 90
 - users/user_form_values.dart :: UserFormValues = 74

@@ -5,11 +5,12 @@ import 'delivery_models.dart';
 /// solicitante (destino: persona) o el despachador de la central de destino
 /// (traslado); a cualquier otro Nest le responde 404.
 abstract class DeliveryRepository {
-  /// `POST /orders/:id/delivery-code` — solo con el pedido en
-  /// `awaiting_delivery` y antes de que venza la espera.
-  Future<DeliveryCode> generate(String orderId);
+  /// `GET /orders/:id/delivery-code` — desde que se confirma la carga hasta
+  /// que vence la espera en destino. Siempre devuelve el mismo código.
+  Future<DeliveryCode> code(String orderId);
 
   /// `POST /orders/:id/delivery-code/validate` — con el código correcto el
-  /// pedido queda `delivered` y el dron se libera.
+  /// pedido queda `delivered` y el dron vuelve a su central. A los 5 códigos
+  /// equivocados el pedido se bloquea.
   Future<Order> validate(String orderId, String code);
 }

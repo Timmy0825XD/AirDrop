@@ -13,48 +13,38 @@ Estado: `Pendiente` · `En curso (rama)` · `Hecho (PR)`.
 
 ---
 
-## 1. Entrega, retorno y cuarentena — En parte hecho (PR #56, #62, #63, #65, #66)
+## 1. Entrega, retorno y cuarentena — En parte hecho (PR #56, #62, #63, #65, #66, #68, #70, #71)
 
-**Ya funciona** (probado de punta a punta en la Fase 5 del frontend):
-código de un uso (`POST /orders/:id/delivery-code` y `.../validate`), quien
-recibe es el solicitante o el despachador de la central de destino, la
-espera de 5 min (`DELIVERY_WAIT_MS` la acorta en pruebas) pasa el pedido a
-`returning`, el dron vuelve con el paquete publicando `leg: 'return'` por el
-socket y al aterrizar queda `returned` y el dron `available`. También
-`GET /orders/incoming` para los traslados que llegan a una central.
+**Ya funciona** (probado de punta a punta con la app): el código de un uso
+(`GET /orders/:id/delivery-code`) existe desde que se confirma la carga y es
+siempre el mismo; `expiresAt` llega `null` en vuelo y con la hora límite al
+aterrizar. `POST .../validate` entrega el pedido y el dron vuelve solo a su
+central (`leg: 'return'`, el pedido sigue `delivered`) y queda `available`
+al aterrizar. A los 5 códigos equivocados se bloquea. Sin código en 5 min
+(`DELIVERY_WAIT_MS` la acorta en pruebas) el pedido pasa a `returning`,
+vuelve con el paquete y queda `returned`. Recibe el solicitante o el
+despachador de la central de destino; los traslados se listan en
+`GET /orders/incoming`.
 
 **Falta:**
 
-1. **El dron no vuelve después de una entrega correcta.** Al validar el
-   código, `DeliveryService.validate` pone el dron `available` de una vez,
-   parado en el destino. Debería
-   ([`entregas/persona.md`](../entregas/persona.md),
-   [`entregas/centrales.md`](../entregas/centrales.md)) volar el tramo de
-   regreso a su central (como cuando vence la espera, pero sin paquete) y
-   quedar `available` al aterrizar.
-2. **Sin límite de intentos del código.** `validate` acepta intentos sin
-   tope durante los 5 minutos; con 6 dígitos se puede probar a fuerza bruta.
-   Igual que el login (RNF-04), debería bloquear tras unos cuantos intentos
-   fallidos (por ejemplo 5) y responder un mensaje claro.
-3. **El código lo ve y lo escribe la misma cuenta.** El contexto dice que
-   se genera al confirmar la carga y lo ve quien recibe; Nest lo genera
-   cuando el dron ya aterrizó, a pedido de quien recibe. La app lo muestra
-   y ofrece el "teclado del dron" simulado para escribirlo. Si el equipo
-   decide otra cosa, la app se ajusta.
-4. **Cuarentena al volver** (sin hacer): sin alerta de frío y con el
+1. **Cuarentena al volver** (sin hacer): sin alerta de frío y con el
    empaque íntegro, el lote reingresa al inventario de origen; con alerta de
    frío o si el despachador marca el empaque comprometido, no. Depende
    también del punto 9 (temperatura).
-5. **Traslado recibido** (sin hacer): el lote entra al inventario de la
+2. **Traslado recibido** (sin hacer): el lote entra al inventario de la
    central de destino.
-6. **La ruta de regreso no viaja en el pedido.** `assignment.coordinates`
-   es solo la ida; en el regreso la app pinta esa misma línea. Si el
-   regreso esquiva una geovalla nueva, el mapa no lo muestra.
+3. **La ruta de regreso no viaja en el pedido.** `assignment.coordinates`
+   es solo la ida (el documento de la demo menciona `returnRoute`, pero Nest
+   no lo envía); en el regreso la app pinta la misma línea.
+4. **El aviso de intentos agotados promete más de lo que pasa.** Dice "El
+   dron regresa con el paquete", pero el pedido sigue en `awaiting_delivery`
+   hasta que vencen los 5 minutos; recién ahí sale el dron.
 
 **Tests** que pide `AGENTS.md` y faltan: cuarentena con y sin alerta de frío.
 
-**La app lo usará** para: el regreso tras entregar en el mapa, el aviso de
-intentos agotados y la marca del empaque al recibir un retorno.
+**La app lo usará** para: la ruta de regreso en el mapa y la marca del
+empaque al recibir un retorno.
 
 ## 2. Fallback con estado `reasignado` (RF-18) — Pendiente
 
@@ -176,7 +166,7 @@ la variable, o quitarla de `.env.example` y dejar las 8 horas documentadas.
 
 **La app** no depende del valor: ante un `401` cierra sesión.
 
-## 11. El seed de pruebas no corre (`pnpm seed:test`) — Pendiente
+## 11. El seed de pruebas no corre (`pnpm seed:test`) — Hecho (`seed-shared.ts`, renumera los parámetros)
 
 **Hoy.** `cleanTestData` en `backend/scripts/seed-test.ts` manda los dos
 parámetros (`$1` prefijo de central, `$2` dominio de correo) a todas las

@@ -11,8 +11,8 @@ class RemoteDeliveryRepository implements DeliveryRepository {
   final ApiClient apiClient;
 
   @override
-  Future<DeliveryCode> generate(String orderId) async {
-    final data = await apiClient.postJson('/orders/$orderId/delivery-code');
+  Future<DeliveryCode> code(String orderId) async {
+    final data = await apiClient.getJson('/orders/$orderId/delivery-code');
     return DeliveryCode.fromJson(_asMap(data));
   }
 
