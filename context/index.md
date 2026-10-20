@@ -18,7 +18,8 @@ En esta raíz solo está este índice. El resto vive en carpetas.
 | Requisitos y su fundamento | [producto/requisitos.md](producto/requisitos.md) |
 | Casos de uso | [producto/casos-de-uso.md](producto/casos-de-uso.md) |
 | Historias y sprints | [producto/backlog.md](producto/backlog.md) |
-| En qué fase va el frontend | [producto/avance.md](producto/avance.md) |
+| En qué fase va el frontend y qué historias están hechas | [producto/avance.md](producto/avance.md) |
+| Qué le falta al backend frente al contexto | [producto/pendientes-backend.md](producto/pendientes-backend.md) |
 | Cómo está armado el software | [diseno/arquitectura.md](diseno/arquitectura.md) |
 | Cómo se programa | [diseno/principios.md](diseno/principios.md) |
 | Problema, objetivos, marco, glosario, fuentes | [sustentacion/](sustentacion/) |

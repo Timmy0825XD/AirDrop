@@ -2,6 +2,20 @@
 
 Plan por fases del frontend Flutter a partir de la guía 25 (`learning/25-front-pending-despues-de-auth.md`, local y fuera de git). Todo agente que entre al repo lee este archivo para saber en qué fase vamos.
 
+## Dónde está el proyecto hoy (2026-10-19)
+
+| Historias | Estado |
+| --- | --- |
+| HU-01 a HU-05 (auth), HU-06 a HU-10 (centrales, inventario, cuentas), HU-11 a HU-14 (flota y geovallas) | Backend y frontend hechos |
+| HU-15 a HU-20 (pedidos, planes, cola, historial) | Backend y frontend hechos |
+| HU-21 a HU-23 (decisión, prioridad, rutas) | Backend y frontend hechos |
+| HU-25 a HU-28, HU-35 (simulación, telemetría, mapa, confirmar carga) | Hechos hasta que el dron llega al destino |
+| HU-29, HU-30 (avisos de estado y batería) | Backend publica `order-status` y `alert` por el socket; no hay push |
+| HU-31 (flag de frío) | Hecho; la temperatura simulada es fija (5 °C), sin alerta de rango |
+| HU-24 (fallback), HU-32 a HU-34 (alerta de frío, código, espera de 5 min, retorno y cuarentena), HU-36 a HU-38 (histórico de central, dashboard, métricas) | **Sin hacer en backend**; el frontend espera (Fase 5 y Métricas) |
+
+Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-backend.md`](pendientes-backend.md). Las reglas de `context/` describen el MVP completo: donde el código va atrás, manda el contexto y se anota aquí o en esos pendientes, no se reescribe el contexto.
+
 ## Cómo se trabaja una fase
 
 1. Se crea una rama nueva desde `develop`. No se trabaja en `develop` ni en `main`.
@@ -22,7 +36,7 @@ Plan por fases del frontend Flutter a partir de la guía 25 (`learning/25-front-
 | 7 | Revisión y rediseño del despachador | `style/rediseno-despachador` | Hecha (PR #48) |
 | 8 | Revisión y rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Hecha (PR #49) |
 | 9 | Limpieza antes de la revisión | `refactor/limpieza-front` | Hecha (PR #50) |
-| 10 | Cierre y pruebas de punta a punta | `test/flujos-front` | Hecha (PR pendiente) |
+| 10 | Cierre y pruebas de punta a punta | `test/flujos-front` | Hecha (PR #51) |
 
 ## Fase 0 — Preparación y documento de avance
 
