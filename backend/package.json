@@ -18,7 +18,9 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json --runInBand"
+    "test:e2e": "jest --config ./test/jest-e2e.json --runInBand",
+    "seed:test": "ts-node scripts/seed-test.ts seed",
+    "seed:clean": "ts-node scripts/seed-test.ts clean"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
