@@ -1,11 +1,15 @@
-import { timingSafeEqual } from 'node:crypto';
-import { hashOtp } from '../auth/auth.rules';
+import { createHmac, timingSafeEqual } from 'node:crypto';
+import { FIELD_LIMITS } from '../common/field-limits';
 
 /** CU-29: el solicitante tiene 5 minutos desde el aterrizaje. */
 export const DEFAULT_DELIVERY_WAIT_MS = 5 * 60 * 1000;
 
 export const ONLY_AWAITING_DELIVERY_IS_DELIVERED =
   'Solo se entrega un pedido en espera de entrega.';
+export const DELIVERY_CODE_NOT_READY =
+  'El código aparece cuando el despachador confirma la carga.';
+export const DELIVERY_CODE_NOT_AVAILABLE =
+  'Este pedido ya no tiene un código de entrega vigente.';
 export const ORDER_ALREADY_DELIVERED = 'Este pedido ya fue entregado.';
 export const DELIVERY_WAIT_EXPIRED = 'El tiempo para recibir el pedido venció.';
 /** Tope de códigos equivocados por pedido, como el login (RNF-04). */
@@ -40,15 +44,36 @@ export function isDeliveryCodeLocked(code: { attempts: number }): boolean {
   return code.attempts >= DELIVERY_CODE_MAX_ATTEMPTS;
 }
 
-export function isDeliveryCodeUsable(
-  code: { usedAt: Date | null; expiresAt: Date },
-  now: Date,
-): boolean {
-  return code.usedAt === null && now.getTime() < code.expiresAt.getTime();
+/**
+ * CU-19: el código existe desde que se confirma la carga. Se deriva con HMAC
+ * del pedido y de ese instante, así quien recibe puede verlo mientras el dron
+ * vuela sin que el código se guarde en claro.
+ */
+export function deliveryCodeFor(
+  order: { id: string; loadConfirmedAt: Date },
+  secret: string,
+): string {
+  const digest = createHmac('sha256', secret)
+    .update(`delivery-code:${order.id}:${order.loadConfirmedAt.toISOString()}`)
+    .digest();
+  return (digest.readUInt32BE(0) % 10 ** FIELD_LIMITS.otpDigits)
+    .toString()
+    .padStart(FIELD_LIMITS.otpDigits, '0');
 }
 
-export function deliveryCodeMatches(code: string, codeHash: string): boolean {
-  const received = Buffer.from(hashOtp(code), 'hex');
-  const stored = Buffer.from(codeHash, 'hex');
-  return received.length === stored.length && timingSafeEqual(received, stored);
+export function isDeliveryCodeUsable(
+  code: { usedAt: Date | null },
+  landedAt: Date,
+  now: Date,
+): boolean {
+  return code.usedAt === null && !isDeliveryWaitOver(landedAt, now);
+}
+
+export function deliveryCodeMatches(
+  received: string,
+  expected: string,
+): boolean {
+  const left = Buffer.from(received);
+  const right = Buffer.from(expected);
+  return left.length === right.length && timingSafeEqual(left, right);
 }

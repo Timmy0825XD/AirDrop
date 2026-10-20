@@ -1,8 +1,10 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
-import { CHAR_TRANSFORMER } from '../common/column-transformers';
-import { FIELD_LIMITS } from '../common/field-limits';
 
-/** Código de un solo uso para recibir el pedido. Solo se guarda su hash. */
+/**
+ * Estado del código de un pedido. El código no se guarda: se deriva del pedido
+ * (ver `deliveryCodeFor`), así que aquí solo queda si ya se usó y cuántos
+ * intentos fallidos lleva.
+ */
 @Entity({ name: 'delivery_codes' })
 export class DeliveryCode {
   @PrimaryGeneratedColumn('uuid')
@@ -12,20 +14,10 @@ export class DeliveryCode {
   @Column({ type: 'uuid' })
   orderId: string;
 
-  @Column({
-    type: 'char',
-    length: FIELD_LIMITS.sha256Hex,
-    transformer: CHAR_TRANSFORMER,
-  })
-  codeHash: string;
-
-  @Column({ type: 'timestamptz' })
-  expiresAt: Date;
-
   @Column({ type: 'timestamptz', nullable: true })
   usedAt: Date | null;
 
-  /** Códigos equivocados. No se reinicia al pedir un código nuevo. */
+  /** Códigos equivocados. Con 5 el pedido queda bloqueado. */
   @Column({ type: 'int', default: 0 })
   attempts: number;
 }

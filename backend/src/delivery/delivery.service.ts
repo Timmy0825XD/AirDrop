@@ -4,8 +4,8 @@ import {
   Logger,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DataSource, EntityManager } from 'typeorm';
-import { generateOtp, hashOtp } from '../auth/auth.rules';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
@@ -19,15 +19,32 @@ import { User } from '../users/user.entity';
 import { DeliveryCode } from './delivery-code.entity';
 import {
   DELIVERY_CODE_LOCKED,
+  DELIVERY_CODE_NOT_AVAILABLE,
+  DELIVERY_CODE_NOT_READY,
   DELIVERY_CODE_REJECTED,
   DELIVERY_WAIT_EXPIRED,
   ONLY_AWAITING_DELIVERY_IS_DELIVERED,
   ORDER_ALREADY_DELIVERED,
+  deliveryCodeFor,
   deliveryCodeMatches,
   deliveryExpiresAt,
   isDeliveryCodeLocked,
   isDeliveryCodeUsable,
 } from './delivery.rules';
+
+/** Pedidos para los que ya hay un código que mostrar. */
+const CODE_VISIBLE = [
+  OrderStatus.PENDING_LOAD,
+  OrderStatus.IN_FLIGHT,
+  OrderStatus.AWAITING_DELIVERY,
+];
+
+/** Pedidos que todavía no pasan por la confirmación de carga. */
+const BEFORE_LOAD = [
+  OrderStatus.RECEIVED,
+  OrderStatus.UNDER_REVIEW,
+  OrderStatus.ASSIGNED,
+];
 
 @Injectable()
 export class DeliveryService {
@@ -37,35 +54,48 @@ export class DeliveryService {
     private readonly dataSource: DataSource,
     private readonly notifications: NotificationsService,
     private readonly flights: FlightClockService,
+    private readonly config: ConfigService,
   ) {}
 
-  /** CU-19: el solicitante pide el código cuando el dron ya aterrizó. */
-  async generate(user: User, orderId: string) {
-    return this.dataSource.transaction(async (manager) => {
-      const order = await this.lockRecipientOrder(manager, user, orderId);
-      if (order.status === OrderStatus.DELIVERED) {
-        throw new BadRequestException(ORDER_ALREADY_DELIVERED);
-      }
-      if (order.status !== OrderStatus.AWAITING_DELIVERY) {
-        throw new BadRequestException(ONLY_AWAITING_DELIVERY_IS_DELIVERED);
-      }
+  /**
+   * Lo que ve quien recibe: el código desde que se confirma la carga y, una vez
+   * que el dron aterriza, hasta cuándo puede ingresarlo (`expiresAt`).
+   */
+  async show(user: User, orderId: string) {
+    const manager = this.dataSource.manager;
+    const order = await manager.findOne(Order, { where: { id: orderId } });
+    if (!order || !isRecipient(user, order)) {
+      throw new NotFoundException('El pedido no existe.');
+    }
+    if (order.status === OrderStatus.DELIVERED) {
+      throw new BadRequestException(ORDER_ALREADY_DELIVERED);
+    }
+    if (
+      BEFORE_LOAD.includes(order.status) ||
+      (order.status === OrderStatus.PENDING_LOAD && !order.loadConfirmedAt)
+    ) {
+      throw new BadRequestException(DELIVERY_CODE_NOT_READY);
+    }
+    if (!CODE_VISIBLE.includes(order.status) || !order.loadConfirmedAt) {
+      throw new BadRequestException(DELIVERY_CODE_NOT_AVAILABLE);
+    }
+    let expiresAt: Date | null = null;
+    if (order.status === OrderStatus.AWAITING_DELIVERY) {
       const mission = await manager.findOne(Mission, { where: { orderId } });
-      if (!mission?.landedAt) {
-        throw new BadRequestException(ONLY_AWAITING_DELIVERY_IS_DELIVERED);
+      if (mission?.landedAt) {
+        expiresAt = deliveryExpiresAt(mission.landedAt);
+        if (expiresAt.getTime() <= Date.now()) {
+          throw new BadRequestException(DELIVERY_WAIT_EXPIRED);
+        }
       }
-      const expiresAt = deliveryExpiresAt(mission.landedAt);
-      if (expiresAt.getTime() <= Date.now()) {
-        throw new BadRequestException(DELIVERY_WAIT_EXPIRED);
-      }
-      const code = generateOtp();
-      const stored =
-        (await manager.findOne(DeliveryCode, { where: { orderId } })) ??
-        manager.create(DeliveryCode, { orderId, usedAt: null, attempts: 0 });
-      stored.codeHash = hashOtp(code);
-      stored.expiresAt = expiresAt;
-      await manager.save(stored);
-      return { code, expiresAt };
-    });
+    }
+    return {
+      code: deliveryCodeFor(
+        { id: order.id, loadConfirmedAt: order.loadConfirmedAt },
+        this.secret(),
+      ),
+      expiresAt,
+    };
   }
 
   /**
@@ -81,28 +111,36 @@ export class DeliveryService {
       if (order.status !== OrderStatus.AWAITING_DELIVERY) {
         throw new BadRequestException(ONLY_AWAITING_DELIVERY_IS_DELIVERED);
       }
-      const stored = await manager.findOne(DeliveryCode, {
-        where: { orderId },
-      });
+      const mission = await manager.findOne(Mission, { where: { orderId } });
+      if (!mission?.landedAt || !order.loadConfirmedAt) {
+        throw new BadRequestException(ONLY_AWAITING_DELIVERY_IS_DELIVERED);
+      }
+      const state =
+        (await manager.findOne(DeliveryCode, { where: { orderId } })) ??
+        manager.create(DeliveryCode, { orderId, usedAt: null, attempts: 0 });
       const now = new Date();
-      if (!stored || !isDeliveryCodeUsable(stored, now)) {
+      if (!isDeliveryCodeUsable(state, mission.landedAt, now)) {
         throw new BadRequestException(DELIVERY_CODE_REJECTED);
       }
-      if (isDeliveryCodeLocked(stored)) {
+      if (isDeliveryCodeLocked(state)) {
         throw new BadRequestException(DELIVERY_CODE_LOCKED);
       }
-      if (!deliveryCodeMatches(code, stored.codeHash)) {
+      const expected = deliveryCodeFor(
+        { id: order.id, loadConfirmedAt: order.loadConfirmedAt },
+        this.secret(),
+      );
+      if (!deliveryCodeMatches(code, expected)) {
         // El intento queda guardado: por eso no se lanza dentro de la transacción.
-        stored.attempts += 1;
-        await manager.save(stored);
+        state.attempts += 1;
+        await manager.save(state);
         return {
-          rejection: isDeliveryCodeLocked(stored)
+          rejection: isDeliveryCodeLocked(state)
             ? DELIVERY_CODE_LOCKED
             : DELIVERY_CODE_REJECTED,
         };
       }
-      stored.usedAt = now;
-      await manager.save(stored);
+      state.usedAt = now;
+      await manager.save(state);
       order.status = OrderStatus.DELIVERED;
       return { delivered: await manager.save(order) };
     });
@@ -120,6 +158,10 @@ export class DeliveryService {
       );
     }
     return presentOrder(delivered);
+  }
+
+  private secret(): string {
+    return this.config.getOrThrow<string>('JWT_SECRET');
   }
 
   /**
