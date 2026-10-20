@@ -378,6 +378,16 @@ export class OrdersService {
     return orders.map((order) => this.toPublicOrder(order));
   }
 
+  /** Traslados que otras centrales despachan hacia la central del despachador. */
+  async listIncoming(user: User) {
+    const hub = await this.requireDispatcherHub(user);
+    const orders = await this.orders.find({
+      where: { destinationKind: DestinationKind.HUB, destinationHubId: hub.id },
+      order: { createdAt: 'DESC' },
+    });
+    return orders.map((order) => this.toPublicOrder(order));
+  }
+
   async findOne(user: User, id: string) {
     const order = await this.requireReadable(user, id);
     return this.toPublicOrder(order);

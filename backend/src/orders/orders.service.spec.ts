@@ -729,3 +729,35 @@ describe('OrdersService plans', () => {
     );
   });
 });
+
+describe('OrdersService incoming', () => {
+  it('lista los traslados cuyo destino es la central del despachador', async () => {
+    const { service, orders } = build();
+    orders.find.mockResolvedValue([
+      receivedOrder({
+        requesterId: null,
+        originHubId: origin.id,
+        destinationHubId: destination.id,
+        destinationKind: DestinationKind.HUB,
+      }),
+    ]);
+
+    const rows = await service.listIncoming(dispatcher());
+
+    expect(rows).toHaveLength(1);
+    expect(orders.find).toHaveBeenCalledWith({
+      where: {
+        destinationKind: DestinationKind.HUB,
+        destinationHubId: destination.id,
+      },
+      order: { createdAt: 'DESC' },
+    });
+  });
+
+  it('rechaza a quien no es despachador', async () => {
+    const { service } = build();
+    await expect(service.listIncoming(requester())).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+  });
+});
