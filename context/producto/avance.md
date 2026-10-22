@@ -651,6 +651,25 @@ el administrador no puede editar una central (punto 8, nuevo).
 - `flutter analyze` sin issues; 189 tests en verde (3 nuevos en
   `fase10_fixes_test`).
 
+## Pruebas de la Segunda Parte (parte de Oscar)
+
+Guía: `GUIA_EJECUCION_PRUEBAS.md` (la comparte el equipo; no está en git).
+Las capturas no se suben al repositorio; solo los archivos de prueba, en
+ramas `test/...`.
+
+| Fase | Qué | Estado |
+| --- | --- | --- |
+| T1 | Unitarias Jest: CU-20 (`fleet.cu20.spec.ts`, CP-20-01 a 10) y CU-10 (`orders.cu10.spec.ts`, CP-10-01 a 11) | Hecha, rama `test/unitarias-cu20-cu10` |
+| T2 | Cypress (instalar) e integración descendente CD-06 a CD-10 | Pendiente |
+| T3 | Hilos de entrega CH-04 a CH-08 | Pendiente |
+| T4 | Aceptación con Swagger (CA005, CA006, CA009, CA010), Lighthouse, LambdaTest y ambiente | Pendiente |
+
+T1: 19 casos en verde y 2 en rojo **a propósito** (sección 8.1 de la guía):
+CP-20-10 (mantenimiento sin motivo se acepta) y CP-10-11 (medicamento vacío
+no da «El medicamento es obligatorio.»). No se corrigen hasta tener todas las
+capturas. CU-10 fija el reloj en 2026-10-16 para que las fechas del documento
+no cambien de resultado con los días.
+
 ## Pendiente del backend
 
 Vive en [`pendientes-backend.md`](pendientes-backend.md), para que la persona
