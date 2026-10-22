@@ -23,7 +23,9 @@
     "seed:test": "ts-node scripts/seed-test.ts seed",
     "seed:clean": "ts-node scripts/seed-test.ts clean",
     "seed:demo": "ts-node scripts/seed-demo.ts seed",
-    "seed:demo:clean": "ts-node scripts/seed-demo.ts clean"
+    "seed:demo:clean": "ts-node scripts/seed-demo.ts clean",
+    "test:int": "cypress run",
+    "test:int:open": "cypress open"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -62,6 +64,7 @@
     "@types/node": "^24.0.0",
     "@types/passport-jwt": "^4.0.1",
     "@types/supertest": "^7.0.0",
+    "cypress": "^16.2.0",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",

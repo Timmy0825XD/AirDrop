@@ -660,7 +660,7 @@ ramas `test/...`.
 | Fase | Qué | Estado |
 | --- | --- | --- |
 | T1 | Unitarias Jest: CU-20 (`fleet.cu20.spec.ts`, CP-20-01 a 10) y CU-10 (`orders.cu10.spec.ts`, CP-10-01 a 11) | Hecha, rama `test/unitarias-cu20-cu10` |
-| T2 | Cypress (instalar) e integración descendente CD-06 a CD-10 | Pendiente |
+| T2 | Cypress (instalar) e integración descendente CD-06 a CD-10 | Hecha, rama `test/integracion-descendente` |
 | T3 | Hilos de entrega CH-04 a CH-08 | Pendiente |
 | T4 | Aceptación con Swagger (CA005, CA006, CA009, CA010), Lighthouse, LambdaTest y ambiente | Pendiente |
 
@@ -669,6 +669,17 @@ CP-20-10 (mantenimiento sin motivo se acepta) y CP-10-11 (medicamento vacío
 no da «El medicamento es obligatorio.»). No se corrigen hasta tener todas las
 capturas. CU-10 fija el reloj en 2026-10-16 para que las fechas del documento
 no cambien de resultado con los días.
+
+T2: Cypress 16 en `backend/` (`pnpm test:int`); los casos van por la API
+con `cy.request` y cada uno arranca con `seed:test` (task de Node, porque
+Cypress 16 quitó `cy.exec`). 14 de 15 pasos en verde; CD-10 paso 2 sale
+**Fallido**: una imagen de 3 MB recibe 413 (límite de 3 MB del JSON en
+`main.ts`, la imagen en base64 pesa ~4 MB) y no el 400 «La imagen de la
+fórmula debe pesar hasta 2 MB.». El paso 3 de CD-09 (Redis caído) se corre
+aparte con el servidor sin Redis (`REDIS_CAIDO=1`).
+Hallazgo de datos: la central A de `seed:test` (10.4631, -73.2532) queda
+dentro de la geovalla de la demo «Zona de eventos Parque de la Leyenda», así
+que nada sale de ahí; los despachos de las pruebas salen de la central B.
 
 ## Pendiente del backend
 

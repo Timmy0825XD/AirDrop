@@ -1,3 +1,8 @@
 /dist
 /coverage
 *.js.map
+
+# Cypress (capturas y videos se entregan por fuera del repo)
+/cypress/screenshots
+/cypress/videos
+/cypress/downloads
