@@ -49,6 +49,43 @@ Cypress.Commands.add('activarCentralB', (operador, despachadorB) => {
   });
 });
 
+/** Consulta el pedido cada 3 s hasta ver `estado` (máximo `intentos`). */
+Cypress.Commands.add('esperarEstado', (token, id, estado, intentos) => {
+  return cy.api(token, 'GET', `/orders/${id}`).then((respuesta) => {
+    if (respuesta.body.status === estado || intentos <= 1) {
+      expect(respuesta.body.status, `estado del pedido`).to.eq(estado);
+      return cy.wrap(respuesta.body, { log: false });
+    }
+    cy.wait(3000, { log: false });
+    return cy.esperarEstado(token, id, estado, intentos - 1);
+  });
+});
+
+/**
+ * Recorre el flujo real hasta «en espera de entrega»: urgencia del
+ * solicitante, autorización y confirmación de carga en la central B, y vuelo
+ * hasta el aterrizaje (unos 2 minutos, necesita Redis). Devuelve el id.
+ */
+Cypress.Commands.add(
+  'pedidoEnEsperaDeEntrega',
+  (solicitante, despachador, urgencia) => {
+    return cy
+      .api(solicitante, 'POST', '/orders/emergencies', urgencia)
+      .then((pedido) => {
+        const id = pedido.body.id;
+        cy.api(despachador, 'POST', `/orders/${id}/authorize`, {})
+          .its('body.status')
+          .should('eq', 'pending_load');
+        cy.api(despachador, 'POST', `/orders/${id}/confirm-load`)
+          .its('status')
+          .should('eq', 201);
+        cy.log('Vuelo en curso: esperando el aterrizaje');
+        cy.esperarEstado(solicitante, id, 'awaiting_delivery', 100);
+        return cy.wrap(id, { log: false });
+      });
+  },
+);
+
 /** Petición autenticada que no falla por el código HTTP: el caso lo revisa. */
 Cypress.Commands.add('api', (token, method, url, body) => {
   return cy.request({
