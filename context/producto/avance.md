@@ -661,7 +661,7 @@ ramas `test/...`.
 | --- | --- | --- |
 | T1 | Unitarias Jest: CU-20 (`fleet.cu20.spec.ts`, CP-20-01 a 10) y CU-10 (`orders.cu10.spec.ts`, CP-10-01 a 11) | Hecha, rama `test/unitarias-cu20-cu10` |
 | T2 | Cypress (instalar) e integración descendente CD-06 a CD-10 | Hecha, rama `test/integracion-descendente` |
-| T3 | Hilos de entrega CH-04 a CH-08 | Pendiente |
+| T3 | Hilos de entrega CH-04 a CH-08 | Hecha, rama `test/integracion-hilos` |
 | T4 | Aceptación con Swagger (CA005, CA006, CA009, CA010), Lighthouse, LambdaTest y ambiente | Pendiente |
 
 T1: 19 casos en verde y 2 en rojo **a propósito** (sección 8.1 de la guía):
@@ -680,6 +680,12 @@ aparte con el servidor sin Redis (`REDIS_CAIDO=1`).
 Hallazgo de datos: la central A de `seed:test` (10.4631, -73.2532) queda
 dentro de la geovalla de la demo «Zona de eventos Parque de la Leyenda», así
 que nada sale de ahí; los despachos de las pruebas salen de la central B.
+
+T3: CH-04 a CH-07 en Cypress (`cypress/e2e/ch-*.cy.js`) recorren el flujo
+real hasta «en espera de entrega» (vuelo de ~2 min, necesita Redis) con
+`DELIVERY_WAIT_MS=10000` al iniciar el servidor. CH-08 es Jest + supertest
+(`orders.ch08.spec.ts`) con la caída de la base simulada (el `save` lanza
+error): responde 500 y no queda pedido. 16 de 16 pasos en verde.
 
 ## Pendiente del backend
 
