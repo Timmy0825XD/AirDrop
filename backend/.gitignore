@@ -6,3 +6,8 @@
 /cypress/screenshots
 /cypress/videos
 /cypress/downloads
+
+# JMeter (resultados y reportes se entregan como capturas)
+/jmeter/resultados
+*.jtl
+jmeter.log
