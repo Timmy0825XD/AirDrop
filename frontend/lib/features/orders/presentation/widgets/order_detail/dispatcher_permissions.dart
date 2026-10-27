@@ -30,12 +30,12 @@ class DispatcherPermissions {
   bool get canConfirmLoad =>
       order.awaitsLoad && myHubId != null && order.originHubId == myHubId;
 
-  /// Ver el vuelo: solo la central de origen. La de destino no tiene mapa
-  /// (Nest respondería 404). Entregado también: el dron vuelve a su central.
+  /// Ver el vuelo: la central de origen y la que recibe el traslado (esta
+  /// solo ve el mapa). Entregado también: el dron vuelve a su central.
   bool get canWatchFlight =>
       (order.hasFlight || order.status == OrderStatus.delivered) &&
       myHubId != null &&
-      order.originHubId == myHubId;
+      (order.originHubId == myHubId || onlyDestination);
 
   /// El código de un traslado: lo ve la central de destino desde que se
   /// confirma la carga, y lo escribe cuando el dron aterriza allí.

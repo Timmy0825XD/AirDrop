@@ -25,7 +25,32 @@ describe('telemetryAccess', () => {
   const order = {
     requesterId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     originHubId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+    destinationHubId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
   };
+
+  it('gives the destination dispatcher the map only', () => {
+    const transfer = { ...order, requesterId: null };
+    expect(
+      telemetryAccess(
+        {
+          id: 'receiver',
+          role: UserRole.DISPATCHER,
+          hubIds: [order.destinationHubId],
+        },
+        transfer,
+      ),
+    ).toEqual({ view: 'map', alerts: false });
+    expect(
+      telemetryAccess(
+        {
+          id: 'receiver',
+          role: UserRole.FLEET_OPERATOR,
+          hubIds: [order.destinationHubId],
+        },
+        transfer,
+      ),
+    ).toBeNull();
+  });
 
   it('gives the requester the map and the operator the full packet with alerts', () => {
     expect(
