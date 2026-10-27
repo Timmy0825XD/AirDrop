@@ -13,12 +13,26 @@ export type TelemetryAccess = {
 
 export function telemetryAccess(
   user: { id: string; role: UserRole; hubIds: string[] },
-  order: { requesterId: string | null; originHubId: string | null },
+  order: {
+    requesterId: string | null;
+    originHubId: string | null;
+    destinationHubId: string | null;
+  },
 ): TelemetryAccess | null {
   if (user.role === UserRole.REQUESTER) {
     if (order.requesterId !== user.id) {
       return null;
     }
+    return { view: 'map', alerts: false };
+  }
+  // La central que recibe el traslado sigue el vuelo como el solicitante:
+  // solo el mapa, sin los datos de la aeronave.
+  if (
+    user.role === UserRole.DISPATCHER &&
+    order.destinationHubId &&
+    order.destinationHubId !== order.originHubId &&
+    user.hubIds.includes(order.destinationHubId)
+  ) {
     return { view: 'map', alerts: false };
   }
   if (!order.originHubId || !user.hubIds.includes(order.originHubId)) {

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
+import '../../../core/widgets/auto_refresh.dart';
 import '../../../core/widgets/confirm_sheet.dart';
 import '../../../core/widgets/message_view.dart';
 import '../../../core/widgets/rise_in.dart';
@@ -87,14 +88,20 @@ class _PlanDetailScreenState extends ConsumerState<PlanDetailScreen> {
             onBack: () => SectionHeader.backOrHome(context),
           ),
           Expanded(
-            child: switch (detail) {
-              AsyncValue(hasValue: true, hasError: false, :final value?) => _content(value),
-              AsyncError(:final error) => MessageView(
-                icon: Icons.cloud_off_rounded,
-                message: ApiException.messageOf(error),
-              ),
-              _ => const Center(child: CircularProgressIndicator()),
-            },
+            // Sin socket: se pide de nuevo cada 10 s para que el estado de
+            // cada entrega no se quede en "Recibido" con el dron ya volando.
+            child: AutoRefresh(
+              onTick: () => ref.invalidate(planDetailProvider(widget.planId)),
+              child: switch (detail) {
+                AsyncValue(hasValue: true, hasError: false, :final value?) =>
+                  _content(value),
+                AsyncError(:final error) => MessageView(
+                  icon: Icons.cloud_off_rounded,
+                  message: ApiException.messageOf(error),
+                ),
+                _ => const Center(child: CircularProgressIndicator()),
+              },
+            ),
           ),
         ],
       ),

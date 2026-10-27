@@ -29,7 +29,11 @@ export class TelemetryAccessService {
     }
     return telemetryAccess(
       { id: user.id, role: user.role, hubIds: assignedHubIds(user) },
-      { requesterId: order.requesterId, originHubId: order.originHubId },
+      {
+        requesterId: order.requesterId,
+        originHubId: order.originHubId,
+        destinationHubId: order.destinationHubId,
+      },
     );
   }
 }
