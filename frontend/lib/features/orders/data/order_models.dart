@@ -45,6 +45,8 @@ enum DestinationKind {
 }
 
 enum OrderStatus {
+  scheduled('scheduled', 'Agendado'),
+  awaitingConfirmation('awaiting_confirmation', 'Por confirmar'),
   received('received', 'Recibido'),
   underReview('under_review', 'En revisión'),
   assigned('assigned', 'Asignado'),
@@ -56,7 +58,9 @@ enum OrderStatus {
   returned('returned', 'Devuelto'),
   rejected('rejected', 'Rechazado'),
   reassigned('reassigned', 'Reasignado'),
-  cancelled('cancelled', 'Cancelado');
+  cancelled('cancelled', 'Cancelado'),
+  skipped('skipped', 'Omitido'),
+  expired('expired', 'Vencido');
 
   const OrderStatus(this.apiValue, this.label);
 

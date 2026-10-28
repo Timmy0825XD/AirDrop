@@ -5,6 +5,7 @@ import { FallbackKind } from '../common/enums/fallback-kind.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
+import { assertDispatchWindow } from '../orders/plan-dispatch.rules';
 import { isAwaitingHub } from './fallback.rules';
 
 /** El inventario no guarda masa. Cada unidad cuenta 0,5 kg. */
@@ -72,6 +73,9 @@ export type AuthorizableOrder = {
   destinationKind: DestinationKind;
   saleType: SaleType;
   scheduledFor: string | null;
+  scheduledAt?: Date | null;
+  windowEndsAt?: Date | null;
+  reassignedFromHubId?: string | null;
   latitude: number | null;
   longitude: number | null;
   originHubId: string | null;
@@ -104,6 +108,7 @@ export function assertCanAuthorize(
   order: AuthorizableOrder,
   today: string,
   prescriptionVerified?: boolean,
+  now?: Date,
 ): void {
   if (!isAwaitingHub(order)) {
     throw new BadRequestException(ONLY_RECEIVED_IS_AUTHORIZED);
@@ -121,6 +126,9 @@ export function assertCanAuthorize(
     order.scheduledFor > today
   ) {
     throw new BadRequestException(SCHEDULED_TOO_EARLY);
+  }
+  if (now) {
+    assertDispatchWindow(order, now);
   }
   if (order.latitude == null || order.longitude == null) {
     throw new BadRequestException(MISSING_DESTINATION);

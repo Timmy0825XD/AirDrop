@@ -8,15 +8,20 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository } from 'typeorm';
+import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { DroneStatus } from '../common/enums/drone-status.enum';
+import { MissionType } from '../common/enums/mission-type.enum';
+import { NotificationKind } from '../common/enums/notification-kind.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { RouteLeg } from '../common/enums/route-leg.enum';
 import { DeliveryCode } from '../delivery/delivery-code.entity';
 import { isDeliveryWaitOver, pickupWaitMs } from '../delivery/delivery.rules';
 import { Drone } from '../fleet/drone.entity';
 import { Hub } from '../hubs/hub.entity';
+import { InboxService } from '../notifications/inbox.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Order } from '../orders/order.entity';
+import { departureCopy } from '../orders/plan-dispatch.rules';
 import { PlannedCorridor, reverseCorridor } from '../routing/routing.rules';
 import { RoutePlannerService } from '../routing/route-planner.service';
 import { TELEMETRY_UNAVAILABLE } from '../telemetry/telemetry.rules';
@@ -58,6 +63,12 @@ type FlightSession = {
   model: FlightModel;
   progress: FlightProgress;
   loadConfirmedAt: Date;
+  /** Aviso de despegue, solo en la ida de un programado que todavía no volaba. */
+  departure: {
+    toHub: boolean;
+    requesterId: string | null;
+    destinationHubId: string | null;
+  } | null;
 };
 
 @Injectable()
@@ -84,6 +95,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     private readonly routes: RoutePlannerService,
     private readonly telemetry: TelemetryPublisher,
     private readonly notifications: NotificationsService,
+    private readonly inbox: InboxService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -367,6 +379,16 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       },
       progress,
       loadConfirmedAt: order.loadConfirmedAt,
+      departure:
+        !returning &&
+        order.missionType === MissionType.SCHEDULED &&
+        order.status === OrderStatus.PENDING_LOAD
+          ? {
+              toHub: order.destinationKind === DestinationKind.HUB,
+              requesterId: order.requesterId,
+              destinationHubId: order.destinationHubId,
+            }
+          : null,
     });
   }
 
@@ -497,6 +519,9 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       for (const status of step.statusChanges) {
         await this.orders.update({ id: orderId }, { status });
         await this.notifications.statusChanged(orderId, status);
+        if (status === OrderStatus.IN_FLIGHT) {
+          await this.noteDeparture(session);
+        }
       }
       const landedAt = await this.syncMission(session, step);
       for (const kind of step.alerts) {
@@ -557,6 +582,37 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
         await this.notifications.alert(orderId, cold.droneId, 'cold_chain');
         await this.markColdChainAlert(orderId, now);
       }
+    }
+  }
+
+  /** RU-30: al despegar, quien recibe sabe a qué hora llega. Una sola vez. */
+  private async noteDeparture(session: FlightSession): Promise<void> {
+    const departure = session.departure;
+    if (!departure) {
+      return;
+    }
+    session.departure = null;
+    const arrival = new Date(
+      Date.now() + outboundDurationMs(session.corridor, session.model),
+    );
+    const notice = {
+      kind: NotificationKind.DEPARTED,
+      orderId: session.orderId,
+      ...departureCopy(arrival, departure.toHub),
+    };
+    try {
+      if (departure.toHub && departure.destinationHubId) {
+        await this.inbox.notifyHubDispatchers(departure.destinationHubId, notice);
+        return;
+      }
+      if (departure.requesterId) {
+        await this.inbox.notifyUser(departure.requesterId, notice);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'aviso';
+      this.logger.warn(
+        `No se pudo avisar el despegue de ${session.orderId}: ${message}`,
+      );
     }
   }
 

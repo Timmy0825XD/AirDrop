@@ -15,7 +15,9 @@ class OrderStatusChip extends StatelessWidget {
     OrderStatus.awaitingDelivery || OrderStatus.delivered => PillTone.positive,
     OrderStatus.rejected ||
     OrderStatus.cancelled ||
-    OrderStatus.returned => PillTone.negative,
+    OrderStatus.returned ||
+    OrderStatus.skipped ||
+    OrderStatus.expired => PillTone.negative,
     _ => PillTone.neutral,
   };
 

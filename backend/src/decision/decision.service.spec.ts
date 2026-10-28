@@ -268,6 +268,10 @@ function build(state?: {
     routes as unknown as RoutePlannerService,
     new EligibilityService(),
   );
+  const inbox = {
+    notifyUser: jest.fn().mockResolvedValue(undefined),
+    notifyHubDispatchers: jest.fn().mockResolvedValue(undefined),
+  };
   const service = new DecisionService(
     dataSource as unknown as DataSource,
     hubsService as unknown as HubsService,
@@ -276,6 +280,7 @@ function build(state?: {
     new FallbackService(hubEvaluation),
     flights as unknown as FlightClockService,
     notifications as unknown as NotificationsService,
+    inbox as never,
   );
   return {
     service,
@@ -287,6 +292,7 @@ function build(state?: {
     routes,
     flights,
     notifications,
+    inbox,
     saved,
     dataSource,
   };
@@ -727,24 +733,33 @@ describe('DecisionService scheduled fallback', () => {
     expect(notifications.statusChanged).not.toHaveBeenCalled();
   });
 
-  it('at the end of the day a scheduled order looks for another hub', async () => {
+  it('refuses to authorize after the operating window has closed', async () => {
     jest.useFakeTimers({
       now: lateNight,
       doNotFake: ['nextTick', 'setImmediate'],
     });
     const order = scheduledToday(lateNight);
-    const { service } = build({
+    const { service } = build({ order });
+    await expect(service.authorize(dispatcher(), order.id, {})).rejects.toThrow(
+      'La franja de esta entrega ya cerró.',
+    );
+  });
+
+  it('when the slot closes without takeoff it looks for another hub', async () => {
+    const order = scheduledToday(lateNight, { originHubId: HUB_ID });
+    const { service, inbox } = build({
       order,
       drones: [drone({ status: DroneStatus.MAINTENANCE })],
       hubs: [hub(), otherHub()],
       lotsByHub: { [OTHER_HUB_ID]: lot() },
       dronesByHub: { [OTHER_HUB_ID]: [drone({ id: HELD_ID })] },
     });
-    const result = await service.authorize(dispatcher(), order.id, {});
-    expect(result.status).toBe(OrderStatus.REASSIGNED);
-    expect(result.fallback?.kind).toBe(FallbackKind.HUB);
-    expect(result.originHubId).toBe(OTHER_HUB_ID);
-    expect(order.retryAfter).toBeNull();
+    const result = await service.expireMissed(order.id, lateNight);
+    expect(result?.status).toBe(OrderStatus.REASSIGNED);
+    expect(result?.fallback?.kind).toBe(FallbackKind.HUB);
+    expect(result?.originHubId).toBe(OTHER_HUB_ID);
+    expect(order.statusReason).toBe('La franja cerró sin despegue.');
+    expect(inbox.notifyUser).toHaveBeenCalled();
   });
 
   it('a due retry takes the drone that became free without asking for the formula again', async () => {

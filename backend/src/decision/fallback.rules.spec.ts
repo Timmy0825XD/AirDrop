@@ -57,6 +57,14 @@ describe('shouldRetry', () => {
     expect(shouldRetry(order(), morning, next)).toBe(true);
   });
 
+  it('does not retry once the next try would miss the slot', () => {
+    const closes = new Date(morning.getTime() + 10 * 60 * 1000);
+    const next = new Date(morning.getTime() + DEFAULT_SCHEDULED_RETRY_MS);
+    expect(shouldRetry(order({ windowEndsAt: closes }), morning, next)).toBe(
+      false,
+    );
+  });
+
   it('does not retry past midnight in Colombia', () => {
     const next = new Date(lateNight.getTime() + DEFAULT_SCHEDULED_RETRY_MS);
     expect(shouldRetry(order(), lateNight, next)).toBe(false);

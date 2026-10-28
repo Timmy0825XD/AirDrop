@@ -10,4 +10,8 @@ export enum NotificationKind {
   STOCK_WARNING = 'stock_warning',
   /** La entrega se omitió (sin confirmar o plan en pausa). */
   DELIVERY_SKIPPED = 'delivery_skipped',
+  /** El dron despegó y se avisa a qué hora llega. */
+  DEPARTED = 'departed',
+  /** La franja cerró sin despegue. */
+  DELIVERY_MISSED = 'delivery_missed',
 }

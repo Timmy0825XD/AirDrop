@@ -46,7 +46,7 @@ Si el tipo de venta es bajo fórmula, la imagen es obligatoria y el documento de
 
 ### RU-03 — Ver el estado
 
-Estados: agendado, por confirmar, recibido, en evaluación, asignado, pendiente de carga, en vuelo, en espera de entrega, entregado, en retorno, devuelto, rechazado, reasignado, omitido o cancelado. Agendado y por confirmar son de las entregas de un plan antes de que quien recibe confirme (RU-30); omitido es la entrega que no se confirmó o que quien recibe dejó pasar. Cancelar un plan deja en cancelado las entregas que todavía no tienen dron.
+Estados: agendado, por confirmar, recibido, en evaluación, asignado, pendiente de carga, en vuelo, en espera de entrega, entregado, en retorno, devuelto, rechazado, reasignado, omitido, vencido o cancelado. Agendado y por confirmar son de las entregas de un plan antes de que quien recibe confirme (RU-30); omitido es la entrega que no se confirmó o que quien recibe dejó pasar; vencido es la que no despegó al cerrar su franja. Cancelar un plan deja en cancelado las entregas que todavía no tienen dron.
 
 **Por qué.** Autorizar no es despegar. El solicitante tiene que distinguir “ya hay dron reservado” de “ya va en el aire”.
 
@@ -56,7 +56,7 @@ Ver el dron en el mapa desde que despega, en la ida y en el retorno.
 
 ### RU-05 — Avisos
 
-Aviso cuando el dron está por aterrizar, cuando espera el código o cuando cambia el estado. Las entregas programadas avisan el día anterior para confirmar, si puede faltar stock y si una entrega no sale. Esos avisos quedan en la bandeja de la app y llegan al correo, sin el nombre del medicamento.
+Aviso cuando el dron está por aterrizar, cuando espera el código o cuando cambia el estado. Las entregas programadas avisan el día anterior para confirmar, si puede faltar stock, cuando despegan (con la hora estimada de llegada) y si una entrega no sale. Esos avisos quedan en la bandeja de la app y llegan al correo, sin el nombre del medicamento.
 
 ### RU-06 — Alternativa, no un rechazo vacío
 
@@ -202,7 +202,7 @@ La crea el solicitante (destino: su ubicación) o el despachador que necesita st
 
 ### RF-10 — Programado
 
-Suministro, cantidad, calendario (días de la semana cada 1 a 4 semanas, un día del mes o fechas sueltas) con fin por fecha o por número de entregas, y la hora de la franja de 1 hora (en punto, de 07:00 a 17:00). El destino es la ubicación del solicitante o la central que pide el abastecimiento. Máximo 3 meses y, bajo fórmula, no más que su vigencia. Las entregas que empezarían en menos de 2 horas no se agendan. El plan guarda la regla y crea todas sus entregas al crearse; cambiar la regla rehace las que no tienen dron. Los planes anteriores (frecuencia única, semanal, quincenal o mensual con 8 semanas) siguen valiendo: su franja es todo el horario operativo y se pueden extender otras 8 semanas.
+Suministro, cantidad, calendario (días de la semana cada 1 a 4 semanas, un día del mes o fechas sueltas) con fin por fecha o por número de entregas, y la hora de la franja de 1 hora (en punto, de 07:00 a 17:00). El destino es la ubicación del solicitante o la central que pide el abastecimiento. Máximo 3 meses y, bajo fórmula, no más que su vigencia. Las entregas que empezarían en menos de 2 horas no se agendan. El plan guarda la regla y crea todas sus entregas al crearse; cambiar la regla rehace las que no tienen dron. Los planes anteriores (frecuencia única, semanal, quincenal o mensual con 8 semanas) siguen valiendo: su franja es todo el horario operativo y se pueden extender otras 8 semanas. El despachador ve el día agrupado por franja: si la entrega está confirmada, si hay stock, si la fórmula sigue vigente y hasta cuándo tiene que despegar para llegar antes del cierre. Si en una franja ya hay más entregas que drones en la central, el plan se crea igual y lo avisa.
 
 ### RF-11 — Elegibilidad
 
@@ -222,7 +222,7 @@ Estado y mapa desde el despegue, ida y retorno. No antes: todavía no hay vuelo.
 
 ### RF-16 y RF-24 — Avisos
 
-Cambios de estado, llegada, espera de código, retorno, temperatura, batería y urgencia quieta más de 5 minutos en recibido. El aviso de la cola se calcula al abrirla. Los avisos de las entregas programadas (confirmar, abastecimiento que llega o que hay que despachar, stock que puede faltar y entrega omitida) se guardan en una bandeja por cuenta y se mandan al correo; si el correo falla, el aviso igual queda.
+Cambios de estado, llegada, espera de código, retorno, temperatura, batería y urgencia quieta más de 5 minutos en recibido. El aviso de la cola se calcula al abrirla. Los avisos de las entregas programadas (confirmar, abastecimiento que llega o que hay que despachar, stock que puede faltar, despegue con hora de llegada y entrega omitida o vencida) se guardan en una bandeja por cuenta y se mandan al correo; si el correo falla, el aviso igual queda.
 
 ### RF-17 — Frío
 
@@ -240,7 +240,7 @@ Depende del servicio:
 | --- | --- |
 | Urgencia a una persona | Pasa a la central activa más cercana al destino que tenga el lote, un corredor libre y un dron elegible. Queda `reasignado` y entra primero en su cola. |
 | Urgencia entre centrales | Igual, con otra central de origen. Nunca la central que pidió. |
-| Programado | Sigue en recibido y se reintenta solo cada 15 minutos mientras el siguiente intento caiga el mismo día. Al terminar el día, busca otra central como una urgencia. |
+| Programado | Sigue en recibido y se reintenta solo cada 15 minutos mientras el siguiente intento caiga dentro de la franja. Si la franja cierra sin despegue, queda vencido, suelta el dron si ya estaba reservado y busca otra central como una urgencia. Esa central autoriza sin la franja original. |
 
 Un pedido se reasigna **una sola vez**. Si la central que lo recibe tampoco puede, o si ninguna central sirve, queda `reasignado` como **traslado convencional**: es final, ningún dron despega y quien pidió ve hasta tres centrales con el insumo (nombre, dirección, contacto y distancia). La central que recibe un pedido reasignado verifica la fórmula otra vez, y puede autorizarlo o rechazarlo.
 

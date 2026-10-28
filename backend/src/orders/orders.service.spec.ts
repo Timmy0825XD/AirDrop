@@ -830,6 +830,7 @@ describe('OrdersService hub history (HU-36)', () => {
           OrderStatus.REASSIGNED,
           OrderStatus.CANCELLED,
           OrderStatus.SKIPPED,
+          OrderStatus.EXPIRED,
         ]),
       },
       order: { createdAt: 'DESC' },

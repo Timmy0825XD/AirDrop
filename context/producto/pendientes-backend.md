@@ -263,7 +263,7 @@ parameters, but prepared statement "" requires 1` y fallan tanto
 **La app** lo necesita para probar contra datos conocidos sin tocar los de
 la demostración.
 
-## 12. Entregas programadas con calendario, franja y confirmación (RU-30) — En curso
+## 12. Entregas programadas con calendario, franja y confirmación (RU-30) — Hecho
 
 Rediseño en tres ramas (detalle en `learning/28-rediseno-entregas-programadas.md`).
 
@@ -328,15 +328,35 @@ Rediseño en tres ramas (detalle en `learning/28-rediseno-entregas-programadas.m
 - **Al cancelar un plan** también pasan a `cancelled` las entregas en
   `scheduled` y `awaiting_confirmation`.
 
-**Falta:**
+**Hecho en `feature/plan-agenda-despacho`:**
 
-1. `feature/plan-agenda-despacho`: `GET /orders/agenda?date=`, autorizar
-   solo desde 2 horas antes hasta el cierre de la franja, la entrega
-   `vencida` al cerrar sin despegar (con RF-18) y el aviso de despegue con
-   ETA.
+- `GET /orders/agenda?date=AAAA-MM-DD` (despachador de la central):
+  `{ date, drones, slots: [{ time, deliveries, overCapacity, orders }] }`.
+  Cada pedido trae lo de siempre más `time`, `confirmed`, `stockOk`,
+  `prescriptionValid` (`null` si no pide fórmula), `departBefore` (ISO, o
+  `null` si no hay corredor) y `availableQuantity`. `departBefore` es el
+  cierre de la franja menos el ETA de la ida.
+- Autorizar y confirmar la carga de un programado solo entre 2 horas antes
+  de la franja y su cierre. Fuera de eso: «Esta entrega se despacha desde 2
+  horas antes de la franja.» o «La franja de esta entrega ya cerró.»
+  Una entrega reasignada a otra central ya no usa esa franja.
+- Al cerrar la franja sin despegue: suelta el dron si estaba reservado,
+  queda `expired` si no hay central de origen, y si la hay aplica RF-18
+  (otra central o traslado convencional) con motivo «La franja cerró sin
+  despegue.» El reintento de 15 min solo cabe si el siguiente intento sigue
+  dentro de la franja.
+- Al despegar, aviso «Tu entrega programada salió» / «Salió un
+  abastecimiento programado», con la hora estimada de llegada. No nombra
+  el medicamento.
+- Al crear o cambiar el calendario de un plan con central de origen, la
+  respuesta trae `busySlots: [{ date, time, deliveries, drones }]`. No
+  bloquea el alta.
 
-**La app lo usará** en el formulario del plan (días, hora, fin y vista
-previa), en el detalle del plan (cambiar el calendario) y en el detalle de
-cada entrega (la franja, y los botones de confirmar, omitir y mover), y en
-una bandeja de avisos. Mientras no use `schedule`, la app sigue funcionando
-con `frequency` y no ve los estados nuevos.
+**La app lo usará** en el formulario del plan (días, hora, fin, vista
+previa y el aviso de franja llena), en el detalle del plan (cambiar el
+calendario) y en el detalle de cada entrega (la franja, y los botones de
+confirmar, omitir y mover), en la agenda del despachador y en una bandeja
+de avisos. Mientras no use `schedule`, la app sigue funcionando con
+`frequency`. Los estados nuevos ya no rompen el parseo (`scheduled`,
+`awaiting_confirmation`, `skipped`, `expired`); la agenda y los botones de
+la franja todavía no están en las pantallas.

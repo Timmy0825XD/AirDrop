@@ -7,6 +7,23 @@ type PostgresOptions = TypeOrmModuleOptions & {
   ssl?: boolean | object;
 };
 
+/** Postgres no agrega valores a un enum ya creado cuando TypeORM sincroniza. */
+async function addEnumValue(
+  boot: DataSource,
+  typeName: string,
+  label: string,
+): Promise<void> {
+  const rows = (await boot.query(`SELECT 1 FROM pg_type WHERE typname = $1`, [
+    typeName,
+  ])) as unknown[];
+  if (!rows.length) {
+    return;
+  }
+  await boot.query(
+    `ALTER TYPE "${typeName}" ADD VALUE IF NOT EXISTS '${label}'`,
+  );
+}
+
 async function tableExists(
   boot: DataSource,
   name: string,
@@ -185,6 +202,9 @@ export async function alignSprintSchema(
     if (!(await tableExists(boot, 'users'))) {
       return;
     }
+    await addEnumValue(boot, 'order_status', 'expired');
+    await addEnumValue(boot, 'notification_kind', 'departed');
+    await addEnumValue(boot, 'notification_kind', 'delivery_missed');
     await migrateHubStatus(boot);
     await copyLegacyHubAssignments(boot);
     await dropHubCreatorUnique(boot);
