@@ -46,7 +46,7 @@ Si el tipo de venta es bajo fórmula, la imagen es obligatoria y el documento de
 
 ### RU-03 — Ver el estado
 
-Estados: recibido, en evaluación, asignado, pendiente de carga, en vuelo, en espera de entrega, entregado, en retorno, devuelto, rechazado, reasignado o cancelado. Cancelar un plan deja en cancelado las ocurrencias que siguen en recibido.
+Estados: agendado, por confirmar, recibido, en evaluación, asignado, pendiente de carga, en vuelo, en espera de entrega, entregado, en retorno, devuelto, rechazado, reasignado, omitido o cancelado. Agendado y por confirmar son de las entregas de un plan antes de que quien recibe confirme (RU-30); omitido es la entrega que no se confirmó o que quien recibe dejó pasar. Cancelar un plan deja en cancelado las entregas que todavía no tienen dron.
 
 **Por qué.** Autorizar no es despegar. El solicitante tiene que distinguir “ya hay dron reservado” de “ya va en el aire”.
 
@@ -56,7 +56,7 @@ Ver el dron en el mapa desde que despega, en la ida y en el retorno.
 
 ### RU-05 — Avisos
 
-Aviso cuando el dron está por aterrizar, cuando espera el código o cuando cambia el estado.
+Aviso cuando el dron está por aterrizar, cuando espera el código o cuando cambia el estado. Las entregas programadas avisan el día anterior para confirmar, si puede faltar stock y si una entrega no sale. Esos avisos quedan en la bandeja de la app y llegan al correo, sin el nombre del medicamento.
 
 ### RU-06 — Alternativa, no un rechazo vacío
 
@@ -222,7 +222,7 @@ Estado y mapa desde el despegue, ida y retorno. No antes: todavía no hay vuelo.
 
 ### RF-16 y RF-24 — Avisos
 
-Cambios de estado, llegada, espera de código, retorno, temperatura, batería y urgencia quieta más de 5 minutos en recibido. El aviso de la cola se calcula al abrirla.
+Cambios de estado, llegada, espera de código, retorno, temperatura, batería y urgencia quieta más de 5 minutos en recibido. El aviso de la cola se calcula al abrirla. Los avisos de las entregas programadas (confirmar, abastecimiento que llega o que hay que despachar, stock que puede faltar y entrega omitida) se guardan en una bandeja por cuenta y se mandan al correo; si el correo falla, el aviso igual queda.
 
 ### RF-17 — Frío
 

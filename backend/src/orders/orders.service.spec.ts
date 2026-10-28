@@ -752,7 +752,14 @@ describe('OrdersService plans', () => {
     const result = await service.cancelPlan(requester(), id);
     expect(result.status).toBe(PlanStatus.CANCELLED);
     expect(orders.update).toHaveBeenCalledWith(
-      { planId: id, status: OrderStatus.RECEIVED },
+      {
+        planId: id,
+        status: In([
+          OrderStatus.SCHEDULED,
+          OrderStatus.AWAITING_CONFIRMATION,
+          OrderStatus.RECEIVED,
+        ]),
+      },
       {
         status: OrderStatus.CANCELLED,
         statusReason: 'El plan fue cancelado.',
@@ -822,6 +829,7 @@ describe('OrdersService hub history (HU-36)', () => {
           OrderStatus.REJECTED,
           OrderStatus.REASSIGNED,
           OrderStatus.CANCELLED,
+          OrderStatus.SKIPPED,
         ]),
       },
       order: { createdAt: 'DESC' },

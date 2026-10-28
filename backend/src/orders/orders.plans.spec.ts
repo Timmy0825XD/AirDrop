@@ -21,6 +21,7 @@ import { CreatePlanDto } from './dto/create-plan.dto';
 import { InventoryOfferQuery } from './inventory-offer.query';
 import { Order } from './order.entity';
 import {
+  PLAN_ALREADY_PAUSED,
   PLAN_RESCHEDULED_REASON,
   OrdersService,
   RULE_PLAN_NOT_EXTENDED,
@@ -153,6 +154,7 @@ function existingPlan(overrides: Partial<DeliveryPlan> = {}): DeliveryPlan {
     scheduleDates: [],
     occurrenceCount: null,
     deliveryTime: '10:00',
+    paused: false,
     prescriptionValidUntil: null,
     medicationName: 'Insulina NPH',
     saleType: SaleType.OVER_THE_COUNTER,
@@ -212,7 +214,8 @@ describe('OrdersService planes con calendario (RU-30)', () => {
     expect(saved[0].windowEndsAt?.toISOString()).toBe(
       '2026-11-05T16:00:00.000Z',
     );
-    expect(saved.every((order) => order.status === OrderStatus.RECEIVED)).toBe(
+    // A más de 24 horas: agendadas, esperan el aviso para confirmar.
+    expect(saved.every((order) => order.status === OrderStatus.SCHEDULED)).toBe(
       true,
     );
     const [stored] = plans.save.mock.calls[0];
@@ -345,6 +348,39 @@ describe('OrdersService planes con calendario (RU-30)', () => {
     expect(dates).not.toContain('2026-11-05');
     expect(dates).toContain('2026-11-12');
     expect(saved[0].scheduledAt?.toISOString()).toMatch(/T20:00:00/);
+  });
+
+  it('lo que cae en menos de 24 horas nace confirmado: quien arma el plan ya lo eligió', async () => {
+    const { service, saved } = build();
+    await service.createPlan(
+      requester(),
+      planDto({
+        schedule: {
+          kind: ScheduleKind.DATES,
+          dates: ['2026-11-03', '2026-11-10'],
+          time: '08:00',
+        },
+      }),
+    );
+    expect(saved.map((order) => [order.scheduledFor, order.status])).toEqual([
+      ['2026-11-03', OrderStatus.RECEIVED],
+      ['2026-11-10', OrderStatus.SCHEDULED],
+    ]);
+    expect(saved[0].confirmedAt).toEqual(NOW);
+  });
+
+  it('pausar y reanudar el plan; no se pausa dos veces', async () => {
+    const plan = existingPlan();
+    const { service } = build({ plan });
+    await expect(
+      service.setPlanPaused(requester(), PLAN_ID, true),
+    ).resolves.toMatchObject({ paused: true });
+    await expect(
+      service.setPlanPaused(requester(), PLAN_ID, true),
+    ).rejects.toThrow(new BadRequestException(PLAN_ALREADY_PAUSED));
+    await expect(
+      service.setPlanPaused(requester(), PLAN_ID, false),
+    ).resolves.toMatchObject({ paused: false });
   });
 
   it('un plan con calendario no se extiende: se cambia su calendario', async () => {

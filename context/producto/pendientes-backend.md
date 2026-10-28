@@ -294,19 +294,49 @@ Rediseño en tres ramas (detalle en `learning/28-rediseno-entregas-programadas.m
 - Un plan con calendario no se extiende: responde 400 "Para alargar este
   plan cambia su calendario.".
 
+**Hecho en `feature/plan-confirmacion-avisos`:**
+
+- **Estados nuevos de un pedido:** `scheduled` (agendado), `awaiting_confirmation`
+  (por confirmar) y `skipped` (omitido).
+- **Con qué estado nacen las entregas de un plan con franja:**
+  - a más de 24 h, `scheduled`;
+  - a 24 h o menos, `received` ya confirmadas, porque quien arma el plan
+    las acaba de elegir.
+
+  Los planes con `frequency` siguen naciendo en `received`, como antes.
+- **T-24 h:** a una persona se le pasa a `awaiting_confirmation` y le llega
+  el aviso «Confirma tu entrega programada». Un abastecimiento a una central
+  pasa solo a `received` y avisa a los despachadores de destino y de origen.
+  Si hoy no alcanza el stock, llega además un aviso de stock.
+- **T-2 h:** lo que sigue sin confirmar pasa a `skipped` ("No se confirmó 2
+  horas antes de la franja.") y se avisa.
+- **Quien recibe** (la persona, o el despachador de la central de destino),
+  hasta 2 h antes y sin dron:
+  - `POST /orders/:id/confirm`;
+  - `POST /orders/:id/skip`;
+  - `POST /orders/:id/reschedule { date, time }`, al mismo día o al
+    siguiente. Mover la entrega cuenta como confirmarla.
+- **Pausar un plan:** `POST /orders/plans/:id/pause` y `/resume`. En pausa no
+  hay avisos, y a T-2 h se omite todo lo que no tenga dron. El plan trae
+  `paused`.
+- **Bandeja:**
+  - `GET /notifications?unread=true`, `PATCH /notifications/:id/read` y
+    `POST /notifications/read-all`, para cualquier rol;
+  - cada aviso también va al correo (Brevo). Los textos no nombran el
+    medicamento;
+  - cada pedido trae `confirmedAt`.
+- **Al cancelar un plan** también pasan a `cancelled` las entregas en
+  `scheduled` y `awaiting_confirmation`.
+
 **Falta:**
 
-1. `feature/plan-confirmacion-avisos`: bandeja de avisos
-   (`GET /notifications`), correo por Brevo, confirmar, omitir y mover una
-   entrega, la tarea de T-24 h (aviso y revisión de stock y fórmula) y la de
-   T-2 h (sin confirmar se omite). Estados nuevos: `agendado`,
-   `por confirmar`, `omitido`.
-2. `feature/plan-agenda-despacho`: `GET /orders/agenda?date=`, autorizar
+1. `feature/plan-agenda-despacho`: `GET /orders/agenda?date=`, autorizar
    solo desde 2 horas antes hasta el cierre de la franja, la entrega
    `vencida` al cerrar sin despegar (con RF-18) y el aviso de despegue con
    ETA.
 
 **La app lo usará** en el formulario del plan (días, hora, fin y vista
 previa), en el detalle del plan (cambiar el calendario) y en el detalle de
-cada entrega (la franja). Mientras no lo use, la app sigue funcionando con
-`frequency`.
+cada entrega (la franja, y los botones de confirmar, omitir y mover), y en
+una bandeja de avisos. Mientras no use `schedule`, la app sigue funcionando
+con `frequency` y no ve los estados nuevos.
