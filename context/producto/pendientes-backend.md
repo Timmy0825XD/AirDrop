@@ -48,9 +48,12 @@ despachador de la central de destino; los traslados se listan en
 
 **Falta:**
 
-1. **La ruta de regreso no viaja en el pedido.** `assignment.coordinates`
-   es solo la ida (el documento de la demo menciona `returnRoute`, pero Nest
-   no lo envía); en el regreso la app pinta la misma línea.
+1. ~~**La ruta de regreso no viaja en el pedido.**~~ Hecho en
+   `feature/ruta-regreso`: `assignment.returnRoute` (misma forma que
+   `assignment.route`) llega en los pedidos del despachador y del
+   solicitante. Es `null` hasta que el dron empieza a volver; el reloj la
+   calcula en ese momento con las geovallas vigentes, y si una la bloquea,
+   es la ida al revés.
 2. **El aviso de intentos agotados promete más de lo que pasa.** Dice "El
    dron regresa con el paquete", pero el pedido sigue en `awaiting_delivery`
    hasta que vencen los 5 minutos; recién ahí sale el dron.
