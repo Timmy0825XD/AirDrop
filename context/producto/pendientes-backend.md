@@ -84,13 +84,25 @@ retryAfter, reassignedAt }`, y `assignment: null`.
 **La app lo usará** en el detalle del despachador y del solicitante (CU-05):
 dejar de tratar el 409 como "sin dron" y mostrar `fallback`.
 
-## 3. Telemetría para el operador (RU-18, CU-19) — Pendiente
+## 3. Telemetría para el operador (RU-18, CU-19) — Hecho (rama `feature/telemetria-operador`)
 
-**Hoy.** El operador puede abrir el socket, pero ninguna ruta le dice qué
-pedido lleva cada dron, así que la app no tiene desde dónde abrir el mapa.
+**Antes.** El operador podía abrir el socket, pero ninguna ruta le decía qué
+pedido llevaba cada dron.
 
-**Debería:** listar los vuelos en curso de sus centrales (o devolver el
-`orderId` activo en cada dron de `GET /fleet/drones`).
+**Ahora:**
+
+- `GET /fleet/drones` trae `activeOrderId` y `phase` en cada dron en misión
+  (`null` en los demás). Tras una entrega, el regreso vacío sigue mostrando
+  ese pedido.
+- `GET /fleet/flights?hubId=` (operador) lista los vuelos en curso de sus
+  centrales: dron, pedido, estado, fase, tramo, posición, batería,
+  temperatura, ETA y `alerts { battery, failure, coldChain }`. Sin Redis el
+  vuelo sigue en la lista, sin fase ni posición.
+- Socket: con `subscribe-hub { hubId }` el operador recibe las `alert` de
+  todos los vuelos de esa central (batería, falla y frío), una sola vez
+  aunque además siga el pedido. El despachador en esa sala no las recibe.
+- Con `subscribe { orderId }` el operador ya veía el vuelo completo con
+  alertas.
 
 **La app lo usará** en la flota del operador (Fase 8).
 

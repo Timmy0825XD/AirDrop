@@ -15,6 +15,7 @@ function build(findUser: () => Promise<User | null>) {
   const access = {
     findUser: jest.fn(findUser),
     resolve: jest.fn().mockResolvedValue({ view: 'map', alerts: false }),
+    originHubOf: jest.fn().mockResolvedValue(null),
   };
   const publisher = { readFlight: jest.fn().mockResolvedValue(null) };
   const gateway = new TelemetryGateway(
@@ -25,9 +26,9 @@ function build(findUser: () => Promise<User | null>) {
   return { gateway, access };
 }
 
-function socket(disconnect = jest.fn()) {
+function socket(disconnect = jest.fn(), id = 'socket-1') {
   return {
-    id: 'socket-1',
+    id,
     handshake: { auth: { token: 'token' } },
     disconnect,
     join: jest.fn().mockResolvedValue(undefined),
@@ -116,3 +117,75 @@ describe('TelemetryGateway.subscribeHub', () => {
     }
   });
 });
+
+describe('TelemetryGateway alertas por central (CU-32)', () => {
+  const HUB_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+  const event = {
+    type: 'alert' as const,
+    orderId: ORDER_ID,
+    droneId: '33333333-3333-4333-8333-333333333333',
+    kind: 'cold_chain' as const,
+    message: 'La temperatura de la carga salió del rango de 2 a 8 °C.',
+  };
+
+  async function joined(role: UserRole, id: string) {
+    const user = {
+      id: USER_ID,
+      role,
+      status: UserStatus.ACTIVE,
+      hubAssignments: [{ hubId: HUB_ID }],
+    } as unknown as User;
+    const built = build(() => Promise.resolve(user));
+    const client = socket(jest.fn(), id);
+    await built.gateway.handleConnection(client);
+    await built.gateway.subscribeHub(client, { hubId: HUB_ID });
+    return { ...built, client };
+  }
+
+  it('el operador en la sala de la central recibe la alerta; el despachador no', async () => {
+    const operator = await joined(UserRole.FLEET_OPERATOR, 'op');
+    const dispatcher = await joined(UserRole.DISPATCHER, 'disp');
+    // Un mismo gateway con los dos sockets: se copian los estados.
+    const gateway = operator.gateway;
+    gateway['clients'].set('disp', dispatcher.gateway['clients'].get('disp')!);
+    operator.access.originHubOf.mockResolvedValue(HUB_ID);
+    gateway.server = {
+      in: (name: string) => ({
+        fetchSockets: () =>
+          Promise.resolve(
+            name === `hub:${HUB_ID}`
+              ? [operator.client, dispatcher.client]
+              : [],
+          ),
+      }),
+    } as never;
+
+    await gateway['dispatch'](event);
+
+    expect(emitOf(operator.client)).toHaveBeenCalledWith(
+      'alert',
+      expect.objectContaining({ kind: 'cold_chain', orderId: ORDER_ID }),
+    );
+    expect(emitOf(dispatcher.client)).not.toHaveBeenCalled();
+  });
+
+  it('quien ya sigue el pedido con alertas no la recibe dos veces', async () => {
+    const operator = await joined(UserRole.FLEET_OPERATOR, 'op');
+    operator.access.originHubOf.mockResolvedValue(HUB_ID);
+    operator.gateway['clients'].get('op')!.orders[ORDER_ID] = {
+      view: 'full',
+      alerts: true,
+    };
+    operator.gateway.server = {
+      in: () => ({ fetchSockets: () => Promise.resolve([operator.client]) }),
+    } as never;
+
+    await operator.gateway['dispatch'](event);
+
+    expect(emitOf(operator.client)).toHaveBeenCalledTimes(1);
+  });
+});
+
+function emitOf(client: Socket) {
+  return (client as unknown as { emit: jest.Mock }).emit;
+}
