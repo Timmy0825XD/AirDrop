@@ -7,20 +7,23 @@ type PostgresOptions = TypeOrmModuleOptions & {
   ssl?: boolean | object;
 };
 
-async function tableExists(boot: DataSource, name: string): Promise<boolean> {
-  const rows = await boot.query(`SELECT to_regclass($1) AS name`, [
+async function tableExists(
+  boot: DataSource,
+  name: string,
+): Promise<boolean> {
+  const rows = (await boot.query(`SELECT to_regclass($1) AS name`, [
     `public.${name}`,
-  ]);
+  ])) as Array<{ name: string | null }>;
   return Boolean(rows[0]?.name);
 }
 
 async function migrateHubStatus(boot: DataSource): Promise<void> {
-  const labels = await boot.query(
+  const labels = (await boot.query(
     `SELECT e.enumlabel
      FROM pg_enum e
      JOIN pg_type t ON e.enumtypid = t.oid
      WHERE t.typname = 'hub_status'`,
-  );
+  )) as Array<{ enumlabel: string }>;
   if (!labels.some((row) => row.enumlabel === 'pending_approval')) {
     return;
   }
@@ -82,11 +85,11 @@ async function copyLegacyHubAssignments(boot: DataSource): Promise<void> {
 }
 
 async function dropHubCreatorUnique(boot: DataSource): Promise<void> {
-  const indexes = await boot.query(
+  const indexes = (await boot.query(
     `SELECT indexname, indexdef
      FROM pg_indexes
      WHERE schemaname = 'public' AND tablename = 'hubs'`,
-  );
+  )) as Array<{ indexname: string; indexdef: string }>;
   for (const index of indexes) {
     const definition = index.indexdef.toLowerCase();
     if (
@@ -107,11 +110,11 @@ async function migrateInventorySaleType(boot: DataSource): Promise<void> {
   if (!(await tableExists(boot, 'inventory_items'))) {
     return;
   }
-  const columns = await boot.query(
+  const columns = (await boot.query(
     `SELECT column_name
      FROM information_schema.columns
      WHERE table_schema = 'public' AND table_name = 'inventory_items'`,
-  );
+  )) as Array<{ column_name: string }>;
   const names = new Set(columns.map((row) => row.column_name));
   if (names.has('requiresPrescription')) {
     await boot.query(
@@ -145,7 +148,9 @@ async function migrateInventorySaleType(boot: DataSource): Promise<void> {
     );
   }
   if (!names.has('lot')) {
-    await boot.query(`ALTER TABLE inventory_items ADD COLUMN lot varchar(20)`);
+    await boot.query(
+      `ALTER TABLE inventory_items ADD COLUMN lot varchar(20)`,
+    );
     await boot.query(
       `UPDATE inventory_items SET lot = 'L-0001' WHERE lot IS NULL`,
     );

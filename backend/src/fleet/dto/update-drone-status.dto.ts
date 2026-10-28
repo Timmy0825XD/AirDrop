@@ -1,10 +1,4 @@
-import {
-  IsIn,
-  IsOptional,
-  IsString,
-  Matches,
-  MaxLength,
-} from 'class-validator';
+import { IsIn, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
 import { DroneStatus } from '../../common/enums/drone-status.enum';
 import { FIELD_LIMITS } from '../../common/field-limits';
 
@@ -16,7 +10,8 @@ export const OPERATOR_DRONE_STATUSES = [
 
 export class UpdateDroneStatusDto {
   @IsIn(OPERATOR_DRONE_STATUSES, {
-    message: 'El estado debe ser available, maintenance o out_of_service.',
+    message:
+      'El estado debe ser available, maintenance o out_of_service.',
   })
   status: (typeof OPERATOR_DRONE_STATUSES)[number];
 

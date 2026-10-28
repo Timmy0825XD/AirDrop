@@ -150,9 +150,7 @@ export class UsersService {
     });
     const saved = await this.users.save(user);
     saved.hubAssignments = await this.assignments.save(
-      hubIds.map((hubId) =>
-        this.assignments.create({ userId: saved.id, hubId }),
-      ),
+      hubIds.map((hubId) => this.assignments.create({ userId: saved.id, hubId })),
     );
     return saved;
   }

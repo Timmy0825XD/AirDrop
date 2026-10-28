@@ -25,10 +25,7 @@ describe('AuthService OTP consume', () => {
     save: jest.Mock;
   }): AuthService {
     return new AuthService(
-      {
-        findByEmail: jest.fn().mockResolvedValue(user),
-        save: jest.fn(),
-      } as unknown as UsersService,
+      { findByEmail: jest.fn().mockResolvedValue(user), save: jest.fn() } as unknown as UsersService,
       codes as never,
       { sign: jest.fn().mockReturnValue('token') } as unknown as JwtService,
       { deliver: jest.fn() } as unknown as OtpDeliveryService,

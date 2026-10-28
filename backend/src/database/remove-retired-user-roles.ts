@@ -35,16 +35,16 @@ export async function removeRetiredUserRoles(
   }
 
   try {
-    const usersTable = await boot.query(
+    const usersTable = (await boot.query(
       `SELECT to_regclass('public.users') AS name`,
-    );
+    )) as Array<{ name: string | null }>;
     if (!hasRegclass(usersTable)) {
       return;
     }
 
-    const codesTable = await boot.query(
+    const codesTable = (await boot.query(
       `SELECT to_regclass('public.one_time_codes') AS name`,
-    );
+    )) as Array<{ name: string | null }>;
     if (hasRegclass(codesTable)) {
       await boot.query(
         `DELETE FROM one_time_codes WHERE "userId" IN (SELECT id FROM users WHERE role::text = $1)`,
@@ -53,12 +53,12 @@ export async function removeRetiredUserRoles(
     }
     await boot.query(`DELETE FROM users WHERE role::text = $1`, [RETIRED_ROLE]);
 
-    const labels = await boot.query(
+    const labels = (await boot.query(
       `SELECT e.enumlabel
        FROM pg_enum e
        JOIN pg_type t ON e.enumtypid = t.oid
        WHERE t.typname = 'user_role'`,
-    );
+    )) as Array<{ enumlabel: string }>;
     if (!labels.some((row) => row.enumlabel === RETIRED_ROLE)) {
       return;
     }
