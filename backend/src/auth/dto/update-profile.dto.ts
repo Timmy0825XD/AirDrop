@@ -28,6 +28,14 @@ export class UpdateProfileDto {
   })
   email?: string;
 
+  /** Obligatoria solo si cambia el correo. */
+  @IsOptional()
+  @IsString({ message: 'La contraseña actual no es válida.' })
+  @MaxLength(FIELD_LIMITS.passwordMax, {
+    message: `La contraseña no puede superar ${FIELD_LIMITS.passwordMax} caracteres.`,
+  })
+  currentPassword?: string;
+
   @IsOptional()
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.replace(/\D/g, '') : value,

@@ -170,18 +170,32 @@ junto a "Vuelos en curso".
 despachador. La app los muestra en "Traslados entrantes" (Fase 5), con
 "Recibir pedido" cuando el dron aterriza.
 
-## 7. Cambiar el correo sin verificarlo — Pendiente
+## 7. Cambiar el correo sin verificarlo — Hecho (rama `feature/confirmar-correo`)
 
-**Hoy.** `PATCH /auth/me` cambia el correo de una vez si no está tomado.
-El login y la recuperación de contraseña usan ese correo, así que un error
-de tipeo deja a la persona sin poder entrar ni recuperar la cuenta.
+**Antes.** `PATCH /auth/me` cambiaba el correo de una vez si no estaba
+tomado; un error de tipeo dejaba a la persona sin poder entrar.
 
-**Debería** (RNF de seguridad en [`requisitos.md`](requisitos.md)): mandar
-un código al correo nuevo y cambiarlo solo cuando se confirme, como en el
-registro.
+**Ahora** (RNF-04 en [`requisitos.md`](requisitos.md)):
 
-**La app lo usará** en el perfil: al guardar un correo nuevo, la misma
-pantalla de seis cajas del registro para confirmarlo.
+1. `PATCH /auth/me` con un `email` distinto exige `currentPassword`.
+   - Sin ella: 400 "Para cambiar el correo escribe tu contraseña actual.".
+   - Con una equivocada: 400 "La contraseña actual no es correcta.". Es
+     400 y no 401 para que la app no cierre la sesión.
+   - El correo **no cambia**: queda en `pendingEmail` (la respuesta lo
+     trae) y llega un código de 6 dígitos al correo nuevo, que vence en
+     10 min. El resto de campos se guarda como siempre.
+2. `POST /auth/me/email/confirm { code }` cambia el correo, limpia
+   `pendingEmail` y manda un aviso al correo anterior, con el nuevo
+   enmascarado. Si otra cuenta lo tomó entre tanto, responde 409.
+3. `POST /auth/me/email/resend` reenvía el código (5 por minuto).
+4. `DELETE /auth/me/email/pending` cancela el cambio.
+
+Mientras tanto, el login y la recuperación siguen con el correo actual.
+`GET /auth/me` trae `pendingEmail` (o `null`).
+
+**La app lo usará** en el perfil: al guardar un correo nuevo, pedir la
+contraseña y mostrar la pantalla de seis cajas del registro. **Hasta que lo
+haga, guardar un correo nuevo responde 400** (falta `currentPassword`).
 
 ## 8. Editar una central — Hecho (rama `feature/editar-central`)
 

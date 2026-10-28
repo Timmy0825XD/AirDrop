@@ -305,7 +305,7 @@ Sin código a los 5 minutos: vuelo de regreso, estados `en retorno` y luego `dev
 | RNF-01 | Contraseña con bcrypt | No guardar la clave en claro |
 | RNF-02 | HTTPS y WSS | El canal lleva datos de salud y la posición del vuelo |
 | RNF-03 | Cada endpoint comprueba el rol | El operador no abre una fórmula; el solicitante no autoriza |
-| RNF-04 | Tope de 5 intentos de login y bloqueo temporal. Sin SQL armado en texto ni XSS abierto | Evita adivinar la clave a fuerza |
+| RNF-04 | Tope de 5 intentos de login y bloqueo temporal. Sin SQL armado en texto ni XSS abierto. Cambiar el correo pide la contraseña actual y un código al correo nuevo; el anterior recibe un aviso | Evita adivinar la clave a fuerza, y que un error de tipeo o un teléfono prestado dejen a alguien sin su cuenta |
 | RNF-05 | Consentimiento explícito. La fórmula no va a logs y solo la ve el despachador que autoriza. El dashboard no identifica | [../legal/datos.md](../legal/datos.md) |
 | RNF-06 | La imagen de la fórmula se guarda con acceso restringido | Es dato sensible, no un adjunto público |
 | RNF-07 | 95 % de las peticiones REST por debajo de 800 ms en carga normal | La cola de urgencia no puede esperar al tablero |

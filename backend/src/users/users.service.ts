@@ -93,6 +93,7 @@ export class UsersService {
       id: user.id,
       fullName: user.fullName,
       email: user.email,
+      pendingEmail: user.pendingEmail ?? null,
       phone: user.phone,
       documentType: user.documentType,
       documentNumber: user.documentNumber,
