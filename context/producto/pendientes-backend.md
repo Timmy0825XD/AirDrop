@@ -221,13 +221,16 @@ operador, como las de batería). El pedido trae `coldChainAlert` y
 **La app lo usará** en la ficha del vuelo (aviso de frío) y al marcar el
 empaque de un retorno.
 
-## 10. Vencimiento del token (`JWT_EXPIRES_IN`) — Pendiente
+## 10. Vencimiento del token (`JWT_EXPIRES_IN`) — Hecho (rama `bugfix/jwt-expiracion`)
 
-**Hoy.** `auth.module.ts` fija el token en 8 horas y no lee `JWT_EXPIRES_IN`
-(`.env.example` dice `2h`).
+**Antes.** `auth.module.ts` fijaba el token en 8 horas y no leía
+`JWT_EXPIRES_IN` (`.env.example` decía `2h`).
 
-**Debería** ([`../../AGENTS.md`](../../AGENTS.md): "JWT con expiración"): leer
-la variable, o quitarla de `.env.example` y dejar las 8 horas documentadas.
+**Ahora:** se lee `JWT_EXPIRES_IN` en segundos o con unidad (`8h`, `30m`,
+`1d`). Sin la variable son 8 horas, y `.env.example` queda en `8h`. Un valor
+mal escrito detiene el arranque con un mensaje, para que nadie quede con
+sesiones de duración inesperada. Quien tenga `2h` en su `.env` local tendrá
+sesiones de 2 horas.
 
 **La app** no depende del valor: ante un `401` cierra sesión.
 
