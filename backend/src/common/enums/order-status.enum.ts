@@ -18,4 +18,6 @@ export enum OrderStatus {
   CANCELLED = 'cancelled',
   /** Quien recibe la omitió, o no confirmó 2 horas antes de la franja. */
   SKIPPED = 'skipped',
+  /** La franja cerró y el dron no despegó. */
+  EXPIRED = 'expired',
 }

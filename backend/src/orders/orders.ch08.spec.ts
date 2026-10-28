@@ -24,6 +24,7 @@ import { User } from '../users/user.entity';
 import { InventoryOfferQuery } from './inventory-offer.query';
 import { Order } from './order.entity';
 import { OrdersController } from './orders.controller';
+import { PlanAgendaService } from './plan-agenda.service';
 import { OrdersService } from './orders.service';
 
 // @nestjs/swagger se publica como ESM y Jest (CommonJS) no lo carga. Sus
@@ -100,6 +101,10 @@ describe('CH-08 — Interfaz – Inventario – Pedidos – BD (base de datos ca
       providers: [
         { provide: OrdersService, useValue: service },
         { provide: DecisionService, useValue: decision },
+        {
+          provide: PlanAgendaService,
+          useValue: { withCapacity: (plan: object) => plan },
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)

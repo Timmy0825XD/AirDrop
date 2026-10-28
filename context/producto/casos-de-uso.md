@@ -328,7 +328,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 
 - **Actor:** Sistema
 - **Antes:** CU-26 no encontró dron, en el momento de autorizar
-- **Pasos:** Muestra otra central con stock o avisa que toca un traslado convencional. El estado queda `reasignado`. Un programado primero espera un dron durante su día (RF-18).
+- **Pasos:** Muestra otra central con stock o avisa que toca un traslado convencional. El estado queda `reasignado`. Un programado primero espera un dron mientras el siguiente intento caiga dentro de su franja. Si la franja cierra sin despegue, la entrega queda vencida y aplica RF-18: pasa a `reasignado` (otra central o traslado convencional).
 - **Después:** Quien pidió ve la alternativa. Ningún dron despegó vacío.
 - **Por qué:** RU-06. El rechazo mudo no es una respuesta.
 

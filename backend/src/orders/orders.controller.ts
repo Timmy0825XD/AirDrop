@@ -20,6 +20,7 @@ import { UserRole } from '../common/enums/user-role.enum';
 import { AuthorizeOrderDto } from '../decision/dto/authorize-order.dto';
 import { DecisionService } from '../decision/decision.service';
 import { User } from '../users/user.entity';
+import { AgendaQueryDto } from './dto/agenda-query.dto';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
 import { CreateEmergencyDto } from './dto/create-emergency.dto';
 import { CreateHubEmergencyDto } from './dto/create-hub-emergency.dto';
@@ -29,6 +30,7 @@ import { HistoryQueryDto } from './dto/history-query.dto';
 import { PreviewPlanDto, UpdatePlanScheduleDto } from './dto/plan-schedule.dto';
 import { RejectOrderDto } from './dto/reject-order.dto';
 import { OrdersService } from './orders.service';
+import { PlanAgendaService } from './plan-agenda.service';
 
 @ApiTags('Pedidos')
 @ApiBearerAuth()
@@ -38,6 +40,7 @@ export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
     private readonly decisionService: DecisionService,
+    private readonly agenda: PlanAgendaService,
   ) {}
 
   @Get('catalog')
@@ -85,6 +88,13 @@ export class OrdersController {
     return this.ordersService.listScheduled(user);
   }
 
+  /** RU-30: el día del despachador, agrupado por franja. */
+  @Get('agenda')
+  @Roles(UserRole.DISPATCHER)
+  agendaFor(@CurrentUser() user: User, @Query() query: AgendaQueryDto) {
+    return this.agenda.list(user, query.date);
+  }
+
   @Get('pending-load')
   @Roles(UserRole.DISPATCHER)
   pendingLoad(@CurrentUser() user: User) {
@@ -99,14 +109,16 @@ export class OrdersController {
 
   @Post('plans')
   @Roles(UserRole.REQUESTER)
-  createPlan(@CurrentUser() user: User, @Body() dto: CreatePlanDto) {
-    return this.ordersService.createPlan(user, dto);
+  async createPlan(@CurrentUser() user: User, @Body() dto: CreatePlanDto) {
+    return this.agenda.withCapacity(await this.ordersService.createPlan(user, dto));
   }
 
   @Post('hub-plans')
   @Roles(UserRole.DISPATCHER)
-  createHubPlan(@CurrentUser() user: User, @Body() dto: CreateHubPlanDto) {
-    return this.ordersService.createHubPlan(user, dto);
+  async createHubPlan(@CurrentUser() user: User, @Body() dto: CreateHubPlanDto) {
+    return this.agenda.withCapacity(
+      await this.ordersService.createHubPlan(user, dto),
+    );
   }
 
   /** RU-30: las fechas y franjas que dejaría un calendario, sin crear nada. */
@@ -119,12 +131,14 @@ export class OrdersController {
 
   @Patch('plans/:id/schedule')
   @Roles(UserRole.REQUESTER, UserRole.DISPATCHER)
-  updatePlanSchedule(
+  async updatePlanSchedule(
     @CurrentUser() user: User,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() dto: UpdatePlanScheduleDto,
   ) {
-    return this.ordersService.updatePlanSchedule(user, id, dto);
+    return this.agenda.withCapacity(
+      await this.ordersService.updatePlanSchedule(user, id, dto),
+    );
   }
 
   @Get('plans')

@@ -176,6 +176,7 @@ export class Order {
   scheduledAt: Date | null;
 
   /** Cierre de la franja: después de esto la entrega vence. */
+  @Index()
   @Column({ type: 'timestamptz', nullable: true })
   windowEndsAt: Date | null;
 

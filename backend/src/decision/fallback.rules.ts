@@ -49,6 +49,8 @@ export type FallbackOrder = {
   reassignedAt: Date | null;
   retryAfter: Date | null;
   prescriptionVerifiedAt: Date | null;
+  /** Cierre de la franja. Sin él, el reintento sigue hasta la medianoche. */
+  windowEndsAt?: Date | null;
 };
 
 type HubPlace = LngLat & { id: string; name: string };
@@ -73,20 +75,25 @@ export function isAwaitingHub(order: {
 }
 
 /**
- * Solo un programado espera un dron, y solo mientras el siguiente intento
- * caiga el mismo día. Una urgencia no espera, y un pedido ya reasignado
- * tampoco: pasa al convencional.
+ * Solo un programado espera un dron. El siguiente intento tiene que caer
+ * dentro de la franja y, si no hay franja guardada, el mismo día. Una
+ * urgencia no espera, y un pedido ya reasignado tampoco.
  */
 export function shouldRetry(
   order: FallbackOrder,
   now: Date,
   nextRetryAt: Date,
 ): boolean {
-  return (
-    order.missionType === MissionType.SCHEDULED &&
-    canReassign(order) &&
-    todayInColombia(nextRetryAt) === todayInColombia(now)
-  );
+  if (order.missionType !== MissionType.SCHEDULED || !canReassign(order)) {
+    return false;
+  }
+  if (
+    order.windowEndsAt &&
+    nextRetryAt.getTime() >= order.windowEndsAt.getTime()
+  ) {
+    return false;
+  }
+  return todayInColombia(nextRetryAt) === todayInColombia(now);
 }
 
 /** Centrales que no se prueban con dron: la que falló, la de destino y la anterior. */

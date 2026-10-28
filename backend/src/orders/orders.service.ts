@@ -104,6 +104,7 @@ const CLOSED_STATUSES = [
   OrderStatus.REASSIGNED,
   OrderStatus.CANCELLED,
   OrderStatus.SKIPPED,
+  OrderStatus.EXPIRED,
 ];
 
 const DEFAULT_HISTORY_PAGE_SIZE = 20;

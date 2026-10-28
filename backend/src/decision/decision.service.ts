@@ -21,9 +21,21 @@ import { Hub } from '../hubs/hub.entity';
 import { HubsService } from '../hubs/hubs.service';
 import { InventoryItem } from '../inventory/inventory-item.entity';
 import { NotificationsService } from '../notifications/notifications.service';
+import { DestinationKind } from '../common/enums/destination-kind.enum';
+import { NotificationKind } from '../common/enums/notification-kind.enum';
+import { InboxService } from '../notifications/inbox.service';
 import { presentOrder } from '../orders/order.presenter';
 import { Order } from '../orders/order.entity';
 import { todayInColombia } from '../orders/orders.rules';
+import { SCHEDULE_LEAD_MS } from '../orders/plan-schedule.rules';
+import {
+  WINDOW_MISSED,
+  assertDispatchWindow,
+  dispatchWindow,
+  isMissedDeparture,
+  isWindowClosed,
+  missedCopy,
+} from '../orders/plan-dispatch.rules';
 import { PlannedCorridor } from '../routing/routing.rules';
 import { RoutePlannerService } from '../routing/route-planner.service';
 import { FlightClockService } from '../simulation/flight-clock.service';
@@ -68,6 +80,7 @@ export class DecisionService {
     private readonly fallback: FallbackService,
     private readonly flights: FlightClockService,
     private readonly notifications: NotificationsService,
+    private readonly inbox: InboxService,
   ) {}
 
   async authorize(user: User, orderId: string, dto: AuthorizeOrderDto = {}) {
@@ -110,6 +123,9 @@ export class DecisionService {
       if (!hub) {
         return null;
       }
+      if (isWindowClosed(order, now)) {
+        return this.expireLocked(manager, order, now);
+      }
       return this.authorizeIn(
         manager,
         hub,
@@ -120,7 +136,30 @@ export class DecisionService {
     });
     if (result) {
       await this.announce(result, true);
+      if (result.statusReason === WINDOW_MISSED) {
+        await this.notifyMissed(result);
+      }
     }
+    return result;
+  }
+
+  /** La franja cerró con el dron en tierra: suelta la reserva y aplica RF-18. */
+  async expireMissed(orderId: string, now = new Date()) {
+    const result = await this.dataSource.transaction(async (manager) => {
+      const order = await manager.findOne(Order, {
+        where: { id: orderId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!order || !isMissedDeparture(order, now)) {
+        return null;
+      }
+      return this.expireLocked(manager, order, now);
+    });
+    if (!result) {
+      return null;
+    }
+    await this.announce(result, true);
+    await this.notifyMissed(result);
     return result;
   }
 
@@ -146,6 +185,7 @@ export class DecisionService {
       if (current.originHubId !== hub.id) {
         throw new ForbiddenException(NOT_THE_LOADING_HUB);
       }
+      assertDispatchWindow(current, new Date());
       const corridor = await this.routes.findOutboundMany([orderId]);
       if (!current.droneId || !corridor.has(orderId)) {
         throw new BadRequestException(FLIGHT_NOT_READY);
@@ -241,7 +281,7 @@ export class DecisionService {
       throw new NotFoundException('El pedido no existe.');
     }
     const today = todayInColombia(now);
-    assertCanAuthorize(order, today, prescriptionVerified);
+    assertCanAuthorize(order, today, prescriptionVerified, now);
     assertAuthorizingHub(order.originHubId, dispatcherHub.id);
     const originHubId = order.originHubId ?? dispatcherHub.id;
     const origin = await manager.findOne(Hub, { where: { id: originHubId } });
@@ -374,6 +414,54 @@ export class DecisionService {
     order.dispatchedLotExpiresOn = lot.expirationDate;
   }
 
+  private async expireLocked(
+    manager: EntityManager,
+    order: Order,
+    now: Date,
+  ) {
+    if (order.droneId) {
+      const drone = await manager.findOne(Drone, {
+        where: { id: order.droneId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (drone?.status === DroneStatus.IN_MISSION) {
+        drone.status = DroneStatus.AVAILABLE;
+        await manager.save(drone);
+      }
+      await this.routes.deleteOutbound(order.id, manager);
+      order.droneId = null;
+      order.inventoryItemId = null;
+    }
+    const window = dispatchWindow(order);
+    if (window && !order.scheduledAt) {
+      order.scheduledAt = new Date(window.opensAt.getTime() + SCHEDULE_LEAD_MS);
+    }
+    if (window && !order.windowEndsAt) {
+      order.windowEndsAt = window.closesAt;
+    }
+    order.statusReason = WINDOW_MISSED;
+    const hub = order.originHubId
+      ? await manager.findOne(Hub, { where: { id: order.originHubId } })
+      : null;
+    if (!hub || order.latitude == null || order.longitude == null) {
+      order.status = OrderStatus.EXPIRED;
+      await manager.save(order);
+      return { ...presentOrder(order), assignment: null };
+    }
+    const polygons = await this.routes.loadPolygons(manager);
+    await this.fallback.resolve(
+      manager,
+      order,
+      hub,
+      todayInColombia(now),
+      polygons,
+      now,
+    );
+    order.statusReason = WINDOW_MISSED;
+    await manager.save(order);
+    return { ...presentOrder(order), assignment: null };
+  }
+
   private async withFallback(
     manager: EntityManager,
     order: Order,
@@ -397,6 +485,45 @@ export class DecisionService {
    * Avisos por el socket, ya confirmada la transacción. Un aviso que no sale
    * (Redis caído) no deshace la decisión: la app también refresca sola.
    */
+  private async notifyMissed(order: {
+    id: string;
+    destinationKind: DestinationKind;
+    requesterId: string | null;
+    destinationHubId: string | null;
+    scheduledAt: Date | null;
+    windowEndsAt: Date | null;
+    fallback: { kind: FallbackKind } | null;
+  }): Promise<void> {
+    if (!order.scheduledAt || !order.windowEndsAt) {
+      return;
+    }
+    const notice = {
+      kind: NotificationKind.DELIVERY_MISSED,
+      orderId: order.id,
+      ...missedCopy(
+        order.scheduledAt,
+        order.windowEndsAt,
+        order.fallback?.kind === FallbackKind.HUB,
+      ),
+    };
+    try {
+      if (order.destinationKind === DestinationKind.HUB) {
+        if (order.destinationHubId) {
+          await this.inbox.notifyHubDispatchers(order.destinationHubId, notice);
+        }
+        return;
+      }
+      if (order.requesterId) {
+        await this.inbox.notifyUser(order.requesterId, notice);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'aviso';
+      this.logger.warn(
+        `No se pudo avisar el vencimiento de ${order.id}: ${message}`,
+      );
+    }
+  }
+
   private async announce(
     order: { id: string; status: OrderStatus; originHubId: string | null },
     retried: boolean,
