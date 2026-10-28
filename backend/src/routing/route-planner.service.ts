@@ -81,6 +81,11 @@ export class RoutePlannerService {
     return this.findLegMany(orderIds, RouteLeg.OUTBOUND);
   }
 
+  /** Regresos ya planificados (el reloj los guarda al iniciar el regreso). */
+  findReturnMany(orderIds: string[]): Promise<Map<string, PlannedCorridor>> {
+    return this.findLegMany(orderIds, RouteLeg.RETURN);
+  }
+
   async findReturn(orderId: string): Promise<PlannedCorridor | null> {
     const routes = await this.findLegMany([orderId], RouteLeg.RETURN);
     return routes.get(orderId) ?? null;

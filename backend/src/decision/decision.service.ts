@@ -49,6 +49,11 @@ export type OrderAssignment = {
   identifier: string;
   modelName: string;
   route: PlannedCorridor;
+  /**
+   * Ruta de regreso, con las geovallas vigentes cuando empezó (la ida al
+   * revés si una geovalla nueva la bloquea). `null` hasta que el dron sale.
+   */
+  returnRoute: PlannedCorridor | null;
 };
 
 @Injectable()
@@ -202,14 +207,22 @@ export class DecisionService {
           where: { id: In(modelIds) },
         })
       : [];
-    const routes = await this.routes.findOutboundMany(
-      assigned.map((order) => order.id),
-    );
+    const assignedIds = assigned.map((order) => order.id);
+    const [routes, returnRoutes] = await Promise.all([
+      this.routes.findOutboundMany(assignedIds),
+      this.routes.findReturnMany(assignedIds),
+    ]);
     const dronesById = new Map(drones.map((drone) => [drone.id, drone]));
     const modelsById = new Map(models.map((model) => [model.id, model]));
     return orders.map((order) => ({
       ...order,
-      assignment: this.assignmentFor(order, dronesById, modelsById, routes),
+      assignment: this.assignmentFor(
+        order,
+        dronesById,
+        modelsById,
+        routes,
+        returnRoutes,
+      ),
     }));
   }
 
@@ -291,6 +304,7 @@ export class DecisionService {
         identifier: drone.identifier,
         modelName: model.name,
         route: corridor,
+        returnRoute: null,
       },
     };
   }
@@ -409,6 +423,7 @@ export class DecisionService {
     dronesById: Map<string, Drone>,
     modelsById: Map<string, DroneModel>,
     routes: Map<string, PlannedCorridor>,
+    returnRoutes: Map<string, PlannedCorridor>,
   ): OrderAssignment | null {
     if (!order.droneId) {
       return null;
@@ -424,6 +439,7 @@ export class DecisionService {
       identifier: drone.identifier,
       modelName: model.name,
       route,
+      returnRoute: returnRoutes.get(order.id) ?? null,
     };
   }
 

@@ -251,6 +251,7 @@ function build(state?: {
     saveOutbound: jest.fn(),
     deleteOutbound: jest.fn(),
     findOutboundMany: jest.fn().mockResolvedValue(new Map()),
+    findReturnMany: jest.fn().mockResolvedValue(new Map()),
   };
   const hubsService = {
     requireActive: jest.fn().mockResolvedValue(hub()),
@@ -301,6 +302,7 @@ describe('DecisionService.authorize', () => {
       identifier: 'WC-01',
       modelName: 'Wingcopter 198',
       route: corridor,
+      returnRoute: null,
     });
     expect(drones[0].status).toBe(DroneStatus.IN_MISSION);
     expect(currentLot?.quantity).toBe(8);
@@ -534,6 +536,8 @@ describe('DecisionService.listPendingLoad', () => {
       new Map([[pending.id, corridor]]),
     );
     const rows = await service.listPendingLoad(dispatcher());
+    // Todavía no despegó: no hay regreso planificado.
+    expect(rows[0].assignment?.returnRoute).toBeNull();
     expect(orders.find).toHaveBeenCalledWith({
       where: { originHubId: HUB_ID, status: OrderStatus.PENDING_LOAD },
       order: { updatedAt: 'DESC' },
@@ -565,7 +569,19 @@ describe('DecisionService.listInFlight', () => {
       throw new Error('Repositorio inesperado');
     });
     routes.findOutboundMany.mockResolvedValue(new Map([[flying.id, corridor]]));
+    const back: PlannedCorridor = {
+      altitudeM: 100,
+      distanceKm: 4.9,
+      coordinates: [
+        [-73.25, 10.46],
+        [-73.255, 10.465],
+        [-73.26, 10.47],
+      ],
+    };
+    routes.findReturnMany.mockResolvedValue(new Map([[flying.id, back]]));
     const rows = await service.listInFlight(dispatcher());
+    expect(rows[0].assignment?.returnRoute).toEqual(back);
+    expect(routes.findReturnMany).toHaveBeenCalledWith([flying.id]);
     expect(orders.find).toHaveBeenCalledWith({
       where: {
         originHubId: HUB_ID,
