@@ -187,16 +187,24 @@ registro.
 **La app lo usará** en el perfil: al guardar un correo nuevo, la misma
 pantalla de seis cajas del registro para confirmarlo.
 
-## 8. Editar una central — Pendiente
+## 8. Editar una central — Hecho (rama `feature/editar-central`)
 
-**Hoy.** Una central solo se crea y se suspende o reactiva. Si el nombre,
-la dirección o el contacto quedan mal escritos (pasó en las pruebas de la
-Fase 10), no hay forma de corregirlos: hay que crear otra y suspender la
-mala.
+**Antes.** Una central solo se creaba y se suspendía o reactivaba; un dato
+mal escrito obligaba a crear otra.
 
-**Debería** ([`../app/roles.md`](../app/roles.md): el administrador
-gestiona las centrales): `PATCH /hubs/:id` para nombre, tipo, dirección,
-ubicación y contacto, con las mismas validaciones del alta.
+**Ahora:** `PATCH /hubs/:id` (admin) acepta cualquier campo del alta (nombre,
+tipo, dirección, latitud y longitud, celular y correo de contacto), con las
+mismas validaciones.
+
+- Un body vacío responde 400 "Debes enviar al menos un campo para
+  actualizar.".
+- La latitud y la longitud van juntas.
+- Mover la ubicación responde 409 "No se puede mover una central con vuelos
+  o pedidos en curso." si la central tiene drones en misión o pedidos
+  asignados, en carga, en vuelo, en espera, de regreso o reasignados a ella.
+- Si el punto nuevo queda dentro de una geovalla, responde 400 "La nueva
+  ubicación queda dentro de una geovalla.".
+- Enviar las mismas coordenadas no cuenta como mover.
 
 **La app lo usará** en la tarjeta de cada central del administrador
 ("Editar"), reusando el formulario de Nueva central.

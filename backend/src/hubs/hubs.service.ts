@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -6,13 +7,25 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
+import { DroneStatus } from '../common/enums/drone-status.enum';
+import { Drone } from '../fleet/drone.entity';
+import { Order } from '../orders/order.entity';
 import { UserRole } from '../common/enums/user-role.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
 import { CreateHubDto } from './dto/create-hub.dto';
+import { UpdateHubDto } from './dto/update-hub.dto';
 import { Hub } from './hub.entity';
+import {
+  HUB_HAS_LIVE_ORDERS,
+  HUB_INSIDE_GEOFENCE,
+  LIVE_ORDER_STATUSES,
+  REASSIGNED_HERE,
+  assertHubPatch,
+  movesLocation,
+} from './hubs.rules';
 
 @Injectable()
 export class HubsService {
@@ -34,6 +47,36 @@ export class HubsService {
       status: HubStatus.ACTIVE,
       createdByUserId: user.id,
     });
+    const saved = await this.hubs.save(hub);
+    return this.toPublicHub(saved);
+  }
+
+  /**
+   * El administrador corrige una central. La ubicación solo se mueve si no
+   * hay vuelos ni pedidos en curso que dependan de ella, y nunca dentro de
+   * una geovalla.
+   */
+  async update(user: User, hubId: string, dto: UpdateHubDto) {
+    this.assertActiveAdmin(user, 'Solo el administrador edita centrales.');
+    assertHubPatch(dto);
+    const hub = await this.hubs.findOne({ where: { id: hubId } });
+    if (!hub) {
+      throw new NotFoundException('La central no existe.');
+    }
+    if (movesLocation(hub, dto)) {
+      await this.assertCanMove(hub.id);
+      await this.assertOutsideGeofences(
+        dto.longitude as number,
+        dto.latitude as number,
+      );
+      hub.latitude = dto.latitude as number;
+      hub.longitude = dto.longitude as number;
+    }
+    if (dto.name !== undefined) hub.name = dto.name.trim();
+    if (dto.type !== undefined) hub.type = dto.type;
+    if (dto.address !== undefined) hub.address = dto.address.trim();
+    if (dto.contactPhone !== undefined) hub.contactPhone = dto.contactPhone;
+    if (dto.contactEmail !== undefined) hub.contactEmail = dto.contactEmail;
     const saved = await this.hubs.save(hub);
     return this.toPublicHub(saved);
   }
@@ -123,10 +166,48 @@ export class HubsService {
     };
   }
 
-  private assertActiveAdmin(user: User): void {
+  private async assertCanMove(hubId: string): Promise<void> {
+    const manager = this.hubs.manager;
+    const [liveOrders, flyingDrones] = await Promise.all([
+      manager.exists(Order, {
+        where: [
+          { originHubId: hubId, status: In(LIVE_ORDER_STATUSES) },
+          { destinationHubId: hubId, status: In(LIVE_ORDER_STATUSES) },
+          { originHubId: hubId, ...REASSIGNED_HERE },
+        ],
+      }),
+      manager.exists(Drone, {
+        where: { hubId, status: DroneStatus.IN_MISSION },
+      }),
+    ]);
+    if (liveOrders || flyingDrones) {
+      throw new ConflictException(HUB_HAS_LIVE_ORDERS);
+    }
+  }
+
+  private async assertOutsideGeofences(
+    longitude: number,
+    latitude: number,
+  ): Promise<void> {
+    const rows = await this.hubs.manager.query<Array<{ inside: boolean }>>(
+      `SELECT EXISTS (
+         SELECT 1 FROM geofences
+         WHERE ST_Contains(polygon, ST_SetSRID(ST_MakePoint($1, $2), 4326))
+       ) AS inside`,
+      [longitude, latitude],
+    );
+    if (rows[0]?.inside) {
+      throw new BadRequestException(HUB_INSIDE_GEOFENCE);
+    }
+  }
+
+  private assertActiveAdmin(
+    user: User,
+    message = 'Solo el administrador crea centrales.',
+  ): void {
     this.assertActiveAccount(user);
     if (user.role !== UserRole.ADMIN) {
-      throw new ForbiddenException('Solo el administrador crea centrales.');
+      throw new ForbiddenException(message);
     }
   }
 
