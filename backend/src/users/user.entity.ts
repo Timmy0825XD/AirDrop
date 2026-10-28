@@ -30,6 +30,13 @@ export class User {
   @Column({ type: 'varchar', length: FIELD_LIMITS.email, nullable: true })
   email: string | null;
 
+  /**
+   * Correo nuevo que espera el código de confirmación. Mientras tanto, el
+   * login y la recuperación siguen usando `email`.
+   */
+  @Column({ type: 'varchar', length: FIELD_LIMITS.email, nullable: true })
+  pendingEmail: string | null;
+
   @Index({ unique: true })
   @Column({ type: 'varchar', length: FIELD_LIMITS.phone, nullable: true })
   phone: string | null;

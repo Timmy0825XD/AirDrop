@@ -7,6 +7,7 @@ import { ConfigService } from '@nestjs/config';
 import { OtpPurpose } from '../common/enums/otp-purpose.enum';
 import { OTP_RESET_TTL_MS, OTP_SIGNUP_TTL_MS } from '../common/field-limits';
 import { BrevoMailService } from '../mail/brevo-mail.service';
+import { renderEmailChangedNotice } from '../mail/email-changed';
 import { renderOtpEmail } from '../mail/otp-email';
 
 export type OtpDestination = {
@@ -58,6 +59,27 @@ export class OtpDeliveryService {
     });
   }
 
+  /** Aviso al correo anterior: el cambio ya quedó hecho. */
+  async notifyEmailChanged(
+    previous: OtpDestination,
+    newEmail: string,
+  ): Promise<void> {
+    const env = this.config.get<string>('NODE_ENV', 'development');
+    if (env === 'test') {
+      return;
+    }
+    if (!this.mail.isConfigured()) {
+      this.logger.log('Aviso de cambio de correo (solo desarrollo/pruebas).');
+      return;
+    }
+    await this.mail.send({
+      toEmail: previous.email,
+      toName: previous.name,
+      subject: 'El correo de tu cuenta cambió',
+      html: renderEmailChangedNotice({ name: previous.name, newEmail }),
+    });
+  }
+
   private emailCopy(purpose: OtpPurpose): {
     minutes: number;
     subject: string;
@@ -65,6 +87,17 @@ export class OtpDeliveryService {
     intro: string;
     ignore: string;
   } {
+    if (purpose === OtpPurpose.EMAIL_CHANGE) {
+      return {
+        minutes: OTP_SIGNUP_TTL_MS / 60_000,
+        subject: 'Código para confirmar tu nuevo correo',
+        headline: 'Confirma tu nuevo correo',
+        intro:
+          'Usa este código en la app para que este correo quede en tu cuenta de AirDrop.',
+        ignore:
+          'Si no pediste este cambio, ignora este correo: tu cuenta sigue igual.',
+      };
+    }
     if (purpose === OtpPurpose.SIGNUP) {
       return {
         minutes: OTP_SIGNUP_TTL_MS / 60_000,

@@ -3,6 +3,7 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
@@ -39,8 +40,17 @@ import { OtpDeliveryService, OtpDestination } from './otp-delivery.service';
 
 const GENERIC_RESET_MESSAGE = 'Si el contacto existe, te enviaremos un código.';
 
+const EMAIL_TAKEN = 'Ya existe una cuenta con este correo o celular.';
+export const CURRENT_PASSWORD_REQUIRED =
+  'Para cambiar el correo escribe tu contraseña actual.';
+// 400 y no 401: ante un 401 la app cierra la sesión.
+export const CURRENT_PASSWORD_WRONG = 'La contraseña actual no es correcta.';
+export const NO_PENDING_EMAIL = 'No hay un cambio de correo pendiente.';
+
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UsersService,
     @InjectRepository(OneTimeCode)
@@ -231,14 +241,19 @@ export class AuthService {
       }
       user.fullName = fullName;
     }
-    if (dto.email !== undefined) {
-      const taken = await this.usersService.findByEmail(dto.email);
-      if (taken && taken.id !== user.id) {
-        throw new ConflictException(
-          'Ya existe una cuenta con este correo o celular.',
-        );
+    // RNF de seguridad: el correo nuevo no reemplaza al actual hasta
+    // confirmarlo con el código que le llega (POST /auth/me/email/confirm).
+    const newEmail =
+      dto.email !== undefined && dto.email !== user.email ? dto.email : null;
+    if (newEmail) {
+      if (!dto.currentPassword) {
+        throw new BadRequestException(CURRENT_PASSWORD_REQUIRED);
       }
-      user.email = dto.email;
+      if (!(await passwordsMatch(dto.currentPassword, user.passwordHash))) {
+        throw new BadRequestException(CURRENT_PASSWORD_WRONG);
+      }
+      await this.assertEmailFree(user, newEmail);
+      user.pendingEmail = newEmail;
     }
     if (dto.phone !== undefined) {
       const taken = await this.usersService.findByPhone(dto.phone);
@@ -280,7 +295,74 @@ export class AuthService {
       user.documentNumber = documentNumber;
     }
     const saved = await this.usersService.save(user);
+    if (!newEmail) {
+      return this.toPublicUser(saved);
+    }
+    const otp = await this.issueEmailChangeOtp(saved);
+    return this.withOptionalOtp(this.toPublicUser(saved), otp);
+  }
+
+  /** Cambia el correo cuando llega el código y avisa al correo anterior. */
+  async confirmEmailChange(user: User, code: string) {
+    const pending = user.pendingEmail;
+    if (!pending) {
+      throw new BadRequestException(NO_PENDING_EMAIL);
+    }
+    await this.consumeOtp(user, OtpPurpose.EMAIL_CHANGE, code);
+    // Otra cuenta pudo tomarlo mientras llegaba el código.
+    await this.assertEmailFree(user, pending);
+    const previous = user.email;
+    user.email = pending;
+    user.pendingEmail = null;
+    const saved = await this.usersService.save(user);
+    if (previous) {
+      try {
+        await this.otpDelivery.notifyEmailChanged(
+          { channel: 'email', email: previous, name: saved.fullName },
+          pending,
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'correo';
+        this.logger.warn(`No se pudo avisar del cambio de correo: ${message}`);
+      }
+    }
     return this.toPublicUser(saved);
+  }
+
+  async resendEmailChangeOtp(user: User) {
+    if (!user.pendingEmail) {
+      throw new BadRequestException(NO_PENDING_EMAIL);
+    }
+    const otp = await this.issueEmailChangeOtp(user);
+    return this.withOptionalOtp(
+      { message: 'Te enviamos un código nuevo al correo nuevo.' },
+      otp,
+    );
+  }
+
+  /** Cancela el cambio: el correo actual sigue igual. */
+  async cancelEmailChange(user: User) {
+    if (!user.pendingEmail) {
+      throw new BadRequestException(NO_PENDING_EMAIL);
+    }
+    user.pendingEmail = null;
+    const saved = await this.usersService.save(user);
+    return this.toPublicUser(saved);
+  }
+
+  private issueEmailChangeOtp(user: User): Promise<string> {
+    return this.issueOtp(user, OtpPurpose.EMAIL_CHANGE, OTP_SIGNUP_TTL_MS, {
+      channel: 'email',
+      email: user.pendingEmail as string,
+      name: user.fullName,
+    });
+  }
+
+  private async assertEmailFree(user: User, email: string): Promise<void> {
+    const taken = await this.usersService.findByEmail(email);
+    if (taken && taken.id !== user.id) {
+      throw new ConflictException(EMAIL_TAKEN);
+    }
   }
 
   private tokenResponse(user: User) {
