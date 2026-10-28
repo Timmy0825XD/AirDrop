@@ -14,7 +14,8 @@ Plan por fases del frontend Flutter a partir de la guía 25 (`learning/25-front-
 | HU-29, HU-30 (avisos de estado y batería) | Backend publica `order-status` y `alert` por el socket; no hay push |
 | HU-31 (flag de frío) | Hecho; la temperatura simulada es fija (5 °C), sin alerta de rango |
 | HU-24 (fallback) | Backend hecho (`feature/fallback-reasignacion`); el frontend todavía trata el 409 "sin dron", que ya no llega (ver punto 2 de pendientes) |
-| HU-32 (alerta de frío), la cuarentena de HU-34, HU-36 a HU-38 (histórico de central, dashboard, métricas) | **Sin hacer en backend**; el frontend espera (Métricas) |
+| HU-32 (alerta de frío) | Backend hecho (`feature/alerta-frio`); falta que la app muestre la alerta `cold_chain` y `coldChainAlert` |
+| La cuarentena de HU-34, HU-36 a HU-38 (histórico de central, dashboard, métricas) | **Sin hacer en backend**; el frontend espera (Métricas) |
 
 Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-backend.md`](pendientes-backend.md). Las reglas de `context/` describen el MVP completo: donde el código va atrás, manda el contexto y se anota aquí o en esos pendientes, no se reescribe el contexto.
 

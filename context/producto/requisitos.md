@@ -218,6 +218,8 @@ Cambios de estado, llegada, espera de código, retorno, temperatura, batería y 
 
 Si el ítem lo exige, la temperatura simulada se compara con el rango en ida, espera y retorno. Fuera de rango: alerta, y la cuarentena de [../entregas/productos.md](../entregas/productos.md).
 
+El rango es **2–8 °C** para todo ítem con frío. La carga viaja estable alrededor de 5 °C. Uno de cada diez vuelos con frío (`COLD_CHAIN_FAILURE_RATE`, 10 % por defecto) sufre una falla en un momento al azar de la ida: desde ahí la carga se calienta y sale de rango en unos dos minutos, y sigue caliente en la espera y en el retorno. La alerta sale una vez por pedido y queda marcada en él. Tras una entrega el dron vuelve vacío y ya no se mide.
+
 ### RF-18 — Fallback
 
 Si al autorizar ningún dron sirve, hay otra central con stock o un aviso de traslado convencional. El estado es `reasignado`, no un rechazo mudo.

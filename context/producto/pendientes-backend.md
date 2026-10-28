@@ -157,18 +157,21 @@ ubicación y contacto, con las mismas validaciones del alta.
 **La app lo usará** en la tarjeta de cada central del administrador
 ("Editar"), reusando el formulario de Nueva central.
 
-## 9. Alerta de temperatura fuera de rango (RF-17, HU-32) — Pendiente
+## 9. Alerta de temperatura fuera de rango (RF-17, HU-32) — Hecho (rama `feature/alerta-frio`)
 
-**Hoy.** Si el ítem lleva frío, el reloj publica `temperatureC` fija en 5 °C
-durante todo el vuelo. Nunca sale de rango y no hay alerta, así que la
-cuarentena del punto 1 (cuando exista) no tiene en qué apoyarse.
+**Antes.** Si el ítem llevaba frío, el reloj publicaba `temperatureC` fija en
+5 °C durante todo el vuelo. Nunca salía de rango y no había alerta.
 
-**Debería** ([`../entregas/productos.md`](../entregas/productos.md),
-[`requisitos.md`](requisitos.md) RF-17): comparar la temperatura simulada con
-el rango en ida, espera y retorno; fuera de rango, emitir una alerta por el
-socket (`alert`) y dejar marcado el pedido para la cuarentena.
+**Ahora** (reglas en RF-17 de [`requisitos.md`](requisitos.md)):
+`temperatureC` varía en la telemetría de ida, espera y retorno con paquete.
+Con una falla, el socket manda una vez `alert` con `kind: 'cold_chain'` y el
+mensaje "La temperatura de la carga salió del rango de 2 a 8 °C." (solo al
+operador, como las de batería). El pedido trae `coldChainAlert` y
+`coldChainAlertAt`, que la cuarentena del punto 1 usará.
+`COLD_CHAIN_FAILURE_RATE=1` fuerza la falla para la demo.
 
-**La app lo usará** en la ficha del vuelo y al marcar el empaque.
+**La app lo usará** en la ficha del vuelo (aviso de frío) y al marcar el
+empaque de un retorno.
 
 ## 10. Vencimiento del token (`JWT_EXPIRES_IN`) — Pendiente
 

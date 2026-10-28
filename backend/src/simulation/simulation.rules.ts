@@ -19,8 +19,14 @@ export const LANDING_BATTERY_PERCENT = 3;
 
 export const CRITICAL_BATTERY_PERCENT = 20;
 
-/** Lectura fija mientras el sprint 6 no compara el rango. */
+/** RF-17: rango de la cadena de frío y la lectura estable dentro de él. */
+export const COLD_CHAIN_RANGE_C = { min: 2, max: 8 } as const;
 export const COLD_CHAIN_TEMPERATURE_C = 5;
+/** Desde la falla, la carga se calienta hasta salir de rango en ~2 min. */
+export const COLD_CHAIN_RISE_C_PER_MIN = 1.5;
+export const COLD_CHAIN_MAX_C = 20;
+/** Uno de cada diez vuelos con frío sufre una falla. */
+export const DEFAULT_COLD_CHAIN_FAILURE_RATE = 0.1;
 export const SIMULATED_LATENCY_MS = 40;
 
 export const FLIGHT_NOT_READY = 'No hay un corredor para este pedido.';
@@ -45,7 +51,7 @@ const PHASE_SEQUENCE: FlightPhase[] = [
   FlightPhase.LANDED,
 ];
 
-export type FlightAlertKind = 'battery_critical' | 'failure';
+export type FlightAlertKind = 'battery_critical' | 'failure' | 'cold_chain';
 
 export type FlightProgress = {
   phase: FlightPhase;
@@ -54,6 +60,9 @@ export type FlightProgress = {
   batteryPercent: number;
   batteryAlertSent: boolean;
   failureAlertSent: boolean;
+  /** Ms desde la confirmación de carga en que falla el frío, o `null`. */
+  coldChainExcursionAtMs: number | null;
+  coldChainAlertSent: boolean;
   orderStatus: OrderStatus;
 };
 
@@ -105,13 +114,15 @@ export function initialProgress(): FlightProgress {
     batteryPercent: 100,
     batteryAlertSent: false,
     failureAlertSent: false,
+    coldChainExcursionAtMs: null,
+    coldChainAlertSent: false,
     orderStatus: OrderStatus.PENDING_LOAD,
   };
 }
 
 /**
  * El regreso arranca con la batería y las alertas con que terminó la ida:
- * el dron no se recarga en el aire.
+ * el dron no se recarga en el aire, y la carga sigue tan caliente como venía.
  */
 export function returnProgress(
   outbound: FlightProgress | null,
@@ -121,6 +132,8 @@ export function returnProgress(
     batteryPercent: outbound?.batteryPercent ?? 100,
     batteryAlertSent: outbound?.batteryAlertSent ?? false,
     failureAlertSent: outbound?.failureAlertSent ?? false,
+    coldChainExcursionAtMs: outbound?.coldChainExcursionAtMs ?? null,
+    coldChainAlertSent: outbound?.coldChainAlertSent ?? false,
     orderStatus: OrderStatus.RETURNING,
   };
 }
@@ -180,6 +193,8 @@ export function buildLiveFlight(input: {
   identifier: string;
   quantity: number;
   requiresColdChain: boolean;
+  /** Lectura de `coldChainReading`; sin ella, la estable. */
+  temperatureC?: number | null;
   step: FlightStep;
 }): LiveFlight {
   return {
@@ -192,7 +207,9 @@ export function buildLiveFlight(input: {
     speedKmh: input.step.speedKmh,
     batteryPercent: roundTo(input.step.progress.batteryPercent, 1),
     payloadKg: roundTo(input.quantity * UNIT_MASS_KG, 1),
-    temperatureC: input.requiresColdChain ? COLD_CHAIN_TEMPERATURE_C : null,
+    temperatureC: input.requiresColdChain
+      ? (input.temperatureC ?? COLD_CHAIN_TEMPERATURE_C)
+      : null,
     latencyMs: SIMULATED_LATENCY_MS,
     phase: input.step.progress.phase,
     leg: input.leg ?? RouteLeg.OUTBOUND,
@@ -200,6 +217,88 @@ export function buildLiveFlight(input: {
     etaSeconds: input.step.etaSeconds,
     progress: input.step.progress,
   };
+}
+
+/**
+ * `COLD_CHAIN_FAILURE_RATE` (0 a 1) fija la probabilidad en pruebas y en la
+ * demo; sin variable, o con un valor fuera de rango, es 10 %.
+ */
+export function coldChainFailureRate(): number {
+  const raw = process.env.COLD_CHAIN_FAILURE_RATE;
+  const configured = raw === undefined || raw === '' ? NaN : Number(raw);
+  return configured >= 0 && configured <= 1
+    ? configured
+    : DEFAULT_COLD_CHAIN_FAILURE_RATE;
+}
+
+/**
+ * Se decide una vez, al despegar. Con un solo número aleatorio: por debajo
+ * de la tasa hay falla, y en qué punto de la ida cae sale del mismo número.
+ */
+export function planColdChainExcursion(
+  random: number,
+  rate: number,
+  windowMs: number,
+): number | null {
+  if (rate <= 0 || random >= rate) {
+    return null;
+  }
+  return Math.floor((random / rate) * windowMs);
+}
+
+/** Temperatura de la carga a `elapsedMs` de confirmar la carga. */
+export function temperatureAt(
+  elapsedMs: number,
+  excursionAtMs: number | null,
+): number {
+  // Un vaivén leve para que la lectura no parezca congelada.
+  const stable = COLD_CHAIN_TEMPERATURE_C + 0.3 * Math.sin(elapsedMs / 90_000);
+  if (excursionAtMs == null || elapsedMs < excursionAtMs) {
+    return roundTo(stable, 1);
+  }
+  const minutes = (elapsedMs - excursionAtMs) / 60_000;
+  return roundTo(
+    Math.min(COLD_CHAIN_MAX_C, stable + COLD_CHAIN_RISE_C_PER_MIN * minutes),
+    1,
+  );
+}
+
+export function isOutOfColdChainRange(temperatureC: number): boolean {
+  return (
+    temperatureC < COLD_CHAIN_RANGE_C.min ||
+    temperatureC > COLD_CHAIN_RANGE_C.max
+  );
+}
+
+/**
+ * CU-30: compara en ida, espera y retorno. La alerta sale una sola vez por
+ * pedido; después la marca queda en el progreso.
+ */
+export function coldChainReading(
+  progress: Pick<
+    FlightProgress,
+    'coldChainExcursionAtMs' | 'coldChainAlertSent'
+  >,
+  elapsedMs: number,
+): { temperatureC: number; alert: boolean; alertSent: boolean } {
+  const temperatureC = temperatureAt(
+    elapsedMs,
+    progress.coldChainExcursionAtMs ?? null,
+  );
+  const alreadySent = progress.coldChainAlertSent === true;
+  const alert = !alreadySent && isOutOfColdChainRange(temperatureC);
+  return { temperatureC, alert, alertSent: alreadySent || alert };
+}
+
+/** Duración de la ida completa, de despegar a aterrizar. */
+export function outboundDurationMs(
+  corridor: PlannedCorridor,
+  model: FlightModel,
+): number {
+  return PHASE_SEQUENCE.reduce(
+    (total, phase) => total + phaseDurationMs(phase, corridor, model),
+    0,
+  );
 }
 
 function finishPhase(

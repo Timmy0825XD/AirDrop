@@ -4,7 +4,15 @@ import { RouteLeg } from '../common/enums/route-leg.enum';
 import { Hub } from '../hubs/hub.entity';
 import { PlannedCorridor } from '../routing/routing.rules';
 import { FlightClockService } from './flight-clock.service';
-import { FlightPhase, LANDING_MS, returnProgress } from './simulation.rules';
+import { IsNull } from 'typeorm';
+import {
+  COLD_CHAIN_RANGE_C,
+  FlightPhase,
+  LANDING_MS,
+  LiveFlight,
+  initialProgress,
+  returnProgress,
+} from './simulation.rules';
 
 const ORDER_ID = '11111111-1111-4111-8111-111111111111';
 const DRONE_ID = '33333333-3333-4333-8333-333333333333';
@@ -273,5 +281,155 @@ describe('FlightClockService regreso tras la entrega', () => {
     expect(published.status).toBe(OrderStatus.DELIVERED);
     expect(published.leg).toBe(RouteLeg.RETURN);
     expect(service['active'].has(ORDER_ID)).toBe(false);
+  });
+});
+
+describe('FlightClockService cadena de frío (RF-17)', () => {
+  const previousRate = process.env.COLD_CHAIN_FAILURE_RATE;
+
+  afterEach(() => {
+    process.env.COLD_CHAIN_FAILURE_RATE = previousRate;
+  });
+
+  function buildCold(rate: string) {
+    process.env.COLD_CHAIN_FAILURE_RATE = rate;
+    const built = build();
+    built.service['waiting'].clear();
+    built.service['random'] = () => 0;
+    built.service['missions'] = {
+      findOne: jest.fn().mockResolvedValue(null),
+      create: jest.fn((value: unknown) => value),
+      save: jest.fn((value: unknown) => Promise.resolve(value)),
+    } as never;
+    built.orders.findOne.mockResolvedValue({
+      ...order(OrderStatus.PENDING_LOAD),
+      requiresColdChain: true,
+    });
+    return built;
+  }
+
+  function published(telemetry: { publishFlight: jest.Mock }) {
+    return telemetry.publishFlight.mock.calls.map(
+      ([flight]) => flight as LiveFlight,
+    );
+  }
+
+  it('con falla, alerta una sola vez y marca el pedido', async () => {
+    const { service, orders, notifications, telemetry } = buildCold('1');
+    await service['activate'](ORDER_ID);
+    expect(
+      service['active'].get(ORDER_ID)?.progress.coldChainExcursionAtMs,
+    ).toBe(0);
+
+    await service['tick'](ORDER_ID);
+    await service['tick'](ORDER_ID);
+
+    const coldAlerts = notifications.alert.mock.calls.filter(
+      ([, , kind]) => kind === 'cold_chain',
+    );
+    expect(coldAlerts).toHaveLength(1);
+    expect(orders.update).toHaveBeenCalledWith(
+      { id: ORDER_ID, coldChainAlertAt: IsNull() },
+      { coldChainAlertAt: expect.any(Date) as Date },
+    );
+    expect(published(telemetry)[0].temperatureC).toBeGreaterThan(
+      COLD_CHAIN_RANGE_C.max,
+    );
+  });
+
+  it('sin falla, la carga viaja en rango y no hay alerta', async () => {
+    const { service, orders, notifications, telemetry } = buildCold('0');
+    await service['activate'](ORDER_ID);
+    await service['tick'](ORDER_ID);
+
+    const [flight] = published(telemetry);
+    expect(flight.temperatureC).toBeGreaterThanOrEqual(COLD_CHAIN_RANGE_C.min);
+    expect(flight.temperatureC).toBeLessThanOrEqual(COLD_CHAIN_RANGE_C.max);
+    expect(notifications.alert).not.toHaveBeenCalled();
+    expect(orders.update).not.toHaveBeenCalledWith(
+      expect.objectContaining({ coldChainAlertAt: IsNull() }),
+      expect.anything(),
+    );
+  });
+
+  it('en la espera sigue midiendo y alerta una vez', async () => {
+    const { service, orders, notifications, telemetry } = buildCold('1');
+    let stored: LiveFlight = {
+      orderId: ORDER_ID,
+      droneId: DRONE_ID,
+      identifier: 'WG-198-001',
+      latitude: 10.46,
+      longitude: -73.25,
+      altitudeM: 0,
+      speedKmh: 0,
+      batteryPercent: 80,
+      payloadKg: 0.5,
+      temperatureC: 5,
+      latencyMs: 40,
+      phase: FlightPhase.LANDED,
+      leg: RouteLeg.OUTBOUND,
+      status: OrderStatus.AWAITING_DELIVERY,
+      etaSeconds: null,
+      progress: {
+        ...initialProgress(),
+        phase: FlightPhase.LANDED,
+        coldChainExcursionAtMs: 0,
+        orderStatus: OrderStatus.AWAITING_DELIVERY,
+      },
+    };
+    telemetry.readFlight.mockImplementation(() => Promise.resolve(stored));
+    telemetry.publishFlight.mockImplementation((flight: LiveFlight) => {
+      stored = flight;
+      return Promise.resolve();
+    });
+    service['waiting'].set(ORDER_ID, LANDED_AT);
+    service['coldWaits'].set(ORDER_ID, {
+      droneId: DRONE_ID,
+      loadConfirmedAt: order(OrderStatus.AWAITING_DELIVERY).loadConfirmedAt,
+    });
+
+    await service['watchColdWaits'](AFTER_WAIT);
+    await service['watchColdWaits'](AFTER_WAIT);
+
+    expect(stored.temperatureC).toBeGreaterThan(COLD_CHAIN_RANGE_C.max);
+    expect(stored.progress.coldChainAlertSent).toBe(true);
+    expect(notifications.alert).toHaveBeenCalledTimes(1);
+    expect(notifications.alert).toHaveBeenCalledWith(
+      ORDER_ID,
+      DRONE_ID,
+      'cold_chain',
+    );
+    expect(orders.update).toHaveBeenCalledWith(
+      { id: ORDER_ID, coldChainAlertAt: IsNull() },
+      { coldChainAlertAt: AFTER_WAIT },
+    );
+  });
+
+  it('deja de medir la espera cuando el dron ya va de regreso', async () => {
+    const { service, telemetry } = buildCold('1');
+    service['waiting'].set(ORDER_ID, LANDED_AT);
+    service['coldWaits'].set(ORDER_ID, {
+      droneId: DRONE_ID,
+      loadConfirmedAt: LANDED_AT,
+    });
+    service['active'].set(ORDER_ID, {} as never);
+
+    await service['watchColdWaits'](AFTER_WAIT);
+
+    expect(telemetry.readFlight).not.toHaveBeenCalled();
+    expect(service['coldWaits'].has(ORDER_ID)).toBe(false);
+  });
+
+  it('tras la entrega el dron vuelve vacío: no publica temperatura', async () => {
+    const { service, orders, telemetry, notifications } = buildCold('1');
+    orders.findOne.mockResolvedValue({
+      ...order(OrderStatus.DELIVERED),
+      requiresColdChain: true,
+    });
+    await service.startReturn(ORDER_ID);
+    await service['tick'](ORDER_ID);
+
+    expect(published(telemetry).at(-1)?.temperatureC).toBeNull();
+    expect(notifications.alert).not.toHaveBeenCalled();
   });
 });

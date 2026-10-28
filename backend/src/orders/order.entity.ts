@@ -116,6 +116,13 @@ export class Order {
   @Column({ type: 'timestamptz', nullable: true })
   loadConfirmedAt: Date | null;
 
+  /**
+   * RF-17: la temperatura de la carga salió de 2–8 °C en ida, espera o
+   * retorno. Con esta marca el insumo no reingresa al inventario.
+   */
+  @Column({ type: 'timestamptz', nullable: true })
+  coldChainAlertAt: Date | null;
+
   /** Motivo del rechazo, o de cancelar el plan. */
   @Column({ type: 'varchar', length: FIELD_LIMITS.reason, nullable: true })
   statusReason: string | null;
