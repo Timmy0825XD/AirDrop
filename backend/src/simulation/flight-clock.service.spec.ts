@@ -98,16 +98,29 @@ function build(
     statusChanged: jest.fn().mockResolvedValue(undefined),
     alert: jest.fn().mockResolvedValue(undefined),
   };
+  const missions = {
+    findOne: jest.fn(),
+    save: jest.fn(),
+    update: jest.fn().mockResolvedValue(undefined),
+  };
   const service = new FlightClockService(
     orders as never,
     drones as never,
-    { findOne: jest.fn(), save: jest.fn() } as never,
+    missions as never,
     routes as never,
     telemetry as never,
     notifications as never,
   );
   service['waiting'].set(ORDER_ID, LANDED_AT);
-  return { service, orders, drones, routes, telemetry, notifications };
+  return {
+    service,
+    orders,
+    drones,
+    missions,
+    routes,
+    telemetry,
+    notifications,
+  };
 }
 
 describe('FlightClockService expireDeliveryWaits', () => {
@@ -207,7 +220,7 @@ describe('FlightClockService regreso', () => {
   });
 
   it('al aterrizar de regreso el pedido queda returned y el dron available', async () => {
-    const { service, orders, drones, notifications } = build();
+    const { service, orders, drones, missions, notifications } = build();
     await service.expireDeliveryWaits(AFTER_WAIT);
     const session = service['active'].get(ORDER_ID)!;
     session.progress = {
@@ -229,6 +242,10 @@ describe('FlightClockService regreso', () => {
     expect(drones.update).toHaveBeenCalledWith(
       { id: DRONE_ID },
       { status: DroneStatus.AVAILABLE },
+    );
+    expect(missions.update).toHaveBeenCalledWith(
+      { orderId: ORDER_ID },
+      { returnedAt: expect.any(Date) as Date },
     );
     expect(service['active'].has(ORDER_ID)).toBe(false);
     expect(service['waiting'].has(ORDER_ID)).toBe(false);

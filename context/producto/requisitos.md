@@ -256,6 +256,8 @@ El solicitante ve lo suyo. El despachador, lo de su central. El administrador, l
 
 Conteos por medicamento, zona y fecha. Sin identificadores de persona.
 
+La zona es una celda de unos 1 km (0,01°) con al menos 3 pedidos; una celda con menos no se muestra. Los traslados cuentan por central de destino.
+
 ### RF-25 — Cuentas institucionales
 
 Crear, listar, suspender y reactivar. El despachador queda en una central. El operador, en una o varias.
@@ -263,6 +265,26 @@ Crear, listar, suspender y reactivar. El despachador queda en una central. El op
 ### RF-26 — Métricas
 
 Misiones por tipo, tiempo promedio e incidencias.
+
+Cada KPI trae meta y semáforo (verde, ámbar, rojo) y se compara con el periodo anterior de la misma duración (por defecto, los últimos 30 días):
+
+| Grupo | KPI | Verde | Ámbar |
+| --- | --- | --- | --- |
+| Resultados | Entregas exitosas (entregados / cerrados) | ≥ 90 % | ≥ 75 % |
+| Resultados | Urgencia de pedida a entregada | ≤ 30 min | ≤ 45 min |
+| Resultados | Urgencia de pedida a autorizada | ≤ 10 min | ≤ 15 min |
+| Oportunidades | Demanda sin atender (rechazos y traslado convencional) | ≤ 5 % | ≤ 10 % |
+| Oportunidades | Urgencias que esperaron más de 5 min | 0 | ≤ 2 |
+| Fallas | Retornos sin entrega | ≤ 5 % | ≤ 10 % |
+| Fallas | Alertas de frío | 0 | 1 |
+| Fallas | Unidades en cuarentena | 0 | ≤ 5 |
+| Fallas | Batería crítica o falla de dron | 0 | 1 |
+| Fallas | Códigos bloqueados | 0 | ≤ 2 |
+| Fallas | Pedidos reasignados a otra central | ≤ 10 % | ≤ 20 % |
+| Deficiencias | Uso de la flota (tiempo en misión / tiempo disponible) | 30–80 % | 15–90 % |
+| Deficiencias | Centrales sin dron disponible | 0 | 1 |
+
+Sin meta, solo informativos: misiones, unidades entregadas, km volados, de autorizada a cargada, duración de la ida, drones en mantenimiento y stock que vence en 30 días.
 
 ### RF-27 — Fórmula
 

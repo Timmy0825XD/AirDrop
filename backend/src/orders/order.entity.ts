@@ -113,6 +113,10 @@ export class Order {
   @Column({ type: 'uuid', nullable: true })
   inventoryItemId: string | null;
 
+  /** Cuándo se reservó el dron (RF-26: tiempo de respuesta). */
+  @Column({ type: 'timestamptz', nullable: true })
+  authorizedAt: Date | null;
+
   /** El reloj de vuelo no arranca antes de esta marca. */
   @Column({ type: 'timestamptz', nullable: true })
   loadConfirmedAt: Date | null;

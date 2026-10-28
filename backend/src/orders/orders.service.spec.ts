@@ -133,6 +133,7 @@ function build(options?: {
     create: jest.fn((value: Partial<Order>) => value),
     find: jest.fn(),
     findOne: jest.fn(),
+    findAndCount: jest.fn(),
     update: jest.fn(),
     delete: jest.fn(),
     save: jest.fn((value: Order) => {
@@ -787,6 +788,69 @@ describe('OrdersService incoming', () => {
   it('rechaza a quien no es despachador', async () => {
     const { service } = build();
     await expect(service.listIncoming(requester())).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+  });
+});
+
+describe('OrdersService hub history (HU-36)', () => {
+  it('lista lo cerrado que despachó la central, paginado y del más nuevo al más viejo', async () => {
+    const { service, orders } = build();
+    orders.findAndCount.mockResolvedValue([
+      [
+        receivedOrder({
+          status: OrderStatus.DELIVERED,
+          originHubId: origin.id,
+        }),
+      ],
+      21,
+    ]);
+
+    const result = await service.listHistory(originDispatcher(), {
+      page: 2,
+      pageSize: 10,
+    });
+
+    expect(result).toMatchObject({ total: 21, page: 2, pageSize: 10 });
+    expect(result.items[0].status).toBe(OrderStatus.DELIVERED);
+    expect(orders.findAndCount).toHaveBeenCalledWith({
+      where: {
+        originHubId: origin.id,
+        status: In([
+          OrderStatus.DELIVERED,
+          OrderStatus.RETURNED,
+          OrderStatus.REJECTED,
+          OrderStatus.REASSIGNED,
+          OrderStatus.CANCELLED,
+        ]),
+      },
+      order: { createdAt: 'DESC' },
+      skip: 10,
+      take: 10,
+    });
+  });
+
+  it('filtra por estado y por las fechas de creación', async () => {
+    const { service, orders } = build();
+    orders.findAndCount.mockResolvedValue([[], 0]);
+
+    await service.listHistory(originDispatcher(), {
+      status: OrderStatus.RETURNED,
+      from: '2026-10-01',
+      to: '2026-10-10',
+    });
+
+    const [options] = orders.findAndCount.mock.calls[0] as [
+      { where: { status: unknown; createdAt?: unknown }; take: number },
+    ];
+    expect(options.where.status).toBe(OrderStatus.RETURNED);
+    expect(options.where.createdAt).toBeDefined();
+    expect(options.take).toBe(20);
+  });
+
+  it('rechaza a quien no es despachador', async () => {
+    const { service } = build();
+    await expect(service.listHistory(requester(), {})).rejects.toBeInstanceOf(
       ForbiddenException,
     );
   });

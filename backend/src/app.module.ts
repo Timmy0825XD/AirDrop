@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { AuthModule } from './auth/auth.module';
 import { alignSprintSchema } from './database/align-sprint-schema';
 import { ensurePrescriptionBucket } from './database/ensure-prescription-bucket';
@@ -51,6 +52,7 @@ import { UsersModule } from './users/users.module';
     DecisionModule,
     OrdersModule,
     DeliveryModule,
+    AnalyticsModule,
   ],
 })
 export class AppModule {}
