@@ -137,21 +137,17 @@ El pedido trae además `authorizedAt`; la misión guarda `returnedAt`.
 **La app lo usará** en el inicio del administrador, en lugar de la tarjeta
 "PRÓXIMAMENTE", y en el histórico del despachador.
 
-## 5. Flota de una central para el administrador — Pendiente
+## 5. Flota de una central para el administrador — Hecho (rama `bugfix/flota-admin`)
 
-**Hoy.** `GET /fleet/drones?hubId=` permite el rol `admin` en el
-controlador, pero `FleetService.listDrones` llama `assertAssigned`, y el
-administrador no tiene centrales asignadas: siempre responde 403 "Esa
-central no está asignada a tu cuenta.".
+**Antes.** `GET /fleet/drones?hubId=` permitía el rol `admin` en el
+controlador, pero `FleetService.listDrones` llamaba `assertAssigned` y el
+administrador, sin centrales asignadas, siempre recibía 403.
 
-**Debería:** decidir una de dos y dejarla consistente:
+**Ahora:** el administrador consulta los drones de cualquier central, solo en
+lectura. Una central que no existe responde 404. El operador sigue limitado
+a sus centrales, y crear o gestionar drones sigue siendo solo suyo.
 
-- el administrador ve los drones de cualquier central (saltar
-  `assertAssigned` cuando el rol es `admin`), o
-- quitar `admin` del `@Roles` de esa ruta.
-
-**La app** hoy no la usa; si se abre, se mostraría en el detalle de una
-central.
+**La app** puede mostrarlos en el detalle de una central del administrador.
 
 ## 6. Lo que una central le pide a otra — Hecho (PR #66)
 

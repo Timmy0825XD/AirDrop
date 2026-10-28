@@ -74,7 +74,9 @@ function buildService(opts: {
       .mockResolvedValue(opts.hub === undefined ? hub : opts.hub),
     requireActive:
       opts.hub === null
-        ? jest.fn().mockRejectedValue(new NotFoundException('La central no existe.'))
+        ? jest
+            .fn()
+            .mockRejectedValue(new NotFoundException('La central no existe.'))
         : jest.fn().mockResolvedValue(opts.hub === undefined ? hub : opts.hub),
   } as unknown as HubsService;
   return {
@@ -143,7 +145,9 @@ describe('FleetService', () => {
     const { service, drones } = buildService({
       drones: {
         findOne: jest.fn().mockResolvedValue(drone),
-        save: jest.fn().mockImplementation((row: Drone) => Promise.resolve(row)),
+        save: jest
+          .fn()
+          .mockImplementation((row: Drone) => Promise.resolve(row)),
       },
     });
     const result = await service.registerMaintenance(operator(), drone.id, {
@@ -167,5 +171,50 @@ describe('FleetService', () => {
     await expect(
       service.createDrone(operator({ status: UserStatus.UNVERIFIED }), dto),
     ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+});
+
+describe('FleetService.listDrones', () => {
+  const listed = [{ id: 'd1', identifier: 'WC-198-001', hubId: hub.id }];
+
+  it('el administrador ve los drones de cualquier central', async () => {
+    const find = jest.fn().mockResolvedValue(listed);
+    const { service } = buildService({ drones: { find } as never });
+    const admin = operator({ role: UserRole.ADMIN, hubAssignments: [] });
+    const rows = await service.listDrones(admin, hub.id);
+    expect(rows).toHaveLength(1);
+    expect(find).toHaveBeenCalledWith({
+      where: { hubId: hub.id },
+      order: { identifier: 'ASC' },
+    });
+  });
+
+  it('el operador sin esa central sigue recibiendo 403', async () => {
+    const { service } = buildService({
+      drones: { find: jest.fn().mockResolvedValue(listed) } as never,
+    });
+    await expect(
+      service.listDrones(operator({ hubAssignments: [] }), hub.id),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('una central que no existe responde 404 también al administrador', async () => {
+    const { service } = buildService({ hub: null });
+    const admin = operator({ role: UserRole.ADMIN, hubAssignments: [] });
+    await expect(service.listDrones(admin, hub.id)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
+  });
+
+  it('el administrador con la cuenta inactiva no consulta', async () => {
+    const { service } = buildService({});
+    const admin = operator({
+      role: UserRole.ADMIN,
+      status: UserStatus.SUSPENDED,
+      hubAssignments: [],
+    });
+    await expect(service.listDrones(admin, hub.id)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
   });
 });
