@@ -8,7 +8,7 @@ Lo pide el despachador de la central que **necesita** el insumo. Lo suelta el de
 2. El despachador de origen confirma unidades selladas del mismo genérico, concentración y forma. Arma la remisión: origen, destino, medicamento, lote, vencimiento y cantidad. Autorizar reserva el dron. El vuelo no empieza.
 3. Al confirmar la carga descuenta ese lote en origen. No adjunta información de uso para un paciente: quien recibe es otro servicio de la red.
 4. En destino, el despachador que pidió ingresa el código y compara la remisión: cantidad, lote, vencimiento, sello y, si el ítem lleva frío, la temperatura del trayecto.
-5. Si todo coincide y no hubo alerta de frío, el inventario entra en la central de destino. La app manda esa comparación junto con el código (remisión y sello).
+5. Si todo coincide y no hubo alerta de frío, el inventario entra en la central de destino. La app manda esa comparación junto con el código (remisión y sello). El dron espera 1 minuto a que descarguen y vuelve vacío a origen.
 6. Si no hay código, la cantidad no coincide, el sello está mal o hubo alerta de temperatura, no entra. El paquete vuelve a origen y sigue la cuarentena.
 
 Una central del simulador no le vende al detal a otra. El control especial no usa este camino: el pedido se rechaza, porque en la práctica ese movimiento pertenece al Fondo Nacional de Estupefacientes.

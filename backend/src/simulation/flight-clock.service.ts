@@ -11,7 +11,8 @@ import { In, IsNull, Repository } from 'typeorm';
 import { DroneStatus } from '../common/enums/drone-status.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { RouteLeg } from '../common/enums/route-leg.enum';
-import { isDeliveryWaitOver } from '../delivery/delivery.rules';
+import { DeliveryCode } from '../delivery/delivery-code.entity';
+import { isDeliveryWaitOver, pickupWaitMs } from '../delivery/delivery.rules';
 import { Drone } from '../fleet/drone.entity';
 import { Hub } from '../hubs/hub.entity';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -66,6 +67,8 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
   /** Pedidos aterrizados que esperan el código de entrega. */
   private readonly waiting = new Map<string, Date>();
   private readonly coldWaits = new Map<string, ColdWait>();
+  /** Pedidos entregados cuyo dron espera en destino a que retiren el insumo. */
+  private readonly pickups = new Map<string, Date>();
   /** Los tests lo reemplazan para fijar si hay falla de frío. */
   private random: () => number = Math.random;
   private timer: NodeJS.Timeout | null = null;
@@ -147,8 +150,11 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
         droneStatus: DroneStatus.IN_MISSION,
       })
       .getMany();
-    for (const order of [...orders, ...deliveredFlying]) {
+    for (const order of orders) {
       await this.activate(order.id);
+    }
+    for (const order of deliveredFlying) {
+      await this.resumeDelivered(order.id);
     }
   }
 
@@ -187,31 +193,105 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
 
   /**
    * CU-29: sin código válido a tiempo, el pedido pasa a `returning`.
-   * El UPDATE condicionado al estado evita pisar una entrega que se esté
-   * validando en ese instante.
    */
   async expireDeliveryWaits(now = new Date()): Promise<void> {
     for (const [orderId, landedAt] of [...this.waiting]) {
-      if (!isDeliveryWaitOver(landedAt, now)) {
-        continue;
-      }
-      this.waiting.delete(orderId);
-      const result = await this.orders.update(
-        { id: orderId, status: OrderStatus.AWAITING_DELIVERY },
-        { status: OrderStatus.RETURNING },
-      );
-      if (result.affected) {
-        await this.notifications.statusChanged(orderId, OrderStatus.RETURNING);
-        try {
-          await this.activate(orderId);
-        } catch (error) {
-          const message = error instanceof Error ? error.message : 'regreso';
-          this.logger.error(
-            `No se pudo iniciar el regreso ${orderId}: ${message}. Se reintenta al reiniciar.`,
-          );
-        }
+      if (isDeliveryWaitOver(landedAt, now)) {
+        await this.returnWithPackage(orderId);
       }
     }
+  }
+
+  /**
+   * El dron deja de esperar y vuelve con el paquete: venció la espera o se
+   * agotaron los intentos del código. El UPDATE condicionado al estado evita
+   * pisar una entrega que se esté validando en ese instante.
+   */
+  async returnWithPackage(orderId: string): Promise<boolean> {
+    const result = await this.orders.update(
+      { id: orderId, status: OrderStatus.AWAITING_DELIVERY },
+      { status: OrderStatus.RETURNING },
+    );
+    // Si el UPDATE falla, sigue en espera y la vence el siguiente tick.
+    this.waiting.delete(orderId);
+    if (!result.affected) {
+      return false;
+    }
+    await this.notifications.statusChanged(orderId, OrderStatus.RETURNING);
+    try {
+      await this.activate(orderId);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'regreso';
+      this.logger.error(
+        `No se pudo iniciar el regreso ${orderId}: ${message}. Se reintenta al reiniciar.`,
+      );
+    }
+    return true;
+  }
+
+  /**
+   * Código correcto: el pedido ya está entregado, pero el dron se queda en
+   * destino `PICKUP_WAIT_MS` (1 min) con la fase `unloading` para que retiren
+   * el medicamento. Después despega solo de regreso.
+   */
+  async schedulePickup(
+    orderId: string,
+    deliveredAt = new Date(),
+  ): Promise<void> {
+    this.waiting.delete(orderId);
+    this.coldWaits.delete(orderId);
+    this.pickups.set(orderId, new Date(deliveredAt.getTime() + pickupWaitMs()));
+    try {
+      const flight = await this.telemetry.readFlight(orderId);
+      if (flight) {
+        await this.telemetry.publishFlight({
+          ...flight,
+          phase: FlightPhase.UNLOADING,
+          status: OrderStatus.DELIVERED,
+          speedKmh: 0,
+          etaSeconds: null,
+          temperatureC: null,
+        });
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'telemetría';
+      this.logger.warn(
+        `No se pudo publicar el retiro de ${orderId}: ${message}`,
+      );
+    }
+  }
+
+  /** Terminó el minuto de retiro: el dron despega de regreso, ya vacío. */
+  private async releasePickups(now = new Date()): Promise<void> {
+    for (const [orderId, readyAt] of [...this.pickups]) {
+      if (now < readyAt) {
+        continue;
+      }
+      this.pickups.delete(orderId);
+      try {
+        await this.activate(orderId);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'regreso';
+        this.logger.error(
+          `No se pudo iniciar el regreso del dron ${orderId}: ${message}. Se reintenta al reiniciar.`,
+        );
+      }
+    }
+  }
+
+  /**
+   * Tras un reinicio: si el regreso ya empezó, sigue; si no, el dron todavía
+   * estaba en el minuto de retiro y lo termina desde la hora de la entrega.
+   */
+  private async resumeDelivered(orderId: string): Promise<void> {
+    if (await this.routes.findReturn(orderId)) {
+      await this.activate(orderId);
+      return;
+    }
+    const code = await this.orders.manager.findOne(DeliveryCode, {
+      where: { orderId },
+    });
+    await this.schedulePickup(orderId, code?.usedAt ?? new Date());
   }
 
   private async activate(orderId: string): Promise<void> {
@@ -340,6 +420,12 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
             `No se pudo avanzar el vuelo ${orderId}: ${message}`,
           );
         }
+      }
+      try {
+        await this.releasePickups();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'retiro';
+        this.logger.error(`No se pudo terminar el retiro: ${message}`);
       }
       try {
         await this.watchColdWaits();

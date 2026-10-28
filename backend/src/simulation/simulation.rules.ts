@@ -40,6 +40,8 @@ export enum FlightPhase {
   DESCENT = 'descent',
   LANDING = 'landing',
   LANDED = 'landed',
+  /** En destino, ya entregado: espera a que retiren el medicamento. */
+  UNLOADING = 'unloading',
 }
 
 const PHASE_SEQUENCE: FlightPhase[] = [

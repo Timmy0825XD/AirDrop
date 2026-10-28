@@ -85,7 +85,11 @@ describe('DeliveryService', () => {
     save: jest.Mock;
   };
   let notifications: { statusChanged: jest.Mock };
-  let flights: { startReturn: jest.Mock };
+  let flights: {
+    startReturn: jest.Mock;
+    schedulePickup: jest.Mock;
+    returnWithPackage: jest.Mock;
+  };
   let restock: { receiveTransfer: jest.Mock };
   let service: DeliveryService;
 
@@ -112,7 +116,11 @@ describe('DeliveryService', () => {
       ),
     } as unknown as DataSource;
     notifications = { statusChanged: jest.fn().mockResolvedValue(undefined) };
-    flights = { startReturn: jest.fn().mockResolvedValue(undefined) };
+    flights = {
+      startReturn: jest.fn().mockResolvedValue(undefined),
+      schedulePickup: jest.fn().mockResolvedValue(undefined),
+      returnWithPackage: jest.fn().mockResolvedValue(true),
+    };
     restock = { receiveTransfer: jest.fn().mockResolvedValue(undefined) };
     service = new DeliveryService(
       dataSource,
@@ -220,7 +228,7 @@ describe('DeliveryService', () => {
   });
 
   describe('validate', () => {
-    it('con el código correcto entrega el pedido, avisa y manda al dron de vuelta', async () => {
+    it('con el código correcto entrega, avisa y el dron espera el minuto de retiro', async () => {
       const result = await service.validate(requester, ORDER_ID, {
         code: CODE,
       });
@@ -228,21 +236,16 @@ describe('DeliveryService', () => {
       expect(result.status).toBe(OrderStatus.DELIVERED);
       const [saved] = manager.save.mock.calls[0] as [DeliveryCode];
       expect(saved.usedAt).toBeInstanceOf(Date);
-      expect(flights.startReturn).toHaveBeenCalledWith(ORDER_ID);
+      expect(flights.schedulePickup).toHaveBeenCalledWith(
+        ORDER_ID,
+        saved.usedAt,
+      );
+      // No despega ya: lo hace el reloj al terminar el retiro.
+      expect(flights.startReturn).not.toHaveBeenCalled();
       expect(notifications.statusChanged).toHaveBeenCalledWith(
         ORDER_ID,
         OrderStatus.DELIVERED,
       );
-    });
-
-    it('la entrega sigue valiendo aunque no arranque el regreso', async () => {
-      flights.startReturn.mockRejectedValueOnce(new Error('sin Redis'));
-
-      const result = await service.validate(requester, ORDER_ID, {
-        code: CODE,
-      });
-
-      expect(result.status).toBe(OrderStatus.DELIVERED);
     });
 
     it('rechaza un código incorrecto sin entregar y cuenta el intento', async () => {
@@ -258,7 +261,7 @@ describe('DeliveryService', () => {
       expect(notifications.statusChanged).not.toHaveBeenCalled();
     });
 
-    it('bloquea el pedido al quinto intento fallido', async () => {
+    it('al quinto intento fallido bloquea y el dron regresa ya con el paquete', async () => {
       stored = state({ attempts: DELIVERY_CODE_MAX_ATTEMPTS - 1 });
 
       await expect(
@@ -266,6 +269,35 @@ describe('DeliveryService', () => {
       ).rejects.toThrow(new BadRequestException(DELIVERY_CODE_LOCKED));
 
       expect(stored.attempts).toBe(DELIVERY_CODE_MAX_ATTEMPTS);
+      expect(flights.returnWithPackage).toHaveBeenCalledWith(ORDER_ID);
+    });
+
+    it('un intento fallido que no agota no hace volver al dron', async () => {
+      stored = state({ attempts: 1 });
+
+      await expect(
+        service.validate(requester, ORDER_ID, { code: WRONG }),
+      ).rejects.toThrow(new BadRequestException(DELIVERY_CODE_REJECTED));
+
+      expect(flights.returnWithPackage).not.toHaveBeenCalled();
+    });
+
+    it('el bloqueo se mantiene aunque el regreso no arranque', async () => {
+      stored = state({ attempts: DELIVERY_CODE_MAX_ATTEMPTS - 1 });
+      flights.returnWithPackage.mockRejectedValueOnce(new Error('sin Redis'));
+
+      await expect(
+        service.validate(requester, ORDER_ID, { code: WRONG }),
+      ).rejects.toThrow(new BadRequestException(DELIVERY_CODE_LOCKED));
+    });
+
+    it('con el dron ya de regreso tras el bloqueo, sigue diciendo que está bloqueado', async () => {
+      current = order({ status: OrderStatus.RETURNING });
+      stored = state({ attempts: DELIVERY_CODE_MAX_ATTEMPTS });
+
+      await expect(
+        service.validate(requester, ORDER_ID, { code: CODE }),
+      ).rejects.toThrow(new BadRequestException(DELIVERY_CODE_LOCKED));
     });
 
     it('con el pedido bloqueado ni el código correcto entrega', async () => {

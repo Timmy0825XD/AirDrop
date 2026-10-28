@@ -31,6 +31,20 @@ export function deliveryWaitMs(): number {
     : DEFAULT_DELIVERY_WAIT_MS;
 }
 
+/** Tras el código correcto, el dron espera 1 minuto a que retiren el medicamento. */
+export const DEFAULT_PICKUP_WAIT_MS = 60 * 1000;
+
+/**
+ * `PICKUP_WAIT_MS` permite acortar el retiro en pruebas; sin variable (o con
+ * un valor no válido) es 1 minuto.
+ */
+export function pickupWaitMs(): number {
+  const configured = Number(process.env.PICKUP_WAIT_MS);
+  return Number.isInteger(configured) && configured > 0
+    ? configured
+    : DEFAULT_PICKUP_WAIT_MS;
+}
+
 export function deliveryExpiresAt(landedAt: Date): Date {
   return new Date(landedAt.getTime() + deliveryWaitMs());
 }

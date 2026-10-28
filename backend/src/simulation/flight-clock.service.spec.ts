@@ -452,3 +452,118 @@ describe('FlightClockService cadena de frío (RF-17)', () => {
     expect(notifications.alert).not.toHaveBeenCalled();
   });
 });
+
+describe('FlightClockService minuto de retiro tras la entrega', () => {
+  const DELIVERED_AT = new Date('2026-10-19T15:02:00.000Z');
+  const previousPickup = process.env.PICKUP_WAIT_MS;
+
+  afterEach(() => {
+    process.env.PICKUP_WAIT_MS = previousPickup;
+  });
+
+  function buildDelivered() {
+    const built = build();
+    built.orders.findOne.mockResolvedValue(order(OrderStatus.DELIVERED));
+    built.telemetry.readFlight.mockResolvedValue({
+      orderId: ORDER_ID,
+      phase: FlightPhase.LANDED,
+      status: OrderStatus.AWAITING_DELIVERY,
+      speedKmh: 0,
+      etaSeconds: null,
+      temperatureC: 5,
+      progress: initialProgress(),
+    });
+    return built;
+  }
+
+  it('publica la fase unloading y deja de esperar el código', async () => {
+    const { service, telemetry } = buildDelivered();
+    service['coldWaits'].set(ORDER_ID, {
+      droneId: DRONE_ID,
+      loadConfirmedAt: LANDED_AT,
+    });
+
+    await service.schedulePickup(ORDER_ID, DELIVERED_AT);
+
+    expect(service['waiting'].has(ORDER_ID)).toBe(false);
+    expect(service['coldWaits'].has(ORDER_ID)).toBe(false);
+    const [flight] = telemetry.publishFlight.mock.calls.at(-1) as [LiveFlight];
+    expect(flight.phase).toBe(FlightPhase.UNLOADING);
+    expect(flight.status).toBe(OrderStatus.DELIVERED);
+    expect(flight.temperatureC).toBeNull();
+  });
+
+  it('despega de regreso cuando pasa el minuto, no antes', async () => {
+    const { service } = buildDelivered();
+    await service.schedulePickup(ORDER_ID, DELIVERED_AT);
+
+    await service['releasePickups'](new Date(DELIVERED_AT.getTime() + 59_000));
+    expect(service['active'].has(ORDER_ID)).toBe(false);
+
+    await service['releasePickups'](new Date(DELIVERED_AT.getTime() + 60_000));
+    const session = service['active'].get(ORDER_ID);
+    expect(session?.leg).toBe(RouteLeg.RETURN);
+    expect(session?.keepStatus).toBe(true);
+    expect(service['pickups'].has(ORDER_ID)).toBe(false);
+  });
+
+  it('respeta PICKUP_WAIT_MS', async () => {
+    process.env.PICKUP_WAIT_MS = '5000';
+    const { service } = buildDelivered();
+    await service.schedulePickup(ORDER_ID, DELIVERED_AT);
+    expect(service['pickups'].get(ORDER_ID)).toEqual(
+      new Date(DELIVERED_AT.getTime() + 5000),
+    );
+  });
+
+  it('tras un reinicio termina el retiro desde la hora de la entrega', async () => {
+    const { service, orders, routes } = buildDelivered();
+    routes.findReturn.mockResolvedValue(null);
+    Object.assign(orders.manager, {
+      findOne: jest.fn().mockResolvedValue({ usedAt: DELIVERED_AT }),
+    });
+
+    await service['resumeDelivered'](ORDER_ID);
+
+    expect(service['pickups'].get(ORDER_ID)).toEqual(
+      new Date(DELIVERED_AT.getTime() + 60_000),
+    );
+    expect(service['active'].has(ORDER_ID)).toBe(false);
+  });
+
+  it('tras un reinicio, si el regreso ya había empezado, lo sigue', async () => {
+    const { service, routes } = buildDelivered();
+    routes.findReturn.mockResolvedValue(planned);
+
+    await service['resumeDelivered'](ORDER_ID);
+
+    expect(service['active'].get(ORDER_ID)?.leg).toBe(RouteLeg.RETURN);
+    expect(service['pickups'].has(ORDER_ID)).toBe(false);
+  });
+});
+
+describe('FlightClockService returnWithPackage', () => {
+  it('pasa a returning, avisa y arranca el regreso con el paquete', async () => {
+    const { service, orders, notifications } = build();
+    await expect(service.returnWithPackage(ORDER_ID)).resolves.toBe(true);
+    expect(orders.update).toHaveBeenCalledWith(
+      { id: ORDER_ID, status: OrderStatus.AWAITING_DELIVERY },
+      { status: OrderStatus.RETURNING },
+    );
+    expect(notifications.statusChanged).toHaveBeenCalledWith(
+      ORDER_ID,
+      OrderStatus.RETURNING,
+    );
+    expect(service['active'].get(ORDER_ID)?.keepStatus).toBe(false);
+    expect(service['waiting'].has(ORDER_ID)).toBe(false);
+  });
+
+  it('si la base falla, el pedido sigue esperando para que lo venza el tick', async () => {
+    const { service, orders } = build();
+    orders.update.mockRejectedValueOnce(new Error('sin base'));
+    await expect(service.returnWithPackage(ORDER_ID)).rejects.toThrow(
+      'sin base',
+    );
+    expect(service['waiting'].has(ORDER_ID)).toBe(true);
+  });
+});
