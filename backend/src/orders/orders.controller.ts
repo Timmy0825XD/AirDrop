@@ -23,6 +23,7 @@ import { CreateEmergencyDto } from './dto/create-emergency.dto';
 import { CreateHubEmergencyDto } from './dto/create-hub-emergency.dto';
 import { CreateHubPlanDto } from './dto/create-hub-plan.dto';
 import { CreatePlanDto } from './dto/create-plan.dto';
+import { HistoryQueryDto } from './dto/history-query.dto';
 import { RejectOrderDto } from './dto/reject-order.dto';
 import { OrdersService } from './orders.service';
 
@@ -54,6 +55,13 @@ export class OrdersController {
   async incoming(@CurrentUser() user: User) {
     const rows = await this.ordersService.listIncoming(user);
     return this.decisionService.attachAssignments(rows);
+  }
+
+  /** HU-36: misiones cerradas que despachó la central. */
+  @Get('history')
+  @Roles(UserRole.DISPATCHER)
+  history(@CurrentUser() user: User, @Query() query: HistoryQueryDto) {
+    return this.ordersService.listHistory(user, query);
   }
 
   @Get('origin-hubs')

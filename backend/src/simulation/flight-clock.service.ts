@@ -426,6 +426,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
             { id: session.droneId },
             { status: DroneStatus.AVAILABLE },
           );
+          await this.missions.update({ orderId }, { returnedAt: new Date() });
         } else if (landedAt) {
           this.waiting.set(orderId, landedAt);
           if (session.requiresColdChain) {
@@ -503,6 +504,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
         droneId: session.droneId,
         startedAt: new Date(),
         landedAt: null,
+        returnedAt: null,
         batteryAlert: false,
         failureAlert: false,
       });

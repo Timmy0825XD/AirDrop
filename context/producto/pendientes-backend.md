@@ -94,18 +94,30 @@ pedido lleva cada dron, así que la app no tiene desde dónde abrir el mapa.
 
 **La app lo usará** en la flota del operador (Fase 8).
 
-## 4. Métricas del administrador — Pendiente
+## 4. Métricas del administrador — Hecho (rama `feature/metricas-admin`)
 
-**Hoy.** No hay módulo `Analytics`: ningún endpoint de métricas.
+**Antes.** No había módulo `Analytics` ni endpoints de métricas.
 
-**Debería** ([`../app/roles.md`](../app/roles.md): "el administrador … ve
-las métricas"; dashboard epidemiológico simple del MVP en
-[`../../INDEX.md`](../../INDEX.md)): agregados **sin identificar personas**,
-por ejemplo pedidos por estado y por tipo de misión, tiempo medio de
-entrega, entregas por central y por municipio, y drones por estado.
+**Ahora** (metas en RF-26 de [`requisitos.md`](requisitos.md)). Las tres
+rutas son solo del `admin` y aceptan `?from=AAAA-MM-DD&to=AAAA-MM-DD`; por
+defecto cubren los últimos 30 días. Ninguna devuelve nombres, documentos ni
+direcciones.
 
-**La app lo usará** en el inicio del administrador (Fase 6 deja el espacio
-listo con un aviso de "próximamente" hasta que exista).
+- `GET /analytics/kpis?hubId=`: `groups` (resultados, oportunidades, fallas
+  y deficiencias). Cada KPI trae `{ key, label, value, unit, target, status,
+  previous, delta }`, y la respuesta suma `byMissionType` y `byStatus`.
+- `GET /analytics/demand`: `topMedications`, `byDestinationHub`, `zones`
+  (celdas de ~1 km con al menos 3 pedidos) y `byDay`.
+- `GET /analytics/hubs`: ranking por central de origen (misiones, éxito,
+  retornos, tiempo de urgencia, frío, uso de la flota y drones).
+- HU-36: `GET /orders/history?from&to&status&page&pageSize` (despachador).
+  Devuelve lo cerrado que despachó su central: `{ items, total, page,
+  pageSize }`.
+
+El pedido trae además `authorizedAt`; la misión guarda `returnedAt`.
+
+**La app lo usará** en el inicio del administrador, en lugar de la tarjeta
+"PRÓXIMAMENTE", y en el histórico del despachador.
 
 ## 5. Flota de una central para el administrador — Pendiente
 

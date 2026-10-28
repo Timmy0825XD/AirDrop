@@ -326,6 +326,7 @@ export class DecisionService {
     drone.status = DroneStatus.IN_MISSION;
     await manager.save(drone);
     order.status = OrderStatus.PENDING_LOAD;
+    order.authorizedAt = new Date();
     order.droneId = drone.id;
     order.inventoryItemId = lot.id;
     order.originHubId = originHubId;

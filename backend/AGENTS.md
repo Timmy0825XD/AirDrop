@@ -35,7 +35,7 @@ Nombres alineados al glosario:
 
 `Auth`, `Users`, `Hubs`, `Inventory`, `Fleet`, `Geofences`, `Orders`, `Decision`, `Routing`, `Simulation`, `Telemetry`, `Notifications`, `Analytics`. Existe además `Mail` (envío del OTP por Brevo), que no es un dominio de negocio.
 
-Hoy `Analytics` **no existe** todavía (RF-23, RF-26): está en [`../context/producto/pendientes-backend.md`](../context/producto/pendientes-backend.md). `FallbackService` (RF-18) vive en `decision/`.
+`Analytics` (RF-23, RF-26) vive en `analytics/`: el servicio solo carga datos y `analytics.rules.ts` calcula KPI, metas y el dashboard. `FallbackService` (RF-18) vive en `decision/`.
 
 Un módulo = controllers + services + entities de **ese** tema. El motor de decisión **no** vive dentro de `Simulation`. El reloj de vuelo **no** autoriza pedidos ni asume la carga a bordo.
 

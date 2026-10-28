@@ -5,7 +5,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { And, In, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
+import { resolvePeriod } from '../analytics/analytics.rules';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
@@ -26,6 +27,7 @@ import { CreateEmergencyDto } from './dto/create-emergency.dto';
 import { CreateHubEmergencyDto } from './dto/create-hub-emergency.dto';
 import { CreateHubPlanDto } from './dto/create-hub-plan.dto';
 import { CreatePlanDto } from './dto/create-plan.dto';
+import { HistoryQueryDto } from './dto/history-query.dto';
 import { RejectOrderDto } from './dto/reject-order.dto';
 import { DeliveryPlan } from './delivery-plan.entity';
 import { CatalogRow, InventoryOfferQuery } from './inventory-offer.query';
@@ -55,6 +57,17 @@ import {
 import { presentOrder } from './order.presenter';
 import { PrescriptionImage } from './prescription-image.entity';
 import { PrescriptionStorage } from './prescription-storage';
+
+/** HU-36: estados con los que una misión ya no cambia. */
+const CLOSED_STATUSES = [
+  OrderStatus.DELIVERED,
+  OrderStatus.RETURNED,
+  OrderStatus.REJECTED,
+  OrderStatus.REASSIGNED,
+  OrderStatus.CANCELLED,
+];
+
+const DEFAULT_HISTORY_PAGE_SIZE = 20;
 
 @Injectable()
 export class OrdersService {
@@ -399,6 +412,36 @@ export class OrdersService {
       order: { createdAt: 'DESC' },
     });
     return orders.map((order) => this.toPublicOrder(order));
+  }
+
+  /**
+   * HU-36: lo que la central despachó y ya cerró, del más nuevo al más
+   * viejo. Con fechas, solo los pedidos creados en ese periodo.
+   */
+  async listHistory(user: User, query: HistoryQueryDto) {
+    const hub = await this.requireDispatcherHub(user);
+    const page = query.page ?? 1;
+    const pageSize = query.pageSize ?? DEFAULT_HISTORY_PAGE_SIZE;
+    const period =
+      query.from || query.to ? resolvePeriod(query.from, query.to) : null;
+    const [rows, total] = await this.orders.findAndCount({
+      where: {
+        originHubId: hub.id,
+        status: query.status ?? In(CLOSED_STATUSES),
+        ...(period && {
+          createdAt: And(MoreThanOrEqual(period.from), LessThan(period.to)),
+        }),
+      },
+      order: { createdAt: 'DESC' },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+    return {
+      items: rows.map((order) => this.toPublicOrder(order)),
+      total,
+      page,
+      pageSize,
+    };
   }
 
   async findOne(user: User, id: string) {

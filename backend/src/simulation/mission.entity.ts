@@ -20,6 +20,10 @@ export class Mission {
   @Column({ type: 'timestamptz', nullable: true })
   landedAt: Date | null;
 
+  /** El dron volvió a su central: cierra el tiempo en misión (RF-26). */
+  @Column({ type: 'timestamptz', nullable: true })
+  returnedAt: Date | null;
+
   @Column({ type: 'boolean', default: false })
   batteryAlert: boolean;
 
