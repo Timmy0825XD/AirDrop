@@ -25,8 +25,16 @@ describe('UsersService.setSuspension', () => {
       findOne: jest.fn().mockResolvedValue(target),
       update: jest.fn().mockResolvedValue(undefined),
     };
-    const service = new UsersService(users as never, { find: jest.fn() } as never, { find: jest.fn() } as never);
-    const result = await service.setSuspension(user({ role: UserRole.ADMIN }), target.id, true);
+    const service = new UsersService(
+      users as never,
+      { find: jest.fn() } as never,
+      { find: jest.fn() } as never,
+    );
+    const result = await service.setSuspension(
+      user({ role: UserRole.ADMIN }),
+      target.id,
+      true,
+    );
     expect(result.status).toBe(UserStatus.SUSPENDED);
   });
 
@@ -39,7 +47,11 @@ describe('UsersService.setSuspension', () => {
       findOne: jest.fn().mockResolvedValue(target),
       save: jest.fn(),
     };
-    const service = new UsersService(users as never, { find: jest.fn() } as never, { find: jest.fn() } as never);
+    const service = new UsersService(
+      users as never,
+      { find: jest.fn() } as never,
+      { find: jest.fn() } as never,
+    );
     await expect(
       service.setSuspension(user({ role: UserRole.ADMIN }), target.id, true),
     ).rejects.toBeInstanceOf(ForbiddenException);

@@ -46,15 +46,29 @@ despachador de la central de destino; los traslados se listan en
 **La app lo usará** para: la ruta de regreso en el mapa y la marca del
 empaque al recibir un retorno.
 
-## 2. Fallback con estado `reasignado` (RF-18) — Pendiente
+## 2. Fallback con estado `reasignado` (RF-18) — Hecho (rama `feature/fallback-reasignacion`)
 
-**Hoy.** Si ningún dron es elegible, autorizar responde 409 y nada más.
+**Antes.** Si ningún dron era elegible, autorizar respondía 409 y nada más.
 
-**Debería** ([`../../INDEX.md`](../../INDEX.md), RF-18): sugerir una
-alternativa en vez de rechazar (otra central con stock y dron, o esperar), y
-dejar el pedido en `reassigned` cuando se acepta.
+**Ahora** (reglas en RF-18 de [`requisitos.md`](requisitos.md)): autorizar
+responde **200** con el pedido y `fallback: { kind, reason, options,
+retryAfter, reassignedAt }`, y `assignment: null`.
 
-**La app lo usará** en el detalle del despachador (Fase 7).
+- `kind: 'hub'`: el pedido queda `reassigned` con `originHubId` en la central
+  nueva y aparece primero en su cola (`GET /orders/queue` o
+  `/orders/scheduled`). Esa central lo autoriza o lo rechaza como uno recibido.
+- `kind: 'conventional'`: `reassigned` final; `options` trae hasta tres
+  centrales con el insumo (`hubId`, `name`, `address`, `contactPhone`,
+  `contactEmail`, `distanceKm`).
+- `kind: 'retry'` (solo programados): sigue `received` y Nest lo reintenta
+  solo (`SCHEDULED_RETRY_MS`, 15 min por defecto).
+- Todo pedido trae `fallback` (o `null`) y `reassignedFromHubId`.
+- Socket: `subscribe-hub { hubId }` (despachador u operador de esa central)
+  y el evento `queue-changed { hubId, orderId }`; el pedido publica
+  `order-status: reassigned`.
+
+**La app lo usará** en el detalle del despachador y del solicitante (CU-05):
+dejar de tratar el 409 como "sin dron" y mostrar `fallback`.
 
 ## 3. Telemetría para el operador (RU-18, CU-19) — Pendiente
 

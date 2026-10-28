@@ -1,5 +1,6 @@
 import { JwtService } from '@nestjs/jwt';
 import { Socket } from 'socket.io';
+import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { User } from '../users/user.entity';
 import { TelemetryAccessService } from './telemetry-access.service';
@@ -68,5 +69,50 @@ describe('TelemetryGateway.subscribe', () => {
       event: 'error',
       data: { message: 'El pedido no existe.' },
     });
+  });
+});
+
+describe('TelemetryGateway.subscribeHub', () => {
+  const HUB_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+
+  const joinOf = (client: Socket) =>
+    (client as unknown as { join: jest.Mock }).join;
+
+  function staff(role: UserRole, hubId: string): User {
+    return {
+      id: USER_ID,
+      role,
+      status: UserStatus.ACTIVE,
+      hubAssignments: [{ hubId }],
+    } as unknown as User;
+  }
+
+  it('joins the room of a hub assigned to the dispatcher', async () => {
+    const { gateway } = build(() =>
+      Promise.resolve(staff(UserRole.DISPATCHER, HUB_ID)),
+    );
+    const client = socket();
+    await gateway.handleConnection(client);
+    const reply = await gateway.subscribeHub(client, { hubId: HUB_ID });
+    expect(joinOf(client)).toHaveBeenCalledWith(`hub:${HUB_ID}`);
+    expect(reply).toEqual({ event: 'subscribed-hub', data: { hubId: HUB_ID } });
+  });
+
+  it('rejects a hub that is not assigned, and a requester', async () => {
+    const other = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+    for (const user of [
+      staff(UserRole.DISPATCHER, other),
+      staff(UserRole.REQUESTER, HUB_ID),
+    ]) {
+      const { gateway } = build(() => Promise.resolve(user));
+      const client = socket();
+      await gateway.handleConnection(client);
+      const reply = await gateway.subscribeHub(client, { hubId: HUB_ID });
+      expect(joinOf(client)).not.toHaveBeenCalled();
+      expect(reply).toEqual({
+        event: 'error',
+        data: { message: 'La central no está asignada a tu cuenta.' },
+      });
+    }
   });
 });

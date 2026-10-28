@@ -70,7 +70,9 @@ describeIfDb('Auth (e2e)', () => {
       .send({ email: anaPerez.email, code: otp })
       .expect(201);
 
-    expect((verified.body as { accessToken: string }).accessToken).toBeDefined();
+    expect(
+      (verified.body as { accessToken: string }).accessToken,
+    ).toBeDefined();
 
     const login = await request(app!.getHttpServer())
       .post('/auth/login')
@@ -170,7 +172,9 @@ describeIfDb('Auth (e2e)', () => {
       .post('/auth/forgot-password')
       .send({ email: 'persona.desconocida@gmail.com' })
       .expect(200);
-    expect(unknown.body).toEqual(forgot.body.message ? { message: forgot.body.message } : unknown.body);
+    expect(unknown.body).toEqual(
+      forgot.body.message ? { message: forgot.body.message } : unknown.body,
+    );
     expect((unknown.body as { message: string }).message).toBe(
       (forgot.body as { message: string }).message,
     );

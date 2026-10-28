@@ -1,4 +1,10 @@
-import { IsString, Length, Matches, MaxLength, MinLength } from 'class-validator';
+import {
+  IsString,
+  Length,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { FIELD_LIMITS } from '../../common/field-limits';
 import { ContactDto } from './contact.dto';
 

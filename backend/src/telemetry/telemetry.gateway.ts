@@ -10,10 +10,15 @@ import {
 import { Server, Socket } from 'socket.io';
 import { JwtPayload } from '../auth/jwt-payload';
 import { UserStatus } from '../common/enums/user-status.enum';
+import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
 import { TelemetryAccessService } from './telemetry-access.service';
 import { TelemetryEvent, TelemetryPublisher } from './telemetry.publisher';
-import { TelemetryAccess, presentTelemetry } from './telemetry.rules';
+import {
+  TelemetryAccess,
+  canFollowHub,
+  presentTelemetry,
+} from './telemetry.rules';
 
 const UUID_V4 =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -84,6 +89,26 @@ export class TelemetryGateway
     return { event: 'subscribed', data: { orderId } };
   }
 
+  /** Sala de una central: hoy avisa cuando su cola cambia. */
+  @SubscribeMessage('subscribe-hub')
+  async subscribeHub(client: Socket, body: { hubId?: string }) {
+    const hubId = body?.hubId ?? '';
+    const state = this.clients.get(client.id);
+    const user = state ? await state.ready : null;
+    if (
+      !user ||
+      !UUID_V4.test(hubId) ||
+      !canFollowHub({ role: user.role, hubIds: assignedHubIds(user) }, hubId)
+    ) {
+      return {
+        event: 'error',
+        data: { message: 'La central no está asignada a tu cuenta.' },
+      };
+    }
+    await client.join(hubRoom(hubId));
+    return { event: 'subscribed-hub', data: { hubId } };
+  }
+
   /** Usuario activo dueño del token, o `null` (y desconecta) si no lo hay. */
   private async authenticate(client: Socket): Promise<User | null> {
     const token = tokenFrom(client);
@@ -111,6 +136,13 @@ export class TelemetryGateway
         await this.emit(event.orderId, 'telemetry', (access) =>
           presentTelemetry(event.flight, access.view),
         );
+        return;
+      }
+      if (event.type === 'queue-changed') {
+        this.server?.to(hubRoom(event.hubId)).emit('queue-changed', {
+          hubId: event.hubId,
+          orderId: event.orderId,
+        });
         return;
       }
       if (event.type === 'order-status') {
@@ -169,4 +201,8 @@ function tokenFrom(client: Socket): string | null {
 
 function room(orderId: string): string {
   return `order:${orderId}`;
+}
+
+function hubRoom(hubId: string): string {
+  return `hub:${hubId}`;
 }

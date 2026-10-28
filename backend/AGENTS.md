@@ -35,7 +35,7 @@ Nombres alineados al glosario:
 
 `Auth`, `Users`, `Hubs`, `Inventory`, `Fleet`, `Geofences`, `Orders`, `Decision`, `Routing`, `Simulation`, `Telemetry`, `Notifications`, `Analytics`. Existe además `Mail` (envío del OTP por Brevo), que no es un dominio de negocio.
 
-Hoy `Analytics` y `FallbackService` **no existen** todavía (RF-18, RF-23, RF-26): están en [`../context/producto/pendientes-backend.md`](../context/producto/pendientes-backend.md).
+Hoy `Analytics` **no existe** todavía (RF-23, RF-26): está en [`../context/producto/pendientes-backend.md`](../context/producto/pendientes-backend.md). `FallbackService` (RF-18) vive en `decision/`.
 
 Un módulo = controllers + services + entities de **ese** tema. El motor de decisión **no** vive dentro de `Simulation`. El reloj de vuelo **no** autoriza pedidos ni asume la carga a bordo.
 
@@ -45,7 +45,7 @@ Un módulo = controllers + services + entities de **ese** tema. El motor de deci
 - Guards JWT + roles (RNF-03).
 - ValidationPipe + DTOs class-validator.
 - TypeORM (o Prisma, si el equipo unifica uno): **una** librería de persistencia.
-- `EligibilityService`, `RoutePlannerService`, `FlightClockService`, `TelemetryPublisher` como clases concretas (y `FallbackService` cuando se haga RF-18).
+- `EligibilityService`, `RoutePlannerService`, `FlightClockService`, `TelemetryPublisher`, `FallbackService` como clases concretas.
 
 ## Patrones no permitidos en el MVP
 

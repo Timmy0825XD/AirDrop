@@ -10,6 +10,7 @@ import {
 export type TelemetryEvent =
   | { type: 'telemetry'; orderId: string; flight: LiveFlight }
   | { type: 'order-status'; orderId: string; status: OrderStatus }
+  | { type: 'queue-changed'; hubId: string; orderId: string }
   | {
       type: 'alert';
       orderId: string;

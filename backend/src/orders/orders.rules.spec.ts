@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { DocumentType } from '../common/enums/document-type.enum';
+import { FallbackKind } from '../common/enums/fallback-kind.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 import { User } from '../users/user.entity';
 import { OrderStatus } from '../common/enums/order-status.enum';
@@ -64,14 +65,33 @@ describe('patientFormula', () => {
 });
 
 describe('assertStillReceived', () => {
+  const at = (
+    status: OrderStatus,
+    fallbackKind: FallbackKind | null = null,
+  ) => ({
+    status,
+    fallbackKind,
+  });
+
   it('allows received and blocks any later status', () => {
-    expect(() => assertStillReceived(OrderStatus.RECEIVED)).not.toThrow();
-    expect(() => assertStillReceived(OrderStatus.REJECTED)).toThrow(
+    expect(() => assertStillReceived(at(OrderStatus.RECEIVED))).not.toThrow();
+    expect(() => assertStillReceived(at(OrderStatus.REJECTED))).toThrow(
       new BadRequestException(ONLY_RECEIVED_IS_REJECTED),
     );
-    expect(() => assertStillReceived(OrderStatus.PENDING_LOAD)).toThrow(
+    expect(() => assertStillReceived(at(OrderStatus.PENDING_LOAD))).toThrow(
       new BadRequestException(ONLY_RECEIVED_IS_REJECTED),
     );
+  });
+
+  it('lets the new hub reject a reassigned order, not a conventional one', () => {
+    expect(() =>
+      assertStillReceived(at(OrderStatus.REASSIGNED, FallbackKind.HUB)),
+    ).not.toThrow();
+    expect(() =>
+      assertStillReceived(
+        at(OrderStatus.REASSIGNED, FallbackKind.CONVENTIONAL),
+      ),
+    ).toThrow(new BadRequestException(ONLY_RECEIVED_IS_REJECTED));
   });
 });
 

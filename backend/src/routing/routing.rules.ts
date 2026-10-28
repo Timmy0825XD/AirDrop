@@ -194,7 +194,7 @@ function toCorridor(path: LngLat[]): PlannedCorridor {
   };
 }
 
-function haversineKm(start: LngLat, end: LngLat): number {
+export function haversineKm(start: LngLat, end: LngLat): number {
   const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
   const latitudeDelta = toRadians(end.latitude - start.latitude);
   const longitudeDelta = toRadians(end.longitude - start.longitude);

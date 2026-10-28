@@ -29,9 +29,9 @@ export async function enablePostgis(
   }
 
   try {
-    const installed = (await boot.query(
+    const installed = await boot.query(
       `SELECT 1 FROM pg_extension WHERE extname = 'postgis'`,
-    )) as unknown[];
+    );
     if (installed.length) {
       return;
     }

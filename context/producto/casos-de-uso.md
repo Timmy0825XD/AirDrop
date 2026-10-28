@@ -329,7 +329,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 
 - **Actor:** Sistema
 - **Antes:** CU-26 no encontró dron, en el momento de autorizar
-- **Pasos:** Muestra otra central con stock o avisa que toca un traslado convencional. El estado queda `reasignado`.
+- **Pasos:** Muestra otra central con stock o avisa que toca un traslado convencional. El estado queda `reasignado`. Un programado primero espera un dron durante su día (RF-18).
 - **Después:** Quien pidió ve la alternativa. Ningún dron despegó vacío.
 - **Por qué:** RU-06. El rechazo mudo no es una respuesta.
 

@@ -3,20 +3,24 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { DataSource, EntityManager, In } from 'typeorm';
 import { DroneStatus } from '../common/enums/drone-status.enum';
+import { FallbackKind } from '../common/enums/fallback-kind.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { Drone } from '../fleet/drone.entity';
 import { DroneModel } from '../fleet/drone-model.entity';
+import { GeoJsonPolygon } from '../geofences/geofences.rules';
 import { Hub } from '../hubs/hub.entity';
 import { HubsService } from '../hubs/hubs.service';
 import { InventoryItem } from '../inventory/inventory-item.entity';
+import { NotificationsService } from '../notifications/notifications.service';
 import { presentOrder } from '../orders/order.presenter';
 import { Order } from '../orders/order.entity';
 import { todayInColombia } from '../orders/orders.rules';
@@ -28,17 +32,17 @@ import { TELEMETRY_UNAVAILABLE } from '../telemetry/telemetry.rules';
 import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
 import { AuthorizeOrderDto } from './dto/authorize-order.dto';
-import { EligibilityService } from './eligibility.service';
 import {
-  DroneCandidate,
   LOT_NOT_AVAILABLE,
   NOT_THE_LOADING_HUB,
   NO_ELIGIBLE_DRONE,
   ONLY_PENDING_LOAD_IS_CONFIRMED,
   assertAuthorizingHub,
   assertCanAuthorize,
-  simulatedWeather,
 } from './decision.rules';
+import { clearFallback } from './fallback.rules';
+import { FallbackService } from './fallback.service';
+import { HubEvaluationService } from './hub-evaluation.service';
 
 export type OrderAssignment = {
   droneId: string;
@@ -49,19 +53,70 @@ export type OrderAssignment = {
 
 @Injectable()
 export class DecisionService {
+  private readonly logger = new Logger(DecisionService.name);
+
   constructor(
     private readonly dataSource: DataSource,
     private readonly hubsService: HubsService,
     private readonly routes: RoutePlannerService,
-    private readonly eligibility: EligibilityService,
+    private readonly hubEvaluation: HubEvaluationService,
+    private readonly fallback: FallbackService,
     private readonly flights: FlightClockService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async authorize(user: User, orderId: string, dto: AuthorizeOrderDto = {}) {
     const hub = await this.requireDispatcherHub(user);
-    return this.dataSource.transaction((manager) =>
-      this.authorizeIn(manager, hub, orderId, dto),
+    const result = await this.dataSource.transaction((manager) =>
+      this.authorizeIn(
+        manager,
+        hub,
+        orderId,
+        dto.prescriptionVerified === true,
+        new Date(),
+      ),
     );
+    await this.announce(result, false);
+    return result;
+  }
+
+  /**
+   * Reintento automático de un programado que esperaba dron. Autoriza como
+   * la central que lo intentó, con la fórmula que ya verificó.
+   */
+  async retryScheduled(orderId: string, now = new Date()) {
+    const result = await this.dataSource.transaction(async (manager) => {
+      const order = await manager.findOne(Order, {
+        where: { id: orderId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (
+        !order?.originHubId ||
+        order.status !== OrderStatus.RECEIVED ||
+        order.fallbackKind !== FallbackKind.RETRY ||
+        !order.retryAfter ||
+        order.retryAfter > now
+      ) {
+        return null;
+      }
+      const hub = await manager.findOne(Hub, {
+        where: { id: order.originHubId },
+      });
+      if (!hub) {
+        return null;
+      }
+      return this.authorizeIn(
+        manager,
+        hub,
+        orderId,
+        order.prescriptionVerifiedAt != null,
+        now,
+      );
+    });
+    if (result) {
+      await this.announce(result, true);
+    }
+    return result;
   }
 
   async confirmLoad(user: User, orderId: string) {
@@ -161,7 +216,8 @@ export class DecisionService {
     manager: EntityManager,
     dispatcherHub: Hub,
     orderId: string,
-    dto: AuthorizeOrderDto,
+    prescriptionVerified: boolean,
+    now: Date,
   ) {
     const order = await manager.findOne(Order, {
       where: { id: orderId },
@@ -170,64 +226,54 @@ export class DecisionService {
     if (!order) {
       throw new NotFoundException('El pedido no existe.');
     }
-    const today = todayInColombia();
-    assertCanAuthorize(order, today, dto.prescriptionVerified);
+    const today = todayInColombia(now);
+    assertCanAuthorize(order, today, prescriptionVerified);
     assertAuthorizingHub(order.originHubId, dispatcherHub.id);
     const originHubId = order.originHubId ?? dispatcherHub.id;
     const origin = await manager.findOne(Hub, { where: { id: originHubId } });
     if (!origin) {
       throw new NotFoundException('La central no existe.');
     }
-    if (origin.status !== HubStatus.ACTIVE) {
-      throw new ForbiddenException('La central está suspendida.');
-    }
-    const lot = await this.findFefoLot(manager, originHubId, order, today);
-    if (!lot) {
-      throw new BadRequestException(LOT_NOT_AVAILABLE);
-    }
-    const drones = await manager
-      .createQueryBuilder(Drone, 'drone')
-      .where('drone.hubId = :hubId', { hubId: originHubId })
-      .orderBy('drone.id', 'ASC')
-      .setLock('pessimistic_write')
-      .getMany();
-    const modelsById = await this.modelsById(manager, drones);
-    const heldByDrone = await this.heldByDrone(manager, drones);
+    // Un programado que esperaba dron no se queda reintentando en una
+    // central suspendida o sin el lote: busca otra.
+    const retrying = order.fallbackKind === FallbackKind.RETRY;
     const polygons = await this.routes.loadPolygons(manager);
-    const corridor = this.routes.plan(
-      { longitude: origin.longitude, latitude: origin.latitude },
-      {
-        longitude: order.longitude as number,
-        latitude: order.latitude as number,
-      },
+    if (origin.status !== HubStatus.ACTIVE) {
+      if (!retrying) {
+        throw new ForbiddenException('La central está suspendida.');
+      }
+      return this.withFallback(manager, order, origin, today, polygons, now);
+    }
+    if (prescriptionVerified && !order.prescriptionVerifiedAt) {
+      order.prescriptionVerifiedAt = now;
+    }
+    const evaluation = await this.hubEvaluation.evaluate(
+      manager,
+      origin,
+      order,
+      today,
       polygons,
+      true,
     );
-    const choice = this.eligibility.choose({
-      missionType: order.missionType,
-      quantity: order.quantity,
-      weatherFlyable: simulatedWeather().flyable,
-      candidates: drones.flatMap((drone) => {
-        const model = modelsById.get(drone.droneModelId);
-        if (!model) {
-          return [];
-        }
-        return [
-          {
-            drone: toCandidate(drone, model, heldByDrone.get(drone.id) ?? null),
-            distanceKm: corridor?.distanceKm ?? null,
-          },
-        ];
-      }),
-    });
-    if (!choice.chosen || !corridor) {
-      throw new ConflictException(NO_ELIGIBLE_DRONE);
+    const lot = evaluation.lot;
+    if (!lot) {
+      if (!retrying) {
+        throw new BadRequestException(LOT_NOT_AVAILABLE);
+      }
+      return this.withFallback(manager, order, origin, today, polygons, now);
     }
-    const chosen = choice.chosen;
-    const drone = drones.find((item) => item.id === chosen.droneId);
-    const model = drone ? modelsById.get(drone.droneModelId) : undefined;
-    if (!drone || !model) {
-      throw new ConflictException(NO_ELIGIBLE_DRONE);
+    const chosen = evaluation.choice.chosen;
+    const corridor = evaluation.corridor;
+    const drone = chosen
+      ? evaluation.drones.find((item) => item.id === chosen.droneId)
+      : undefined;
+    const model = drone
+      ? evaluation.modelsById.get(drone.droneModelId)
+      : undefined;
+    if (!chosen || !corridor || !drone || !model) {
+      return this.withFallback(manager, order, origin, today, polygons, now);
     }
+    clearFallback(order);
     await this.applyReservation(
       manager,
       order,
@@ -286,51 +332,48 @@ export class DecisionService {
     await this.routes.saveOutbound(order.id, corridor, manager);
   }
 
-  private async findFefoLot(
+  private async withFallback(
     manager: EntityManager,
-    hubId: string,
     order: Order,
+    failingHub: Hub,
     today: string,
+    polygons: GeoJsonPolygon[],
+    now: Date,
   ) {
-    return manager
-      .createQueryBuilder(InventoryItem, 'item')
-      .where('item.hubId = :hubId', { hubId })
-      .andWhere('LOWER(item.name) = :name', {
-        name: order.medicationName.trim().toLowerCase(),
-      })
-      .andWhere('item.saleType = :saleType', { saleType: order.saleType })
-      .andWhere('item.expirationDate >= :today', { today })
-      .andWhere('item.quantity >= :quantity', { quantity: order.quantity })
-      .orderBy('item.expirationDate', 'ASC')
-      .addOrderBy('item.lot', 'ASC')
-      .setLock('pessimistic_write')
-      .getOne();
-  }
-
-  private async modelsById(manager: EntityManager, drones: Drone[]) {
-    const modelIds = [...new Set(drones.map((drone) => drone.droneModelId))];
-    if (!modelIds.length) {
-      return new Map<string, DroneModel>();
-    }
-    const models = await manager.find(DroneModel, {
-      where: { id: In(modelIds) },
-    });
-    return new Map(models.map((model) => [model.id, model]));
-  }
-
-  private async heldByDrone(manager: EntityManager, drones: Drone[]) {
-    const droneIds = drones.map((drone) => drone.id);
-    if (!droneIds.length) {
-      return new Map<string, Order>();
-    }
-    const held = await manager.find(Order, {
-      where: { droneId: In(droneIds), status: OrderStatus.PENDING_LOAD },
-    });
-    return new Map(
-      held
-        .filter((order) => order.droneId)
-        .map((order) => [order.droneId as string, order]),
+    await this.fallback.resolve(
+      manager,
+      order,
+      failingHub,
+      today,
+      polygons,
+      now,
     );
+    return { ...presentOrder(order), assignment: null };
+  }
+
+  /**
+   * Avisos por el socket, ya confirmada la transacción. Un aviso que no sale
+   * (Redis caído) no deshace la decisión: la app también refresca sola.
+   */
+  private async announce(
+    order: { id: string; status: OrderStatus; originHubId: string | null },
+    retried: boolean,
+  ): Promise<void> {
+    const changed =
+      order.status === OrderStatus.REASSIGNED ||
+      (retried && order.status === OrderStatus.PENDING_LOAD);
+    if (!changed) {
+      return;
+    }
+    try {
+      await this.notifications.statusChanged(order.id, order.status);
+      if (order.originHubId) {
+        await this.notifications.queueChanged(order.originHubId, order.id);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'socket';
+      this.logger.warn(`No se pudo avisar del pedido ${order.id}: ${message}`);
+    }
   }
 
   private assignmentFor(
@@ -368,25 +411,4 @@ export class DecisionService {
     }
     return this.hubsService.requireActive(hubIds[0]);
   }
-}
-
-function toCandidate(
-  drone: Drone,
-  model: DroneModel,
-  held: Order | null,
-): DroneCandidate {
-  return {
-    id: drone.id,
-    identifier: drone.identifier,
-    status: drone.status,
-    maxPayloadKg: model.maxPayloadKg,
-    maxRangeKm: model.maxRangeKm,
-    held: held
-      ? {
-          orderId: held.id,
-          missionType: held.missionType,
-          status: held.status,
-        }
-      : null,
-  };
 }

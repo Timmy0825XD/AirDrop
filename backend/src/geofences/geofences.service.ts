@@ -11,10 +11,7 @@ import { User } from '../users/user.entity';
 import { CreateGeofenceDto } from './dto/create-geofence.dto';
 import { UpdateGeofenceDto } from './dto/update-geofence.dto';
 import { Geofence } from './geofence.entity';
-import {
-  assertGeoJsonPolygon,
-  GeoJsonPolygon,
-} from './geofences.rules';
+import { assertGeoJsonPolygon, GeoJsonPolygon } from './geofences.rules';
 
 type GeofenceRow = {
   id: string;
@@ -35,7 +32,7 @@ export class GeofencesService {
   async create(user: User, dto: CreateGeofenceDto) {
     this.assertActiveOperator(user);
     const polygon = assertGeoJsonPolygon(dto.polygon);
-    const rows = (await this.geofences.query(
+    const rows = await this.geofences.query(
       `INSERT INTO geofences (id, name, reason, polygon, "createdByUserId")
        VALUES (
          gen_random_uuid(),
@@ -46,17 +43,17 @@ export class GeofencesService {
        )
        RETURNING id, name, reason, ST_AsGeoJSON(polygon) AS polygon, "createdByUserId", "createdAt"`,
       [dto.name.trim(), dto.reason.trim(), JSON.stringify(polygon), user.id],
-    )) as GeofenceRow[];
+    );
     return this.toPublicGeofence(rows[0]);
   }
 
   async list(user: User) {
     this.assertActiveOperator(user);
-    const rows = (await this.geofences.query(
+    const rows = await this.geofences.query(
       `SELECT id, name, reason, ST_AsGeoJSON(polygon) AS polygon, "createdByUserId", "createdAt"
        FROM geofences
        ORDER BY name ASC`,
-    )) as GeofenceRow[];
+    );
     return rows.map((row) => this.toPublicGeofence(row));
   }
 
@@ -72,13 +69,11 @@ export class GeofencesService {
       );
     }
     await this.requireGeofence(id);
-    const polygon = dto.polygon
-      ? assertGeoJsonPolygon(dto.polygon)
-      : undefined;
+    const polygon = dto.polygon ? assertGeoJsonPolygon(dto.polygon) : undefined;
     // En UPDATE, TypeORM devuelve `[rows, rowCount]` (PostgresQueryRunner)
     // y no las filas: sin desestructurar, `rows[0]` es el arreglo completo
     // y `toPublicGeofence` recibiría `polygon: undefined` → 500 en JSON.parse.
-    const [rows] = (await this.geofences.query(
+    const [rows] = await this.geofences.query(
       `UPDATE geofences
        SET
          name = COALESCE($2, name),
@@ -96,7 +91,7 @@ export class GeofencesService {
         dto.reason?.trim() ?? null,
         polygon ? JSON.stringify(polygon) : null,
       ],
-    )) as [GeofenceRow[], number];
+    );
     return this.toPublicGeofence(rows[0]);
   }
 

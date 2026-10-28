@@ -61,7 +61,8 @@ export class UpdateInventoryItemDto {
 
   @IsOptional()
   @IsEnum(SaleType, {
-    message: 'El tipo de venta debe ser libre, bajo fórmula o control especial.',
+    message:
+      'El tipo de venta debe ser libre, bajo fórmula o control especial.',
   })
   saleType?: SaleType;
 }

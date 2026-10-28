@@ -8,11 +8,21 @@ import {
 } from 'typeorm';
 import { NUMERIC_TRANSFORMER } from '../common/numeric.transformer';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
+import { FallbackKind } from '../common/enums/fallback-kind.enum';
 import { FIELD_LIMITS } from '../common/field-limits';
 import { MissionType } from '../common/enums/mission-type.enum';
 import { OrderPriority } from '../common/enums/order-priority.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
+
+export type FallbackOption = {
+  hubId: string;
+  name: string;
+  address: string;
+  contactPhone: string;
+  contactEmail: string | null;
+  distanceKm: number;
+};
 
 @Entity({ name: 'orders' })
 export class Order {
@@ -117,6 +127,38 @@ export class Order {
   @Index()
   @Column({ type: 'date', nullable: true })
   scheduledFor: string | null;
+
+  /** RF-18: alternativa cuando ningún dron de la central pudo salir. */
+  @Column({
+    type: 'enum',
+    enum: FallbackKind,
+    enumName: 'fallback_kind',
+    nullable: true,
+  })
+  fallbackKind: FallbackKind | null;
+
+  @Column({ type: 'varchar', length: FIELD_LIMITS.reason, nullable: true })
+  fallbackReason: string | null;
+
+  /** Centrales sugeridas en ese momento, de la más cercana a la más lejana. */
+  @Column({ type: 'jsonb', nullable: true })
+  fallbackOptions: FallbackOption[] | null;
+
+  /** Central que no pudo despachar. Un pedido se reasigna una sola vez. */
+  @Column({ type: 'uuid', nullable: true })
+  reassignedFromHubId: string | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  reassignedAt: Date | null;
+
+  /** Próximo intento automático de un programado sin dron libre. */
+  @Index()
+  @Column({ type: 'timestamptz', nullable: true })
+  retryAfter: Date | null;
+
+  /** El despachador verificó la fórmula; el reintento automático no la repite. */
+  @Column({ type: 'timestamptz', nullable: true })
+  prescriptionVerifiedAt: Date | null;
 
   @Index()
   @CreateDateColumn({ type: 'timestamptz' })

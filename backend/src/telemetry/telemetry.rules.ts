@@ -47,6 +47,18 @@ export function telemetryAccess(
   return null;
 }
 
+/** Despachador u operador siguen la sala de una central que tienen asignada. */
+export function canFollowHub(
+  user: { role: UserRole; hubIds: string[] },
+  hubId: string,
+): boolean {
+  return (
+    (user.role === UserRole.DISPATCHER ||
+      user.role === UserRole.FLEET_OPERATOR) &&
+    user.hubIds.includes(hubId)
+  );
+}
+
 export function presentTelemetry(flight: LiveFlight, view: TelemetryView) {
   const map = {
     orderId: flight.orderId,
