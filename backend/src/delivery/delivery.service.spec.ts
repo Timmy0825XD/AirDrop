@@ -4,6 +4,12 @@ import { DataSource } from 'typeorm';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
+import {
+  RECEIPT_CHECK_REQUIRED,
+  RECEIPT_COLD_CHAIN,
+  RECEIPT_REMISSION_MISMATCH,
+} from '../inventory/restock.rules';
+import { RestockService } from '../inventory/restock.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Order } from '../orders/order.entity';
 import { FlightClockService } from '../simulation/flight-clock.service';
@@ -80,6 +86,7 @@ describe('DeliveryService', () => {
   };
   let notifications: { statusChanged: jest.Mock };
   let flights: { startReturn: jest.Mock };
+  let restock: { receiveTransfer: jest.Mock };
   let service: DeliveryService;
 
   beforeEach(() => {
@@ -106,11 +113,13 @@ describe('DeliveryService', () => {
     } as unknown as DataSource;
     notifications = { statusChanged: jest.fn().mockResolvedValue(undefined) };
     flights = { startReturn: jest.fn().mockResolvedValue(undefined) };
+    restock = { receiveTransfer: jest.fn().mockResolvedValue(undefined) };
     service = new DeliveryService(
       dataSource,
       notifications as unknown as NotificationsService,
       flights as unknown as FlightClockService,
       { getOrThrow: () => SECRET } as unknown as ConfigService,
+      restock as unknown as RestockService,
     );
   });
 
@@ -212,7 +221,9 @@ describe('DeliveryService', () => {
 
   describe('validate', () => {
     it('con el código correcto entrega el pedido, avisa y manda al dron de vuelta', async () => {
-      const result = await service.validate(requester, ORDER_ID, CODE);
+      const result = await service.validate(requester, ORDER_ID, {
+        code: CODE,
+      });
 
       expect(result.status).toBe(OrderStatus.DELIVERED);
       const [saved] = manager.save.mock.calls[0] as [DeliveryCode];
@@ -227,14 +238,16 @@ describe('DeliveryService', () => {
     it('la entrega sigue valiendo aunque no arranque el regreso', async () => {
       flights.startReturn.mockRejectedValueOnce(new Error('sin Redis'));
 
-      const result = await service.validate(requester, ORDER_ID, CODE);
+      const result = await service.validate(requester, ORDER_ID, {
+        code: CODE,
+      });
 
       expect(result.status).toBe(OrderStatus.DELIVERED);
     });
 
     it('rechaza un código incorrecto sin entregar y cuenta el intento', async () => {
       await expect(
-        service.validate(requester, ORDER_ID, WRONG),
+        service.validate(requester, ORDER_ID, { code: WRONG }),
       ).rejects.toThrow(new BadRequestException(DELIVERY_CODE_REJECTED));
 
       const [saved] = manager.save.mock.calls[0] as [DeliveryCode];
@@ -249,7 +262,7 @@ describe('DeliveryService', () => {
       stored = state({ attempts: DELIVERY_CODE_MAX_ATTEMPTS - 1 });
 
       await expect(
-        service.validate(requester, ORDER_ID, WRONG),
+        service.validate(requester, ORDER_ID, { code: WRONG }),
       ).rejects.toThrow(new BadRequestException(DELIVERY_CODE_LOCKED));
 
       expect(stored.attempts).toBe(DELIVERY_CODE_MAX_ATTEMPTS);
@@ -258,9 +271,9 @@ describe('DeliveryService', () => {
     it('con el pedido bloqueado ni el código correcto entrega', async () => {
       stored = state({ attempts: DELIVERY_CODE_MAX_ATTEMPTS });
 
-      await expect(service.validate(requester, ORDER_ID, CODE)).rejects.toThrow(
-        new BadRequestException(DELIVERY_CODE_LOCKED),
-      );
+      await expect(
+        service.validate(requester, ORDER_ID, { code: CODE }),
+      ).rejects.toThrow(new BadRequestException(DELIVERY_CODE_LOCKED));
 
       expect(stored.usedAt).toBeNull();
       expect(flights.startReturn).not.toHaveBeenCalled();
@@ -269,7 +282,9 @@ describe('DeliveryService', () => {
     it('el código correcto entrega aunque haya intentos fallidos previos', async () => {
       stored = state({ attempts: DELIVERY_CODE_MAX_ATTEMPTS - 1 });
 
-      const result = await service.validate(requester, ORDER_ID, CODE);
+      const result = await service.validate(requester, ORDER_ID, {
+        code: CODE,
+      });
 
       expect(result.status).toBe(OrderStatus.DELIVERED);
     });
@@ -281,39 +296,41 @@ describe('DeliveryService', () => {
       } as Mission;
       stored = state();
 
-      await expect(service.validate(requester, ORDER_ID, CODE)).rejects.toThrow(
-        new BadRequestException(DELIVERY_CODE_REJECTED),
-      );
+      await expect(
+        service.validate(requester, ORDER_ID, { code: CODE }),
+      ).rejects.toThrow(new BadRequestException(DELIVERY_CODE_REJECTED));
 
       expect(stored.attempts).toBe(0);
     });
 
     it('rechaza un código ya usado', async () => {
       stored = state({ usedAt: new Date() });
-      await expect(service.validate(requester, ORDER_ID, CODE)).rejects.toThrow(
-        new BadRequestException(DELIVERY_CODE_REJECTED),
-      );
+      await expect(
+        service.validate(requester, ORDER_ID, { code: CODE }),
+      ).rejects.toThrow(new BadRequestException(DELIVERY_CODE_REJECTED));
     });
 
     it('rechaza un segundo intento cuando el pedido ya está entregado', async () => {
       current = order({ status: OrderStatus.DELIVERED });
-      await expect(service.validate(requester, ORDER_ID, CODE)).rejects.toThrow(
-        new BadRequestException(DELIVERY_CODE_REJECTED),
-      );
+      await expect(
+        service.validate(requester, ORDER_ID, { code: CODE }),
+      ).rejects.toThrow(new BadRequestException(DELIVERY_CODE_REJECTED));
     });
 
     it('rechaza un pedido que no está en espera de entrega', async () => {
       current = order({ status: OrderStatus.RETURNING });
-      await expect(service.validate(requester, ORDER_ID, CODE)).rejects.toThrow(
+      await expect(
+        service.validate(requester, ORDER_ID, { code: CODE }),
+      ).rejects.toThrow(
         new BadRequestException(ONLY_AWAITING_DELIVERY_IS_DELIVERED),
       );
     });
 
     it('responde 404 si el pedido es de otro solicitante', async () => {
       current = order({ requesterId: 'otro' });
-      await expect(service.validate(requester, ORDER_ID, CODE)).rejects.toThrow(
-        NotFoundException,
-      );
+      await expect(
+        service.validate(requester, ORDER_ID, { code: CODE }),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 
@@ -330,9 +347,63 @@ describe('DeliveryService', () => {
       const dispatcher = dispatcherOf(HUB_ID);
 
       const shown = await service.show(dispatcher, ORDER_ID);
-      const result = await service.validate(dispatcher, ORDER_ID, shown.code);
+      const result = await service.validate(dispatcher, ORDER_ID, {
+        code: shown.code,
+        remissionMatches: true,
+        sealIntact: true,
+      });
 
       expect(result.status).toBe(OrderStatus.DELIVERED);
+      expect(restock.receiveTransfer).toHaveBeenCalledWith(manager, current);
+    });
+
+    it('sin el checklist de remisión y sello no recibe ni cuenta el intento', async () => {
+      current = hubOrder();
+      await expect(
+        service.validate(dispatcherOf(HUB_ID), ORDER_ID, { code: WRONG }),
+      ).rejects.toThrow(new BadRequestException(RECEIPT_CHECK_REQUIRED));
+      expect(manager.save).not.toHaveBeenCalled();
+    });
+
+    it('si la remisión no coincide, el paquete vuelve a origen y no entra', async () => {
+      current = hubOrder();
+      const result = await service.validate(dispatcherOf(HUB_ID), ORDER_ID, {
+        code: CODE,
+        remissionMatches: false,
+        sealIntact: true,
+      });
+
+      expect(result.status).toBe(OrderStatus.RETURNING);
+      expect(result.receiptRejectedReason).toBe(RECEIPT_REMISSION_MISMATCH);
+      expect(restock.receiveTransfer).not.toHaveBeenCalled();
+      expect(notifications.statusChanged).toHaveBeenCalledWith(
+        ORDER_ID,
+        OrderStatus.RETURNING,
+      );
+      expect(flights.startReturn).toHaveBeenCalledWith(ORDER_ID);
+    });
+
+    it('con alerta de frío no entra aunque todo coincida, y guarda el sello', async () => {
+      current = hubOrder();
+      current.coldChainAlertAt = new Date();
+      const result = await service.validate(dispatcherOf(HUB_ID), ORDER_ID, {
+        code: CODE,
+        remissionMatches: true,
+        sealIntact: true,
+      });
+
+      expect(result.status).toBe(OrderStatus.RETURNING);
+      expect(result.receiptRejectedReason).toBe(RECEIPT_COLD_CHAIN);
+      expect(current.receiptSealIntact).toBe(true);
+      expect(restock.receiveTransfer).not.toHaveBeenCalled();
+    });
+
+    it('a una persona le basta el código', async () => {
+      const result = await service.validate(requester, ORDER_ID, {
+        code: CODE,
+      });
+      expect(result.status).toBe(OrderStatus.DELIVERED);
+      expect(restock.receiveTransfer).not.toHaveBeenCalled();
     });
 
     it('un despachador de otra central recibe 404', async () => {

@@ -13,7 +13,7 @@ Estado: `Pendiente` · `En curso (rama)` · `Hecho (PR)`.
 
 ---
 
-## 1. Entrega, retorno y cuarentena — En parte hecho (PR #56, #62, #63, #65, #66, #68, #70, #71)
+## 1. Entrega, retorno y cuarentena — En parte hecho (PR #56, #62, #63, #65, #66, #68, #70, #71, rama `feature/cuarentena-inventario`)
 
 **Ya funciona** (probado de punta a punta con la app): el código de un uso
 (`GET /orders/:id/delivery-code`) existe desde que se confirma la carga y es
@@ -26,25 +26,39 @@ vuelve con el paquete y queda `returned`. Recibe el solicitante o el
 despachador de la central de destino; los traslados se listan en
 `GET /orders/incoming`.
 
+**Hecho en `feature/cuarentena-inventario`:**
+
+- **El lote se descuenta al confirmar la carga** (antes no se descontaba).
+  El pedido guarda el registro de salida: `dispatchedLot` y
+  `dispatchedLotExpiresOn`. Si el lote ya no alcanza, `confirm-load` responde
+  400 "No hay un lote vigente con la cantidad del pedido." y no despega.
+- **Cuarentena al volver:** `POST /orders/:id/return-check` con
+  `{ packagingIntact: boolean }` (despachador de la central de origen, pedido
+  `returned`, una sola vez). Sin alerta de frío, con el empaque íntegro y sin
+  sello roto en destino, el lote vuelve al mismo ítem (o se recrea).
+  Si no, queda en cuarentena y no vuelve al stock. El pedido trae
+  `returnCheckedAt` y `returnOutcome` (`restocked | quarantined`).
+  `GET /inventory/quarantine` lista la cuarentena de la central.
+- **Traslado recibido:** `POST .../delivery-code/validate` de un traslado
+  exige además `{ remissionMatches, sealIntact }` (400 "Confirma si la
+  remisión coincide y si el sello llegó intacto." si faltan). Todo bien y sin
+  alerta de frío: `delivered` y el lote entra en la central de destino. Si
+  no: el pedido pasa a `returning`, el dron vuelve con el paquete y
+  `receiptRejectedReason` dice por qué.
+
 **Falta:**
 
-1. **Cuarentena al volver** (sin hacer): sin alerta de frío y con el
-   empaque íntegro, el lote reingresa al inventario de origen; con alerta de
-   frío o si el despachador marca el empaque comprometido, no. Depende
-   también del punto 9 (temperatura).
-2. **Traslado recibido** (sin hacer): el lote entra al inventario de la
-   central de destino.
-3. **La ruta de regreso no viaja en el pedido.** `assignment.coordinates`
+1. **La ruta de regreso no viaja en el pedido.** `assignment.coordinates`
    es solo la ida (el documento de la demo menciona `returnRoute`, pero Nest
    no lo envía); en el regreso la app pinta la misma línea.
-4. **El aviso de intentos agotados promete más de lo que pasa.** Dice "El
+2. **El aviso de intentos agotados promete más de lo que pasa.** Dice "El
    dron regresa con el paquete", pero el pedido sigue en `awaiting_delivery`
    hasta que vencen los 5 minutos; recién ahí sale el dron.
 
-**Tests** que pide `AGENTS.md` y faltan: cuarentena con y sin alerta de frío.
-
-**La app lo usará** para: la ruta de regreso en el mapa y la marca del
-empaque al recibir un retorno.
+**La app lo usará** para: la ruta de regreso en el mapa, la revisión del
+empaque al recibir un retorno (`return-check`) y el checklist de remisión y
+sello al recibir un traslado. **Sin ese checklist, la app ya no puede recibir
+un traslado.**
 
 ## 2. Fallback con estado `reasignado` (RF-18) — Hecho (rama `feature/fallback-reasignacion`)
 

@@ -42,6 +42,6 @@ export class DeliveryController {
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() dto: ValidateDeliveryCodeDto,
   ) {
-    return this.deliveryService.validate(user, id, dto.code);
+    return this.deliveryService.validate(user, id, dto);
   }
 }

@@ -9,6 +9,11 @@ import { DataSource, EntityManager } from 'typeorm';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
+import { RestockService } from '../inventory/restock.service';
+import {
+  RECEIPT_CHECK_REQUIRED,
+  receiptRejection,
+} from '../inventory/restock.rules';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Order } from '../orders/order.entity';
 import { presentOrder } from '../orders/order.presenter';
@@ -17,6 +22,7 @@ import { Mission } from '../simulation/mission.entity';
 import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
 import { DeliveryCode } from './delivery-code.entity';
+import { ValidateDeliveryCodeDto } from './dto/validate-delivery-code.dto';
 import {
   DELIVERY_CODE_LOCKED,
   DELIVERY_CODE_NOT_AVAILABLE,
@@ -55,6 +61,7 @@ export class DeliveryService {
     private readonly notifications: NotificationsService,
     private readonly flights: FlightClockService,
     private readonly config: ConfigService,
+    private readonly restock: RestockService,
   ) {}
 
   /**
@@ -101,10 +108,20 @@ export class DeliveryService {
   /**
    * Cierra la entrega: marca el código usado y entrega el pedido. El dron no
    * queda libre en destino: vuelve a su central y se libera al aterrizar.
+   * En un traslado, quien recibe compara la remisión y el sello: si algo
+   * falla, o hubo alerta de frío, el paquete vuelve a origen (centrales.md).
    */
-  async validate(user: User, orderId: string, code: string) {
+  async validate(user: User, orderId: string, dto: ValidateDeliveryCodeDto) {
+    const code = dto.code;
     const result = await this.dataSource.transaction(async (manager) => {
       const order = await this.lockRecipientOrder(manager, user, orderId);
+      const toHub = order.destinationKind === DestinationKind.HUB;
+      if (
+        toHub &&
+        (dto.remissionMatches === undefined || dto.sealIntact === undefined)
+      ) {
+        throw new BadRequestException(RECEIPT_CHECK_REQUIRED);
+      }
       if (order.status === OrderStatus.DELIVERED) {
         throw new BadRequestException(DELIVERY_CODE_REJECTED);
       }
@@ -141,14 +158,39 @@ export class DeliveryService {
       }
       state.usedAt = now;
       await manager.save(state);
+      if (toHub) {
+        const rejected = receiptRejection({
+          coldChainAlert: order.coldChainAlertAt != null,
+          remissionMatches: dto.remissionMatches === true,
+          sealIntact: dto.sealIntact === true,
+        });
+        if (rejected) {
+          order.status = OrderStatus.RETURNING;
+          order.receiptRejectedReason = rejected;
+          order.receiptSealIntact = dto.sealIntact === true;
+          return { refused: await manager.save(order) };
+        }
+        await this.restock.receiveTransfer(manager, order);
+      }
       order.status = OrderStatus.DELIVERED;
       return { delivered: await manager.save(order) };
     });
     if ('rejection' in result) {
       throw new BadRequestException(result.rejection);
     }
+    if ('refused' in result && result.refused) {
+      await this.notifications.statusChanged(orderId, OrderStatus.RETURNING);
+      await this.startReturnSafely(orderId);
+      return presentOrder(result.refused);
+    }
     const { delivered } = result;
     await this.notifications.statusChanged(orderId, OrderStatus.DELIVERED);
+    await this.startReturnSafely(orderId);
+    return presentOrder(delivered);
+  }
+
+  /** La entrega o el rechazo ya quedaron guardados aunque el regreso no arranque. */
+  private async startReturnSafely(orderId: string): Promise<void> {
     try {
       await this.flights.startReturn(orderId);
     } catch (error) {
@@ -157,7 +199,6 @@ export class DeliveryService {
         `No se pudo iniciar el regreso del dron ${orderId}: ${message}. Se reintenta al reiniciar.`,
       );
     }
-    return presentOrder(delivered);
   }
 
   private secret(): string {

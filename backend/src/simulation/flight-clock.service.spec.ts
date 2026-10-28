@@ -296,11 +296,13 @@ describe('FlightClockService cadena de frío (RF-17)', () => {
     const built = build();
     built.service['waiting'].clear();
     built.service['random'] = () => 0;
-    built.service['missions'] = {
-      findOne: jest.fn().mockResolvedValue(null),
-      create: jest.fn((value: unknown) => value),
-      save: jest.fn((value: unknown) => Promise.resolve(value)),
-    } as never;
+    Object.assign(built.service, {
+      missions: {
+        findOne: jest.fn().mockResolvedValue(null),
+        create: jest.fn((value: unknown) => value),
+        save: jest.fn((value: unknown) => Promise.resolve(value)),
+      },
+    });
     built.orders.findOne.mockResolvedValue({
       ...order(OrderStatus.PENDING_LOAD),
       requiresColdChain: true,

@@ -20,6 +20,7 @@ import { User } from '../users/user.entity';
 import { CreateInventoryItemDto } from './dto/create-inventory-item.dto';
 import { UpdateInventoryItemDto } from './dto/update-inventory-item.dto';
 import { InventoryService } from './inventory.service';
+import { RestockService } from './restock.service';
 
 @ApiTags('Inventario')
 @ApiBearerAuth()
@@ -27,7 +28,10 @@ import { InventoryService } from './inventory.service';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.DISPATCHER)
 export class InventoryController {
-  constructor(private readonly inventoryService: InventoryService) {}
+  constructor(
+    private readonly inventoryService: InventoryService,
+    private readonly restockService: RestockService,
+  ) {}
 
   @Post()
   create(@CurrentUser() user: User, @Body() dto: CreateInventoryItemDto) {
@@ -37,6 +41,12 @@ export class InventoryController {
   @Get()
   list(@CurrentUser() user: User) {
     return this.inventoryService.list(user);
+  }
+
+  /** Insumo devuelto que no reingresa (cuarentena de productos.md). */
+  @Get('quarantine')
+  quarantine(@CurrentUser() user: User) {
+    return this.restockService.listQuarantine(user);
   }
 
   @Patch(':id')
