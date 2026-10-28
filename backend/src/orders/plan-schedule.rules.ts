@@ -297,7 +297,7 @@ function candidateDates(schedule: PlanSchedule, until: string): string[] {
   return dates;
 }
 
-function assertTime(time: string): void {
+export function assertTime(time: string): void {
   const match = /^(\d{2}):00$/.exec(time);
   const hour = match ? Number(match[1]) : NaN;
   if (!(hour >= FIRST_SLOT_HOUR && hour <= LAST_SLOT_HOUR)) {

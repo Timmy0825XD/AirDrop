@@ -35,6 +35,7 @@ export function presentOrder(order: Order) {
     scheduledFor: order.scheduledFor,
     scheduledAt: order.scheduledAt ?? null,
     windowEndsAt: order.windowEndsAt ?? null,
+    confirmedAt: order.confirmedAt ?? null,
     hasPrescription: order.saleType === SaleType.PRESCRIPTION,
     reassignedFromHubId: order.reassignedFromHubId,
     fallback: presentFallback(order),

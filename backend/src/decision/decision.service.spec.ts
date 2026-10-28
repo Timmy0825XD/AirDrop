@@ -154,6 +154,8 @@ function received(overrides: Partial<Order> = {}): Order {
     scheduledFor: null,
     scheduledAt: null,
     windowEndsAt: null,
+    confirmedAt: null,
+    remindedAt: null,
     fallbackKind: null,
     fallbackReason: null,
     fallbackOptions: null,

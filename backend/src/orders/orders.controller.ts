@@ -151,6 +151,26 @@ export class OrdersController {
     return this.ordersService.extendPlan(user, id);
   }
 
+  @Post('plans/:id/pause')
+  @HttpCode(200)
+  @Roles(UserRole.REQUESTER, UserRole.DISPATCHER)
+  pausePlan(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.ordersService.setPlanPaused(user, id, true);
+  }
+
+  @Post('plans/:id/resume')
+  @HttpCode(200)
+  @Roles(UserRole.REQUESTER, UserRole.DISPATCHER)
+  resumePlan(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.ordersService.setPlanPaused(user, id, false);
+  }
+
   @Post('plans/:id/cancel')
   @Roles(UserRole.REQUESTER, UserRole.DISPATCHER)
   cancelPlan(

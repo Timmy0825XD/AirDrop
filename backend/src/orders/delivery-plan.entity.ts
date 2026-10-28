@@ -61,6 +61,10 @@ export class DeliveryPlan {
   @Column({ type: 'varchar', length: 5, nullable: true })
   deliveryTime: string | null;
 
+  /** En pausa: no avisa y sus entregas se omiten al llegar a T-2 h. */
+  @Column({ type: 'boolean', default: false })
+  paused: boolean;
+
   /** Bajo fórmula: el plan no pasa de esta fecha. */
   @Column({ type: 'date', nullable: true })
   prescriptionValidUntil: string | null;

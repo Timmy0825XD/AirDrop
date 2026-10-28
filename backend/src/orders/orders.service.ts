@@ -57,6 +57,10 @@ import {
 } from './orders.rules';
 import { presentOrder } from './order.presenter';
 import {
+  NOT_YET_AUTHORIZED,
+  initialOccurrenceState,
+} from './plan-occurrence.rules';
+import {
   Occurrence,
   PRESCRIPTION_VALIDITY_REQUIRED,
   PlanSchedule,
@@ -73,6 +77,8 @@ import { PrescriptionStorage } from './prescription-storage';
 export const RULE_PLAN_NOT_EXTENDED =
   'Para alargar este plan cambia su calendario.';
 export const PLAN_RESCHEDULED_REASON = 'Se cambió el calendario del plan.';
+export const PLAN_ALREADY_PAUSED = 'El plan ya está en pausa.';
+export const PLAN_NOT_PAUSED = 'El plan no está en pausa.';
 
 /** Cuándo sale cada entrega de un plan y hasta cuándo cubre. */
 type PlanTiming = {
@@ -97,6 +103,7 @@ const CLOSED_STATUSES = [
   OrderStatus.REJECTED,
   OrderStatus.REASSIGNED,
   OrderStatus.CANCELLED,
+  OrderStatus.SKIPPED,
 ];
 
 const DEFAULT_HISTORY_PAGE_SIZE = 20;
@@ -413,6 +420,21 @@ export class OrdersService {
     return this.toPublicPlan(plan);
   }
 
+  /** RU-30: en pausa no hay avisos y las entregas se omiten a T-2 h. */
+  async setPlanPaused(user: User, id: string, paused: boolean) {
+    const plan = await this.requireOwnedPlan(user, id);
+    if (plan.status === PlanStatus.CANCELLED) {
+      throw new BadRequestException(PLAN_ALREADY_CANCELLED);
+    }
+    if (plan.paused === paused) {
+      throw new BadRequestException(
+        paused ? PLAN_ALREADY_PAUSED : PLAN_NOT_PAUSED,
+      );
+    }
+    plan.paused = paused;
+    return this.toPublicPlan(await this.plans.save(plan));
+  }
+
   async cancelPlan(user: User, id: string) {
     const plan = await this.requireOwnedPlan(user, id);
     if (plan.status === PlanStatus.CANCELLED) {
@@ -421,7 +443,7 @@ export class OrdersService {
     plan.status = PlanStatus.CANCELLED;
     await this.plans.save(plan);
     await this.orders.update(
-      { planId: plan.id, status: OrderStatus.RECEIVED },
+      { planId: plan.id, status: In(NOT_YET_AUTHORIZED) },
       {
         status: OrderStatus.CANCELLED,
         statusReason: PLAN_CANCELLED_REASON,
@@ -794,7 +816,7 @@ export class OrdersService {
       this.orders.create({
         missionType: MissionType.SCHEDULED,
         destinationKind: plan.destinationKind,
-        status: OrderStatus.RECEIVED,
+        ...initialOccurrenceState(plan, occurrence, new Date()),
         priority: OrderPriority.NORMAL,
         medicationName: plan.medicationName,
         saleType: plan.saleType,
@@ -922,6 +944,7 @@ export class OrdersService {
       longitude: plan.longitude,
       hasPrescription: plan.saleType === SaleType.PRESCRIPTION,
       schedule: scheduleOf(plan),
+      paused: plan.paused ?? false,
       windowMinutes: plan.deliveryTime ? SLOT_MS / 60_000 : null,
       prescriptionValidUntil: plan.prescriptionValidUntil ?? null,
       renewalDue: plan.frequency
@@ -980,7 +1003,7 @@ function scheduleOf(plan: DeliveryPlan): PlanSchedule {
  */
 function isReplaceable(order: Order, now: Date): boolean {
   if (
-    order.status !== OrderStatus.RECEIVED ||
+    !NOT_YET_AUTHORIZED.includes(order.status) ||
     order.droneId ||
     order.fallbackKind
   ) {

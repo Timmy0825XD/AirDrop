@@ -179,6 +179,14 @@ export class Order {
   @Column({ type: 'timestamptz', nullable: true })
   windowEndsAt: Date | null;
 
+  /** Quien recibe confirmó que estará (o la central, sola). */
+  @Column({ type: 'timestamptz', nullable: true })
+  confirmedAt: Date | null;
+
+  /** Se mandó el aviso de T-24 h. */
+  @Column({ type: 'timestamptz', nullable: true })
+  remindedAt: Date | null;
+
   /** RF-18: alternativa cuando ningún dron de la central pudo salir. */
   @Column({
     type: 'enum',

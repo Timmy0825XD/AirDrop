@@ -47,6 +47,8 @@ const CODE_VISIBLE = [
 
 /** Pedidos que todavía no pasan por la confirmación de carga. */
 const BEFORE_LOAD = [
+  OrderStatus.SCHEDULED,
+  OrderStatus.AWAITING_CONFIRMATION,
   OrderStatus.RECEIVED,
   OrderStatus.UNDER_REVIEW,
   OrderStatus.ASSIGNED,
