@@ -7,6 +7,7 @@ import { BrevoMailService } from '../mail/brevo-mail.service';
 import { UsersModule } from '../users/users.module';
 import { AdminSeedService } from './admin-seed.service';
 import { AuthController } from './auth.controller';
+import { jwtExpiresInSeconds } from './auth.rules';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
 import { OneTimeCode } from './one-time-code.entity';
@@ -24,7 +25,7 @@ import { RolesGuard } from './roles.guard';
       useFactory: (config: ConfigService) => ({
         secret: config.getOrThrow<string>('JWT_SECRET'),
         signOptions: {
-          expiresIn: 60 * 60 * 8,
+          expiresIn: jwtExpiresInSeconds(config.get<string>('JWT_EXPIRES_IN')),
         },
       }),
     }),

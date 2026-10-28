@@ -14,12 +14,45 @@ import {
   LOGIN_MAX_ATTEMPTS,
 } from '../common/field-limits';
 
+/** Sin `JWT_EXPIRES_IN`, la sesión dura 8 horas: una jornada de turno. */
+export const DEFAULT_JWT_EXPIRES_IN_SECONDS = 8 * 60 * 60;
+
+export const JWT_EXPIRES_IN_INVALID =
+  'JWT_EXPIRES_IN debe ser un número de segundos o un valor como 8h, 30m o 1d.';
+
+const DURATION_SECONDS: Record<string, number> = {
+  s: 1,
+  m: 60,
+  h: 60 * 60,
+  d: 24 * 60 * 60,
+};
+
+/**
+ * Vencimiento del token en segundos. Acepta `28800` o `8h`, `30m`, `1d`.
+ * Un valor mal escrito detiene el arranque en vez de dejar sesiones sin
+ * vencer o con una duración inesperada.
+ */
+export function jwtExpiresInSeconds(raw: string | undefined): number {
+  const value = raw?.trim();
+  if (!value) {
+    return DEFAULT_JWT_EXPIRES_IN_SECONDS;
+  }
+  const match = /^(\d+)\s*([smhd])?$/i.exec(value);
+  const amount = match ? Number(match[1]) : NaN;
+  if (!match || !Number.isSafeInteger(amount) || amount <= 0) {
+    throw new Error(JWT_EXPIRES_IN_INVALID);
+  }
+  return amount * DURATION_SECONDS[(match[2] ?? 's').toLowerCase()];
+}
+
 export function hashOtp(code: string): string {
   return createHash('sha256').update(code).digest('hex');
 }
 
 export function generateOtp(): string {
-  return randomInt(0, 1_000_000).toString().padStart(FIELD_LIMITS.otpDigits, '0');
+  return randomInt(0, 1_000_000)
+    .toString()
+    .padStart(FIELD_LIMITS.otpDigits, '0');
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -59,7 +92,9 @@ export function normalizeDocumentNumber(
 }
 
 export function isLockActive(user: User, now = new Date()): boolean {
-  return Boolean(user.lockedUntil && user.lockedUntil.getTime() > now.getTime());
+  return Boolean(
+    user.lockedUntil && user.lockedUntil.getTime() > now.getTime(),
+  );
 }
 
 export function nextFailedLoginState(
