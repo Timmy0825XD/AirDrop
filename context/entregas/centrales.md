@@ -4,7 +4,7 @@ Esto es distribución física, no dispensación. No hay fórmula de paciente ni 
 
 Lo pide el despachador de la central que **necesita** el insumo. Lo suelta el despachador de la central que **lo tiene**. El dron sale de la segunda.
 
-1. El despachador de destino elige la central de origen, el medicamento y la cantidad. Si el pedido es programado, también la frecuencia y la fecha de inicio. No adjunta fórmula.
+1. El despachador de destino elige la central de origen, el medicamento y la cantidad. Si el pedido es programado, también el calendario, cuándo termina y la hora de la franja (RU-30). No adjunta fórmula.
 2. El despachador de origen confirma unidades selladas del mismo genérico, concentración y forma. Arma la remisión: origen, destino, medicamento, lote, vencimiento y cantidad. Autorizar reserva el dron. El vuelo no empieza.
 3. Al confirmar la carga descuenta ese lote en origen. No adjunta información de uso para un paciente: quien recibe es otro servicio de la red.
 4. En destino, el despachador que pidió ingresa el código y compara la remisión: cantidad, lote, vencimiento, sello y, si el ítem lleva frío, la temperatura del trayecto.

@@ -2,7 +2,7 @@
 
 Esto es dispensación: hay un paciente. La norma está en [../legal/salud.md](../legal/salud.md). Los tipos de producto y la cuarentena están en [productos.md](productos.md).
 
-1. El solicitante crea la urgencia o el plan periódico hacia su ubicación.
+1. El solicitante crea la urgencia o el plan periódico hacia su ubicación. En el plan elige días, hora de la franja y cuándo termina (RU-30); cada entrega le pide confirmar el día anterior.
 2. Si el ítem es de venta bajo fórmula, adjunta la imagen. El pedido no se crea si falta la imagen, si el documento de la cuenta no es el del paciente, o si el ítem es de control especial.
 3. El despachador de la central que tiene el insumo verifica la fórmula: español, legible, sin tachones, con genérico, concentración, forma, vía, dosis, frecuencia, duración, cantidad en números y letras, paciente, fecha, vigencia y registro de quien prescribe. Si falla, no autoriza.
 4. Confronta eso con el estante. Autorizar reserva el dron. El vuelo no empieza y el inventario no se descuenta.

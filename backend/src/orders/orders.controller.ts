@@ -2,7 +2,9 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
   Param,
+  Patch,
   ParseUUIDPipe,
   Post,
   Query,
@@ -24,6 +26,7 @@ import { CreateHubEmergencyDto } from './dto/create-hub-emergency.dto';
 import { CreateHubPlanDto } from './dto/create-hub-plan.dto';
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { HistoryQueryDto } from './dto/history-query.dto';
+import { PreviewPlanDto, UpdatePlanScheduleDto } from './dto/plan-schedule.dto';
 import { RejectOrderDto } from './dto/reject-order.dto';
 import { OrdersService } from './orders.service';
 
@@ -104,6 +107,24 @@ export class OrdersController {
   @Roles(UserRole.DISPATCHER)
   createHubPlan(@CurrentUser() user: User, @Body() dto: CreateHubPlanDto) {
     return this.ordersService.createHubPlan(user, dto);
+  }
+
+  /** RU-30: las fechas y franjas que dejaría un calendario, sin crear nada. */
+  @Post('plans/preview')
+  @HttpCode(200)
+  @Roles(UserRole.REQUESTER, UserRole.DISPATCHER)
+  previewPlan(@CurrentUser() user: User, @Body() dto: PreviewPlanDto) {
+    return this.ordersService.previewPlan(user, dto);
+  }
+
+  @Patch('plans/:id/schedule')
+  @Roles(UserRole.REQUESTER, UserRole.DISPATCHER)
+  updatePlanSchedule(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() dto: UpdatePlanScheduleDto,
+  ) {
+    return this.ordersService.updatePlanSchedule(user, id, dto);
   }
 
   @Get('plans')

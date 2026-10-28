@@ -42,6 +42,7 @@ import {
   PLAN_NOT_READY_TO_EXTEND,
   SAME_HUB_MESSAGE,
   SPECIAL_CONTROL_MESSAGE,
+  addCalendarDays,
   assertCoordinates,
   assertNoPatientFormula,
   assertStartDate,
@@ -55,8 +56,39 @@ import {
   windowEnd,
 } from './orders.rules';
 import { presentOrder } from './order.presenter';
+import {
+  Occurrence,
+  PRESCRIPTION_VALIDITY_REQUIRED,
+  PlanSchedule,
+  SCHEDULE_LEAD_MS,
+  SLOT_MS,
+  buildSchedule,
+  legacySchedule,
+  slotFor,
+} from './plan-schedule.rules';
+import { PreviewPlanDto, UpdatePlanScheduleDto } from './dto/plan-schedule.dto';
 import { PrescriptionImage } from './prescription-image.entity';
 import { PrescriptionStorage } from './prescription-storage';
+
+export const RULE_PLAN_NOT_EXTENDED =
+  'Para alargar este plan cambia su calendario.';
+export const PLAN_RESCHEDULED_REASON = 'Se cambió el calendario del plan.';
+
+/** Cuándo sale cada entrega de un plan y hasta cuándo cubre. */
+type PlanTiming = {
+  frequency: PlanFrequency | null;
+  schedule: PlanSchedule;
+  windowEndsOn: string;
+  occurrences: Occurrence[];
+  prescriptionValidUntil: string | null;
+};
+
+type PlanTimingInput = {
+  frequency?: PlanFrequency;
+  startDate?: string;
+  schedule?: PreviewPlanDto['schedule'];
+  prescriptionValidUntil?: string;
+};
 
 /** HU-36: estados con los que una misión ya no cambia. */
 const CLOSED_STATUSES = [
@@ -201,14 +233,13 @@ export class OrdersService {
       undefined,
       dto.quantity,
     );
+    const timing = this.planTiming(dto, dto.saleType === SaleType.PRESCRIPTION);
     return this.persistPlan(
       {
-        frequency: dto.frequency,
         medicationName: offer.name,
         saleType: dto.saleType,
         requiresColdChain: offer.requiresColdChain,
         quantity: dto.quantity,
-        startDate: dto.startDate,
         requesterId: user.id,
         createdByUserId: user.id,
         destinationKind: DestinationKind.PERSON,
@@ -218,6 +249,7 @@ export class OrdersService {
         latitude: coords.latitude,
         longitude: coords.longitude,
       },
+      timing,
       image,
       dto.prescriptionMime ?? null,
     );
@@ -236,14 +268,14 @@ export class OrdersService {
       origin.id,
       dto.quantity,
     );
+    // Entre centrales no viaja la fórmula de un paciente: no hay vigencia.
+    const timing = this.planTiming(dto, false);
     return this.persistPlan(
       {
-        frequency: dto.frequency,
         medicationName: offer.name,
         saleType: dto.saleType,
         requiresColdChain: offer.requiresColdChain,
         quantity: dto.quantity,
-        startDate: dto.startDate,
         requesterId: null,
         createdByUserId: user.id,
         destinationKind: DestinationKind.HUB,
@@ -253,9 +285,82 @@ export class OrdersService {
         latitude: destination.latitude,
         longitude: destination.longitude,
       },
+      timing,
       null,
       null,
     );
+  }
+
+  /** RU-30: las fechas y franjas que dejaría un calendario, sin guardar nada. */
+  previewPlan(user: User, dto: PreviewPlanDto) {
+    if (user.role !== UserRole.REQUESTER && user.role !== UserRole.DISPATCHER) {
+      throw new ForbiddenException('No puedes armar planes.');
+    }
+    const result = buildSchedule(dto.schedule, {
+      prescriptionValidUntil: dto.prescriptionValidUntil ?? null,
+    });
+    return {
+      schedule: result.schedule,
+      lastDate: result.lastDate,
+      windowMinutes: SLOT_MS / 60_000,
+      occurrences: result.occurrences.map(presentOccurrence),
+      tooSoon: result.tooSoon,
+    };
+  }
+
+  /**
+   * RU-30: cambia el calendario o la hora. Las entregas que todavía no
+   * tienen dron, y empiezan en más de 2 horas, se rehacen con la regla
+   * nueva; las demás no cambian y su fecha no se repite.
+   */
+  async updatePlanSchedule(user: User, id: string, dto: UpdatePlanScheduleDto) {
+    const plan = await this.requireOwnedPlan(user, id);
+    if (plan.status === PlanStatus.CANCELLED) {
+      throw new BadRequestException(PLAN_ALREADY_CANCELLED);
+    }
+    const now = new Date();
+    const result = buildSchedule(dto.schedule, {
+      now,
+      prescriptionValidUntil: plan.prescriptionValidUntil,
+    });
+    const current = await this.orders.find({ where: { planId: plan.id } });
+    const replaceable = current.filter((order) => isReplaceable(order, now));
+    const replaceableIds = new Set(replaceable.map((order) => order.id));
+    const keptDates = new Set(
+      current
+        .filter(
+          (order) =>
+            !replaceableIds.has(order.id) &&
+            order.status !== OrderStatus.CANCELLED &&
+            order.scheduledFor,
+        )
+        .map((order) => order.scheduledFor as string),
+    );
+    const image = await this.formulaForPlan(plan);
+    Object.assign(plan, scheduleColumns(result.schedule), {
+      frequency: null,
+      startDate: result.schedule.startDate,
+      windowEndsOn: addCalendarDays(
+        result.schedule.endDate ?? result.lastDate,
+        1,
+      ),
+    });
+    await this.plans.save(plan);
+    if (replaceable.length) {
+      await this.orders.update(
+        { id: In([...replaceableIds]) },
+        {
+          status: OrderStatus.CANCELLED,
+          statusReason: PLAN_RESCHEDULED_REASON,
+        },
+      );
+    }
+    for (const occurrence of result.occurrences) {
+      if (!keptDates.has(occurrence.date)) {
+        await this.saveOccurrence(plan, occurrence, image);
+      }
+    }
+    return this.findPlan(user, plan.id);
   }
 
   async listPlans(user: User) {
@@ -278,6 +383,8 @@ export class OrdersService {
         id: order.id,
         status: order.status,
         scheduledFor: order.scheduledFor,
+        scheduledAt: order.scheduledAt ?? null,
+        windowEndsAt: order.windowEndsAt ?? null,
         droneId: order.droneId,
       })),
     };
@@ -285,19 +392,23 @@ export class OrdersService {
 
   async extendPlan(user: User, id: string) {
     const plan = await this.requireOwnedPlan(user, id);
-    this.assertCanExtend(plan);
+    const frequency = this.assertCanExtend(plan);
     const today = todayInColombia();
     const extension = datesForExtension(
       plan.startDate,
       plan.windowEndsOn,
-      plan.frequency,
+      frequency,
       today,
     );
     plan.windowEndsOn = extension.windowEndsOn;
     await this.plans.save(plan);
     const image = await this.formulaForPlan(plan);
     for (const scheduledFor of extension.dates) {
-      await this.saveOccurrence(plan, scheduledFor, image);
+      await this.saveOccurrence(
+        plan,
+        slotFor(scheduledFor, plan.deliveryTime),
+        image,
+      );
     }
     return this.toPublicPlan(plan);
   }
@@ -593,14 +704,53 @@ export class OrdersService {
     }
   }
 
+  /**
+   * Con `schedule`, la regla nueva (RU-30). Sin ella, la frecuencia anterior:
+   * 8 semanas y la franja es todo el horario operativo.
+   */
+  private planTiming(
+    dto: PlanTimingInput,
+    needsPrescriptionValidity: boolean,
+  ): PlanTiming {
+    if (dto.schedule) {
+      if (needsPrescriptionValidity && !dto.prescriptionValidUntil) {
+        throw new BadRequestException(PRESCRIPTION_VALIDITY_REQUIRED);
+      }
+      const result = buildSchedule(dto.schedule, {
+        prescriptionValidUntil: dto.prescriptionValidUntil ?? null,
+      });
+      return {
+        frequency: null,
+        schedule: result.schedule,
+        windowEndsOn: addCalendarDays(
+          result.schedule.endDate ?? result.lastDate,
+          1,
+        ),
+        occurrences: result.occurrences,
+        prescriptionValidUntil: dto.prescriptionValidUntil ?? null,
+      };
+    }
+    const frequency = dto.frequency as PlanFrequency;
+    const startDate = dto.startDate as string;
+    assertStartDate(startDate);
+    const windowEndsOn = windowEnd(startDate);
+    return {
+      frequency,
+      schedule: legacySchedule(frequency, startDate, windowEndsOn),
+      windowEndsOn,
+      occurrences: occurrenceDates(startDate, windowEndsOn, frequency).map(
+        (date) => slotFor(date, null),
+      ),
+      prescriptionValidUntil: null,
+    };
+  }
+
   private async persistPlan(
     input: {
-      frequency: PlanFrequency;
       medicationName: string;
       saleType: SaleType;
       requiresColdChain: boolean;
       quantity: number;
-      startDate: string;
       requesterId: string | null;
       createdByUserId: string;
       destinationKind: DestinationKind;
@@ -610,26 +760,25 @@ export class OrdersService {
       latitude: number | null;
       longitude: number | null;
     },
+    timing: PlanTiming,
     image: Buffer | null,
     mime: string | null,
   ) {
-    assertStartDate(input.startDate);
-    const dates = occurrenceDates(
-      input.startDate,
-      windowEnd(input.startDate),
-      input.frequency,
-    );
     const plan = await this.plans.save(
       this.plans.create({
         ...input,
+        ...scheduleColumns(timing.schedule),
+        frequency: timing.frequency,
+        startDate: timing.schedule.startDate,
         status: PlanStatus.ACTIVE,
-        windowEndsOn: windowEnd(input.startDate),
+        windowEndsOn: timing.windowEndsOn,
+        prescriptionValidUntil: timing.prescriptionValidUntil,
       }),
     );
-    for (const scheduledFor of dates) {
+    for (const occurrence of timing.occurrences) {
       await this.saveOccurrence(
         plan,
-        scheduledFor,
+        occurrence,
         image ? { content: image, mime: mime ?? 'image/jpeg' } : null,
       );
     }
@@ -638,7 +787,7 @@ export class OrdersService {
 
   private async saveOccurrence(
     plan: DeliveryPlan,
-    scheduledFor: string,
+    occurrence: Occurrence,
     image: { content: Buffer; mime: string } | null,
   ) {
     const saved = await this.orders.save(
@@ -662,7 +811,9 @@ export class OrdersService {
         droneId: null,
         statusReason: null,
         planId: plan.id,
-        scheduledFor,
+        scheduledFor: occurrence.date,
+        scheduledAt: occurrence.scheduledAt,
+        windowEndsAt: occurrence.windowEndsAt,
       }),
     );
     if (image) {
@@ -712,16 +863,22 @@ export class OrdersService {
     };
   }
 
-  private assertCanExtend(plan: DeliveryPlan) {
+  /** Solo los planes con la frecuencia anterior se extienden 8 semanas. */
+  private assertCanExtend(plan: DeliveryPlan): PlanFrequency {
     if (plan.status === PlanStatus.CANCELLED) {
       throw new BadRequestException(PLAN_ALREADY_CANCELLED);
     }
-    if (plan.frequency === PlanFrequency.ONCE) {
+    const frequency = plan.frequency;
+    if (!frequency) {
+      throw new BadRequestException(RULE_PLAN_NOT_EXTENDED);
+    }
+    if (frequency === PlanFrequency.ONCE) {
       throw new BadRequestException(ONCE_IS_NOT_EXTENDED);
     }
-    if (!renewalDue(plan, todayInColombia())) {
+    if (!renewalDue({ ...plan, frequency }, todayInColombia())) {
       throw new BadRequestException(PLAN_NOT_READY_TO_EXTEND);
     }
+    return frequency;
   }
 
   private ownedPlanWhere(
@@ -764,7 +921,12 @@ export class OrdersService {
       latitude: plan.latitude,
       longitude: plan.longitude,
       hasPrescription: plan.saleType === SaleType.PRESCRIPTION,
-      renewalDue: renewalDue(plan, todayInColombia()),
+      schedule: scheduleOf(plan),
+      windowMinutes: plan.deliveryTime ? SLOT_MS / 60_000 : null,
+      prescriptionValidUntil: plan.prescriptionValidUntil ?? null,
+      renewalDue: plan.frequency
+        ? renewalDue({ ...plan, frequency: plan.frequency }, todayInColombia())
+        : false,
       createdAt: plan.createdAt,
     };
   }
@@ -772,4 +934,68 @@ export class OrdersService {
   private toPublicOrder(order: Order) {
     return presentOrder(order);
   }
+}
+
+/** Las columnas del plan que guardan la regla de calendario. */
+function scheduleColumns(schedule: PlanSchedule) {
+  return {
+    scheduleKind: schedule.kind,
+    daysOfWeek: schedule.daysOfWeek,
+    everyWeeks: schedule.everyWeeks,
+    dayOfMonth: schedule.dayOfMonth,
+    scheduleDates: schedule.dates,
+    occurrenceCount: schedule.count,
+    deliveryTime: schedule.time,
+  };
+}
+
+/** La regla del plan; los planes anteriores a ella la derivan de la frecuencia. */
+function scheduleOf(plan: DeliveryPlan): PlanSchedule {
+  if (!plan.scheduleKind) {
+    return legacySchedule(
+      plan.frequency as PlanFrequency,
+      plan.startDate,
+      plan.windowEndsOn,
+    );
+  }
+  return {
+    kind: plan.scheduleKind,
+    startDate: plan.startDate,
+    endDate:
+      plan.occurrenceCount != null
+        ? null
+        : addCalendarDays(plan.windowEndsOn, -1),
+    count: plan.occurrenceCount,
+    daysOfWeek: plan.daysOfWeek ?? [],
+    everyWeeks: plan.everyWeeks ?? 1,
+    dayOfMonth: plan.dayOfMonth,
+    dates: plan.scheduleDates ?? [],
+    time: plan.deliveryTime,
+  };
+}
+
+/**
+ * Se rehace al cambiar el calendario: sigue en recibido, sin dron ni
+ * reintento, y su franja empieza en más de 2 horas.
+ */
+function isReplaceable(order: Order, now: Date): boolean {
+  if (
+    order.status !== OrderStatus.RECEIVED ||
+    order.droneId ||
+    order.fallbackKind
+  ) {
+    return false;
+  }
+  const start =
+    order.scheduledAt ??
+    (order.scheduledFor ? slotFor(order.scheduledFor, null).scheduledAt : null);
+  return start != null && start.getTime() - now.getTime() >= SCHEDULE_LEAD_MS;
+}
+
+function presentOccurrence(occurrence: Occurrence) {
+  return {
+    date: occurrence.date,
+    scheduledAt: occurrence.scheduledAt,
+    windowEndsAt: occurrence.windowEndsAt,
+  };
 }

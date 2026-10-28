@@ -262,3 +262,51 @@ parameters, but prepared statement "" requires 1` y fallan tanto
 
 **La app** lo necesita para probar contra datos conocidos sin tocar los de
 la demostración.
+
+## 12. Entregas programadas con calendario, franja y confirmación (RU-30) — En curso
+
+Rediseño en tres ramas (detalle en `learning/28-rediseno-entregas-programadas.md`).
+
+**Hecho en `feature/plan-recurrencia`:**
+
+- `POST /orders/plans` y `POST /orders/hub-plans` aceptan `schedule`:
+  `{ kind: 'weekly' | 'monthly' | 'dates', startDate?, endDate? | count?,
+  daysOfWeek? (1=lunes…7=domingo), everyWeeks? (1–4), dayOfMonth?, dates?,
+  time: 'HH:00' }`.
+  - La franja es de 1 hora, de 07:00 a 17:00.
+  - El plan dura como máximo 3 meses.
+  - Las entregas que empezarían en menos de 2 horas no se agendan.
+  - Bajo fórmula (plan civil) se pide `prescriptionValidUntil`, y el plan no
+    pasa de esa fecha.
+- **Compatibilidad:** sin `schedule`, siguen valiendo `frequency` y
+  `startDate`. Dan las mismas 8 semanas de antes, la franja es todo el día y
+  el plan se puede extender.
+- `POST /orders/plans/preview { schedule, prescriptionValidUntil? }`
+  devuelve `occurrences [{ date, scheduledAt, windowEndsAt }]` y `tooSoon`
+  sin guardar nada.
+- `PATCH /orders/plans/:id/schedule { schedule }` cambia el calendario o la
+  hora.
+  - Las entregas en recibido, sin dron y a más de 2 horas, pasan a
+    `cancelled` ("Se cambió el calendario del plan.") y se rehacen.
+  - Las demás no cambian y su fecha no se repite.
+- Cada entrega trae `scheduledAt` y `windowEndsAt`. El plan trae
+  `schedule`, `windowMinutes` y `prescriptionValidUntil`.
+- Un plan con calendario no se extiende: responde 400 "Para alargar este
+  plan cambia su calendario.".
+
+**Falta:**
+
+1. `feature/plan-confirmacion-avisos`: bandeja de avisos
+   (`GET /notifications`), correo por Brevo, confirmar, omitir y mover una
+   entrega, la tarea de T-24 h (aviso y revisión de stock y fórmula) y la de
+   T-2 h (sin confirmar se omite). Estados nuevos: `agendado`,
+   `por confirmar`, `omitido`.
+2. `feature/plan-agenda-despacho`: `GET /orders/agenda?date=`, autorizar
+   solo desde 2 horas antes hasta el cierre de la franja, la entrega
+   `vencida` al cerrar sin despegar (con RF-18) y el aviso de despegue con
+   ETA.
+
+**La app lo usará** en el formulario del plan (días, hora, fin y vista
+previa), en el detalle del plan (cambiar el calendario) y en el detalle de
+cada entrega (la franja). Mientras no lo use, la app sigue funcionando con
+`frequency`.

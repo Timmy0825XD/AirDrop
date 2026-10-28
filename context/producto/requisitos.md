@@ -24,7 +24,17 @@ Medicamento, ubicación y una descripción breve, con prioridad alta.
 
 ### RU-30 — Entrega periódica a mi ubicación
 
-Medicamento, cantidad, frecuencia y fecha de inicio. La ventana es de 8 semanas (56 días) desde esa fecha: una ocurrencia por periodo. La frecuencia única es una sola fecha y no se extiende. En la última semana, o si la ventana ya pasó y el plan sigue activo, quien lo creó ve en la app el aviso para extender otras 8 semanas. Puede cancelarlo cuando quiera: el plan queda cancelado y las ocurrencias que siguen en recibido también. Las que ya salieron de recibido no se revierten.
+Medicamento, cantidad, calendario y hora. El calendario se arma como en un calendario de teléfono:
+
+- **Días de la semana**, cada 1 a 4 semanas (por ejemplo, todos los jueves, o martes y jueves cada 15 días).
+- **Un día del mes** (por ejemplo, el 15; si el mes es más corto, el último día).
+- **Fechas sueltas**, hasta 30.
+
+Termina en una fecha o después de un número de entregas, nunca las dos. Un plan dura como máximo **3 meses** desde su inicio y, si es bajo fórmula, no pasa de la vigencia de la fórmula. Cada entrega tiene una **franja de 1 hora**, que empieza a una hora en punto entre las 07:00 y las 17:00 (la última cierra a las 18:00). Una entrega que empezaría en menos de 2 horas no se agenda: no da tiempo de avisar ni de preparar la carga. Antes de crear el plan, la app muestra las fechas y horas que van a quedar.
+
+Quien lo creó puede cambiar el calendario o la hora: las entregas que todavía no tienen dron se rehacen con la regla nueva y las que ya salieron no cambian. Puede cancelarlo cuando quiera: el plan queda cancelado y las entregas que siguen en recibido también. Las que ya salieron de recibido no se revierten.
+
+Cada entrega a una persona pide confirmación: el día anterior le llega el aviso y, si no confirma 2 horas antes de la franja, la entrega queda omitida y el dron no sale. Hasta 2 horas antes puede omitir o mover una sola entrega. El despachador autoriza y carga desde 2 horas antes hasta el cierre de la franja. Si la franja cierra sin despegue, la entrega queda vencida y aplica RF-18. Los avisos llegan a la bandeja de la app y al correo.
 
 **Por qué.** Hay civiles en zonas de difícil acceso que necesitan el mismo insumo cada semana, quincena o mes. No se modela como un abastecimiento de central.
 
@@ -84,7 +94,7 @@ Cantidad, lote, vencimiento, tipo de venta y si exige frío.
 
 ### RU-12 — Abastecimiento programado desde otra central
 
-Pide a otra central un plan: suministro, cantidad, frecuencia y fechas. El destino es su central. La ventana, el aviso para extender y la cancelación son los de RU-30.
+Pide a otra central un plan: suministro, cantidad, calendario y hora. El destino es su central. El calendario, la franja, los topes, el cambio y la cancelación son los de RU-30. Una central siempre tiene personal, así que sus entregas no piden confirmación.
 
 ### RU-31 — Urgencia de abastecimiento
 
@@ -192,7 +202,7 @@ La crea el solicitante (destino: su ubicación) o el despachador que necesita st
 
 ### RF-10 — Programado
 
-Suministro, cantidad, frecuencia (única, semanal, quincenal o mensual) y fecha de inicio. El destino es la ubicación del solicitante o la central que pide el abastecimiento. Cada plan materializa 8 semanas. La frecuencia única no se extiende.
+Suministro, cantidad, calendario (días de la semana cada 1 a 4 semanas, un día del mes o fechas sueltas) con fin por fecha o por número de entregas, y la hora de la franja de 1 hora (en punto, de 07:00 a 17:00). El destino es la ubicación del solicitante o la central que pide el abastecimiento. Máximo 3 meses y, bajo fórmula, no más que su vigencia. Las entregas que empezarían en menos de 2 horas no se agendan. El plan guarda la regla y crea todas sus entregas al crearse; cambiar la regla rehace las que no tienen dron. Los planes anteriores (frecuencia única, semanal, quincenal o mensual con 8 semanas) siguen valiendo: su franja es todo el horario operativo y se pueden extender otras 8 semanas.
 
 ### RF-11 — Elegibilidad
 

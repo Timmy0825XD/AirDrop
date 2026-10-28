@@ -9,11 +9,14 @@ import {
   Max,
   MaxLength,
   Min,
+  ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 import { DocumentType } from '../../common/enums/document-type.enum';
 import { PlanFrequency } from '../../common/enums/plan-frequency.enum';
 import { SaleType } from '../../common/enums/sale-type.enum';
 import { FIELD_LIMITS } from '../../common/field-limits';
+import { PlanScheduleDto } from './plan-schedule.dto';
 
 export class CreateHubPlanDto {
   @IsUUID('4', { message: 'La central de origen no es válida.' })
@@ -40,15 +43,33 @@ export class CreateHubPlanDto {
   @Max(100000, { message: 'La cantidad es demasiado alta.' })
   quantity: number;
 
+  @ValidateIf((dto: { schedule?: unknown }) => dto.schedule === undefined)
   @IsEnum(PlanFrequency, {
     message: 'La frecuencia debe ser única, semanal, quincenal o mensual.',
   })
-  frequency: PlanFrequency;
+  frequency?: PlanFrequency;
 
+  @ValidateIf((dto: { schedule?: unknown }) => dto.schedule === undefined)
   @Matches(/^\d{4}-\d{2}-\d{2}$/, {
     message: 'La fecha de inicio debe ser AAAA-MM-DD.',
   })
-  startDate: string;
+  startDate?: string;
+
+  /**
+   * RU-30: calendario, fin y hora de la franja. Sin él, el plan usa la
+   * frecuencia y la fecha de inicio anteriores (8 semanas, todo el día).
+   */
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PlanScheduleDto)
+  schedule?: PlanScheduleDto;
+
+  /** Bajo fórmula, con `schedule`: el plan no pasa de esta fecha. */
+  @IsOptional()
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: 'La vigencia de la fórmula debe ser AAAA-MM-DD.',
+  })
+  prescriptionValidUntil?: string;
 
   @IsOptional()
   @IsEnum(DocumentType)
