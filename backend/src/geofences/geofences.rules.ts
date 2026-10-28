@@ -11,9 +11,7 @@ export function assertGeoJsonPolygon(value: unknown): GeoJsonPolygon {
   }
   const polygon = value as GeoJsonPolygon;
   if (polygon.type !== 'Polygon' || !Array.isArray(polygon.coordinates)) {
-    throw new BadRequestException(
-      'El polígono debe ser GeoJSON de tipo Polygon.',
-    );
+    throw new BadRequestException('El polígono debe ser GeoJSON de tipo Polygon.');
   }
   const ring = polygon.coordinates[0];
   if (!Array.isArray(ring) || ring.length < 4) {

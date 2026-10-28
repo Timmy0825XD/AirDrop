@@ -1,5 +1,10 @@
 import { Transform } from 'class-transformer';
-import { IsEmail, IsOptional, Matches, MaxLength } from 'class-validator';
+import {
+  IsEmail,
+  IsOptional,
+  Matches,
+  MaxLength,
+} from 'class-validator';
 import { COLOMBIA_PHONE_REGEX, FIELD_LIMITS } from '../../common/field-limits';
 import { ContactCheckDto } from './contact-check.dto';
 

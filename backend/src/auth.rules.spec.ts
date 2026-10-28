@@ -3,7 +3,10 @@ import { plainToInstance } from 'class-transformer';
 import { DocumentType } from './common/enums/document-type.enum';
 import { PUBLIC_REGISTER_ROLES, UserRole } from './common/enums/user-role.enum';
 import { UserStatus } from './common/enums/user-status.enum';
-import { FIELD_LIMITS, LOGIN_MAX_ATTEMPTS } from './common/field-limits';
+import {
+  FIELD_LIMITS,
+  LOGIN_MAX_ATTEMPTS,
+} from './common/field-limits';
 import {
   hashOtp,
   isLockActive,
@@ -41,9 +44,9 @@ describe('auth.rules', () => {
     const next = nextFailedLoginState(user, new Date('2026-09-03T12:00:00Z'));
     expect(next.status).toBe(UserStatus.LOCKED);
     expect(next.failedLoginCount).toBe(LOGIN_MAX_ATTEMPTS);
-    expect(
-      isLockActive({ ...user, ...next }, new Date('2026-09-03T12:01:00Z')),
-    ).toBe(true);
+    expect(isLockActive({ ...user, ...next } as User, new Date('2026-09-03T12:01:00Z'))).toBe(
+      true,
+    );
   });
 
   it('requires email for dispatcher and fleet operator', () => {
