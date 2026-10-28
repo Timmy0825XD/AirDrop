@@ -54,9 +54,12 @@ despachador de la central de destino; los traslados se listan en
    solicitante. Es `null` hasta que el dron empieza a volver; el reloj la
    calcula en ese momento con las geovallas vigentes, y si una la bloquea,
    es la ida al revés.
-2. **El aviso de intentos agotados promete más de lo que pasa.** Dice "El
-   dron regresa con el paquete", pero el pedido sigue en `awaiting_delivery`
-   hasta que vencen los 5 minutos; recién ahí sale el dron.
+2. ~~**El aviso de intentos agotados promete más de lo que pasa.**~~ Hecho
+   en `bugfix/intentos-y-retiro`: con el quinto código equivocado el pedido
+   pasa a `returning` y el dron vuelve en ese momento con el paquete; los
+   intentos siguientes responden "bloqueado". Además, tras un código correcto
+   el dron espera 1 minuto en destino con la fase `unloading` (telemetría)
+   antes de despegar (`PICKUP_WAIT_MS`).
 
 **La app lo usará** para: la ruta de regreso en el mapa, la revisión del
 empaque al recibir un retorno (`return-check`) y el checklist de remisión y

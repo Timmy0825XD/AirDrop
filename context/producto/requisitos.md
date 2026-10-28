@@ -236,7 +236,7 @@ Un pedido se reasigna **una sola vez**. Si la central que lo recibe tampoco pued
 
 ### RF-19 y RF-29 — Código y espera
 
-Un solo uso. Se ingresa con el dron en destino. La espera dura 5 minutos. Un código válido cierra `entregado`.
+Un solo uso. Se ingresa con el dron en destino. La espera dura 5 minutos. Un código válido cierra `entregado`; el dron se queda 1 minuto más (fase `unloading`) para que retiren el insumo y después despega de regreso. Con el quinto código equivocado el código se bloquea y el dron vuelve en ese momento con el paquete, sin esperar el resto de los 5 minutos.
 
 **Por qué.** Cinco minutos alcanzan para acusar recibo en el punto sin dejar el paquete esperando una ausencia larga. Pasado ese tiempo, el insumo no se queda en campo.
 

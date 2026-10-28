@@ -125,6 +125,13 @@ export class DeliveryService {
       if (order.status === OrderStatus.DELIVERED) {
         throw new BadRequestException(DELIVERY_CODE_REJECTED);
       }
+      if (
+        order.status === OrderStatus.RETURNING &&
+        (await this.isLocked(manager, orderId))
+      ) {
+        // Ya se agotaron los intentos y el dron va de regreso con el paquete.
+        throw new BadRequestException(DELIVERY_CODE_LOCKED);
+      }
       if (order.status !== OrderStatus.AWAITING_DELIVERY) {
         throw new BadRequestException(ONLY_AWAITING_DELIVERY_IS_DELIVERED);
       }
@@ -150,10 +157,10 @@ export class DeliveryService {
         // El intento queda guardado: por eso no se lanza dentro de la transacción.
         state.attempts += 1;
         await manager.save(state);
+        const locked = isDeliveryCodeLocked(state);
         return {
-          rejection: isDeliveryCodeLocked(state)
-            ? DELIVERY_CODE_LOCKED
-            : DELIVERY_CODE_REJECTED,
+          rejection: locked ? DELIVERY_CODE_LOCKED : DELIVERY_CODE_REJECTED,
+          locked,
         };
       }
       state.usedAt = now;
@@ -173,9 +180,12 @@ export class DeliveryService {
         await this.restock.receiveTransfer(manager, order);
       }
       order.status = OrderStatus.DELIVERED;
-      return { delivered: await manager.save(order) };
+      return { delivered: await manager.save(order), deliveredAt: now };
     });
     if ('rejection' in result) {
+      if (result.locked) {
+        await this.returnWithPackageSafely(orderId);
+      }
       throw new BadRequestException(result.rejection);
     }
     if ('refused' in result && result.refused) {
@@ -183,10 +193,34 @@ export class DeliveryService {
       await this.startReturnSafely(orderId);
       return presentOrder(result.refused);
     }
-    const { delivered } = result;
+    const { delivered, deliveredAt } = result;
     await this.notifications.statusChanged(orderId, OrderStatus.DELIVERED);
-    await this.startReturnSafely(orderId);
+    // El dron espera el minuto de retiro antes de volver (fase `unloading`).
+    await this.flights.schedulePickup(orderId, deliveredAt);
     return presentOrder(delivered);
+  }
+
+  /**
+   * Quinto código equivocado: el dron no sigue esperando, vuelve ya con el
+   * paquete. El bloqueo queda guardado aunque el regreso no arranque.
+   */
+  private async returnWithPackageSafely(orderId: string): Promise<void> {
+    try {
+      await this.flights.returnWithPackage(orderId);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'regreso';
+      this.logger.error(
+        `No se pudo iniciar el regreso con el paquete ${orderId}: ${message}. Sale al vencer la espera.`,
+      );
+    }
+  }
+
+  private async isLocked(
+    manager: EntityManager,
+    orderId: string,
+  ): Promise<boolean> {
+    const state = await manager.findOne(DeliveryCode, { where: { orderId } });
+    return state != null && isDeliveryCodeLocked(state);
   }
 
   /** La entrega o el rechazo ya quedaron guardados aunque el regreso no arranque. */

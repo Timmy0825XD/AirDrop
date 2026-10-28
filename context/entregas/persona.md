@@ -7,7 +7,7 @@ Esto es dispensación: hay un paciente. La norma está en [../legal/salud.md](..
 3. El despachador de la central que tiene el insumo verifica la fórmula: español, legible, sin tachones, con genérico, concentración, forma, vía, dosis, frecuencia, duración, cantidad en números y letras, paciente, fecha, vigencia y registro de quien prescribe. Si falla, no autoriza.
 4. Confronta eso con el estante. Autorizar reserva el dron. El vuelo no empieza y el inventario no se descuenta.
 5. Al confirmar la carga registra la salida (paciente, medicamento, lote, cantidad, destino) y la información de uso que va con el paquete. Ahí se descuenta el lote de vencimiento más próximo.
-6. En destino, el código de un uso que ingresa el solicitante cierra `entregado`.
+6. En destino, el código de un uso que ingresa el solicitante cierra `entregado`. El dron espera 1 minuto en el punto para que retiren el medicamento y después vuelve vacío a su central.
 7. Si en 5 minutos no hay código válido, el paquete vuelve y pasa por la cuarentena.
 
 La urgencia no espera el plazo de 48 horas del canal EPS. Sale cuando la central ya verificó y cargó.
