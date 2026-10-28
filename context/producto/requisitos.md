@@ -222,6 +222,16 @@ Si el ítem lo exige, la temperatura simulada se compara con el rango en ida, es
 
 Si al autorizar ningún dron sirve, hay otra central con stock o un aviso de traslado convencional. El estado es `reasignado`, no un rechazo mudo.
 
+Depende del servicio:
+
+| Servicio | Sin dron elegible en la central que autoriza |
+| --- | --- |
+| Urgencia a una persona | Pasa a la central activa más cercana al destino que tenga el lote, un corredor libre y un dron elegible. Queda `reasignado` y entra primero en su cola. |
+| Urgencia entre centrales | Igual, con otra central de origen. Nunca la central que pidió. |
+| Programado | Sigue en recibido y se reintenta solo cada 15 minutos mientras el siguiente intento caiga el mismo día. Al terminar el día, busca otra central como una urgencia. |
+
+Un pedido se reasigna **una sola vez**. Si la central que lo recibe tampoco puede, o si ninguna central sirve, queda `reasignado` como **traslado convencional**: es final, ningún dron despega y quien pidió ve hasta tres centrales con el insumo (nombre, dirección, contacto y distancia). La central que recibe un pedido reasignado verifica la fórmula otra vez, y puede autorizarlo o rechazarlo.
+
 ### RF-19 y RF-29 — Código y espera
 
 Un solo uso. Se ingresa con el dron en destino. La espera dura 5 minutos. Un código válido cierra `entregado`.

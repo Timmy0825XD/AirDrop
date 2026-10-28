@@ -1,9 +1,11 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { DroneStatus } from '../common/enums/drone-status.enum';
+import { FallbackKind } from '../common/enums/fallback-kind.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
+import { isAwaitingHub } from './fallback.rules';
 
 /** El inventario no guarda masa. Cada unidad cuenta 0,5 kg. */
 export const UNIT_MASS_KG = 0.5;
@@ -24,7 +26,7 @@ export const NOT_THE_AUTHORIZING_HUB =
   'Solo el despachador de la central que tiene el insumo autoriza este pedido.';
 
 export const ONLY_RECEIVED_IS_AUTHORIZED =
-  'Solo se autoriza un pedido que sigue en recibido.';
+  'Solo se autoriza un pedido recibido o reasignado a tu central.';
 
 export const ONLY_PENDING_LOAD_IS_CONFIRMED =
   'Solo se confirma la carga de un pedido pendiente de carga.';
@@ -65,6 +67,7 @@ export type DroneCandidate = {
 
 export type AuthorizableOrder = {
   status: OrderStatus;
+  fallbackKind: FallbackKind | null;
   missionType: MissionType;
   destinationKind: DestinationKind;
   saleType: SaleType;
@@ -102,7 +105,7 @@ export function assertCanAuthorize(
   today: string,
   prescriptionVerified?: boolean,
 ): void {
-  if (order.status !== OrderStatus.RECEIVED) {
+  if (!isAwaitingHub(order)) {
     throw new BadRequestException(ONLY_RECEIVED_IS_AUTHORIZED);
   }
   if (

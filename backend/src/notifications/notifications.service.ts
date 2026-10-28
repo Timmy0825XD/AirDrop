@@ -16,6 +16,11 @@ export class NotificationsService {
     return this.telemetry.publish({ type: 'order-status', orderId, status });
   }
 
+  /** La cola de una central cambió (p. ej. le llegó un pedido reasignado). */
+  queueChanged(hubId: string, orderId: string): Promise<void> {
+    return this.telemetry.publish({ type: 'queue-changed', hubId, orderId });
+  }
+
   alert(
     orderId: string,
     droneId: string,

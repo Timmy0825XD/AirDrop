@@ -26,6 +26,22 @@ export function presentOrder(order: Order) {
     planId: order.planId,
     scheduledFor: order.scheduledFor,
     hasPrescription: order.saleType === SaleType.PRESCRIPTION,
+    reassignedFromHubId: order.reassignedFromHubId,
+    fallback: presentFallback(order),
     createdAt: order.createdAt,
+  };
+}
+
+/** RF-18 y CU-05: la alternativa que ve quien pidió, mientras aplica. */
+function presentFallback(order: Order) {
+  if (!order.fallbackKind) {
+    return null;
+  }
+  return {
+    kind: order.fallbackKind,
+    reason: order.fallbackReason,
+    options: order.fallbackOptions ?? [],
+    retryAfter: order.retryAfter,
+    reassignedAt: order.reassignedAt,
   };
 }

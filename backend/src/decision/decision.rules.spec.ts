@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { DroneStatus } from '../common/enums/drone-status.enum';
+import { FallbackKind } from '../common/enums/fallback-kind.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
@@ -43,6 +44,7 @@ function candidate(
 function order(overrides: Partial<AuthorizableOrder> = {}): AuthorizableOrder {
   return {
     status: OrderStatus.RECEIVED,
+    fallbackKind: null,
     missionType: MissionType.EMERGENCY,
     destinationKind: DestinationKind.PERSON,
     saleType: SaleType.OVER_THE_COUNTER,
@@ -93,6 +95,24 @@ describe('simulated weather and authorize guards', () => {
         '2026-10-08',
       ),
     ).toThrow(new BadRequestException(ONLY_RECEIVED_IS_AUTHORIZED));
+    expect(() =>
+      assertCanAuthorize(
+        order({
+          status: OrderStatus.REASSIGNED,
+          fallbackKind: FallbackKind.CONVENTIONAL,
+        }),
+        '2026-10-08',
+      ),
+    ).toThrow(new BadRequestException(ONLY_RECEIVED_IS_AUTHORIZED));
+    expect(() =>
+      assertCanAuthorize(
+        order({
+          status: OrderStatus.REASSIGNED,
+          fallbackKind: FallbackKind.HUB,
+        }),
+        '2026-10-08',
+      ),
+    ).not.toThrow();
     expect(() => assertAuthorizingHub('origin-hub', 'other-hub')).toThrow(
       new ForbiddenException(NOT_THE_AUTHORIZING_HUB),
     );

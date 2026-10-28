@@ -4,11 +4,13 @@ import {
   NotFoundException,
   ServiceUnavailableException,
 } from '@nestjs/common';
+import { In } from 'typeorm';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { DocumentType } from '../common/enums/document-type.enum';
 import { PlanFrequency } from '../common/enums/plan-frequency.enum';
 import { PlanStatus } from '../common/enums/plan-status.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
+import { FallbackKind } from '../common/enums/fallback-kind.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
@@ -104,6 +106,7 @@ function receivedOrder(overrides: Partial<Order> = {}): Order {
     destinationHubId: null,
     droneId: null,
     statusReason: null,
+    fallbackKind: null,
     createdAt: new Date(),
     ...overrides,
   } as Order;
@@ -511,10 +514,37 @@ describe('OrdersService queue', () => {
     expect(orders.find).toHaveBeenCalledWith({
       where: {
         missionType: MissionType.EMERGENCY,
-        status: OrderStatus.RECEIVED,
+        status: In([OrderStatus.RECEIVED, OrderStatus.REASSIGNED]),
       },
       order: { createdAt: 'ASC' },
     });
+  });
+
+  it('puts an order reassigned to the hub first and hides a conventional one', async () => {
+    const { service, orders, stockForHub } = build();
+    stockForHub.mockResolvedValue(stock);
+    orders.find.mockResolvedValue([
+      receivedOrder(),
+      receivedOrder({
+        id: '22222222-2222-4222-8222-222222222222',
+        status: OrderStatus.REASSIGNED,
+        fallbackKind: FallbackKind.HUB,
+        originHubId: origin.id,
+        reassignedFromHubId: destination.id,
+      }),
+      receivedOrder({
+        id: '33333333-3333-4333-8333-333333333333',
+        status: OrderStatus.REASSIGNED,
+        fallbackKind: FallbackKind.CONVENTIONAL,
+        originHubId: origin.id,
+      }),
+    ]);
+    const rows = await service.listQueue(originDispatcher());
+    expect(rows.map((row) => row.id)).toEqual([
+      '22222222-2222-4222-8222-222222222222',
+      '11111111-1111-4111-8111-111111111111',
+    ]);
+    expect(rows[0].fallback?.kind).toBe(FallbackKind.HUB);
   });
 
   it('keeps a hub emergency in the origin queue even when stock is gone', async () => {

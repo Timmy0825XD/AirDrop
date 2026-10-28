@@ -1,6 +1,7 @@
 import { BadRequestException } from '@nestjs/common';
 import { normalizeDocumentNumber } from '../auth/auth.rules';
 import { DocumentType } from '../common/enums/document-type.enum';
+import { FallbackKind } from '../common/enums/fallback-kind.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { PlanFrequency } from '../common/enums/plan-frequency.enum';
 import { PlanStatus } from '../common/enums/plan-status.enum';
@@ -276,9 +277,18 @@ export function isUnattendedEmergency(
   return now.getTime() - createdAt.getTime() > UNATTENDED_EMERGENCY_MS;
 }
 
-/** CU-11: el rechazo cierra el pedido. No reserva dron ni busca otra central. */
-export function assertStillReceived(status: OrderStatus): void {
-  if (status !== OrderStatus.RECEIVED) {
+/**
+ * CU-11: el rechazo cierra el pedido. No reserva dron ni busca otra central.
+ * La central que recibe un pedido reasignado también puede rechazarlo.
+ */
+export function assertStillReceived(order: {
+  status: OrderStatus;
+  fallbackKind: FallbackKind | null;
+}): void {
+  const reassignedHere =
+    order.status === OrderStatus.REASSIGNED &&
+    order.fallbackKind === FallbackKind.HUB;
+  if (order.status !== OrderStatus.RECEIVED && !reassignedHere) {
     throw new BadRequestException(ONLY_RECEIVED_IS_REJECTED);
   }
 }

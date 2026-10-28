@@ -74,7 +74,9 @@ function buildService(opts: {
       .mockResolvedValue(opts.hub === undefined ? hub : opts.hub),
     requireActive:
       opts.hub === null
-        ? jest.fn().mockRejectedValue(new NotFoundException('La central no existe.'))
+        ? jest
+            .fn()
+            .mockRejectedValue(new NotFoundException('La central no existe.'))
         : jest.fn().mockResolvedValue(opts.hub === undefined ? hub : opts.hub),
   } as unknown as HubsService;
   return {
@@ -143,7 +145,9 @@ describe('FleetService', () => {
     const { service, drones } = buildService({
       drones: {
         findOne: jest.fn().mockResolvedValue(drone),
-        save: jest.fn().mockImplementation((row: Drone) => Promise.resolve(row)),
+        save: jest
+          .fn()
+          .mockImplementation((row: Drone) => Promise.resolve(row)),
       },
     });
     const result = await service.registerMaintenance(operator(), drone.id, {

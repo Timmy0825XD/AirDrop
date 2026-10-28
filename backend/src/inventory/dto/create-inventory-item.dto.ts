@@ -54,7 +54,8 @@ export class CreateInventoryItemDto {
   requiresColdChain: boolean;
 
   @IsEnum(SaleType, {
-    message: 'El tipo de venta debe ser libre, bajo fórmula o control especial.',
+    message:
+      'El tipo de venta debe ser libre, bajo fórmula o control especial.',
   })
   saleType: SaleType;
 }

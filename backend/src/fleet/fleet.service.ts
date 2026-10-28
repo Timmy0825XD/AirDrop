@@ -139,9 +139,7 @@ export class FleetService {
 
   private assertAssigned(user: User, hubId: string): void {
     if (!assignedHubIds(user).includes(hubId)) {
-      throw new ForbiddenException(
-        'Esa central no está asignada a tu cuenta.',
-      );
+      throw new ForbiddenException('Esa central no está asignada a tu cuenta.');
     }
   }
 

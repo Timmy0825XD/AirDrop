@@ -19,7 +19,9 @@ export function hashOtp(code: string): string {
 }
 
 export function generateOtp(): string {
-  return randomInt(0, 1_000_000).toString().padStart(FIELD_LIMITS.otpDigits, '0');
+  return randomInt(0, 1_000_000)
+    .toString()
+    .padStart(FIELD_LIMITS.otpDigits, '0');
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -59,7 +61,9 @@ export function normalizeDocumentNumber(
 }
 
 export function isLockActive(user: User, now = new Date()): boolean {
-  return Boolean(user.lockedUntil && user.lockedUntil.getTime() > now.getTime());
+  return Boolean(
+    user.lockedUntil && user.lockedUntil.getTime() > now.getTime(),
+  );
 }
 
 export function nextFailedLoginState(

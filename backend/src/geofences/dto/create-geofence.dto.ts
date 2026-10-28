@@ -9,7 +9,9 @@ import {
 import { FIELD_LIMITS } from '../../common/field-limits';
 
 export class GeoJsonPolygonDto {
-  @Equals('Polygon', { message: 'El polígono debe ser GeoJSON de tipo Polygon.' })
+  @Equals('Polygon', {
+    message: 'El polígono debe ser GeoJSON de tipo Polygon.',
+  })
   type: 'Polygon';
 
   @IsArray({ message: 'El polígono debe incluir coordenadas.' })

@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
@@ -16,6 +16,7 @@ import { PlanStatus } from '../common/enums/plan-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { CIVIL_EMERGENCY_QUANTITY } from '../common/field-limits';
+import { isAwaitingHub } from '../decision/fallback.rules';
 import { Hub } from '../hubs/hub.entity';
 import { HubsService } from '../hubs/hubs.service';
 import { assignedHubIds } from '../users/hub-assignment';
@@ -311,12 +312,15 @@ export class OrdersService {
     const pending = await this.orders.find({
       where: {
         missionType: MissionType.SCHEDULED,
-        status: OrderStatus.RECEIVED,
+        status: In([OrderStatus.RECEIVED, OrderStatus.REASSIGNED]),
       },
       order: { scheduledFor: 'ASC' },
     });
     return pending
-      .filter((order) => this.isDirectedToHub(order, hub.id, stock))
+      .filter(
+        (order) =>
+          isAwaitingHub(order) && this.isDirectedToHub(order, hub.id, stock),
+      )
       .map((order) => ({
         ...this.toPublicOrder(order),
         availableQuantity: this.availableAt(order, stock),
@@ -329,12 +333,21 @@ export class OrdersService {
     const pending = await this.orders.find({
       where: {
         missionType: MissionType.EMERGENCY,
-        status: OrderStatus.RECEIVED,
+        status: In([OrderStatus.RECEIVED, OrderStatus.REASSIGNED]),
       },
       order: { createdAt: 'ASC' },
     });
+    // Lo reasignado desde otra central ya esperó una vez: va primero.
     return pending
-      .filter((order) => this.isDirectedToHub(order, hub.id, stock))
+      .filter(
+        (order) =>
+          isAwaitingHub(order) && this.isDirectedToHub(order, hub.id, stock),
+      )
+      .sort(
+        (left, right) =>
+          Number(right.status === OrderStatus.REASSIGNED) -
+          Number(left.status === OrderStatus.REASSIGNED),
+      )
       .map((order) => ({
         ...this.toPublicOrder(order),
         availableQuantity: this.availableAt(order, stock),
@@ -350,7 +363,7 @@ export class OrdersService {
       !order ||
       !stock ||
       order.missionType !== MissionType.EMERGENCY ||
-      order.status !== OrderStatus.RECEIVED ||
+      !isAwaitingHub(order) ||
       order.destinationKind !== DestinationKind.PERSON ||
       order.saleType !== SaleType.PRESCRIPTION ||
       !this.isDirectedToHub(order, hub.id, stock)
@@ -399,7 +412,7 @@ export class OrdersService {
     if (!order) {
       throw new NotFoundException('El pedido no existe.');
     }
-    assertStillReceived(order.status);
+    assertStillReceived(order);
     await this.assertSupplyingHub(hub.id, order);
     order.status = OrderStatus.REJECTED;
     order.statusReason = dto.reason;
