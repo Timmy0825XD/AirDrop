@@ -7,6 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DroneStatus } from '../common/enums/drone-status.enum';
+import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { HubsService } from '../hubs/hubs.service';
 import { assignedHubIds } from '../users/hub-assignment';
@@ -60,9 +61,16 @@ export class FleetService {
     return this.toPublicDrone(saved);
   }
 
+  /**
+   * El operador ve los drones de sus centrales; el administrador, los de
+   * cualquier central, solo para consultar (crear y gestionar sigue siendo
+   * del operador).
+   */
   async listDrones(user: User, hubId: string) {
     this.assertActiveOperator(user);
-    this.assertAssigned(user, hubId);
+    if (user.role !== UserRole.ADMIN) {
+      this.assertAssigned(user, hubId);
+    }
     const hub = await this.hubsService.findById(hubId);
     if (!hub) {
       throw new NotFoundException('La central no existe.');
@@ -139,9 +147,7 @@ export class FleetService {
 
   private assertAssigned(user: User, hubId: string): void {
     if (!assignedHubIds(user).includes(hubId)) {
-      throw new ForbiddenException(
-        'Esa central no está asignada a tu cuenta.',
-      );
+      throw new ForbiddenException('Esa central no está asignada a tu cuenta.');
     }
   }
 
