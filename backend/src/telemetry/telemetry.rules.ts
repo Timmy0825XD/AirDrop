@@ -59,6 +59,11 @@ export function canFollowHub(
   );
 }
 
+/** En la sala de una central, solo el operador recibe las alertas del vuelo. */
+export function receivesHubAlerts(role: UserRole): boolean {
+  return role === UserRole.FLEET_OPERATOR;
+}
+
 export function presentTelemetry(flight: LiveFlight, view: TelemetryView) {
   const map = {
     orderId: flight.orderId,

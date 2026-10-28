@@ -22,6 +22,15 @@ export class TelemetryAccessService {
     });
   }
 
+  /** Central de origen del pedido: su sala recibe las alertas del vuelo. */
+  async originHubOf(orderId: string): Promise<string | null> {
+    const order = await this.orders.findOne({
+      where: { id: orderId },
+      select: { id: true, originHubId: true },
+    });
+    return order?.originHubId ?? null;
+  }
+
   async resolve(user: User, orderId: string): Promise<TelemetryAccess | null> {
     const order = await this.orders.findOne({ where: { id: orderId } });
     if (!order) {

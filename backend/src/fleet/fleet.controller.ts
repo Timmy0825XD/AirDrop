@@ -18,8 +18,10 @@ import { RolesGuard } from '../auth/roles.guard';
 import { User } from '../users/user.entity';
 import { CreateDroneDto } from './dto/create-drone.dto';
 import { ListDronesQueryDto } from './dto/list-drones-query.dto';
+import { ListFlightsQueryDto } from './dto/list-flights-query.dto';
 import { RegisterMaintenanceDto } from './dto/register-maintenance.dto';
 import { UpdateDroneStatusDto } from './dto/update-drone-status.dto';
+import { FleetFlightsService } from './fleet-flights.service';
 import { FleetService } from './fleet.service';
 
 @ApiTags('Flota')
@@ -27,7 +29,10 @@ import { FleetService } from './fleet.service';
 @Controller('fleet')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class FleetController {
-  constructor(private readonly fleetService: FleetService) {}
+  constructor(
+    private readonly fleetService: FleetService,
+    private readonly fleetFlights: FleetFlightsService,
+  ) {}
 
   @Get('models')
   @Roles(UserRole.FLEET_OPERATOR, UserRole.ADMIN)
@@ -43,8 +48,19 @@ export class FleetController {
 
   @Get('drones')
   @Roles(UserRole.FLEET_OPERATOR, UserRole.ADMIN)
-  listDrones(@CurrentUser() user: User, @Query() query: ListDronesQueryDto) {
-    return this.fleetService.listDrones(user, query.hubId);
+  async listDrones(
+    @CurrentUser() user: User,
+    @Query() query: ListDronesQueryDto,
+  ) {
+    const drones = await this.fleetService.listDrones(user, query.hubId);
+    return this.fleetFlights.withActiveOrders(drones);
+  }
+
+  /** CU-19: vuelos en curso de las centrales del operador, con sus alertas. */
+  @Get('flights')
+  @Roles(UserRole.FLEET_OPERATOR)
+  listFlights(@CurrentUser() user: User, @Query() query: ListFlightsQueryDto) {
+    return this.fleetFlights.listFlights(user, query.hubId);
   }
 
   @Patch('drones/:id/status')

@@ -18,6 +18,7 @@ import {
   TelemetryAccess,
   canFollowHub,
   presentTelemetry,
+  receivesHubAlerts,
 } from './telemetry.rules';
 
 const UUID_V4 =
@@ -31,6 +32,8 @@ type ClientState = {
    */
   ready: Promise<User | null>;
   orders: Record<string, TelemetryAccess>;
+  /** Salas de central a las que se unió, y si recibe ahí las alertas. */
+  hubs: Record<string, { alerts: boolean }>;
 };
 
 @WebSocketGateway({
@@ -59,7 +62,11 @@ export class TelemetryGateway
   }
 
   async handleConnection(client: Socket): Promise<void> {
-    const state: ClientState = { ready: this.authenticate(client), orders: {} };
+    const state: ClientState = {
+      ready: this.authenticate(client),
+      orders: {},
+      hubs: {},
+    };
     this.clients.set(client.id, state);
     await state.ready;
   }
@@ -104,6 +111,9 @@ export class TelemetryGateway
         event: 'error',
         data: { message: 'La central no está asignada a tu cuenta.' },
       };
+    }
+    if (state) {
+      state.hubs[hubId] = { alerts: receivesHubAlerts(user.role) };
     }
     await client.join(hubRoom(hubId));
     return { event: 'subscribed-hub', data: { hubId } };
@@ -152,19 +162,49 @@ export class TelemetryGateway
         }));
         return;
       }
-      await this.emit(event.orderId, 'alert', (access) =>
-        access.alerts
-          ? {
-              orderId: event.orderId,
-              droneId: event.droneId,
-              kind: event.kind,
-              message: event.message,
-            }
-          : null,
-      );
+      await this.emitAlert(event);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'socket';
       this.logger.error(`No se pudo publicar telemetría: ${message}`);
+    }
+  }
+
+  /**
+   * CU-32: la alerta llega a quien sigue el pedido con alertas y a los
+   * operadores en la sala de la central de origen, una sola vez por socket.
+   */
+  private async emitAlert(
+    event: Extract<TelemetryEvent, { type: 'alert' }>,
+  ): Promise<void> {
+    if (!this.server) {
+      return;
+    }
+    const payload = {
+      orderId: event.orderId,
+      droneId: event.droneId,
+      kind: event.kind,
+      message: event.message,
+    };
+    const reached = new Set<string>();
+    const followers = await this.server.in(room(event.orderId)).fetchSockets();
+    for (const socket of followers) {
+      if (this.clients.get(socket.id)?.orders[event.orderId]?.alerts) {
+        socket.emit('alert', payload);
+        reached.add(socket.id);
+      }
+    }
+    const hubId = await this.access.originHubOf(event.orderId);
+    if (!hubId) {
+      return;
+    }
+    const staff = await this.server.in(hubRoom(hubId)).fetchSockets();
+    for (const socket of staff) {
+      if (
+        !reached.has(socket.id) &&
+        this.clients.get(socket.id)?.hubs[hubId]?.alerts
+      ) {
+        socket.emit('alert', payload);
+      }
     }
   }
 
