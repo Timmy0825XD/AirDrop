@@ -19,6 +19,7 @@ import { User } from '../users/user.entity';
 import { CreateHubDto } from './dto/create-hub.dto';
 import { ListHubsQueryDto } from './dto/list-hubs-query.dto';
 import { SetHubSuspensionDto } from './dto/set-hub-suspension.dto';
+import { UpdateHubDto } from './dto/update-hub.dto';
 import { HubsService } from './hubs.service';
 
 @ApiTags('Centrales')
@@ -47,6 +48,16 @@ export class HubsController {
       return this.hubsService.listForAdmin(query.status);
     }
     return this.hubsService.listAssigned(user);
+  }
+
+  @Patch(':id')
+  @Roles(UserRole.ADMIN)
+  update(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() dto: UpdateHubDto,
+  ) {
+    return this.hubsService.update(user, id, dto);
   }
 
   @Patch(':id/suspension')
