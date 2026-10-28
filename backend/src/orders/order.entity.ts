@@ -170,6 +170,15 @@ export class Order {
   @Column({ type: 'date', nullable: true })
   scheduledFor: string | null;
 
+  /** RU-30: inicio de la franja de entrega de un programado. */
+  @Index()
+  @Column({ type: 'timestamptz', nullable: true })
+  scheduledAt: Date | null;
+
+  /** Cierre de la franja: después de esto la entrega vence. */
+  @Column({ type: 'timestamptz', nullable: true })
+  windowEndsAt: Date | null;
+
   /** RF-18: alternativa cuando ningún dron de la central pudo salir. */
   @Column({
     type: 'enum',

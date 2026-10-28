@@ -59,13 +59,12 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Actores:** Solicitante
 - **Antes:** Sesión activa
 - **Pasos:**
-  1. Elige medicamento, cantidad, frecuencia (única, semanal, quincenal o mensual) y fecha de inicio.
-  2. Si es bajo fórmula, adjunta la imagen y el documento coincide, igual que en CU-04.
+  1. Elige medicamento, cantidad, el calendario (días de la semana, un día del mes o fechas sueltas), cuándo termina (fecha o número de entregas) y la hora de la franja.
+  2. Si es bajo fórmula, adjunta la imagen, el documento coincide igual que en CU-04, y escribe hasta cuándo vale la fórmula.
   3. Fija la ubicación de entrega.
-  4. El sistema genera una ocurrencia por periodo dentro de las 8 semanas siguientes. La frecuencia única genera solo esa fecha. Cada una queda en `recibido`, como pedido programado, no como urgencia.
-  5. En la última semana, o si la ventana ya venció, la app pregunta si extiende otras 8 semanas. La única no se extiende.
-  6. Puede cancelar el plan. Las ocurrencias que siguen en `recibido` pasan a `cancelado`. Las demás no cambian.
-- **Si falla:** Las mismas exclusiones de fórmula y de control especial que CU-04. Una fecha de inicio anterior a hoy no crea el plan.
+  4. La app muestra las fechas y horas que van a quedar (vista previa). Al confirmar, el sistema crea una entrega por fecha, cada una con su franja de 1 hora, en `recibido`, como pedido programado y no como urgencia.
+  5. Puede cambiar el calendario o la hora: las entregas sin dron se rehacen. Puede cancelar el plan: las que siguen en `recibido` pasan a `cancelado` y las demás no cambian.
+- **Si falla:** Las mismas exclusiones de fórmula y de control especial que CU-04. No se crea si empieza antes de hoy, si dura más de 3 meses, si pasa de la vigencia de la fórmula, si la hora no es una franja válida o si no queda ninguna entrega a más de 2 horas.
 - **Después:** Hay un plan activo. Cada fecha espera autorización. No hay vuelo todavía.
 - **Por qué:** RU-30. El periódico civil no se pide desde la cuenta de una central.
 
@@ -180,11 +179,11 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Actores:** Despachador de la central que necesita el insumo
 - **Antes:** Su central y la de origen están activas
 - **Pasos:**
-  1. Elige origen, medicamento, cantidad, frecuencia y fecha de inicio.
-  2. El sistema crea las ocurrencias de las 8 semanas, con destino en su central. La frecuencia única es solo la fecha de inicio.
+  1. Elige origen, medicamento, cantidad, calendario, fin y la hora de la franja, como en CU-35.
+  2. El sistema crea una entrega por fecha, con su franja, con destino en su central.
   3. En cada fecha, el despachador de origen autoriza y carga como en CU-11 y CU-22.
   4. Quien pidió recibe con CU-21. Si la remisión cuadra, el inventario entra en su central.
-  5. En la última semana, o si la ventana ya venció, puede extender otras 8 semanas. Puede cancelar el plan: las ocurrencias que siguen en `recibido` pasan a `cancelado`.
+  5. Puede cambiar el calendario o la hora, o cancelar el plan: las entregas que siguen en `recibido` pasan a `cancelado`.
 - **Si falla:** Origen inactivo, o igual al destino: el plan no se crea. Control especial: no se crea.
 - **Después:** El plan queda activo. Ninguna ocurrencia despega sola.
 - **Por qué:** RU-12. La frecuencia no salta la autorización de cada salida.

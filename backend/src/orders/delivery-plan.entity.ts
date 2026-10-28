@@ -10,6 +10,7 @@ import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { FIELD_LIMITS } from '../common/field-limits';
 import { PlanFrequency } from '../common/enums/plan-frequency.enum';
 import { PlanStatus } from '../common/enums/plan-status.enum';
+import { ScheduleKind } from '../common/enums/schedule-kind.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 import { NUMERIC_TRANSFORMER } from '../common/numeric.transformer';
 
@@ -18,8 +19,51 @@ export class DeliveryPlan {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'enum', enum: PlanFrequency, enumName: 'plan_frequency' })
-  frequency: PlanFrequency;
+  /**
+   * Solo los planes creados con la frecuencia anterior (8 semanas, todo el
+   * día). Los demás usan la regla de calendario de abajo.
+   */
+  @Column({
+    type: 'enum',
+    enum: PlanFrequency,
+    enumName: 'plan_frequency',
+    nullable: true,
+  })
+  frequency: PlanFrequency | null;
+
+  /** RU-30: regla de calendario. Nula en los planes anteriores a ella. */
+  @Column({
+    type: 'enum',
+    enum: ScheduleKind,
+    enumName: 'schedule_kind',
+    nullable: true,
+  })
+  scheduleKind: ScheduleKind | null;
+
+  /** 1 = lunes … 7 = domingo. */
+  @Column({ type: 'smallint', array: true, nullable: true })
+  daysOfWeek: number[] | null;
+
+  @Column({ type: 'smallint', nullable: true })
+  everyWeeks: number | null;
+
+  @Column({ type: 'smallint', nullable: true })
+  dayOfMonth: number | null;
+
+  @Column({ type: 'date', array: true, nullable: true })
+  scheduleDates: string[] | null;
+
+  /** Fin por número de entregas, en vez de por fecha. */
+  @Column({ type: 'smallint', nullable: true })
+  occurrenceCount: number | null;
+
+  /** Inicio de la franja de 1 hora (`HH:00`). Nula: todo el horario operativo. */
+  @Column({ type: 'varchar', length: 5, nullable: true })
+  deliveryTime: string | null;
+
+  /** Bajo fórmula: el plan no pasa de esta fecha. */
+  @Column({ type: 'date', nullable: true })
+  prescriptionValidUntil: string | null;
 
   @Index()
   @Column({ type: 'enum', enum: PlanStatus, enumName: 'plan_status' })
@@ -40,7 +84,7 @@ export class DeliveryPlan {
   @Column({ type: 'date' })
   startDate: string;
 
-  /** Día en que empieza la ventana siguiente. Esta ventana no lo incluye. */
+  /** Día siguiente al último que cubre el plan (fin exclusivo). */
   @Column({ type: 'date' })
   windowEndsOn: string;
 
