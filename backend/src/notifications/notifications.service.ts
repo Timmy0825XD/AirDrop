@@ -6,6 +6,7 @@ import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
 const ALERT_MESSAGES: Record<FlightAlertKind, string> = {
   battery_critical: 'Batería crítica en el dron en vuelo.',
   failure: 'Falla de batería en el dron en vuelo.',
+  cold_chain: 'La temperatura de la carga salió del rango de 2 a 8 °C.',
 };
 
 @Injectable()

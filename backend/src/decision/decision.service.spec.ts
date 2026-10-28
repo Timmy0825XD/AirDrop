@@ -140,6 +140,7 @@ function received(overrides: Partial<Order> = {}): Order {
     droneId: null,
     inventoryItemId: null,
     loadConfirmedAt: null,
+    coldChainAlertAt: null,
     statusReason: null,
     planId: null,
     scheduledFor: null,

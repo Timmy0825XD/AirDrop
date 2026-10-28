@@ -11,6 +11,8 @@ export function presentOrder(order: Order) {
     medicationName: order.medicationName,
     saleType: order.saleType,
     requiresColdChain: order.requiresColdChain,
+    coldChainAlert: order.coldChainAlertAt != null,
+    coldChainAlertAt: order.coldChainAlertAt,
     quantity: order.quantity,
     description: order.description,
     requesterId: order.requesterId,

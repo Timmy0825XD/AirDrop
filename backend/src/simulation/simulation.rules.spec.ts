@@ -2,11 +2,19 @@ import { OrderStatus } from '../common/enums/order-status.enum';
 import { RouteLeg } from '../common/enums/route-leg.enum';
 import { PlannedCorridor } from '../routing/routing.rules';
 import {
+  COLD_CHAIN_RANGE_C,
+  DEFAULT_COLD_CHAIN_FAILURE_RATE,
   FlightPhase,
   advanceFlight,
   buildLiveFlight,
+  coldChainFailureRate,
+  coldChainReading,
   initialProgress,
+  isOutOfColdChainRange,
+  outboundDurationMs,
+  planColdChainExcursion,
   returnProgress,
+  temperatureAt,
 } from './simulation.rules';
 
 const confirmed = new Date('2026-10-11T18:00:00.000Z');
@@ -197,5 +205,106 @@ describe('vuelo de regreso', () => {
     });
     expect(live.leg).toBe(RouteLeg.RETURN);
     expect(live.status).toBe(OrderStatus.RETURNING);
+  });
+});
+
+describe('cadena de frío (RF-17)', () => {
+  const minute = 60_000;
+
+  it('con tasa 0 nunca hay falla y la carga se queda en rango', () => {
+    expect(planColdChainExcursion(0, 0, 10 * minute)).toBeNull();
+    for (let elapsed = 0; elapsed <= 60 * minute; elapsed += minute) {
+      expect(isOutOfColdChainRange(temperatureAt(elapsed, null))).toBe(false);
+    }
+  });
+
+  it('con tasa 1 la falla cae dentro de la ida y la carga sale de rango', () => {
+    const window = 10 * minute;
+    const at = planColdChainExcursion(0.5, 1, window);
+    expect(at).toBe(5 * minute);
+    expect(isOutOfColdChainRange(temperatureAt(at! + minute, at))).toBe(false);
+    expect(isOutOfColdChainRange(temperatureAt(at! + 3 * minute, at))).toBe(
+      true,
+    );
+  });
+
+  it('con la tasa por defecto, uno de cada diez números cae en falla', () => {
+    expect(planColdChainExcursion(0.09, 0.1, minute)).not.toBeNull();
+    expect(planColdChainExcursion(0.1, 0.1, minute)).toBeNull();
+  });
+
+  it('después de la falla la temperatura no baja', () => {
+    let previous = -Infinity;
+    for (let elapsed = minute; elapsed <= 20 * minute; elapsed += 10_000) {
+      const reading = temperatureAt(elapsed, minute);
+      expect(reading).toBeGreaterThanOrEqual(previous);
+      previous = reading;
+    }
+    expect(previous).toBeGreaterThan(COLD_CHAIN_RANGE_C.max);
+  });
+
+  it('alerta una sola vez', () => {
+    const progress = { coldChainExcursionAtMs: 0, coldChainAlertSent: false };
+    const first = coldChainReading(progress, 10 * minute);
+    expect(first.alert).toBe(true);
+    const second = coldChainReading(
+      { ...progress, coldChainAlertSent: first.alertSent },
+      11 * minute,
+    );
+    expect(second.alert).toBe(false);
+    expect(second.alertSent).toBe(true);
+  });
+
+  it('el regreso hereda la falla y la alerta de la ida', () => {
+    const progress = returnProgress({
+      ...initialProgress(),
+      coldChainExcursionAtMs: 1234,
+      coldChainAlertSent: true,
+    });
+    expect(progress.coldChainExcursionAtMs).toBe(1234);
+    expect(progress.coldChainAlertSent).toBe(true);
+  });
+
+  it('lee COLD_CHAIN_FAILURE_RATE y vuelve al 10 % si no sirve', () => {
+    const previous = process.env.COLD_CHAIN_FAILURE_RATE;
+    process.env.COLD_CHAIN_FAILURE_RATE = '1';
+    expect(coldChainFailureRate()).toBe(1);
+    process.env.COLD_CHAIN_FAILURE_RATE = '0';
+    expect(coldChainFailureRate()).toBe(0);
+    process.env.COLD_CHAIN_FAILURE_RATE = '7';
+    expect(coldChainFailureRate()).toBe(DEFAULT_COLD_CHAIN_FAILURE_RATE);
+    delete process.env.COLD_CHAIN_FAILURE_RATE;
+    expect(coldChainFailureRate()).toBe(DEFAULT_COLD_CHAIN_FAILURE_RATE);
+    process.env.COLD_CHAIN_FAILURE_RATE = previous;
+  });
+
+  it('la ida dura lo de sus fases más el crucero', () => {
+    // 20 + 10 + 15 + 15 s de fases fijas y 10 km a 150 km/h (240 s).
+    expect(outboundDurationMs(corridor, model)).toBe(300_000);
+  });
+
+  it('sin frío no publica temperatura; con frío publica la lectura', () => {
+    const step = advanceFlight({
+      progress: initialProgress(),
+      elapsedMs: 2_000,
+      corridor,
+      model,
+      loadConfirmedAt: confirmed,
+    })!;
+    const base = {
+      orderId: 'o',
+      droneId: 'd',
+      identifier: 'WG-1',
+      quantity: 1,
+      step,
+    };
+    expect(
+      buildLiveFlight({ ...base, requiresColdChain: false, temperatureC: 9 })
+        .temperatureC,
+    ).toBeNull();
+    expect(
+      buildLiveFlight({ ...base, requiresColdChain: true, temperatureC: 9 })
+        .temperatureC,
+    ).toBe(9);
   });
 });

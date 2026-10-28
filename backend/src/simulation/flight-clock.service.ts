@@ -7,7 +7,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { DroneStatus } from '../common/enums/drone-status.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { RouteLeg } from '../common/enums/route-leg.enum';
@@ -29,10 +29,20 @@ import {
   TICK_MS,
   advanceFlight,
   buildLiveFlight,
+  coldChainFailureRate,
+  coldChainReading,
   initialProgress,
+  outboundDurationMs,
+  planColdChainExcursion,
   returnProgress,
   FlightPhase,
 } from './simulation.rules';
+
+/** Pedido con frío que espera el código: la carga se sigue midiendo. */
+type ColdWait = {
+  droneId: string;
+  loadConfirmedAt: Date;
+};
 
 type FlightSession = {
   leg: RouteLeg;
@@ -55,6 +65,9 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
   private readonly active = new Map<string, FlightSession>();
   /** Pedidos aterrizados que esperan el código de entrega. */
   private readonly waiting = new Map<string, Date>();
+  private readonly coldWaits = new Map<string, ColdWait>();
+  /** Los tests lo reemplazan para fijar si hay falla de frío. */
+  private random: () => number = Math.random;
   private timer: NodeJS.Timeout | null = null;
   private ticking = false;
 
@@ -150,6 +163,23 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
         this.waiting.set(mission.orderId, mission.landedAt);
       }
     }
+    if (!missions.length) {
+      return;
+    }
+    const cold = await this.orders.find({
+      where: {
+        id: In(missions.map((mission) => mission.orderId)),
+        requiresColdChain: true,
+      },
+    });
+    for (const order of cold) {
+      if (order.droneId && order.loadConfirmedAt) {
+        this.coldWaits.set(order.id, {
+          droneId: order.droneId,
+          loadConfirmedAt: order.loadConfirmedAt,
+        });
+      }
+    }
   }
 
   /**
@@ -224,6 +254,16 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
           }
       : (stored?.progress ?? {
           ...initialProgress(),
+          coldChainExcursionAtMs: order.requiresColdChain
+            ? planColdChainExcursion(
+                this.random(),
+                coldChainFailureRate(),
+                outboundDurationMs(corridor, {
+                  maxSpeedKmh: drone.droneModel.maxSpeedKmh,
+                  maxRangeKm: drone.droneModel.maxRangeKm,
+                }),
+              )
+            : null,
           orderStatus:
             order.status === OrderStatus.IN_FLIGHT
               ? OrderStatus.IN_FLIGHT
@@ -299,6 +339,12 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
         }
       }
       try {
+        await this.watchColdWaits();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'frío';
+        this.logger.error(`No se pudo medir la carga en espera: ${message}`);
+      }
+      try {
         await this.expireDeliveryWaits();
       } catch (error) {
         const message = error instanceof Error ? error.message : 'espera';
@@ -330,6 +376,20 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       step.progress.orderStatus = OrderStatus.DELIVERED;
       step.statusChanges = [];
     }
+    // Tras entregar, el dron vuelve vacío: ya no hay carga que medir.
+    const carriesColdLoad = session.requiresColdChain && !session.keepStatus;
+    let temperatureC: number | null = null;
+    if (carriesColdLoad) {
+      const reading = coldChainReading(
+        step.progress,
+        Date.now() - session.loadConfirmedAt.getTime(),
+      );
+      temperatureC = reading.temperatureC;
+      step.progress.coldChainAlertSent = reading.alertSent;
+      if (reading.alert) {
+        step.alerts.push('cold_chain');
+      }
+    }
     const previous = session.progress;
     session.progress = step.progress;
     try {
@@ -340,7 +400,8 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
           droneId: session.droneId,
           identifier: session.identifier,
           quantity: session.quantity,
-          requiresColdChain: session.requiresColdChain,
+          requiresColdChain: carriesColdLoad,
+          temperatureC,
           step,
         }),
       );
@@ -352,6 +413,9 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       for (const kind of step.alerts) {
         await this.notifications.alert(orderId, session.droneId, kind);
       }
+      if (step.alerts.includes('cold_chain')) {
+        await this.markColdChainAlert(orderId);
+      }
       if (step.progress.phase === FlightPhase.LANDED) {
         this.active.delete(orderId);
         if (session.leg === RouteLeg.RETURN) {
@@ -361,12 +425,60 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
           );
         } else if (landedAt) {
           this.waiting.set(orderId, landedAt);
+          if (session.requiresColdChain) {
+            this.coldWaits.set(orderId, {
+              droneId: session.droneId,
+              loadConfirmedAt: session.loadConfirmedAt,
+            });
+          }
         }
       }
     } catch (error) {
       session.progress = previous;
       throw error;
     }
+  }
+
+  /**
+   * RF-17 en la espera: no hay tick de vuelo, pero la carga sigue en el dron.
+   * Se recalcula la temperatura, se publica y, si sale de rango, se alerta.
+   * Al entregar o al iniciar el regreso, deja de medirse aquí.
+   */
+  private async watchColdWaits(now = new Date()): Promise<void> {
+    for (const [orderId, cold] of [...this.coldWaits]) {
+      if (!this.waiting.has(orderId) || this.active.has(orderId)) {
+        this.coldWaits.delete(orderId);
+        continue;
+      }
+      const flight = await this.telemetry.readFlight(orderId);
+      if (!flight) {
+        continue;
+      }
+      const reading = coldChainReading(
+        flight.progress,
+        now.getTime() - cold.loadConfirmedAt.getTime(),
+      );
+      await this.telemetry.publishFlight({
+        ...flight,
+        temperatureC: reading.temperatureC,
+        progress: { ...flight.progress, coldChainAlertSent: reading.alertSent },
+      });
+      if (reading.alert) {
+        await this.notifications.alert(orderId, cold.droneId, 'cold_chain');
+        await this.markColdChainAlert(orderId, now);
+      }
+    }
+  }
+
+  /** La marca impide reingresar el insumo (cuarentena de productos.md). */
+  private async markColdChainAlert(
+    orderId: string,
+    now = new Date(),
+  ): Promise<void> {
+    await this.orders.update(
+      { id: orderId, coldChainAlertAt: IsNull() },
+      { coldChainAlertAt: now },
+    );
   }
 
   private async syncMission(
