@@ -1,4 +1,4 @@
-import { IsString, Matches } from 'class-validator';
+import { IsBoolean, IsOptional, IsString, Matches } from 'class-validator';
 import { FIELD_LIMITS } from '../../common/field-limits';
 
 export class ValidateDeliveryCodeDto {
@@ -7,4 +7,14 @@ export class ValidateDeliveryCodeDto {
     message: `El código de entrega debe tener ${FIELD_LIMITS.otpDigits} dígitos.`,
   })
   code: string;
+
+  /** Traslado entre centrales: la remisión coincide (cantidad, lote, vencimiento). */
+  @IsOptional()
+  @IsBoolean({ message: 'Indica si la remisión coincide.' })
+  remissionMatches?: boolean;
+
+  /** Traslado entre centrales: el sello llegó intacto. */
+  @IsOptional()
+  @IsBoolean({ message: 'Indica si el sello llegó intacto.' })
+  sealIntact?: boolean;
 }

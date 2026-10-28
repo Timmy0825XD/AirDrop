@@ -13,6 +13,7 @@ import { FIELD_LIMITS } from '../common/field-limits';
 import { MissionType } from '../common/enums/mission-type.enum';
 import { OrderPriority } from '../common/enums/order-priority.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
+import { ReturnOutcome } from '../common/enums/return-outcome.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 
 export type FallbackOption = {
@@ -115,6 +116,36 @@ export class Order {
   /** El reloj de vuelo no arranca antes de esta marca. */
   @Column({ type: 'timestamptz', nullable: true })
   loadConfirmedAt: Date | null;
+
+  /**
+   * Registro de salida: lote y vencimiento que se descontaron al confirmar
+   * la carga. Sirven para reingresar o recibir el insumo aunque el ítem cambie.
+   */
+  @Column({ type: 'varchar', length: FIELD_LIMITS.lotCode, nullable: true })
+  dispatchedLot: string | null;
+
+  @Column({ type: 'date', nullable: true })
+  dispatchedLotExpiresOn: string | null;
+
+  /** Revisión del despachador de origen al recibir un paquete devuelto. */
+  @Column({ type: 'timestamptz', nullable: true })
+  returnCheckedAt: Date | null;
+
+  @Column({
+    type: 'enum',
+    enum: ReturnOutcome,
+    enumName: 'return_outcome',
+    nullable: true,
+  })
+  returnOutcome: ReturnOutcome | null;
+
+  /** Un traslado que la central de destino no recibió, y por qué. */
+  @Column({ type: 'varchar', length: FIELD_LIMITS.reason, nullable: true })
+  receiptRejectedReason: string | null;
+
+  /** `false` si el sello llegó roto: el paquete vuelve directo a cuarentena. */
+  @Column({ type: 'boolean', nullable: true })
+  receiptSealIntact: boolean | null;
 
   /**
    * RF-17: la temperatura de la carga salió de 2–8 °C en ida, espera o

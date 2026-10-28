@@ -112,6 +112,7 @@ function drone(overrides: Partial<Drone> = {}): Drone {
 function lot(): InventoryItem {
   return {
     id: LOT_ID,
+    hubId: HUB_ID,
     quantity: 8,
     lot: 'L-1',
     expirationDate: '2027-01-01',
@@ -140,6 +141,12 @@ function received(overrides: Partial<Order> = {}): Order {
     droneId: null,
     inventoryItemId: null,
     loadConfirmedAt: null,
+    dispatchedLot: null,
+    dispatchedLotExpiresOn: null,
+    returnCheckedAt: null,
+    returnOutcome: null,
+    receiptRejectedReason: null,
+    receiptSealIntact: null,
     coldChainAlertAt: null,
     statusReason: null,
     planId: null,
@@ -203,6 +210,9 @@ function build(state?: {
       if (held && entity === Order && options.where.id === held.id) return held;
       if (entity === Hub) {
         return hubs.find((item) => item.id === options.where.id) ?? null;
+      }
+      if (entity === InventoryItem && currentLot?.id === options.where.id) {
+        return currentLot;
       }
       return null;
     }),
@@ -572,20 +582,44 @@ describe('DecisionService.listInFlight', () => {
 });
 
 describe('DecisionService.confirmLoad', () => {
-  it('marks the load and starts the clock without taking off', async () => {
+  it('marks the load, discounts the reserved lot and starts the clock without taking off', async () => {
     const order = received({
       status: OrderStatus.PENDING_LOAD,
       originHubId: HUB_ID,
       droneId: DRONE_ID,
+      inventoryItemId: LOT_ID,
+      quantity: 3,
       loadConfirmedAt: null,
     });
-    const { service, flights, routes } = build({ order });
+    const { service, flights, routes, currentLot, manager } = build({ order });
     routes.findOutboundMany.mockResolvedValue(new Map([[order.id, corridor]]));
     const result = await service.confirmLoad(dispatcher(), order.id);
     expect(order.loadConfirmedAt).toBeInstanceOf(Date);
     expect(order.status).toBe(OrderStatus.PENDING_LOAD);
+    expect(currentLot?.quantity).toBe(5);
+    expect(manager.save).toHaveBeenCalledWith(currentLot);
+    expect(result.dispatchedLot).toBe('L-1');
+    expect(result.dispatchedLotExpiresOn).toBe('2027-01-01');
     expect(flights.start).toHaveBeenCalledWith(order.id);
     expect(result.status).toBe(OrderStatus.PENDING_LOAD);
+  });
+
+  it('does not take off when the reserved lot no longer has the units', async () => {
+    const order = received({
+      status: OrderStatus.PENDING_LOAD,
+      originHubId: HUB_ID,
+      droneId: DRONE_ID,
+      inventoryItemId: LOT_ID,
+      quantity: 9,
+    });
+    const { service, flights, routes, currentLot } = build({ order });
+    routes.findOutboundMany.mockResolvedValue(new Map([[order.id, corridor]]));
+    await expect(service.confirmLoad(dispatcher(), order.id)).rejects.toThrow(
+      new BadRequestException(LOT_NOT_AVAILABLE),
+    );
+    expect(currentLot?.quantity).toBe(8);
+    expect(order.loadConfirmedAt).toBeNull();
+    expect(flights.start).not.toHaveBeenCalled();
   });
 
   it('rejects a dispatcher from another hub', async () => {

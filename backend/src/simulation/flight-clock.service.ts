@@ -119,7 +119,10 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  /** Tras una entrega recibida, el dron vuelve solo a su central. */
+  /**
+   * Tras una entrega, el dron vuelve solo a su central. Si la central de
+   * destino no recibió el traslado (`returning`), vuelve con el paquete.
+   */
   async startReturn(orderId: string): Promise<void> {
     await this.activate(orderId);
   }

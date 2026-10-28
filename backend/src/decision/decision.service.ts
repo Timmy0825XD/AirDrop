@@ -145,6 +145,7 @@ export class DecisionService {
       if (!current.droneId || !corridor.has(orderId)) {
         throw new BadRequestException(FLIGHT_NOT_READY);
       }
+      await this.dischargeLot(manager, current);
       current.loadConfirmedAt = new Date();
       return manager.save(current);
     });
@@ -330,6 +331,32 @@ export class DecisionService {
     order.originHubId = originHubId;
     await manager.save(order);
     await this.routes.saveOutbound(order.id, corridor, manager);
+  }
+
+  /**
+   * persona.md paso 5 y centrales.md paso 3: al confirmar la carga sale el
+   * lote reservado. Queda el registro de salida (lote y vencimiento) para el
+   * reingreso o la recepción en destino.
+   */
+  private async dischargeLot(manager: EntityManager, order: Order) {
+    const lot = order.inventoryItemId
+      ? await manager.findOne(InventoryItem, {
+          where: { id: order.inventoryItemId },
+          lock: { mode: 'pessimistic_write' },
+        })
+      : null;
+    if (
+      !lot ||
+      lot.hubId !== order.originHubId ||
+      lot.quantity < order.quantity ||
+      lot.expirationDate < todayInColombia()
+    ) {
+      throw new BadRequestException(LOT_NOT_AVAILABLE);
+    }
+    lot.quantity -= order.quantity;
+    await manager.save(lot);
+    order.dispatchedLot = lot.lot;
+    order.dispatchedLotExpiresOn = lot.expirationDate;
   }
 
   private async withFallback(
