@@ -86,6 +86,18 @@ final dronesProvider = FutureProvider<List<Drone>>((ref) {
   return ref.watch(fleetRepositoryProvider).listDrones(hubId);
 });
 
+/// Drones de **todas** las centrales del operador, para su inicio. Con
+/// [dronesProvider] (una central) un dron en misión de otra central no
+/// aparecía hasta elegirla en Flota.
+final operatorDronesProvider = FutureProvider<List<Drone>>((ref) async {
+  final hubs = await ref.watch(assignedHubsProvider.future);
+  final repository = ref.watch(fleetRepositoryProvider);
+  final lists = await Future.wait(
+    hubs.map((hub) => repository.listDrones(hub.id)),
+  );
+  return [for (final list in lists) ...list];
+});
+
 /// Alta de dron. El error se propaga para que la pantalla muestre el
 /// `message` de `ApiException`.
 class CreateDroneNotifier extends AsyncNotifier<Drone?> {
@@ -146,11 +158,6 @@ final registerMaintenanceProvider =
       RegisterMaintenanceNotifier.new,
     );
 
-/// Vuelos en curso de la central efectiva, para que el operador siga el
-/// mapa de cada dron en misión. Se refresca cada 10 s en su pantalla.
-/// Alertas en vivo de la central que mira el operador (`subscribe-hub`).
-/// Un socket mientras la pantalla de vuelos esté abierta; al salir se
-/// cierra.
 /// La flota de una central cualquiera, para el administrador (solo
 /// lectura; `GET /fleet/drones?hubId=`).
 final hubDronesProvider = FutureProvider.family<List<Drone>, String>((
@@ -160,6 +167,9 @@ final hubDronesProvider = FutureProvider.family<List<Drone>, String>((
   return ref.watch(fleetRepositoryProvider).listDrones(hubId);
 });
 
+/// Alertas en vivo de una central del operador (`subscribe-hub`). Un
+/// socket por central mientras la pantalla de vuelos esté abierta; al
+/// salir se cierra.
 final hubAlertsProvider = StreamProvider.autoDispose
     .family<FlightAlert, String>((ref, hubId) async* {
       final client = ref.read(telemetryClientProvider);
@@ -169,8 +179,14 @@ final hubAlertsProvider = StreamProvider.autoDispose
       }
     });
 
-final fleetFlightsProvider = FutureProvider<List<FleetFlight>>((ref) {
-  final hubId = ref.watch(effectiveHubProvider)?.id;
-  if (hubId == null) return const <FleetFlight>[];
-  return ref.watch(fleetRepositoryProvider).listFlights(hubId);
+/// Vuelos en curso de **todas** las centrales del operador, para que siga
+/// el mapa de cada dron en misión y el contador de la barra no se quede
+/// en una sola central. Se refresca cada 10 s en su pantalla y su inicio.
+final fleetFlightsProvider = FutureProvider<List<FleetFlight>>((ref) async {
+  final hubs = await ref.watch(assignedHubsProvider.future);
+  final repository = ref.watch(fleetRepositoryProvider);
+  final lists = await Future.wait(
+    hubs.map((hub) => repository.listFlights(hub.id)),
+  );
+  return [for (final list in lists) ...list];
 });
