@@ -1,62 +1,153 @@
 @import "tailwindcss";
 
-/* Paleta del radar: fondo casi negro verdoso y verde lima para lo que vuela. */
+/*
+ * "Grafito y turquesa", la misma paleta oscura de la app Flutter
+ * (frontend/lib/theme/app_palette.dart y app_theme.dart).
+ */
 :root {
-  --ink: #04100f;
-  --panel: #0a1a19;
-  --panel-2: #102524;
-  --line: #1c3331;
-  --muted: #8fa7a3;
-  --text: #e8f3f1;
-  --outbound: #c6f432;
-  --returning: #ffb020;
-  --alert: #ff5d5d;
-  --hub: #2dd4bf;
-  --hub-off: #6b7c78;
+  /* Degradado del fondo: arriba, en medio y abajo. */
+  --backdrop-1: #1f2a30;
+  --backdrop-2: #14191d;
+  --backdrop-3: #0b0e10;
+  --surface: #1a2126;
+  --sunk: #12171a;
+  --line: #2c363c;
+  --text: #eef3f5;
+  --muted: #a6b4ba;
+
+  /* Vidrio: tarjetas translúcidas, la barra y los paneles sobre el mapa. */
+  --glass: rgb(255 255 255 / 0.07);
+  --glass-border: rgb(255 255 255 / 0.1);
+  --bar: rgb(22 28 32 / 0.94);
+  --shadow: rgb(0 0 0 / 0.4);
+
+  /* Acento en degradado y su color de texto. */
+  --accent: #4fc3c9;
+  --accent-from: #6ed6d9;
+  --accent-to: #3fa9c0;
+  --on-accent: #071214;
+  --accent-glow: rgb(79 195 201 / 0.2);
+  --sky-glow: rgb(191 210 226 / 0.12);
+
+  /* Semáforo. */
+  --success: #4ade80;
+  --warning: #fbbf6a;
+  --danger: #ff8fa3;
+  --info: #a9c8e6;
 }
 
 @theme inline {
-  --color-ink: var(--ink);
-  --color-panel: var(--panel);
-  --color-panel-2: var(--panel-2);
+  --color-backdrop: var(--backdrop-2);
+  --color-ink: var(--backdrop-3);
+  --color-surface: var(--surface);
+  --color-sunk: var(--sunk);
   --color-line: var(--line);
-  --color-muted: var(--muted);
   --color-text: var(--text);
-  --color-outbound: var(--outbound);
-  --color-returning: var(--returning);
-  --color-alert: var(--alert);
-  --color-hub: var(--hub);
-  --color-hub-off: var(--hub-off);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-glass: var(--glass);
+  --color-glass-border: var(--glass-border);
+  --color-bar: var(--bar);
+  --color-accent: var(--accent);
+  --color-accent-from: var(--accent-from);
+  --color-accent-to: var(--accent-to);
+  --color-on-accent: var(--on-accent);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+  --font-sans: var(--font-space-grotesk);
 }
 
 html,
 body {
   height: 100%;
-  background: var(--ink);
+  background: var(--backdrop-3);
   color: var(--text);
-  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-family: var(--font-space-grotesk), system-ui, sans-serif;
 }
 
-/* Controles del mapa en el mismo tono oscuro. */
+/* El fondo de la app: degradado de grafito con velo de cielo y turquesa. */
+@utility app-backdrop {
+  background:
+    radial-gradient(120% 120% at 0% 0%, var(--sky-glow), transparent 60%),
+    radial-gradient(110% 110% at 100% 100%, var(--accent-glow), transparent 60%),
+    linear-gradient(135deg, var(--backdrop-1), var(--backdrop-2) 48%, var(--backdrop-3));
+}
+
+/* Vidrio más opaco, como la barra flotante y las hojas sobre el mapa. */
+@utility glass {
+  background: var(--bar);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 18px 44px -12px var(--shadow);
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+@utility bg-accent-gradient {
+  background-image: linear-gradient(135deg, var(--accent-from), var(--accent-to));
+}
+
+/* Etiquetas: mayúsculas pequeñas con aire (labelSmall de la app). */
+@utility eyebrow {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* Velo sobre el mapa: oscurece los bordes y lo lleva al tono de la app. */
+.map-vignette {
+  background:
+    radial-gradient(90% 70% at 50% 50%, transparent 55%, rgb(11 14 16 / 0.55)),
+    radial-gradient(60% 60% at 0% 0%, var(--sky-glow), transparent 70%),
+    radial-gradient(60% 60% at 100% 100%, var(--accent-glow), transparent 70%);
+}
+
+/* Las centrales quedan por encima del velo del mapa (z-index 1). */
+.maplibregl-marker {
+  z-index: 2;
+}
+
+/* Con un panel abierto, la atribución quedaría debajo de él: se recoge. */
+@media (min-width: 640px) {
+  main[data-panel] .maplibregl-ctrl-bottom-right {
+    display: none;
+  }
+}
+
+/* Controles del mapa en vidrio. */
 .maplibregl-ctrl-group {
-  background: var(--panel) !important;
-  border: 1px solid var(--line);
-  box-shadow: none !important;
+  background: var(--bar) !important;
+  border: 1px solid var(--glass-border);
+  border-radius: 14px !important;
+  overflow: hidden;
+  box-shadow: 0 12px 28px -10px var(--shadow) !important;
+  backdrop-filter: blur(18px);
+}
+.maplibregl-ctrl-group button {
+  width: 36px !important;
+  height: 36px !important;
 }
 .maplibregl-ctrl-group button + button {
-  border-top: 1px solid var(--line) !important;
+  border-top: 1px solid var(--glass-border) !important;
 }
 .maplibregl-ctrl-icon {
-  filter: invert(1);
+  filter: invert(1) opacity(0.8);
 }
 .maplibregl-ctrl-attrib {
-  background: rgb(4 16 15 / 0.7) !important;
+  background: var(--bar) !important;
   color: var(--muted) !important;
+  border-radius: 10px !important;
 }
 .maplibregl-ctrl-attrib a {
   color: var(--muted) !important;
+}
+/* La leyenda ocupa la esquina inferior izquierda desde pantallas medianas. */
+@media (min-width: 768px) {
+  .maplibregl-map .maplibregl-ctrl-bottom-left .maplibregl-ctrl {
+    margin: 0 0 76px 16px;
+  }
 }
 
 @keyframes slide-in {
@@ -70,12 +161,47 @@ body {
   }
 }
 
+@keyframes rise-in {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes hub-ping {
+  from {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  to {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
 .panel-enter {
-  animation: slide-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: slide-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.rise-in {
+  animation: rise-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.hub-ping {
+  animation: hub-ping 1.6s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .panel-enter {
+  .panel-enter,
+  .rise-in {
     animation: none;
+  }
+  .hub-ping {
+    animation: none;
+    opacity: 0;
   }
 }

@@ -6,6 +6,8 @@ import type { Selection } from "@/lib/types";
 import { usePolled } from "@/lib/use-polled";
 import { useRadar } from "@/lib/use-radar";
 import { FlightPanel } from "./FlightPanel";
+import { AlertIcon, DroneIcon } from "./icons";
+import { Legend } from "./Legend";
 import { HubPanel } from "./HubPanel";
 import { RadarMap } from "./map/RadarMap";
 import { TopBar } from "./TopBar";
@@ -48,7 +50,10 @@ export function Dashboard({ source, userName, onLogout }: Props) {
   const live = flightId ? data.flights.find((f) => f.orderId === flightId) : undefined;
 
   return (
-    <main className="relative h-dvh w-full overflow-hidden">
+    <main
+      data-panel={selection ? "" : undefined}
+      className="relative h-dvh w-full overflow-hidden bg-backdrop"
+    >
       <RadarMap
         hubs={data.hubs}
         flights={data.flights}
@@ -69,16 +74,22 @@ export function Dashboard({ source, userName, onLogout }: Props) {
         onLogout={onLogout}
       />
 
+      {/* Velo del tono de la app; no capta clics. */}
+      <div className="map-vignette pointer-events-none absolute inset-0 z-[1]" />
+      <Legend />
+
       {data.message && (
         <p
           role="alert"
-          className="absolute left-1/2 top-20 z-30 -translate-x-1/2 rounded-lg bg-alert/90 px-4 py-2 text-sm font-medium text-white shadow-lg"
+          className="glass rise-in absolute left-1/2 top-[100px] z-30 flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-2.5 rounded-2xl !border-danger/40 px-4 py-3 text-sm font-medium text-danger"
         >
+          <AlertIcon size={18} className="shrink-0" />
           {data.message}
         </p>
       )}
       {data.loaded && !data.flights.length && !selection && (
-        <p className="pointer-events-none absolute bottom-6 left-1/2 z-10 -translate-x-1/2 rounded-full border border-line bg-ink/80 px-4 py-2 text-sm text-muted backdrop-blur">
+        <p className="glass rise-in pointer-events-none absolute bottom-24 left-1/2 z-10 flex w-max max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-2.5 rounded-full px-4 py-2.5 text-sm text-muted 2xl:bottom-5">
+          <DroneIcon size={16} className="shrink-0 text-accent" />
           No hay drones en vuelo ahora. Toca una central para ver su flota.
         </p>
       )}

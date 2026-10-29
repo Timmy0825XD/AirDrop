@@ -30,9 +30,9 @@ import { useDroneTracks } from "./use-drone-tracks";
 // El worker lo copia `scripts/copy-maplibre.mjs` a /public antes de dev y build.
 if (typeof window !== "undefined") setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
-const VALLEDUPAR ={ longitude: -73.2532, latitude: 10.4631, zoom: 11 };
-/** El panel lateral mide 420 px: el mapa deja ese espacio al encuadrar. */
-const PANEL_PX = 420;
+const VALLEDUPAR = { longitude: -73.2532, latitude: 10.4631, zoom: 11 };
+/** El panel lateral mide 400 px más su margen: el mapa deja ese espacio al encuadrar. */
+const PANEL_PX = 416;
 
 /**
  * Mapa base oscuro de Esri (sin API key). Se puede cambiar con
@@ -59,9 +59,21 @@ const STYLE: StyleSpecification = {
       maxzoom: 16,
     },
   },
+  // El gris de Esri sobre un fondo grafito turquesa, como el mapa de la app.
   layers: [
-    { id: "base", type: "raster", source: "base" },
-    { id: "labels", type: "raster", source: "labels" },
+    { id: "tint", type: "background", paint: { "background-color": COLORS.mapTint } },
+    {
+      id: "base",
+      type: "raster",
+      source: "base",
+      paint: {
+        "raster-opacity": 0.62,
+        "raster-brightness-max": 0.85,
+        "raster-contrast": 0.12,
+        "raster-fade-duration": 200,
+      },
+    },
+    { id: "labels", type: "raster", source: "labels", paint: { "raster-opacity": 0.7 } },
   ],
 };
 
@@ -100,6 +112,7 @@ export function RadarMap({
 }: Props) {
   const mapRef = useRef<MapRef>(null);
   const [ready, setReady] = useState(false);
+  const [hovering, setHovering] = useState(false);
   const fitted = useRef(false);
 
   useDroneTracks(mapRef, flights, ready);
@@ -174,7 +187,11 @@ export function RadarMap({
     [onSelect],
   );
 
+  // Estable: así `HubMarker` (memo) no se repinta con cada dato del socket.
+  const selectHub = useCallback((id: string) => onSelect({ kind: "hub", id }), [onSelect]);
+
   const selectedFlightId = selection?.kind === "flight" ? selection.id : "";
+  const geofenceVisibility = showGeofences ? "visible" : "none";
 
   return (
     <Map
@@ -187,32 +204,47 @@ export function RadarMap({
       interactiveLayerIds={["drones"]}
       onClick={onClick}
       onLoad={onLoad}
-      cursor="grab"
+      onMouseEnter={() => setHovering(true)}
+      onMouseLeave={() => setHovering(false)}
+      cursor={hovering ? "pointer" : "grab"}
     >
       <NavigationControl position="bottom-left" showCompass={false} />
 
-      {showGeofences && (
-        <Source id="geofences" type="geojson" data={geofenceCollection}>
-          <Layer
-            id="geofences-fill"
-            type="fill"
-            paint={{ "fill-color": COLORS.geofence, "fill-opacity": 0.16 }}
-          />
-          <Layer
-            id="geofences-line"
-            type="line"
-            paint={{ "line-color": COLORS.geofence, "line-width": 1.5, "line-dasharray": [2, 2] }}
-          />
-        </Source>
-      )}
+      {/* Se oculta con `visibility` en vez de desmontar la fuente. */}
+      <Source id="geofences" type="geojson" data={geofenceCollection}>
+        <Layer
+          id="geofences-fill"
+          type="fill"
+          layout={{ visibility: geofenceVisibility }}
+          paint={{ "fill-color": COLORS.geofence, "fill-opacity": 0.12 }}
+        />
+        <Layer
+          id="geofences-line"
+          type="line"
+          layout={{ visibility: geofenceVisibility }}
+          paint={{
+            "line-color": COLORS.geofence,
+            "line-width": 1.5,
+            "line-opacity": 0.85,
+            "line-dasharray": [2, 2],
+          }}
+        />
+      </Source>
 
       <Source id="route" type="geojson" data={routeCollection}>
+        <Layer
+          id="route-glow"
+          type="line"
+          filter={["==", ["get", "leg"], "outbound"]}
+          layout={{ "line-cap": "round", "line-join": "round" }}
+          paint={{ "line-color": COLORS.outbound, "line-width": 10, "line-opacity": 0.18, "line-blur": 6 }}
+        />
         <Layer
           id="route-outbound"
           type="line"
           filter={["==", ["get", "leg"], "outbound"]}
           layout={{ "line-cap": "round", "line-join": "round" }}
-          paint={{ "line-color": COLORS.outbound, "line-width": 3, "line-opacity": 0.9 }}
+          paint={{ "line-color": COLORS.outbound, "line-width": 3, "line-opacity": 0.95 }}
         />
         <Layer
           id="route-return"
@@ -229,15 +261,33 @@ export function RadarMap({
 
       <Source id="drones" type="geojson" data={EMPTY}>
         <Layer
+          id="drone-glow"
+          type="circle"
+          paint={{
+            "circle-radius": 22,
+            "circle-blur": 0.9,
+            "circle-opacity": 0.4,
+            "circle-color": [
+              "case",
+              ["get", "alert"],
+              COLORS.alert,
+              ["==", ["get", "leg"], "return"],
+              COLORS.returning,
+              COLORS.outbound,
+            ],
+          }}
+        />
+        <Layer
           id="drone-halo"
           type="circle"
           filter={["==", ["get", "orderId"], selectedFlightId]}
           paint={{
-            "circle-radius": 24,
-            "circle-color": COLORS.outbound,
-            "circle-opacity": 0.14,
-            "circle-stroke-color": COLORS.outbound,
-            "circle-stroke-width": 2,
+            "circle-radius": 28,
+            "circle-color": COLORS.accent,
+            "circle-opacity": 0.1,
+            "circle-stroke-color": COLORS.accent,
+            "circle-stroke-width": 1.5,
+            "circle-stroke-opacity": 0.9,
           }}
         />
         <Layer
@@ -252,7 +302,7 @@ export function RadarMap({
               ICON_RETURN,
               ICON_OUTBOUND,
             ],
-            "icon-size": 0.55,
+            "icon-size": ["interpolate", ["linear"], ["zoom"], 9, 0.7, 14, 1],
             "icon-rotate": ["get", "bearing"],
             "icon-rotation-alignment": "map",
             "icon-allow-overlap": true,
@@ -266,7 +316,7 @@ export function RadarMap({
           key={hub.id}
           hub={hub}
           selected={selectedHubId === hub.id}
-          onSelect={(id) => onSelect({ kind: "hub", id })}
+          onSelect={selectHub}
         />
       ))}
     </Map>
