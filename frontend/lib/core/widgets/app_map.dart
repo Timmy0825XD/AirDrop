@@ -36,6 +36,13 @@ class AppMap extends StatefulWidget {
   /// Centro por defecto: el caso de estudio es Valledupar.
   static const valledupar = LatLng(10.4631, -73.2532);
 
+  /// Lo más lejos y lo más cerca que deja ir la cámara. Sin límite, alejar
+  /// o acercar de más rompe el cálculo de tiles de flutter_map y la app se
+  /// queda congelada. 9 muestra unos 120 km (el alcance del Wingcopter);
+  /// 18 es nivel de calle, donde todavía hay tiles de OpenStreetMap.
+  static const minZoom = 9.0;
+  static const maxZoom = 18.0;
+
   final List<Widget> layers;
   final LatLng center;
 
@@ -175,6 +182,8 @@ class _AppMapState extends State<AppMap> with TickerProviderStateMixin {
           options: MapOptions(
             initialCenter: widget.follow ?? widget.center,
             initialZoom: widget.zoom,
+            minZoom: AppMap.minZoom,
+            maxZoom: AppMap.maxZoom,
             initialCameraFit: widget.fit.length < 2 || widget.follow != null
                 ? null
                 : _fit,
@@ -201,7 +210,10 @@ class _AppMapState extends State<AppMap> with TickerProviderStateMixin {
                   onZoom: (step) => _camera.moveTo(
                     context,
                     _map.camera.center,
-                    _map.camera.zoom + step,
+                    (_map.camera.zoom + step).clamp(
+                      AppMap.minZoom,
+                      AppMap.maxZoom,
+                    ),
                   ),
                   onRecenter: _recenter,
                   following: widget.follow == null ? null : _following,
@@ -278,6 +290,7 @@ class _BaseTiles extends StatelessWidget {
             'https://api.mapbox.com/styles/v1/$style/tiles/256/{z}/{x}/{y}@2x'
             '?access_token=$_token',
         userAgentPackageName: 'com.example.frontend',
+        maxZoom: AppMap.maxZoom,
       );
     }
     // OpenStreetMap pide identificar la app; el filtro los lleva a la
@@ -290,6 +303,7 @@ class _BaseTiles extends StatelessWidget {
       child: TileLayer(
         urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
         userAgentPackageName: 'com.example.frontend',
+        maxZoom: AppMap.maxZoom,
       ),
     );
   }
@@ -316,9 +330,8 @@ class _Attribution extends StatelessWidget {
         ),
         child: Text(
           mapbox ? '© Mapbox © OpenStreetMap' : '© OpenStreetMap',
-          style: Theme.of(
-            context,
-          ).textTheme.labelMedium?.copyWith(fontSize: 10),
+          style: Theme.of(context).textTheme.labelMedium
+              ?.copyWith(fontSize: 10),
         ),
       ),
     );
