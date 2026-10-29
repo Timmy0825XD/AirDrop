@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'glass_card.dart';
+
 /// Tarjeta de una lista de gestión: a la izquierda [leading] (ícono o
 /// avatar), en el medio [body] y a la derecha el estado ([status]) con su
 /// acción debajo ([action]). La usan centrales y cuentas.
@@ -19,14 +21,9 @@ class StatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Container(
+    return GlassCard(
+      radius: 22,
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: colors.outline),
-      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

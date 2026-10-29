@@ -5,6 +5,7 @@ import '../../auth/data/auth_models.dart';
 import '../../auth/data/local/local_auth_rules.dart';
 import '../../auth/data/local/local_fixtures.dart';
 import '../../hubs/data/hub_repository.dart';
+import 'fleet_flight.dart';
 import 'fleet_models.dart';
 import 'fleet_repository.dart';
 
@@ -64,6 +65,14 @@ class LocalFleetRepository implements FleetRepository {
     return List<DroneModel>.unmodifiable(_models);
   }
 
+  /// Sin backend no hay simulación de vuelo: la lista local va vacía.
+  @override
+  Future<List<FleetFlight>> listFlights(String hubId) async {
+    final user = await _requireActiveAccount();
+    _assertAssigned(user, hubId);
+    return const <FleetFlight>[];
+  }
+
   @override
   Future<List<Drone>> listDrones(String hubId) async {
     final user = await _requireActiveAccount();
@@ -81,10 +90,7 @@ class LocalFleetRepository implements FleetRepository {
   Future<Drone> create(CreateDroneRequest request) async {
     final user = await _requireActiveAccount();
     if (!_models.any((model) => model.id == request.droneModelId)) {
-      throw const ApiException(
-        'El modelo de dron no existe.',
-        statusCode: 404,
-      );
+      throw const ApiException('El modelo de dron no existe.', statusCode: 404);
     }
     await _requireActiveHub(request.hubId);
     _assertAssigned(user, request.hubId);

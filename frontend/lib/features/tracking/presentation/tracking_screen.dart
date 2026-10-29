@@ -2,19 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/widgets/map_sheet.dart';
+import '../../../core/widgets/rise_in.dart';
 import '../../auth/data/auth_models.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../delivery/presentation/widgets/receive_order_button.dart';
+import '../../home/presentation/widgets/section_header.dart';
 import '../../orders/data/order_models.dart';
 import '../../orders/data/order_providers.dart';
-import '../../home/presentation/widgets/section_header.dart';
 import '../../orders/presentation/widgets/order_status_chip.dart';
 import '../data/tracking_providers.dart';
 import 'widgets/flight_card.dart';
 import 'widgets/flight_map.dart';
 import 'widgets/flight_notice.dart';
 
-/// El vuelo de un pedido en vivo (`/tracking/:orderId`).
+/// El vuelo de un pedido en vivo (`/tracking/:orderId`): el mapa a
+/// pantalla completa y, en la hoja de abajo, el estado, el aviso, "Recibir
+/// pedido" si aplica y la telemetría.
 ///
 /// Del pedido (`GET /orders/:id`) saca el título y la ruta; de la
 /// telemetría (GET y luego socket) el punto del dron y la ficha. Al salir
@@ -41,79 +45,48 @@ class TrackingScreen extends ConsumerWidget {
             status == OrderStatus.awaitingDelivery ||
             (status == OrderStatus.pendingLoad &&
                 order?.loadConfirmedAt != null));
-    return Scaffold(
-      appBar: AppBar(
-        // Se abre con `push` desde las listas; si se llegó directo, la
-        // flecha lleva al inicio en vez de dejar la pantalla sin salida.
-        leading: BackButton(onPressed: () => SectionHeader.backOrHome(context)),
-        title: Text(order?.medicationName ?? 'Vuelo'),
+    // El solicitante ve la ida y la entrega; el regreso del dron (con o
+    // sin paquete) solo lo ven el despachador y el operador.
+    final hideReturn =
+        role == UserRole.requester &&
+        ((t?.returning ?? false) ||
+            status == OrderStatus.delivered ||
+            status == OrderStatus.returning ||
+            status == OrderStatus.returned);
+    final drone = t == null || hideReturn
+        ? null
+        : LatLng(t.latitude, t.longitude);
+    return MapSheetScaffold(
+      title: order?.medicationName ?? 'Vuelo',
+      // Se abre con `push` desde las listas; si se llegó directo, volver
+      // lleva al inicio en vez de dejar la pantalla sin salida.
+      onBack: () => SectionHeader.backOrHome(context),
+      trailing: status == null ? null : OrderStatusChip(status: status),
+      map: (sheetHeight) => FlightMap(
+        route: order?.assignment?.coordinates ?? const [],
+        drone: drone,
+        sheetHeight: sheetHeight,
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: FlightMap(
-              route: order?.assignment?.coordinates ?? const [],
-              drone: t == null ? null : LatLng(t.latitude, t.longitude),
-            ),
-          ),
-          _FlightPanel(
-            state: flight,
-            receive: canReceive
-                ? ReceiveOrderButton(
+      sheet: flight.loading
+          ? const [
+              Padding(
+                padding: EdgeInsets.all(24),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            ]
+          : [
+              FlightNotice(state: flight, showReturn: !hideReturn),
+              if (canReceive)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: ReceiveOrderButton(
                     orderId: orderId,
                     landed: t?.arrived ?? false,
-                  )
-                : null,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// La parte de abajo: estado, aviso, "Recibir pedido" si aplica y ficha.
-class _FlightPanel extends StatelessWidget {
-  const _FlightPanel({required this.state, this.receive});
-
-  final TrackingState state;
-  final Widget? receive;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(
-        20,
-        16,
-        20,
-        20 + MediaQuery.paddingOf(context).bottom,
-      ),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: state.loading
-          ? const Center(child: CircularProgressIndicator())
-          : Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (state.status case final status?) ...[
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: OrderStatusChip(status: status),
                   ),
-                  const SizedBox(height: 12),
-                ],
-                FlightNotice(state: state),
-                if (receive case final button?) ...[
-                  button,
-                  const SizedBox(height: 12),
-                ],
-                if (state.telemetry case final t?) FlightCard(telemetry: t),
-              ],
-            ),
+                ),
+              if (t != null && !hideReturn)
+                RiseIn(child: FlightCard(telemetry: t)),
+            ],
     );
   }
 }

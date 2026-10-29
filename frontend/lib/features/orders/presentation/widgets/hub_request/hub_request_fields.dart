@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/api_exception.dart';
-import '../../../../../core/widgets/choice_pill.dart';
-import '../../../../auth/presentation/widgets/auth_choice_group.dart';
+import '../../../../auth/presentation/widgets/auth_picker_field.dart';
+import '../../../../auth/presentation/widgets/search_picker_sheet.dart';
+import '../offer_option.dart';
 import '../../../../auth/presentation/widgets/auth_field.dart';
 import '../../../../inventory/data/inventory_models.dart' show SaleType;
 import '../../../data/order_models.dart';
@@ -36,22 +37,26 @@ class HubRequestFields extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AuthChoiceGroup(
+        AuthPickerField<String>(
           label: 'Central de origen',
+          hint: 'Elige la central',
+          sheetTitle: '¿A qué central le pides?',
+          searchHint: 'Busca la central',
           errorText: errors[HubRequestInput.origin],
           shakeCount: shakeCount,
-          children: [
+          options: [
             for (final hub in origins)
-              ChoicePill(
-                label: hub.name,
+              PickerOption(
+                value: hub.id,
+                title: hub.name,
                 icon: Icons.home_work_outlined,
-                selected: hub.id == values.originHubId,
-                onTap: () {
-                  values.selectOrigin(hub.id);
-                  onChanged();
-                },
               ),
           ],
+          isSelected: (id) => id == values.originHubId,
+          onSelected: (id) {
+            values.selectOrigin(id);
+            onChanged();
+          },
         ),
         AnimatedSize(
           duration: const Duration(milliseconds: 320),
@@ -106,28 +111,28 @@ class _OfferPicker extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 16),
       child: switch (f.catalog!) {
-        AsyncValue(hasValue: true, hasError: false, :final value?) => AuthChoiceGroup(
-          label: 'Medicamento',
-          errorText: f.errors[HubRequestInput.offer],
-          shakeCount: f.shakeCount,
-          empty: 'Esa central no tiene insumos para trasladar.',
-          children: [
-            for (final offer in value)
-              if (offer.saleType != SaleType.specialControl)
-                ChoicePill(
-                  label: '${offer.name} · ${offer.availableQuantity ?? 0}',
-                  filled: false,
-                  showCheck: true,
-                  selected:
-                      offer.name == values.offer?.name &&
-                      offer.saleType == values.offer?.saleType,
-                  onTap: () {
-                    values.offer = offer;
-                    f.onChanged();
-                  },
-                ),
-          ],
-        ),
+        AsyncValue(hasValue: true, hasError: false, :final value?) =>
+          AuthPickerField<CatalogOffer>(
+            label: 'Medicamento',
+            hint: 'Elige el insumo',
+            sheetTitle: 'Insumos de esa central',
+            searchHint: 'Busca por nombre',
+            errorText: f.errors[HubRequestInput.offer],
+            shakeCount: f.shakeCount,
+            empty: 'Esa central no tiene insumos para trasladar.',
+            options: [
+              for (final offer in value)
+                if (offer.saleType != SaleType.specialControl)
+                  offerOption(offer),
+            ],
+            isSelected: (offer) =>
+                offer.name == values.offer?.name &&
+                offer.saleType == values.offer?.saleType,
+            onSelected: (offer) {
+              values.offer = offer;
+              f.onChanged();
+            },
+          ),
         AsyncError(:final error) => Text(ApiException.messageOf(error)),
         _ => const LinearProgressIndicator(),
       },

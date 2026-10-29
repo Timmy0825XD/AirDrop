@@ -3,13 +3,22 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/widgets/app_map.dart';
+import '../../../../core/widgets/map_markers.dart';
+import '../../../../theme/app_palette.dart';
 
-/// El mapa del vuelo: la ruta del pedido y el dron encima de [AppMap].
+/// El mapa del vuelo, a pantalla completa: la ruta del pedido (lo
+/// recorrido sólido, lo que falta punteado), la central de origen, el
+/// destino y el dron que la cámara acompaña.
 ///
 /// La ruta llega como pares `[longitud, latitud]` (GeoJSON) y aquí se
 /// voltea a `LatLng(latitud, longitud)`, que es lo que pide el mapa.
 class FlightMap extends StatelessWidget {
-  const FlightMap({super.key, required this.route, this.drone});
+  const FlightMap({
+    super.key,
+    required this.route,
+    this.drone,
+    this.sheetHeight = 0,
+  });
 
   /// Puntos del corredor, `[longitud, latitud]`.
   final List<List<double>> route;
@@ -17,45 +26,34 @@ class FlightMap extends StatelessWidget {
   /// Posición actual del dron; `null` mientras no hay vuelo.
   final LatLng? drone;
 
+  /// Lo que tapa la hoja de abajo: la cámara y los botones lo dejan libre.
+  final double sheetHeight;
+
   @override
   Widget build(BuildContext context) {
     final points = route.map(latLngFromGeoJson).toList();
-    final colors = Theme.of(context).colorScheme;
     return AppMap(
       // El encuadre solo aplica al crear el mapa: si la ruta llega después
       // (el pedido aún cargaba), se vuelve a montar para encuadrarla.
       key: ValueKey(points.length >= 2),
       center: drone ?? (points.isEmpty ? AppMap.valledupar : points.first),
-      // Encuadra la ruta completa al abrir, con aire alrededor.
       fit: points,
+      follow: drone,
+      fitPadding: EdgeInsets.fromLTRB(56, 140, 56, sheetHeight + 40),
+      controlsPadding: EdgeInsets.only(right: 16, bottom: sheetHeight),
       layers: [
         // flutter_map no acepta una línea sin puntos: sin ruta, no hay capa.
+        if (points.length >= 2) _RouteLayer(points: points, drone: drone),
         if (points.length >= 2)
-          PolylineLayer(
-            polylines: [
-              Polyline(points: points, strokeWidth: 4, color: colors.primary),
-            ],
-          ),
-        if (points.length >= 2)
-          MarkerLayer(
-            markers: [
-              Marker(
-                point: points.last,
-                width: 36,
-                height: 36,
-                alignment: Alignment.topCenter,
-                child: const _DestinationPin(),
-              ),
-            ],
-          ),
+          _EndpointsLayer(from: points.first, to: points.last),
         if (drone != null)
           MarkerLayer(
             markers: [
               Marker(
                 point: drone!,
-                width: 36,
-                height: 36,
-                child: const _DroneMarker(),
+                width: DroneMarker.size,
+                height: DroneMarker.size,
+                child: const DroneMarker(),
               ),
             ],
           ),
@@ -64,44 +62,88 @@ class FlightMap extends StatelessWidget {
   }
 }
 
-/// El dron en el mapa: el naranja de señal con borde blanco.
-class _DroneMarker extends StatelessWidget {
-  const _DroneMarker();
+/// La central de origen (en vidrio) y el destino (con el acento).
+class _EndpointsLayer extends StatelessWidget {
+  const _EndpointsLayer({required this.from, required this.to});
+
+  final LatLng from;
+  final LatLng to;
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Semantics(
-      label: 'Dron',
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: colors.secondary,
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 3),
-          boxShadow: [
-            BoxShadow(
-              color: colors.secondary.withValues(alpha: 0.5),
-              blurRadius: 12,
-            ),
-          ],
+    Marker pin(LatLng point, Widget child) => Marker(
+      point: point,
+      width: PlacePin.size,
+      height: PlacePin.size,
+      alignment: Alignment.topCenter,
+      child: child,
+    );
+    return MarkerLayer(
+      markers: [
+        pin(
+          from,
+          const PlacePin(
+            icon: Icons.home_work_outlined,
+            label: 'Central de origen',
+          ),
         ),
-        child: const Icon(Icons.flight_rounded, size: 18, color: Colors.white),
-      ),
+        pin(
+          to,
+          const PlacePin(
+            icon: Icons.flag_rounded,
+            label: 'Destino',
+            highlight: true,
+          ),
+        ),
+      ],
     );
   }
 }
 
-/// El pin del destino, al final de la ruta.
-class _DestinationPin extends StatelessWidget {
-  const _DestinationPin();
+/// La ruta en dos tramos: hasta el punto más cercano al dron va sólida
+/// (recorrida) y desde ahí punteada (lo que falta).
+class _RouteLayer extends StatelessWidget {
+  const _RouteLayer({required this.points, required this.drone});
+
+  final List<LatLng> points;
+  final LatLng? drone;
 
   @override
   Widget build(BuildContext context) {
-    return Icon(
-      Icons.location_on_rounded,
-      size: 36,
-      color: Theme.of(context).colorScheme.primary,
-      semanticLabel: 'Destino',
+    final palette = context.palette;
+    final accent = palette.accentGradient.first;
+    final split = _closestIndex();
+    final done = points.sublist(0, split + 1);
+    final left = points.sublist(split);
+    return PolylineLayer(
+      polylines: [
+        if (left.length >= 2)
+          Polyline(
+            points: left,
+            strokeWidth: 4,
+            color: accent.withValues(alpha: 0.55),
+            pattern: StrokePattern.dashed(segments: const [10, 8]),
+          ),
+        if (done.length >= 2)
+          Polyline(
+            points: done,
+            strokeWidth: 5,
+            gradientColors: palette.accentGradient,
+            borderStrokeWidth: 6,
+            borderColor: accent.withValues(alpha: 0.18),
+          ),
+      ],
     );
+  }
+
+  int _closestIndex() {
+    final at = drone;
+    if (at == null) return 0;
+    const distance = Distance();
+    var best = 0;
+    for (var i = 1; i < points.length; i++) {
+      if (distance(at, points[i]) < distance(at, points[best])) best = i;
+    }
+    return best;
   }
 }

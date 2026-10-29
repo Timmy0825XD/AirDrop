@@ -41,6 +41,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 8 | Revisión y rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Hecha (PR #49) |
 | 9 | Limpieza antes de la revisión | `refactor/limpieza-front` | Hecha (PR #50) |
 | 10 | Cierre y pruebas de punta a punta | `test/flujos-front` | Hecha (PR #51) |
+| 11 | Rediseño visual total "Grafito y turquesa" | `style/rediseno-total-temporal` | En revisión (sin PR) |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -653,6 +654,31 @@ el administrador no puede editar una central (punto 8, nuevo).
 
 - `flutter analyze` sin issues; 189 tests en verde (3 nuevos en
   `fase10_fixes_test`).
+
+## Fase 11 — Rediseño visual total "Grafito y turquesa"
+
+Rama temporal `style/rediseno-total-temporal` desde `develop`. Solo apariencia: no cambian `data/`, rutas de API, bodies ni `appDataSource`. Propuesta aprobada por Oscar en el lienzo <https://claude.ai/artifact/Ay5RAswEtqiuxruk6Lzioi> (paleta medida de un póster de dron: grafito, turquesa y cielo).
+
+Hecho (2026-10-28):
+
+- Base: `AppPalette` (`context.palette`), Space Grotesk con cifras fijas, `AppBackdrop` (degradado con velos) y transición entre pantallas que sube y se funde, `AppMotion` (curvas y "reducir movimiento"). Modo claro derivado de los mismos tokens; todo pasa AA.
+- Navegación: `RoleShell` + `FloatingNavBar` con botón central por rol (ver `frontend/AGENTS.md`, "Navegación por rol"). La barra se esconde al bajar y en detalles y formularios. Nueva pantalla "Más" del despachador y hoja de crear del administrador.
+- Inicios de los cuatro roles: encabezado con contexto, cifra principal con el dron (`DroneArt`), cifras en cuadrícula (`MetricTile`, `BarSpark`, `RingGauge`) y accesos en cuadrícula (`QuickTile`) en vez de la lista de menú.
+- Mapa: `AppMap` con tiles de OpenStreetMap teñidos (`AppMapStyle`), controles de vidrio, cámara suave, seguir al dron y Mapbox opcional por `--dart-define`. Vuelo, selector de ubicación y dibujo de geovallas a pantalla completa con hoja abajo (`MapSheetScaffold`), al estilo de una app de transporte.
+- Auth: el bloque de marca pasa al degradado turquesa con luz y filo; el botón principal toma el degradado con halo. Se conservan el splash, el morph, el botón que se vuelve dron y las entradas en cascada.
+- Listas, detalles y formularios heredan el vidrio (`GlassCard`, `StatusPill` con punto, `SectionHeader` sin curva).
+- Ajustes tras la primera prueba de Oscar: editar una geovalla dejaba la vista previa del mapa en negro (el margen del encuadre era el de pantalla completa; `AppMap` ahora lo recorta al tamaño del mapa). El medicamento del solicitante y del despachador, y la central de origen, pasan de chips a `AuthPickerField` con buscador, para que 50 opciones no llenen la pantalla.
+- Segunda ronda (2026-10-29): el filtro de color del mapa pasa a uno solo para toda la capa y la transición entre pantallas usa transiciones compuestas (causa probable de los cierres en Chrome); la cámara del mapa no se mueve antes del primer cuadro. Cuadrícula pareja `BalancedGrid` (telemetría e inicios). El solicitante ya no ve el regreso del dron. El operador tiene "Vuelos en curso" (`GET /fleet/flights`) y abre el mapa de cada dron en misión.
+- Pendiente del backend: (1) rechazar un pedido cuyo destino cae dentro de una geovalla con un mensaje de zona prohibida, en vez de aplicar el fallback de reasignación (hoy sale "Reasignado" y además cuenta como en curso); (2) dejar que el operador lea `GET /orders/:id` (o mandar la ruta en `/fleet/flights`) para dibujarle el corredor. En el frontend sigue pendiente leer `fallbackKind`/`fallbackReason` (HU-24).
+- Borrado: `RoleHero`, `HomeStatsCard`, `HomeAccessCard`, `AdminMetricsCard`, `DispatcherActions` y las tarjetas de `dispatcher_cards.dart`.
+- `flutter analyze` sin issues y `flutter test` en verde (202). `docs/ui_inventory.md` regenerado: solo los `*_values` pasan de 60 líneas.
+
+Pendiente:
+
+- El render 3D del dron (imagen) reemplaza a `DroneArt` al final.
+- La pantalla de agenda (`GET /orders/agenda`): hoy "Agenda" abre los programados.
+- Métricas del administrador: Nest ya tiene `/analytics/*`, falta su capa `data/` en el frontend (la tarjeta queda con candado).
+- Probar en el emulador y en Windows con el backend real (la telemetría del mapa necesita el socket).
 
 ## Pruebas de la Segunda Parte (parte de Oscar)
 

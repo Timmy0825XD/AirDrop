@@ -48,7 +48,10 @@ class OrderTile extends StatelessWidget {
           const SizedBox(height: 8),
           ReceiveOrderButton(orderId: order.id, landed: true),
         ],
-        if (canWatch && order.hasFlight) ...[
+        // El regreso del dron no se le muestra a quien pidió.
+        if (canWatch &&
+            order.hasFlight &&
+            order.status != OrderStatus.returning) ...[
           const SizedBox(height: 8),
           WatchFlightButton(orderId: order.id),
         ],

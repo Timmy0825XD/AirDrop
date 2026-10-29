@@ -7,6 +7,8 @@ import '../../../../auth/presentation/widgets/auth_choice_group.dart';
 import '../../../../auth/presentation/widgets/auth_date_field.dart';
 import '../../../../auth/presentation/widgets/auth_field.dart';
 import '../../../../auth/presentation/widgets/auth_location_field.dart';
+import '../../../../auth/presentation/widgets/auth_picker_field.dart';
+import '../offer_option.dart';
 import '../../../../inventory/data/inventory_models.dart' show SaleType;
 import '../../../data/order_models.dart';
 import 'prescription_picker.dart';
@@ -33,8 +35,9 @@ class RequesterOrderForm {
   final VoidCallback onPickDate;
 }
 
-/// El medicamento en chips: el control especial no se ofrece (no viaja en
-/// dron) y el copo de nieve marca la cadena de frío.
+/// El medicamento en un campo con buscador (la lista puede ser larga): el
+/// control especial no se ofrece (no viaja en dron) y el copo de nieve
+/// marca la cadena de frío.
 class CatalogChoices extends StatelessWidget {
   const CatalogChoices({super.key, required this.offers, required this.form});
 
@@ -44,28 +47,25 @@ class CatalogChoices extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final values = form.values;
-    return AuthChoiceGroup(
+    return AuthPickerField<CatalogOffer>(
       label: 'Medicamento',
+      hint: 'Elige el medicamento',
+      sheetTitle: '¿Qué medicamento necesitas?',
+      searchHint: 'Busca por nombre',
       errorText: form.errors[RequesterInput.offer],
       shakeCount: form.shakeCount,
       empty: 'No hay medicamentos disponibles.',
-      children: [
+      options: [
         for (final offer in offers)
-          if (offer.saleType != SaleType.specialControl)
-            ChoicePill(
-              label: '${offer.name} · ${offer.saleType.label}',
-              icon: offer.requiresColdChain ? Icons.ac_unit_rounded : null,
-              filled: false,
-              showCheck: true,
-              selected:
-                  offer.name == values.offer?.name &&
-                  offer.saleType == values.offer?.saleType,
-              onTap: () {
-                values.offer = offer;
-                form.onChanged();
-              },
-            ),
+          if (offer.saleType != SaleType.specialControl) offerOption(offer),
       ],
+      isSelected: (offer) =>
+          offer.name == values.offer?.name &&
+          offer.saleType == values.offer?.saleType,
+      onSelected: (offer) {
+        values.offer = offer;
+        form.onChanged();
+      },
     );
   }
 }

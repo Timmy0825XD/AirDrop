@@ -32,9 +32,8 @@ Future<void> _tapMap(WidgetTester tester, Offset shift) async {
   await tester.pump(const Duration(milliseconds: 400));
 }
 
-bool _listoEnabled(WidgetTester tester) => tester
-    .widget<TextButton>(find.widgetWithText(TextButton, 'Listo'))
-    .enabled;
+bool _listoEnabled(WidgetTester tester) =>
+    tester.widget<TextButton>(find.widgetWithText(TextButton, 'Listo')).enabled;
 
 void main() {
   testWidgets('cada toque pone un vértice y Listo se prende con 3', (
@@ -89,7 +88,7 @@ void main() {
   testWidgets('salir sin Listo no devuelve vértices', (tester) async {
     final results = await _pumpLauncher(tester);
 
-    await tester.tap(find.byType(CloseButton));
+    await tester.tap(find.byTooltip('Volver'));
     await tester.pumpAndSettle();
 
     expect(results.single, isNull);

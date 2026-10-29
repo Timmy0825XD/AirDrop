@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/widgets/rise_in.dart';
 
-/// Una pantalla de formulario: el encabezado curvo ([header], un
-/// `SectionHeader`), la tarjeta del formulario montada sobre la curva (que
-/// entra subiendo) y el botón principal debajo. Hace scroll con el teclado.
+/// Una pantalla de formulario: el encabezado ([header], un `SectionHeader`),
+/// la tarjeta de vidrio del formulario (que entra subiendo) y el botón
+/// principal debajo, que entra después. Hace scroll con el teclado.
 class SectionFormPage extends StatelessWidget {
   const SectionFormPage({
     super.key,
@@ -26,16 +26,13 @@ class SectionFormPage extends StatelessWidget {
         ),
         children: [
           header,
-          Transform.translate(
-            offset: const Offset(0, -24),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: RiseIn(child: card),
-            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: RiseIn(child: card),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: button,
+            child: RiseIn(delay: RiseIn.stagger(2), child: button),
           ),
         ],
       ),

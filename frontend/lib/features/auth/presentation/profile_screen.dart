@@ -68,12 +68,9 @@ class ProfileScreen extends ConsumerWidget {
             subtitle: ProfileLabels.role(user.role),
             onBack: () => SectionHeader.backOrHome(context),
           ),
-          Transform.translate(
-            offset: const Offset(0, -24),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: RiseIn(child: ProfileIdentityCard(user: user)),
-            ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: RiseIn(child: ProfileIdentityCard(user: user)),
           ),
           for (final (i, block) in blocks.indexed)
             Padding(

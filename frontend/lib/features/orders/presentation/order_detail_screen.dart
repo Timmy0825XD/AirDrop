@@ -182,7 +182,9 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
             orderId: order.id,
             landed: order.status == OrderStatus.awaitingDelivery,
           ),
-        if (order.hasFlight || order.status == OrderStatus.delivered)
+        // Solo la ida: el regreso del dron lo ven el despachador y el
+        // operador, no quien pidió.
+        if (order.hasFlight && order.status != OrderStatus.returning)
           WatchFlightButton(orderId: order.id),
       ],
     ];

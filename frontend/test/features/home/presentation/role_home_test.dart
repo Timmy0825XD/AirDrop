@@ -7,6 +7,7 @@ import 'package:frontend/core/auth/token_store.dart';
 import 'package:frontend/features/auth/data/auth_models.dart';
 import 'package:frontend/features/auth/data/local/local_auth_repository.dart';
 import 'package:frontend/features/auth/presentation/auth_controller.dart';
+import 'package:frontend/features/fleet/data/fleet_flight.dart';
 import 'package:frontend/features/fleet/data/fleet_models.dart';
 import 'package:frontend/features/fleet/data/fleet_providers.dart';
 import 'package:frontend/features/fleet/data/fleet_repository.dart';
@@ -16,6 +17,7 @@ import 'package:frontend/features/geofences/data/geofence_providers.dart';
 import 'package:frontend/features/geofences/data/geofence_repository.dart';
 import 'package:frontend/features/geofences/presentation/geofences_screen.dart';
 import 'package:frontend/features/home/presentation/role_home.dart';
+import 'package:frontend/features/home/presentation/widgets/quick_tile.dart';
 import 'package:frontend/features/hubs/data/hub_models.dart';
 import 'package:frontend/features/hubs/data/hub_providers.dart';
 import 'package:frontend/features/hubs/data/hub_repository.dart';
@@ -190,6 +192,9 @@ class FakeFleetRepository implements FleetRepository {
   ];
 
   @override
+  Future<List<FleetFlight>> listFlights(String hubId) async => const [];
+
+  @override
   Future<Drone> create(CreateDroneRequest request) async =>
       throw UnimplementedError();
 
@@ -251,9 +256,10 @@ void main() {
 
     await _pumpHome(tester, container, settles: false);
 
+    expect(find.text('Operador de flota'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Geovallas'), 200);
     expect(find.text('Flota'), findsOneWidget);
     expect(find.text('Geovallas'), findsOneWidget);
-    expect(find.text('Operador de flota'), findsOneWidget);
   });
 
   testWidgets('muestra los accesos de administrador', (tester) async {
@@ -273,9 +279,6 @@ void main() {
     await _pumpHome(tester, container, settles: false);
 
     expect(find.text('Hola, Admin'), findsOneWidget);
-    expect(find.text('Centrales'), findsOneWidget);
-    expect(find.text('Cuentas institucionales'), findsOneWidget);
-    expect(find.text('Métricas'), findsOneWidget);
     expect(
       find.bySemanticsLabel(RegExp('Centrales activas: 0')),
       findsOneWidget,
@@ -287,6 +290,10 @@ void main() {
       findsOneWidget,
       reason: '1 central y 1 cuenta',
     );
+    await tester.scrollUntilVisible(find.text('Métricas'), 200);
+    expect(find.text('Centrales'), findsOneWidget);
+    expect(find.text('Cuentas institucionales'), findsOneWidget);
+    expect(_onTapOf(tester, 'Métricas'), isNull, reason: 'aún sin datos');
     semantics.dispose();
   });
 
@@ -373,7 +380,10 @@ void main() {
     await _pumpFrames(tester);
     expect(find.byType(FleetScreen), findsNothing);
 
-    await tester.tap(find.text('Flota'));
+    // La tarjeta del inicio, no el destino de la barra con el mismo nombre.
+    final tile = find.widgetWithText(QuickTile, 'Flota');
+    await tester.scrollUntilVisible(tile, 200);
+    await tester.tap(tile);
     await _pumpFrames(tester);
 
     expect(find.byType(FleetScreen), findsOneWidget);
@@ -402,10 +412,10 @@ void main() {
     await _pumpFrames(tester);
     expect(find.byType(InventoryScreen), findsNothing);
 
-    await tester.scrollUntilVisible(find.text('Inventario'), 200);
-    await tester.ensureVisible(find.text('Inventario'));
+    final tile = find.widgetWithText(QuickTile, 'Inventario');
+    await tester.scrollUntilVisible(tile, 200);
     await tester.pump();
-    await tester.tap(find.text('Inventario'));
+    await tester.tap(tile);
     await _pumpFrames(tester);
 
     expect(find.byType(InventoryScreen), findsOneWidget);
@@ -419,6 +429,7 @@ void main() {
       email: 'operador@airdrop.local',
       password: 'Operador123',
       hubRepository: FakeHubRepository(_hub(status: HubStatus.active)),
+      fleetRepository: const FakeFleetRepository(),
       geofenceRepository: FakeGeofenceRepository([_geofence()]),
     );
     addTearDown(container.dispose);
@@ -432,7 +443,9 @@ void main() {
     await _pumpFrames(tester);
     expect(find.byType(GeofencesScreen), findsNothing);
 
-    await tester.tap(find.text('Geovallas'));
+    final tile = find.widgetWithText(QuickTile, 'Geovallas');
+    await tester.scrollUntilVisible(tile, 200);
+    await tester.tap(tile);
     await _pumpFrames(tester);
 
     expect(find.byType(GeofencesScreen), findsOneWidget);
@@ -502,8 +515,8 @@ Future<void> _pumpHome(
       child: const MaterialApp(home: RoleHomeScreen()),
     ),
   );
-  // El inicio del administrador tiene un dron de fondo que flota en bucle:
-  // nunca "se asienta", así que se avanza un tiempo fijo.
+  // Los inicios tienen el dron que flota en bucle: nunca "se asienta",
+  // así que se avanza un tiempo fijo.
   settles ? await tester.pumpAndSettle() : await _pumpFrames(tester);
 }
 

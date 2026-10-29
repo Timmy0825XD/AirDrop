@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../check_mark.dart';
+import '../../../../../theme/app_palette.dart';
 
 /// Consentimiento de datos (RNF-05) en su propia tarjeta. Sin marcarlo, el
 /// botón de crear cuenta queda apagado.
@@ -17,11 +18,10 @@ class RegisterConsentRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     return Semantics(
       checked: value,
       child: Material(
-        color: colors.surface,
+        color: context.palette.glass,
         borderRadius: BorderRadius.circular(20),
         child: InkWell(
           borderRadius: BorderRadius.circular(20),

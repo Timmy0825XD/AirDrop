@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'auth_field.dart';
+import '../../../../theme/app_palette.dart';
 
 /// Campo de fecha con la forma de [AuthField]: label en mayúsculas, la
 /// caja de 56 px con el calendario y el error que tiembla. Al tocarlo,
@@ -57,7 +58,7 @@ class _DateBox extends StatelessWidget {
     final colors = theme.colorScheme;
     final value = field.value;
     return Material(
-      color: colors.surface,
+      color: context.palette.glass,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(18),
         side: BorderSide(

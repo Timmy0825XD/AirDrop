@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'glass_card.dart';
+
 /// Tarjeta con título para cada bloque del detalle (datos, dron, acciones):
 /// el ícono en su cuadro teñido, el rótulo en mayúsculas y el contenido.
 class DetailSection extends StatelessWidget {
@@ -23,13 +25,7 @@ class DetailSection extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final color = tone ?? colors.primary;
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colors.outline),
-      ),
+    return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

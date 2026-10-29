@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/widgets/status_pill.dart';
 import '../../../data/auth_models.dart';
 import 'profile_labels.dart';
+import '../../../../../theme/app_palette.dart';
 
 /// La tarjeta de quién es, montada sobre la curva: las iniciales en el
 /// color del rol (entran con un rebote), el nombre, el correo y el rol.
@@ -19,7 +20,7 @@ class ProfileIdentityCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: colors.surface,
+        color: context.palette.glass,
         borderRadius: BorderRadius.circular(28),
         boxShadow: [
           BoxShadow(

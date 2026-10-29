@@ -11,9 +11,11 @@ import '../features/auth/presentation/reset_password_screen.dart';
 import '../features/auth/presentation/verify_otp_screen.dart';
 import '../features/delivery/presentation/receive_order_screen.dart';
 import '../features/fleet/presentation/drone_form_screen.dart';
+import '../features/fleet/presentation/fleet_flights_screen.dart';
 import '../features/fleet/presentation/fleet_screen.dart';
 import '../features/geofences/presentation/geofence_form_screen.dart';
 import '../features/geofences/presentation/geofences_screen.dart';
+import '../features/home/presentation/dispatcher_more_screen.dart';
 import '../features/home/presentation/role_home.dart';
 import '../features/hubs/presentation/hub_detail_screen.dart';
 import '../features/hubs/presentation/hub_form_screen.dart';
@@ -37,6 +39,7 @@ import '../features/tracking/presentation/tracking_screen.dart';
 import '../features/users/presentation/user_form_screen.dart';
 import '../features/users/presentation/users_screen.dart';
 import 'placeholder_screen.dart';
+import 'role_shell.dart';
 
 /// Roles que autorizan cada ruta protegida por rol. Varias rutas de pedidos
 /// admiten solicitante y despachador. Cualquier otra cuenta recibe
@@ -45,6 +48,7 @@ const _roleRoutes = <String, Set<UserRole>>{
   '/hubs': {UserRole.admin},
   '/hubs/new': {UserRole.admin},
   '/hubs/me': {UserRole.dispatcher},
+  '/more': {UserRole.dispatcher},
   '/users': {UserRole.admin},
   '/users/new': {UserRole.admin},
   '/inventory': {UserRole.dispatcher},
@@ -52,6 +56,7 @@ const _roleRoutes = <String, Set<UserRole>>{
   '/inventory/:id': {UserRole.dispatcher},
   '/fleet': {UserRole.fleetOperator},
   '/fleet/new': {UserRole.fleetOperator},
+  '/fleet/flights': {UserRole.fleetOperator},
   '/geofences': {UserRole.fleetOperator},
   '/geofences/new': {UserRole.fleetOperator},
   '/geofences/:id': {UserRole.fleetOperator},
@@ -68,9 +73,12 @@ const _roleRoutes = <String, Set<UserRole>>{
   '/orders/hub-plans/new': {UserRole.dispatcher},
   '/orders/plans/:id': {UserRole.requester, UserRole.dispatcher},
   '/orders/:id': {UserRole.requester, UserRole.dispatcher},
-  // El operador podría ver la telemetría, pero la API no le lista pedidos:
-  // no hay desde dónde abrir el mapa, así que no se le da la ruta.
-  '/tracking/:orderId': {UserRole.requester, UserRole.dispatcher},
+  // El operador abre el mapa desde sus vuelos en curso (`GET /fleet/flights`).
+  '/tracking/:orderId': {
+    UserRole.requester,
+    UserRole.dispatcher,
+    UserRole.fleetOperator,
+  },
   // Recibe el solicitante (persona) o el despachador de destino (traslado).
   '/delivery/:orderId': {UserRole.requester, UserRole.dispatcher},
 };
@@ -189,101 +197,136 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
         ),
       ),
-      GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
-      GoRoute(
-        path: '/unauthorized',
-        builder: (_, _) => const PlaceholderScreen(
-          title: 'Sin permiso',
-          note: 'No tienes permiso para ver esa pantalla.',
-        ),
-      ),
-      GoRoute(path: '/home', builder: (_, _) => const RoleHomeScreen()),
-      GoRoute(path: '/hubs', builder: (_, _) => const HubsScreen()),
-      GoRoute(path: '/hubs/new', builder: (_, _) => const HubFormScreen()),
-      GoRoute(path: '/hubs/me', builder: (_, _) => const HubDetailScreen()),
-      GoRoute(path: '/users', builder: (_, _) => const UsersScreen()),
-      GoRoute(path: '/users/new', builder: (_, _) => const UserFormScreen()),
-      GoRoute(path: '/inventory', builder: (_, _) => const InventoryScreen()),
-      GoRoute(
-        path: '/inventory/new',
-        builder: (_, _) => const InventoryFormScreen(),
-      ),
-      GoRoute(
-        path: '/inventory/:id',
-        builder: (_, state) =>
-            InventoryFormScreen(itemId: state.pathParameters['id']),
-      ),
-      GoRoute(path: '/fleet', builder: (_, _) => const FleetScreen()),
-      GoRoute(path: '/fleet/new', builder: (_, _) => const DroneFormScreen()),
-      GoRoute(path: '/geofences', builder: (_, _) => const GeofencesScreen()),
-      GoRoute(
-        path: '/geofences/new',
-        builder: (_, _) => const GeofenceFormScreen(),
-      ),
-      GoRoute(
-        path: '/geofences/:id',
-        builder: (_, state) =>
-            GeofenceFormScreen(geofenceId: state.pathParameters['id']),
-      ),
-      GoRoute(
-        path: '/orders/emergency',
-        builder: (_, _) => const EmergencyScreen(),
-      ),
-      GoRoute(
-        path: '/orders/plans/new',
-        builder: (_, _) => const PlanFormScreen(),
-      ),
-      GoRoute(path: '/orders/plans', builder: (_, _) => const PlansScreen()),
-      GoRoute(
-        path: '/orders/plans/:id',
-        builder: (_, state) =>
-            PlanDetailScreen(planId: state.pathParameters['id'] ?? ''),
-      ),
-      GoRoute(
-        path: '/orders/mine',
-        builder: (_, _) => const OrderHistoryScreen(),
-      ),
-      GoRoute(path: '/orders/queue', builder: (_, _) => const QueueScreen()),
-      GoRoute(
-        path: '/orders/scheduled',
-        builder: (_, _) => const ScheduledScreen(),
-      ),
-      GoRoute(
-        path: '/orders/hub-emergency',
-        builder: (_, _) => const HubEmergencyScreen(),
-      ),
-      GoRoute(
-        path: '/orders/hub-plans/new',
-        builder: (_, _) => const HubPlanFormScreen(),
-      ),
-      // Antes de '/orders/:id': si no, 'pending-load' e 'in-flight' se leerían
-      // como un id.
-      GoRoute(
-        path: '/orders/pending-load',
-        builder: (_, _) => const PendingLoadScreen(),
-      ),
-      GoRoute(
-        path: '/orders/in-flight',
-        builder: (_, _) => const InFlightScreen(),
-      ),
-      GoRoute(
-        path: '/orders/incoming',
-        builder: (_, _) => const IncomingScreen(),
-      ),
-      GoRoute(
-        path: '/orders/:id',
-        builder: (_, state) =>
-            OrderDetailScreen(orderId: state.pathParameters['id'] ?? ''),
-      ),
-      GoRoute(
-        path: '/tracking/:orderId',
-        builder: (_, state) =>
-            TrackingScreen(orderId: state.pathParameters['orderId'] ?? ''),
-      ),
-      GoRoute(
-        path: '/delivery/:orderId',
-        builder: (_, state) =>
-            ReceiveOrderScreen(orderId: state.pathParameters['orderId'] ?? ''),
+      // Todo lo que pide sesión vive dentro del marco con la barra flotante
+      // del rol (`RoleShell`).
+      ShellRoute(
+        builder: (_, state, child) =>
+            RoleShell(location: state.uri.path, child: child),
+        routes: [
+          GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
+          GoRoute(
+            path: '/unauthorized',
+            builder: (_, _) => const PlaceholderScreen(
+              title: 'Sin permiso',
+              note: 'No tienes permiso para ver esa pantalla.',
+            ),
+          ),
+          GoRoute(path: '/home', builder: (_, _) => const RoleHomeScreen()),
+          GoRoute(
+            path: '/more',
+            builder: (_, _) => const DispatcherMoreScreen(),
+          ),
+          GoRoute(path: '/hubs', builder: (_, _) => const HubsScreen()),
+          GoRoute(path: '/hubs/new', builder: (_, _) => const HubFormScreen()),
+          GoRoute(path: '/hubs/me', builder: (_, _) => const HubDetailScreen()),
+          GoRoute(path: '/users', builder: (_, _) => const UsersScreen()),
+          GoRoute(
+            path: '/users/new',
+            builder: (_, _) => const UserFormScreen(),
+          ),
+          GoRoute(
+            path: '/inventory',
+            builder: (_, _) => const InventoryScreen(),
+          ),
+          GoRoute(
+            path: '/inventory/new',
+            builder: (_, _) => const InventoryFormScreen(),
+          ),
+          GoRoute(
+            path: '/inventory/:id',
+            builder: (_, state) =>
+                InventoryFormScreen(itemId: state.pathParameters['id']),
+          ),
+          GoRoute(path: '/fleet', builder: (_, _) => const FleetScreen()),
+          GoRoute(
+            path: '/fleet/new',
+            builder: (_, _) => const DroneFormScreen(),
+          ),
+          GoRoute(
+            path: '/fleet/flights',
+            builder: (_, _) => const FleetFlightsScreen(),
+          ),
+          GoRoute(
+            path: '/geofences',
+            builder: (_, _) => const GeofencesScreen(),
+          ),
+          GoRoute(
+            path: '/geofences/new',
+            builder: (_, _) => const GeofenceFormScreen(),
+          ),
+          GoRoute(
+            path: '/geofences/:id',
+            builder: (_, state) =>
+                GeofenceFormScreen(geofenceId: state.pathParameters['id']),
+          ),
+          GoRoute(
+            path: '/orders/emergency',
+            builder: (_, _) => const EmergencyScreen(),
+          ),
+          GoRoute(
+            path: '/orders/plans/new',
+            builder: (_, _) => const PlanFormScreen(),
+          ),
+          GoRoute(
+            path: '/orders/plans',
+            builder: (_, _) => const PlansScreen(),
+          ),
+          GoRoute(
+            path: '/orders/plans/:id',
+            builder: (_, state) =>
+                PlanDetailScreen(planId: state.pathParameters['id'] ?? ''),
+          ),
+          GoRoute(
+            path: '/orders/mine',
+            builder: (_, _) => const OrderHistoryScreen(),
+          ),
+          GoRoute(
+            path: '/orders/queue',
+            builder: (_, _) => const QueueScreen(),
+          ),
+          GoRoute(
+            path: '/orders/scheduled',
+            builder: (_, _) => const ScheduledScreen(),
+          ),
+          GoRoute(
+            path: '/orders/hub-emergency',
+            builder: (_, _) => const HubEmergencyScreen(),
+          ),
+          GoRoute(
+            path: '/orders/hub-plans/new',
+            builder: (_, _) => const HubPlanFormScreen(),
+          ),
+          // Antes de '/orders/:id': si no, 'pending-load' e 'in-flight' se leerían
+          // como un id.
+          GoRoute(
+            path: '/orders/pending-load',
+            builder: (_, _) => const PendingLoadScreen(),
+          ),
+          GoRoute(
+            path: '/orders/in-flight',
+            builder: (_, _) => const InFlightScreen(),
+          ),
+          GoRoute(
+            path: '/orders/incoming',
+            builder: (_, _) => const IncomingScreen(),
+          ),
+          GoRoute(
+            path: '/orders/:id',
+            builder: (_, state) =>
+                OrderDetailScreen(orderId: state.pathParameters['id'] ?? ''),
+          ),
+          GoRoute(
+            path: '/tracking/:orderId',
+            builder: (_, state) =>
+                TrackingScreen(orderId: state.pathParameters['orderId'] ?? ''),
+          ),
+          GoRoute(
+            path: '/delivery/:orderId',
+            builder: (_, state) => ReceiveOrderScreen(
+              orderId: state.pathParameters['orderId'] ?? '',
+            ),
+          ),
+        ],
       ),
     ],
     errorBuilder: (_, _) => const PlaceholderScreen(
