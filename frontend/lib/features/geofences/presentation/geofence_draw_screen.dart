@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../core/widgets/app_map.dart';
+import '../../../core/widgets/map_sheet.dart';
 import 'widgets/geofence_draw_bar.dart';
 import 'widgets/geofence_draw_map.dart';
 
@@ -49,32 +50,27 @@ class _GeofenceDrawScreenState extends State<GeofenceDrawScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Dibujar geovalla'),
-        actions: [
-          TextButton(
-            onPressed: _points.length < 3 ? null : _done,
-            child: const Text('Listo'),
-          ),
-        ],
+    return MapSheetScaffold(
+      title: 'Dibujar geovalla',
+      onBack: () => Navigator.of(context).pop(),
+      sheetFraction: 0.24,
+      trailing: TextButton(
+        onPressed: _points.length < 3 ? null : _done,
+        child: const Text('Listo'),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: GeofenceDrawMap(
-              points: _points,
-              onAdd: _add,
-              onRemove: _remove,
-            ),
-          ),
-          GeofenceDrawBar(
-            count: _points.length,
-            onUndo: () => _remove(_points.length - 1),
-            onClear: () => setState(_points.clear),
-          ),
-        ],
+      map: (sheetHeight) => GeofenceDrawMap(
+        points: _points,
+        onAdd: _add,
+        onRemove: _remove,
+        sheetHeight: sheetHeight,
       ),
+      sheet: [
+        GeofenceDrawBar(
+          count: _points.length,
+          onUndo: () => _remove(_points.length - 1),
+          onClear: () => setState(_points.clear),
+        ),
+      ],
     );
   }
 }

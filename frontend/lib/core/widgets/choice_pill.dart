@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/app_motion.dart';
+import '../../theme/app_palette.dart';
 import 'press_scale.dart';
 
 /// Chip redondo que se elige con un toque: tipo de central, centrales de
@@ -70,20 +72,21 @@ class _PillBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final palette = context.palette;
     final fill = !selected
-        ? colors.surface
-        : (filled ? colors.primary : colors.primary.withValues(alpha: 0.10));
+        ? palette.glass
+        : (filled ? colors.primary : colors.primary.withValues(alpha: 0.14));
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      curve: Curves.fastOutSlowIn,
+      duration: AppMotion.of(context, AppMotion.quick),
+      curve: AppMotion.enterCurve,
       height: 40,
       padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: BoxDecoration(
         color: fill,
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: selected ? colors.primary : colors.outline,
-          width: 1.5,
+          color: selected ? colors.primary : palette.glassBorder,
+          width: 1.2,
         ),
       ),
       child: child,

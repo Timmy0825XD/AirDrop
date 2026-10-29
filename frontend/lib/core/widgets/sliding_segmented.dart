@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/app_motion.dart';
+import '../../theme/app_palette.dart';
+
 /// Una opción del filtro: el valor que representa y su texto.
 class SegmentOption<T> {
   const SegmentOption(this.value, this.label);
@@ -24,21 +27,15 @@ class SlidingSegmented<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    final palette = context.palette;
     final index = options.indexWhere((option) => option.value == selected);
     final x = options.length < 2 ? 0.0 : -1 + 2 * index / (options.length - 1);
     return Container(
-      padding: const EdgeInsets.all(5),
+      padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: colors.primary.withValues(alpha: 0.14),
-            blurRadius: 28,
-            offset: const Offset(0, 12),
-          ),
-        ],
+        color: palette.bar,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: palette.glassBorder),
       ),
       child: Stack(
         children: [
@@ -75,15 +72,15 @@ class _SlidingPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return AnimatedAlign(
       alignment: Alignment(x, 0),
-      duration: const Duration(milliseconds: 280),
-      curve: Curves.easeInOutCubic,
+      duration: AppMotion.of(context, const Duration(milliseconds: 300)),
+      curve: AppMotion.pageCurve,
       child: FractionallySizedBox(
         widthFactor: 1 / count,
         heightFactor: 1,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.primary,
-            borderRadius: BorderRadius.circular(14),
+            gradient: context.palette.accent,
+            borderRadius: BorderRadius.circular(999),
           ),
         ),
       ),
@@ -105,21 +102,22 @@ class _Segment extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
     return Semantics(
       button: true,
       selected: selected,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(999),
         child: SizedBox(
           height: 42,
           child: Center(
             child: AnimatedDefaultTextStyle(
-              duration: const Duration(milliseconds: 200),
-              style: theme.textTheme.titleSmall!.copyWith(
+              duration: AppMotion.quick,
+              style: theme.textTheme.labelLarge!.copyWith(
                 fontSize: 13,
-                color: selected ? colors.onPrimary : colors.onSurfaceVariant,
+                color: selected
+                    ? context.palette.onAccent
+                    : theme.colorScheme.onSurfaceVariant,
               ),
               child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
             ),

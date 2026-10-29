@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../auth/presentation/widgets/auth_brand.dart';
-import '../../../auth/presentation/widgets/auth_curved_header.dart';
+import '../../../../core/widgets/glass_icon_button.dart';
+import '../../../../core/widgets/nav_scope.dart';
 
-/// Encabezado curvo de las pantallas de trabajo: volver, título y una
-/// línea de contexto. Es el mismo bloque de marca de auth, en compacto.
+/// Encabezado de las pantallas de trabajo: volver en vidrio, el título
+/// grande y una línea de contexto. En un destino de la barra flotante no
+/// hay "volver": se llega desde la barra.
 ///
-/// Con [bottom] (un filtro, por ejemplo) ese widget queda montado sobre la
-/// curva, mitad adentro y mitad afuera, como en el diseño.
+/// Con [bottom] (un filtro, por ejemplo) ese widget va debajo del título.
 class SectionHeader extends StatelessWidget {
   const SectionHeader({
     super.key,
@@ -16,6 +16,7 @@ class SectionHeader extends StatelessWidget {
     required this.subtitle,
     required this.onBack,
     this.bottom,
+    this.trailing,
   });
 
   final String title;
@@ -23,86 +24,70 @@ class SectionHeader extends StatelessWidget {
   final VoidCallback onBack;
   final Widget? bottom;
 
+  /// Una acción a la derecha del título (filtro, recargar).
+  final Widget? trailing;
+
   /// Volver a la pantalla anterior si se llegó con `push`; si se llegó
   /// directo (con `go`), al inicio.
   static void backOrHome(BuildContext context) =>
       context.canPop() ? context.pop() : context.go('/home');
 
-  /// Cuánto del [bottom] cae debajo de la curva.
-  static const double overlap = 26;
-
   @override
   Widget build(BuildContext context) {
-    final top = MediaQuery.paddingOf(context).top;
-    final height = top + 120;
-    return SizedBox(
-      height: height + (bottom == null ? 0 : overlap),
-      child: Stack(
+    final showBack = !NavScope.isTabRootOf(context) || context.canPop();
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        20,
+        MediaQuery.paddingOf(context).top + 14,
+        20,
+        bottom == null ? 8 : 0,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Positioned(
-            left: 0,
-            right: 0,
-            top: 0,
-            height: height,
-            child: AuthCurvedHeader(height: height, curve: 32),
+          Row(
+            children: [
+              if (showBack) ...[
+                GlassIconButton.back(onPressed: onBack),
+                const SizedBox(width: 14),
+              ],
+              Expanded(
+                child: _Titles(title: title, subtitle: subtitle),
+              ),
+              ?trailing,
+            ],
           ),
-          Positioned(
-            left: 20,
-            right: 20,
-            top: top + 14,
-            child: _TitleRow(title: title, subtitle: subtitle, onBack: onBack),
-          ),
-          if (bottom != null)
-            Positioned(left: 20, right: 20, bottom: 0, child: bottom!),
+          if (bottom != null) ...[const SizedBox(height: 16), bottom!],
         ],
       ),
     );
   }
 }
 
-class _TitleRow extends StatelessWidget {
-  const _TitleRow({
-    required this.title,
-    required this.subtitle,
-    required this.onBack,
-  });
+class _Titles extends StatelessWidget {
+  const _Titles({required this.title, required this.subtitle});
 
   final String title;
   final String subtitle;
-  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final onBrand = theme.colorScheme.onPrimary;
-    return Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AuthBackButton(onPressed: onBack),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  color: onBrand,
-                  fontSize: 24,
-                ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: onBrand.withValues(alpha: 0.82),
-                ),
-              ),
-            ],
-          ),
+        Text(
+          title,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.headlineMedium,
+        ),
+        const SizedBox(height: 2),
+        Text(
+          subtitle,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodySmall,
         ),
       ],
     );

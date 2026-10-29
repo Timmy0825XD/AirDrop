@@ -1,150 +1,220 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// Paleta y tipografía de AirDrop. Es la única fuente de colores de la app:
-/// las pantallas leen `Theme.of(context)` y nunca escriben hex.
+import 'app_backdrop.dart';
+import 'app_palette.dart';
+
+/// Paleta y tipografía de AirDrop, "Grafito y turquesa". Es la única fuente
+/// de colores de la app: las pantallas leen `Theme.of(context)` y
+/// `context.palette`, y nunca escriben hex.
 class AppTheme {
   AppTheme._();
 
-  /// Verde azulado de marca. En oscuro se usa [primaryOnDark], el mismo tono
-  /// aclarado para que contraste sobre el fondo casi negro.
-  static const Color primary = Color(0xFF0B7A75);
-  static const Color primaryOnDark = Color(0xFF68ADA9);
-
-  /// Naranja de señal: el dron y lo que está en vuelo.
-  static const Color signal = Color(0xFFE8743B);
-  static const Color tertiary = Color(0xFF10B981);
-  static const Color error = Color(0xFFC2362B);
-  static const Color errorOnDark = Color(0xFFFF8C7F);
-  static const double radius = 18;
+  /// Turquesa de marca. En claro baja a petróleo para leerse sobre el cielo.
+  static const Color primary = Color(0xFF0B6470);
+  static const Color primaryOnDark = Color(0xFF4FC3C9);
+  static const double radius = 16;
 
   static ThemeData get light => _build(
-        const _Palette(
-          brightness: Brightness.light,
-          primary: primary,
-          onPrimary: Color(0xFFFFFFFF),
-          error: error,
-          background: Color(0xFFF5F6F3),
-          surface: Color(0xFFFFFFFF),
-          sunk: Color(0xFFECEEEA),
-          line: Color(0xFFE2E6E1),
-          ink: Color(0xFF101716),
-          muted: Color(0xFF5D6A67),
-        ),
-      );
+    const _Palette(
+      brightness: Brightness.light,
+      primary: primary,
+      onPrimary: Color(0xFFFFFFFF),
+      surface: Color(0xFFFFFFFF),
+      sunk: Color(0xFFEAF1F6),
+      line: Color(0xFFC9D6DE),
+      ink: Color(0xFF12171A),
+      muted: Color(0xFF4D5B63),
+      extra: AppPalette.light,
+    ),
+  );
 
   static ThemeData get dark => _build(
-        const _Palette(
-          brightness: Brightness.dark,
-          primary: primaryOnDark,
-          onPrimary: Color(0xFF05201C),
-          error: errorOnDark,
-          background: Color(0xFF0B1110),
-          surface: Color(0xFF141B1A),
-          sunk: Color(0xFF0F1615),
-          line: Color(0xFF25302E),
-          ink: Color(0xFFEEF3F1),
-          muted: Color(0xFF95A4A0),
-        ),
-      );
+    const _Palette(
+      brightness: Brightness.dark,
+      primary: primaryOnDark,
+      onPrimary: Color(0xFF071214),
+      surface: Color(0xFF1A2126),
+      sunk: Color(0xFF12171A),
+      line: Color(0xFF2C363C),
+      ink: Color(0xFFEEF3F5),
+      muted: Color(0xFFA6B4BA),
+      extra: AppPalette.dark,
+    ),
+  );
 
   static ThemeData _build(_Palette p) {
     final base = ThemeData(brightness: p.brightness, useMaterial3: true);
-    final font = GoogleFonts.plusJakartaSans(color: p.ink);
+    final font = GoogleFonts.spaceGrotesk(color: p.ink);
+    final x = p.extra;
+    final colors =
+        ColorScheme.fromSeed(
+          seedColor: p.primary,
+          brightness: p.brightness,
+        ).copyWith(
+          primary: p.primary,
+          onPrimary: p.onPrimary,
+          secondary: x.warning,
+          onSecondary: x.onAccent,
+          tertiary: x.success,
+          error: x.danger,
+          surface: p.surface,
+          onSurface: p.ink,
+          onSurfaceVariant: p.muted,
+          surfaceContainerHighest: p.sunk,
+          outline: p.line,
+          outlineVariant: x.glassBorder,
+        );
+    final text = _textTheme(base.textTheme, font, p.muted);
+    final shape = RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(radius),
+    );
 
     return base.copyWith(
-      scaffoldBackgroundColor: p.background,
-      // El esquema sale del verde de marca y no del morado por defecto de
-      // Material: así los "container" (botón flotante, botones tonales,
-      // hojas inferiores) quedan en la paleta.
-      colorScheme: ColorScheme.fromSeed(
-        seedColor: p.primary,
-        brightness: p.brightness,
-      ).copyWith(
-        primary: p.primary,
-        onPrimary: p.onPrimary,
-        secondary: signal,
-        onSecondary: Colors.white,
-        tertiary: tertiary,
-        error: p.error,
-        surface: p.surface,
-        onSurface: p.ink,
-        onSurfaceVariant: p.muted,
-        surfaceContainerHighest: p.sunk,
-        outline: p.line,
-      ),
-      textTheme: _textTheme(base.textTheme, font, p.muted),
+      // El fondo lo pinta `AppBackdrop`; el scaffold queda transparente.
+      scaffoldBackgroundColor: Colors.transparent,
+      canvasColor: p.surface,
+      colorScheme: colors,
+      extensions: [x],
+      textTheme: text,
+      iconTheme: IconThemeData(color: p.ink),
       inputDecorationTheme: _inputTheme(p),
-      floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: p.primary,
-        foregroundColor: p.onPrimary,
-        elevation: 2,
-        extendedTextStyle: font.copyWith(fontWeight: FontWeight.w700),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(radius),
-        ),
+      pageTransitionsTheme: PageTransitionsTheme(
+        builders: {
+          for (final platform in TargetPlatform.values)
+            platform: const AppPageTransitionsBuilder(),
+        },
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: p.primary,
           foregroundColor: p.onPrimary,
           elevation: 0,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radius),
-          ),
+          minimumSize: const Size(0, 54),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+          shape: shape,
           textStyle: font.copyWith(fontSize: 16, fontWeight: FontWeight.w700),
         ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: p.primary,
+          foregroundColor: p.onPrimary,
+          minimumSize: const Size(0, 48),
+          shape: shape,
+          textStyle: font.copyWith(fontSize: 15, fontWeight: FontWeight.w700),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: p.ink,
+          minimumSize: const Size(0, 48),
+          side: BorderSide(color: p.line),
+          shape: shape,
+          textStyle: font.copyWith(fontSize: 15, fontWeight: FontWeight.w600),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: p.primary,
+          textStyle: font.copyWith(fontSize: 14, fontWeight: FontWeight.w700),
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: p.primary,
+        foregroundColor: p.onPrimary,
+        elevation: 0,
+        extendedTextStyle: font.copyWith(fontWeight: FontWeight.w700),
+        shape: const StadiumBorder(),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: p.surface,
+        surfaceTintColor: Colors.transparent,
+        showDragHandle: true,
+        dragHandleColor: p.muted.withValues(alpha: 0.5),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: p.surface,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: p.ink,
+        contentTextStyle: font.copyWith(
+          color: p.surface,
+          fontWeight: FontWeight.w600,
+        ),
+        shape: shape,
+      ),
+      progressIndicatorTheme: ProgressIndicatorThemeData(color: p.primary),
+      dividerTheme: DividerThemeData(color: p.line, thickness: 1),
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
+        foregroundColor: p.ink,
+        elevation: 0,
+        titleTextStyle: text.titleLarge,
       ),
     );
   }
 
   static TextTheme _textTheme(TextTheme base, TextStyle font, Color muted) {
-    // Titulares w800 con letter-spacing negativo, como en el diseño de auth.
-    TextStyle title(double size) => font.copyWith(
-          fontSize: size,
-          fontWeight: FontWeight.w800,
-          letterSpacing: -0.03 * size,
-          height: 1.1,
-        );
+    // Cifras de ancho fijo: los contadores no bailan al cambiar.
+    const tabular = [FontFeature.tabularFigures()];
+    TextStyle title(double size, {double spacing = -0.02}) => font.copyWith(
+      fontSize: size,
+      fontWeight: FontWeight.w600,
+      letterSpacing: spacing * size,
+      height: 1.08,
+      fontFeatures: tabular,
+    );
     TextStyle text(double size, FontWeight weight) =>
         font.copyWith(fontSize: size, fontWeight: weight);
 
     return base.copyWith(
-      displayLarge: title(40),
-      displayMedium: title(32),
-      headlineLarge: title(28),
-      headlineMedium: title(22),
-      titleLarge: text(20, FontWeight.w700),
-      titleMedium: text(16, FontWeight.w700),
-      titleSmall: text(14, FontWeight.w700),
-      bodyLarge: text(16, FontWeight.w500),
-      bodyMedium: text(14, FontWeight.w500),
-      bodySmall: text(12, FontWeight.w500),
-      labelLarge: text(13, FontWeight.w600).copyWith(color: muted),
+      displayLarge: title(64, spacing: -0.03),
+      displayMedium: title(48, spacing: -0.03),
+      displaySmall: title(40),
+      headlineLarge: title(32),
+      headlineMedium: title(24),
+      headlineSmall: title(20),
+      titleLarge: text(20, FontWeight.w600),
+      titleMedium: text(16, FontWeight.w600),
+      titleSmall: text(14, FontWeight.w600),
+      bodyLarge: text(16, FontWeight.w400),
+      bodyMedium: text(15, FontWeight.w400),
+      bodySmall: text(13, FontWeight.w400).copyWith(color: muted),
+      labelLarge: text(14, FontWeight.w600),
       labelMedium: text(12, FontWeight.w600).copyWith(color: muted),
-      // Labels de campo: mayúsculas con aire.
-      labelSmall: text(11, FontWeight.w700)
-          .copyWith(color: muted, letterSpacing: 1.3),
+      // Etiquetas: mayúsculas pequeñas con aire.
+      labelSmall: text(
+        11,
+        FontWeight.w600,
+      ).copyWith(color: muted, letterSpacing: 1.6),
     );
   }
 
   static InputDecorationTheme _inputTheme(_Palette p) {
-    OutlineInputBorder border(Color color) => OutlineInputBorder(
+    OutlineInputBorder border(Color color, [double width = 1]) =>
+        OutlineInputBorder(
           borderRadius: BorderRadius.circular(radius),
-          borderSide: BorderSide(color: color, width: 1.5),
+          borderSide: BorderSide(color: color, width: width),
         );
 
     return InputDecorationTheme(
       filled: true,
-      fillColor: p.surface,
-      border: border(p.line),
-      enabledBorder: border(p.line),
-      focusedBorder: border(p.primary),
-      errorBorder: border(p.error),
-      focusedErrorBorder: border(p.error),
+      fillColor: p.extra.glass,
+      border: border(p.extra.glassBorder),
+      enabledBorder: border(p.extra.glassBorder),
+      focusedBorder: border(p.primary, 1.6),
+      errorBorder: border(p.extra.danger),
+      focusedErrorBorder: border(p.extra.danger, 1.6),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      hintStyle: TextStyle(color: p.muted.withValues(alpha: 0.75)),
+      hintStyle: TextStyle(color: p.muted.withValues(alpha: 0.8)),
     );
   }
 }
@@ -155,23 +225,21 @@ class _Palette {
     required this.brightness,
     required this.primary,
     required this.onPrimary,
-    required this.error,
-    required this.background,
     required this.surface,
     required this.sunk,
     required this.line,
     required this.ink,
     required this.muted,
+    required this.extra,
   });
 
   final Brightness brightness;
   final Color primary;
   final Color onPrimary;
-  final Color error;
-  final Color background;
   final Color surface;
   final Color sunk;
   final Color line;
   final Color ink;
   final Color muted;
+  final AppPalette extra;
 }

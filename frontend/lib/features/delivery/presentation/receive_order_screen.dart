@@ -129,6 +129,8 @@ class _ReceiveOrderScreenState extends ConsumerState<ReceiveOrderScreen>
           .read(receiveOrderProvider.notifier)
           .validate(widget.orderId, code);
       _timer?.cancel();
+      // Se pudo salir de la pantalla mientras Nest respondía.
+      if (!mounted) return;
       setState(() => _delivered = true);
       await _collapse.forward();
       if (!mounted) return;

@@ -6,6 +6,7 @@ import '../../../core/data/data_source_config.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../hubs/data/hub_models.dart';
 import '../../hubs/data/hub_providers.dart';
+import 'fleet_flight.dart';
 import 'fleet_models.dart';
 import 'fleet_repository.dart';
 import 'local_fleet_repository.dart';
@@ -46,8 +47,9 @@ class FleetHubNotifier extends Notifier<String?> {
   void select(String? hubId) => state = hubId;
 }
 
-final fleetHubProvider =
-    NotifierProvider<FleetHubNotifier, String?>(FleetHubNotifier.new);
+final fleetHubProvider = NotifierProvider<FleetHubNotifier, String?>(
+  FleetHubNotifier.new,
+);
 
 /// Central **efectiva**: la elegida por el operador o, si todavía no hay
 /// selección válida, la primera asignada.
@@ -126,10 +128,7 @@ class RegisterMaintenanceNotifier extends AsyncNotifier<Drone?> {
   @override
   Future<Drone?> build() async => null;
 
-  Future<Drone> register(
-    String id,
-    RegisterMaintenanceRequest request,
-  ) async {
+  Future<Drone> register(String id, RegisterMaintenanceRequest request) async {
     final drone = await ref
         .read(fleetRepositoryProvider)
         .registerMaintenance(id, request);
@@ -143,3 +142,11 @@ final registerMaintenanceProvider =
     AsyncNotifierProvider<RegisterMaintenanceNotifier, Drone?>(
       RegisterMaintenanceNotifier.new,
     );
+
+/// Vuelos en curso de la central efectiva, para que el operador siga el
+/// mapa de cada dron en misión. Se refresca cada 10 s en su pantalla.
+final fleetFlightsProvider = FutureProvider<List<FleetFlight>>((ref) {
+  final hubId = ref.watch(effectiveHubProvider)?.id;
+  if (hubId == null) return const <FleetFlight>[];
+  return ref.watch(fleetRepositoryProvider).listFlights(hubId);
+});

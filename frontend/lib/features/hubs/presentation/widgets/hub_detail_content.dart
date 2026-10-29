@@ -9,6 +9,7 @@ import '../../../../core/widgets/status_pill.dart';
 import '../../data/hub_models.dart';
 import 'hub_labels.dart';
 import 'hub_tile.dart';
+import '../../../../theme/app_palette.dart';
 
 /// "Mi central" en solo lectura: quién es, dónde queda en el mapa y cómo
 /// contactarla. Sin acciones: el despachador consulta su central, no la
@@ -71,9 +72,9 @@ class _HubIdentity extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colors.surface,
+        color: context.palette.glass,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: colors.outline),
+        border: Border.all(color: context.palette.glassBorder),
       ),
       child: Row(
         children: [

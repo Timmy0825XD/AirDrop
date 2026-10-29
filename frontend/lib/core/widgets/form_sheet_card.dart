@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-/// La tarjeta blanca de un formulario, montada sobre la curva del
-/// encabezado, con una sombra suave. Apila sus [children] a lo ancho.
+import 'glass_card.dart';
+
+/// La tarjeta de vidrio de un formulario. Apila sus [children] a lo ancho.
 class FormSheetCard extends StatelessWidget {
   const FormSheetCard({super.key, required this.children});
 
@@ -9,20 +10,9 @@ class FormSheetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return Container(
+    return GlassCard(
+      radius: 28,
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 16),
-      decoration: BoxDecoration(
-        color: colors.surface,
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: [
-          BoxShadow(
-            color: colors.onSurface.withValues(alpha: 0.08),
-            blurRadius: 40,
-            offset: const Offset(0, 18),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: children,

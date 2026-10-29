@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/app_motion.dart';
+
 /// Un número que cuenta desde 0 hasta [value] al aparecer, y desde el
 /// valor anterior cuando cambia. Con "reducir movimiento" se muestra
 /// directo. `null` pinta un guion: el dato todavía no llegó o falló.
@@ -18,8 +20,8 @@ class CountUpText extends StatelessWidget {
     }
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0, end: target.toDouble()),
-      duration: const Duration(milliseconds: 700),
-      curve: Curves.easeOutCubic,
+      duration: AppMotion.count,
+      curve: AppMotion.enterCurve,
       builder: (context, t, _) => Text('${t.round()}', style: style),
     );
   }

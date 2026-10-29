@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../theme/app_palette.dart';
 
 /// Tarjeta del reenvío: cuenta regresiva con una barra que se vacía y, al
 /// llegar a cero, el botón para pedir otro código.
@@ -18,11 +19,10 @@ class OtpResendCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
       decoration: BoxDecoration(
-        color: colors.surface,
+        color: context.palette.glass,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(

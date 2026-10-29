@@ -15,37 +15,31 @@ class GeofenceDrawMap extends StatelessWidget {
     required this.points,
     this.onAdd,
     this.onRemove,
+    this.sheetHeight = 0,
   });
 
   final List<LatLng> points;
+
+  /// Lo que tapa la hoja de abajo en el modo dibujar.
+  final double sheetHeight;
   final void Function(LatLng point)? onAdd;
   final void Function(int index)? onRemove;
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     return AppMap(
       fit: points,
       interactive: onAdd != null,
+      // La vista previa es un recuadro chico: el margen del modo dibujar
+      // (barra arriba, botones a la derecha, hoja abajo) no le cabe y
+      // dejaba el mapa en negro con el polígono aplastado.
+      fitPadding: onAdd == null
+          ? const EdgeInsets.all(28)
+          : EdgeInsets.fromLTRB(40, 120, 84, sheetHeight + 40),
+      controlsPadding: EdgeInsets.only(right: 16, bottom: sheetHeight),
       onTap: onAdd,
       layers: [
-        if (points.length >= 3)
-          PolygonLayer(
-            polygons: [
-              Polygon(
-                points: points,
-                color: colors.error.withValues(alpha: 0.18),
-                borderColor: colors.error,
-                borderStrokeWidth: 3,
-              ),
-            ],
-          )
-        else if (points.length == 2)
-          PolylineLayer(
-            polylines: [
-              Polyline(points: points, strokeWidth: 3, color: colors.error),
-            ],
-          ),
+        if (points.length >= 2) _ShapeLayer(points: points),
         MarkerLayer(
           markers: [
             for (final (index, point) in points.indexed)
@@ -98,6 +92,33 @@ class _VertexDot extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// El área: el polígono relleno con 3 o más vértices; con 2, la línea.
+class _ShapeLayer extends StatelessWidget {
+  const _ShapeLayer({required this.points});
+
+  final List<LatLng> points;
+
+  @override
+  Widget build(BuildContext context) {
+    final danger = Theme.of(context).colorScheme.error;
+    if (points.length == 2) {
+      return PolylineLayer(
+        polylines: [Polyline(points: points, strokeWidth: 3, color: danger)],
+      );
+    }
+    return PolygonLayer(
+      polygons: [
+        Polygon(
+          points: points,
+          color: danger.withValues(alpha: 0.18),
+          borderColor: danger,
+          borderStrokeWidth: 3,
+        ),
+      ],
     );
   }
 }

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/app_motion.dart';
+
 /// Encoge a su hijo mientras el dedo está encima: la respuesta táctil de
 /// tarjetas y botones. Usa `Listener`, así que no le quita el toque al
 /// `InkWell` o al botón que lleve adentro.
 class PressScale extends StatefulWidget {
-  const PressScale({super.key, required this.child, this.scale = 0.97});
+  const PressScale({super.key, required this.child, this.scale = 0.96});
 
   final Widget child;
 
-  /// Cuánto se encoge al presionar (0.97 = un 3 %).
+  /// Cuánto se encoge al presionar (0.96 = un 4 %).
   final double scale;
 
   @override
@@ -30,8 +32,8 @@ class _PressScaleState extends State<PressScale> {
       onPointerCancel: (_) => _set(false),
       child: AnimatedScale(
         scale: _pressed ? widget.scale : 1,
-        duration: const Duration(milliseconds: 160),
-        curve: Curves.fastOutSlowIn,
+        duration: AppMotion.tap,
+        curve: AppMotion.enterCurve,
         child: widget.child,
       ),
     );

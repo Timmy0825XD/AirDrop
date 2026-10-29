@@ -1,4 +1,5 @@
 import '../../../core/network/api_client.dart';
+import 'fleet_flight.dart';
 import 'fleet_models.dart';
 import 'fleet_repository.dart';
 
@@ -24,9 +25,9 @@ class RemoteFleetRepository implements FleetRepository {
       '/fleet/drones',
       query: {'hubId': hubId},
     );
-    return _asJsonList(data)
-        .map((row) => Drone.fromJson(_asJsonMap(row)))
-        .toList(growable: false);
+    return _asJsonList(
+      data,
+    ).map((row) => Drone.fromJson(_asJsonMap(row))).toList(growable: false);
   }
 
   @override
@@ -60,6 +61,17 @@ class RemoteFleetRepository implements FleetRepository {
       body: request.toJson(),
     );
     return Drone.fromJson(_asJsonMap(data));
+  }
+
+  @override
+  Future<List<FleetFlight>> listFlights(String hubId) async {
+    final data = await apiClient.getJson(
+      '/fleet/flights',
+      query: {'hubId': hubId},
+    );
+    return _asJsonList(data)
+        .map((row) => FleetFlight.fromJson(_asJsonMap(row)))
+        .toList(growable: false);
   }
 
   Map<String, dynamic> _asJsonMap(Object? data) {

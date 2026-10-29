@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../theme/app_motion.dart';
+import '../../theme/app_palette.dart';
+
 /// Qué tan bien está lo que muestra la pastilla.
 /// `neutral` va en el color de marca: algo que sigue su curso normal.
 enum PillTone { positive, attention, negative, neutral }
 
-/// Estado en una pastilla de color (Activa, Suspendida, Bloqueada…). El
+/// Estado en una pastilla con punto (Activa, Suspendida, En vuelo…). El
 /// color no es decorativo: distingue de un vistazo si algo puede operar.
 /// Cuando cambia el texto, la pastilla nueva entra con un rebote corto.
 class StatusPill extends StatelessWidget {
@@ -13,38 +16,48 @@ class StatusPill extends StatelessWidget {
   final String label;
   final PillTone tone;
 
+  /// El color de cada tono; lo comparten otras piezas (puntos, cifras).
+  static Color colorOf(BuildContext context, PillTone tone) {
+    final palette = context.palette;
+    return switch (tone) {
+      PillTone.positive => palette.success,
+      PillTone.attention => palette.warning,
+      PillTone.negative => palette.danger,
+      PillTone.neutral => Theme.of(context).colorScheme.primary,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final base = switch (tone) {
-      PillTone.positive => colors.tertiary,
-      PillTone.attention => colors.secondary,
-      PillTone.negative => colors.error,
-      PillTone.neutral => colors.primary,
-    };
-    // El texto se oscurece (o aclara en tema oscuro) hacia la tinta para
-    // que lea con contraste sobre su propio tinte.
-    final ink = Color.lerp(base, colors.onSurface, 0.4)!;
+    final color = colorOf(context, tone);
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 320),
-      switchInCurve: Curves.easeOutBack,
+      duration: AppMotion.of(context, AppMotion.enter),
+      switchInCurve: AppMotion.bounceCurve,
       transitionBuilder: (child, animation) =>
           ScaleTransition(scale: animation, child: child),
       child: Container(
         key: ValueKey(label),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: base.withValues(alpha: 0.14),
+          color: color.withValues(alpha: 0.12),
+          border: Border.all(color: color.withValues(alpha: 0.35)),
           borderRadius: BorderRadius.circular(999),
         ),
-        child: Text(
-          label,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: ink,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 0.2,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: theme.textTheme.labelMedium?.copyWith(color: color),
+            ),
+          ],
         ),
       ),
     );

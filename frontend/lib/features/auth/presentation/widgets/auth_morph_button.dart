@@ -1,8 +1,30 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/widgets/press_scale.dart';
-
+import '../../../../theme/app_motion.dart';
+import '../../../../theme/app_palette.dart';
 import 'drone_glyph.dart';
+
+/// El fondo del botón: el acento en degradado con su halo, o apagado.
+BoxDecoration _morphDecoration(BuildContext context, bool on, bool loading) {
+  final palette = context.palette;
+  const height = AuthMorphButton.height;
+  return BoxDecoration(
+    gradient: on ? palette.accent : null,
+    color: on
+        ? null
+        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+    borderRadius: BorderRadius.circular(loading ? height / 2 : 16),
+    boxShadow: [
+      if (on)
+        BoxShadow(
+          color: palette.accentGradient.first.withValues(alpha: 0.35),
+          blurRadius: 22,
+          offset: const Offset(0, 8),
+        ),
+    ],
+  );
+}
 
 /// Botón principal de auth. Al cargar se encoge de ancho completo a un
 /// círculo con el dron girando; al terminar vuelve a su forma. Al tocarlo
@@ -27,6 +49,7 @@ class AuthMorphButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final palette = context.palette;
     final enabled = onPressed != null;
     return LayoutBuilder(
       builder: (context, constraints) => Semantics(
@@ -34,17 +57,12 @@ class AuthMorphButton extends StatelessWidget {
         child: PressScale(
           scale: 0.98,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 480),
-            curve: Curves.fastOutSlowIn,
+            duration: AppMotion.of(context, const Duration(milliseconds: 480)),
+            curve: AppMotion.enterCurve,
             width: isLoading ? height : constraints.maxWidth,
             height: height,
             clipBehavior: Clip.antiAlias,
-            decoration: BoxDecoration(
-              color: enabled
-                  ? colors.primary
-                  : colors.onSurface.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(isLoading ? height / 2 : 18),
-            ),
+            decoration: _morphDecoration(context, enabled, isLoading),
             child: AbsorbPointer(
               absorbing: isLoading,
               child: ElevatedButton(
@@ -52,6 +70,9 @@ class AuthMorphButton extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   padding: EdgeInsets.zero,
                   shape: const RoundedRectangleBorder(),
+                  backgroundColor: Colors.transparent,
+                  foregroundColor: palette.onAccent,
+                  shadowColor: Colors.transparent,
                   disabledBackgroundColor: Colors.transparent,
                   disabledForegroundColor: colors.onSurfaceVariant,
                 ),
@@ -74,7 +95,7 @@ class _ButtonFace extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final onPrimary = Theme.of(context).colorScheme.onPrimary;
+    final onPrimary = context.palette.onAccent;
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 260),
       switchInCurve: Curves.easeOutBack,

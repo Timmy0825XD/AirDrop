@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/auth_models.dart';
 import 'document_type_labels.dart';
+import '../../../../theme/app_palette.dart';
 
 /// Selector segmentado del tipo de documento: una pastilla blanca se
 /// desliza con un rebote corto hasta la opción elegida. Lo usan el registro
@@ -65,10 +66,9 @@ class _SlidingPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: colors.surface,
+        color: context.palette.glass,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(

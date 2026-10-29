@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import 'auth_brand.dart';
 import 'auth_curved_header.dart';
+import '../../../../theme/app_palette.dart';
 
 /// Andamiaje de las pantallas de paso (verificar código, recuperar y nueva
 /// contraseña): encabezado curvo con volver y pastilla, un ícono montado
@@ -216,7 +217,7 @@ class _StepIcon extends StatelessWidget {
       width: 76,
       height: 76,
       decoration: BoxDecoration(
-        color: colors.surface,
+        color: context.palette.glass,
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(

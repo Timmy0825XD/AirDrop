@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// La barra de abajo del modo dibujar: cuántos vértices hay, qué falta, y
+/// La hoja de abajo del modo dibujar: cuántos vértices hay, qué falta, y
 /// los botones de deshacer y borrar todo.
 class GeofenceDrawBar extends StatelessWidget {
   const GeofenceDrawBar({
@@ -17,27 +17,14 @@ class GeofenceDrawBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(
-        20,
-        16,
-        20,
-        16 + MediaQuery.paddingOf(context).bottom,
-      ),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(drawHint(count), style: theme.textTheme.bodyMedium),
-          const SizedBox(height: 12),
-          _DrawButtons(bar: this),
-        ],
-      ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(drawHint(count), style: theme.textTheme.bodyMedium),
+        const SizedBox(height: 12),
+        _DrawButtons(bar: this),
+      ],
     );
   }
 }

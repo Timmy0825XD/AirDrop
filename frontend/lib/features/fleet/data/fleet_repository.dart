@@ -1,6 +1,7 @@
+import 'fleet_flight.dart';
 import 'fleet_models.dart';
 
-/// Contrato de la feature de flota. Las cinco operaciones que
+/// Contrato de la feature de flota. Las seis operaciones que
 /// `FleetController` expone, reservadas al operador de flota.
 ///
 /// Ningún método convierte un error en `null`: Nest define los mensajes
@@ -30,4 +31,9 @@ abstract class FleetRepository {
     String id,
     RegisterMaintenanceRequest request,
   );
+
+  /// `GET /fleet/flights?hubId=` — drones en misión de la central con su
+  /// pedido y la última telemetría. De aquí sale el pedido para abrir el
+  /// mapa del vuelo.
+  Future<List<FleetFlight>> listFlights(String hubId);
 }
