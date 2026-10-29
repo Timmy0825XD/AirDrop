@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/widgets/balanced_grid.dart';
 import '../../../../core/widgets/ring_gauge.dart';
+import '../../../../theme/app_palette.dart';
 import '../../data/telemetry_models.dart';
 
 /// La telemetría en la hoja del vuelo: la llegada en grande (con el anillo
@@ -17,13 +18,15 @@ class FlightCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = telemetry;
     final v = t.vitals;
+    final cold = v?.temperatureC;
     final stats = [
-      ('Altitud', '${t.altitudeM.round()}', 'm'),
-      ('Velocidad', '${t.speedKmh.round()}', 'km/h'),
-      if (v != null) ('Batería', '${v.batteryPercent.round()}', '%'),
-      if (v?.temperatureC case final c?) ('Frío', _decimal(c), '°C'),
-      if (v != null) ('Carga', _decimal(v.payloadKg), 'kg'),
-      if (v != null) ('Latencia', '${v.latencyMs.round()}', 'ms'),
+      ('Altitud', '${t.altitudeM.round()}', 'm', false),
+      ('Velocidad', '${t.speedKmh.round()}', 'km/h', false),
+      if (v != null) ('Batería', '${v.batteryPercent.round()}', '%', false),
+      // Fuera de 2 a 8 °C se pinta en rojo (RF-17).
+      if (cold != null) ('Frío', _decimal(cold), '°C', isColdChainBreach(cold)),
+      if (v != null) ('Carga', _decimal(v.payloadKg), 'kg', false),
+      if (v != null) ('Latencia', '${v.latencyMs.round()}', 'ms', false),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -35,8 +38,8 @@ class FlightCard extends StatelessWidget {
           maxPerRow: 3,
           spacing: 8,
           children: [
-            for (final (label, value, unit) in stats)
-              _Stat(label: label, value: value, unit: unit),
+            for (final (label, value, unit, alert) in stats)
+              _Stat(label: label, value: value, unit: unit, alert: alert),
           ],
         ),
         const SizedBox(height: 10),
@@ -96,19 +99,31 @@ class _Arrival extends StatelessWidget {
 
 /// Un dato: el valor grande con su unidad y la etiqueta en mayúsculas.
 class _Stat extends StatelessWidget {
-  const _Stat({required this.label, required this.value, required this.unit});
+  const _Stat({
+    required this.label,
+    required this.value,
+    required this.unit,
+    this.alert = false,
+  });
 
   final String label;
   final String value;
   final String unit;
 
+  /// El dato está fuera de rango: se tiñe de alerta.
+  final bool alert;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final danger = context.palette.danger;
     return Container(
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
-        color: theme.colorScheme.onSurface.withValues(alpha: 0.06),
+        color: alert
+            ? danger.withValues(alpha: 0.14)
+            : theme.colorScheme.onSurface.withValues(alpha: 0.06),
+        border: alert ? Border.all(color: danger.withValues(alpha: 0.5)) : null,
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
@@ -121,7 +136,9 @@ class _Stat extends StatelessWidget {
             child: Text.rich(
               TextSpan(
                 text: value,
-                style: theme.textTheme.titleLarge,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: alert ? danger : null,
+                ),
                 children: [
                   TextSpan(text: ' $unit', style: theme.textTheme.labelMedium),
                 ],

@@ -112,6 +112,25 @@ class LocalInventoryRepository implements InventoryRepository {
     _items.removeAt(index);
   }
 
+  /// Un lote devuelto con alerta de frío, para ver la pantalla.
+  @override
+  Future<List<QuarantineRecord>> quarantine() async {
+    await _requireHub();
+    return [
+      QuarantineRecord(
+        id: 'q1',
+        orderId: 'a3333333-3333-4333-8333-333333333333',
+        medicationName: 'Insulina glargina 100 UI/ml',
+        saleType: SaleType.overTheCounter,
+        lot: 'L-2026-10',
+        expirationDate: '2027-01-31',
+        quantity: 1,
+        reason: QuarantineReason.coldChain,
+        createdAt: DateTime.now().toUtc().subtract(const Duration(hours: 1)),
+      ),
+    ];
+  }
+
   /// Réplica de `requireDispatcherHub`: central asignada y activa antes de
   /// tocar el inventario.
   Future<({String id})> _requireHub() async {

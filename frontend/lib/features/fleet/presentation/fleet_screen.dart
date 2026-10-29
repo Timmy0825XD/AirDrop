@@ -251,7 +251,7 @@ Future<void> _registerMaintenance(
       );
     }
   } on ApiException catch (error) {
-    if (context.mounted) showAppSnack(context, error.message);
+    if (context.mounted) showErrorSnack(context, error.message);
   }
 }
 
@@ -268,6 +268,6 @@ Future<void> _patchStatus(
     await ref.read(updateDroneStatusProvider.notifier).set(droneId, request);
     if (context.mounted) showAppSnack(context, doneMessage);
   } on ApiException catch (error) {
-    if (context.mounted) showAppSnack(context, error.message);
+    if (context.mounted) showErrorSnack(context, error.message);
   }
 }

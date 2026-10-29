@@ -15,6 +15,7 @@ import 'widgets/home_spotlight.dart';
 import 'widgets/quick_tile.dart';
 import 'widgets/requester/flight_spotlight_card.dart';
 import 'widgets/sign_out.dart';
+import '../../notifications/data/notice_providers.dart';
 
 /// Inicio del solicitante: el saludo, el dron con cuántos pedidos van en
 /// curso, el vuelo que esté en el aire (con su atajo al mapa), sus números
@@ -42,7 +43,8 @@ class RequesterHome extends ConsumerWidget {
     return AutoRefresh(
       onTick: () => ref
         ..invalidate(mineProvider)
-        ..invalidate(plansProvider),
+        ..invalidate(plansProvider)
+        ..invalidate(unreadCountProvider),
       child: HomePage(
         children: [
           HomeHeader(
@@ -50,6 +52,8 @@ class RequesterHome extends ConsumerWidget {
             fullName: user.fullName,
             tagline: 'Medicamentos por dron en Valledupar',
             onSignOut: () => signOut(context, ref),
+            onNotices: () => context.push('/notifications'),
+            unreadNotices: ref.watch(unreadCountProvider).value,
           ),
           const SizedBox(height: 8),
           HomeSpotlight(

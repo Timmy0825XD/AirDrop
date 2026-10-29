@@ -154,3 +154,63 @@ int _asInt(Object? value) {
   }
   return parsed;
 }
+
+/// Por qué un insumo devuelto no reingresa (productos.md). Un motivo nuevo
+/// de Nest cae en [other].
+enum QuarantineReason {
+  coldChain('cold_chain', 'Cadena de frío'),
+  packaging('packaging', 'Empaque dañado'),
+  other('other', 'Revisión');
+
+  const QuarantineReason(this.apiValue, this.label);
+
+  final String apiValue;
+  final String label;
+
+  static QuarantineReason fromJson(Object? value) {
+    return QuarantineReason.values.firstWhere(
+      (e) => e.apiValue == value,
+      orElse: () => QuarantineReason.other,
+    );
+  }
+}
+
+/// Fila de `GET /inventory/quarantine`: un lote devuelto que no volvió al
+/// stock (HU-34).
+class QuarantineRecord {
+  const QuarantineRecord({
+    required this.id,
+    required this.orderId,
+    required this.medicationName,
+    required this.saleType,
+    required this.lot,
+    required this.expirationDate,
+    required this.quantity,
+    required this.reason,
+    this.createdAt,
+  });
+
+  factory QuarantineRecord.fromJson(Map<String, dynamic> json) {
+    return QuarantineRecord(
+      id: json['id'] as String,
+      orderId: json['orderId'] as String? ?? '',
+      medicationName: json['medicationName'] as String? ?? '',
+      saleType: SaleType.fromJson(json['saleType'] as String),
+      lot: json['lot'] as String? ?? '',
+      expirationDate: json['expirationDate'] as String? ?? '',
+      quantity: (json['quantity'] as num?)?.toInt() ?? 0,
+      reason: QuarantineReason.fromJson(json['reason']),
+      createdAt: DateTime.tryParse('${json['createdAt']}'),
+    );
+  }
+
+  final String id;
+  final String orderId;
+  final String medicationName;
+  final SaleType saleType;
+  final String lot;
+  final String expirationDate;
+  final int quantity;
+  final QuarantineReason reason;
+  final DateTime? createdAt;
+}

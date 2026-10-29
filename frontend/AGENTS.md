@@ -51,11 +51,11 @@ lib/
     users/
     orders/
     home/        # inicios por rol y andamiaje compartido (solo presentation/)
-    tracking/    # mapa + telemetría en vivo (solicitante y despachador)
+    tracking/    # mapa + telemetría en vivo (solicitante, despachador y operador)
     delivery/    # recibir el pedido con el código de un uso (sin rol receptor)
+    analytics/   # métricas del administrador: KPI, demanda y ranking (`/analytics/*`)
+    notifications/ # bandeja de avisos (`/notifications`), cualquier rol
 ```
-
-Todavía **no existe** `analytics/` (métricas del administrador). Se crea cuando Nest tenga sus endpoints ([`../context/producto/pendientes-backend.md`](../context/producto/pendientes-backend.md)).
 
 No Clean Architecture de tres capas por feature “porque sí”. Suficiente:
 
@@ -214,14 +214,15 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
 | Rol | Destinos | Botón central |
 | --- | --- | --- |
 | Solicitante | Inicio · Pedidos (`/orders/mine`) · Planes (`/orders/plans`) · Perfil | Pedir urgencia (`push /orders/emergency`) |
-| Despachador | Inicio · Agenda (`/orders/scheduled`) · Inventario · Más (`/more`) | Cola de urgencias (`go /orders/queue`, con contador) |
+| Despachador | Inicio · Agenda (`/orders/agenda`) · Inventario · Más (`/more`) | Cola de urgencias (`go /orders/queue`, con contador) |
 | Operador de flota | Inicio · Flota · Geovallas · Perfil | Vuelos en curso (`go /fleet/flights`, con contador); "Nuevo dron" queda en Flota |
 | Administrador | Resumen · Centrales · Cuentas · Perfil | Hoja para crear central o cuenta (`showAdminCreateSheet`) |
 
 - En un destino la barra se ve; en un detalle o formulario se desliza hacia abajo y se encoge, igual que al bajar en una lista (`UserScrollNotification`). Al subir vuelve.
 - `RoleShell` suma el alto de la barra a `padding` y `viewPadding` de `MediaQuery`: las listas y los botones flotantes quedan por encima sin cálculos en cada pantalla.
 - `NavScope.isTabRootOf(context)` dice si la pantalla es un destino: `SectionHeader` no muestra "volver" ahí.
-- "Agenda" abre los programados mientras no exista la pantalla de `GET /orders/agenda`.
+- "Agenda" abre `GET /orders/agenda` (franjas del día, "despegar antes de"); los programados, el histórico (`/orders/history`) y la cuarentena (`/inventory/quarantine`) están en "Más".
+- Los cuatro inicios tienen la campana de avisos (`NoticeBell`) con los sin leer; abre `/notifications`.
 
 ## Telemetría y mapa (`features/tracking/`)
 
@@ -268,14 +269,24 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
 - El operador ve el mapa de sus drones en misión desde "Vuelos en curso"
   (`FleetFlightsScreen`, `GET /fleet/flights?hubId=`, `fleetFlightsProvider`).
   Nest no le deja leer `GET /orders/:id`, así que su mapa sigue al dron sin
-  la ruta dibujada (pendiente del backend).
+  la ruta dibujada (pendiente del backend). Esa pantalla abre un socket con
+  `subscribe-hub` (`TelemetryClient.watchHub`, `hubAlertsProvider`): cada
+  alerta de batería, falla o frío sale en un aviso con "Ver vuelo".
 - La telemetría trae `leg`: `outbound` (ida) o `return` (`FlightLeg.back`,
   el regreso a su central: con el paquete si nadie recibió, o vacío tras
   entregar).
-  `Telemetry.arrived` es solo la ida en tierra. `FlightNotice` avisa
-  entregado, de regreso y devuelto según el `order-status` del socket. El
-  mapa pinta la ruta de ida también en el regreso: Nest no expone la de
-  vuelta.
+  `Telemetry.arrived` es solo la ida en tierra. Tras entregar, el dron
+  espera un minuto en destino con `phase: unloading` ("Retiro del
+  medicamento"); una fase que la app no conozca cae en `FlightPhase.unknown`
+  y el mapa sigue. `FlightNotice` avisa entregado, retiro, de regreso y
+  devuelto según el `order-status` del socket.
+- En el regreso, si el pedido ya trae `assignment.returnRoute` (Nest la
+  calcula cuando el dron empieza a volver; la pantalla relee el pedido en
+  ese momento), el mapa pinta **esa** ruta en el color de información; si
+  no, la de ida.
+- La temperatura (solo vista `full`) se pinta en rojo fuera de 2 a 8 °C
+  (`isColdChainBreach`); con `coldChainAlert` o una alerta `cold_chain`
+  sale el aviso "Alerta de frío" (`ColdChainBanner`).
 
 ## Entrega (`features/delivery/`)
 
@@ -291,6 +302,12 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
 - Recibe el solicitante (persona) o el despachador de la central de
   destino (traslado, `DispatcherPermissions.canReceive`); a cualquier otro
   Nest responde 404.
+- En un traslado, después del código se responden "¿La remisión coincide?"
+  y "¿El sello llegó intacto?" (`TransferChecklist`, con `YesNoQuestion`);
+  sin las dos respuestas "Confirmar entrega" queda apagado y viajan
+  `remissionMatches` y `sealIntact`. Si algo no cuadra, Nest responde el
+  pedido en `returning` con `receiptRejectedReason` (no es un error): se
+  muestra el motivo y el dron vuelve con el paquete.
 - `ReceiveOrderScreen` (`/delivery/:orderId`, con `push`) lee el código al
   abrir. En vuelo lo muestra y lo vuelve a leer cada 10 s hasta que llega
   `expiresAt`; en tierra cuenta cada segundo y abre el "teclado del dron"
@@ -342,6 +359,8 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `ChoicePill` | `core/widgets` | Chip elegible (relleno o teñido, con ícono o check). |
 | `SlidingSegmented` | `core/widgets` | Filtro con pastilla que se desliza (`null` = "Todas"). |
 | `showConfirmSheet` | `core/widgets` | Hoja inferior para confirmar suspender o reactivar. |
+| `showAppSnack` / `showErrorSnack` / `GlassSnack` | `core/widgets/app_snack.dart` | El aviso de cualquier acción: pastilla de vidrio (desenfoque, tinte del tono y borde fino) con ícono, texto de Nest, acción opcional y una línea que se acorta mientras se ve. `SnackTone`: `success`, `error`, `info`, `warning`. Los errores de Nest van con `showErrorSnack`. |
+| `YesNoQuestion` | `core/widgets` | Pregunta de sí o no con dos chips (recibir un traslado, revisar un retorno). |
 | `FormSheetCard` | `core/widgets` | Tarjeta de vidrio del formulario. |
 | `MessageView` | `core/widgets` | Lista vacía o error de Nest, centrado. |
 | `RiseIn` (`RiseIn.stagger`) / `PressScale` / `CountUpText` | `core/widgets` | Entrada en cascada, hundirse al tocar y números que cuentan. Respetan "reducir movimiento". |
@@ -356,6 +375,10 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `OrderFormScaffold` | `orders/presentation/widgets` | Formularios de pedido sobre `SectionFormPage`; mientras su lista (catálogo o centrales) carga, falla o viene vacía, lo dice. |
 | `pickFutureDate` | `auth/presentation/widgets/auth_date_field.dart` | El calendario de hoy a un año (inicio de planes, fecha estimada de mantenimiento). |
 | `RequesterOrderValues` / `RequesterOrderState` | `orders/presentation/widgets/requester_order` | Valores, validación y estado compartidos por la urgencia y la entrega periódica del solicitante. **La ubicación es obligatoria**: Nest no autoriza sin coordenadas. |
+| `ScheduleDraft` / `ScheduleFields` / `SchedulePreviewState` / `SchedulePreviewCard` | `orders/presentation/widgets/plan_schedule` | El calendario de un plan (RU-30): semanal, mensual o fechas sueltas, inicio, fin (fecha **o** número de entregas), hora en punto de 07:00 a 17:00 y, con fórmula, su vigencia. La vista previa llama `POST /orders/plans/preview` medio segundo después del último cambio; con error de Nest el botón se apaga. Lo usan el plan del solicitante, el abastecimiento y "Cambiar calendario". |
+| `FallbackCard` / `AuthorizeOutcome` | `orders/presentation/widgets/order_detail` | HU-24: autorizar sin dron ya no da 409. `AuthorizeOutcome.of` lee `assignment` o `fallback` (otra central, convencional, reintento) o el rechazo por geovalla; `FallbackCard` muestra el motivo de Nest y las centrales alternativas. |
+| `OccurrenceSection` / `OccurrenceRules` / `showRescheduleSheet` | `orders/presentation/widgets/order_detail` | Confirmar, omitir y mover una entrega de plan (sin dron y a 2 horas o más; la verdad es la respuesta de Nest). |
+| `ReturnCheckSection` | `orders/presentation/widgets/order_detail` | Revisión del paquete devuelto (`return-check`) en la central de origen; con alerta de frío avisa que irá a cuarentena. |
 
 Los formularios validan en la pantalla con `Validators` y pasan
 `errorText` + `shakeCount` a cada `AuthField`, igual que el login
@@ -470,6 +493,12 @@ La pantalla y las capas de datos no deben inventar endpoints ni cambiar el contr
 | Usuario actual | `GET /auth/me` | `PublicUser` |
 | Actualizar perfil | `PATCH /auth/me` | `PublicUser` |
 
+- Cambiar el correo es en dos pasos (RNF-04): `PATCH /auth/me` con
+  `email` y `currentPassword` (la hoja `EmailEditSheet` la pide solo si el
+  correo cambió) deja `pendingEmail`; `/profile/email` (`EmailChangeScreen`)
+  confirma el código (`POST /auth/me/email/confirm`), reenvía a los 45 s o
+  cancela (`DELETE /auth/me/email/pending`). El perfil muestra el correo
+  pendiente mientras exista.
 - `ApiClient` adjunta el JWT, convierte errores a `ApiException` y maneja el `401`.
 - El controller es la única capa que guarda o elimina el token en `TokenStore`.
 - Los repositorios no conocen Riverpod, Flutter UI ni `TokenStore` salvo el repositorio local para su sesión simulada.

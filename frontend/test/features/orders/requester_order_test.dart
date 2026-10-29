@@ -78,15 +78,18 @@ void main() {
     expect(body.patientDocumentNumber, '1065123456');
   });
 
-  test('la entrega periódica valida la cantidad y manda la fecha elegida', () {
+  test('la entrega periódica valida la cantidad y manda el calendario', () {
     final values = RequesterOrderValues()
       ..offer = const CatalogOffer(
         name: 'Suero oral',
         saleType: SaleType.overTheCounter,
         requiresColdChain: false,
       )
-      ..location = const LatLng(10.46, -73.25)
-      ..startDate = '2099-03-01';
+      ..location = const LatLng(10.46, -73.25);
+    values.schedule
+      ..startDate = '2099-03-01'
+      ..daysOfWeek.addAll({2, 4})
+      ..time = '10:00';
     addTearDown(values.dispose);
     values
       ..address.text = 'Calle 16 # 9-40'
@@ -99,7 +102,18 @@ void main() {
 
     values.quantity.text = '3';
     expect(values.validate(plan: true), isEmpty);
-    expect(values.plan(_ana).startDate, '2099-03-01');
+    final body = values.plan(_ana).toJson();
+    expect(body['schedule'], {
+      'kind': 'weekly',
+      'startDate': '2099-03-01',
+      'count': 4,
+      'daysOfWeek': [2, 4],
+      'everyWeeks': 1,
+      'time': '10:00',
+    });
+    // Nunca los dos modos en el mismo body.
+    expect(body.containsKey('frequency'), isFalse);
+    expect(body.containsKey('startDate'), isFalse);
     expect(values.plan(_ana).prescriptionImageBase64, isNull);
   });
 

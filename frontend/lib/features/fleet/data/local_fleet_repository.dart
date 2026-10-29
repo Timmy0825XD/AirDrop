@@ -76,7 +76,7 @@ class LocalFleetRepository implements FleetRepository {
   @override
   Future<List<Drone>> listDrones(String hubId) async {
     final user = await _requireActiveAccount();
-    _assertAssigned(user, hubId);
+    if (!user.isAdmin) _assertAssigned(user, hubId);
     // `FleetService.listDrones` exige que la central exista, pero no que
     // esté activa: el operador puede revisar la flota de una central
     // suspendida.
@@ -270,7 +270,11 @@ class LocalFleetRepository implements FleetRepository {
     final id = token.substring(LocalAuthRules.tokenPrefix.length);
     for (final user in localFixtureUsers) {
       if (user.id == id) {
-        return _SessionUser(status: user.status, hubIds: user.hubIds);
+        return _SessionUser(
+          status: user.status,
+          hubIds: user.hubIds,
+          isAdmin: user.role == UserRole.admin,
+        );
       }
     }
     return null;
@@ -291,8 +295,15 @@ class LocalFleetRepository implements FleetRepository {
 
 /// Alcance mínimo que `FleetService` mira de la sesión: estado y centrales.
 class _SessionUser {
-  const _SessionUser({required this.status, required this.hubIds});
+  const _SessionUser({
+    required this.status,
+    required this.hubIds,
+    this.isAdmin = false,
+  });
 
   final UserStatus status;
   final List<String> hubIds;
+
+  /// El administrador lee la flota de cualquier central (solo lectura).
+  final bool isAdmin;
 }

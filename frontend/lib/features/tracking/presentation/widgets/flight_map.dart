@@ -8,7 +8,9 @@ import '../../../../theme/app_palette.dart';
 
 /// El mapa del vuelo, a pantalla completa: la ruta del pedido (lo
 /// recorrido sólido, lo que falta punteado), la central de origen, el
-/// destino y el dron que la cámara acompaña.
+/// destino y el dron que la cámara acompaña. En el regreso ([returnLeg])
+/// pinta la ruta de vuelta (`assignment.returnRoute`), que va del destino
+/// a la central.
 ///
 /// La ruta llega como pares `[longitud, latitud]` (GeoJSON) y aquí se
 /// voltea a `LatLng(latitud, longitud)`, que es lo que pide el mapa.
@@ -18,6 +20,7 @@ class FlightMap extends StatelessWidget {
     required this.route,
     this.drone,
     this.sheetHeight = 0,
+    this.returnLeg = false,
   });
 
   /// Puntos del corredor, `[longitud, latitud]`.
@@ -28,6 +31,9 @@ class FlightMap extends StatelessWidget {
 
   /// Lo que tapa la hoja de abajo: la cámara y los botones lo dejan libre.
   final double sheetHeight;
+
+  /// [route] es la ruta de regreso: empieza en el destino.
+  final bool returnLeg;
 
   @override
   Widget build(BuildContext context) {
@@ -43,9 +49,12 @@ class FlightMap extends StatelessWidget {
       controlsPadding: EdgeInsets.only(right: 16, bottom: sheetHeight),
       layers: [
         // flutter_map no acepta una línea sin puntos: sin ruta, no hay capa.
-        if (points.length >= 2) _RouteLayer(points: points, drone: drone),
         if (points.length >= 2)
-          _EndpointsLayer(from: points.first, to: points.last),
+          _RouteLayer(points: points, drone: drone, returnLeg: returnLeg),
+        if (points.length >= 2)
+          returnLeg
+              ? _EndpointsLayer(from: points.last, to: points.first)
+              : _EndpointsLayer(from: points.first, to: points.last),
         if (drone != null)
           MarkerLayer(
             markers: [
@@ -103,15 +112,26 @@ class _EndpointsLayer extends StatelessWidget {
 /// La ruta en dos tramos: hasta el punto más cercano al dron va sólida
 /// (recorrida) y desde ahí punteada (lo que falta).
 class _RouteLayer extends StatelessWidget {
-  const _RouteLayer({required this.points, required this.drone});
+  const _RouteLayer({
+    required this.points,
+    required this.drone,
+    required this.returnLeg,
+  });
 
   final List<LatLng> points;
   final LatLng? drone;
 
+  /// El regreso va en el color de información, para no confundirlo con la
+  /// ida.
+  final bool returnLeg;
+
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final accent = palette.accentGradient.first;
+    final accent = returnLeg ? palette.info : palette.accentGradient.first;
+    final gradient = returnLeg
+        ? [palette.info, palette.info.withValues(alpha: 0.7)]
+        : palette.accentGradient;
     final split = _closestIndex();
     final done = points.sublist(0, split + 1);
     final left = points.sublist(split);
@@ -128,7 +148,7 @@ class _RouteLayer extends StatelessWidget {
           Polyline(
             points: done,
             strokeWidth: 5,
-            gradientColors: palette.accentGradient,
+            gradientColors: gradient,
             borderStrokeWidth: 6,
             borderColor: accent.withValues(alpha: 0.18),
           ),

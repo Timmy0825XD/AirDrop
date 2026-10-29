@@ -15,6 +15,14 @@ import '../../data/tracking_providers.dart';
     // Tras entregar el dron vuelve solo; el pedido sigue entregado.
     case OrderStatus.delivered:
       final t = s.telemetry;
+      // Un minuto en destino para retirar el medicamento (fase unloading).
+      if (t != null && t.unloading) {
+        return (
+          'Pedido entregado. Retira tu medicamento: el dron espera un '
+              'minuto antes de volver.',
+          false,
+        );
+      }
       if (!showReturn || t == null || !t.returning) {
         return ('Pedido entregado.', false);
       }
@@ -26,9 +34,10 @@ import '../../data/tracking_providers.dart';
           ? ('El dron volvió a la central con el paquete.', false)
           : ('El paquete volvió a la central.', false);
     case OrderStatus.returning:
+      // Sin código a tiempo, intentos agotados o un traslado rechazado.
       return (
-        'Nadie recibió el pedido a tiempo. El dron vuelve a la central con '
-            'el paquete.',
+        'El pedido no se entregó. El dron vuelve a la central con el '
+            'paquete.',
         true,
       );
     default:

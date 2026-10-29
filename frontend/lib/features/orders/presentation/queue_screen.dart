@@ -35,7 +35,8 @@ class QueueScreen extends ConsumerWidget {
 }
 
 /// Una urgencia de la cola: qué y cuánto, a quién va, el stock de la
-/// central y cuándo llegó. "Sin atender" si lleva rato esperando.
+/// central y cuándo llegó. "Sin atender" si lleva rato esperando;
+/// "Reasignado" si otra central sin dron se la pasó (CU-31).
 class QueueTile extends StatelessWidget {
   const QueueTile({super.key, required this.entry, required this.onTap});
 
@@ -54,7 +55,12 @@ class QueueTile extends StatelessWidget {
       detail:
           'Disponible: ${entry.availableQuantity} · '
           '${formatBogota(order.createdAt)}',
-      pill: entry.unattended
+      pill: order.reassignedToHub
+          ? const StatusPill(
+              label: 'Viene de otra central',
+              tone: PillTone.attention,
+            )
+          : entry.unattended
           ? const StatusPill(label: 'Sin atender', tone: PillTone.negative)
           : null,
       onTap: onTap,

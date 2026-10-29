@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/auto_refresh.dart';
@@ -15,6 +16,7 @@ import 'widgets/home_header.dart';
 import 'widgets/home_page.dart';
 import 'widgets/home_spotlight.dart';
 import 'widgets/sign_out.dart';
+import '../../notifications/data/notice_providers.dart';
 
 /// Inicio del despachador: su central, las urgencias en cola como cifra
 /// principal, las bandejas en cuadrícula y los accesos de su central. Con
@@ -32,7 +34,10 @@ class DispatcherHome extends ConsumerWidget {
     final active = hub?.isActive ?? false;
     final counts = active ? DispatcherCounts.watch(ref) : null;
     return AutoRefresh(
-      onTick: () => active ? DispatcherCounts.refresh(ref) : null,
+      onTick: () {
+        ref.invalidate(unreadCountProvider);
+        if (active) DispatcherCounts.refresh(ref);
+      },
       child: HomePage(
         children: [
           HomeHeader(
@@ -40,6 +45,8 @@ class DispatcherHome extends ConsumerWidget {
             fullName: user.fullName,
             tagline: _tagline(hubState),
             onSignOut: () => signOut(context, ref),
+            onNotices: () => context.push('/notifications'),
+            unreadNotices: ref.watch(unreadCountProvider).value,
           ),
           if (hubNoticeText(hubState) case final text?)
             Padding(

@@ -46,10 +46,17 @@ extension ProfileFieldTypeRules on ProfileFieldType {
   }
 
   /// El tipo y el número de documento se mandan siempre juntos.
-  UpdateProfileRequest request(String value, DocumentType documentType) {
+  UpdateProfileRequest request(
+    String value,
+    DocumentType documentType, {
+    String? currentPassword,
+  }) {
     return switch (this) {
       ProfileFieldType.fullName => UpdateProfileRequest(fullName: value),
-      ProfileFieldType.email => UpdateProfileRequest(email: value),
+      ProfileFieldType.email => UpdateProfileRequest(
+        email: value,
+        currentPassword: currentPassword,
+      ),
       ProfileFieldType.phone => UpdateProfileRequest(phone: value),
       ProfileFieldType.document => UpdateProfileRequest(
         documentType: documentType,

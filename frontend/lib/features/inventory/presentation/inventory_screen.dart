@@ -99,6 +99,6 @@ Future<void> _deleteItem(
       showAppSnack(context, 'Ítem eliminado del inventario.');
     }
   } on ApiException catch (error) {
-    if (context.mounted) showAppSnack(context, error.message);
+    if (context.mounted) showErrorSnack(context, error.message);
   }
 }

@@ -31,6 +31,10 @@ class _FakeTokenStore extends TokenStore {
 }
 
 class _FakeHubRepository implements HubRepository {
+  @override
+  Future<Hub> update(String id, Map<String, dynamic> changes) =>
+      throw UnimplementedError();
+
   _FakeHubRepository(this.hubs);
 
   final List<Hub> hubs;
@@ -107,20 +111,23 @@ void main() {
     );
   });
 
-  test('el modelo de dron inexistente responde 404 con el mensaje de Nest', () async {
-    final repo = _repo();
+  test(
+    'el modelo de dron inexistente responde 404 con el mensaje de Nest',
+    () async {
+      final repo = _repo();
 
-    await expectLater(
-      repo.create(
-        const CreateDroneRequest(
-          identifier: 'DRON-09',
-          droneModelId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
-          hubId: _demoHubId,
+      await expectLater(
+        repo.create(
+          const CreateDroneRequest(
+            identifier: 'DRON-09',
+            droneModelId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+            hubId: _demoHubId,
+          ),
         ),
-      ),
-      _message(404, 'El modelo de dron no existe.'),
-    );
-  });
+        _message(404, 'El modelo de dron no existe.'),
+      );
+    },
+  );
 
   test('una central sin asignar responde 403 con el mensaje de Nest', () async {
     final repo = _repo();
@@ -288,25 +295,28 @@ void main() {
     expect(updated.maintenanceUntil, '2026-11-30');
   });
 
-  test('un motivo en blanco no da 400: Nest solo exige que sea string', () async {
-    final repo = _repo();
+  test(
+    'un motivo en blanco no da 400: Nest solo exige que sea string',
+    () async {
+      final repo = _repo();
 
-    final updated = await repo.registerMaintenance(
-      'd1111111-1111-4111-8111-111111111111',
-      const RegisterMaintenanceRequest(
-        reason: '   ',
-        estimatedEndDate: '2026-11-30',
-      ),
-    );
+      final updated = await repo.registerMaintenance(
+        'd1111111-1111-4111-8111-111111111111',
+        const RegisterMaintenanceRequest(
+          reason: '   ',
+          estimatedEndDate: '2026-11-30',
+        ),
+      );
 
-    expect(updated.status, DroneStatus.outOfService);
-    expect(
-      updated.maintenanceReason,
-      '',
-      reason: 'FleetService.registerMaintenance guarda reason.trim()',
-    );
-    expect(updated.maintenanceUntil, '2026-11-30');
-  });
+      expect(updated.status, DroneStatus.outOfService);
+      expect(
+        updated.maintenanceReason,
+        '',
+        reason: 'FleetService.registerMaintenance guarda reason.trim()',
+      );
+      expect(updated.maintenanceUntil, '2026-11-30');
+    },
+  );
 
   test('una fecha que no sea AAAA-MM-DD responde 400', () async {
     final repo = _repo();

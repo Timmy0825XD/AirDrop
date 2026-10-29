@@ -2,10 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/widgets/status_pill.dart';
 import '../../../../theme/app_palette.dart';
+import '../../../notifications/presentation/widgets/notice_bell.dart';
+
+/// El primer nombre para el saludo.
+String homeFirstName(String fullName) =>
+    fullName.trim().split(RegExp(r'\s+')).first;
 
 /// El encabezado de un inicio: el rol en una pastilla, el saludo y una
 /// línea de contexto (la central, la ciudad). A la derecha, las iniciales
-/// sobre el acento y cerrar sesión.
+/// sobre el acento, la campana de avisos (si la pantalla la pasa) y cerrar
+/// sesión.
 class HomeHeader extends StatelessWidget {
   const HomeHeader({
     super.key,
@@ -13,6 +19,8 @@ class HomeHeader extends StatelessWidget {
     required this.fullName,
     required this.tagline,
     required this.onSignOut,
+    this.onNotices,
+    this.unreadNotices,
   });
 
   final String roleLabel;
@@ -20,9 +28,9 @@ class HomeHeader extends StatelessWidget {
   final String tagline;
   final VoidCallback onSignOut;
 
-  /// El primer nombre para el saludo.
-  static String firstNameOf(String fullName) =>
-      fullName.trim().split(RegExp(r'\s+')).first;
+  /// Abre la bandeja de avisos; sin él no hay campana.
+  final VoidCallback? onNotices;
+  final int? unreadNotices;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +45,7 @@ class HomeHeader extends StatelessWidget {
               StatusPill(label: roleLabel, tone: PillTone.neutral),
               const SizedBox(height: 10),
               Text(
-                'Hola, ${firstNameOf(fullName)}',
+                'Hola, ${homeFirstName(fullName)}',
                 style: theme.textTheme.headlineLarge,
               ),
               const SizedBox(height: 4),
@@ -55,9 +63,30 @@ class HomeHeader extends StatelessWidget {
         const SizedBox(width: 12),
         _Initials(name: fullName),
         const SizedBox(width: 8),
+        _HeaderActions(header: this),
+      ],
+    );
+  }
+}
+
+/// La campana (si hay) y cerrar sesión.
+class _HeaderActions extends StatelessWidget {
+  const _HeaderActions({required this.header});
+
+  final HomeHeader header;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (header.onNotices case final open?) ...[
+          NoticeBell(unread: header.unreadNotices, onTap: open),
+          const SizedBox(width: 4),
+        ],
         IconButton.filledTonal(
           tooltip: 'Cerrar sesión',
-          onPressed: onSignOut,
+          onPressed: header.onSignOut,
           icon: const Icon(Icons.logout_rounded, size: 20),
         ),
       ],

@@ -8,6 +8,8 @@
 /// lista para elegir uno en el alta.
 library;
 
+import '../../tracking/data/telemetry_models.dart' show FlightPhase;
+
 /// Los cuatro valores de `DroneStatus` en Nest.
 ///
 /// [inMission] lo asigna el motor de decisión al autorizar un pedido; la
@@ -95,6 +97,8 @@ class Drone {
     this.maintenanceReason,
     this.maintenanceUntil,
     this.createdAt,
+    this.activeOrderId,
+    this.phase,
   });
 
   factory Drone.fromJson(Map<String, dynamic> json) {
@@ -107,6 +111,10 @@ class Drone {
       maintenanceReason: json['maintenanceReason'] as String?,
       maintenanceUntil: json['maintenanceUntil'] as String?,
       createdAt: DateTime.tryParse('${json['createdAt']}'),
+      activeOrderId: json['activeOrderId'] as String?,
+      phase: json['phase'] is String
+          ? FlightPhase.fromJson(json['phase'] as String)
+          : null,
     );
   }
 
@@ -124,6 +132,13 @@ class Drone {
   final String? maintenanceUntil;
 
   final DateTime? createdAt;
+
+  /// El pedido que lleva (en misión); tras entregar, el regreso vacío
+  /// sigue mostrando ese pedido.
+  final String? activeOrderId;
+
+  /// La fase del vuelo; `null` sin telemetría o en tierra.
+  final FlightPhase? phase;
 
   /// Motivo y fecha solo se muestran si vienen y el dron no está
   /// disponible: al volver a `available`, Nest los limpia.
@@ -197,10 +212,7 @@ class RegisterMaintenanceRequest {
   });
 
   Map<String, dynamic> toJson() {
-    return {
-      'reason': reason.trim(),
-      'estimatedEndDate': estimatedEndDate,
-    };
+    return {'reason': reason.trim(), 'estimatedEndDate': estimatedEndDate};
   }
 
   final String reason;

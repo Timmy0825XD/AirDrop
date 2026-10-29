@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/field_limits.dart';
-import '../../../../../core/widgets/choice_pill.dart';
 import '../../../../auth/data/auth_models.dart';
-import '../../../../auth/presentation/widgets/auth_choice_group.dart';
-import '../../../../auth/presentation/widgets/auth_date_field.dart';
 import '../../../../auth/presentation/widgets/auth_field.dart';
 import '../../../../auth/presentation/widgets/auth_location_field.dart';
 import '../../../../auth/presentation/widgets/auth_picker_field.dart';
 import '../offer_option.dart';
 import '../../../../inventory/data/inventory_models.dart' show SaleType;
 import '../../../data/order_models.dart';
+import '../plan_schedule/schedule_fields.dart';
 import 'prescription_picker.dart';
 import 'requester_order_values.dart';
 
@@ -23,7 +21,6 @@ class RequesterOrderForm {
     required this.user,
     required this.onChanged,
     required this.onPickPrescription,
-    required this.onPickDate,
   });
 
   final RequesterOrderValues values;
@@ -32,7 +29,6 @@ class RequesterOrderForm {
   final PublicUser? user;
   final VoidCallback onChanged;
   final VoidCallback onPickPrescription;
-  final VoidCallback onPickDate;
 }
 
 /// El medicamento en un campo con buscador (la lista puede ser larga): el
@@ -134,51 +130,33 @@ class DestinationFields extends StatelessWidget {
   }
 }
 
-/// La entrega periódica: cuánto, cada cuánto y desde cuándo.
+/// La entrega periódica: cuánto por entrega y el calendario.
 class PlanScheduleFields extends StatelessWidget {
-  const PlanScheduleFields({super.key, required this.form});
+  const PlanScheduleFields({
+    super.key,
+    required this.form,
+    required this.schedule,
+  });
 
   final RequesterOrderForm form;
+  final ScheduleForm schedule;
 
   @override
   Widget build(BuildContext context) {
-    final values = form.values;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AuthField(
           label: 'Cantidad por entrega',
           hint: '1',
-          controller: values.quantity,
+          controller: form.values.quantity,
           keyboardType: TextInputType.number,
           maxLength: 6,
           errorText: form.errors[RequesterInput.quantity],
           shakeCount: form.shakeCount,
         ),
         const SizedBox(height: 16),
-        AuthChoiceGroup(
-          label: 'Frecuencia',
-          children: [
-            for (final frequency in PlanFrequency.values)
-              ChoicePill(
-                label: frequency.label,
-                selected: frequency == values.frequency,
-                onTap: () {
-                  values.frequency = frequency;
-                  form.onChanged();
-                },
-              ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        AuthDateField(
-          label: 'Fecha de inicio',
-          value: values.startDate,
-          hint: 'Elige la fecha',
-          errorText: form.errors[RequesterInput.startDate],
-          shakeCount: form.shakeCount,
-          onTap: form.onPickDate,
-        ),
+        ScheduleFields(form: schedule),
       ],
     );
   }

@@ -54,6 +54,52 @@ class ProfileDataCard extends StatelessWidget {
   }
 }
 
+/// El correo nuevo espera su código: se puede escribir o cancelar el
+/// cambio. Viene del servidor, así que sobrevive a cerrar la app.
+class ProfilePendingEmailCard extends StatelessWidget {
+  const ProfilePendingEmailCard({
+    super.key,
+    required this.pendingEmail,
+    required this.onEnterCode,
+    required this.onCancel,
+  });
+
+  final String pendingEmail;
+  final VoidCallback onEnterCode;
+  final VoidCallback onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return DetailSection(
+      title: 'Correo pendiente de confirmar',
+      icon: Icons.mark_email_unread_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(pendingEmail, style: theme.textTheme.titleMedium),
+          const SizedBox(height: 4),
+          Text(
+            'Hasta confirmarlo entras con tu correo actual.',
+            style: theme.textTheme.bodySmall,
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            children: [
+              FilledButton(
+                onPressed: onEnterCode,
+                child: const Text('Ingresar código'),
+              ),
+              TextButton(onPressed: onCancel, child: const Text('Cancelar')),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _EditableLine extends StatelessWidget {
   const _EditableLine({required this.label, required this.value, this.onTap});
 

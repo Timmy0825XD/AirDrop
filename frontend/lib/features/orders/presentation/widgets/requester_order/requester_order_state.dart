@@ -5,7 +5,6 @@ import '../../../../../core/api_exception.dart';
 import '../../../../../core/widgets/app_snack.dart';
 import '../../../../auth/data/auth_models.dart';
 import '../../../../auth/presentation/auth_controller.dart';
-import '../../../../auth/presentation/widgets/auth_date_field.dart';
 import 'prescription_picker.dart';
 import 'requester_order_fields.dart';
 import 'requester_order_values.dart';
@@ -36,7 +35,6 @@ mixin RequesterOrderState<T extends ConsumerStatefulWidget>
     user: user,
     onChanged: () => setState(() {}),
     onPickPrescription: _pickPrescription,
-    onPickDate: _pickDate,
   );
 
   Future<void> _pickPrescription() async {
@@ -49,13 +47,8 @@ mixin RequesterOrderState<T extends ConsumerStatefulWidget>
           ..prescriptionMime = picked.mime;
       });
     } on FormatException catch (e) {
-      if (mounted) showAppSnack(context, e.message);
+      if (mounted) showErrorSnack(context, e.message);
     }
-  }
-
-  Future<void> _pickDate() async {
-    final picked = await pickFutureDate(context, current: values.startDate);
-    if (picked != null && mounted) setState(() => values.startDate = picked);
   }
 
   /// Valida, y si todo está bien llama [send] con el usuario y avisa con
@@ -76,7 +69,7 @@ mixin RequesterOrderState<T extends ConsumerStatefulWidget>
     try {
       await send(account);
     } on ApiException catch (e) {
-      if (mounted) showAppSnack(context, e.message);
+      if (mounted) showErrorSnack(context, e.message);
     } finally {
       if (mounted) setState(() => sending = false);
     }

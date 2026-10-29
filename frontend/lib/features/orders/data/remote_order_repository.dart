@@ -1,4 +1,5 @@
 import '../../../core/network/api_client.dart';
+import 'agenda_models.dart';
 import 'order_models.dart';
 import 'order_repository.dart';
 
@@ -167,6 +168,86 @@ class RemoteOrderRepository implements OrderRepository {
   Future<List<Order>> listIncoming() async {
     final data = await apiClient.getJson('/orders/incoming');
     return _asJsonList(data).map((row) => Order.fromJson(_asMap(row))).toList();
+  }
+
+  @override
+  Future<Order> returnCheck(String id, {required bool packagingIntact}) =>
+      _postOrder('/orders/$id/return-check', {
+        'packagingIntact': packagingIntact,
+      });
+
+  @override
+  Future<Order> confirmOccurrence(String id) =>
+      _postOrder('/orders/$id/confirm');
+
+  @override
+  Future<Order> skipOccurrence(String id) => _postOrder('/orders/$id/skip');
+
+  @override
+  Future<Order> rescheduleOccurrence(
+    String id, {
+    required String date,
+    required String time,
+  }) => _postOrder('/orders/$id/reschedule', {'date': date, 'time': time});
+
+  @override
+  Future<DeliveryPlan> setPlanPaused(String id, {required bool paused}) async {
+    final action = paused ? 'pause' : 'resume';
+    final data = await apiClient.postJson('/orders/plans/$id/$action');
+    return DeliveryPlan.fromJson(_asMap(data));
+  }
+
+  @override
+  Future<PlanPreview> previewPlan(
+    PlanSchedule schedule, {
+    String? prescriptionValidUntil,
+  }) async {
+    final data = await apiClient.postJson(
+      '/orders/plans/preview',
+      body: {
+        'schedule': schedule.toJson(),
+        'prescriptionValidUntil': ?prescriptionValidUntil,
+      },
+    );
+    return PlanPreview.fromJson(_asMap(data));
+  }
+
+  @override
+  Future<DeliveryPlan> updatePlanSchedule(
+    String id,
+    PlanSchedule schedule,
+  ) async {
+    final data = await apiClient.patchJson(
+      '/orders/plans/$id/schedule',
+      body: {'schedule': schedule.toJson()},
+    );
+    return DeliveryPlan.fromJson(_asMap(data));
+  }
+
+  @override
+  Future<AgendaDay> agenda(String date) async {
+    final data = await apiClient.getJson(
+      '/orders/agenda',
+      query: {'date': date},
+    );
+    return AgendaDay.fromJson(_asMap(data));
+  }
+
+  @override
+  Future<HistoryPage> history(HistoryQuery query) async {
+    final data = await apiClient.getJson(
+      '/orders/history',
+      query: query.toQuery(),
+    );
+    return HistoryPage.fromJson(_asMap(data));
+  }
+
+  Future<Order> _postOrder(String path, [Map<String, dynamic>? body]) async {
+    final data = await apiClient.postJson(
+      path,
+      body: body ?? const <String, dynamic>{},
+    );
+    return Order.fromJson(_asMap(data));
   }
 
   Map<String, dynamic> _asMap(Object? data) {

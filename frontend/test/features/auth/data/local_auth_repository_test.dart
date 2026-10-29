@@ -210,6 +210,60 @@ void main() {
     expect(updated.documentNumber, '99887766');
   });
 
+  test(
+    'el correo nuevo pide la contraseña y no cambia hasta el código',
+    () async {
+      final session = await repository.login(
+        LoginRequest(
+          contact: AuthContact.email('demo@airdrop.local'),
+          password: 'Demo1234',
+        ),
+      );
+      tokenStore.value = session.accessToken;
+
+      await expectLater(
+        repository.updateProfile(
+          const UpdateProfileRequest(email: 'nuevo@airdrop.local'),
+        ),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            'Para cambiar el correo escribe tu contraseña actual.',
+          ),
+        ),
+      );
+      final pending = await repository.updateProfile(
+        const UpdateProfileRequest(
+          email: 'nuevo@airdrop.local',
+          currentPassword: 'Demo1234',
+        ),
+      );
+      expect(pending.email, 'demo@airdrop.local');
+      expect(pending.pendingEmail, 'nuevo@airdrop.local');
+
+      final confirmed = await repository.confirmEmailChange(
+        LocalAuthRepository.localEmailCode,
+      );
+      expect(confirmed.email, 'nuevo@airdrop.local');
+      expect(confirmed.pendingEmail, isNull);
+    },
+  );
+
+  test('cambiar solo el nombre no pide contraseña', () async {
+    final session = await repository.login(
+      LoginRequest(
+        contact: AuthContact.email('demo@airdrop.local'),
+        password: 'Demo1234',
+      ),
+    );
+    tokenStore.value = session.accessToken;
+    final user = await repository.updateProfile(
+      const UpdateProfileRequest(fullName: 'Ana Pérez'),
+    );
+    expect(user.fullName, 'Ana Pérez');
+  });
+
   test('restablece la contraseña y permite iniciar sesión', () async {
     await repository.resetPassword(
       ResetPasswordRequest(

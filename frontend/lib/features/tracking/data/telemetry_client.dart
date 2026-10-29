@@ -125,6 +125,44 @@ class TelemetryClient {
     return events.stream;
   }
 
+  /// Sala de una central (`subscribe-hub`): el operador recibe las
+  /// alertas de **todos** sus vuelos (batería, falla y frío), una vez por
+  /// socket. Cancelar la suscripción del stream cierra el socket.
+  Stream<TelemetryEvent> watchHub(String hubId, {required String? token}) {
+    final socket = io.io(
+      '$baseUrl/telemetry',
+      io.OptionBuilder()
+          .setTransports(['websocket'])
+          .setAuth({'token': token})
+          .enableReconnection()
+          .disableAutoConnect()
+          .build(),
+    );
+    final events = StreamController<TelemetryEvent>(onCancel: socket.dispose);
+    void add(TelemetryEvent event) {
+      if (!events.isClosed) events.add(event);
+    }
+
+    socket
+      ..onConnect((_) {
+        add(const ConnectionChanged(connected: true));
+        if (!events.isClosed) socket.emit('subscribe-hub', {'hubId': hubId});
+      })
+      ..onDisconnect((_) => add(const ConnectionChanged(connected: false)))
+      ..on(
+        'alert',
+        (data) => add(AlertReceived(FlightAlert.fromJson(_map(data)))),
+      )
+      ..on('error', (data) {
+        final message = data is Map ? data['message'] : null;
+        if (message is! String) return;
+        add(SubscriptionRefused(message));
+        socket.dispose();
+      })
+      ..connect();
+    return events.stream;
+  }
+
   static Map<String, dynamic> _map(Object? data) =>
       Map<String, dynamic>.from(data as Map);
 }

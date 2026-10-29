@@ -8,6 +8,7 @@ import 'package:frontend/features/delivery/data/delivery_repository.dart';
 import 'package:frontend/features/delivery/presentation/receive_order_screen.dart';
 import 'package:frontend/features/inventory/data/inventory_models.dart';
 import 'package:frontend/features/orders/data/order_models.dart';
+import 'package:frontend/features/orders/data/order_providers.dart';
 import 'package:frontend/features/orders/presentation/widgets/order_detail/dispatcher_permissions.dart';
 import 'package:frontend/features/tracking/data/telemetry_models.dart';
 import 'package:frontend/features/tracking/data/tracking_providers.dart';
@@ -40,6 +41,9 @@ Order _order({
 /// Nest de mentira: el código es `135790`. [expiresAt] `null` = el dron
 /// todavía vuela. Al quinto código equivocado se bloquea, como Nest.
 class _FakeDelivery implements DeliveryRepository {
+  /// Lo que llegó de remisión y sello en cada validación.
+  final checks = <(bool?, bool?)>[];
+
   _FakeDelivery({this.expiresAt, this.codeError});
 
   DateTime? expiresAt;
@@ -58,8 +62,14 @@ class _FakeDelivery implements DeliveryRepository {
   }
 
   @override
-  Future<Order> validate(String orderId, String code) async {
+  Future<Order> validate(
+    String orderId,
+    String code, {
+    bool? remissionMatches,
+    bool? sealIntact,
+  }) async {
     validated.add(code);
+    checks.add((remissionMatches, sealIntact));
     if (_wrong >= 5) {
       throw const ApiException(
         ReceiveOrderScreen.lockedMessage,
@@ -75,6 +85,12 @@ class _FakeDelivery implements DeliveryRepository {
         statusCode: 400,
       );
     }
+    if (sealIntact == false) {
+      return _order(status: OrderStatus.returning).copyWith(
+        receiptRejectedReason:
+            'El sello llegó roto. El paquete vuelve a origen.',
+      );
+    }
     return _order(status: OrderStatus.delivered);
   }
 }
@@ -86,7 +102,11 @@ Future<void> _type(WidgetTester tester, String code) async {
   await tester.pump();
 }
 
-Future<void> _openReceive(WidgetTester tester, _FakeDelivery fake) async {
+Future<void> _openReceive(
+  WidgetTester tester,
+  _FakeDelivery fake, {
+  Order? order,
+}) async {
   final router = GoRouter(
     initialLocation: '/delivery/o1',
     routes: [
@@ -101,7 +121,13 @@ Future<void> _openReceive(WidgetTester tester, _FakeDelivery fake) async {
   addTearDown(router.dispose);
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [deliveryRepositoryProvider.overrideWithValue(fake)],
+      overrides: [
+        deliveryRepositoryProvider.overrideWithValue(fake),
+        orderDetailProvider.overrideWith(
+          (ref, id) async =>
+              order ?? _order(destination: DestinationKind.person),
+        ),
+      ],
       child: MaterialApp.router(routerConfig: router),
     ),
   );
@@ -211,6 +237,49 @@ void main() {
 
     expect(fake.validated, ['111111', '135790']);
     expect(find.text('INICIO'), findsOneWidget);
+  });
+
+  testWidgets('un traslado pide remisión y sello antes de confirmar', (
+    tester,
+  ) async {
+    final fake = _FakeDelivery(
+      expiresAt: DateTime.now().add(const Duration(minutes: 4)),
+    );
+    await _openReceive(tester, fake, order: _order());
+
+    expect(find.text('REVISIÓN DEL TRASLADO'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), '135790');
+    await tester.tap(find.text('Confirmar entrega'));
+    await tester.pump();
+    expect(fake.validated, isEmpty, reason: 'sin responder no se envía');
+
+    await tester.ensureVisible(find.text('Sí').first);
+    await tester.tap(find.text('Sí').first);
+    await tester.ensureVisible(find.text('No').last);
+    await tester.tap(find.text('No').last);
+    await tester.pump();
+    await tester.tap(find.text('Confirmar entrega'));
+    await tester.pump();
+    await tester.pump();
+
+    expect(fake.checks, [(true, false)]);
+    expect(
+      find.text('El sello llegó roto. El paquete vuelve a origen.'),
+      findsWidgets,
+    );
+    expect(find.text('INICIO'), findsNothing);
+  });
+
+  testWidgets('a una persona no se le pregunta por la remisión', (
+    tester,
+  ) async {
+    final fake = _FakeDelivery(
+      expiresAt: DateTime.now().add(const Duration(minutes: 4)),
+    );
+    await _openReceive(tester, fake);
+    expect(find.text('REVISIÓN DEL TRASLADO'), findsNothing);
+    await _type(tester, '135790');
+    expect(fake.checks, [(null, null)]);
   });
 
   testWidgets('al quinto código equivocado se apaga el botón', (tester) async {

@@ -1,3 +1,4 @@
+import 'agenda_models.dart';
 import 'order_models.dart';
 
 /// Contrato del módulo de pedidos. Un método por endpoint de la sección 2.
@@ -72,4 +73,42 @@ abstract class OrderRepository {
   /// `GET /orders/incoming` — despachador: los traslados que otras
   /// centrales despachan hacia la suya, lo más nuevo primero.
   Future<List<Order>> listIncoming();
+
+  /// `POST /orders/:id/return-check` — despachador de origen, una vez por
+  /// pedido devuelto: `restocked` o `quarantined`.
+  Future<Order> returnCheck(String id, {required bool packagingIntact});
+
+  /// `POST /orders/:id/confirm` — quien recibe una entrega de plan.
+  Future<Order> confirmOccurrence(String id);
+
+  /// `POST /orders/:id/skip` — quien recibe omite la entrega.
+  Future<Order> skipOccurrence(String id);
+
+  /// `POST /orders/:id/reschedule` — al mismo día o al siguiente; cuenta
+  /// como confirmar.
+  Future<Order> rescheduleOccurrence(
+    String id, {
+    required String date,
+    required String time,
+  });
+
+  /// `POST /orders/plans/:id/pause` y `/resume` — dueño del plan.
+  Future<DeliveryPlan> setPlanPaused(String id, {required bool paused});
+
+  /// `POST /orders/plans/preview` — las fechas que dejaría un calendario,
+  /// sin guardar nada.
+  Future<PlanPreview> previewPlan(
+    PlanSchedule schedule, {
+    String? prescriptionValidUntil,
+  });
+
+  /// `PATCH /orders/plans/:id/schedule` — rehace las entregas sin dron y a
+  /// más de 2 horas; las demás no cambian.
+  Future<DeliveryPlan> updatePlanSchedule(String id, PlanSchedule schedule);
+
+  /// `GET /orders/agenda?date=` — despachador con una central.
+  Future<AgendaDay> agenda(String date);
+
+  /// `GET /orders/history` — lo cerrado que despachó su central.
+  Future<HistoryPage> history(HistoryQuery query);
 }

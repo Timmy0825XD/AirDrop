@@ -76,6 +76,27 @@ class RemoteAuthRepository implements AuthRepository {
     return PublicUser.fromJson(_asJsonMap(data));
   }
 
+  @override
+  Future<PublicUser> confirmEmailChange(String code) async {
+    final data = await apiClient.postJson(
+      '/auth/me/email/confirm',
+      body: {'code': code},
+    );
+    return PublicUser.fromJson(_asJsonMap(data));
+  }
+
+  @override
+  Future<AuthMessage> resendEmailChange() async {
+    final data = await apiClient.postJson('/auth/me/email/resend');
+    return AuthMessage.fromJson(_asJsonMap(data));
+  }
+
+  @override
+  Future<PublicUser> cancelEmailChange() async {
+    final data = await apiClient.deleteJson('/auth/me/email/pending');
+    return PublicUser.fromJson(_asJsonMap(data));
+  }
+
   Map<String, dynamic> _asJsonMap(Object? data) {
     if (data is Map<String, dynamic>) {
       return data;

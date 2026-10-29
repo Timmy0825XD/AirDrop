@@ -141,14 +141,15 @@ class AppTheme {
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
       ),
+      // El vidrio lo pinta `GlassSnack` (core/widgets/app_snack.dart).
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: p.ink,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
         contentTextStyle: font.copyWith(
-          color: p.surface,
+          color: p.ink,
           fontWeight: FontWeight.w600,
         ),
-        shape: shape,
       ),
       progressIndicatorTheme: ProgressIndicatorThemeData(color: p.primary),
       dividerTheme: DividerThemeData(color: p.line, thickness: 1),

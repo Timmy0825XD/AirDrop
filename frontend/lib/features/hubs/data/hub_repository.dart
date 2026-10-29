@@ -19,4 +19,9 @@ abstract class HubRepository {
   /// `PATCH /hubs/:id/suspension` — activa o suspende. Si la central ya
   /// está en ese estado, Nest responde 409 y el error se propaga.
   Future<Hub> setSuspension(String id, {required bool suspended});
+
+  /// `PATCH /hubs/:id` — solo lo que cambió, con las validaciones del alta.
+  /// 409 si se mueve con vuelos o pedidos en curso; 400 si la nueva
+  /// ubicación cae en una geovalla.
+  Future<Hub> update(String id, Map<String, dynamic> changes);
 }

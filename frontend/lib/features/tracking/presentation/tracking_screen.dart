@@ -10,7 +10,9 @@ import '../../delivery/presentation/widgets/receive_order_button.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../../orders/data/order_models.dart';
 import '../../orders/data/order_providers.dart';
+import '../../orders/presentation/widgets/order_detail/cold_chain_banner.dart';
 import '../../orders/presentation/widgets/order_status_chip.dart';
+import '../data/telemetry_models.dart';
 import '../data/tracking_providers.dart';
 import 'widgets/flight_card.dart';
 import 'widgets/flight_map.dart';
@@ -34,6 +36,13 @@ class TrackingScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final order = ref.watch(orderDetailProvider(orderId)).value;
     final flight = ref.watch(trackingProvider(orderId));
+    // La ruta de regreso se calcula cuando el dron empieza a volver: ahí se
+    // vuelve a leer el pedido para traerla.
+    ref.listen(trackingProvider(orderId), (previous, next) {
+      final nowBack = next.telemetry?.returning ?? false;
+      final wasBack = previous?.telemetry?.returning ?? false;
+      if (nowBack && !wasBack) ref.invalidate(orderDetailProvider(orderId));
+    });
     final role = ref.watch(authControllerProvider).value?.user?.role;
     final t = flight.telemetry;
     // El código se ve desde el despegue; el estado del socket manda sobre
@@ -56,6 +65,12 @@ class TrackingScreen extends ConsumerWidget {
     final drone = t == null || hideReturn
         ? null
         : LatLng(t.latitude, t.longitude);
+    final assignment = order?.assignment;
+    final back =
+        (t?.returning ?? false) && (assignment?.hasReturnRoute ?? false);
+    final coldAlert =
+        (order?.coldChainAlert ?? false) ||
+        flight.alert?.kind == FlightAlertKind.coldChain;
     return MapSheetScaffold(
       title: order?.medicationName ?? 'Vuelo',
       // Se abre con `push` desde las listas; si se llegó directo, volver
@@ -63,7 +78,10 @@ class TrackingScreen extends ConsumerWidget {
       onBack: () => SectionHeader.backOrHome(context),
       trailing: status == null ? null : OrderStatusChip(status: status),
       map: (sheetHeight) => FlightMap(
-        route: order?.assignment?.coordinates ?? const [],
+        route: back
+            ? assignment!.returnCoordinates
+            : assignment?.coordinates ?? const [],
+        returnLeg: back,
         drone: drone,
         sheetHeight: sheetHeight,
       ),
@@ -76,6 +94,11 @@ class TrackingScreen extends ConsumerWidget {
             ]
           : [
               FlightNotice(state: flight, showReturn: !hideReturn),
+              if (coldAlert && role != UserRole.requester)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: ColdChainBanner(at: order?.coldChainAlertAt),
+                ),
               if (canReceive)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 14),

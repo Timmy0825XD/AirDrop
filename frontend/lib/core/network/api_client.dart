@@ -46,6 +46,9 @@ class ApiClient {
 
   Future<void> delete(String path) => _sendVoid(() => _dio.delete(path));
 
+  /// `DELETE` que responde un cuerpo (cancelar el correo pendiente).
+  Future<dynamic> deleteJson(String path) => _send(() => _dio.delete(path));
+
   /// Baja bytes (`GET /orders/:id/prescription`). `getJson` no sirve: Dio
   /// interpretaría la imagen como texto. Lee `content-type` y usa
   /// `image/jpeg` cuando el header falta.

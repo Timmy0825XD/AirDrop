@@ -13,10 +13,11 @@ Plan por fases del frontend Flutter a partir de la guía 25 (`learning/25-front-
 | HU-33, HU-34 (código de entrega, espera de 5 min y retorno con el paquete) | Backend (PR #56, #62, #63, #65, #66) y frontend (Fase 5) hechos; falta la cuarentena |
 | HU-29, HU-30 (avisos de estado y batería) | Backend publica `order-status` y `alert` por el socket; no hay push |
 | HU-31 (flag de frío) | Hecho; la temperatura simulada es fija (5 °C), sin alerta de rango |
-| HU-24 (fallback) | Backend hecho (`feature/fallback-reasignacion`); el frontend todavía trata el 409 "sin dron", que ya no llega (ver punto 2 de pendientes) |
-| HU-32 (alerta de frío) | Backend hecho (`feature/alerta-frio`); falta que la app muestre la alerta `cold_chain` y `coldChainAlert` |
-| La cuarentena de HU-34 y el inventario de los traslados | Backend hecho (`feature/cuarentena-inventario`); la app debe mandar `remissionMatches` y `sealIntact` al recibir un traslado (hoy da 400) y usar `return-check` |
-| HU-36 a HU-38 (histórico de central, dashboard, métricas) | Backend hecho (`feature/metricas-admin`: `/analytics/*` y `GET /orders/history`); el frontend sigue con la tarjeta "PRÓXIMAMENTE" |
+| HU-24 (fallback) | Backend y frontend hechos (Fase 12): autorizar sin dron lee `fallback`, la cola marca "Viene de otra central" y el detalle muestra el motivo |
+| HU-32 (alerta de frío) | Backend y frontend hechos (Fase 12): temperatura en rojo fuera de 2 a 8 °C, aviso de frío y alertas en vivo del operador |
+| La cuarentena de HU-34 y el inventario de los traslados | Backend y frontend hechos (Fase 12): checklist de remisión y sello, `return-check` y pantalla de cuarentena |
+| HU-36 a HU-38 (histórico de central, dashboard, métricas) | Backend y frontend hechos (Fase 12): `/analytics` del administrador y `/orders/history` del despachador |
+| RU-30 y RU-05 (planes con calendario, confirmar entregas, agenda, avisos) | Backend y frontend hechos (Fase 12) |
 
 Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-backend.md`](pendientes-backend.md). Las reglas de `context/` describen el MVP completo: donde el código va atrás, manda el contexto y se anota aquí o en esos pendientes, no se reescribe el contexto.
 
@@ -41,7 +42,8 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 8 | Revisión y rediseño del solicitante y el operador | `style/rediseno-solicitante-operador` | Hecha (PR #49) |
 | 9 | Limpieza antes de la revisión | `refactor/limpieza-front` | Hecha (PR #50) |
 | 10 | Cierre y pruebas de punta a punta | `test/flujos-front` | Hecha (PR #51) |
-| 11 | Rediseño visual total "Grafito y turquesa" | `style/rediseno-total-temporal` | En revisión (sin PR) |
+| 11 | Rediseño visual total "Grafito y turquesa" | `style/rediseno-total-temporal` | Hecha (PR #99) |
+| 12 | Contratos de Nest pendientes y avisos de vidrio | `feature/front-pendientes-backend` | Hecha (PR pendiente) |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -726,6 +728,51 @@ pinta en un lienzo. LambdaTest usa la misma dirección.
 **Parte de Oscar cerrada.** Lo que falta (Josheph y Sebastián) y las
 correcciones de la guía están en la versión actualizada de
 `GUIA_EJECUCION_PRUEBAS.md`, que se comparte por fuera del repositorio.
+
+## Fase 12 — Contratos de Nest pendientes y avisos de vidrio
+
+Rama `feature/front-pendientes-backend`. Pone a la app al día con lo que Nest
+ya tenía en `develop` (PR #83 a #100, guía local `learning/30`). Cada
+contrato se verificó en el código de `backend/src`, no solo en la guía.
+
+- **Avisos de vidrio**: `showAppSnack` ya no es la caja blanca (el
+  `SnackBar` con fondo `ink`): `GlassSnack` desenfoca lo de atrás, se tiñe
+  con el tono (`SnackTone`: éxito, error, información, atención), lleva
+  ícono, acción opcional y una línea que se acorta. Los errores de Nest van
+  con `showErrorSnack`.
+- **Lo que rompía la app**: la fase `unloading` (y una fase desconocida ya
+  no revienta el mapa); `DeliveryPlan.frequency` puede venir `null`;
+  recibir un traslado manda `remissionMatches` y `sealIntact`; cambiar el
+  correo pide la contraseña y confirma con el código (`/profile/email`);
+  autorizar sin dron ya no espera el 409.
+- **Fallback (HU-24)**: `Order.fallback`, `FallbackCard` en el detalle, la
+  cola y los programados marcan "Viene de otra central" o "Reintento
+  automático". El rechazo por geovalla en el destino (PR #100) se muestra
+  con el motivo de Nest al crear y al autorizar.
+- **Frío, retorno y cuarentena**: `coldChainAlert`, temperatura en rojo,
+  `ReturnCheckSection`, `/inventory/quarantine`, lote despachado en el
+  detalle del despachador y el motivo del traslado rechazado.
+- **Mapa**: `assignment.returnRoute` se pinta en el regreso; el operador
+  recibe las alertas de su central por `subscribe-hub` en "Vuelos en curso"
+  y ve en cada dron su fase y el pedido.
+- **Planes (RU-30)**: calendario semanal, mensual o de fechas sueltas, con
+  hora y vista previa en vivo; detalle con franjas, Pausar/Reanudar y
+  "Cambiar calendario"; "Extender" solo en los planes con frecuencia;
+  confirmar, omitir y mover una entrega; aviso de franjas llenas.
+- **Agenda, histórico y avisos**: `/orders/agenda` (la pestaña Agenda),
+  `/orders/history`, la bandeja `/notifications` con la campana en los
+  cuatro inicios.
+- **Administrador**: editar central (`PATCH /hubs/:id`, solo lo que
+  cambió), ver la flota de una central y `/analytics` (indicadores con
+  semáforo y variación, demanda con zonas en el mapa y ranking).
+- Las horas se muestran en Colombia (UTC−5) sin importar la zona del
+  teléfono (`colombiaTime`).
+
+`flutter analyze` sin issues y 227 tests en verde. Ninguna clase de UI pasa
+de 60 líneas (solo los `*_values.dart`, que no cuentan).
+
+Sigue pendiente del backend: el operador no puede leer `GET /orders/:id`,
+así que su mapa sigue al dron sin la ruta (o mandarla en `/fleet/flights`).
 
 ## Pendiente del backend
 

@@ -1,24 +1,24 @@
 import 'package:flutter/material.dart';
 
 import '../../../data/order_models.dart';
-import '../../order_format.dart';
+import '../plan_schedule/schedule_values.dart';
 
 /// Los campos de un pedido a otra central.
-enum HubRequestInput { origin, offer, quantity, startDate }
+enum HubRequestInput { origin, offer, quantity }
 
 /// Lo que comparten la urgencia y el abastecimiento a otra central: de
-/// dónde sale, qué insumo y cuánto. El abastecimiento suma la frecuencia y
-/// la fecha de inicio. No pinta nada: guarda, valida y arma el body.
+/// dónde sale, qué insumo y cuánto. El abastecimiento suma el calendario
+/// ([schedule], RU-30). No pinta nada: guarda, valida y arma el body.
 class HubRequestValues {
   final quantity = TextEditingController(text: '1');
   String? originHubId;
   CatalogOffer? offer;
-  PlanFrequency frequency = PlanFrequency.weekly;
+  final schedule = ScheduleDraft();
 
-  /// AAAA-MM-DD; arranca hoy y se cambia con el calendario.
-  String startDate = todayIso();
-
-  void dispose() => quantity.dispose();
+  void dispose() {
+    quantity.dispose();
+    schedule.dispose();
+  }
 
   /// Otra central de origen: el catálogo cambia, así que el insumo elegido
   /// ya no vale.
@@ -47,9 +47,6 @@ class HubRequestValues {
       HubRequestInput.quantity: qty == null || qty < 1 || qty > max
           ? 'La cantidad debe ser un entero entre 1 y $max.'
           : null,
-      HubRequestInput.startDate: plan && startDate.compareTo(todayIso()) < 0
-          ? 'La fecha de inicio no puede ser anterior a hoy.'
-          : null,
     };
     return {
       for (final entry in errors.entries)
@@ -69,7 +66,6 @@ class HubRequestValues {
     medicationName: offer!.name,
     saleType: offer!.saleType,
     quantity: _qty!,
-    frequency: frequency,
-    startDate: startDate,
+    schedule: schedule.toSchedule(),
   );
 }

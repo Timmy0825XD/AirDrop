@@ -2,13 +2,17 @@ import 'dart:typed_data';
 
 import '../../../core/api_exception.dart';
 import '../../inventory/data/inventory_models.dart' show SaleType;
+import 'agenda_models.dart';
+import 'local_plan_calendar.dart';
 import 'order_models.dart';
 import 'order_repository.dart';
 
 /// Fixture mínimo para `DataSource.local`: una oferta, una urgencia en
-/// `received` con `unattended: true`, otra ya autorizada esperando carga y
-/// un plan semanal con dos ocurrencias. Rechazar, autorizar y confirmar la
-/// carga cambian el estado como en Nest; no hay telemetría.
+/// `received` con `unattended: true`, otra ya autorizada esperando carga,
+/// una devuelta sin revisar, una reasignada desde otra central, una entrega
+/// de plan por confirmar y un plan semanal. Rechazar, autorizar, confirmar
+/// la carga, revisar el retorno y confirmar/omitir/mover una entrega
+/// cambian el estado como en Nest; no hay telemetría.
 class LocalOrderRepository implements OrderRepository {
   final List<Order> _orders = [
     Order(
@@ -43,6 +47,74 @@ class LocalOrderRepository implements OrderRepository {
       hasPrescription: false,
       createdByUserId: 'local-requester',
       createdAt: DateTime.now().toUtc().subtract(const Duration(minutes: 6)),
+    ),
+    Order(
+      id: 'a3333333-3333-4333-8333-333333333333',
+      missionType: MissionType.emergency,
+      destinationKind: DestinationKind.person,
+      status: OrderStatus.returned,
+      priority: OrderPriority.high,
+      medicationName: 'Insulina glargina 100 UI/ml',
+      saleType: SaleType.overTheCounter,
+      requiresColdChain: true,
+      coldChainAlert: true,
+      quantity: 1,
+      address: 'Calle 12 # 8-40, Valledupar',
+      hasPrescription: false,
+      createdByUserId: 'local-requester',
+      originHubId: _localHubId,
+      dispatchedLot: 'L-2026-10',
+      dispatchedLotExpiresOn: '2027-01-31',
+      createdAt: DateTime.now().toUtc().subtract(const Duration(hours: 2)),
+    ),
+    Order(
+      id: 'a4444444-4444-4444-8444-444444444444',
+      missionType: MissionType.emergency,
+      destinationKind: DestinationKind.person,
+      status: OrderStatus.reassigned,
+      priority: OrderPriority.high,
+      medicationName: 'Ibuprofeno 400 mg',
+      saleType: SaleType.overTheCounter,
+      requiresColdChain: false,
+      quantity: 1,
+      address: 'Calle 20 # 8-15, Valledupar',
+      hasPrescription: false,
+      createdByUserId: 'local-requester',
+      originHubId: _localHubId,
+      reassignedFromHubId: 'local-other-hub',
+      fallback: const OrderFallback(
+        kind: FallbackKind.hub,
+        reason: 'Ningún dron de la central podía salir.',
+        options: [
+          FallbackOption(
+            hubId: _localHubId,
+            name: 'Hospital Rosario Pumarejo',
+            address: 'Calle 16',
+            contactPhone: '6055700000',
+            distanceKm: 3.1,
+          ),
+        ],
+      ),
+      createdAt: DateTime.now().toUtc().subtract(const Duration(minutes: 9)),
+    ),
+    Order(
+      id: 'a5555555-5555-4555-8555-555555555555',
+      missionType: MissionType.scheduled,
+      destinationKind: DestinationKind.person,
+      status: OrderStatus.awaitingConfirmation,
+      priority: OrderPriority.normal,
+      medicationName: 'Acetaminofén 500 mg',
+      saleType: SaleType.overTheCounter,
+      requiresColdChain: false,
+      quantity: 2,
+      address: 'Calle 16 # 12-30, Valledupar',
+      hasPrescription: false,
+      createdByUserId: 'local-requester',
+      planId: 'b1111111-1111-4111-8111-111111111111',
+      scheduledFor: _tomorrowIso(),
+      scheduledAt: _tomorrowAt(10),
+      windowEndsAt: _tomorrowAt(11),
+      createdAt: DateTime.now().toUtc().subtract(const Duration(days: 3)),
     ),
   ];
 
@@ -137,16 +209,22 @@ class LocalOrderRepository implements OrderRepository {
 
   @override
   Future<DeliveryPlan> createPlan(CreatePlanRequest request) async {
+    final dates = request.schedule == null
+        ? const <String>[]
+        : localOccurrenceDates(request.schedule!);
     final plan = DeliveryPlan(
       id: 'local-${DateTime.now().microsecondsSinceEpoch}',
       frequency: request.frequency,
+      schedule: request.schedule,
+      windowMinutes: request.schedule == null ? null : 60,
+      prescriptionValidUntil: request.prescriptionValidUntil,
       status: PlanStatus.active,
       medicationName: request.medicationName,
       saleType: request.saleType,
       requiresColdChain: false,
       quantity: request.quantity,
-      startDate: request.startDate,
-      windowEndsOn: '2026-11-29',
+      startDate: dates.firstOrNull ?? request.startDate ?? todayLocalIso(),
+      windowEndsOn: dates.lastOrNull ?? '2026-11-29',
       destinationKind: DestinationKind.person,
       address: request.address,
       hasPrescription: request.saleType == SaleType.prescription,
@@ -159,16 +237,21 @@ class LocalOrderRepository implements OrderRepository {
 
   @override
   Future<DeliveryPlan> createHubPlan(CreateHubPlanRequest request) async {
+    final dates = request.schedule == null
+        ? const <String>[]
+        : localOccurrenceDates(request.schedule!);
     final plan = DeliveryPlan(
       id: 'local-${DateTime.now().microsecondsSinceEpoch}',
       frequency: request.frequency,
+      schedule: request.schedule,
+      windowMinutes: request.schedule == null ? null : 60,
       status: PlanStatus.active,
       medicationName: request.medicationName,
       saleType: request.saleType,
       requiresColdChain: false,
       quantity: request.quantity,
-      startDate: request.startDate,
-      windowEndsOn: '2026-11-29',
+      startDate: dates.firstOrNull ?? request.startDate ?? todayLocalIso(),
+      windowEndsOn: dates.lastOrNull ?? '2026-11-29',
       destinationKind: DestinationKind.hub,
       address: 'Calle 16',
       hasPrescription: false,
@@ -226,33 +309,20 @@ class LocalOrderRepository implements OrderRepository {
     if (index < 0) {
       throw const ApiException('El plan no existe.', statusCode: 404);
     }
-    const cancelled = PlanStatus.cancelled;
-    final current = _plans[index];
-    _plans[index] = DeliveryPlan(
-      id: current.id,
-      frequency: current.frequency,
-      status: cancelled,
-      medicationName: current.medicationName,
-      saleType: current.saleType,
-      requiresColdChain: current.requiresColdChain,
-      quantity: current.quantity,
-      startDate: current.startDate,
-      windowEndsOn: current.windowEndsOn,
-      destinationKind: current.destinationKind,
-      address: current.address,
-      hasPrescription: current.hasPrescription,
-      renewalDue: false,
-      createdAt: current.createdAt,
-    );
+    _plans[index] = _plans[index].copyWith(status: PlanStatus.cancelled);
     return _plans[index];
   }
 
   @override
   Future<List<QueueEntry>> queue() async {
     return _orders
-        .where((e) => e.status == OrderStatus.received)
+        .where((e) => e.status == OrderStatus.received || e.reassignedToHub)
         .map(
-          (e) => QueueEntry(order: e, availableQuantity: 8, unattended: true),
+          (e) => QueueEntry(
+            order: e,
+            availableQuantity: 8,
+            unattended: e.status == OrderStatus.received,
+          ),
         )
         .toList(growable: false);
   }
@@ -283,7 +353,7 @@ class LocalOrderRepository implements OrderRepository {
   @override
   Future<Order> reject(String id, String reason) async {
     final current = await findOne(id);
-    if (current.status != OrderStatus.received) {
+    if (current.status != OrderStatus.received && !current.reassignedToHub) {
       throw const ApiException(
         'Solo se rechaza un pedido que sigue en recibido.',
         statusCode: 400,
@@ -299,7 +369,7 @@ class LocalOrderRepository implements OrderRepository {
   @override
   Future<Order> authorize(String id, {bool? prescriptionVerified}) async {
     final current = await findOne(id);
-    if (current.status != OrderStatus.received) {
+    if (current.status != OrderStatus.received && !current.reassignedToHub) {
       throw const ApiException(
         'Solo se autoriza un pedido que sigue en recibido.',
         statusCode: 400,
@@ -311,6 +381,7 @@ class LocalOrderRepository implements OrderRepository {
         droneId: _localAssignment.droneId,
         originHubId: _localHubId,
         assignment: _localAssignment,
+        clearFallback: true,
       ),
     );
   }
@@ -361,6 +432,239 @@ class LocalOrderRepository implements OrderRepository {
         .toList(growable: false);
   }
 
+  /// Como Nest: con alerta de frío o empaque dañado va a cuarentena.
+  @override
+  Future<Order> returnCheck(String id, {required bool packagingIntact}) async {
+    final current = await findOne(id);
+    if (current.status != OrderStatus.returned) {
+      throw const ApiException(
+        'Solo se revisa un pedido devuelto.',
+        statusCode: 400,
+      );
+    }
+    if (current.returnCheckedAt != null) {
+      throw const ApiException('Este retorno ya se revisó.', statusCode: 400);
+    }
+    final quarantined = current.coldChainAlert || !packagingIntact;
+    return _replace(
+      current.copyWith(
+        returnCheckedAt: DateTime.now().toUtc(),
+        returnOutcome: quarantined
+            ? ReturnOutcome.quarantined
+            : ReturnOutcome.restocked,
+      ),
+    );
+  }
+
+  @override
+  Future<Order> confirmOccurrence(String id) async {
+    final current = await _changeableOccurrence(id);
+    if (current.status != OrderStatus.awaitingConfirmation &&
+        current.status != OrderStatus.scheduled) {
+      throw const ApiException(
+        'Esta entrega no espera confirmación.',
+        statusCode: 400,
+      );
+    }
+    return _replace(
+      current.copyWith(
+        status: OrderStatus.received,
+        confirmedAt: DateTime.now().toUtc(),
+      ),
+    );
+  }
+
+  @override
+  Future<Order> skipOccurrence(String id) async {
+    final current = await _changeableOccurrence(id);
+    return _replace(
+      current.copyWith(
+        status: OrderStatus.skipped,
+        statusReason: 'Omitida por quien la recibe.',
+      ),
+    );
+  }
+
+  @override
+  Future<Order> rescheduleOccurrence(
+    String id, {
+    required String date,
+    required String time,
+  }) async {
+    final current = await _changeableOccurrence(id);
+    final start = colombiaSlotStart(date, time);
+    return _replace(
+      current.copyWith(
+        status: OrderStatus.received,
+        scheduledFor: date,
+        scheduledAt: start,
+        windowEndsAt: start.add(const Duration(hours: 1)),
+        confirmedAt: DateTime.now().toUtc(),
+      ),
+    );
+  }
+
+  Future<Order> _changeableOccurrence(String id) async {
+    final current = await findOne(id);
+    if (current.planId == null) {
+      throw const ApiException(
+        'Solo las entregas de un plan se confirman.',
+        statusCode: 400,
+      );
+    }
+    final start = current.scheduledAt;
+    final late =
+        start != null &&
+        start.difference(DateTime.now().toUtc()) < const Duration(hours: 2);
+    if (current.droneId != null || late) {
+      throw const ApiException(
+        'Esta entrega ya no se puede cambiar: faltan menos de 2 horas o ya '
+        'tiene dron.',
+        statusCode: 400,
+      );
+    }
+    return current;
+  }
+
+  @override
+  Future<DeliveryPlan> setPlanPaused(String id, {required bool paused}) async {
+    final index = _plans.indexWhere((e) => e.id == id);
+    if (index < 0) {
+      throw const ApiException('El plan no existe.', statusCode: 404);
+    }
+    if (_plans[index].paused == paused) {
+      throw ApiException(
+        paused ? 'El plan ya está en pausa.' : 'El plan no está en pausa.',
+        statusCode: 400,
+      );
+    }
+    _plans[index] = _plans[index].copyWith(paused: paused);
+    return _plans[index];
+  }
+
+  @override
+  Future<PlanPreview> previewPlan(
+    PlanSchedule schedule, {
+    String? prescriptionValidUntil,
+  }) async {
+    final dates = localOccurrenceDates(schedule);
+    if (dates.isEmpty) {
+      throw const ApiException(
+        'El plan no tiene entregas a más de 2 horas. Revisa las fechas y la '
+        'hora.',
+        statusCode: 400,
+      );
+    }
+    final time = schedule.time ?? '07:00';
+    return PlanPreview(
+      lastDate: dates.last,
+      occurrences: [
+        for (final date in dates)
+          PreviewOccurrence(
+            date: date,
+            scheduledAt: colombiaSlotStart(date, time),
+            windowEndsAt: colombiaSlotStart(
+              date,
+              time,
+            ).add(const Duration(hours: 1)),
+          ),
+      ],
+    );
+  }
+
+  @override
+  Future<DeliveryPlan> updatePlanSchedule(
+    String id,
+    PlanSchedule schedule,
+  ) async {
+    final index = _plans.indexWhere((e) => e.id == id);
+    if (index < 0) {
+      throw const ApiException('El plan no existe.', statusCode: 404);
+    }
+    final current = _plans[index];
+    final dates = localOccurrenceDates(schedule);
+    _plans[index] = DeliveryPlan(
+      id: current.id,
+      schedule: schedule,
+      windowMinutes: 60,
+      status: current.status,
+      medicationName: current.medicationName,
+      saleType: current.saleType,
+      requiresColdChain: current.requiresColdChain,
+      quantity: current.quantity,
+      startDate: dates.firstOrNull ?? current.startDate,
+      windowEndsOn: dates.lastOrNull ?? current.windowEndsOn,
+      destinationKind: current.destinationKind,
+      address: current.address,
+      hasPrescription: current.hasPrescription,
+      renewalDue: false,
+      paused: current.paused,
+      prescriptionValidUntil: current.prescriptionValidUntil,
+      createdAt: current.createdAt,
+    );
+    return _plans[index];
+  }
+
+  @override
+  Future<AgendaDay> agenda(String date) async {
+    final rows = _orders.where(
+      (e) => e.scheduledFor == date && e.scheduledAt != null,
+    );
+    final byTime = <String, List<AgendaOrder>>{};
+    for (final order in rows) {
+      final time = localClock(order.scheduledAt!);
+      (byTime[time] ??= []).add(
+        AgendaOrder(
+          order: order,
+          time: time,
+          confirmed: order.confirmedAt != null,
+          stockOk: true,
+          availableQuantity: 8,
+          departBefore: order.windowEndsAt?.subtract(
+            const Duration(minutes: 12),
+          ),
+        ),
+      );
+    }
+    return AgendaDay(
+      date: date,
+      drones: 1,
+      slots: [
+        for (final entry in byTime.entries)
+          AgendaSlot(
+            time: entry.key,
+            deliveries: entry.value.length,
+            overCapacity: entry.value.length > 1,
+            orders: entry.value,
+          ),
+      ],
+    );
+  }
+
+  @override
+  Future<HistoryPage> history(HistoryQuery query) async {
+    const closed = {
+      OrderStatus.delivered,
+      OrderStatus.returned,
+      OrderStatus.rejected,
+      OrderStatus.reassigned,
+      OrderStatus.cancelled,
+      OrderStatus.skipped,
+      OrderStatus.expired,
+    };
+    final rows = _orders
+        .where((e) => closed.contains(e.status))
+        .where((e) => query.status == null || e.status == query.status)
+        .toList(growable: false);
+    final start = (query.page - 1) * query.pageSize;
+    return HistoryPage(
+      items: rows.skip(start).take(query.pageSize).toList(growable: false),
+      total: rows.length,
+      page: query.page,
+      pageSize: query.pageSize,
+    );
+  }
+
   Order _replace(Order updated) {
     final index = _orders.indexWhere((e) => e.id == updated.id);
     _orders[index] = updated;
@@ -369,6 +673,11 @@ class LocalOrderRepository implements OrderRepository {
 }
 
 const _localHubId = 'local-hub';
+
+String _tomorrowIso() => isoOfDay(colombiaToday().add(const Duration(days: 1)));
+
+DateTime _tomorrowAt(int hour) =>
+    colombiaSlotStart(_tomorrowIso(), '${hour.toString().padLeft(2, '0')}:00');
 
 const _localAssignment = OrderAssignment(
   droneId: 'local-drone',

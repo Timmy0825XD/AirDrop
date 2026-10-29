@@ -51,6 +51,10 @@ class DroneTile extends StatelessWidget {
   }
 }
 
+/// Los primeros 8 caracteres de un id, para nombrar un pedido sin
+/// mostrar el uuid entero.
+String shortId(String id) => id.length <= 8 ? id : id.substring(0, 8);
+
 class _DroneInfo extends StatelessWidget {
   const _DroneInfo({required this.drone, required this.modelName});
 
@@ -65,7 +69,11 @@ class _DroneInfo extends StatelessWidget {
     );
     final reason = drone.maintenanceReason?.trim();
     final until = drone.maintenanceUntil;
+    final order = drone.activeOrderId;
     final note = [
+      // En misión: la fase y el pedido (id corto, sin datos clínicos).
+      if (drone.phase case final phase?) phase.label,
+      if (order != null) 'Pedido ${shortId(order)}',
       if (reason != null && reason.isNotEmpty) 'Motivo: $reason',
       if (until != null && until.isNotEmpty) 'Hasta $until',
     ].join(' · ');

@@ -124,7 +124,9 @@ class LocalAuthRepository implements AuthRepository {
     final user = await _requireSessionUser();
     _assertSomethingToUpdate(request);
     if (request.fullName != null) _applyFullName(user, request.fullName!);
-    if (request.email != null) _applyEmail(user, request.email!);
+    if (request.email != null) {
+      _applyEmail(user, request.email!, request.currentPassword);
+    }
     if (request.phone != null) _applyPhone(user, request.phone!);
     if (request.documentType != null || request.documentNumber != null) {
       _applyDocument(user, request);
@@ -155,12 +157,71 @@ class LocalAuthRepository implements AuthRepository {
     user.fullName = fullName;
   }
 
-  void _applyEmail(LocalUser user, String raw) {
+  /// Como Nest: el correo nuevo queda pendiente hasta el código.
+  void _applyEmail(LocalUser user, String raw, String? currentPassword) {
     final email = LocalAuthRules.normalizeEmail(raw);
+    if (email == user.email) return;
+    if (currentPassword == null || currentPassword.isEmpty) {
+      throw const ApiException(
+        'Para cambiar el correo escribe tu contraseña actual.',
+        statusCode: 400,
+      );
+    }
+    if (currentPassword != user.password) {
+      throw const ApiException(
+        'La contraseña actual no es correcta.',
+        statusCode: 400,
+      );
+    }
     if (email == null || _emailTaken(email, user.id)) {
       throw LocalAuthRules.duplicateContact();
     }
-    user.email = email;
+    user.pendingEmail = email;
+  }
+
+  /// Código del cambio de correo en `DataSource.local`.
+  static const localEmailCode = '123456';
+
+  @override
+  Future<PublicUser> confirmEmailChange(String code) async {
+    final user = await _requireSessionUser();
+    if (user.pendingEmail == null) {
+      throw const ApiException(
+        'No hay un cambio de correo pendiente.',
+        statusCode: 400,
+      );
+    }
+    if (code != localEmailCode) {
+      throw const ApiException(
+        'El código es inválido o ya venció.',
+        statusCode: 400,
+      );
+    }
+    user
+      ..email = user.pendingEmail
+      ..pendingEmail = null;
+    return user.toPublicUser();
+  }
+
+  @override
+  Future<AuthMessage> resendEmailChange() async {
+    final user = await _requireSessionUser();
+    if (user.pendingEmail == null) {
+      throw const ApiException(
+        'No hay un cambio de correo pendiente.',
+        statusCode: 400,
+      );
+    }
+    return const AuthMessage(
+      message: 'Te enviamos un código nuevo al correo nuevo.',
+    );
+  }
+
+  @override
+  Future<PublicUser> cancelEmailChange() async {
+    final user = await _requireSessionUser();
+    user.pendingEmail = null;
+    return user.toPublicUser();
   }
 
   void _applyPhone(LocalUser user, String raw) {

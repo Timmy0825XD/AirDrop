@@ -41,21 +41,42 @@ class ScheduledTile extends StatelessWidget {
   final ScheduledEntry entry;
   final VoidCallback onTap;
 
+  /// Lo más importante primero: viene de otra central, se reintenta solo,
+  /// o si es para hoy o más adelante.
+  static StatusPill pillOf(Order order) {
+    if (order.reassignedToHub) {
+      return const StatusPill(
+        label: 'Viene de otra central',
+        tone: PillTone.attention,
+      );
+    }
+    if (order.fallback?.kind == FallbackKind.retry) {
+      return const StatusPill(
+        label: 'Reintento automático',
+        tone: PillTone.attention,
+      );
+    }
+    return isFutureSchedule(order.scheduledFor)
+        ? const StatusPill(label: 'Más adelante', tone: PillTone.neutral)
+        : const StatusPill(label: 'Hoy', tone: PillTone.attention);
+  }
+
   @override
   Widget build(BuildContext context) {
     final order = entry.order;
     final date = order.scheduledFor;
+    final slot = order.scheduledAt == null
+        ? ''
+        : ' · ${formatSlot(order.scheduledAt, order.windowEndsAt)}';
     return OrderRowCard(
       icon: Icons.event_outlined,
       tone: Theme.of(context).colorScheme.primary,
       title: order.medicationName,
       accent:
           '${order.quantity} und. · ${destinationLabel(order)}'
-          '${date == null ? '' : ' · $date'}',
+          '${date == null ? '' : ' · $date'}$slot',
       detail: 'Disponible: ${entry.availableQuantity}',
-      pill: isFutureSchedule(date)
-          ? const StatusPill(label: 'Más adelante', tone: PillTone.neutral)
-          : const StatusPill(label: 'Hoy', tone: PillTone.attention),
+      pill: pillOf(order),
       onTap: onTap,
     );
   }

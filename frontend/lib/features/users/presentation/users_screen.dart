@@ -136,6 +136,6 @@ Future<void> _toggleUserAccount(
       );
     }
   } on ApiException catch (error) {
-    if (context.mounted) showAppSnack(context, error.message);
+    if (context.mounted) showErrorSnack(context, error.message);
   }
 }

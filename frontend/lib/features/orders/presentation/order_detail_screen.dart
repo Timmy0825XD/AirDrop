@@ -5,6 +5,7 @@ import '../../../core/api_exception.dart';
 import '../../../core/field_limits.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../../../core/widgets/auto_refresh.dart';
+import '../../../core/widgets/confirm_sheet.dart';
 import '../../../core/widgets/error_banner.dart';
 import '../../../core/widgets/message_view.dart';
 import '../../../core/widgets/rise_in.dart';
@@ -15,18 +16,32 @@ import '../../home/presentation/widgets/section_header.dart';
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
 import 'order_format.dart';
+import 'widgets/order_detail/authorize_outcome.dart';
 import 'widgets/order_detail/authorize_section.dart';
+import 'widgets/order_detail/cold_chain_banner.dart';
 import 'widgets/order_detail/confirm_load_section.dart';
 import 'widgets/order_detail/dispatcher_permissions.dart';
+import 'widgets/order_detail/fallback_card.dart';
+import 'widgets/order_detail/occurrence_rules.dart';
+import 'widgets/order_detail/occurrence_section.dart';
 import 'widgets/order_detail/order_assignment_card.dart';
 import 'widgets/order_detail/order_summary.dart';
 import 'widgets/order_detail/prescription_viewer.dart';
 import 'widgets/order_detail/reject_section.dart';
+import 'widgets/order_detail/return_check_section.dart';
+import 'widgets/order_detail/reschedule_sheet.dart';
 import 'widgets/watch_flight_button.dart';
 
 /// Lo que se está haciendo sobre el pedido, para mostrar el dron girando
 /// solo en ese botón.
-enum _Action { authorize, reject, confirmLoad, prescription }
+enum _Action {
+  authorize,
+  reject,
+  confirmLoad,
+  prescription,
+  returnCheck,
+  occurrence,
+}
 
 /// Detalle del pedido (`GET /orders/:id`).
 ///
@@ -47,6 +62,7 @@ class OrderDetailScreen extends ConsumerStatefulWidget {
 class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   final _reason = TextEditingController();
   bool _prescriptionVerified = false;
+  bool? _packagingIntact;
   _Action? _running;
   String? _error;
   String? _reasonError;
@@ -79,15 +95,76 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     }
   }
 
+  /// Sin dron ya no hay 409: Nest responde el pedido con `fallback` (otra
+  /// central, convencional o reintento) o lo rechaza si el destino quedó en
+  /// una geovalla.
   Future<void> _authorize(DispatcherPermissions can) =>
       _act(_Action.authorize, () async {
-        await _dispatch.authorize(
+        final order = await _dispatch.authorize(
           widget.orderId,
           prescriptionVerified: can.needsPrescriptionCheck ? true : null,
         );
         if (!mounted) return;
-        showAppSnack(context, 'Pedido autorizado. Falta confirmar la carga.');
+        final outcome = AuthorizeOutcome.of(order);
+        showAppSnack(context, outcome.message, tone: outcome.tone);
+        if (outcome.leavesHub) SectionHeader.backOrHome(context);
       });
+
+  Future<void> _returnCheck() => _act(_Action.returnCheck, () async {
+    final order = await _dispatch.returnCheck(
+      widget.orderId,
+      packagingIntact: _packagingIntact!,
+    );
+    if (!mounted) return;
+    final quarantined = order.returnOutcome == ReturnOutcome.quarantined;
+    showAppSnack(
+      context,
+      quarantined
+          ? 'El lote quedó en cuarentena.'
+          : 'El lote volvió al inventario.',
+      tone: quarantined ? SnackTone.warning : SnackTone.success,
+    );
+  });
+
+  OccurrenceNotifier get _occurrence => ref.read(occurrenceProvider.notifier);
+
+  Future<void> _confirmOccurrence() => _act(_Action.occurrence, () async {
+    await _occurrence.confirm(widget.orderId);
+    if (mounted) showAppSnack(context, 'Entrega confirmada.');
+  });
+
+  Future<void> _skipOccurrence(Order order) async {
+    final ok = await showConfirmSheet(
+      context,
+      title: 'Omitir esta entrega',
+      message: 'No se envía esta vez. Las demás entregas del plan siguen.',
+      confirmLabel: 'Omitir',
+      icon: Icons.event_busy_outlined,
+      subject: Text(OccurrenceRules(order, DateTime.now()).slotLabel),
+    );
+    if (!ok || !mounted) return;
+    await _act(_Action.occurrence, () async {
+      await _occurrence.skip(widget.orderId);
+      if (mounted) {
+        showAppSnack(context, 'Entrega omitida.', tone: SnackTone.info);
+      }
+    });
+  }
+
+  Future<void> _moveOccurrence(Order order) async {
+    final choice = await showRescheduleSheet(
+      context,
+      dates: OccurrenceRules(order, DateTime.now()).rescheduleDates,
+      initialTime: order.scheduledAt == null
+          ? null
+          : formatClock(order.scheduledAt!),
+    );
+    if (choice == null || !mounted) return;
+    await _act(_Action.occurrence, () async {
+      await _occurrence.reschedule(widget.orderId, choice.$1, choice.$2);
+      if (mounted) showAppSnack(context, 'Entrega movida y confirmada.');
+    });
+  }
 
   Future<void> _confirmLoad() => _act(_Action.confirmLoad, () async {
     await _dispatch.confirmLoad(widget.orderId);
@@ -160,21 +237,43 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   Widget _content(Order order) {
     final user = ref.watch(authControllerProvider).value?.user;
     final isDispatcher = user?.role == UserRole.dispatcher;
+    final can = DispatcherPermissions(
+      order: order,
+      myHubId: user?.hubIds.firstOrNull,
+    );
+    // Quien recibe: el solicitante o la central de destino del traslado.
+    final receives = !isDispatcher || can.onlyDestination;
+    final occurrence = OccurrenceRules(order, DateTime.now());
     final blocks = <Widget>[
       if (_error != null) ErrorBanner(message: _error!),
-      OrderSummary(order: order, showPrescriptionFlag: !isDispatcher),
+      if (order.coldChainAlert) ColdChainBanner(at: order.coldChainAlertAt),
+      if (order.receiptRejectedReason case final reason?)
+        ErrorBanner(message: reason),
+      OrderSummary(
+        order: order,
+        showPrescriptionFlag: !isDispatcher,
+        showLot: isDispatcher && !can.onlyDestination,
+        cameFromOtherHub: isDispatcher && cameFromOtherHub(can),
+      ),
+      // La central que lo recibió ya ve "Viene de otra central".
+      if (order.fallback case final fallback?
+          when !isDispatcher || fallback.kind != FallbackKind.hub)
+        FallbackCard(fallback: fallback),
+      if (receives && occurrence.applies)
+        OccurrenceSection(
+          rules: occurrence,
+          busy: _busy,
+          onConfirm: _confirmOccurrence,
+          onSkip: () => _skipOccurrence(order),
+          onMove: () => _moveOccurrence(order),
+        ),
       if (order.assignment != null)
         OrderAssignmentCard(
           assignment: order.assignment!,
           loadConfirmedAt: order.loadConfirmedAt,
         ),
       if (isDispatcher)
-        ..._dispatcherActions(
-          DispatcherPermissions(
-            order: order,
-            myHubId: user!.hubIds.firstOrNull,
-          ),
-        )
+        ..._dispatcherActions(can)
       // El solicitante solo abre sus pedidos: el vuelo y la entrega son suyos.
       else ...[
         if (order.deliveryCodeVisible)
@@ -207,7 +306,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           onViewPrescription: can.canViewPrescription
               ? _viewPrescription
               : null,
-          notYet: can.notYet,
+          blockedNote: dispatchWindowNote(can.order, DateTime.now()),
           busy: _busy,
           loading: _running == _Action.authorize,
           onAuthorize: () => _authorize(can),
@@ -220,6 +319,15 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           onReject: _reject,
         ),
       ],
+      if (canReturnCheck(can))
+        ReturnCheckSection(
+          coldChainAlert: can.order.coldChainAlert,
+          packagingIntact: _packagingIntact,
+          onChanged: (value) => setState(() => _packagingIntact = value),
+          busy: _busy,
+          loading: _running == _Action.returnCheck,
+          onSubmit: _returnCheck,
+        ),
       if (can.canConfirmLoad)
         ConfirmLoadSection(
           busy: _busy,

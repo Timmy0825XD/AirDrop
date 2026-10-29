@@ -7,7 +7,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../../auth/data/auth_models.dart';
 import '../../../../inventory/data/inventory_models.dart' show SaleType;
 import '../../../data/order_models.dart';
-import '../../order_format.dart';
+import '../plan_schedule/schedule_values.dart';
 
 /// Los campos de un pedido del solicitante que pueden tener error.
 enum RequesterInput {
@@ -17,13 +17,12 @@ enum RequesterInput {
   address,
   location,
   prescription,
-  startDate,
 }
 
 /// Lo que comparten la urgencia y la entrega periódica del solicitante:
 /// qué insumo, a dónde (dirección y punto en el mapa) y, si es bajo
 /// fórmula, la imagen. La urgencia suma la descripción; la entrega
-/// periódica, la cantidad, la frecuencia y la fecha de inicio.
+/// periódica, la cantidad y el calendario ([schedule], RU-30).
 ///
 /// La ubicación es **obligatoria**: sin coordenadas Nest no deja autorizar
 /// el pedido (`MISSING_DESTINATION`), así que el despachador nunca podría
@@ -36,13 +35,13 @@ class RequesterOrderValues {
   LatLng? location;
   Uint8List? prescription;
   String? prescriptionMime;
-  PlanFrequency frequency = PlanFrequency.weekly;
-  String startDate = todayIso();
+  final schedule = ScheduleDraft();
 
   void dispose() {
     for (final c in [description, quantity, address]) {
       c.dispose();
     }
+    schedule.dispose();
   }
 
   bool get needsPrescription => offer?.saleType == SaleType.prescription;
@@ -70,9 +69,6 @@ class RequesterOrderValues {
           : null,
       RequesterInput.prescription: needsPrescription && prescription == null
           ? 'La venta bajo fórmula exige la imagen de la fórmula.'
-          : null,
-      RequesterInput.startDate: plan && startDate.compareTo(todayIso()) < 0
-          ? 'La fecha de inicio no puede ser anterior a hoy.'
           : null,
     };
     return {
@@ -106,8 +102,8 @@ class RequesterOrderValues {
       medicationName: offer!.name,
       saleType: offer!.saleType,
       quantity: int.parse(quantity.text.trim()),
-      frequency: frequency,
-      startDate: startDate,
+      schedule: schedule.toSchedule(),
+      prescriptionValidUntil: rx ? schedule.prescriptionValidUntil : null,
       address: address.text.trim(),
       latitude: _round(location!.latitude),
       longitude: _round(location!.longitude),

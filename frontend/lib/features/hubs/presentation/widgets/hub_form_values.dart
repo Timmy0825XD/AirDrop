@@ -29,6 +29,37 @@ class HubFormValues {
     }
   }
 
+  /// Precarga una central para editarla.
+  void load(Hub hub) {
+    name.text = hub.name;
+    address.text = hub.address;
+    phone.text = hub.contactPhone;
+    email.text = hub.contactEmail ?? '';
+    type = hub.type;
+    location = LatLng(hub.latitude, hub.longitude);
+  }
+
+  /// El body de `PATCH /hubs/:id`: solo lo que cambió frente a [original].
+  /// Latitud y longitud van juntas, y solo si el punto se movió: así no se
+  /// choca sin querer con el candado de "vuelos en curso".
+  Map<String, dynamic> changes(Hub original) {
+    final next = request();
+    final moved =
+        next.latitude != double.parse(original.latitude.toStringAsFixed(6)) ||
+        next.longitude != double.parse(original.longitude.toStringAsFixed(6));
+    return {
+      if (next.name != original.name) 'name': next.name,
+      if (next.type != original.type) 'type': next.type.apiValue,
+      if (next.address != original.address) 'address': next.address,
+      if (moved) ...{'latitude': next.latitude, 'longitude': next.longitude},
+      if (next.contactPhone != original.contactPhone)
+        'contactPhone': next.contactPhone,
+      if (next.contactEmail != null &&
+          next.contactEmail != original.contactEmail)
+        'contactEmail': next.contactEmail,
+    };
+  }
+
   /// Un mensaje por campo con error; vacío si todo está bien. El correo
   /// es opcional en `CreateHubDto`: vacío pasa, pero si viene tiene que
   /// ser válido.

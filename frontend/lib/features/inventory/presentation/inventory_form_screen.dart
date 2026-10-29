@@ -76,7 +76,7 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
     });
     if (errors.isNotEmpty) return;
     if (original != null && _values.diff(original).isEmpty) {
-      showAppSnack(context, 'No hay cambios para guardar.');
+      showAppSnack(context, 'No hay cambios para guardar.', tone: SnackTone.info);
       return;
     }
     FocusScope.of(context).unfocus();
@@ -90,7 +90,7 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
       );
       context.go('/inventory');
     } on ApiException catch (error) {
-      if (mounted) showAppSnack(context, error.message);
+      if (mounted) showErrorSnack(context, error.message);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

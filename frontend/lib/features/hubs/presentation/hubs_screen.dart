@@ -11,6 +11,7 @@ import '../../home/presentation/widgets/section_header.dart';
 import '../../inventory/data/inventory_providers.dart';
 import '../data/hub_models.dart';
 import '../data/hub_providers.dart';
+import 'widgets/hub_actions_sheet.dart';
 import 'widgets/hub_confirm.dart';
 import 'widgets/hub_tile.dart';
 
@@ -87,9 +88,14 @@ class _HubList extends ConsumerWidget {
               itemBuilder: (context, index) => RiseIn(
                 key: ValueKey(rows[index].id),
                 delay: RiseIn.stagger(index),
-                child: HubTile(
-                  hub: rows[index],
-                  onToggle: () => onToggle(rows[index]),
+                // Tocar la tarjeta abre editar y ver flota.
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(24),
+                  onTap: () => showHubActionsSheet(context, rows[index]),
+                  child: HubTile(
+                    hub: rows[index],
+                    onToggle: () => onToggle(rows[index]),
+                  ),
                 ),
               ),
             ),
@@ -119,6 +125,6 @@ Future<void> _toggleHub(BuildContext context, WidgetRef ref, Hub hub) async {
       );
     }
   } on ApiException catch (error) {
-    if (context.mounted) showAppSnack(context, error.message);
+    if (context.mounted) showErrorSnack(context, error.message);
   }
 }

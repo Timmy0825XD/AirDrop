@@ -61,7 +61,7 @@ class _DroneFormScreenState extends ConsumerState<DroneFormScreen> {
       showAppSnack(context, 'Dron agregado a ${hub.name}.');
       SectionHeader.backOrHome(context);
     } on ApiException catch (e) {
-      if (mounted) showAppSnack(context, e.message);
+      if (mounted) showErrorSnack(context, e.message);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

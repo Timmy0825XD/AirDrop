@@ -38,7 +38,7 @@ class _PendingLoadScreenState extends ConsumerState<PendingLoadScreen> {
         );
       }
     } on ApiException catch (e) {
-      if (mounted) showAppSnack(context, e.message);
+      if (mounted) showErrorSnack(context, e.message);
     } finally {
       if (mounted) setState(() => _confirming.remove(id));
     }

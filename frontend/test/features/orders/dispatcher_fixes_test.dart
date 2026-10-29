@@ -63,11 +63,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('2026-10-20'), findsOneWidget);
+    expect(find.text('martes 20 de octubre'), findsOneWidget);
     expect(find.text('Pendiente de carga'), findsOneWidget);
     expect(find.textContaining(droneId), findsNothing);
 
-    await tester.tap(find.text('2026-10-20'));
+    await tester.tap(find.text('martes 20 de octubre'));
     expect(opened, 'o-9');
   });
 

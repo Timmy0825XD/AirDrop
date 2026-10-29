@@ -61,7 +61,7 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
       showAppSnack(context, 'Cuenta creada. Ya está activa.');
       context.go('/users');
     } on ApiException catch (error) {
-      if (mounted) showAppSnack(context, error.message);
+      if (mounted) showErrorSnack(context, error.message);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

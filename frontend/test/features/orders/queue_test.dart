@@ -26,6 +26,23 @@ void main() {
 
     expect(find.text('Acetaminofén 500 mg'), findsOneWidget);
     expect(find.text('Sin atender'), findsOneWidget);
-    expect(find.textContaining('Disponible: 8'), findsOneWidget);
+    expect(find.textContaining('Disponible: 8'), findsNWidgets(2));
+  });
+
+  testWidgets('un pedido que pasó de otra central se marca en la cola', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          orderRepositoryProvider.overrideWithValue(LocalOrderRepository()),
+        ],
+        child: const MaterialApp(home: QueueScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ibuprofeno 400 mg'), findsOneWidget);
+    expect(find.text('Viene de otra central'), findsOneWidget);
   });
 }

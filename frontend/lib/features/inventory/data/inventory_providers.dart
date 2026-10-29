@@ -31,6 +31,11 @@ final inventoryProvider = FutureProvider<List<InventoryItem>>((ref) {
   return ref.watch(inventoryRepositoryProvider).list();
 });
 
+/// La cuarentena de la central (HU-34).
+final quarantineProvider = FutureProvider<List<QuarantineRecord>>((ref) {
+  return ref.watch(inventoryRepositoryProvider).quarantine();
+});
+
 /// Alta de ítem. El error se propaga para que la pantalla muestre el
 /// `message` de `ApiException`.
 class CreateInventoryNotifier extends AsyncNotifier<InventoryItem?> {
