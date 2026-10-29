@@ -67,6 +67,8 @@ function build(
   const orders = {
     update: jest.fn().mockResolvedValue({ affected: options.affected ?? 1 }),
     findOne: jest.fn().mockResolvedValue(order(OrderStatus.RETURNING)),
+    find: jest.fn().mockResolvedValue([]),
+    count: jest.fn().mockResolvedValue(0),
     manager,
   };
   const drones = {
@@ -299,6 +301,93 @@ describe('FlightClockService regreso tras la entrega', () => {
     expect(published.status).toBe(OrderStatus.DELIVERED);
     expect(published.leg).toBe(RouteLeg.RETURN);
     expect(service['active'].has(ORDER_ID)).toBe(false);
+  });
+
+  it('si el dron ya tiene otro pedido vivo, cierra el regreso sin liberarlo', async () => {
+    const { service, orders, drones, missions } = buildDelivered();
+    orders.count.mockResolvedValue(1);
+    await service.startReturn(ORDER_ID);
+    const session = service['active'].get(ORDER_ID)!;
+    session.progress = {
+      ...returnProgress(null),
+      orderStatus: OrderStatus.DELIVERED,
+      phase: FlightPhase.LANDING,
+      phaseElapsedMs: LANDING_MS - 1,
+    };
+
+    await service['tick'](ORDER_ID);
+
+    expect(drones.update).not.toHaveBeenCalled();
+    expect(missions.update).toHaveBeenCalledWith(
+      { orderId: ORDER_ID },
+      { returnedAt: expect.any(Date) as Date },
+    );
+  });
+});
+
+describe('FlightClockService reinicio con regresos sin cerrar', () => {
+  const NEWER_ID = '22222222-2222-4222-8222-222222222222';
+
+  function queryReturning(rows: unknown[]) {
+    const query: Record<string, jest.Mock> = {};
+    for (const method of ['innerJoin', 'where', 'andWhere']) {
+      query[method] = jest.fn(() => query);
+    }
+    query.getMany = jest.fn().mockResolvedValue(rows);
+    return query;
+  }
+
+  function resumeWith(delivered: unknown[], live: unknown[]) {
+    const built = build();
+    Object.assign(built.orders, {
+      createQueryBuilder: jest
+        .fn()
+        .mockReturnValueOnce(queryReturning([]))
+        .mockReturnValueOnce(queryReturning(delivered)),
+    });
+    built.orders.find.mockResolvedValue(live);
+    const resumed = jest
+      .spyOn(built.service as never, 'resumeDelivered')
+      .mockResolvedValue(undefined as never);
+    return { ...built, resumed };
+  }
+
+  const delivered = (id: string, updatedAt: string) => ({
+    ...order(OrderStatus.DELIVERED),
+    id,
+    updatedAt: new Date(updatedAt),
+  });
+
+  it('no reanuda un regreso viejo si el dron ya está en otro pedido', async () => {
+    const { service, resumed } = resumeWith(
+      [delivered(ORDER_ID, '2026-10-19T14:10:00.000Z')],
+      [
+        {
+          ...order(OrderStatus.AWAITING_DELIVERY),
+          id: NEWER_ID,
+          updatedAt: new Date('2026-10-19T15:00:00.000Z'),
+        },
+      ],
+    );
+
+    await service['resume']();
+
+    expect(resumed).not.toHaveBeenCalled();
+  });
+
+  it('de varios entregados del mismo dron, reanuda solo el más reciente', async () => {
+    const { service, resumed } = resumeWith(
+      [
+        delivered(ORDER_ID, '2026-10-19T14:10:00.000Z'),
+        delivered(NEWER_ID, '2026-10-19T15:00:00.000Z'),
+      ],
+      [],
+    );
+
+    await service['resume']();
+
+    expect(resumed).toHaveBeenCalledTimes(1);
+    expect(resumed).toHaveBeenCalledWith(NEWER_ID);
   });
 });
 

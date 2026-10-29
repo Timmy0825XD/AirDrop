@@ -7,7 +7,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, IsNull, Repository } from 'typeorm';
+import { In, IsNull, Not, Repository } from 'typeorm';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { DroneStatus } from '../common/enums/drone-status.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
@@ -17,6 +17,10 @@ import { RouteLeg } from '../common/enums/route-leg.enum';
 import { DeliveryCode } from '../delivery/delivery-code.entity';
 import { isDeliveryWaitOver, pickupWaitMs } from '../delivery/delivery.rules';
 import { Drone } from '../fleet/drone.entity';
+import {
+  DRONE_LIVE_STATUSES,
+  activeOrderByDrone,
+} from '../fleet/fleet-flights.rules';
 import { Hub } from '../hubs/hub.entity';
 import { InboxService } from '../notifications/inbox.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -157,17 +161,40 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     const deliveredFlying = await this.orders
       .createQueryBuilder('order')
       .innerJoin(Drone, 'drone', 'drone.id = order.droneId')
+      .innerJoin(Mission, 'mission', 'mission.orderId = order.id')
       .where('order.status = :status', { status: OrderStatus.DELIVERED })
       .andWhere('drone.status = :droneStatus', {
         droneStatus: DroneStatus.IN_MISSION,
       })
+      .andWhere('mission.returnedAt IS NULL')
       .getMany();
     for (const order of orders) {
       await this.activate(order.id);
     }
-    for (const order of deliveredFlying) {
+    for (const order of await this.currentDelivered(deliveredFlying)) {
       await this.resumeDelivered(order.id);
     }
+  }
+
+  /**
+   * De los regresos sin cerrar, solo el que de verdad ocupa al dron. Si el dron
+   * ya tomó otro pedido (vivo, o entregado después), ese regreso quedó viejo:
+   * reanudarlo lo "aterrizaría" en la central y lo liberaría en plena misión.
+   */
+  private async currentDelivered(delivered: Order[]): Promise<Order[]> {
+    const droneIds = [
+      ...new Set(delivered.flatMap((order) => order.droneId ?? [])),
+    ];
+    if (!droneIds.length) {
+      return [];
+    }
+    const live = await this.orders.find({
+      where: { droneId: In(droneIds), status: In(DRONE_LIVE_STATUSES) },
+    });
+    const current = activeOrderByDrone([...live, ...delivered], droneIds);
+    return delivered.filter(
+      (order) => order.droneId && current.get(order.droneId)?.id === order.id,
+    );
   }
 
   private async resumeWaiting(): Promise<void> {
@@ -533,10 +560,20 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       if (step.progress.phase === FlightPhase.LANDED) {
         this.active.delete(orderId);
         if (session.leg === RouteLeg.RETURN) {
-          await this.drones.update(
-            { id: session.droneId },
-            { status: DroneStatus.AVAILABLE },
-          );
+          // Si el dron ya tiene otro pedido vivo, sigue en misión con ese.
+          const busy = await this.orders.count({
+            where: {
+              droneId: session.droneId,
+              status: In(DRONE_LIVE_STATUSES),
+              id: Not(orderId),
+            },
+          });
+          if (!busy) {
+            await this.drones.update(
+              { id: session.droneId },
+              { status: DroneStatus.AVAILABLE },
+            );
+          }
           await this.missions.update({ orderId }, { returnedAt: new Date() });
         } else if (landedAt) {
           this.waiting.set(orderId, landedAt);
