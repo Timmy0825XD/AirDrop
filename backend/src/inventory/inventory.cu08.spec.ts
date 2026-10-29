@@ -205,8 +205,6 @@ describe('CU-08 Gestionar inventario', () => {
     expect(items.save).not.toHaveBeenCalled();
   });
 
-  // Defecto (a) de la sección 8.1 de la guía: se deja a propósito para que
-  // salga Fallido. Esperado: el nombre vacío se rechaza.
   it('CP-08-11 rechaza el nombre vacío (nombre de 0 caracteres)', async () => {
     expect(await errores({ ...valido, name: '' })).toContain(
       'El nombre es obligatorio.',

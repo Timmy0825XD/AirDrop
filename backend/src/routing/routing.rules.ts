@@ -8,6 +8,9 @@ const DETOUR_MARGIN_DEGREES = 0.01;
 
 const EARTH_RADIUS_KM = 6371;
 
+export const DESTINATION_IN_GEOFENCE =
+  'El destino está dentro de una zona prohibida para drones. Elige otro punto de entrega.';
+
 export type LngLat = {
   longitude: number;
   latitude: number;
@@ -52,6 +55,14 @@ export function planOutboundCorridor(
     }
   }
   return best;
+}
+
+/** Un destino dentro de una geovalla no tiene corredor desde ninguna central. */
+export function isInsideGeofence(
+  point: LngLat,
+  geofences: GeoJsonPolygon[],
+): boolean {
+  return geofences.some((fence) => pointInRing(point, fence.coordinates[0]));
 }
 
 function detourWaypoint(

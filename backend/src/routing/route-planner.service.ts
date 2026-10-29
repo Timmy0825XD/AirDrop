@@ -1,8 +1,14 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { RouteLeg } from '../common/enums/route-leg.enum';
 import { GeoJsonPolygon } from '../geofences/geofences.rules';
-import { LngLat, PlannedCorridor, planOutboundCorridor } from './routing.rules';
+import {
+  DESTINATION_IN_GEOFENCE,
+  LngLat,
+  PlannedCorridor,
+  isInsideGeofence,
+  planOutboundCorridor,
+} from './routing.rules';
 
 type RouteRow = {
   orderId: string;
@@ -21,6 +27,16 @@ export class RoutePlannerService {
     geofences: GeoJsonPolygon[],
   ): PlannedCorridor | null {
     return planOutboundCorridor(origin, destination, geofences);
+  }
+
+  async assertDestinationAllowed(
+    destination: LngLat,
+    manager: EntityManager = this.dataSource.manager,
+  ): Promise<void> {
+    const polygons = await this.loadPolygons(manager);
+    if (isInsideGeofence(destination, polygons)) {
+      throw new BadRequestException(DESTINATION_IN_GEOFENCE);
+    }
   }
 
   async loadPolygons(manager: EntityManager): Promise<GeoJsonPolygon[]> {

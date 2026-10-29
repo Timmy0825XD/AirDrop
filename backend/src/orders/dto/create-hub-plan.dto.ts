@@ -9,6 +9,7 @@ import {
   Max,
   MaxLength,
   Min,
+  MinLength,
   ValidateIf,
   ValidateNested,
 } from 'class-validator';
@@ -26,6 +27,7 @@ export class CreateHubPlanDto {
     typeof value === 'string' ? value.trim() : value,
   )
   @IsString({ message: 'El medicamento es obligatorio.' })
+  @MinLength(1, { message: 'El medicamento es obligatorio.' })
   @MaxLength(FIELD_LIMITS.medicationName, {
     message: `El medicamento no puede superar ${FIELD_LIMITS.medicationName} caracteres.`,
   })

@@ -36,7 +36,11 @@ import {
   isWindowClosed,
   missedCopy,
 } from '../orders/plan-dispatch.rules';
-import { PlannedCorridor } from '../routing/routing.rules';
+import {
+  DESTINATION_IN_GEOFENCE,
+  PlannedCorridor,
+  isInsideGeofence,
+} from '../routing/routing.rules';
 import { RoutePlannerService } from '../routing/route-planner.service';
 import { FlightClockService } from '../simulation/flight-clock.service';
 import { FLIGHT_NOT_READY } from '../simulation/simulation.rules';
@@ -292,6 +296,15 @@ export class DecisionService {
     // central suspendida o sin el lote: busca otra.
     const retrying = order.fallbackKind === FallbackKind.RETRY;
     const polygons = await this.routes.loadPolygons(manager);
+    // Ninguna central llega a un destino dentro de una geovalla: se rechaza
+    // en vez de reasignarlo.
+    const destination = {
+      latitude: order.latitude as number,
+      longitude: order.longitude as number,
+    };
+    if (isInsideGeofence(destination, polygons)) {
+      return this.rejectForbiddenDestination(manager, order);
+    }
     if (origin.status !== HubStatus.ACTIVE) {
       if (!retrying) {
         throw new ForbiddenException('La central está suspendida.');
@@ -414,11 +427,7 @@ export class DecisionService {
     order.dispatchedLotExpiresOn = lot.expirationDate;
   }
 
-  private async expireLocked(
-    manager: EntityManager,
-    order: Order,
-    now: Date,
-  ) {
+  private async expireLocked(manager: EntityManager, order: Order, now: Date) {
     if (order.droneId) {
       const drone = await manager.findOne(Drone, {
         where: { id: order.droneId },
@@ -458,6 +467,17 @@ export class DecisionService {
       now,
     );
     order.statusReason = WINDOW_MISSED;
+    await manager.save(order);
+    return { ...presentOrder(order), assignment: null };
+  }
+
+  private async rejectForbiddenDestination(
+    manager: EntityManager,
+    order: Order,
+  ) {
+    clearFallback(order);
+    order.status = OrderStatus.REJECTED;
+    order.statusReason = DESTINATION_IN_GEOFENCE;
     await manager.save(order);
     return { ...presentOrder(order), assignment: null };
   }
@@ -530,6 +550,7 @@ export class DecisionService {
   ): Promise<void> {
     const changed =
       order.status === OrderStatus.REASSIGNED ||
+      order.status === OrderStatus.REJECTED ||
       (retried && order.status === OrderStatus.PENDING_LOAD);
     if (!changed) {
       return;

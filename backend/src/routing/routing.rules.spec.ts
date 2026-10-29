@@ -1,6 +1,7 @@
 import { GeoJsonPolygon } from '../geofences/geofences.rules';
 import {
   CORRIDOR_ALTITUDE_M,
+  isInsideGeofence,
   planOutboundCorridor,
   reverseCorridor,
 } from './routing.rules';
@@ -64,6 +65,22 @@ describe('planOutboundCorridor', () => {
         square(-73.31, 10.39, -73.29, 10.41),
       ]),
     ).toBeNull();
+  });
+});
+
+describe('isInsideGeofence', () => {
+  const park = square(-73.3, 10.4, -73.2, 10.5);
+
+  it('finds a destination inside a geofence', () => {
+    expect(
+      isInsideGeofence({ longitude: -73.25, latitude: 10.45 }, [park]),
+    ).toBe(true);
+  });
+
+  it('lets a destination outside every geofence through', () => {
+    expect(
+      isInsideGeofence({ longitude: -73.1, latitude: 10.45 }, [park]),
+    ).toBe(false);
   });
 });
 

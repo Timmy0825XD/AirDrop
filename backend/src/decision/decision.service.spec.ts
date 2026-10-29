@@ -22,7 +22,10 @@ import { InventoryItem } from '../inventory/inventory-item.entity';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Order } from '../orders/order.entity';
 import { addCalendarDays, todayInColombia } from '../orders/orders.rules';
-import { PlannedCorridor } from '../routing/routing.rules';
+import {
+  DESTINATION_IN_GEOFENCE,
+  PlannedCorridor,
+} from '../routing/routing.rules';
 import { RoutePlannerService } from '../routing/route-planner.service';
 import { FlightClockService } from '../simulation/flight-clock.service';
 import { User } from '../users/user.entity';
@@ -419,6 +422,38 @@ describe('DecisionService.authorize', () => {
     expect(notifications.queueChanged).toHaveBeenCalledWith(
       OTHER_HUB_ID,
       order.id,
+    );
+  });
+
+  it('rejects a destination inside a geofence instead of reassigning it', async () => {
+    const { service, order, drones, routes, notifications } = build({
+      hubs: [hub(), otherHub()],
+      lotsByHub: { [OTHER_HUB_ID]: lot() },
+    });
+    routes.loadPolygons.mockResolvedValue([
+      {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [-73.27, 10.45],
+            [-73.24, 10.45],
+            [-73.24, 10.47],
+            [-73.27, 10.47],
+            [-73.27, 10.45],
+          ],
+        ],
+      },
+    ]);
+    const result = await service.authorize(dispatcher(), order.id, {});
+    expect(result.status).toBe(OrderStatus.REJECTED);
+    expect(result.statusReason).toBe(DESTINATION_IN_GEOFENCE);
+    expect(result.fallback).toBeNull();
+    expect(result.droneId).toBeNull();
+    expect(drones[0].status).toBe(DroneStatus.AVAILABLE);
+    expect(routes.saveOutbound).not.toHaveBeenCalled();
+    expect(notifications.statusChanged).toHaveBeenCalledWith(
+      order.id,
+      OrderStatus.REJECTED,
     );
   });
 
