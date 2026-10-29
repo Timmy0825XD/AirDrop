@@ -9,6 +9,14 @@ export const DRONE_HOLDING_STATUSES = [
   OrderStatus.DELIVERED,
 ];
 
+/**
+ * Los mismos, sin `delivered`: un pedido vivo. Un entregado conserva su
+ * `droneId` para siempre, así que no prueba que el dron siga ocupado.
+ */
+export const DRONE_LIVE_STATUSES = DRONE_HOLDING_STATUSES.filter(
+  (status) => status !== OrderStatus.DELIVERED,
+);
+
 type HoldingOrder = {
   id: string;
   droneId: string | null;
