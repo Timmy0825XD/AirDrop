@@ -7,7 +7,14 @@ import { liveSource } from "@/lib/source";
 import { Dashboard } from "./Dashboard";
 import { LoginForm } from "./LoginForm";
 
-const SPLASH = <main className="grid min-h-dvh place-items-center text-sm text-muted">Cargando…</main>;
+const SPLASH = (
+  <main className="app-backdrop grid min-h-dvh place-items-center">
+    <div role="status" className="flex flex-col items-center gap-4 text-sm text-muted">
+      <span className="size-8 animate-spin rounded-full border-2 border-glass-border border-t-accent motion-reduce:animate-none" />
+      Cargando…
+    </div>
+  </main>
+);
 
 const noSubscription = () => () => {};
 

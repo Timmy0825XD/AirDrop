@@ -28,6 +28,7 @@ function bearing(from: [number, number], to: [number, number]): number | null {
 /**
  * Mueve los drones en el mapa con un bucle de animación propio: la fuente
  * GeoJSON se actualiza sin pasar por React, así 50 vuelos no repintan el árbol.
+ * Cuando ninguno se mueve y no llegó nada nuevo, el bucle no toca el mapa.
  */
 export function useDroneTracks(
   mapRef: RefObject<MapRef | null>,
@@ -36,6 +37,8 @@ export function useDroneTracks(
 ) {
   const tracks = useRef(new Map<string, Track>());
   const meta = useRef(new Map<string, RadarFlight>());
+  /** Llegaron datos que el mapa aún no dibuja. */
+  const changed = useRef(true);
 
   useEffect(() => {
     const now = performance.now();
@@ -61,12 +64,14 @@ export function useDroneTracks(
         meta.current.delete(id);
       }
     }
+    changed.current = true;
   }, [flights]);
 
   useEffect(() => {
     if (!ready) return;
     let frame = 0;
     let last = 0;
+    let moving = true;
     const tick = (time: number) => {
       frame = requestAnimationFrame(tick);
       if (time - last < FRAME_MS) return;
@@ -74,9 +79,12 @@ export function useDroneTracks(
       const source = mapRef.current?.getMap().getSource("drones") as
         | GeoJSONSource
         | undefined;
-      if (!source) return;
+      if (!source || (!moving && !changed.current)) return;
+      changed.current = false;
+      moving = false;
       const features = [...tracks.current.entries()].map(([orderId, track]) => {
         const p = Math.min(1, (time - track.start) / GLIDE_MS);
+        if (p < 1) moving = true;
         track.cur = [
           track.from[0] + (track.to[0] - track.from[0]) * p,
           track.from[1] + (track.to[1] - track.from[1]) * p,
@@ -91,7 +99,6 @@ export function useDroneTracks(
             bearing: track.bearing,
             leg: flight?.leg ?? "outbound",
             alert: Boolean(alerts && (alerts.battery || alerts.failure || alerts.coldChain)),
-            label: flight?.identifier ?? "",
           },
         };
       });
