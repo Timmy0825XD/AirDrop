@@ -17,6 +17,7 @@ import { TelemetryEvent, TelemetryPublisher } from './telemetry.publisher';
 import {
   TelemetryAccess,
   canFollowHub,
+  canWatchRadar,
   presentTelemetry,
   receivesHubAlerts,
 } from './telemetry.rules';
@@ -119,6 +120,50 @@ export class TelemetryGateway
     return { event: 'subscribed-hub', data: { hubId } };
   }
 
+  /** Vista web: el administrador recibe todos los vuelos en la sala `radar`. */
+  @SubscribeMessage('subscribe-radar')
+  async subscribeRadar(client: Socket) {
+    const state = this.clients.get(client.id);
+    const user = state ? await state.ready : null;
+    if (!user || !canWatchRadar(user.role)) {
+      return {
+        event: 'error',
+        data: { message: 'Solo el administrador ve el radar.' },
+      };
+    }
+    await client.join(RADAR_ROOM);
+    return { event: 'subscribed-radar', data: {} };
+  }
+
+  /** Lo que el radar necesita de cada evento: posición, estado y alertas. */
+  private emitRadar(event: TelemetryEvent): void {
+    try {
+      const radar = this.server?.to(RADAR_ROOM);
+      if (!radar) {
+        return;
+      }
+      if (event.type === 'telemetry') {
+        radar.emit('radar-telemetry', presentTelemetry(event.flight, 'full'));
+      } else if (event.type === 'order-status') {
+        radar.emit('radar-status', {
+          orderId: event.orderId,
+          status: event.status,
+        });
+      } else if (event.type === 'alert') {
+        radar.emit('radar-alert', {
+          orderId: event.orderId,
+          droneId: event.droneId,
+          kind: event.kind,
+          message: event.message,
+        });
+      }
+    } catch (error) {
+      // El radar es un extra: nunca debe frenar la telemetría de los demás.
+      const message = error instanceof Error ? error.message : 'radar';
+      this.logger.warn(`No se pudo publicar en el radar: ${message}`);
+    }
+  }
+
   /** Usuario activo dueño del token, o `null` (y desconecta) si no lo hay. */
   private async authenticate(client: Socket): Promise<User | null> {
     const token = tokenFrom(client);
@@ -142,6 +187,7 @@ export class TelemetryGateway
 
   private async dispatch(event: TelemetryEvent): Promise<void> {
     try {
+      this.emitRadar(event);
       if (event.type === 'telemetry') {
         await this.emit(event.orderId, 'telemetry', (access) =>
           presentTelemetry(event.flight, access.view),
@@ -246,3 +292,5 @@ function room(orderId: string): string {
 function hubRoom(hubId: string): string {
   return `hub:${hubId}`;
 }
+
+const RADAR_ROOM = 'radar';

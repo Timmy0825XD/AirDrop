@@ -150,6 +150,7 @@ describe('TelemetryGateway alertas por central (CU-32)', () => {
     gateway['clients'].set('disp', dispatcher.gateway['clients'].get('disp')!);
     operator.access.originHubOf.mockResolvedValue(HUB_ID);
     gateway.server = {
+      to: () => ({ emit: jest.fn() }),
       in: (name: string) => ({
         fetchSockets: () =>
           Promise.resolve(
@@ -177,12 +178,67 @@ describe('TelemetryGateway alertas por central (CU-32)', () => {
       alerts: true,
     };
     operator.gateway.server = {
+      to: () => ({ emit: jest.fn() }),
       in: () => ({ fetchSockets: () => Promise.resolve([operator.client]) }),
     } as never;
 
     await operator.gateway['dispatch'](event);
 
     expect(emitOf(operator.client)).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('TelemetryGateway radar (vista web)', () => {
+  const asUser = (role: UserRole) =>
+    ({ id: USER_ID, role, status: UserStatus.ACTIVE }) as unknown as User;
+
+  it('el administrador entra a la sala del radar', async () => {
+    const { gateway } = build(() => Promise.resolve(asUser(UserRole.ADMIN)));
+    const client = socket();
+    await gateway.handleConnection(client);
+    const reply = await gateway.subscribeRadar(client);
+    expect(
+      (client as unknown as { join: jest.Mock }).join,
+    ).toHaveBeenCalledWith('radar');
+    expect(reply).toEqual({ event: 'subscribed-radar', data: {} });
+  });
+
+  it('el despachador no entra al radar', async () => {
+    const { gateway } = build(() =>
+      Promise.resolve(asUser(UserRole.DISPATCHER)),
+    );
+    const client = socket();
+    await gateway.handleConnection(client);
+    const reply = await gateway.subscribeRadar(client);
+    expect(
+      (client as unknown as { join: jest.Mock }).join,
+    ).not.toHaveBeenCalled();
+    expect(reply).toEqual({
+      event: 'error',
+      data: { message: 'Solo el administrador ve el radar.' },
+    });
+  });
+
+  it('cada evento de vuelo se copia a la sala del radar', async () => {
+    const { gateway } = build(() => Promise.resolve(asUser(UserRole.ADMIN)));
+    const emit = jest.fn();
+    const to = jest.fn().mockReturnValue({ emit });
+    gateway.server = {
+      to,
+      in: () => ({ fetchSockets: () => Promise.resolve([]) }),
+    } as never;
+
+    await gateway['dispatch']({
+      type: 'order-status',
+      orderId: ORDER_ID,
+      status: 'in_flight' as never,
+    });
+
+    expect(to).toHaveBeenCalledWith('radar');
+    expect(emit).toHaveBeenCalledWith('radar-status', {
+      orderId: ORDER_ID,
+      status: 'in_flight',
+    });
   });
 });
 

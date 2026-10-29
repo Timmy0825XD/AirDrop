@@ -19,6 +19,7 @@ import { GeofencesModule } from './geofences/geofences.module';
 import { HubsModule } from './hubs/hubs.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { OrdersModule } from './orders/orders.module';
+import { RadarModule } from './radar/radar.module';
 import { RoutingModule } from './routing/routing.module';
 import { UsersModule } from './users/users.module';
 
@@ -53,6 +54,7 @@ import { UsersModule } from './users/users.module';
     OrdersModule,
     DeliveryModule,
     AnalyticsModule,
+    RadarModule,
   ],
 })
 export class AppModule {}

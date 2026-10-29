@@ -59,6 +59,11 @@ export function canFollowHub(
   );
 }
 
+/** La vista web de radar ve todos los vuelos: solo el administrador. */
+export function canWatchRadar(role: UserRole): boolean {
+  return role === UserRole.ADMIN;
+}
+
 /** En la sala de una central, solo el operador recibe las alertas del vuelo. */
 export function receivesHubAlerts(role: UserRole): boolean {
   return role === UserRole.FLEET_OPERATOR;

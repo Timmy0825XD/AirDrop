@@ -98,6 +98,7 @@ AGENTS.md                ← reglas globales para quien implemente (humano o age
 README.md                ← entrada corta del repositorio
 context/                 ← esencia del proyecto (fuente de verdad de negocio y diseño)
 frontend/                ← app Flutter (reglas en frontend/AGENTS.md)
+web/                     ← radar web en tiempo real, Next.js (reglas en web/AGENTS.md)
 backend/                 ← API NestJS (reglas en backend/AGENTS.md)
 ```
 

@@ -6,6 +6,8 @@ import { Drone } from '../fleet/drone.entity';
 import { DroneModel } from '../fleet/drone-model.entity';
 import { Hub } from '../hubs/hub.entity';
 import { InventoryItem } from '../inventory/inventory-item.entity';
+import { QuarantineRecord } from '../inventory/quarantine-record.entity';
+import { Notification } from '../notifications/notification.entity';
 import { DeliveryPlan } from '../orders/delivery-plan.entity';
 import { Order } from '../orders/order.entity';
 import { PrescriptionImage } from '../orders/prescription-image.entity';
@@ -37,6 +39,8 @@ export function typeOrmOptions(config: ConfigService): TypeOrmModuleOptions {
       DroneModel,
       Drone,
       InventoryItem,
+      QuarantineRecord,
+      Notification,
       Geofence,
       MissionRoute,
       Mission,
