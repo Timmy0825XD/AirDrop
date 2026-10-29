@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/auto_refresh.dart';
 import '../../../core/widgets/bar_spark.dart';
 import '../../../core/widgets/metric_tile.dart';
 import '../../../core/widgets/status_pill.dart';
@@ -18,8 +19,10 @@ import 'widgets/sign_out.dart';
 import '../../notifications/data/notice_providers.dart';
 
 /// Inicio del operador de flota: sus centrales, los drones disponibles de
-/// la central elegida como cifra principal (el anillo dice qué parte de la
+/// **todas** ellas como cifra principal (el anillo dice qué parte de la
 /// flota está lista), el estado de la flota en barras y los accesos.
+/// Los números se refrescan cada 10 s: sin eso, un dron que despegaba o
+/// aterrizaba seguía en su estado viejo hasta recargar la app.
 class FleetOperatorHome extends ConsumerWidget {
   const FleetOperatorHome({super.key, required this.user});
 
@@ -29,83 +32,93 @@ class FleetOperatorHome extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final hub = ref.watch(effectiveHubProvider);
     final hubs = ref.watch(assignedHubsProvider).value;
-    final drones = ref.watch(dronesProvider).value;
+    final drones = ref.watch(operatorDronesProvider).value;
     final geofences = ref.watch(geofencesProvider).value;
     int? count(bool Function(DroneStatus s) test) =>
         drones?.where((d) => test(d.status)).length;
     final available = count((s) => s == DroneStatus.available);
     final total = drones?.length ?? 0;
-    return HomePage(
-      children: [
-        HomeHeader(
-          roleLabel: 'Operador de flota',
-          fullName: user.fullName,
-          tagline: _tagline(hub?.name, hubs?.length),
-          onSignOut: () => signOut(context, ref),
-          onNotices: () => context.push('/notifications'),
-          unreadNotices: ref.watch(unreadCountProvider).value,
-        ),
-        const SizedBox(height: 8),
-        HomeSpotlight(
-          value: available,
-          label: 'Drones\ndisponibles',
-          progress: total == 0 ? 0 : (available ?? 0) / total,
-          status: StatusPill(
-            label: (available ?? 0) > 0 ? 'Flota lista' : 'Sin drones libres',
-            tone: (available ?? 0) > 0 ? PillTone.positive : PillTone.attention,
+    return AutoRefresh(
+      onTick: () {
+        ref.invalidate(operatorDronesProvider);
+        ref.invalidate(fleetFlightsProvider);
+        ref.invalidate(unreadCountProvider);
+      },
+      child: HomePage(
+        children: [
+          HomeHeader(
+            roleLabel: 'Operador de flota',
+            fullName: user.fullName,
+            tagline: _tagline(hub?.name, hubs?.length),
+            onSignOut: () => signOut(context, ref),
+            onNotices: () => context.push('/notifications'),
+            unreadNotices: ref.watch(unreadCountProvider).value,
           ),
-        ),
-        const HomeLabel('Estado de la flota'),
-        HomeGrid(
-          startIndex: 3,
-          children: [
-            MetricTile(
-              label: 'En misión',
-              value: count((s) => s == DroneStatus.inMission),
-              color: StatusPill.colorOf(context, PillTone.positive),
-              onTap: () => context.go('/fleet/flights'),
-              footer: BarSpark(
-                height: 40,
-                highlight: 1,
-                values: [
-                  for (final s in DroneStatus.values) count((d) => d == s) ?? 0,
-                ],
+          const SizedBox(height: 8),
+          HomeSpotlight(
+            value: available,
+            label: 'Drones\ndisponibles',
+            progress: total == 0 ? 0 : (available ?? 0) / total,
+            status: StatusPill(
+              label: (available ?? 0) > 0 ? 'Flota lista' : 'Sin drones libres',
+              tone: (available ?? 0) > 0
+                  ? PillTone.positive
+                  : PillTone.attention,
+            ),
+          ),
+          const HomeLabel('Estado de la flota'),
+          HomeGrid(
+            startIndex: 3,
+            children: [
+              MetricTile(
+                label: 'En misión',
+                value: count((s) => s == DroneStatus.inMission),
+                color: StatusPill.colorOf(context, PillTone.positive),
+                onTap: () => context.go('/fleet/flights'),
+                footer: BarSpark(
+                  height: 40,
+                  highlight: 1,
+                  values: [
+                    for (final s in DroneStatus.values)
+                      count((d) => d == s) ?? 0,
+                  ],
+                ),
               ),
-            ),
-            MetricTile(
-              label: 'En taller',
-              value: count(
-                (s) =>
-                    s == DroneStatus.maintenance ||
-                    s == DroneStatus.outOfService,
+              MetricTile(
+                label: 'En taller',
+                value: count(
+                  (s) =>
+                      s == DroneStatus.maintenance ||
+                      s == DroneStatus.outOfService,
+                ),
+                caption: 'Mantenimiento o fuera de servicio',
+                color: StatusPill.colorOf(context, PillTone.negative),
+                onTap: () => context.go('/fleet'),
               ),
-              caption: 'Mantenimiento o fuera de servicio',
-              color: StatusPill.colorOf(context, PillTone.negative),
-              onTap: () => context.go('/fleet'),
-            ),
-          ],
-        ),
-        const HomeLabel('Gestionar'),
-        HomeGrid(
-          startIndex: 5,
-          children: [
-            QuickTile(
-              title: 'Flota',
-              subtitle: 'Drones, estados y mantenimiento.',
-              icon: Icons.flight_rounded,
-              count: drones?.length,
-              onTap: () => context.go('/fleet'),
-            ),
-            QuickTile(
-              title: 'Geovallas',
-              subtitle: 'Zonas donde el dron no pasa.',
-              icon: Icons.hexagon_outlined,
-              count: geofences?.length,
-              onTap: () => context.go('/geofences'),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+          const HomeLabel('Gestionar'),
+          HomeGrid(
+            startIndex: 5,
+            children: [
+              QuickTile(
+                title: 'Flota',
+                subtitle: 'Drones, estados y mantenimiento.',
+                icon: Icons.flight_rounded,
+                count: drones?.length,
+                onTap: () => context.go('/fleet'),
+              ),
+              QuickTile(
+                title: 'Geovallas',
+                subtitle: 'Zonas donde el dron no pasa.',
+                icon: Icons.hexagon_outlined,
+                count: geofences?.length,
+                onTap: () => context.go('/geofences'),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 

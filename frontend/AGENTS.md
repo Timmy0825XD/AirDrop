@@ -243,6 +243,9 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
   de vidrio (acercar, alejar, recentrar y, con `follow`, seguir al dron),
   cámara con movimiento suave, sin rotación accidental, `fit` /
   `fitPadding`, `controlsPadding` y `onCameraMove` / `onCameraIdle`.
+  El zoom va de `AppMap.minZoom` (9, unos 120 km) a `AppMap.maxZoom` (18,
+  nivel de calle): sin límite, alejar o acercar de más rompía el cálculo
+  de tiles de `flutter_map` y la app se congelaba.
   Centro por defecto: Valledupar. Cada pantalla le pasa sus capas; no se
   crea otro `FlutterMap`.
 - Las pantallas donde el mapa es el centro (el vuelo, elegir un punto,
@@ -270,8 +273,11 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
   (`FleetFlightsScreen`, `GET /fleet/flights?hubId=`, `fleetFlightsProvider`).
   Nest no le deja leer `GET /orders/:id`, así que su mapa sigue al dron sin
   la ruta dibujada (pendiente del backend). Esa pantalla abre un socket con
-  `subscribe-hub` (`TelemetryClient.watchHub`, `hubAlertsProvider`): cada
-  alerta de batería, falla o frío sale en un aviso con "Ver vuelo".
+  `subscribe-hub` (`TelemetryClient.watchHub`, `hubAlertsProvider`) por
+  cada central: cada alerta de batería, falla o frío sale en un aviso con
+  "Ver vuelo". La lista, el contador de la barra y el inicio del operador
+  (`operatorDronesProvider`) suman **todas** sus centrales (una consulta por
+  central), no solo la elegida en Flota.
 - La telemetría trae `leg`: `outbound` (ida) o `return` (`FlightLeg.back`,
   el regreso a su central: con el paquete si nadie recibió, o vacío tras
   entregar).
@@ -437,7 +443,7 @@ Reglas de los datos:
   o un título se usa `.value` (el último conocido), no `.asData?.value`.
 - Las listas sin socket (cola, programados, pending-load, vuelos en curso, traslados entrantes,
   mis pedidos, el detalle del pedido) y los números del inicio del
-  despachador y del solicitante se
+  despachador, del operador y del solicitante se
   envuelven en `AutoRefresh` (`lib/core/widgets/auto_refresh.dart`), que
   invalida su provider cada 10 s mientras la pantalla está abierta.
 

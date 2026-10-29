@@ -8,23 +8,24 @@ import '../../../core/widgets/auto_refresh.dart';
 import '../../../core/widgets/message_view.dart';
 import '../../../core/widgets/rise_in.dart';
 import '../../home/presentation/widgets/section_header.dart';
+import '../../hubs/data/hub_models.dart';
 import '../data/fleet_flight.dart';
 import '../data/fleet_providers.dart';
 import 'widgets/fleet_flight_card.dart';
 
 /// Vuelos en curso del operador (`/fleet/flights`): los drones en misión de
-/// su central con el estado, la batería y las alertas. Tocar uno abre el
+/// todas sus centrales con el estado, la batería y las alertas. Tocar uno abre el
 /// mapa del vuelo (`/tracking/:orderId`), ida y regreso. Se refresca cada
-/// 10 s mientras está abierta, y las alertas de la central (batería, falla
-/// y frío) llegan en vivo por el socket (`subscribe-hub`).
+/// 10 s mientras está abierta, y las alertas de cada central (batería,
+/// falla y frío) llegan en vivo por el socket (`subscribe-hub`).
 class FleetFlightsScreen extends ConsumerWidget {
   const FleetFlightsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hub = ref.watch(effectiveHubProvider);
+    final hubs = ref.watch(assignedHubsProvider).value ?? const <Hub>[];
     final state = ref.watch(fleetFlightsProvider);
-    if (hub != null) {
+    for (final hub in hubs) {
       ref.listen(hubAlertsProvider(hub.id), (_, next) {
         final alert = next.value;
         if (alert == null) return;
@@ -47,7 +48,7 @@ class FleetFlightsScreen extends ConsumerWidget {
             SectionHeader(
               title: 'Vuelos en curso',
               subtitle: [
-                hub?.name ?? 'Tu central',
+                _place(hubs),
                 if (count != null) count == 1 ? '1 dron' : '$count drones',
               ].join(' · '),
               onBack: () => SectionHeader.backOrHome(context),
@@ -58,6 +59,12 @@ class FleetFlightsScreen extends ConsumerWidget {
       ),
     );
   }
+
+  static String _place(List<Hub> hubs) => switch (hubs) {
+    [] => 'Tu central',
+    [final hub] => hub.name,
+    _ => 'Tus ${hubs.length} centrales',
+  };
 }
 
 class _FlightsBody extends StatelessWidget {
