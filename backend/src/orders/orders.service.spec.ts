@@ -18,6 +18,8 @@ import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { Hub } from '../hubs/hub.entity';
 import { HubsService } from '../hubs/hubs.service';
+import { DESTINATION_IN_GEOFENCE } from '../routing/routing.rules';
+import { RoutePlannerService } from '../routing/route-planner.service';
 import { User } from '../users/user.entity';
 import { CreateEmergencyDto } from './dto/create-emergency.dto';
 import { CreateHubEmergencyDto } from './dto/create-hub-emergency.dto';
@@ -127,6 +129,7 @@ function emergencyDto(
 function build(options?: {
   offer?: typeof offer | null;
   requireActive?: (id: string) => Promise<Hub>;
+  geofences?: object[];
 }) {
   const saved: Order[] = [];
   const orders = {
@@ -180,6 +183,12 @@ function build(options?: {
     find: jest.fn(),
     findOne: jest.fn(),
   };
+  const polygons = (options?.geofences ?? []).map((polygon) => ({
+    polygon: JSON.stringify(polygon),
+  }));
+  const routes = new RoutePlannerService({
+    manager: { query: jest.fn().mockResolvedValue(polygons) },
+  } as never);
   const service = new OrdersService(
     orders as never,
     images as never,
@@ -188,6 +197,7 @@ function build(options?: {
     offers,
     hubsService,
     plans as never,
+    routes,
   );
   return { service, orders, images, storage, stockForHub, plans, saved };
 }
@@ -232,6 +242,35 @@ describe('OrdersService emergencies', () => {
     expect(result.quantity).toBe(1);
     expect(result.droneId).toBeNull();
     expect(saved[0].priority).toBe('high');
+  });
+
+  it('rejects a destination inside a geofence as a forbidden zone', async () => {
+    const park = {
+      type: 'Polygon',
+      coordinates: [
+        [
+          [-73.27, 10.46],
+          [-73.25, 10.46],
+          [-73.25, 10.48],
+          [-73.27, 10.48],
+          [-73.27, 10.46],
+        ],
+      ],
+    };
+    const { service, orders } = build({ geofences: [park] });
+    await expect(
+      service.createEmergency(
+        requester(),
+        emergencyDto({ latitude: 10.47, longitude: -73.26 }),
+      ),
+    ).rejects.toThrow(new BadRequestException(DESTINATION_IN_GEOFENCE));
+    await expect(
+      service.createEmergency(
+        requester(),
+        emergencyDto({ latitude: 10.5, longitude: -73.26 }),
+      ),
+    ).resolves.toMatchObject({ status: OrderStatus.RECEIVED });
+    expect(orders.save).toHaveBeenCalledTimes(1);
   });
 
   it('rejects special control, a missing image and a different document', async () => {

@@ -20,6 +20,7 @@ import { CIVIL_EMERGENCY_QUANTITY } from '../common/field-limits';
 import { isAwaitingHub } from '../decision/fallback.rules';
 import { Hub } from '../hubs/hub.entity';
 import { HubsService } from '../hubs/hubs.service';
+import { RoutePlannerService } from '../routing/route-planner.service';
 import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
@@ -123,6 +124,7 @@ export class OrdersService {
     private readonly hubsService: HubsService,
     @InjectRepository(DeliveryPlan)
     private readonly plans: Repository<DeliveryPlan>,
+    private readonly routes: RoutePlannerService,
   ) {}
 
   async catalog(user: User, query: CatalogQueryDto) {
@@ -156,6 +158,7 @@ export class OrdersService {
     this.requireRequester(user);
     const image = patientFormula(user, dto.saleType, dto);
     const coords = assertCoordinates(dto.latitude, dto.longitude);
+    await this.assertDestinationAllowed(coords);
     const offer = await this.requireOffer(dto.medicationName, dto.saleType);
     const saved = await this.orders.save(
       this.orders.create({
@@ -235,6 +238,7 @@ export class OrdersService {
     this.requireRequester(user);
     const image = patientFormula(user, dto.saleType, dto);
     const coords = assertCoordinates(dto.latitude, dto.longitude);
+    await this.assertDestinationAllowed(coords);
     const offer = await this.requireOffer(
       dto.medicationName,
       dto.saleType,
@@ -594,6 +598,19 @@ export class OrdersService {
     order.status = OrderStatus.REJECTED;
     order.statusReason = dto.reason;
     return this.toPublicOrder(await this.orders.save(order));
+  }
+
+  private async assertDestinationAllowed(coords: {
+    latitude: number | null;
+    longitude: number | null;
+  }) {
+    if (coords.latitude == null || coords.longitude == null) {
+      return;
+    }
+    await this.routes.assertDestinationAllowed({
+      latitude: coords.latitude,
+      longitude: coords.longitude,
+    });
   }
 
   private async requireOffer(

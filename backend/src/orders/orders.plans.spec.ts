@@ -125,6 +125,7 @@ function build(state: { plan?: DeliveryPlan; occurrences?: Order[] } = {}) {
     offers,
     hubsService,
     plans as never,
+    { assertDestinationAllowed: () => Promise.resolve() } as never,
   );
   return { service, orders, plans, saved, storage };
 }

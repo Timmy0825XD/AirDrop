@@ -9,6 +9,7 @@ import {
   Matches,
   MaxLength,
   Min,
+  MinLength,
 } from 'class-validator';
 import { SaleType } from '../../common/enums/sale-type.enum';
 import { FIELD_LIMITS } from '../../common/field-limits';
@@ -20,6 +21,7 @@ export class UpdateInventoryItemDto {
     typeof value === 'string' ? value.trim() : value,
   )
   @IsString({ message: 'El nombre no es válido.' })
+  @MinLength(1, { message: 'El nombre no puede quedar vacío.' })
   @MaxLength(FIELD_LIMITS.medicationName, {
     message: `El nombre no puede superar ${FIELD_LIMITS.medicationName} caracteres.`,
   })
@@ -61,7 +63,8 @@ export class UpdateInventoryItemDto {
 
   @IsOptional()
   @IsEnum(SaleType, {
-    message: 'El tipo de venta debe ser libre, bajo fórmula o control especial.',
+    message:
+      'El tipo de venta debe ser libre, bajo fórmula o control especial.',
   })
   saleType?: SaleType;
 }

@@ -87,6 +87,7 @@ function build(medicationName = 'Insulina glargina') {
     offers,
     {} as HubsService,
     plans as never,
+    { assertDestinationAllowed: () => Promise.resolve() } as never,
   );
   return { service, orders, plans };
 }
@@ -254,8 +255,6 @@ describe('CU-10 Crear pedido programado', () => {
     ).toEqual([]);
   });
 
-  // Defecto (c) de la sección 8.1 de la guía: se deja a propósito para que
-  // salga Fallido. Esperado: el medicamento vacío se rechaza en el formulario.
   it('CP-10-11 rechaza el medicamento vacío con «El medicamento es obligatorio.»', async () => {
     expect(await errors(planDto({ medicationName: '' }))).toContain(
       'El medicamento es obligatorio.',

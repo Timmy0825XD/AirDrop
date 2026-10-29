@@ -91,6 +91,7 @@ describe('CH-08 — Interfaz – Inventario – Pedidos – BD (base de datos ca
       offers,
       {} as HubsService,
       {} as never,
+      { assertDestinationAllowed: () => Promise.resolve() } as never,
     );
     const decision = {
       attachAssignments: (rows: object[]) =>

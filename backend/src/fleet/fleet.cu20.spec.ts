@@ -241,8 +241,6 @@ describe('CU-20 Gestionar flota', () => {
     expect(drones.save).not.toHaveBeenCalled();
   });
 
-  // Defecto (b) de la sección 8.1 de la guía: se deja a propósito para que
-  // salga Fallido. Esperado: un mantenimiento sin motivo se rechaza.
   it('CP-20-10 rechaza un mantenimiento sin motivo (motivo de 0 caracteres)', async () => {
     const found = await errors(UpdateDroneStatusDto, {
       status: DroneStatus.MAINTENANCE,

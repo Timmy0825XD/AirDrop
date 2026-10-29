@@ -145,6 +145,7 @@ function build(
     ofertas,
     hubsService,
     {} as never,
+    { assertDestinationAllowed: () => Promise.resolve() } as never,
   );
   return { service, pedidos, imagenes, almacenamiento, buscarOferta };
 }
@@ -330,8 +331,6 @@ describe('CU-09 Crear pedido de emergencia', () => {
     expect(pedidos.save).not.toHaveBeenCalled();
   });
 
-  // Defecto (c) de la sección 8.1 de la guía: se deja a propósito para que
-  // salga Fallido. Esperado: el medicamento vacío se rechaza en el formulario.
   it('CP-09-12 rechaza el medicamento vacío con «El medicamento es obligatorio.»', async () => {
     expect(await errores(libre({ medicationName: '' }))).toContain(
       'El medicamento es obligatorio.',

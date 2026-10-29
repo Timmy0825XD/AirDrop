@@ -8,6 +8,7 @@ import {
   Max,
   MaxLength,
   Min,
+  MinLength,
 } from 'class-validator';
 import { DocumentType } from '../../common/enums/document-type.enum';
 import { SaleType } from '../../common/enums/sale-type.enum';
@@ -21,6 +22,7 @@ export class CreateHubEmergencyDto {
     typeof value === 'string' ? value.trim() : value,
   )
   @IsString({ message: 'El medicamento es obligatorio.' })
+  @MinLength(1, { message: 'El medicamento es obligatorio.' })
   @MaxLength(FIELD_LIMITS.medicationName, {
     message: `El medicamento no puede superar ${FIELD_LIMITS.medicationName} caracteres.`,
   })

@@ -1,4 +1,12 @@
-import { IsIn, IsOptional, IsString, Matches, MaxLength } from 'class-validator';
+import { Transform } from 'class-transformer';
+import {
+  IsIn,
+  IsOptional,
+  IsString,
+  Matches,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { DroneStatus } from '../../common/enums/drone-status.enum';
 import { FIELD_LIMITS } from '../../common/field-limits';
 
@@ -10,13 +18,17 @@ export const OPERATOR_DRONE_STATUSES = [
 
 export class UpdateDroneStatusDto {
   @IsIn(OPERATOR_DRONE_STATUSES, {
-    message:
-      'El estado debe ser available, maintenance o out_of_service.',
+    message: 'El estado debe ser available, maintenance o out_of_service.',
   })
   status: (typeof OPERATOR_DRONE_STATUSES)[number];
 
+  // Puede no venir (se conserva el anterior), pero si viene no va en blanco.
   @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
   @IsString({ message: 'El motivo no es válido.' })
+  @MinLength(1, { message: 'El motivo no puede quedar vacío.' })
   @MaxLength(FIELD_LIMITS.reason, {
     message: `El motivo no puede superar ${FIELD_LIMITS.reason} caracteres.`,
   })
