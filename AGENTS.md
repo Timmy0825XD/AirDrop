@@ -1,6 +1,6 @@
 # AGENTS.md — reglas globales (AirDrop)
 
-Este archivo aplica a **todo** el monorepo. Las reglas de [`frontend/AGENTS.md`](frontend/AGENTS.md) y [`backend/AGENTS.md`](backend/AGENTS.md) lo especializan; no lo contradicen.
+Este archivo aplica a **todo** el monorepo. Las reglas de [`frontend/AGENTS.md`](frontend/AGENTS.md), [`backend/AGENTS.md`](backend/AGENTS.md) y [`web/AGENTS.md`](web/AGENTS.md) lo especializan; no lo contradicen.
 
 Antes de implementar o cambiar comportamiento de negocio, leer:
 
@@ -34,7 +34,7 @@ AirDrop se **sustenta**. El código debe verse profesional y ser fácil de expli
 - Microservicios, event buses, CQRS, hexagonal/clean con puertos y adaptadores en cada módulo.
 - Repositorios genéricos de 4 niveles, factories de factories, “engine plugins”.
 - Abstracciones para un segundo modelo de dron que no existe en el MVP (hoy el modelo es Wingcopter 198 vía `DroneModel`).
-- App web, admin separado en otro framework, o un segundo canal de tiempo real además de WebSockets.
+- Una app web de gestión, un admin separado en otro framework, o un segundo canal de tiempo real además de WebSockets. **Única excepción:** [`web/`](web/AGENTS.md), el radar en tiempo real que pidió el profesor (Next.js y Tailwind): solo lectura, solo para el administrador, sobre el mismo WebSocket.
 
 ---
 

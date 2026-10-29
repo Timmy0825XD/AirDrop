@@ -33,9 +33,9 @@ Columnas con tipo PostgreSQL real y longitud coherente (no `varchar(255)` por de
 
 Nombres alineados al glosario:
 
-`Auth`, `Users`, `Hubs`, `Inventory`, `Fleet`, `Geofences`, `Orders`, `Decision`, `Routing`, `Simulation`, `Telemetry`, `Notifications`, `Analytics`. Existe además `Mail` (envío del OTP por Brevo), que no es un dominio de negocio.
+`Auth`, `Users`, `Hubs`, `Inventory`, `Fleet`, `Geofences`, `Orders`, `Decision`, `Routing`, `Simulation`, `Telemetry`, `Notifications`, `Analytics`, `Radar`. Existe además `Mail` (envío del OTP por Brevo), que no es un dominio de negocio.
 
-`Analytics` (RF-23, RF-26) vive en `analytics/`: el servicio solo carga datos y `analytics.rules.ts` calcula KPI, metas y el dashboard. `FallbackService` (RF-18) vive en `decision/`.
+`Analytics` (RF-23, RF-26) vive en `analytics/`: el servicio solo carga datos y `analytics.rules.ts` calcula KPI, metas y el dashboard. `FallbackService` (RF-18) vive en `decision/`. `Radar` (`radar/`) solo lee, para la vista web [`../web/`](../web/AGENTS.md): `GET /radar/snapshot`, `/radar/hubs/:id` y `/radar/flights/:orderId` (solo `admin`) y la sala `radar` del socket (`subscribe-radar`); no revela a quién va una entrega ni el medicamento de una entrega a una persona.
 
 Un módulo = controllers + services + entities de **ese** tema. El motor de decisión **no** vive dentro de `Simulation`. El reloj de vuelo **no** autoriza pedidos ni asume la carga a bordo.
 
