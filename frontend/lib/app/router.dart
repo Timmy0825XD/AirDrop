@@ -1,8 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../features/analytics/presentation/analytics_screen.dart';
 import '../features/auth/data/auth_models.dart';
 import '../features/auth/presentation/auth_controller.dart';
+import '../features/auth/presentation/email_change_screen.dart';
 import '../features/auth/presentation/forgot_password_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/profile_screen.dart';
@@ -18,10 +20,15 @@ import '../features/geofences/presentation/geofences_screen.dart';
 import '../features/home/presentation/dispatcher_more_screen.dart';
 import '../features/home/presentation/role_home.dart';
 import '../features/hubs/presentation/hub_detail_screen.dart';
+import '../features/hubs/presentation/hub_fleet_screen.dart';
 import '../features/hubs/presentation/hub_form_screen.dart';
 import '../features/hubs/presentation/hubs_screen.dart';
 import '../features/inventory/presentation/inventory_form_screen.dart';
 import '../features/inventory/presentation/inventory_screen.dart';
+import '../features/inventory/presentation/quarantine_screen.dart';
+import '../features/notifications/presentation/notices_screen.dart';
+import '../features/orders/presentation/agenda_screen.dart';
+import '../features/orders/presentation/dispatch_history_screen.dart';
 import '../features/orders/presentation/emergency_screen.dart';
 import '../features/orders/presentation/hub_emergency_screen.dart';
 import '../features/orders/presentation/hub_plan_form_screen.dart';
@@ -32,6 +39,7 @@ import '../features/orders/presentation/order_history_screen.dart';
 import '../features/orders/presentation/pending_load_screen.dart';
 import '../features/orders/presentation/plan_detail_screen.dart';
 import '../features/orders/presentation/plan_form_screen.dart';
+import '../features/orders/presentation/plan_schedule_screen.dart';
 import '../features/orders/presentation/plans_screen.dart';
 import '../features/orders/presentation/queue_screen.dart';
 import '../features/orders/presentation/scheduled_screen.dart';
@@ -45,14 +53,18 @@ import 'role_shell.dart';
 /// admiten solicitante y despachador. Cualquier otra cuenta recibe
 /// `/unauthorized`. `null` = solo hace falta sesión.
 const _roleRoutes = <String, Set<UserRole>>{
+  '/analytics': {UserRole.admin},
   '/hubs': {UserRole.admin},
   '/hubs/new': {UserRole.admin},
+  '/hubs/:id/edit': {UserRole.admin},
+  '/hubs/:id/fleet': {UserRole.admin},
   '/hubs/me': {UserRole.dispatcher},
   '/more': {UserRole.dispatcher},
   '/users': {UserRole.admin},
   '/users/new': {UserRole.admin},
   '/inventory': {UserRole.dispatcher},
   '/inventory/new': {UserRole.dispatcher},
+  '/inventory/quarantine': {UserRole.dispatcher},
   '/inventory/:id': {UserRole.dispatcher},
   '/fleet': {UserRole.fleetOperator},
   '/fleet/new': {UserRole.fleetOperator},
@@ -66,6 +78,8 @@ const _roleRoutes = <String, Set<UserRole>>{
   '/orders/mine': {UserRole.requester},
   '/orders/queue': {UserRole.dispatcher},
   '/orders/scheduled': {UserRole.dispatcher},
+  '/orders/agenda': {UserRole.dispatcher},
+  '/orders/history': {UserRole.dispatcher},
   '/orders/pending-load': {UserRole.dispatcher},
   '/orders/in-flight': {UserRole.dispatcher},
   '/orders/incoming': {UserRole.dispatcher},
@@ -84,6 +98,8 @@ const _roleRoutes = <String, Set<UserRole>>{
 };
 
 const _fixedOrderRoutes = {
+  'agenda',
+  'history',
   'emergency',
   'mine',
   'queue',
@@ -101,6 +117,9 @@ const _fixedOrderRoutes = {
 /// `/orders/plans/<id>`.
 Set<UserRole>? _parameterizedRole(String location) {
   final segments = location.split('/');
+  if (segments.length == 4 && segments[1] == 'hubs') {
+    return _roleRoutes['/hubs/:id/${segments[3]}'];
+  }
   if (segments.length == 3 && segments[2].isNotEmpty) {
     return switch (segments[1]) {
       'inventory' => _roleRoutes['/inventory/:id'],
@@ -112,7 +131,8 @@ Set<UserRole>? _parameterizedRole(String location) {
       _ => null,
     };
   }
-  if (segments.length == 4 &&
+  if (segments.length >= 4 &&
+      segments.length <= 5 &&
       segments[1] == 'orders' &&
       segments[2] == 'plans' &&
       segments[3].isNotEmpty &&
@@ -205,6 +225,10 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(path: '/profile', builder: (_, _) => const ProfileScreen()),
           GoRoute(
+            path: '/profile/email',
+            builder: (_, _) => const EmailChangeScreen(),
+          ),
+          GoRoute(
             path: '/unauthorized',
             builder: (_, _) => const PlaceholderScreen(
               title: 'Sin permiso',
@@ -213,12 +237,30 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(path: '/home', builder: (_, _) => const RoleHomeScreen()),
           GoRoute(
+            path: '/notifications',
+            builder: (_, _) => const NoticesScreen(),
+          ),
+          GoRoute(
             path: '/more',
             builder: (_, _) => const DispatcherMoreScreen(),
+          ),
+          GoRoute(
+            path: '/analytics',
+            builder: (_, _) => const AnalyticsScreen(),
           ),
           GoRoute(path: '/hubs', builder: (_, _) => const HubsScreen()),
           GoRoute(path: '/hubs/new', builder: (_, _) => const HubFormScreen()),
           GoRoute(path: '/hubs/me', builder: (_, _) => const HubDetailScreen()),
+          GoRoute(
+            path: '/hubs/:id/edit',
+            builder: (_, state) =>
+                HubFormScreen(hubId: state.pathParameters['id']),
+          ),
+          GoRoute(
+            path: '/hubs/:id/fleet',
+            builder: (_, state) =>
+                HubFleetScreen(hubId: state.pathParameters['id'] ?? ''),
+          ),
           GoRoute(path: '/users', builder: (_, _) => const UsersScreen()),
           GoRoute(
             path: '/users/new',
@@ -227,6 +269,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/inventory',
             builder: (_, _) => const InventoryScreen(),
+          ),
+          GoRoute(
+            path: '/inventory/quarantine',
+            builder: (_, _) => const QuarantineScreen(),
           ),
           GoRoute(
             path: '/inventory/new',
@@ -272,6 +318,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, _) => const PlansScreen(),
           ),
           GoRoute(
+            path: '/orders/plans/:id/schedule',
+            builder: (_, state) =>
+                PlanScheduleScreen(planId: state.pathParameters['id'] ?? ''),
+          ),
+          GoRoute(
             path: '/orders/plans/:id',
             builder: (_, state) =>
                 PlanDetailScreen(planId: state.pathParameters['id'] ?? ''),
@@ -283,6 +334,14 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/orders/queue',
             builder: (_, _) => const QueueScreen(),
+          ),
+          GoRoute(
+            path: '/orders/agenda',
+            builder: (_, _) => const AgendaScreen(),
+          ),
+          GoRoute(
+            path: '/orders/history',
+            builder: (_, _) => const DispatchHistoryScreen(),
           ),
           GoRoute(
             path: '/orders/scheduled',

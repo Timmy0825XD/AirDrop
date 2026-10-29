@@ -17,10 +17,19 @@ class RemoteDeliveryRepository implements DeliveryRepository {
   }
 
   @override
-  Future<Order> validate(String orderId, String code) async {
+  Future<Order> validate(
+    String orderId,
+    String code, {
+    bool? remissionMatches,
+    bool? sealIntact,
+  }) async {
     final data = await apiClient.postJson(
       '/orders/$orderId/delivery-code/validate',
-      body: {'code': code},
+      body: {
+        'code': code,
+        'remissionMatches': ?remissionMatches,
+        'sealIntact': ?sealIntact,
+      },
     );
     return Order.fromJson(_asMap(data));
   }

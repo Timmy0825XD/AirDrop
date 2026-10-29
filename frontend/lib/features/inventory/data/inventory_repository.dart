@@ -21,4 +21,8 @@ abstract class InventoryRepository {
 
   /// `DELETE /inventory/:id` — `204` sin cuerpo que no se parsea.
   Future<void> remove(String id);
+
+  /// `GET /inventory/quarantine` — lotes devueltos en cuarentena de su
+  /// central, lo más nuevo primero.
+  Future<List<QuarantineRecord>> quarantine();
 }

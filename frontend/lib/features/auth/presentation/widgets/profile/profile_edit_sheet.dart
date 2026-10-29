@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/widgets/form_bottom_sheet.dart';
 import '../../../data/auth_models.dart';
 import '../auth_field.dart';
+import 'email_edit_sheet.dart';
 import 'profile_document_editor.dart';
 import 'profile_field_type.dart';
 
@@ -19,11 +20,14 @@ Future<UpdateProfileRequest?> showProfileEditSheet(
     context: context,
     showDragHandle: true,
     isScrollControlled: true,
-    builder: (_) => ProfileEditSheet(
-      type: type,
-      initialValue: initialValue,
-      initialDocumentType: initialDocumentType,
-    ),
+    // El correo pide además la contraseña actual (RNF-04).
+    builder: (_) => type == ProfileFieldType.email
+        ? EmailEditSheet(initialValue: initialValue)
+        : ProfileEditSheet(
+            type: type,
+            initialValue: initialValue,
+            initialDocumentType: initialDocumentType,
+          ),
   );
 }
 

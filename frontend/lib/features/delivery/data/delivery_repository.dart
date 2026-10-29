@@ -12,5 +12,14 @@ abstract class DeliveryRepository {
   /// `POST /orders/:id/delivery-code/validate` — con el código correcto el
   /// pedido queda `delivered` y el dron vuelve a su central. A los 5 códigos
   /// equivocados el pedido se bloquea.
-  Future<Order> validate(String orderId, String code);
+  ///
+  /// En un traslado (destino: central) van además [remissionMatches] y
+  /// [sealIntact]. Si algo no cuadra, o hubo alerta de frío, Nest responde
+  /// el pedido en `returning` con `receiptRejectedReason` (no es un error).
+  Future<Order> validate(
+    String orderId,
+    String code, {
+    bool? remissionMatches,
+    bool? sealIntact,
+  });
 }

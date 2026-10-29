@@ -13,8 +13,8 @@ Future<void> signOut(BuildContext context, WidgetRef ref) async {
     await ref.read(authControllerProvider.notifier).logout();
     if (context.mounted) context.go('/login');
   } on ApiException catch (error) {
-    if (context.mounted) showAppSnack(context, error.message);
+    if (context.mounted) showErrorSnack(context, error.message);
   } catch (_) {
-    if (context.mounted) showAppSnack(context, 'No se pudo cerrar sesión.');
+    if (context.mounted) showErrorSnack(context, 'No se pudo cerrar sesión.');
   }
 }

@@ -15,6 +15,7 @@ import 'widgets/home_page.dart';
 import 'widgets/home_spotlight.dart';
 import 'widgets/quick_tile.dart';
 import 'widgets/sign_out.dart';
+import '../../notifications/data/notice_providers.dart';
 
 /// Inicio del operador de flota: sus centrales, los drones disponibles de
 /// la central elegida como cifra principal (el anillo dice qué parte de la
@@ -41,6 +42,8 @@ class FleetOperatorHome extends ConsumerWidget {
           fullName: user.fullName,
           tagline: _tagline(hub?.name, hubs?.length),
           onSignOut: () => signOut(context, ref),
+          onNotices: () => context.push('/notifications'),
+          unreadNotices: ref.watch(unreadCountProvider).value,
         ),
         const SizedBox(height: 8),
         HomeSpotlight(

@@ -5,6 +5,7 @@ import '../../../../../core/widgets/press_scale.dart';
 import '../../../data/order_models.dart';
 import '../order_status_chip.dart';
 import '../plan_tile.dart';
+import '../../order_format.dart';
 
 /// Los datos del plan: estado, frecuencia, cantidad, ventana y destino.
 class PlanSummary extends StatelessWidget {
@@ -22,7 +23,7 @@ class PlanSummary extends StatelessWidget {
         children: [
           Align(alignment: Alignment.centerLeft, child: PlanTile.pillOf(plan)),
           const SizedBox(height: 14),
-          DetailLine(label: 'Frecuencia', value: plan.frequency.label),
+          DetailLine(label: 'Calendario', value: scheduleLabel(plan)),
           DetailLine(
             label: 'Venta',
             value: '${plan.saleType.label} · ${plan.quantity} und.',
@@ -99,7 +100,20 @@ class _OccurrenceRow extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(o.scheduledFor, style: theme.textTheme.bodyLarge),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      formatLongDate(o.scheduledFor),
+                      style: theme.textTheme.bodyLarge,
+                    ),
+                    if (o.scheduledAt != null)
+                      Text(
+                        formatSlot(o.scheduledAt, o.windowEndsAt),
+                        style: theme.textTheme.bodySmall,
+                      ),
+                  ],
+                ),
               ),
               OrderStatusChip(status: o.status),
               Icon(

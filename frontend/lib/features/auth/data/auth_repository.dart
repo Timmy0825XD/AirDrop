@@ -17,5 +17,16 @@ abstract class AuthRepository {
 
   Future<PublicUser> me();
 
+  /// `PATCH /auth/me`. Con un correo distinto exige `currentPassword`; el
+  /// correo no cambia todavía: queda en `pendingEmail` y llega un código.
   Future<PublicUser> updateProfile(UpdateProfileRequest request);
+
+  /// `POST /auth/me/email/confirm` — el correo nuevo queda activo.
+  Future<PublicUser> confirmEmailChange(String code);
+
+  /// `POST /auth/me/email/resend` — otro código al correo nuevo.
+  Future<AuthMessage> resendEmailChange();
+
+  /// `DELETE /auth/me/email/pending` — el correo actual sigue.
+  Future<PublicUser> cancelEmailChange();
 }

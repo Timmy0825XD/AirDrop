@@ -13,6 +13,7 @@ import 'widgets/home_page.dart';
 import 'widgets/home_spotlight.dart';
 import 'widgets/quick_tile.dart';
 import 'widgets/sign_out.dart';
+import '../../notifications/data/notice_providers.dart';
 
 /// Resumen del administrador: las centrales activas como cifra principal
 /// (el anillo dice qué parte de la red opera), las cuentas en cifras y
@@ -40,6 +41,8 @@ class AdminHome extends ConsumerWidget {
           fullName: user.fullName,
           tagline: 'Así va la operación en Valledupar',
           onSignOut: () => signOut(context, ref),
+          onNotices: () => context.push('/notifications'),
+          unreadNotices: ref.watch(unreadCountProvider).value,
         ),
         const SizedBox(height: 8),
         HomeSpotlight(
@@ -87,13 +90,11 @@ class AdminHome extends ConsumerWidget {
               count: users?.length,
               onTap: () => context.go('/users'),
             ),
-            // Nest ya tiene `/analytics/*`, pero el frontend todavía no
-            // tiene su capa de datos: queda con candado.
-            const QuickTile(
+            QuickTile(
               title: 'Métricas',
-              subtitle: 'Próximamente.',
+              subtitle: 'Indicadores, demanda y centrales',
               icon: Icons.insights_rounded,
-              onTap: null,
+              onTap: () => context.push('/analytics'),
             ),
           ],
         ),

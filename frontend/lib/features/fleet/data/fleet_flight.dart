@@ -16,6 +16,7 @@ class FleetFlight {
     this.phase,
     this.returning = false,
     this.batteryPercent,
+    this.temperatureC,
     this.etaSeconds,
     this.batteryAlert = false,
     this.failureAlert = false,
@@ -36,6 +37,7 @@ class FleetFlight {
       phase: phase is String ? FlightPhase.fromJson(phase) : null,
       returning: json['leg'] == 'return',
       batteryPercent: (json['batteryPercent'] as num?)?.toDouble(),
+      temperatureC: (json['temperatureC'] as num?)?.toDouble(),
       etaSeconds: (json['etaSeconds'] as num?)?.toInt(),
       batteryAlert: alertMap['battery'] == true,
       failureAlert: alertMap['failure'] == true,
@@ -54,6 +56,9 @@ class FleetFlight {
   /// El tramo de regreso a la central (`leg: return`).
   final bool returning;
   final double? batteryPercent;
+
+  /// Solo con cadena de frío; `null` si no hay telemetría.
+  final double? temperatureC;
   final int? etaSeconds;
   final bool batteryAlert;
   final bool failureAlert;

@@ -91,6 +91,6 @@ Future<void> _deleteGeofence(
     await ref.read(deleteGeofenceProvider.notifier).delete(geofence.id);
     if (context.mounted) showAppSnack(context, 'Geovalla eliminada.');
   } on ApiException catch (error) {
-    if (context.mounted) showAppSnack(context, error.message);
+    if (context.mounted) showErrorSnack(context, error.message);
   }
 }

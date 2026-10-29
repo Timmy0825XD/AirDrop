@@ -4,6 +4,9 @@ import '../../../../../core/widgets/choice_pill.dart';
 import '../../../../../core/widgets/detail_section.dart';
 import '../../../../auth/presentation/widgets/auth_morph_button.dart';
 
+const _authorizeNote =
+    'Se reserva el dron y la ruta. El vuelo arranca cuando confirmes la carga.';
+
 /// Autorizar un pedido en `received`: el motor de decisión elige dron y
 /// ruta, y el pedido pasa a "Pendiente de carga" (todavía no despega).
 ///
@@ -17,7 +20,7 @@ class AuthorizeSection extends StatelessWidget {
     required this.prescriptionVerified,
     required this.onVerifiedChanged,
     required this.onViewPrescription,
-    required this.notYet,
+    required this.blockedNote,
     required this.busy,
     required this.loading,
     required this.onAuthorize,
@@ -30,8 +33,9 @@ class AuthorizeSection extends StatelessWidget {
   /// `null` cuando la imagen no se puede ver (planes y traslados).
   final VoidCallback? onViewPrescription;
 
-  /// Programado con fecha futura: todavía no se autoriza.
-  final bool notYet;
+  /// Por qué todavía no se autoriza (fecha futura, fuera de la ventana de
+  /// 2 horas o franja cerrada); `null` si se puede.
+  final String? blockedNote;
 
   /// [busy]: hay alguna acción en curso y los botones se apagan.
   /// [loading]: la acción en curso es esta y el botón se vuelve el dron.
@@ -39,21 +43,20 @@ class AuthorizeSection extends StatelessWidget {
   final bool loading;
   final VoidCallback onAuthorize;
 
-  String get _note => notYet
-      ? 'Este pedido programado todavía no llega a su fecha.'
-      : 'Se reserva el dron y la ruta. El vuelo arranca cuando confirmes '
-            'la carga.';
-
   @override
   Widget build(BuildContext context) {
-    final ready = !notYet && (!needsPrescriptionCheck || prescriptionVerified);
+    final checked = !needsPrescriptionCheck || prescriptionVerified;
+    final ready = blockedNote == null && checked;
     return DetailSection(
       title: 'Autorizar salida',
       icon: Icons.verified_outlined,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(_note, style: Theme.of(context).textTheme.bodyMedium),
+          Text(
+            blockedNote ?? _authorizeNote,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           if (needsPrescriptionCheck) _PrescriptionCheck(section: this),
           const SizedBox(height: 14),
           AuthMorphButton(

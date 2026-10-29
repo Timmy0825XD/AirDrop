@@ -14,6 +14,7 @@ class LocalUser {
     this.documentType,
     this.documentNumber,
     this.hubIds = const [],
+    this.pendingEmail,
   });
 
   final String id;
@@ -34,6 +35,9 @@ class LocalUser {
   /// operador de flota, ninguna para el solicitante y el administrador.
   List<String> hubIds;
 
+  /// Correo nuevo que espera el código (`123456` en local).
+  String? pendingEmail;
+
   LocalUser copy() {
     return LocalUser(
       id: id,
@@ -46,6 +50,7 @@ class LocalUser {
       status: status,
       password: password,
       hubIds: List.of(hubIds),
+      pendingEmail: pendingEmail,
     );
   }
 
@@ -60,6 +65,7 @@ class LocalUser {
       role: role,
       status: status,
       hubIds: hubIds,
+      pendingEmail: pendingEmail,
     );
   }
 }

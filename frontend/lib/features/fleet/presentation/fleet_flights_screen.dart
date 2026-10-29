@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
+import '../../../core/widgets/app_snack.dart';
 import '../../../core/widgets/auto_refresh.dart';
 import '../../../core/widgets/message_view.dart';
 import '../../../core/widgets/rise_in.dart';
@@ -14,7 +15,8 @@ import 'widgets/fleet_flight_card.dart';
 /// Vuelos en curso del operador (`/fleet/flights`): los drones en misión de
 /// su central con el estado, la batería y las alertas. Tocar uno abre el
 /// mapa del vuelo (`/tracking/:orderId`), ida y regreso. Se refresca cada
-/// 10 s mientras está abierta.
+/// 10 s mientras está abierta, y las alertas de la central (batería, falla
+/// y frío) llegan en vivo por el socket (`subscribe-hub`).
 class FleetFlightsScreen extends ConsumerWidget {
   const FleetFlightsScreen({super.key});
 
@@ -22,6 +24,20 @@ class FleetFlightsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final hub = ref.watch(effectiveHubProvider);
     final state = ref.watch(fleetFlightsProvider);
+    if (hub != null) {
+      ref.listen(hubAlertsProvider(hub.id), (_, next) {
+        final alert = next.value;
+        if (alert == null) return;
+        ref.invalidate(fleetFlightsProvider);
+        showAppSnack(
+          context,
+          alert.message,
+          tone: SnackTone.warning,
+          actionLabel: 'Ver vuelo',
+          onAction: () => context.push('/tracking/${alert.orderId}'),
+        );
+      });
+    }
     final count = state.value?.length;
     return Scaffold(
       body: AutoRefresh(

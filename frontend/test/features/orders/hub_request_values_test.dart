@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/features/inventory/data/inventory_models.dart';
 import 'package:frontend/features/orders/data/order_models.dart';
 import 'package:frontend/features/orders/presentation/widgets/hub_request/hub_request_values.dart';
+import 'package:frontend/features/orders/presentation/widgets/plan_schedule/schedule_values.dart';
 
 const _offer = CatalogOffer(
   name: 'Suero oral',
@@ -53,21 +54,31 @@ void main() {
     expect(values.offer, isNull);
   });
 
-  test('el abastecimiento manda la fecha elegida, no siempre hoy', () {
+  test('el abastecimiento manda el calendario mensual elegido', () {
     final values = HubRequestValues()
       ..selectOrigin('hub-2')
-      ..offer = _offer
-      ..frequency = PlanFrequency.monthly
+      ..offer = _offer;
+    values.schedule
+      ..kind = ScheduleKind.monthly
       ..startDate = '2099-01-15';
     addTearDown(values.dispose);
 
-    expect(values.validate(plan: true), isEmpty);
-    expect(values.plan().startDate, '2099-01-15');
-
-    values.startDate = '2000-01-01';
     expect(
-      values.validate(plan: true)[HubRequestInput.startDate],
-      'La fecha de inicio no puede ser anterior a hoy.',
+      values.schedule.validate(
+        needsPrescription: false,
+      )[ScheduleInput.dayOfMonth],
+      'Elige el día del mes.',
     );
+    values.schedule.dayOfMonth = 15;
+    expect(values.validate(plan: true), isEmpty);
+    expect(values.schedule.validate(needsPrescription: false), isEmpty);
+    final schedule = values.plan().schedule!;
+    expect(schedule.toJson(), {
+      'kind': 'monthly',
+      'startDate': '2099-01-15',
+      'count': 4,
+      'dayOfMonth': 15,
+      'time': '10:00',
+    });
   });
 }

@@ -49,7 +49,7 @@ class _HubEmergencyScreenState extends ConsumerState<HubEmergencyScreen> {
       showAppSnack(context, 'Urgencia enviada a la otra central.');
       context.go('/orders/${order.id}');
     } on ApiException catch (e) {
-      if (mounted) showAppSnack(context, e.message);
+      if (mounted) showErrorSnack(context, e.message);
     } finally {
       if (mounted) setState(() => _sending = false);
     }

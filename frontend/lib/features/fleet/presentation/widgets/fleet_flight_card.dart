@@ -4,6 +4,7 @@ import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/status_pill.dart';
 import '../../../../core/widgets/tone_tile.dart';
 import '../../../orders/presentation/widgets/order_status_chip.dart';
+import '../../../tracking/data/telemetry_models.dart';
 import '../../data/fleet_flight.dart';
 
 /// "Crucero · Ida · 82 % · llega en 4 min".
@@ -11,6 +12,8 @@ String _flightDetails(FleetFlight f) => [
   f.phase?.label ?? 'Por despegar',
   f.returning ? 'Regreso' : 'Ida',
   if (f.batteryPercent case final b?) '${b.round()} %',
+  if (f.temperatureC case final c?)
+    '${c.toStringAsFixed(1).replaceAll('.', ',')} °C',
   if (f.etaSeconds case final s? when !f.returning)
     'llega en ${(s / 60).ceil()} min',
 ].join(' · ');
@@ -18,7 +21,8 @@ String _flightDetails(FleetFlight f) => [
 List<String> _flightAlerts(FleetFlight f) => [
   if (f.batteryAlert) 'Batería baja',
   if (f.failureAlert) 'Falla',
-  if (f.coldChainAlert) 'Frío fuera de rango',
+  if (f.coldChainAlert || isColdChainBreach(f.temperatureC))
+    'Frío fuera de rango',
 ];
 
 /// Un dron en misión: su nombre, el estado del pedido, la fase, la batería

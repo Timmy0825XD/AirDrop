@@ -16,17 +16,27 @@ enum FlightPhase {
   cruise('cruise', 'Crucero'),
   descent('descent', 'Descenso'),
   landing('landing', 'Aterrizaje'),
-  landed('landed', 'En tierra');
+  landed('landed', 'En tierra'),
+
+  /// En destino, ya entregado: el dron espera un minuto a que retiren el
+  /// medicamento y después vuelve vacío.
+  unloading('unloading', 'Retiro del medicamento'),
+
+  /// Una fase que esta versión de la app todavía no conoce: el mapa sigue.
+  unknown('unknown', 'En vuelo');
 
   const FlightPhase(this.apiValue, this.label);
 
   final String apiValue;
   final String label;
 
+  /// En tierra en el destino (esperando el código o el retiro).
+  bool get onGround => this == landed || this == unloading;
+
   static FlightPhase fromJson(String value) {
     return FlightPhase.values.firstWhere(
       (e) => e.apiValue == value,
-      orElse: () => throw FormatException('Fase de vuelo desconocida: $value'),
+      orElse: () => FlightPhase.unknown,
     );
   }
 }
@@ -115,7 +125,10 @@ class Telemetry {
       phase == FlightPhase.landed &&
       status == OrderStatus.awaitingDelivery;
 
-  /// El dron vuelve a la central con el paquete.
+  /// Ya entregado, el dron espera en destino a que retiren el medicamento.
+  bool get unloading => phase == FlightPhase.unloading;
+
+  /// El dron vuelve a su central: con el paquete, o vacío tras entregar.
   bool get returning => leg == FlightLeg.back;
 }
 
@@ -147,21 +160,59 @@ class FlightVitals {
   final double? temperatureC;
 }
 
-/// Alerta del dron en vuelo. Solo le llega al operador de la central de
-/// origen; el texto es el del servidor.
+/// Tipo de alerta del vuelo; un tipo nuevo de Nest cae en [other].
+enum FlightAlertKind {
+  batteryCritical('battery_critical'),
+  failure('failure'),
+  coldChain('cold_chain'),
+  other('other');
+
+  const FlightAlertKind(this.apiValue);
+
+  final String apiValue;
+
+  static FlightAlertKind fromJson(Object? value) {
+    return FlightAlertKind.values.firstWhere(
+      (e) => e.apiValue == value,
+      orElse: () => FlightAlertKind.other,
+    );
+  }
+}
+
+/// Alerta del dron en vuelo. Le llega al operador de la central de origen
+/// (siguiendo el pedido o en la sala de su central); el texto es el del
+/// servidor.
 class FlightAlert {
-  const FlightAlert({required this.orderId, required this.message});
+  const FlightAlert({
+    required this.orderId,
+    required this.message,
+    this.droneId,
+    this.kind = FlightAlertKind.other,
+  });
 
   factory FlightAlert.fromJson(Map<String, dynamic> json) {
     return FlightAlert(
       orderId: json['orderId'] as String,
       message: json['message'] as String,
+      droneId: json['droneId'] as String?,
+      kind: FlightAlertKind.fromJson(json['kind']),
     );
   }
 
   final String orderId;
   final String message;
+  final String? droneId;
+  final FlightAlertKind kind;
 }
+
+/// Rango sano de la cadena de frío (RF-17).
+const coldChainMinC = 2.0;
+const coldChainMaxC = 8.0;
+
+/// La temperatura salió de 2 a 8 °C.
+bool isColdChainBreach(double? temperatureC) =>
+    temperatureC != null &&
+    (temperatureC < coldChainMinC || temperatureC > coldChainMaxC);
 
 double _asDouble(Object? value) {
   if (value is num) return value.toDouble();

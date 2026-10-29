@@ -63,6 +63,39 @@ class LocalHubRepository implements HubRepository {
     return hub;
   }
 
+  /// Aplica los cambios como Nest: sin campos responde 400.
+  @override
+  Future<Hub> update(String id, Map<String, dynamic> changes) async {
+    final index = _hubs.indexWhere((hub) => hub.id == id);
+    if (index < 0) {
+      throw ApiException('La central no existe.', statusCode: 404);
+    }
+    if (changes.isEmpty) {
+      throw ApiException(
+        'Debes enviar al menos un campo para actualizar.',
+        statusCode: 400,
+      );
+    }
+    final current = _hubs[index];
+    final type = changes['type'];
+    _hubs[index] = Hub(
+      id: current.id,
+      name: changes['name'] as String? ?? current.name,
+      type: type is String ? HubType.fromJson(type) : current.type,
+      address: changes['address'] as String? ?? current.address,
+      latitude: (changes['latitude'] as num?)?.toDouble() ?? current.latitude,
+      longitude:
+          (changes['longitude'] as num?)?.toDouble() ?? current.longitude,
+      contactPhone: changes['contactPhone'] as String? ?? current.contactPhone,
+      contactEmail: changes.containsKey('contactEmail')
+          ? changes['contactEmail'] as String?
+          : current.contactEmail,
+      status: current.status,
+      createdAt: current.createdAt,
+    );
+    return _hubs[index];
+  }
+
   @override
   Future<Hub> setSuspension(String id, {required bool suspended}) async {
     final index = _hubs.indexWhere((hub) => hub.id == id);

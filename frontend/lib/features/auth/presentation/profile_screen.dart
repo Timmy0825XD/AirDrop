@@ -39,6 +39,12 @@ class ProfileScreen extends ConsumerWidget {
       );
     }
     final blocks = [
+      if (user.pendingEmail case final pending?)
+        ProfilePendingEmailCard(
+          pendingEmail: pending,
+          onEnterCode: () => context.push('/profile/email'),
+          onCancel: () => _cancelEmail(context, ref),
+        ),
       ProfileDataCard(
         user: user,
         onEdit: (type) => _edit(context, ref, user, type),
@@ -111,10 +117,38 @@ class ProfileScreen extends ConsumerWidget {
     );
     if (request == null || !context.mounted) return;
     try {
-      await ref.read(authControllerProvider.notifier).updateProfile(request);
-      if (context.mounted) showAppSnack(context, 'Perfil actualizado.');
+      final updated = await ref
+          .read(authControllerProvider.notifier)
+          .updateProfile(request);
+      if (!context.mounted) return;
+      // El correo nuevo espera su código: no cambia todavía.
+      if (request.email != null && updated.pendingEmail != null) {
+        showAppSnack(
+          context,
+          'Te enviamos un código al correo nuevo.',
+          tone: SnackTone.info,
+        );
+        context.push('/profile/email');
+        return;
+      }
+      showAppSnack(context, 'Perfil actualizado.');
     } on ApiException catch (error) {
-      if (context.mounted) showAppSnack(context, error.message);
+      if (context.mounted) showErrorSnack(context, error.message);
+    }
+  }
+
+  Future<void> _cancelEmail(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(authControllerProvider.notifier).cancelEmailChange();
+      if (context.mounted) {
+        showAppSnack(
+          context,
+          'Cambio de correo cancelado.',
+          tone: SnackTone.info,
+        );
+      }
+    } on ApiException catch (error) {
+      if (context.mounted) showErrorSnack(context, error.message);
     }
   }
 }

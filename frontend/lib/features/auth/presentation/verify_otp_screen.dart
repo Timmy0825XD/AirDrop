@@ -162,7 +162,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen>
           .resendOtp(ResendOtpRequest(contact: contact));
       if (!mounted) return;
       _startCountdown();
-      showAppSnack(context, response.message);
+      showAppSnack(context, response.message, tone: SnackTone.info);
     } on ApiException catch (error) {
       if (mounted) setState(() => _errorMessage = error.message);
     } finally {

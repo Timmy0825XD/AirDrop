@@ -7,6 +7,12 @@ import '../data/order_providers.dart';
 import 'widgets/order_tile.dart';
 import 'widgets/order_tray.dart';
 
+/// Las entregas por confirmar arriba (RU-30), sin desordenar lo demás.
+List<Order> awaitingFirst(List<Order> rows) => [
+  ...rows.where((o) => o.status == OrderStatus.awaitingConfirmation),
+  ...rows.where((o) => o.status != OrderStatus.awaitingConfirmation),
+];
+
 /// "Mis pedidos" del solicitante (`GET /orders/mine`): lo más nuevo
 /// primero, con su estado, "Ver vuelo" cuando el dron va en camino y
 /// "Recibir pedido" cuando ya llegó. Se refresca cada 10 s.
@@ -19,7 +25,8 @@ class OrderHistoryScreen extends ConsumerWidget {
       title: 'Mis pedidos',
       idleSubtitle: 'Lo que has pedido',
       countLabel: (n) => n == 1 ? '1 pedido' : '$n pedidos',
-      rows: ref.watch(mineProvider),
+      // Lo que espera confirmación va primero; el resto, en el orden de Nest.
+      rows: ref.watch(mineProvider).whenData(awaitingFirst),
       onRefresh: () => ref.invalidate(mineProvider),
       emptyIcon: Icons.receipt_long_outlined,
       emptyText: 'Todavía no tienes pedidos.',

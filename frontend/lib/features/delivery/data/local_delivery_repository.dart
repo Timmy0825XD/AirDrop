@@ -34,8 +34,20 @@ class LocalDeliveryRepository implements DeliveryRepository {
   }
 
   @override
-  Future<Order> validate(String orderId, String code) async {
+  Future<Order> validate(
+    String orderId,
+    String code, {
+    bool? remissionMatches,
+    bool? sealIntact,
+  }) async {
     final order = await orders.findOne(orderId);
+    final toHub = order.destinationKind == DestinationKind.hub;
+    if (toHub && (remissionMatches == null || sealIntact == null)) {
+      throw const ApiException(
+        'Confirma si la remisión coincide y si el sello llegó intacto.',
+        statusCode: 400,
+      );
+    }
     if (order.status != OrderStatus.awaitingDelivery) {
       throw const ApiException(
         'Solo se entrega un pedido en espera de entrega.',
@@ -46,6 +58,20 @@ class LocalDeliveryRepository implements DeliveryRepository {
       throw const ApiException(
         'El código es inválido, ya se usó o venció.',
         statusCode: 400,
+      );
+    }
+    if (toHub && sealIntact == false) {
+      return order.copyWith(
+        status: OrderStatus.returning,
+        receiptRejectedReason:
+            'El sello llegó roto. El paquete vuelve a origen.',
+      );
+    }
+    if (toHub && remissionMatches == false) {
+      return order.copyWith(
+        status: OrderStatus.returning,
+        receiptRejectedReason:
+            'La remisión no coincide. El paquete vuelve a origen.',
       );
     }
     return order.copyWith(status: OrderStatus.delivered);

@@ -20,6 +20,14 @@ class RemoteInventoryRepository implements InventoryRepository {
   }
 
   @override
+  Future<List<QuarantineRecord>> quarantine() async {
+    final data = await apiClient.getJson('/inventory/quarantine');
+    return _asJsonList(data)
+        .map((row) => QuarantineRecord.fromJson(_asJsonMap(row)))
+        .toList(growable: false);
+  }
+
+  @override
   Future<InventoryItem> create(CreateInventoryItemRequest request) async {
     final data = await apiClient.postJson('/inventory', body: request.toJson());
     return InventoryItem.fromJson(_asJsonMap(data));

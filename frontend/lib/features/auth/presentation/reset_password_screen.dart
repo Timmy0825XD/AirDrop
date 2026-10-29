@@ -197,7 +197,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen>
           .forgotPassword(ForgotPasswordRequest(contact: contact));
       if (!mounted) return;
       _startCountdown();
-      showAppSnack(context, response.message);
+      showAppSnack(context, response.message, tone: SnackTone.info);
     } on ApiException catch (error) {
       _fail(error.message);
     } finally {

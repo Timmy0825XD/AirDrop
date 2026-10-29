@@ -70,6 +70,7 @@ class PublicUser {
     required this.hubIds,
     this.documentType,
     this.documentNumber,
+    this.pendingEmail,
   });
 
   factory PublicUser.fromJson(Map<String, dynamic> json) {
@@ -83,6 +84,7 @@ class PublicUser {
       role: UserRole.fromJson(json['role'] as String),
       status: UserStatus.fromJson(json['status'] as String),
       hubIds: _hubIdsFrom(json['hubIds']),
+      pendingEmail: json['pendingEmail'] as String?,
     );
   }
 
@@ -104,6 +106,10 @@ class PublicUser {
   /// administrador. Un despachador u operador nunca trae `hubId` en el JSON.
   final List<String> hubIds;
 
+  /// Correo nuevo que espera el código (RNF-04). Mientras tanto el login y
+  /// la recuperación siguen con [email].
+  final String? pendingEmail;
+
   bool get isRequester => role == UserRole.requester;
 
   Map<String, dynamic> toJson() {
@@ -117,6 +123,7 @@ class PublicUser {
       'role': role.apiValue,
       'status': status.apiValue,
       'hubIds': hubIds,
+      'pendingEmail': pendingEmail,
     };
   }
 
@@ -274,10 +281,14 @@ class UpdateProfileRequest {
     this.phone,
     this.documentType,
     this.documentNumber,
+    this.currentPassword,
   });
 
   final String? fullName;
   final String? email;
+
+  /// Obligatoria para cambiar el correo; Nest responde 400 sin ella.
+  final String? currentPassword;
   final String? phone;
   final DocumentType? documentType;
   final String? documentNumber;
@@ -289,6 +300,7 @@ class UpdateProfileRequest {
       if (phone != null) 'phone': phone,
       if (documentType != null) 'documentType': documentType!.apiValue,
       if (documentNumber != null) 'documentNumber': documentNumber,
+      if (currentPassword != null) 'currentPassword': currentPassword,
     };
   }
 }

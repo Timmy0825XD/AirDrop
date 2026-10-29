@@ -33,10 +33,20 @@ class ReceiveOrderNotifier extends AsyncNotifier<Order?> {
   Future<DeliveryCode> code(String orderId) =>
       ref.read(deliveryRepositoryProvider).code(orderId);
 
-  Future<Order> validate(String orderId, String code) async {
+  Future<Order> validate(
+    String orderId,
+    String code, {
+    bool? remissionMatches,
+    bool? sealIntact,
+  }) async {
     final order = await ref
         .read(deliveryRepositoryProvider)
-        .validate(orderId, code);
+        .validate(
+          orderId,
+          code,
+          remissionMatches: remissionMatches,
+          sealIntact: sealIntact,
+        );
     ref
       ..invalidate(mineProvider)
       ..invalidate(incomingProvider)

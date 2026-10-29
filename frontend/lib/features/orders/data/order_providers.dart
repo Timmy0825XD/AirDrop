@@ -4,6 +4,7 @@ import '../../../app/providers.dart';
 import '../../../core/data/data_source.dart';
 import '../../../core/data/data_source_config.dart';
 import '../../auth/presentation/auth_controller.dart';
+import 'agenda_models.dart';
 import 'local_order_repository.dart';
 import 'order_models.dart';
 import 'order_repository.dart';
@@ -170,6 +171,11 @@ class OrderDispatchNotifier extends AsyncNotifier<Order?> {
   Future<Order> confirmLoad(String id) =>
       _run(id, (repo) => repo.confirmLoad(id));
 
+  Future<Order> returnCheck(String id, {required bool packagingIntact}) => _run(
+    id,
+    (repo) => repo.returnCheck(id, packagingIntact: packagingIntact),
+  );
+
   Future<Order> _run(
     String id,
     Future<Order> Function(OrderRepository repo) action,
@@ -228,3 +234,89 @@ final cancelPlanProvider =
     AsyncNotifierProvider<CancelPlanNotifier, DeliveryPlan?>(
       CancelPlanNotifier.new,
     );
+
+/// Quien recibe una entrega de plan: confirmar, omitir o mover (RU-30).
+/// Al terminar refresca el pedido, su plan y las listas donde aparece.
+class OccurrenceNotifier extends AsyncNotifier<Order?> {
+  @override
+  Future<Order?> build() async => null;
+
+  Future<Order> confirm(String id) =>
+      _run(id, (repo) => repo.confirmOccurrence(id));
+
+  Future<Order> skip(String id) => _run(id, (repo) => repo.skipOccurrence(id));
+
+  Future<Order> reschedule(String id, String date, String time) =>
+      _run(id, (repo) => repo.rescheduleOccurrence(id, date: date, time: time));
+
+  /// Nest también puede responder 400 porque ya no se puede cambiar: el
+  /// detalle se refresca igual para mostrar el estado real.
+  Future<Order> _run(
+    String id,
+    Future<Order> Function(OrderRepository repo) action,
+  ) async {
+    try {
+      final order = await action(ref.read(orderRepositoryProvider));
+      final planId = order.planId;
+      if (planId != null) {
+        ref.invalidate(planDetailProvider(planId));
+      }
+      state = AsyncData(order);
+      return order;
+    } finally {
+      ref
+        ..invalidate(orderDetailProvider(id))
+        ..invalidate(mineProvider)
+        ..invalidate(incomingProvider)
+        ..invalidate(scheduledProvider);
+    }
+  }
+}
+
+final occurrenceProvider = AsyncNotifierProvider<OccurrenceNotifier, Order?>(
+  OccurrenceNotifier.new,
+);
+
+/// Pausar, reanudar y cambiar el calendario de un plan (dueño del plan).
+class PlanScheduleNotifier extends AsyncNotifier<DeliveryPlan?> {
+  @override
+  Future<DeliveryPlan?> build() async => null;
+
+  Future<DeliveryPlan> setPaused(String id, {required bool paused}) =>
+      _run(id, (repo) => repo.setPlanPaused(id, paused: paused));
+
+  Future<DeliveryPlan> reschedule(String id, PlanSchedule schedule) =>
+      _run(id, (repo) => repo.updatePlanSchedule(id, schedule));
+
+  Future<DeliveryPlan> _run(
+    String id,
+    Future<DeliveryPlan> Function(OrderRepository repo) action,
+  ) async {
+    final plan = await action(ref.read(orderRepositoryProvider));
+    ref
+      ..invalidate(plansProvider)
+      ..invalidate(planDetailProvider(id))
+      ..invalidate(mineProvider)
+      ..invalidate(scheduledProvider);
+    state = AsyncData(plan);
+    return plan;
+  }
+}
+
+final planScheduleProvider =
+    AsyncNotifierProvider<PlanScheduleNotifier, DeliveryPlan?>(
+      PlanScheduleNotifier.new,
+    );
+
+/// La agenda de un día (`AAAA-MM-DD`) de la central del despachador.
+final agendaProvider = FutureProvider.family<AgendaDay, String>((ref, date) {
+  return ref.watch(orderRepositoryProvider).agenda(date);
+});
+
+/// Una página del histórico del despachador.
+final historyProvider = FutureProvider.family<HistoryPage, HistoryQuery>((
+  ref,
+  query,
+) {
+  return ref.watch(orderRepositoryProvider).history(query);
+});

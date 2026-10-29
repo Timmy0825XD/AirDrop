@@ -7,15 +7,19 @@ import '../../../core/widgets/app_snack.dart';
 import '../../auth/presentation/widgets/auth_morph_button.dart';
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
-import 'widgets/hub_request/hub_plan_extras.dart';
 import 'widgets/hub_request/hub_request_fields.dart';
-import 'widgets/order_form_scaffold.dart';
 import 'widgets/hub_request/hub_request_values.dart';
+import 'widgets/order_form_scaffold.dart';
+import 'widgets/plan_schedule/busy_slots.dart';
+import 'widgets/plan_schedule/schedule_values.dart';
+import 'widgets/plan_schedule/schedule_fields.dart';
+import 'widgets/plan_schedule/schedule_preview_card.dart';
+import 'widgets/plan_schedule/schedule_preview_state.dart';
 
 /// Abastecimiento programado desde otra central (`POST /orders/hub-plans`):
-/// las mismas piezas de la urgencia más la frecuencia y la fecha de inicio,
-/// que ahora se elige en el calendario (antes quedaba fija en hoy). Al
-/// crearlo se abre el detalle del plan.
+/// las mismas piezas de la urgencia más el calendario (RU-30) con su vista
+/// previa. Al crearlo se abre el detalle del plan; si en alguna franja hay
+/// más entregas que drones, se avisa sin impedir nada.
 class HubPlanFormScreen extends ConsumerStatefulWidget {
   const HubPlanFormScreen({super.key});
 
@@ -23,9 +27,11 @@ class HubPlanFormScreen extends ConsumerStatefulWidget {
   ConsumerState<HubPlanFormScreen> createState() => _HubPlanFormScreenState();
 }
 
-class _HubPlanFormScreenState extends ConsumerState<HubPlanFormScreen> {
+class _HubPlanFormScreenState extends ConsumerState<HubPlanFormScreen>
+    with SchedulePreviewState {
   final _values = HubRequestValues();
   Map<HubRequestInput, String> _errors = const {};
+  Map<ScheduleInput, String> _scheduleErrors = const {};
   int _shakeCount = 0;
   bool _sending = false;
 
@@ -35,13 +41,19 @@ class _HubPlanFormScreenState extends ConsumerState<HubPlanFormScreen> {
     super.dispose();
   }
 
+  ScheduleDraft get _draft => _values.schedule;
+
   Future<void> _submit() async {
     final errors = _values.validate(plan: true);
+    final scheduleErrors = _draft.validate(needsPrescription: false);
     setState(() {
       _errors = errors;
-      if (errors.isNotEmpty) _shakeCount++;
+      _scheduleErrors = scheduleErrors;
+      if (errors.isNotEmpty || scheduleErrors.isNotEmpty) _shakeCount++;
     });
-    if (errors.isNotEmpty) return;
+    if (errors.isNotEmpty || scheduleErrors.isNotEmpty || !previewReady) {
+      return;
+    }
     FocusScope.of(context).unfocus();
     setState(() => _sending = true);
     try {
@@ -49,10 +61,10 @@ class _HubPlanFormScreenState extends ConsumerState<HubPlanFormScreen> {
           .read(createHubPlanProvider.notifier)
           .create(_values.plan());
       if (!mounted) return;
-      showAppSnack(context, 'Abastecimiento programado.');
+      showPlanCreated(context, plan, 'Abastecimiento programado.');
       context.go('/orders/plans/${plan.id}');
     } on ApiException catch (e) {
-      if (mounted) showAppSnack(context, e.message);
+      if (mounted) showErrorSnack(context, e.message);
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -80,11 +92,19 @@ class _HubPlanFormScreenState extends ConsumerState<HubPlanFormScreen> {
           onChanged: changed,
         ),
         const SizedBox(height: 16),
-        HubPlanExtras(
-          values: _values,
-          errors: _errors,
-          shakeCount: _shakeCount,
-          onChanged: changed,
+        ScheduleFields(
+          form: ScheduleForm(
+            draft: _draft,
+            errors: _scheduleErrors,
+            shakeCount: _shakeCount,
+            onChanged: () => schedulePreview(_draft, needsPrescription: false),
+          ),
+        ),
+        const SizedBox(height: 16),
+        SchedulePreviewCard(
+          preview: preview,
+          error: previewError,
+          loading: previewLoading,
         ),
         const SizedBox(height: 14),
         const HubTransferNote(),
@@ -93,7 +113,7 @@ class _HubPlanFormScreenState extends ConsumerState<HubPlanFormScreen> {
         label: 'Programar',
         loadingLabel: 'Programando el abastecimiento',
         isLoading: _sending,
-        onPressed: _submit,
+        onPressed: previewError == null ? _submit : null,
       ),
     );
   }

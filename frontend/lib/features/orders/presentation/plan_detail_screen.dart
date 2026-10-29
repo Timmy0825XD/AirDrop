@@ -13,9 +13,12 @@ import '../data/order_models.dart';
 import '../data/order_providers.dart';
 import 'widgets/plan_detail/plan_sections.dart';
 import 'widgets/plan_tile.dart';
+import 'order_format.dart';
 
-/// Detalle del plan (`GET /orders/plans/:id`): sus datos, sus entregas y
-/// Extender / Cancelar, que se confirman en la hoja inferior.
+/// Detalle del plan (`GET /orders/plans/:id`): sus datos, sus entregas con
+/// fecha y franja, y las acciones (cambiar calendario, pausar o reanudar,
+/// extender un plan viejo y cancelar), que se confirman en la hoja
+/// inferior.
 class PlanDetailScreen extends ConsumerStatefulWidget {
   const PlanDetailScreen({super.key, required this.planId});
 
@@ -34,7 +37,7 @@ class _PlanDetailScreenState extends ConsumerState<PlanDetailScreen> {
       await action();
       if (mounted) showAppSnack(context, done);
     } on ApiException catch (e) {
-      if (mounted) showAppSnack(context, e.message);
+      if (mounted) showErrorSnack(context, e.message);
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -57,11 +60,37 @@ class _PlanDetailScreenState extends ConsumerState<PlanDetailScreen> {
     );
   }
 
+  Future<void> _togglePause(DeliveryPlan plan) async {
+    final pausing = !plan.paused;
+    if (pausing) {
+      final ok = await showConfirmSheet(
+        context,
+        title: 'Pausar el plan',
+        message:
+            'Mientras esté en pausa no llegan avisos y las entregas sin dron '
+            'se omiten 2 horas antes.',
+        confirmLabel: 'Pausar',
+        icon: Icons.pause_circle_outline_rounded,
+        destructive: false,
+        subject: PlanTile(plan: plan, onTap: () {}),
+      );
+      if (!ok) return;
+    }
+    await _run(
+      () => ref
+          .read(planScheduleProvider.notifier)
+          .setPaused(widget.planId, paused: pausing),
+      pausing ? 'Plan en pausa.' : 'Plan reanudado.',
+    );
+  }
+
   Future<void> _cancel(DeliveryPlan plan) async {
     final ok = await showConfirmSheet(
       context,
       title: 'Cancelar el plan',
-      message: 'Las entregas que siguen en recibido quedan canceladas.',
+      message:
+          'Las entregas que todavía no tienen dron (agendadas, por '
+          'confirmar o recibidas) quedan canceladas.',
       confirmLabel: 'Cancelar plan',
       icon: Icons.event_busy_rounded,
       subject: PlanTile(plan: plan, onTap: () {}),
@@ -84,7 +113,7 @@ class _PlanDetailScreenState extends ConsumerState<PlanDetailScreen> {
             title: plan?.medicationName ?? 'Plan',
             subtitle: plan == null
                 ? 'Detalle del plan'
-                : '${plan.frequency.label} · ${plan.status.label}',
+                : '${scheduleLabel(plan)} · ${plan.status.label}',
             onBack: () => SectionHeader.backOrHome(context),
           ),
           Expanded(
@@ -116,7 +145,28 @@ class _PlanDetailScreenState extends ConsumerState<PlanDetailScreen> {
         occurrences: detail.occurrences,
         onOpen: (id) => context.push('/orders/$id'),
       ),
-      if (plan.renewalDue)
+      if (plan.status == PlanStatus.active && !plan.canExtend)
+        FilledButton.icon(
+          onPressed: _busy
+              ? null
+              : () => context.push('/orders/plans/${plan.id}/schedule'),
+          style: _buttonStyle(),
+          icon: const Icon(Icons.edit_calendar_outlined),
+          label: const Text('Cambiar calendario'),
+        ),
+      if (plan.status == PlanStatus.active)
+        OutlinedButton.icon(
+          onPressed: _busy ? null : () => _togglePause(plan),
+          style: _buttonStyle(),
+          icon: Icon(
+            plan.paused
+                ? Icons.play_circle_outline_rounded
+                : Icons.pause_circle_outline_rounded,
+          ),
+          label: Text(plan.paused ? 'Reanudar' : 'Pausar'),
+        ),
+      // Un plan con calendario no se extiende: se le cambia el calendario.
+      if (plan.renewalDue && plan.canExtend)
         FilledButton.icon(
           onPressed: _busy ? null : () => _extend(plan),
           style: _buttonStyle(),

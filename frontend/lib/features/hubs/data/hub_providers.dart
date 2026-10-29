@@ -72,6 +72,27 @@ final createHubProvider = AsyncNotifierProvider<CreateHubNotifier, Hub?>(
   CreateHubNotifier.new,
 );
 
+/// Editar una central (admin). Refresca los listados y la central del
+/// despachador, que puede ser esta.
+class UpdateHubNotifier extends AsyncNotifier<Hub?> {
+  @override
+  Future<Hub?> build() async => null;
+
+  Future<Hub> edit(String id, Map<String, dynamic> changes) async {
+    final hub = await ref.read(hubRepositoryProvider).update(id, changes);
+    ref
+      ..invalidate(hubsProvider)
+      ..invalidate(allHubsProvider)
+      ..invalidate(myHubProvider);
+    state = AsyncData(hub);
+    return hub;
+  }
+}
+
+final updateHubProvider = AsyncNotifierProvider<UpdateHubNotifier, Hub?>(
+  UpdateHubNotifier.new,
+);
+
 /// Suspensión y reactivación de una central. Tras el cambio se invalidan
 /// el listado **y** `myHubProvider`, para que el despachador vea su
 /// central con el estado nuevo sin reiniciar la app.

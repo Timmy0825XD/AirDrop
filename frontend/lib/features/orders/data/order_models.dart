@@ -9,6 +9,11 @@ import 'dart:typed_data';
 
 import '../../inventory/data/inventory_models.dart' show SaleType;
 import '../../auth/data/auth_models.dart' show DocumentType;
+import 'fallback_models.dart';
+import 'plan_schedule_models.dart';
+
+export 'fallback_models.dart';
+export 'plan_schedule_models.dart';
 
 enum MissionType {
   emergency('emergency', 'Urgencia'),
@@ -141,24 +146,35 @@ class OrderAssignment {
     required this.altitudeM,
     required this.distanceKm,
     required this.coordinates,
+    this.returnCoordinates = const [],
+    this.returnDistanceKm,
   });
 
   factory OrderAssignment.fromJson(Map<String, dynamic> json) {
     final route = json['route'] is Map ? json['route'] as Map : const {};
-    final points = route['coordinates'] is List
-        ? route['coordinates'] as List
-        : const [];
+    final back = json['returnRoute'] is Map ? json['returnRoute'] as Map : null;
     return OrderAssignment(
       droneId: json['droneId'] as String,
       identifier: json['identifier'] as String,
       modelName: json['modelName'] as String,
       altitudeM: _asDoubleOrNull(route['altitudeM']) ?? 0,
       distanceKm: _asDoubleOrNull(route['distanceKm']) ?? 0,
-      coordinates: [
-        for (final point in points.whereType<List>())
-          [for (final value in point) _asDoubleOrNull(value) ?? 0],
-      ],
+      coordinates: _routePoints(route),
+      returnCoordinates: back == null ? const [] : _routePoints(back),
+      returnDistanceKm: back == null
+          ? null
+          : _asDoubleOrNull(back['distanceKm']),
     );
+  }
+
+  static List<List<double>> _routePoints(Map route) {
+    final points = route['coordinates'] is List
+        ? route['coordinates'] as List
+        : const [];
+    return [
+      for (final point in points.whereType<List>())
+        [for (final value in point) _asDoubleOrNull(value) ?? 0],
+    ];
   }
 
   final String droneId;
@@ -173,6 +189,14 @@ class OrderAssignment {
 
   /// Puntos del corredor como `[longitud, latitud]`, igual que GeoJSON.
   final List<List<double>> coordinates;
+
+  /// Ruta de regreso (`assignment.returnRoute`), con las geovallas vigentes
+  /// cuando el dron empezó a volver. Vacía hasta entonces.
+  final List<List<double>> returnCoordinates;
+  final double? returnDistanceKm;
+
+  /// Ya hay una ruta de regreso que dibujar (2 puntos o más).
+  bool get hasReturnRoute => returnCoordinates.length >= 2;
 }
 
 /// Pedido público: crear urgencia, `GET /orders/mine`, `GET /orders/:id`
@@ -205,6 +229,19 @@ class Order {
     this.createdAt,
     this.loadConfirmedAt,
     this.assignment,
+    this.coldChainAlert = false,
+    this.coldChainAlertAt,
+    this.authorizedAt,
+    this.dispatchedLot,
+    this.dispatchedLotExpiresOn,
+    this.returnCheckedAt,
+    this.returnOutcome,
+    this.receiptRejectedReason,
+    this.scheduledAt,
+    this.windowEndsAt,
+    this.confirmedAt,
+    this.reassignedFromHubId,
+    this.fallback,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -241,11 +278,26 @@ class Order {
       assignment: assignment is Map<String, dynamic>
           ? OrderAssignment.fromJson(assignment)
           : null,
+      coldChainAlert: json['coldChainAlert'] as bool? ?? false,
+      coldChainAlertAt: _dateOrNull(json['coldChainAlertAt']),
+      authorizedAt: _dateOrNull(json['authorizedAt']),
+      dispatchedLot: json['dispatchedLot'] as String?,
+      dispatchedLotExpiresOn: json['dispatchedLotExpiresOn'] as String?,
+      returnCheckedAt: _dateOrNull(json['returnCheckedAt']),
+      returnOutcome: ReturnOutcome.fromJson(json['returnOutcome']),
+      receiptRejectedReason: json['receiptRejectedReason'] as String?,
+      scheduledAt: _dateOrNull(json['scheduledAt']),
+      windowEndsAt: _dateOrNull(json['windowEndsAt']),
+      confirmedAt: _dateOrNull(json['confirmedAt']),
+      reassignedFromHubId: json['reassignedFromHubId'] as String?,
+      fallback: OrderFallback.fromJson(json['fallback']),
     );
   }
 
-  /// Copia con los campos que cambian al autorizar, confirmar o rechazar.
-  /// La usa el repositorio local para simular esas transiciones.
+  /// Copia con los campos que cambian al autorizar, confirmar, rechazar,
+  /// revisar el retorno o cambiar una entrega. La usa el repositorio local
+  /// para simular esas transiciones. [clearFallback] borra la alternativa
+  /// (al autorizar con dron).
   Order copyWith({
     OrderStatus? status,
     String? statusReason,
@@ -253,6 +305,16 @@ class Order {
     String? originHubId,
     DateTime? loadConfirmedAt,
     OrderAssignment? assignment,
+    DateTime? returnCheckedAt,
+    ReturnOutcome? returnOutcome,
+    String? receiptRejectedReason,
+    DateTime? scheduledAt,
+    DateTime? windowEndsAt,
+    DateTime? confirmedAt,
+    String? scheduledFor,
+    OrderFallback? fallback,
+    String? reassignedFromHubId,
+    bool clearFallback = false,
   }) {
     return Order(
       id: id,
@@ -276,10 +338,24 @@ class Order {
       droneId: droneId ?? this.droneId,
       statusReason: statusReason ?? this.statusReason,
       planId: planId,
-      scheduledFor: scheduledFor,
+      scheduledFor: scheduledFor ?? this.scheduledFor,
       createdAt: createdAt,
       loadConfirmedAt: loadConfirmedAt ?? this.loadConfirmedAt,
       assignment: assignment ?? this.assignment,
+      coldChainAlert: coldChainAlert,
+      coldChainAlertAt: coldChainAlertAt,
+      authorizedAt: authorizedAt,
+      dispatchedLot: dispatchedLot,
+      dispatchedLotExpiresOn: dispatchedLotExpiresOn,
+      returnCheckedAt: returnCheckedAt ?? this.returnCheckedAt,
+      returnOutcome: returnOutcome ?? this.returnOutcome,
+      receiptRejectedReason:
+          receiptRejectedReason ?? this.receiptRejectedReason,
+      scheduledAt: scheduledAt ?? this.scheduledAt,
+      windowEndsAt: windowEndsAt ?? this.windowEndsAt,
+      confirmedAt: confirmedAt ?? this.confirmedAt,
+      reassignedFromHubId: reassignedFromHubId ?? this.reassignedFromHubId,
+      fallback: clearFallback ? null : (fallback ?? this.fallback),
     );
   }
 
@@ -339,13 +415,53 @@ class Order {
 
   /// Dron y corredor reservados al autorizar; `null` antes de eso.
   final OrderAssignment? assignment;
+
+  /// La temperatura de la carga salió de 2 a 8 °C (RF-17). Un retorno con
+  /// esta marca va a cuarentena aunque el empaque esté bien.
+  final bool coldChainAlert;
+  final DateTime? coldChainAlertAt;
+  final DateTime? authorizedAt;
+
+  /// Lote que salió al confirmar la carga y su vencimiento (AAAA-MM-DD).
+  /// Solo para la central; no se le muestra al solicitante.
+  final String? dispatchedLot;
+  final String? dispatchedLotExpiresOn;
+
+  /// Revisión del paquete devuelto (`return-check`) y su resultado.
+  final DateTime? returnCheckedAt;
+  final ReturnOutcome? returnOutcome;
+
+  /// Por qué la central de destino rechazó el traslado (el dron vuelve con
+  /// el paquete), en texto del servidor.
+  final String? receiptRejectedReason;
+
+  /// Franja de 1 hora de una entrega de plan con calendario.
+  final DateTime? scheduledAt;
+  final DateTime? windowEndsAt;
+
+  /// Cuándo confirmó quien recibe.
+  final DateTime? confirmedAt;
+
+  /// La central que no pudo despacharlo (fallback `hub`).
+  final String? reassignedFromHubId;
+
+  /// Qué pasó cuando ningún dron pudo salir; `null` si no aplica.
+  final OrderFallback? fallback;
+
+  /// Volvió a la central y nadie ha revisado el paquete.
+  bool get awaitsReturnCheck =>
+      status == OrderStatus.returned && returnCheckedAt == null;
+
+  /// Pasó a otra central y está vivo en su cola.
+  bool get reassignedToHub =>
+      status == OrderStatus.reassigned && fallback?.kind == FallbackKind.hub;
 }
 
 /// Plan público, sin ocurrencias. `GET /orders/plans/:id` agrega la lista.
 class DeliveryPlan {
   const DeliveryPlan({
     required this.id,
-    required this.frequency,
+    this.frequency,
     required this.status,
     required this.medicationName,
     required this.saleType,
@@ -362,12 +478,20 @@ class DeliveryPlan {
     this.latitude,
     this.longitude,
     this.createdAt,
+    this.schedule,
+    this.paused = false,
+    this.windowMinutes,
+    this.prescriptionValidUntil,
+    this.busySlots = const [],
   });
 
   factory DeliveryPlan.fromJson(Map<String, dynamic> json) {
+    final frequency = json['frequency'];
+    final busy = json['busySlots'];
     return DeliveryPlan(
       id: json['id'] as String,
-      frequency: PlanFrequency.fromJson(json['frequency'] as String),
+      // `null` en los planes con calendario (RU-30).
+      frequency: frequency is String ? PlanFrequency.fromJson(frequency) : null,
       status: PlanStatus.fromJson(json['status'] as String),
       medicationName: json['medicationName'] as String,
       saleType: SaleType.fromJson(json['saleType'] as String),
@@ -386,11 +510,52 @@ class DeliveryPlan {
       latitude: _asDoubleOrNull(json['latitude']),
       longitude: _asDoubleOrNull(json['longitude']),
       createdAt: DateTime.tryParse('${json['createdAt']}'),
+      schedule: PlanSchedule.fromJson(json['schedule']),
+      paused: json['paused'] as bool? ?? false,
+      windowMinutes: (json['windowMinutes'] as num?)?.toInt(),
+      prescriptionValidUntil: json['prescriptionValidUntil'] as String?,
+      busySlots: [
+        if (busy is List)
+          for (final row in busy.whereType<Map<String, dynamic>>())
+            BusySlot.fromJson(row),
+      ],
+    );
+  }
+
+  /// Copia con lo que cambia al pausar o reanudar (repositorio local).
+  DeliveryPlan copyWith({bool? paused, PlanStatus? status}) {
+    return DeliveryPlan(
+      id: id,
+      frequency: frequency,
+      status: status ?? this.status,
+      medicationName: medicationName,
+      saleType: saleType,
+      requiresColdChain: requiresColdChain,
+      quantity: quantity,
+      startDate: startDate,
+      windowEndsOn: windowEndsOn,
+      destinationKind: destinationKind,
+      address: address,
+      hasPrescription: hasPrescription,
+      renewalDue: renewalDue,
+      originHubId: originHubId,
+      destinationHubId: destinationHubId,
+      latitude: latitude,
+      longitude: longitude,
+      createdAt: createdAt,
+      schedule: schedule,
+      paused: paused ?? this.paused,
+      windowMinutes: windowMinutes,
+      prescriptionValidUntil: prescriptionValidUntil,
+      busySlots: busySlots,
     );
   }
 
   final String id;
-  final PlanFrequency frequency;
+
+  /// Planes viejos (8 semanas). `null` en los de calendario: esos no se
+  /// extienden, se les cambia el calendario.
+  final PlanFrequency? frequency;
   final PlanStatus status;
   final String medicationName;
   final SaleType saleType;
@@ -407,6 +572,22 @@ class DeliveryPlan {
   final double? latitude;
   final double? longitude;
   final DateTime? createdAt;
+
+  /// La regla de calendario (en los planes viejos, reconstruida).
+  final PlanSchedule? schedule;
+  final bool paused;
+
+  /// `60` con franja de 1 hora; `null` en los planes viejos (todo el día).
+  final int? windowMinutes;
+
+  /// Hasta cuándo vale la fórmula (AAAA-MM-DD); el plan no pasa de ahí.
+  final String? prescriptionValidUntil;
+
+  /// Aviso al crear o cambiar el calendario con central de origen.
+  final List<BusySlot> busySlots;
+
+  /// Solo los planes con frecuencia se extienden.
+  bool get canExtend => frequency != null;
 }
 
 class PlanOccurrence {
@@ -415,6 +596,8 @@ class PlanOccurrence {
     required this.status,
     required this.scheduledFor,
     this.droneId,
+    this.scheduledAt,
+    this.windowEndsAt,
   });
 
   factory PlanOccurrence.fromJson(Map<String, dynamic> json) {
@@ -423,6 +606,8 @@ class PlanOccurrence {
       status: OrderStatus.fromJson(json['status'] as String),
       scheduledFor: json['scheduledFor'] as String,
       droneId: json['droneId'] as String?,
+      scheduledAt: _dateOrNull(json['scheduledAt']),
+      windowEndsAt: _dateOrNull(json['windowEndsAt']),
     );
   }
 
@@ -430,6 +615,10 @@ class PlanOccurrence {
   final OrderStatus status;
   final String scheduledFor;
   final String? droneId;
+
+  /// Franja de 1 hora; `null` en los planes viejos.
+  final DateTime? scheduledAt;
+  final DateTime? windowEndsAt;
 }
 
 class PlanDetail {
@@ -585,16 +774,20 @@ class CreateEmergencyRequest {
   final String? prescriptionImageBase64;
 }
 
-/// Body de `POST /orders/plans`: como la urgencia más cantidad,
-/// frecuencia y fecha de inicio. Sin `description`.
+/// Body de `POST /orders/plans`: como la urgencia más cantidad y el
+/// calendario ([schedule], RU-30). Los planes viejos mandaban [frequency] y
+/// [startDate]; nunca van los dos modos en el mismo body. Sin
+/// `description`.
 class CreatePlanRequest {
   const CreatePlanRequest({
     required this.medicationName,
     required this.saleType,
     required this.quantity,
-    required this.frequency,
-    required this.startDate,
     required this.address,
+    this.frequency,
+    this.startDate,
+    this.schedule,
+    this.prescriptionValidUntil,
     this.latitude,
     this.longitude,
     this.patientDocumentType,
@@ -608,8 +801,8 @@ class CreatePlanRequest {
       'medicationName': medicationName,
       'saleType': saleType.apiValue,
       'quantity': quantity,
-      'frequency': frequency.apiValue,
-      'startDate': startDate,
+      ..._timingJson(schedule, frequency, startDate),
+      'prescriptionValidUntil': ?prescriptionValidUntil,
       'address': address,
       if (latitude != null && longitude != null) 'latitude': latitude,
       if (latitude != null && longitude != null) 'longitude': longitude,
@@ -625,8 +818,12 @@ class CreatePlanRequest {
   final String medicationName;
   final SaleType saleType;
   final int quantity;
-  final PlanFrequency frequency;
-  final String startDate;
+  final PlanFrequency? frequency;
+  final String? startDate;
+  final PlanSchedule? schedule;
+
+  /// Obligatoria con fórmula: el plan no pasa de esa fecha.
+  final String? prescriptionValidUntil;
   final String address;
   final double? latitude;
   final double? longitude;
@@ -667,8 +864,9 @@ class CreateHubPlanRequest {
     required this.medicationName,
     required this.saleType,
     required this.quantity,
-    required this.frequency,
-    required this.startDate,
+    this.frequency,
+    this.startDate,
+    this.schedule,
   });
 
   Map<String, dynamic> toJson() {
@@ -677,8 +875,7 @@ class CreateHubPlanRequest {
       'medicationName': medicationName,
       'saleType': saleType.apiValue,
       'quantity': quantity,
-      'frequency': frequency.apiValue,
-      'startDate': startDate,
+      ..._timingJson(schedule, frequency, startDate),
     };
   }
 
@@ -686,8 +883,20 @@ class CreateHubPlanRequest {
   final String medicationName;
   final SaleType saleType;
   final int quantity;
-  final PlanFrequency frequency;
-  final String startDate;
+  final PlanFrequency? frequency;
+  final String? startDate;
+  final PlanSchedule? schedule;
+}
+
+/// El calendario o, en los planes viejos, frecuencia y fecha de inicio:
+/// Nest valida `frequency` y `startDate` solo si no hay `schedule`.
+Map<String, dynamic> _timingJson(
+  PlanSchedule? schedule,
+  PlanFrequency? frequency,
+  String? startDate,
+) {
+  if (schedule != null) return {'schedule': schedule.toJson()};
+  return {'frequency': ?frequency?.apiValue, 'startDate': ?startDate};
 }
 
 int _asInt(Object? value) {
@@ -696,6 +905,9 @@ int _asInt(Object? value) {
   if (parsed == null) throw FormatException('Cantidad no entera: $value');
   return parsed;
 }
+
+DateTime? _dateOrNull(Object? value) =>
+    value == null ? null : DateTime.tryParse('$value');
 
 double? _asDoubleOrNull(Object? value) {
   if (value == null) return null;

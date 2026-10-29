@@ -43,6 +43,21 @@ List<Widget> _moreTiles(
     onTap: open('/orders/in-flight'),
   ),
   QuickTile(
+    title: 'Programados',
+    icon: Icons.event_note_outlined,
+    onTap: open('/orders/scheduled'),
+  ),
+  QuickTile(
+    title: 'Histórico',
+    icon: Icons.history_rounded,
+    onTap: open('/orders/history'),
+  ),
+  QuickTile(
+    title: 'Cuarentena',
+    icon: Icons.health_and_safety_outlined,
+    onTap: open('/inventory/quarantine'),
+  ),
+  QuickTile(
     title: 'Urgencia a otra central',
     icon: Icons.swap_horiz_rounded,
     onTap: open('/orders/hub-emergency'),

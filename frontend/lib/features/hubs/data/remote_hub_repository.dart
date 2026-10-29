@@ -49,6 +49,12 @@ class RemoteHubRepository implements HubRepository {
     return Hub.fromJson(_asJsonMap(data));
   }
 
+  @override
+  Future<Hub> update(String id, Map<String, dynamic> changes) async {
+    final data = await apiClient.patchJson('/hubs/$id', body: changes);
+    return Hub.fromJson(_asJsonMap(data));
+  }
+
   Map<String, dynamic> _asJsonMap(Object? data) {
     if (data is Map<String, dynamic>) return data;
     if (data is Map<Object?, Object?>) return Map<String, dynamic>.from(data);

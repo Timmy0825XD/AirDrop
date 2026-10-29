@@ -5,7 +5,26 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-10-29 00:06
+Generado: 2026-10-29 01:23
+
+## analytics
+
+### Pantallas
+
+| Archivo | Lineas |
+| --- | --- |
+| `analytics_screen.dart` | 195 |
+
+### Widgets
+
+| Archivo | Widget/clase | Lineas | Estado |
+| --- | --- | --- | --- |
+| `demand_cards.dart` | TopMedicationsCard | 32 | ok |
+| `demand_cards.dart` | DemandByDayCard | 37 | ok |
+| `demand_cards.dart` | DemandZonesCard | 55 | ok |
+| `hub_ranking_card.dart` | HubRankingCard | 41 | ok |
+| `kpi_card.dart` | KpiGroupCard | 24 | ok |
+| `kpi_card.dart` | KpiRow | 45 | ok |
 
 ## auth
 
@@ -13,9 +32,10 @@ Generado: 2026-10-29 00:06
 
 | Archivo | Lineas |
 | --- | --- |
+| `email_change_screen.dart` | 165 |
 | `forgot_password_screen.dart` | 139 |
 | `login_screen.dart` | 268 |
-| `profile_screen.dart` | 120 |
+| `profile_screen.dart` | 154 |
 | `register_screen.dart` | 232 |
 | `reset_password_screen.dart` | 268 |
 | `verify_otp_screen.dart` | 226 |
@@ -77,6 +97,12 @@ Generado: 2026-10-29 00:06
 | `drone_glyph.dart` | SpinningDrone | 10 | ok |
 | `drone_glyph.dart` | _SpinningDroneState | 23 | ok |
 | `drone_glyph.dart` | _DronePainter | 43 | ok |
+| `email_change_card.dart` | EmailChangeCard | 59 | ok |
+| `email_change_card.dart` | _EmailChangeActions | 26 | ok |
+| `email_edit_sheet.dart` | EmailEditSheet | 10 | ok |
+| `email_edit_sheet.dart` | _EmailEditSheetState | 60 | ok |
+| `email_edit_sheet.dart` | _EmailField | 32 | ok |
+| `email_edit_sheet.dart` | CurrentPasswordField | 41 | ok |
 | `forgot_password_content.dart` | ForgotPasswordForm | 48 | ok |
 | `forgot_password_content.dart` | _ForgotHeading | 30 | ok |
 | `forgot_password_content.dart` | _CodeLifetime | 30 | ok |
@@ -131,11 +157,12 @@ Generado: 2026-10-29 00:06
 | `profile_document_editor.dart` | ProfileDocumentEditor | 44 | ok |
 | `profile_edit_sheet.dart` | ProfileEditSheet | 16 | ok |
 | `profile_edit_sheet.dart` | _ProfileEditSheetState | 56 | ok |
-| `profile_field_type.dart` | (sin clases) | 60 | ok |
+| `profile_field_type.dart` | (sin clases) | 67 | ok |
 | `profile_identity_card.dart` | ProfileIdentityCard | 53 | ok |
 | `profile_identity_card.dart` | _Initials | 34 | ok |
 | `profile_labels.dart` | ProfileLabels | 24 | ok |
-| `profile_sections.dart` | ProfileDataCard | 45 | ok |
+| `profile_sections.dart` | ProfileDataCard | 47 | ok |
+| `profile_sections.dart` | ProfilePendingEmailCard | 44 | ok |
 | `profile_sections.dart` | _EditableLine | 51 | ok |
 | `profile_sections.dart` | ProfileHubsCard | 27 | ok |
 | `register_consent_row.dart` | RegisterConsentRow | 38 | ok |
@@ -178,7 +205,7 @@ Generado: 2026-10-29 00:06
 
 | Archivo | Lineas |
 | --- | --- |
-| `auth_controller.dart` | 130 |
+| `auth_controller.dart` | 144 |
 
 ## delivery
 
@@ -186,7 +213,7 @@ Generado: 2026-10-29 00:06
 
 | Archivo | Lineas |
 | --- | --- |
-| `receive_order_screen.dart` | 187 |
+| `receive_order_screen.dart` | 219 |
 
 ### Widgets
 
@@ -194,8 +221,10 @@ Generado: 2026-10-29 00:06
 | --- | --- | --- | --- |
 | `delivery_code_badge.dart` | DeliveryCodeBadge | 54 | ok |
 | `receive_order_button.dart` | ReceiveOrderButton | 23 | ok |
-| `receive_order_card.dart` | ReceiveOrderView | 31 | ok |
-| `receive_order_card.dart` | ReceiveOrderCard | 55 | ok |
+| `receive_order_card.dart` | ReceiveOrderView | 39 | ok |
+| `receive_order_card.dart` | ReceiveOrderCard | 47 | ok |
+| `receive_order_card.dart` | _DroneKeypad | 41 | ok |
+| `transfer_checklist.dart` | TransferChecklist | 47 | ok |
 
 ## fleet
 
@@ -204,7 +233,7 @@ Generado: 2026-10-29 00:06
 | Archivo | Lineas |
 | --- | --- |
 | `drone_form_screen.dart` | 133 |
-| `fleet_flights_screen.dart` | 86 |
+| `fleet_flights_screen.dart` | 102 |
 | `fleet_screen.dart` | 273 |
 
 ### Widgets
@@ -218,8 +247,8 @@ Generado: 2026-10-29 00:06
 | `drone_status_sheet.dart` | DroneStatusSheet | 56 | ok |
 | `drone_status_sheet.dart` | _SheetHeader | 21 | ok |
 | `drone_status_sheet.dart` | _ActionTile | 42 | ok |
-| `drone_tile.dart` | DroneTile | 37 | ok |
-| `drone_tile.dart` | _DroneInfo | 44 | ok |
+| `drone_tile.dart` | DroneTile | 41 | ok |
+| `drone_tile.dart` | _DroneInfo | 48 | ok |
 | `fleet_flight_card.dart` | FleetFlightCard | 49 | ok |
 | `fleet_hub_selector.dart` | FleetHubSelector | 34 | ok |
 | `maintenance_sheet.dart` | MaintenanceSheet | 16 | ok |
@@ -257,7 +286,7 @@ Generado: 2026-10-29 00:06
 
 | Archivo | Lineas |
 | --- | --- |
-| `dispatcher_more_screen.dart` | 110 |
+| `dispatcher_more_screen.dart` | 125 |
 
 ### Widgets
 
@@ -269,7 +298,8 @@ Generado: 2026-10-29 00:06
 | `flight_spotlight_card.dart` | FlightSpotlightCard | 50 | ok |
 | `home_grid.dart` | HomeGrid | 23 | ok |
 | `home_grid.dart` | HomeLabel | 14 | ok |
-| `home_header.dart` | HomeHeader | 60 | ok |
+| `home_header.dart` | HomeHeader | 58 | ok |
+| `home_header.dart` | _HeaderActions | 25 | ok |
 | `home_header.dart` | _Initials | 30 | ok |
 | `home_page.dart` | HomePage | 24 | ok |
 | `home_spotlight.dart` | HomeSpotlight | 46 | ok |
@@ -287,10 +317,10 @@ Generado: 2026-10-29 00:06
 
 | Archivo | Lineas |
 | --- | --- |
-| `admin_home.dart` | 103 |
-| `dispatcher_home.dart` | 72 |
-| `fleet_operator_home.dart` | 114 |
-| `requester_home.dart` | 139 |
+| `admin_home.dart` | 104 |
+| `dispatcher_home.dart` | 79 |
+| `fleet_operator_home.dart` | 117 |
+| `requester_home.dart` | 143 |
 | `role_home.dart` | 71 |
 
 ## hubs
@@ -300,13 +330,15 @@ Generado: 2026-10-29 00:06
 | Archivo | Lineas |
 | --- | --- |
 | `hub_detail_screen.dart` | 55 |
-| `hub_form_screen.dart` | 80 |
-| `hubs_screen.dart` | 124 |
+| `hub_fleet_screen.dart` | 77 |
+| `hub_form_screen.dart` | 126 |
+| `hubs_screen.dart` | 130 |
 
 ### Widgets
 
 | Archivo | Widget/clase | Lineas | Estado |
 | --- | --- | --- | --- |
+| `hub_actions_sheet.dart` | (sin clases) | 46 | ok |
 | `hub_confirm.dart` | _HubSubject | 37 | ok |
 | `hub_detail_content.dart` | HubDetailContent | 46 | ok |
 | `hub_detail_content.dart` | _HubIdentity | 48 | ok |
@@ -314,7 +346,7 @@ Generado: 2026-10-29 00:06
 | `hub_form_sheet.dart` | HubFormSheet | 53 | ok |
 | `hub_form_sheet.dart` | _NameAndType | 40 | ok |
 | `hub_form_sheet.dart` | _ContactFields | 43 | ok |
-| `hub_form_values.dart` | HubFormValues | 53 | ok |
+| `hub_form_values.dart` | HubFormValues | 84 | **>60** |
 | `hub_labels.dart` | HubLabels | 27 | ok |
 | `hub_tile.dart` | HubTile | 31 | ok |
 | `hub_tile.dart` | HubTypeTile | 21 | ok |
@@ -329,6 +361,7 @@ Generado: 2026-10-29 00:06
 | --- | --- |
 | `inventory_form_screen.dart` | 164 |
 | `inventory_screen.dart` | 104 |
+| `quarantine_screen.dart` | 60 |
 
 ### Widgets
 
@@ -344,52 +377,81 @@ Generado: 2026-10-29 00:06
 | `inventory_tile.dart` | _ItemIcon | 21 | ok |
 | `inventory_tile.dart` | _ItemInfo | 42 | ok |
 
+## notifications
+
+### Pantallas
+
+| Archivo | Lineas |
+| --- | --- |
+| `notices_screen.dart` | 122 |
+
+### Widgets
+
+| Archivo | Widget/clase | Lineas | Estado |
+| --- | --- | --- | --- |
+| `notice_bell.dart` | NoticeBell | 21 | ok |
+| `notice_tile.dart` | NoticeTile | 41 | ok |
+| `notice_tile.dart` | _NoticeText | 29 | ok |
+
 ## orders
 
 ### Pantallas
 
 | Archivo | Lineas |
 | --- | --- |
+| `agenda_screen.dart` | 120 |
+| `dispatch_history_screen.dart` | 127 |
 | `emergency_screen.dart` | 73 |
 | `hub_emergency_screen.dart` | 89 |
-| `hub_plan_form_screen.dart` | 100 |
+| `hub_plan_form_screen.dart` | 120 |
 | `in_flight_screen.dart` | 36 |
 | `incoming_screen.dart` | 36 |
-| `order_detail_screen.dart` | 237 |
-| `order_history_screen.dart` | 34 |
+| `order_detail_screen.dart` | 345 |
+| `order_history_screen.dart` | 41 |
 | `pending_load_screen.dart` | 67 |
-| `plan_detail_screen.dart` | 153 |
-| `plan_form_screen.dart` | 62 |
+| `plan_detail_screen.dart` | 203 |
+| `plan_form_screen.dart` | 97 |
+| `plan_schedule_screen.dart` | 158 |
 | `plans_screen.dart` | 32 |
-| `queue_screen.dart` | 63 |
-| `scheduled_screen.dart` | 62 |
+| `queue_screen.dart` | 69 |
+| `scheduled_screen.dart` | 83 |
 
 ### Widgets
 
 | Archivo | Widget/clase | Lineas | Estado |
 | --- | --- | --- | --- |
+| `agenda_day_bar.dart` | AgendaDayBar | 57 | ok |
+| `agenda_entry_tile.dart` | AgendaEntryTile | 45 | ok |
+| `agenda_slot_card.dart` | AgendaSlotCard | 48 | ok |
+| `authorize_outcome.dart` | AuthorizeOutcome | 34 | ok |
 | `authorize_section.dart` | AuthorizeSection | 60 | ok |
 | `authorize_section.dart` | _PrescriptionCheck | 35 | ok |
+| `busy_slots.dart` | (sin clases) | 31 | ok |
+| `cold_chain_banner.dart` | ColdChainBanner | 13 | ok |
 | `confirm_load_section.dart` | ConfirmLoadSection | 37 | ok |
-| `dispatcher_permissions.dart` | DispatcherPermissions | 51 | ok |
-| `hub_plan_extras.dart` | HubPlanExtras | 53 | ok |
+| `dispatcher_permissions.dart` | DispatcherPermissions | 56 | ok |
+| `fallback_card.dart` | FallbackCard | 55 | ok |
+| `fallback_card.dart` | FallbackOptionTile | 33 | ok |
 | `hub_request_fields.dart` | HubRequestFields | 60 | ok |
 | `hub_request_fields.dart` | _QuantityField | 25 | ok |
 | `hub_request_fields.dart` | _OfferPicker | 43 | ok |
 | `hub_request_fields.dart` | HubTransferNote | 14 | ok |
-| `hub_request_values.dart` | HubRequestValues | 64 | **>60** |
+| `hub_request_values.dart` | HubRequestValues | 60 | ok |
 | `in_flight_tile.dart` | InFlightTile | 21 | ok |
 | `in_flight_tile.dart` | _DroneTile | 13 | ok |
 | `in_flight_tile.dart` | _FlightInfo | 35 | ok |
+| `occurrence_rules.dart` | OccurrenceRules | 45 | ok |
+| `occurrence_section.dart` | OccurrenceSection | 51 | ok |
+| `occurrence_section.dart` | _OccurrenceActions | 31 | ok |
 | `offer_option.dart` | (sin clases) | 23 | ok |
 | `order_assignment_card.dart` | OrderAssignmentCard | 38 | ok |
 | `order_form_scaffold.dart` | OrderFormScaffold | 54 | ok |
 | `order_kind_chip.dart` | OrderKindChip | 15 | ok |
 | `order_row_card.dart` | OrderRowCard | 46 | ok |
 | `order_row_card.dart` | _Lines | 27 | ok |
-| `order_status_chip.dart` | OrderStatusChip | 21 | ok |
-| `order_summary.dart` | OrderSummary | 36 | ok |
-| `order_summary.dart` | _SummaryLines | 33 | ok |
+| `order_status_chip.dart` | OrderStatusChip | 24 | ok |
+| `order_summary.dart` | OrderSummary | 53 | ok |
+| `order_summary.dart` | _SummaryLines | 53 | ok |
 | `order_tile.dart` | OrderTile | 49 | ok |
 | `order_tray.dart` | OrderTray | 52 | ok |
 | `order_tray.dart` | _TrayList | 26 | ok |
@@ -397,28 +459,45 @@ Generado: 2026-10-29 00:06
 | `pending_load_tile.dart` | _ConfirmButton | 35 | ok |
 | `plan_sections.dart` | PlanSummary | 35 | ok |
 | `plan_sections.dart` | PlanOccurrences | 30 | ok |
-| `plan_sections.dart` | _OccurrenceRow | 41 | ok |
-| `plan_tile.dart` | PlanTile | 28 | ok |
+| `plan_sections.dart` | _OccurrenceRow | 54 | ok |
+| `plan_tile.dart` | PlanTile | 33 | ok |
 | `prescription_checklist.dart` | PrescriptionChecklist | 24 | ok |
 | `prescription_picker.dart` | PrescriptionPicker | 52 | ok |
 | `prescription_picker.dart` | _Preview | 34 | ok |
 | `prescription_viewer.dart` | (sin clases) | 45 | ok |
 | `reject_section.dart` | RejectSection | 20 | ok |
 | `reject_section.dart` | _RejectSectionState | 50 | ok |
-| `requester_order_fields.dart` | RequesterOrderForm | 23 | ok |
+| `requester_order_fields.dart` | RequesterOrderForm | 21 | ok |
 | `requester_order_fields.dart` | CatalogChoices | 34 | ok |
 | `requester_order_fields.dart` | PrescriptionSlot | 28 | ok |
 | `requester_order_fields.dart` | DestinationFields | 35 | ok |
-| `requester_order_fields.dart` | PlanScheduleFields | 48 | ok |
-| `requester_order_state.dart` | (sin clases) | 84 | ok |
-| `requester_order_values.dart` | RequesterOrderValues | 90 | **>60** |
+| `requester_order_fields.dart` | PlanScheduleFields | 30 | ok |
+| `requester_order_state.dart` | (sin clases) | 77 | ok |
+| `requester_order_values.dart` | RequesterOrderValues | 87 | **>60** |
+| `reschedule_sheet.dart` | RescheduleSheet | 10 | ok |
+| `reschedule_sheet.dart` | _RescheduleSheetState | 48 | ok |
+| `return_check_section.dart` | ReturnCheckSection | 52 | ok |
+| `schedule_fields.dart` | ScheduleForm | 22 | ok |
+| `schedule_fields.dart` | ScheduleFields | 43 | ok |
+| `schedule_fields.dart` | ScheduleTimeField | 36 | ok |
+| `schedule_fields.dart` | _PrescriptionValidity | 38 | ok |
+| `schedule_kind_fields.dart` | ScheduleKindFields | 17 | ok |
+| `schedule_kind_fields.dart` | _WeeklyFields | 51 | ok |
+| `schedule_kind_fields.dart` | _MonthlyFields | 38 | ok |
+| `schedule_kind_fields.dart` | _DatesFields | 45 | ok |
+| `schedule_preview_card.dart` | SchedulePreviewCard | 39 | ok |
+| `schedule_preview_card.dart` | _PreviewList | 43 | ok |
+| `schedule_preview_state.dart` | (sin clases) | 78 | ok |
+| `schedule_range_fields.dart` | ScheduleRangeFields | 34 | ok |
+| `schedule_range_fields.dart` | _ScheduleEndFields | 56 | ok |
+| `schedule_values.dart` | ScheduleDraft | 90 | **>60** |
 | `watch_flight_button.dart` | WatchFlightButton | 18 | ok |
 
 ### Otros (presentation/ sin /widgets)
 
 | Archivo | Lineas |
 | --- | --- |
-| `order_format.dart` | 50 |
+| `order_format.dart` | 159 |
 
 ## tracking
 
@@ -426,18 +505,18 @@ Generado: 2026-10-29 00:06
 
 | Archivo | Lineas |
 | --- | --- |
-| `tracking_screen.dart` | 92 |
+| `tracking_screen.dart` | 115 |
 
 ### Widgets
 
 | Archivo | Widget/clase | Lineas | Estado |
 | --- | --- | --- | --- |
-| `flight_card.dart` | FlightCard | 46 | ok |
+| `flight_card.dart` | FlightCard | 48 | ok |
 | `flight_card.dart` | _Arrival | 41 | ok |
-| `flight_card.dart` | _Stat | 44 | ok |
-| `flight_map.dart` | FlightMap | 51 | ok |
+| `flight_card.dart` | _Stat | 58 | ok |
+| `flight_map.dart` | FlightMap | 58 | ok |
 | `flight_map.dart` | _EndpointsLayer | 39 | ok |
-| `flight_map.dart` | _RouteLayer | 45 | ok |
+| `flight_map.dart` | _RouteLayer | 56 | ok |
 | `flight_notice.dart` | FlightNotice | 25 | ok |
 
 ## users
@@ -475,14 +554,15 @@ Generado: 2026-10-29 00:06
 
 ## Resumen
 
-- Pantallas (35 archivos): 35
-- Archivos de widgets: 127 - clases de widget medidas: 282
-- Widgets sobre 60 lineas: 4
+- Pantallas (43 archivos): 43
+- Archivos de widgets: 152 - clases de widget medidas: 326
+- Widgets sobre 60 lineas: 5
 
 Detalle de los que exceden 60 lineas (candidatos a partir):
 
+- hubs/hub_form_values.dart :: HubFormValues = 84
 - inventory/inventory_form_values.dart :: InventoryFormValues = 99
-- orders/hub_request_values.dart :: HubRequestValues = 64
-- orders/requester_order_values.dart :: RequesterOrderValues = 90
+- orders/requester_order_values.dart :: RequesterOrderValues = 87
+- orders/schedule_values.dart :: ScheduleDraft = 90
 - users/user_form_values.dart :: UserFormValues = 74
 

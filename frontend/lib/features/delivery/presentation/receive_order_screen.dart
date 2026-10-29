@@ -9,9 +9,12 @@ import '../../../core/widgets/app_snack.dart';
 import '../../auth/presentation/widgets/auth_morph_button.dart';
 import '../../home/presentation/widgets/section_form_page.dart';
 import '../../home/presentation/widgets/section_header.dart';
+import '../../orders/data/order_models.dart';
+import '../../orders/data/order_providers.dart';
 import '../data/delivery_models.dart';
 import '../data/delivery_providers.dart';
 import 'widgets/receive/receive_order_card.dart';
+import 'widgets/receive/transfer_checklist.dart';
 
 /// El código de entrega y recibir el pedido (`/delivery/:orderId`), CU-19 y
 /// CU-29.
@@ -53,8 +56,15 @@ class _ReceiveOrderScreenState extends ConsumerState<ReceiveOrderScreen>
   bool _validating = false;
   bool _delivered = false;
   int _shakeCount = 0;
+  bool? _remission;
+  bool? _seal;
 
   bool get _canType => (_code?.landed ?? false) && !_closed && !_delivered;
+
+  /// Un traslado: recibe la central de destino y revisa remisión y sello.
+  bool get _isTransfer =>
+      ref.watch(orderDetailProvider(widget.orderId)).value?.destinationKind ==
+      DestinationKind.hub;
 
   @override
   void initState() {
@@ -125,12 +135,27 @@ class _ReceiveOrderScreenState extends ConsumerState<ReceiveOrderScreen>
       _error = null;
     });
     try {
-      await ref
+      final transfer = _isTransfer;
+      final order = await ref
           .read(receiveOrderProvider.notifier)
-          .validate(widget.orderId, code);
+          .validate(
+            widget.orderId,
+            code,
+            remissionMatches: transfer ? _remission : null,
+            sealIntact: transfer ? _seal : null,
+          );
       _timer?.cancel();
       // Se pudo salir de la pantalla mientras Nest respondía.
       if (!mounted) return;
+      // Remisión, sello o frío no cuadran: no es un error, el dron vuelve.
+      if (order.status == OrderStatus.returning) {
+        final reason =
+            order.receiptRejectedReason ??
+            'El traslado no se recibió. El dron regresa con el paquete.';
+        _close(reason);
+        showAppSnack(context, reason, tone: SnackTone.warning);
+        return;
+      }
       setState(() => _delivered = true);
       await _collapse.forward();
       if (!mounted) return;
@@ -152,7 +177,9 @@ class _ReceiveOrderScreenState extends ConsumerState<ReceiveOrderScreen>
 
   @override
   Widget build(BuildContext context) {
+    final transfer = _isTransfer;
     final ready = _canType && !_validating;
+    final checked = !transfer || TransferChecklist.answered(_remission, _seal);
     return SectionFormPage(
       header: SectionHeader(
         title: 'Recibir pedido',
@@ -168,10 +195,15 @@ class _ReceiveOrderScreenState extends ConsumerState<ReceiveOrderScreen>
           canType: _canType,
           shakeCount: _shakeCount,
           enabled: ready,
+          isTransfer: transfer,
+          remissionMatches: _remission,
+          sealIntact: _seal,
         ),
         input: _input,
         collapse: _collapse,
-        onSubmitted: _submit,
+        onSubmitted: checked ? _submit : () {},
+        onRemission: (value) => setState(() => _remission = value),
+        onSeal: (value) => setState(() => _seal = value),
       ),
       button: Padding(
         padding: const EdgeInsets.only(top: 4),
@@ -179,7 +211,7 @@ class _ReceiveOrderScreenState extends ConsumerState<ReceiveOrderScreen>
           label: 'Confirmar entrega',
           loadingLabel: 'Validando el código',
           isLoading: _validating,
-          onPressed: ready ? _submit : null,
+          onPressed: ready && checked ? _submit : null,
         ),
       ),
     );

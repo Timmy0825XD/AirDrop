@@ -30,6 +30,8 @@ import 'package:frontend/features/orders/data/order_providers.dart';
 import 'package:frontend/features/users/data/user_models.dart';
 import 'package:frontend/features/users/data/user_providers.dart';
 import 'package:frontend/features/users/data/user_repository.dart';
+import 'package:frontend/features/notifications/data/local_notice_repository.dart';
+import 'package:frontend/features/notifications/data/notice_providers.dart';
 
 class FakeUserRepository implements UserRepository {
   FakeUserRepository(this.users);
@@ -77,6 +79,10 @@ class FakeTokenStore extends TokenStore {
 }
 
 class FakeHubRepository implements HubRepository {
+  @override
+  Future<Hub> update(String id, Map<String, dynamic> changes) =>
+      throw UnimplementedError();
+
   FakeHubRepository(this.hub);
 
   final Hub? hub;
@@ -139,6 +145,9 @@ class FakeInventoryRepository implements InventoryRepository {
 
   @override
   Future<void> remove(String id) async => throw UnimplementedError();
+
+  @override
+  Future<List<QuarantineRecord>> quarantine() async => const [];
 }
 
 /// Una sola geovalla, para que el listado tenga algo que mostrar sin
@@ -293,7 +302,11 @@ void main() {
     await tester.scrollUntilVisible(find.text('Métricas'), 200);
     expect(find.text('Centrales'), findsOneWidget);
     expect(find.text('Cuentas institucionales'), findsOneWidget);
-    expect(_onTapOf(tester, 'Métricas'), isNull, reason: 'aún sin datos');
+    expect(
+      _onTapOf(tester, 'Métricas'),
+      isNotNull,
+      reason: 'abre /analytics',
+    );
     semantics.dispose();
   });
 
@@ -474,6 +487,7 @@ Future<ProviderContainer> _authenticatedContainer({
       authRepositoryProvider.overrideWithValue(authRepository),
       // Las bandejas del despachador se cuentan en su inicio.
       orderRepositoryProvider.overrideWithValue(LocalOrderRepository()),
+      noticeRepositoryProvider.overrideWithValue(LocalNoticeRepository()),
       if (hubRepository != null)
         hubRepositoryProvider.overrideWithValue(hubRepository),
       if (inventoryRepository != null)

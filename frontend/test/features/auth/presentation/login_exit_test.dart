@@ -11,6 +11,8 @@ import 'package:frontend/features/orders/data/local_order_repository.dart';
 import 'package:frontend/features/orders/data/order_providers.dart';
 
 import 'auth_controller_test.dart' show FakeTokenStore;
+import 'package:frontend/features/notifications/data/local_notice_repository.dart';
+import 'package:frontend/features/notifications/data/notice_providers.dart';
 
 void main() {
   testWidgets('el login termina su círculo de salida antes de ir al inicio', (
@@ -26,6 +28,7 @@ void main() {
         // El inicio del solicitante lista sus pedidos: sin esto pediría a
         // la API real y el test quedaría esperando la red.
         orderRepositoryProvider.overrideWithValue(LocalOrderRepository()),
+        noticeRepositoryProvider.overrideWithValue(LocalNoticeRepository()),
       ],
     );
     addTearDown(container.dispose);

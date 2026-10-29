@@ -67,7 +67,7 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
     });
     if (errors.isNotEmpty) return;
     if (original != null && _values.diff(original).isEmpty) {
-      showAppSnack(context, 'No hay cambios para guardar.');
+      showAppSnack(context, 'No hay cambios para guardar.', tone: SnackTone.info);
       return;
     }
     FocusScope.of(context).unfocus();
@@ -89,7 +89,7 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
       );
       SectionHeader.backOrHome(context);
     } on ApiException catch (e) {
-      if (mounted) showAppSnack(context, e.message);
+      if (mounted) showErrorSnack(context, e.message);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

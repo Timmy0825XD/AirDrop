@@ -113,6 +113,20 @@ class AuthController extends AsyncNotifier<AuthState> {
     return _repository.resetPassword(request);
   }
 
+  Future<PublicUser> confirmEmailChange(String code) =>
+      _publish(_repository.confirmEmailChange(code));
+
+  Future<AuthMessage> resendEmailChange() => _repository.resendEmailChange();
+
+  Future<PublicUser> cancelEmailChange() =>
+      _publish(_repository.cancelEmailChange());
+
+  Future<PublicUser> _publish(Future<PublicUser> pending) async {
+    final user = await pending;
+    state = AsyncData(AuthState.authenticated(user));
+    return user;
+  }
+
   Future<PublicUser> updateProfile(UpdateProfileRequest request) async {
     final user = await _repository.updateProfile(request);
     state = AsyncData(AuthState.authenticated(user));

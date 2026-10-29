@@ -21,9 +21,11 @@ class DispatcherPermissions {
       order.destinationHubId == myHubId &&
       order.originHubId != myHubId;
 
-  /// Autorizar o rechazar: solo mientras sigue en recibido.
+  /// Autorizar o rechazar: mientras sigue en recibido, o si otra central
+  /// se lo pasó a la suya (fallback `hub`, CU-31).
   bool get canDecide =>
-      order.status == OrderStatus.received && !onlyDestination;
+      (order.status == OrderStatus.received || order.reassignedToHub) &&
+      !onlyDestination;
 
   /// Confirmar la carga: autorizado, sin carga confirmada y salió de su
   /// central.
@@ -57,3 +59,33 @@ class DispatcherPermissions {
   /// Programado con fecha futura en Bogotá.
   bool get notYet => isFutureSchedule(order.scheduledFor);
 }
+
+/// Un programado se autoriza y se carga entre 2 horas antes de su franja
+/// y el cierre. Es una pista: la autoridad es el mensaje de Nest.
+String? dispatchWindowNote(Order order, DateTime now) {
+  if (isFutureSchedule(order.scheduledFor)) {
+    return 'Este pedido programado todavía no llega a su fecha.';
+  }
+  final opensAt = order.scheduledAt?.subtract(const Duration(hours: 2));
+  if (opensAt != null && now.isBefore(opensAt)) {
+    return 'Disponible desde las ${formatClock(opensAt)} (2 horas antes '
+        'de la franja).';
+  }
+  final closesAt = order.windowEndsAt;
+  if (closesAt != null && now.isAfter(closesAt)) {
+    return 'La franja de esta entrega ya cerró.';
+  }
+  return null;
+}
+
+/// Llegó de otra central que no tenía dron (fallback `hub`).
+bool cameFromOtherHub(DispatcherPermissions can) =>
+    can.order.reassignedFromHubId != null &&
+    can.order.originHubId == can.myHubId;
+
+/// Revisar el empaque de un pedido devuelto: la central de origen, una
+/// sola vez (HU-34).
+bool canReturnCheck(DispatcherPermissions can) =>
+    can.order.awaitsReturnCheck &&
+    can.myHubId != null &&
+    can.order.originHubId == can.myHubId;

@@ -11,7 +11,10 @@ class OrderStatusChip extends StatelessWidget {
   final OrderStatus status;
 
   static PillTone toneOf(OrderStatus status) => switch (status) {
-    OrderStatus.inFlight || OrderStatus.returning => PillTone.attention,
+    OrderStatus.inFlight ||
+    OrderStatus.returning ||
+    OrderStatus.awaitingConfirmation ||
+    OrderStatus.reassigned => PillTone.attention,
     OrderStatus.awaitingDelivery || OrderStatus.delivered => PillTone.positive,
     OrderStatus.rejected ||
     OrderStatus.cancelled ||

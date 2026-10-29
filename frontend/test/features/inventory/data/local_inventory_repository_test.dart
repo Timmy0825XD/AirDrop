@@ -6,6 +6,10 @@ import 'package:frontend/features/inventory/data/inventory_models.dart';
 import 'package:frontend/features/inventory/data/local_inventory_repository.dart';
 
 class _FakeHubRepository implements HubRepository {
+  @override
+  Future<Hub> update(String id, Map<String, dynamic> changes) =>
+      throw UnimplementedError();
+
   _FakeHubRepository(this.hub);
 
   Hub? hub;

@@ -12,7 +12,7 @@ import '../features/orders/data/order_providers.dart';
 /// Los destinos de la barra de cada rol y su acción del centro.
 ///
 /// - Solicitante: Inicio · Pedidos · (Pedir urgencia) · Planes · Perfil.
-/// - Despachador: Inicio · Agenda (los programados) · (Cola de urgencias) ·
+/// - Despachador: Inicio · Agenda (las franjas del día) · (Cola de urgencias) ·
 ///   Inventario · Más. La cola también es destino: la abre el botón del centro.
 /// - Operador: Inicio · Flota · (Vuelos en curso) · Geovallas · Perfil. El
 ///   botón abre el mapa de cada dron en misión; "Nuevo dron" está en Flota.
@@ -82,7 +82,7 @@ class RoleTabs {
         NavDestination(icon: Icons.medication_outlined, label: 'Inventario'),
         NavDestination(icon: Icons.grid_view_rounded, label: 'Más'),
       ],
-      paths: const ['/home', '/orders/scheduled', '/inventory', '/more'],
+      paths: const ['/home', '/orders/agenda', '/inventory', '/more'],
       centerPath: '/orders/queue',
       center: NavCenterAction(
         icon: Icons.format_list_numbered_rounded,
