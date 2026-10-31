@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/field_limits.dart';
+import '../auth_brand.dart';
 import '../auth_field.dart';
 import '../auth_morph_button.dart';
 import '../auth_text_link.dart';
@@ -16,7 +17,7 @@ class LoginHeading extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'LOGÍSTICA AEROMÉDICA',
+          'BIENVENIDO DE VUELTA',
           style: theme.textTheme.labelSmall?.copyWith(
             color: theme.colorScheme.primary,
             fontWeight: FontWeight.w800,
@@ -26,7 +27,7 @@ class LoginHeading extends StatelessWidget {
         const SizedBox(height: 8),
         Semantics(
           header: true,
-          child: Text('Inicia sesión', style: theme.textTheme.displayMedium),
+          child: Text('Inicia sesión', style: authTitleStyle(theme)),
         ),
         const SizedBox(height: 6),
         Text(
@@ -124,14 +125,18 @@ class LoginActions extends StatelessWidget {
     super.key,
     required this.buttonKey,
     required this.isLoading,
+    this.isDone = false,
     required this.onSubmit,
     required this.onForgotPassword,
     required this.onRegister,
   });
 
-  /// Marca el botón para que el círculo de salida nazca desde él.
+  /// Marca el botón para que la salida nazca desde él.
   final GlobalKey buttonKey;
   final bool isLoading;
+
+  /// La cuenta ya entró: el botón queda verde con el check.
+  final bool isDone;
   final VoidCallback onSubmit;
   final VoidCallback onForgotPassword;
   final VoidCallback onRegister;
@@ -151,10 +156,12 @@ class LoginActions extends StatelessWidget {
         const SizedBox(height: 8),
         Center(
           child: AuthMorphButton(
+            pill: true,
             key: buttonKey,
             label: 'Iniciar sesión',
             loadingLabel: 'Iniciando sesión',
             isLoading: isLoading,
+            isDone: isDone,
             onPressed: onSubmit,
           ),
         ),

@@ -44,6 +44,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 10 | Cierre y pruebas de punta a punta | `test/flujos-front` | Hecha (PR #51) |
 | 11 | Rediseño visual total "Grafito y turquesa" | `style/rediseno-total-temporal` | Hecha (PR #99) |
 | 12 | Contratos de Nest pendientes y avisos de vidrio | `feature/front-pendientes-backend` | Hecha (PR pendiente) |
+| 13 | Auth con el espacio aéreo vivo | `style/auth-espacio-aereo` | Hecha (PR pendiente) |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -773,6 +774,76 @@ de 60 líneas (solo los `*_values.dart`, que no cuentan).
 
 Sigue pendiente del backend: el operador no puede leer `GET /orders/:id`,
 así que su mapa sigue al dron sin la ruta (o mandarla en `/fleet/flights`).
+
+## Fase 13 — Auth con el espacio aéreo vivo
+
+Rama `style/auth-espacio-aereo` desde `develop`. Solo apariencia y
+animación del auth: no cambian `data/`, el controller, las rutas, los
+endpoints, las validaciones ni los textos de Nest. El resto de la app sigue
+igual (va en la fase siguiente). Diseño aprobado por Oscar el 2026-10-31
+sobre maquetas en claro y oscuro, siguiendo la skill `apple-design` (física
+de resortes, entrar y salir por el mismo camino, materiales, tipografía por
+tamaño y "reducir movimiento").
+
+Hecho (2026-10-31):
+
+- **El espacio aéreo vivo** (`widgets/airspace/`): `AirspaceMap` reemplaza
+  el bloque turquesa en todo el auth. Plano de la ciudad con centrales
+  (cruz médica) unidas por rutas punteadas con un pulso, drones de adorno
+  con estela y anillo al llegar, inclinación 3D y ladeo hacia el puntero.
+  **Sin datos inventados**: Oscar pidió quitar "drones en vuelo" y "entregas
+  hoy" porque no son reales.
+- **Entrada nueva** (reemplaza la ruta con el dron que iba de un punto a
+  otro y el punto naranja en bucle): se encienden las centrales y la red, el
+  dron de la marca (`DroneMark`, con hélices y luces de navegación) llega
+  desde abajo, "AirDrop" entra letra por letra de borroso a nítido y el
+  eslogan; aviso "Toca para continuar". En el morph el mapa se encoge a
+  encabezado y se inclina, el dron viaja a la esquina como logo y la hoja
+  del formulario sube.
+- **Salida al inicio** (reemplaza `CircleReveal`): el botón se pone verde y
+  dibuja el check (`AuthMorphButton.isDone`), desde ahí se abre un círculo
+  con el espacio aéreo, la cámara se lanza en picada y se funde en el fondo
+  de la app (`AirspaceReveal`). La usan el login y verificar el código; la
+  nueva contraseña abre el mapa sin picada antes de su sello.
+- **Formulario**: hoja pegada a los bordes (`AuthSheetPanel`), campos
+  blancos con borde en claro y el ícono que se enciende al enfocar (tema
+  local, no toca los formularios de fuera de auth), títulos a 32 con
+  tracking negativo.
+- **Registro**: `RegisterFlightPlan` (el avance como ruta de vuelo que se
+  enciende por grupos completos) y `PasswordAltimeter` (fuerza de la clave
+  como altímetro). Sigue siendo un solo formulario con la misma validación
+  y el consentimiento que enciende el botón.
+- **Pantallas de paso**: el dron de la marca trae colgado el ícono (llave,
+  correo) y flota. "Contraseña actualizada": el sello sobre el mapa y el dron
+  de la marca orbitándolo.
+- Borrado: `login_route.dart` (ruta, dron del splash y punto en bucle) y
+  `circle_reveal.dart`. `AuthGlassPanel` pasa a `AuthSheetPanel` y
+  `AuthGlass.onBrand` a `AuthChrome`.
+- `login_exit_test` ajustado a la salida nueva (700 ms + check 380 ms +
+  salida 1100 ms). `flutter analyze` sin issues y `flutter test` en verde
+  (229). `docs/ui_inventory.md` regenerado: solo los `*_values` pasan de 60
+  líneas. Revisado en la app (web, datos locales) en claro y en oscuro:
+  entrada, login, salida al inicio, registro y recuperar contraseña.
+
+Ajustes tras la revisión de Oscar (2026-10-31):
+
+- La hoja del formulario en oscuro baja de grafito a casi negro (antes era
+  la superficie gris plana) y en claro de blanco a un cielo suave; campos
+  más oscuros en oscuro.
+- El encabezado alto y el de paso crecen con la pantalla (`tallOf`,
+  `stepOf`): en un teléfono largo la hoja ya no queda vacía.
+- Botón principal del auth en píldora (`AuthMorphButton.pill`), títulos a
+  32 (`authTitleStyle`) y "Bienvenido de vuelta" en el login.
+- Pantallas de paso rehechas: el dron baja con el ícono en una insignia
+  turquesa al centro del mapa y el contenido va en la misma hoja del login
+  (antes la llave quedaba pegada al botón de volver).
+
+Pendiente:
+
+- Probarlo en el emulador y en Windows (rendimiento del mapa con el
+  teclado abierto).
+- Fase siguiente: llevar el resto de la app al diseño aprobado en las
+  maquetas (inicio, pedir urgencia, seguimiento).
 
 ## Pendiente del backend
 

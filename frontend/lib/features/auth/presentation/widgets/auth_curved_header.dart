@@ -1,61 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/app_palette.dart';
-
-/// Bloque de marca con el borde inferior curvo: el acento turquesa en
-/// degradado, una luz suave arriba, la trama de puntos y un filo de luz en
-/// la curva, como el borde de un vidrio.
-///
-/// La altura y la profundidad de la curva llegan desde afuera para poder
-/// animarlas: en el splash cubre toda la pantalla ([curve] en 0) y después
-/// se encoge hasta ser el encabezado del formulario. Solo cambia el
-/// recorte, así que el GPU no repinta el contenido en cada cuadro.
-class AuthCurvedHeader extends StatelessWidget {
-  const AuthCurvedHeader({
-    super.key,
-    required this.height,
-    required this.curve,
-  });
-
-  final double height;
-  final double curve;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-    final ink = Theme.of(context).colorScheme.onPrimary;
-    return CustomPaint(
-      foregroundPainter: _RimPainter(height: height, curve: curve, color: ink),
-      child: ClipPath(
-        clipper: _CurvedBottomClipper(height: height, curve: curve),
-        child: DecoratedBox(
-          decoration: BoxDecoration(gradient: palette.accent),
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: RadialGradient(
-                center: const Alignment(-0.7, -0.9),
-                radius: 1.1,
-                colors: [
-                  Colors.white.withValues(alpha: 0.28),
-                  Colors.white.withValues(alpha: 0),
-                ],
-              ),
-            ),
-            child: RepaintBoundary(
-              child: CustomPaint(
-                size: Size.infinite,
-                painter: _DotsPainter(ink.withValues(alpha: 0.12)),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
+import 'airspace/airspace_map.dart';
 
 Path _curvedPath(Size size, double height, double curve) {
-  final bottom = Radius.elliptical(size.width / 2, curve);
+  final bottom = Radius.circular(curve * 0.75);
   return Path()..addRRect(
     RRect.fromLTRBAndCorners(
       0,
@@ -66,6 +14,71 @@ Path _curvedPath(Size size, double height, double curve) {
       bottomRight: bottom,
     ),
   );
+}
+
+/// El encabezado de auth: el espacio aéreo vivo ([AirspaceMap]) recortado
+/// con las esquinas de abajo redondeadas.
+///
+/// La altura y el radio de la curva llegan desde afuera para poder
+/// animarlos: en la entrada cubre toda la pantalla ([curve] en 0) y después
+/// se encoge hasta ser el encabezado del formulario. El mapa ocupa siempre
+/// la pantalla entera y solo cambia el recorte, así no se deforma.
+///
+/// [network], [traffic] y [tilt] pasan directo al mapa; por defecto la red
+/// está encendida, los drones vuelan y el plano está inclinado.
+class AuthCurvedHeader extends StatelessWidget {
+  const AuthCurvedHeader({
+    super.key,
+    required this.height,
+    required this.curve,
+    this.network = kAlwaysCompleteAnimation,
+    this.traffic = kAlwaysCompleteAnimation,
+    this.tilt = kAlwaysCompleteAnimation,
+  });
+
+  final double height;
+  final double curve;
+  final Animation<double> network;
+  final Animation<double> traffic;
+  final Animation<double> tilt;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final dark = colors.brightness == Brightness.dark;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final full = constraints.maxHeight;
+        // El plano gira sobre el centro del encabezado visible.
+        final focus = Alignment(0, (height / full).clamp(0.0, 1.0) - 1);
+        return CustomPaint(
+          foregroundPainter: _EdgePainter(
+            height: height,
+            curve: curve,
+            color: dark
+                ? Colors.white.withValues(alpha: 0.12)
+                : colors.outline.withValues(alpha: 0.6),
+          ),
+          child: ClipPath(
+            clipper: _CurvedBottomClipper(height: height, curve: curve),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: AirspaceMap(
+                    network: network,
+                    traffic: traffic,
+                    tilt: tilt,
+                    focus: focus,
+                  ),
+                ),
+                const _TopVeil(),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class _CurvedBottomClipper extends CustomClipper<Path> {
@@ -82,10 +95,9 @@ class _CurvedBottomClipper extends CustomClipper<Path> {
       old.height != height || old.curve != curve;
 }
 
-/// El filo de luz sobre la curva: más fuerte al centro y se apaga hacia
-/// los lados.
-class _RimPainter extends CustomPainter {
-  const _RimPainter({
+/// El filo fino del borde de abajo, para separar el mapa del fondo.
+class _EdgePainter extends CustomPainter {
+  const _EdgePainter({
     required this.height,
     required this.curve,
     required this.color,
@@ -98,47 +110,49 @@ class _RimPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     if (curve <= 0 || height >= size.height) return;
-    final top = (height - curve * 2).clamp(0.0, size.height);
-    final rect = Rect.fromLTRB(0, top, size.width, height);
     canvas.save();
-    canvas.clipRect(rect);
+    canvas.clipRect(Rect.fromLTRB(0, height - curve, size.width, height + 1));
     canvas.drawPath(
       _curvedPath(size, height, curve),
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5
-        ..shader = LinearGradient(
-          colors: [
-            Colors.white.withValues(alpha: 0),
-            Colors.white.withValues(alpha: 0.55),
-            Colors.white.withValues(alpha: 0),
-          ],
-        ).createShader(rect),
+        ..strokeWidth = 0.8
+        ..color = color,
     );
     canvas.restore();
   }
 
   @override
-  bool shouldRepaint(_RimPainter old) =>
+  bool shouldRepaint(_EdgePainter old) =>
       old.height != height || old.curve != curve || old.color != color;
 }
 
-/// Trama de puntos muy suave, la textura del encabezado.
-class _DotsPainter extends CustomPainter {
-  const _DotsPainter(this.color);
-
-  final Color color;
+/// Un velo arriba para que la hora y el logo se lean sobre el mapa.
+class _TopVeil extends StatelessWidget {
+  const _TopVeil();
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = color;
-    for (var y = 2.0; y < size.height; y += 18) {
-      for (var x = 2.0; x < size.width; x += 18) {
-        canvas.drawCircle(Offset(x, y), 1.1, paint);
-      }
-    }
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final dark = colors.brightness == Brightness.dark;
+    final veil = (dark ? colors.surface : colors.surfaceContainerHighest)
+        .withValues(alpha: 0.85);
+    return Positioned(
+      left: 0,
+      right: 0,
+      top: 0,
+      height: 180,
+      child: IgnorePointer(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [veil, veil.withValues(alpha: 0)],
+            ),
+          ),
+        ),
+      ),
+    );
   }
-
-  @override
-  bool shouldRepaint(_DotsPainter old) => old.color != color;
 }

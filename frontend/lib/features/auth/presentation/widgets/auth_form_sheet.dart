@@ -1,10 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import 'auth_glass.dart';
 
-/// La tarjeta de vidrio con el formulario, montada sobre la curva del
-/// encabezado y con scroll propio (al abrir el teclado sube por encima del
-/// encabezado).
+/// La hoja con el formulario, montada sobre el borde del encabezado y con
+/// scroll propio (al abrir el teclado sube por encima del encabezado). Va
+/// pegada a los lados y llega hasta abajo; en pantallas anchas se centra.
 ///
 /// Entra con [entrance]: aparece y se desplaza desde [from] hasta su sitio.
 /// El login la sube desde abajo; el registro la trae de un lado. Mientras
@@ -21,9 +23,11 @@ class AuthFormSheet extends StatelessWidget {
   final Animation<double> entrance;
   final Offset from;
 
-  /// Distancia desde arriba a la que empieza la tarjeta.
+  /// Distancia desde arriba a la que empieza la hoja.
   final double top;
   final Widget child;
+
+  static const double _maxWidth = 560;
 
   @override
   Widget build(BuildContext context) {
@@ -40,12 +44,18 @@ class AuthFormSheet extends StatelessWidget {
           ),
         );
       },
-      child: SingleChildScrollView(
-        padding: EdgeInsets.fromLTRB(16, top, 16, 24 + bottom),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: AuthGlassPanel(child: child),
+      child: LayoutBuilder(
+        builder: (context, constraints) => SingleChildScrollView(
+          padding: EdgeInsets.only(top: top),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minWidth: math.min(_maxWidth, constraints.maxWidth),
+                maxWidth: _maxWidth,
+                minHeight: math.max(0, constraints.maxHeight - top),
+              ),
+              child: AuthSheetPanel(bottomInset: bottom, child: child),
+            ),
           ),
         ),
       ),

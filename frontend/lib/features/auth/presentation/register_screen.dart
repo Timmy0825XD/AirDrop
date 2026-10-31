@@ -17,6 +17,7 @@ import 'widgets/login/login_form_alert.dart';
 import 'widgets/register/register_consent_row.dart';
 import 'widgets/register/register_document_section.dart';
 import 'widgets/register/register_fields.dart';
+import 'widgets/register/register_flight_plan.dart';
 import 'widgets/register/register_header.dart';
 
 /// Alta pública del solicitante. No hay campo de rol: el despachador y el
@@ -137,6 +138,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
     }
   }
 
+  /// Cuántos grupos del plan de vuelo ya están bien: identidad, contacto
+  /// y acceso (con el consentimiento). Solo pinta el avance.
+  int _completedGroups() {
+    final errors = _validate();
+    bool ok(List<RegisterInput> inputs) =>
+        inputs.every((input) => !errors.containsKey(input));
+    return [
+      ok([RegisterInput.name, RegisterInput.document]),
+      ok([RegisterInput.phone, RegisterInput.email]),
+      ok([RegisterInput.password]) && _consentAccepted,
+    ].where((done) => done).length;
+  }
+
   void _clearErrors(String _) {
     if (_errors.isEmpty && _errorMessage == null) return;
     setState(() {
@@ -189,6 +203,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           const RegisterHeading(),
+          const SizedBox(height: 18),
+          ListenableBuilder(
+            listenable: Listenable.merge(_controllers.all),
+            builder: (context, _) =>
+                RegisterFlightPlan(completed: _completedGroups()),
+          ),
           const SizedBox(height: 22),
           AuthFormAlert(
             message: _errorMessage,
@@ -213,6 +233,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           const SizedBox(height: 22),
           Center(
             child: AuthMorphButton(
+              pill: true,
               label: 'Crear cuenta',
               loadingLabel: 'Creando cuenta',
               isLoading: _isLoading,

@@ -13,7 +13,7 @@ import 'auth_controller.dart';
 import 'login_screen.dart';
 import 'widgets/auth_morph_button.dart';
 import 'widgets/auth_step_scaffold.dart';
-import 'widgets/circle_reveal.dart';
+import 'widgets/airspace/airspace_reveal.dart';
 import 'widgets/reset/reset_code_section.dart';
 import 'widgets/reset/reset_password_form.dart';
 import 'widgets/reset/reset_success_view.dart';
@@ -22,8 +22,8 @@ import 'widgets/reset/reset_success_view.dart';
 enum ResetInput { code, password, confirm }
 
 /// Nueva contraseña con el código del correo. El código dura 15 minutos
-/// en Nest (`OTP_RESET_TTL_MS`). Al actualizar, el botón crece en círculo y
-/// aparece "Contraseña actualizada"; la sesión no se abre, se vuelve al
+/// en Nest (`OTP_RESET_TTL_MS`). Al actualizar, desde el botón se abre el
+/// espacio aéreo y aparece "Contraseña actualizada"; la sesión no se abre, se vuelve al
 /// login.
 class ResetPasswordScreen extends ConsumerStatefulWidget {
   const ResetPasswordScreen({super.key, this.contact});
@@ -46,11 +46,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen>
   final _buttonKey = GlobalKey();
   late final _reveal = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 720),
-  );
-  late final _revealCurve = CurvedAnimation(
-    parent: _reveal,
-    curve: Curves.easeInOutCubic,
+    duration: AirspaceReveal.duration,
   );
 
   Timer? _timer;
@@ -73,7 +69,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen>
   @override
   void dispose() {
     _timer?.cancel();
-    _revealCurve.dispose();
     _reveal.dispose();
     _code.dispose();
     _password.dispose();
@@ -216,13 +211,19 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen>
     }
 
     return AuthStepScaffold(
+      fromStep: true,
       pill: 'Recuperar acceso',
       icon: Icons.lock_reset_rounded,
       onBack: () => context.go('/forgot-password'),
-      overlay: CircleReveal(progress: _revealCurve, center: _revealCenter),
+      overlay: AirspaceReveal(
+        progress: _reveal,
+        center: _revealCenter,
+        dive: false,
+      ),
       body: _body(),
       action: Center(
         child: AuthMorphButton(
+          pill: true,
           key: _buttonKey,
           label: 'Actualizar contraseña',
           loadingLabel: 'Actualizando contraseña',

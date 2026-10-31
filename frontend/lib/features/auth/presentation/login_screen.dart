@@ -8,16 +8,16 @@ import '../data/auth_models.dart';
 import 'auth_controller.dart';
 import 'widgets/auth_brand.dart';
 import 'widgets/auth_form_sheet.dart';
-import 'widgets/circle_reveal.dart';
+import 'widgets/airspace/airspace_reveal.dart';
 import 'widgets/login/login_form.dart';
 import 'widgets/login/login_form_alert.dart';
 import 'widgets/login/login_intro.dart';
 import 'widgets/login/login_timeline.dart';
 
-/// Inicio de sesión. Al abrir la app o al cerrar sesión corre el splash y se
+/// Inicio de sesión. Al abrir la app o al cerrar sesión corre la entrada y se
 /// transforma en el formulario; al volver del registro solo crece el
-/// encabezado. Al entrar bien, el botón se vuelve círculo y llena la
-/// pantalla antes de ir al inicio del rol.
+/// encabezado. Al entrar bien, el botón se vuelve un círculo verde con el
+/// check y desde ahí la cámara se lanza al mapa antes de ir al inicio.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key, this.returning = false});
 
@@ -41,23 +41,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     vsync: this,
     duration: LoginTimeline.total,
   );
-  late final _loop = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 4200),
-  );
   late final _reveal = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 720),
+    duration: AirspaceReveal.duration,
   );
   late final _back = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 640),
   );
   late final _timeline = LoginTimeline(_intro);
-  late final _revealCurve = CurvedAnimation(
-    parent: _reveal,
-    curve: Curves.easeInOutCubic,
-  );
   late final _backHeader = CurvedAnimation(
     parent: _back,
     curve: Curves.fastOutSlowIn,
@@ -69,22 +61,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   bool _started = false;
   bool _isLoading = false;
+  bool _isDone = false;
   bool _showPassword = false;
   int _shakeCount = 0;
   (String?, String?) _fieldErrors = (null, null);
   String? _errorMessage;
   Offset _revealCenter = Offset.zero;
-
-  @override
-  void initState() {
-    super.initState();
-    // Al terminar el splash arranca el punto que recorre la ruta en bucle.
-    _intro.addStatusListener((status) {
-      if (status == AnimationStatus.completed && !_reducedMotion) {
-        _loop.repeat();
-      }
-    });
-  }
 
   @override
   void didChangeDependencies() {
@@ -101,22 +83,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
   @override
   void dispose() {
-    _revealCurve.dispose();
     _backHeader.dispose();
     _backPanel.dispose();
     _back.dispose();
     _intro.dispose();
-    _loop.dispose();
     _reveal.dispose();
     _email.dispose();
     _password.dispose();
     super.dispose();
   }
 
-  /// "Reducir movimiento" del sistema: sin splash, sin bucle, sin círculo.
+  /// "Reducir movimiento" del sistema: sin entrada, sin drones, sin salida.
   bool get _reducedMotion => MediaQuery.disableAnimationsOf(context);
 
-  /// Tocar durante el splash salta directo a la transición al formulario.
+  /// Tocar durante la entrada salta directo a la transición al formulario.
   void _skipIntro() {
     if (_intro.value < LoginTimeline.morphStart) {
       _intro.forward(from: LoginTimeline.morphStart);
@@ -149,13 +129,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       // responda de inmediato.
       final minimum = Future<void>.delayed(const Duration(milliseconds: 700));
       final session = await auth.login(
-        LoginRequest(contact: AuthContact.email(email), password: _password.text),
+        LoginRequest(
+          contact: AuthContact.email(email),
+          password: _password.text,
+        ),
         announce: false,
       );
       await minimum;
+      await _celebrate();
       await _playReveal();
-      // Publicar la sesión hace que el router lleve al inicio; antes del
-      // círculo la pantalla se habría cerrado a mitad de la salida.
+      // Publicar la sesión hace que el router lleve al inicio; antes de la
+      // salida la pantalla se habría cerrado a mitad de la animación.
       auth.announce(session);
     } on ApiException catch (error) {
       if (!mounted) return;
@@ -175,7 +159,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
     }
   }
 
-  /// El círculo de marca nace en el centro del botón y cubre la pantalla.
+  /// El botón se pone verde y dibuja el check antes de salir.
+  Future<void> _celebrate() async {
+    if (!mounted || _reducedMotion) return;
+    setState(() => _isDone = true);
+    await Future<void>.delayed(const Duration(milliseconds: 380));
+  }
+
+  /// Desde el botón se abre el espacio aéreo y la cámara se lanza al mapa.
   Future<void> _playReveal() async {
     if (!mounted || _reducedMotion) return;
     final box = _buttonKey.currentContext?.findRenderObject() as RenderBox?;
@@ -198,7 +189,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
   @override
   Widget build(BuildContext context) {
     ref.watch(authControllerProvider);
-    final inset = MediaQuery.paddingOf(context).top;
     final returning = widget.returning;
 
     return Scaffold(
@@ -210,7 +200,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               onTap: _skipIntro,
               child: LoginIntro(
                 timeline: _timeline,
-                loop: _loop,
                 returning: returning ? _backHeader : null,
               ),
             ),
@@ -219,12 +208,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
             child: AuthFormSheet(
               entrance: returning ? _backPanel : _timeline.form,
               from: returning ? const Offset(-56, 0) : const Offset(0, 72),
-              top: AuthHeaderMetrics.tall(inset) - AuthHeaderMetrics.overlap,
+              top:
+                  AuthHeaderMetrics.tallOf(context) - AuthHeaderMetrics.overlap,
               child: _form(),
             ),
           ),
           Positioned.fill(
-            child: CircleReveal(progress: _revealCurve, center: _revealCenter),
+            child: AirspaceReveal(progress: _reveal, center: _revealCenter),
           ),
         ],
       ),
@@ -257,6 +247,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           LoginActions(
             buttonKey: _buttonKey,
             isLoading: _isLoading,
+            isDone: _isDone,
             onSubmit: _submit,
             onForgotPassword: () => context.go('/forgot-password'),
             onRegister: () => context.go('/register'),

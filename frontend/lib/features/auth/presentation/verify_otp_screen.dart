@@ -13,14 +13,14 @@ import 'login_screen.dart';
 import 'widgets/auth_field.dart';
 import 'widgets/auth_morph_button.dart';
 import 'widgets/auth_step_scaffold.dart';
-import 'widgets/circle_reveal.dart';
+import 'widgets/airspace/airspace_reveal.dart';
 import 'widgets/otp/otp_code_field.dart';
 import 'widgets/otp/otp_verify_content.dart';
 
 /// Verificación del código de registro (paso 2 de 2). La cuenta vive en
 /// `unverified` hasta que entra el código, que dura 10 minutos en Nest
-/// (`OTP_SIGNUP_TTL_MS`). Verificar abre la sesión: tras el check, el círculo
-/// de marca cubre la pantalla y se entra al inicio.
+/// (`OTP_SIGNUP_TTL_MS`). Verificar abre la sesión: tras el check se abre el
+/// espacio aéreo, la cámara se lanza al mapa y se entra al inicio.
 class VerifyOtpScreen extends ConsumerStatefulWidget {
   const VerifyOtpScreen({super.key, required this.contact});
 
@@ -43,11 +43,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen>
   );
   late final _reveal = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 720),
-  );
-  late final _revealCurve = CurvedAnimation(
-    parent: _reveal,
-    curve: Curves.easeInOutCubic,
+    duration: AirspaceReveal.duration,
   );
 
   Timer? _timer;
@@ -70,7 +66,6 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen>
   void dispose() {
     _timer?.cancel();
     _code.dispose();
-    _revealCurve.dispose();
     _collapse.dispose();
     _reveal.dispose();
     super.dispose();
@@ -120,7 +115,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen>
         await _celebrate();
       }
       // Publicar la sesión hace que el router lleve al inicio. Va después
-      // del check y el círculo para que la pantalla no se cierre a mitad.
+      // del check y la salida para que la pantalla no se cierre a mitad.
       auth.announce(session);
     } on ApiException catch (error) {
       _fail(error.message);
@@ -138,8 +133,8 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen>
     });
   }
 
-  /// Las cajas se juntan en el check y, tras un respiro, el círculo de
-  /// marca crece desde el check hasta cubrir la pantalla.
+  /// Las cajas se juntan en el check y, tras un respiro, desde el check
+  /// se abre el espacio aéreo y la cámara se lanza al mapa.
   Future<void> _celebrate() async {
     if (_reducedMotion) return;
     await _collapse.forward();
@@ -177,13 +172,14 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen>
       pill: 'Paso 2 de 2',
       icon: Icons.verified_user_outlined,
       onBack: () => context.go('/login', extra: LoginScreen.returnExtra),
-      overlay: CircleReveal(progress: _revealCurve, center: _revealCenter),
+      overlay: AirspaceReveal(progress: _reveal, center: _revealCenter),
       body: _body(),
       action: AnimatedOpacity(
         opacity: _verified ? 0 : 1,
         duration: const Duration(milliseconds: 320),
         child: Center(
           child: AuthMorphButton(
+            pill: true,
             label: 'Verificar',
             loadingLabel: 'Verificando',
             isLoading: _isLoading,

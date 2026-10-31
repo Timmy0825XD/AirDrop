@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-10-29 01:23
+Generado: 2026-10-31 15:56
 
 ## analytics
 
@@ -33,27 +33,40 @@ Generado: 2026-10-29 01:23
 | Archivo | Lineas |
 | --- | --- |
 | `email_change_screen.dart` | 165 |
-| `forgot_password_screen.dart` | 139 |
-| `login_screen.dart` | 268 |
+| `forgot_password_screen.dart` | 140 |
+| `login_screen.dart` | 259 |
 | `profile_screen.dart` | 154 |
-| `register_screen.dart` | 232 |
-| `reset_password_screen.dart` | 268 |
-| `verify_otp_screen.dart` | 226 |
+| `register_screen.dart` | 253 |
+| `reset_password_screen.dart` | 269 |
+| `verify_otp_screen.dart` | 222 |
 
 ### Widgets
 
 | Archivo | Widget/clase | Lineas | Estado |
 | --- | --- | --- | --- |
-| `auth_brand.dart` | AuthHeaderMetrics | 23 | ok |
-| `auth_brand.dart` | AuthLogoTile | 21 | ok |
-| `auth_brand.dart` | AuthBrandBar | 30 | ok |
-| `auth_brand.dart` | AuthPill | 23 | ok |
-| `auth_brand.dart` | AuthBackButton | 21 | ok |
+| `airspace_map.dart` | AirspaceMap | 23 | ok |
+| `airspace_map.dart` | _AirspaceMapState | 60 | ok |
+| `airspace_map.dart` | _Camera | 29 | ok |
+| `airspace_map.dart` | _Lean | 12 | ok |
+| `airspace_map.dart` | _LeanArea | 34 | ok |
+| `airspace_painter.dart` | AirspaceLook | 51 | ok |
+| `airspace_painter.dart` | AirspacePainter | 52 | ok |
+| `airspace_reveal.dart` | AirspaceReveal | 20 | ok |
+| `airspace_reveal.dart` | _AirspaceRevealState | 54 | ok |
+| `airspace_reveal.dart` | _CircleClipper | 26 | ok |
+| `airspace_traffic.dart` | AirspaceTraffic | 30 | ok |
+| `airspace_traffic.dart` | AirspaceFlight | 29 | ok |
+| `airspace_traffic.dart` | AirspaceRing | 6 | ok |
+| `auth_brand.dart` | AuthHeaderMetrics | 33 | ok |
+| `auth_brand.dart` | AuthLogoTile | 12 | ok |
+| `auth_brand.dart` | AuthBrandBar | 35 | ok |
+| `auth_brand.dart` | AuthPill | 33 | ok |
+| `auth_brand.dart` | AuthBackButton | 20 | ok |
 | `auth_choice_group.dart` | AuthChoiceGroup | 36 | ok |
-| `auth_curved_header.dart` | AuthCurvedHeader | 58 | ok |
-| `auth_curved_header.dart` | _CurvedBottomClipper | 16 | ok |
-| `auth_curved_header.dart` | _RimPainter | 40 | ok |
-| `auth_curved_header.dart` | _DotsPainter | 18 | ok |
+| `auth_curved_header.dart` | AuthCurvedHeader | 55 | ok |
+| `auth_curved_header.dart` | _CurvedBottomClipper | 15 | ok |
+| `auth_curved_header.dart` | _EdgePainter | 32 | ok |
+| `auth_curved_header.dart` | _TopVeil | 28 | ok |
 | `auth_date_field.dart` | AuthDateField | 40 | ok |
 | `auth_date_field.dart` | _DateBox | 50 | ok |
 | `auth_field.dart` | AuthField | 58 | ok |
@@ -65,30 +78,34 @@ Generado: 2026-10-29 01:23
 | `auth_field.dart` | AuthFieldNote | 20 | ok |
 | `auth_field.dart` | AuthFieldBadge | 31 | ok |
 | `auth_field.dart` | AuthPasswordToggle | 28 | ok |
-| `auth_form_sheet.dart` | AuthFormSheet | 43 | ok |
-| `auth_glass.dart` | AuthGlass | 58 | ok |
-| `auth_glass.dart` | AuthGlassPanel | 29 | ok |
+| `auth_form_sheet.dart` | AuthFormSheet | 51 | ok |
+| `auth_glass.dart` | AuthGlass | 41 | ok |
+| `auth_glass.dart` | AuthChrome | 32 | ok |
+| `auth_glass.dart` | AuthSheetPanel | 26 | ok |
 | `auth_location_field.dart` | AuthLocationField | 50 | ok |
 | `auth_location_field.dart` | _MapPreview | 53 | ok |
 | `auth_location_field.dart` | _StillMap | 20 | ok |
 | `auth_location_field.dart` | _LocationHeader | 29 | ok |
 | `auth_location_field.dart` | _PinLayer | 26 | ok |
 | `auth_location_field.dart` | _MapHint | 36 | ok |
-| `auth_morph_button.dart` | AuthMorphButton | 57 | ok |
-| `auth_morph_button.dart` | _ButtonFace | 34 | ok |
+| `auth_morph_button.dart` | AuthMorphButton | 60 | ok |
+| `auth_morph_button.dart` | _ButtonFace | 37 | ok |
+| `auth_morph_button.dart` | _DrawnCheck | 18 | ok |
 | `auth_picker_field.dart` | AuthPickerField | 54 | ok |
 | `auth_picker_field.dart` | _PickerBox | 59 | ok |
 | `auth_picker_field.dart` | _PickerText | 28 | ok |
-| `auth_step_scaffold.dart` | AuthStepScaffold | 30 | ok |
-| `auth_step_scaffold.dart` | _AuthStepScaffoldState | 56 | ok |
-| `auth_step_scaffold.dart` | _StepHeader | 27 | ok |
-| `auth_step_scaffold.dart` | _StepContent | 39 | ok |
-| `auth_step_scaffold.dart` | _StepTop | 38 | ok |
-| `auth_step_scaffold.dart` | _StepIcon | 30 | ok |
+| `auth_step_scaffold.dart` | AuthStepScaffold | 32 | ok |
+| `auth_step_scaffold.dart` | _AuthStepScaffoldState | 48 | ok |
+| `auth_step_scaffold.dart` | _StepLayers | 39 | ok |
+| `auth_step_scaffold.dart` | _StepHeader | 31 | ok |
+| `auth_step_scaffold.dart` | _StepTopBar | 25 | ok |
+| `auth_step_scaffold.dart` | _StepHero | 44 | ok |
+| `auth_step_scaffold.dart` | _CarriedBadge | 41 | ok |
+| `auth_step_scaffold.dart` | _Hover | 9 | ok |
+| `auth_step_scaffold.dart` | _HoverState | 34 | ok |
+| `auth_step_scaffold.dart` | _StepSheet | 52 | ok |
 | `auth_text_link.dart` | AuthTextLink | 30 | ok |
 | `check_mark.dart` | CheckMarkPainter | 36 | ok |
-| `circle_reveal.dart` | CircleReveal | 34 | ok |
-| `circle_reveal.dart` | _CircleClipper | 26 | ok |
 | `document_type_labels.dart` | DocumentTypeLabels | 34 | ok |
 | `document_type_tabs.dart` | DocumentTypeTabs | 54 | ok |
 | `document_type_tabs.dart` | _SlidingPill | 21 | ok |
@@ -97,6 +114,9 @@ Generado: 2026-10-29 01:23
 | `drone_glyph.dart` | SpinningDrone | 10 | ok |
 | `drone_glyph.dart` | _SpinningDroneState | 23 | ok |
 | `drone_glyph.dart` | _DronePainter | 43 | ok |
+| `drone_mark.dart` | DroneMark | 10 | ok |
+| `drone_mark.dart` | _DroneMarkState | 50 | ok |
+| `drone_mark.dart` | _DroneMarkPainter | 58 | ok |
 | `email_change_card.dart` | EmailChangeCard | 59 | ok |
 | `email_change_card.dart` | _EmailChangeActions | 26 | ok |
 | `email_edit_sheet.dart` | EmailEditSheet | 10 | ok |
@@ -104,7 +124,7 @@ Generado: 2026-10-29 01:23
 | `email_edit_sheet.dart` | _EmailField | 32 | ok |
 | `email_edit_sheet.dart` | CurrentPasswordField | 41 | ok |
 | `forgot_password_content.dart` | ForgotPasswordForm | 48 | ok |
-| `forgot_password_content.dart` | _ForgotHeading | 30 | ok |
+| `forgot_password_content.dart` | _ForgotHeading | 27 | ok |
 | `forgot_password_content.dart` | _CodeLifetime | 30 | ok |
 | `forgot_password_content.dart` | ForgotSentCard | 32 | ok |
 | `forgot_password_content.dart` | _SentBody | 43 | ok |
@@ -117,25 +137,19 @@ Generado: 2026-10-29 01:23
 | `login_form.dart` | LoginHeading | 36 | ok |
 | `login_form.dart` | LoginFields | 48 | ok |
 | `login_form.dart` | _PasswordField | 29 | ok |
-| `login_form.dart` | LoginActions | 49 | ok |
+| `login_form.dart` | LoginActions | 55 | ok |
 | `login_form_alert.dart` | AuthFormAlert | 37 | ok |
-| `login_intro.dart` | LoginIntro | 46 | ok |
-| `login_intro.dart` | _IntroHeader | 34 | ok |
-| `login_intro.dart` | _BrandMark | 36 | ok |
-| `login_intro.dart` | _Wordmark | 47 | ok |
-| `login_intro.dart` | _Letters | 27 | ok |
-| `login_intro.dart` | _PopIn | 26 | ok |
-| `login_intro.dart` | _Tagline | 41 | ok |
+| `login_intro.dart` | LoginIntro | 36 | ok |
+| `login_intro.dart` | _IntroHeader | 39 | ok |
+| `login_intro.dart` | _BrandMark | 40 | ok |
+| `login_intro.dart` | _Wordmark | 60 | ok |
+| `login_intro.dart` | _Materialize | 33 | ok |
+| `login_intro.dart` | _Tagline | 31 | ok |
+| `login_intro.dart` | _SkipHint | 29 | ok |
+| `login_intro.dart` | _InThenOut | 32 | ok |
 | `login_intro.dart` | _CityPill | 18 | ok |
-| `login_route.dart` | LoginRoute | 49 | ok |
-| `login_route.dart` | _RouteCanvas | 49 | ok |
-| `login_route.dart` | _TripDrone | 23 | ok |
-| `login_route.dart` | _LoopDot | 42 | ok |
-| `login_route.dart` | _RouteLabel | 32 | ok |
-| `login_route.dart` | _RoutePainter | 46 | ok |
-| `login_route.dart` | _PinPainter | 40 | ok |
-| `login_timeline.dart` | LoginTimeline | 36 | ok |
-| `login_timeline.dart` | LoginLayout | 15 | ok |
+| `login_timeline.dart` | LoginTimeline | 37 | ok |
+| `login_timeline.dart` | LoginLayout | 12 | ok |
 | `otp_boxes.dart` | OtpBoxes | 50 | ok |
 | `otp_boxes.dart` | _Slot | 27 | ok |
 | `otp_boxes.dart` | _OtpBox | 52 | ok |
@@ -150,10 +164,13 @@ Generado: 2026-10-29 01:23
 | `otp_resend_card.dart` | _ResendButton | 31 | ok |
 | `otp_resend_card.dart` | _DrainBar | 25 | ok |
 | `otp_success_check.dart` | OtpSuccessCheck | 58 | ok |
-| `otp_verify_content.dart` | OtpHeading | 45 | ok |
+| `otp_verify_content.dart` | OtpHeading | 42 | ok |
 | `otp_verify_content.dart` | OtpStatus | 41 | ok |
 | `otp_verify_content.dart` | _Pending | 35 | ok |
 | `otp_verify_content.dart` | _Verified | 18 | ok |
+| `password_altimeter.dart` | PasswordAltimeter | 42 | ok |
+| `password_altimeter.dart` | _AltitudeBars | 29 | ok |
+| `password_altimeter.dart` | _Meters | 21 | ok |
 | `profile_document_editor.dart` | ProfileDocumentEditor | 44 | ok |
 | `profile_edit_sheet.dart` | ProfileEditSheet | 16 | ok |
 | `profile_edit_sheet.dart` | _ProfileEditSheetState | 56 | ok |
@@ -169,12 +186,14 @@ Generado: 2026-10-29 01:23
 | `register_consent_row.dart` | _ConsentText | 33 | ok |
 | `register_consent_row.dart` | _CheckBox | 32 | ok |
 | `register_document_section.dart` | RegisterIdentityFields | 57 | ok |
-| `register_fields.dart` | RegisterControllers | 16 | ok |
+| `register_fields.dart` | RegisterControllers | 24 | ok |
 | `register_fields.dart` | RegisterFormData | 15 | ok |
-| `register_fields.dart` | RegisterContactFields | 56 | ok |
+| `register_fields.dart` | RegisterContactFields | 58 | ok |
 | `register_fields.dart` | _CountryCode | 25 | ok |
-| `register_header.dart` | RegisterHeaderLayer | 10 | ok |
-| `register_header.dart` | _RegisterHeaderLayerState | 53 | ok |
+| `register_flight_plan.dart` | RegisterFlightPlan | 50 | ok |
+| `register_flight_plan.dart` | _FlightPath | 46 | ok |
+| `register_flight_plan.dart` | _RoutePainter | 53 | ok |
+| `register_header.dart` | RegisterHeaderLayer | 38 | ok |
 | `register_header.dart` | RegisterHeading | 25 | ok |
 | `reset_code_section.dart` | ResetCodeSection | 57 | ok |
 | `reset_match_icon.dart` | ResetMatchIcon | 39 | ok |
@@ -190,10 +209,10 @@ Generado: 2026-10-29 01:23
 | `reset_success_view.dart` | _SuccessTimeline | 25 | ok |
 | `reset_success_view.dart` | _ShrinkingHeader | 21 | ok |
 | `reset_success_view.dart` | _SuccessSeal | 40 | ok |
-| `reset_success_view.dart` | _SealCheck | 30 | ok |
-| `reset_success_view.dart` | _OrbitDot | 24 | ok |
+| `reset_success_view.dart` | _SealCheck | 37 | ok |
+| `reset_success_view.dart` | _OrbitDot | 12 | ok |
 | `reset_success_view.dart` | _DashedRing | 25 | ok |
-| `reset_success_view.dart` | _SuccessText | 55 | ok |
+| `reset_success_view.dart` | _SuccessText | 56 | ok |
 | `reset_success_view.dart` | _SuccessCopy | 33 | ok |
 | `search_picker_sheet.dart` | PickerOption | 31 | ok |
 | `search_picker_sheet.dart` | _PickerSheet | 19 | ok |
@@ -233,7 +252,7 @@ Generado: 2026-10-29 01:23
 | Archivo | Lineas |
 | --- | --- |
 | `drone_form_screen.dart` | 133 |
-| `fleet_flights_screen.dart` | 102 |
+| `fleet_flights_screen.dart` | 109 |
 | `fleet_screen.dart` | 273 |
 
 ### Widgets
@@ -319,7 +338,7 @@ Generado: 2026-10-29 01:23
 | --- | --- |
 | `admin_home.dart` | 104 |
 | `dispatcher_home.dart` | 79 |
-| `fleet_operator_home.dart` | 117 |
+| `fleet_operator_home.dart` | 130 |
 | `requester_home.dart` | 143 |
 | `role_home.dart` | 71 |
 
@@ -555,7 +574,7 @@ Generado: 2026-10-29 01:23
 ## Resumen
 
 - Pantallas (43 archivos): 43
-- Archivos de widgets: 152 - clases de widget medidas: 326
+- Archivos de widgets: 157 - clases de widget medidas: 345
 - Widgets sobre 60 lineas: 5
 
 Detalle de los que exceden 60 lineas (candidatos a partir):

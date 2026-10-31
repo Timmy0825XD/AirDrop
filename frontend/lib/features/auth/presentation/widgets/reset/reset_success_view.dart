@@ -3,13 +3,15 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
+import '../auth_brand.dart';
+import '../airspace/drone_mark.dart';
 import '../auth_curved_header.dart';
 import '../auth_morph_button.dart';
 import '../check_mark.dart';
 
-/// "Contraseña actualizada". Llega cuando el círculo de marca ya cubrió la
-/// pantalla: el verde se encoge hasta un encabezado curvo, el sello con el
-/// check aparece con un rebote y un dron (el punto naranja) lo orbita.
+/// "Contraseña actualizada". Llega cuando el espacio aéreo ya cubrió la
+/// pantalla: el mapa se encoge hasta el encabezado, el sello con el check
+/// aparece con un rebote y el dron de la marca lo orbita.
 class ResetSuccessView extends StatefulWidget {
   const ResetSuccessView({
     super.key,
@@ -171,7 +173,7 @@ class _SuccessSeal extends StatelessWidget {
                 children: [
                   CustomPaint(
                     size: const Size.square(180),
-                    painter: _DashedRing(color: colors.onPrimary),
+                    painter: _DashedRing(color: colors.primary),
                   ),
                   RotationTransition(turns: t.orbit, child: const _OrbitDot()),
                 ],
@@ -188,7 +190,7 @@ class _SuccessSeal extends StatelessWidget {
   }
 }
 
-/// El círculo blanco donde se dibuja el check.
+/// El círculo donde se dibuja el check, con la superficie del tema.
 class _SealCheck extends StatelessWidget {
   const _SealCheck({required this.tick});
 
@@ -201,8 +203,15 @@ class _SealCheck extends StatelessWidget {
       width: 120,
       height: 120,
       decoration: BoxDecoration(
-        color: colors.onPrimary,
+        color: colors.surface,
         shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: colors.primary.withValues(alpha: 0.25),
+            blurRadius: 30,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: AnimatedBuilder(
         animation: tick,
@@ -218,27 +227,15 @@ class _SealCheck extends StatelessWidget {
   }
 }
 
-/// El dron: punto naranja con borde, arriba del anillo; gira con él.
+/// El dron de la marca, arriba del anillo; gira con él.
 class _OrbitDot extends StatelessWidget {
   const _OrbitDot();
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return SizedBox.square(
+    return const SizedBox.square(
       dimension: 180,
-      child: Align(
-        alignment: const Alignment(0, -1.02),
-        child: Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(
-            color: colors.secondary,
-            shape: BoxShape.circle,
-            border: Border.all(color: colors.onPrimary, width: 3),
-          ),
-        ),
-      ),
+      child: Align(alignment: Alignment(0, -1.08), child: DroneMark(size: 34)),
     );
   }
 }
@@ -307,6 +304,7 @@ class _SuccessText extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 28),
                     child: Center(
                       child: AuthMorphButton(
+                        pill: true,
                         label: 'Ir al inicio de sesión',
                         loadingLabel: 'Ir al inicio de sesión',
                         onPressed: onContinue,
@@ -343,7 +341,7 @@ class _SuccessCopy extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 8),
-        Text('Contraseña actualizada', style: theme.textTheme.displayMedium),
+        Text('Contraseña actualizada', style: authTitleStyle(theme)),
         const SizedBox(height: 10),
         Text(
           message,
