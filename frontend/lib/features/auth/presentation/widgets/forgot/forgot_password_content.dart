@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../auth_brand.dart';
 import '../../../../../core/field_limits.dart';
 import '../auth_field.dart';
 
@@ -63,10 +64,7 @@ class _ForgotHeading extends StatelessWidget {
       children: [
         Semantics(
           header: true,
-          child: Text(
-            'Recuperar contraseña',
-            style: theme.textTheme.displayMedium,
-          ),
+          child: Text('Recuperar contraseña', style: authTitleStyle(theme)),
         ),
         const SizedBox(height: 8),
         Text(

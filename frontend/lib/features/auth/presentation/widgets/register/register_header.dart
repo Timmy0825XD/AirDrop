@@ -4,70 +4,43 @@ import 'package:flutter/material.dart';
 
 import '../auth_brand.dart';
 import '../auth_curved_header.dart';
-import '../login/login_route.dart';
-import '../login/login_timeline.dart';
 
 /// El encabezado del registro. Llega con la forma del login y se encoge al
-/// alto compacto mientras la ruta del login se desvanece: así el paso de
-/// una pantalla a otra se ve como un solo movimiento.
-class RegisterHeaderLayer extends StatefulWidget {
+/// alto compacto sobre el mismo mapa: así el paso de una pantalla a otra se
+/// ve como un solo movimiento.
+class RegisterHeaderLayer extends StatelessWidget {
   const RegisterHeaderLayer({super.key, required this.entry});
 
   /// De 0 (forma del login) a 1 (encabezado compacto).
   final Animation<double> entry;
 
   @override
-  State<RegisterHeaderLayer> createState() => _RegisterHeaderLayerState();
-}
-
-class _RegisterHeaderLayerState extends State<RegisterHeaderLayer>
-    with SingleTickerProviderStateMixin {
-  // La ruta del login ya terminada (splash completo), solo para desvanecerla.
-  late final _done = AnimationController(vsync: this, value: 1);
-  late final _route = LoginTimeline(_done);
-  late final _fade = ReverseAnimation(widget.entry);
-
-  @override
-  void dispose() {
-    _done.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     final inset = MediaQuery.paddingOf(context).top;
-    final tall = AuthHeaderMetrics.tall(inset);
+    final tall = AuthHeaderMetrics.tallOf(context);
     final compact = AuthHeaderMetrics.compact(inset);
-    return LayoutBuilder(
-      builder: (context, constraints) => Stack(
-        children: [
-          Positioned.fill(
-            child: AnimatedBuilder(
-              animation: widget.entry,
-              builder: (context, _) => AuthCurvedHeader(
-                height: lerpDouble(tall, compact, widget.entry.value)!,
-                curve: lerpDouble(
-                  AuthHeaderMetrics.tallCurve,
-                  AuthHeaderMetrics.compactCurve,
-                  widget.entry.value,
-                )!,
-              ),
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: AnimatedBuilder(
+            animation: entry,
+            builder: (context, _) => AuthCurvedHeader(
+              height: lerpDouble(tall, compact, entry.value)!,
+              curve: lerpDouble(
+                AuthHeaderMetrics.tallCurve,
+                AuthHeaderMetrics.compactCurve,
+                entry.value,
+              )!,
             ),
           ),
-          LoginRoute(
-            timeline: _route,
-            loop: kAlwaysDismissedAnimation,
-            layout: LoginLayout(size: constraints.biggest, topInset: inset),
-            opacity: _fade,
-          ),
-          Positioned(
-            left: 24,
-            right: 24,
-            top: AuthHeaderMetrics.brandTop(inset),
-            child: const AuthBrandBar(pill: 'Paso 1 de 2'),
-          ),
-        ],
-      ),
+        ),
+        Positioned(
+          left: 24,
+          right: 24,
+          top: AuthHeaderMetrics.brandTop(inset),
+          child: const AuthBrandBar(pill: 'Paso 1 de 2'),
+        ),
+      ],
     );
   }
 }
@@ -84,7 +57,7 @@ class RegisterHeading extends StatelessWidget {
       children: [
         Semantics(
           header: true,
-          child: Text('Crear cuenta', style: theme.textTheme.displayMedium),
+          child: Text('Crear cuenta', style: authTitleStyle(theme)),
         ),
         const SizedBox(height: 6),
         Text(

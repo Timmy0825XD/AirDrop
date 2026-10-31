@@ -118,6 +118,7 @@ class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
         children: [
           Center(
             child: AuthMorphButton(
+              pill: true,
               label: sent ? 'Ingresar el código' : 'Enviar código',
               loadingLabel: 'Enviando código',
               isLoading: _isLoading,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../auth_brand.dart';
 import '../../../../../core/field_limits.dart';
 import 'otp_resend_card.dart';
 
@@ -21,10 +22,7 @@ class OtpHeading extends StatelessWidget {
       children: [
         Semantics(
           header: true,
-          child: Text(
-            'Verifica tu cuenta',
-            style: theme.textTheme.displayMedium,
-          ),
+          child: Text('Verifica tu cuenta', style: authTitleStyle(theme)),
         ),
         const SizedBox(height: 8),
         Text.rich(
