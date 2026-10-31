@@ -95,47 +95,58 @@ controller de la feature.
 Las pantallas de auth tienen identidad propia y **comparten andamiaje**. Antes de
 armar una pantalla nueva, reusar lo que ya existe.
 
-El rediseño de la Fase 1 (ver `../context/producto/avance.md`) va pantalla por
-pantalla. Estas piezas son las nuevas y las usan el login y el registro; las
-demás pantallas las adoptan cuando les toque su rediseño:
+El rediseño de la Fase 13 (ver `../context/producto/avance.md`) cambió el
+bloque de marca por **el espacio aéreo vivo**: un plano de la ciudad con las
+centrales conectadas y drones de adorno, que se inclina en 3D. Es solo
+decoración: no muestra datos ni contadores (nada de "drones en vuelo" ni
+"entregas hoy" inventados). Sirve igual en claro y en oscuro; todos los
+colores salen del tema. Piezas (en `widgets/` y `widgets/airspace/`):
 
 | Widget | Para qué |
 | --- | --- |
-| `AuthCurvedHeader` | Bloque de marca con borde inferior curvo: el acento turquesa en degradado, una luz arriba, la trama de puntos y un filo de luz en la curva. Altura y curva se animan desde afuera (splash → encabezado). |
-| `AuthHeaderMetrics` | Alturas del encabezado: alto (login) y compacto (el resto). Con ellas una pantalla arranca con la forma de la anterior. |
-| `AuthBrandBar` / `AuthLogoTile` / `AuthPill` | Logo, nombre y pastilla de vidrio en la esquina del encabezado. El logo es provisional. |
-| `AuthFormSheet` | Tarjeta de vidrio del formulario sobre la curva, con scroll y su animación de entrada (desde abajo o de lado). |
-| `AuthField` | Label en mayúsculas (con nota o `AuthFieldBadge` opcional a la derecha), caja de 56 px, temblor y mensaje deslizante cuando la pantalla pasa `errorText`. |
-| `AuthMorphButton` | `ElevatedButton` que se encoge a círculo con el dron girando mientras carga; con `onPressed` en `null` queda apagado. |
-| `AuthGlass` / `AuthGlassPanel` | Vidrio esmerilado (blur + tinte + borde fino). Con medida: tarjeta del formulario y piezas sobre el encabezado. |
-| `CircleReveal` | Círculo de marca que crece desde un punto hasta cubrir la pantalla. |
-| `DroneGlyph` / `SpinningDrone` | El dron dibujado; quieto o girando como indicador de carga. |
-| `AuthStepScaffold` | Pantallas de paso (código, recuperación): encabezado con `AuthBackButton` y pastilla opcional, ícono montado sobre la curva que entra con rebote (`turnIcon` lo hace girar, como la llave), contenido y la acción al fondo. `fromTall` cuando se llega desde el login. |
+| `AirspaceMap` | El plano vivo (grilla, río, calles, centrales con la cruz médica, vuelos con estela y anillo al llegar). Lo mueven `network` (enciende la red), `traffic` (suelta los drones), `tilt` (lo inclina) y `dive` (la cámara se lanza adentro). Ya inclinado, se ladea un poco hacia el puntero. Con "reducir movimiento" queda quieto y sin drones. El dibujo vive en `AirspacePainter` y los vuelos en `AirspaceTraffic`. |
+| `DroneMark` | El dron de la marca visto desde arriba: ala, largueros, cuatro hélices girando y luces de navegación (roja y verde) que destellan. Grafito en claro, claro en oscuro. `halo` dibuja su anillo en la entrada. |
+| `AuthCurvedHeader` | El `AirspaceMap` recortado con las esquinas de abajo redondeadas y un velo arriba para leer el logo. Altura y curva se animan desde afuera (entrada → encabezado); el mapa no se deforma, solo cambia el recorte. |
+| `AuthHeaderMetrics` | Alturas del encabezado: alto (login, `tallOf`), de paso (`stepOf`) y compacto (registro). El alto y el de paso crecen con la pantalla para que en un teléfono largo la hoja no quede vacía. Con ellas una pantalla arranca con la forma de la anterior. |
+| `AuthBrandBar` / `AuthLogoTile` / `AuthPill` | Logo (`DroneMark`), nombre y pastilla de vidrio (con ícono opcional) en la esquina del encabezado. El logo es provisional. |
+| `AuthFormSheet` | La hoja del formulario: sube desde abajo pegada a los bordes, con las esquinas de arriba redondeadas, scroll propio y su animación de entrada (desde abajo o de lado). |
+| `AuthField` | Label en mayúsculas (con nota o `AuthFieldBadge` opcional a la derecha), caja de 56 px, temblor y mensaje deslizante cuando la pantalla pasa `errorText`. Dentro de la hoja los campos toman borde visible e ícono que se enciende al enfocar (tema local de `AuthSheetPanel`); fuera de auth no cambian. |
+| `AuthMorphButton` | `ElevatedButton` que se encoge a círculo con el dron girando mientras carga; con `isDone` se pone verde y dibuja el check; con `pill` (las pantallas de auth) los bordes son del todo redondos; con `onPressed` en `null` queda apagado. |
+| `AuthGlass` / `AuthChrome` / `AuthSheetPanel` | Vidrio esmerilado; el vidrio de las piezas sobre el mapa (pastilla, volver); la hoja del formulario, que en oscuro baja de grafito a casi negro y en claro de blanco a un cielo suave. Los títulos usan `authTitleStyle` (32, tracking cerrado). |
+| `AirspaceReveal` | La salida al inicio: desde el botón se abre un círculo con el espacio aéreo, la cámara se lanza en picada y todo se funde en el fondo de la app. Con `dive: false` solo abre el mapa (lo usa la nueva contraseña). |
+| `DroneGlyph` / `SpinningDrone` | El dron de líneas; quieto o girando como indicador de carga. |
+| `AuthStepScaffold` | Pantallas de paso (código, recuperación, nueva contraseña): el mapa arriba con `AuthBackButton` y pastilla opcional, el `DroneMark` que baja trayendo el ícono del paso en una insignia del acento (flota; `turnIcon` lo endereza, como la llave) y la hoja con el contenido y la acción al fondo. `fromTall` cuando se llega desde el login y `fromStep` desde otra pantalla de paso. |
+| `RegisterFlightPlan` | El avance del registro como plan de vuelo: tres puntos (identidad, contacto, acceso) que se encienden cuando cada grupo queda bien, y el dron avanza. Solo pinta; la validación al enviar no cambió. |
+| `PasswordAltimeter` | La fuerza de la contraseña del registro como altímetro (barras, metros y "Crucero · Segura"), con `PasswordScore`. |
 | `AuthTextLink` | "Pregunta + acción" centrados (¿No tienes cuenta? Regístrate). |
 | `OtpCodeField` | Un campo invisible (acepta el autocompletado del código) y seis cajas que lo muestran; al verificar, las cajas se juntan en el check (`OtpSuccessCheck`). |
-| `CheckMarkPainter` | Check que se dibuja de punta a punta; lo usan el consentimiento y el código. |
+| `CheckMarkPainter` | Check que se dibuja de punta a punta; lo usan el consentimiento, el botón y el código. |
 
 El login arma su coreografía con un solo `AnimationController` y tramos
-`Interval` (`widgets/login/login_timeline.dart`). Con "reducir movimiento" del
-sistema (`MediaQuery.disableAnimationsOf`) se salta el splash, el bucle y el
-círculo de salida.
+`Interval` (`widgets/login/login_timeline.dart`): se enciende la red, llega
+el dron, el nombre entra letra por letra de borroso a nítido y, en el morph,
+el mapa se encoge e inclina, el dron viaja a la esquina como logo y sube la
+hoja. Tocar salta al morph. Las curvas propias son `authSettle` (sin
+rebote) y `authEmphasized`. Con "reducir movimiento" del sistema
+(`MediaQuery.disableAnimationsOf`) se salta la entrada, no vuelan drones y
+no hay salida animada.
 
 `/login`, `/register`, `/verify-otp`, `/forgot-password` y `/reset-password`
 usan `NoTransitionPage`: cada pantalla anima su propia entrada partiendo de
 la forma del encabezado de la anterior (`AuthHeaderMetrics`). Volver al login
 desde registro, código o recuperación usa
-`extra: LoginScreen.returnExtra`: el encabezado crece y no se repite el
-splash, que sale solo al abrir la app y al cerrar sesión.
+`extra: LoginScreen.returnExtra`: el encabezado crece y no se repite la
+entrada, que sale solo al abrir la app y al cerrar sesión.
 
 Verificar el código abre la sesión (Nest devuelve `AuthSession`), así que tras
-el check el círculo de marca cubre la pantalla y se va a `/home`. El reenvío
-se habilita a los 45 s (espera solo de la app; el código dura 10 min).
+el check se abre el espacio aéreo (`AirspaceReveal`) y se va a `/home`. El
+reenvío se habilita a los 45 s (espera solo de la app; el código dura 10 min).
 
 El router escucha `authControllerProvider` y, apenas hay sesión, saca al
 usuario de las pantallas públicas hacia `/home`. Por eso el login y el código
 llaman `login(..., announce: false)` / `verifyOtp(..., announce: false)`:
 guardan el token sin avisar, terminan su animación de salida y recién ahí
-llaman `announce(session)`. Así la pantalla no se cierra a mitad del círculo.
+llaman `announce(session)`. Así la pantalla no se cierra a mitad de la salida.
 
 Recuperar contraseña ya no salta sola a la siguiente pantalla: al enviar
 muestra el mensaje de Nest (que no dice si la cuenta existe) y el botón pasa
@@ -143,9 +154,9 @@ a "Ingresar el código", que lleva a `/reset-password`.
 
 Nueva contraseña reusa `OtpCodeField` para el código, mide la clave con
 `PasswordScore` (solo orienta; lo que se exige es `Validators.password`) y
-avisa en vivo si la confirmación no coincide. Al actualizar, el círculo de
-marca cubre la pantalla y aparece `ResetSuccessView`; la sesión no se abre y
-el botón vuelve al login.
+avisa en vivo si la confirmación no coincide. Al actualizar, desde el botón
+se abre el mapa y aparece `ResetSuccessView` (el dron de la marca orbita el
+sello); la sesión no se abre y el botón vuelve al login.
 
 `LoginAlert` / `AuthFormAlert` (en `widgets/login/`) son el aviso de error
 o de éxito del login y el registro; `AuthFormAlert` ya maneja el caso
