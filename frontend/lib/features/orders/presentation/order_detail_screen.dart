@@ -16,6 +16,7 @@ import '../../home/presentation/widgets/section_header.dart';
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
 import 'order_format.dart';
+import 'widgets/order_detail/order_journey.dart';
 import 'widgets/order_detail/authorize_outcome.dart';
 import 'widgets/order_detail/authorize_section.dart';
 import 'widgets/order_detail/cold_chain_banner.dart';
@@ -249,6 +250,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
       if (order.coldChainAlert) ColdChainBanner(at: order.coldChainAlertAt),
       if (order.receiptRejectedReason case final reason?)
         ErrorBanner(message: reason),
+      OrderJourney(order: order),
       OrderSummary(
         order: order,
         showPrescriptionFlag: !isDispatcher,

@@ -4,7 +4,7 @@ import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 
 import '../../../../theme/app_palette.dart';
-import 'airspace/drone_mark.dart';
+import '../../../../core/widgets/drone_mark.dart';
 import 'auth_brand.dart';
 import 'auth_curved_header.dart';
 import 'auth_glass.dart';

@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-10-31 15:56
+Generado: 2026-10-31 20:01
 
 ## analytics
 
@@ -33,12 +33,12 @@ Generado: 2026-10-31 15:56
 | Archivo | Lineas |
 | --- | --- |
 | `email_change_screen.dart` | 165 |
-| `forgot_password_screen.dart` | 140 |
+| `forgot_password_screen.dart` | 139 |
 | `login_screen.dart` | 259 |
 | `profile_screen.dart` | 154 |
-| `register_screen.dart` | 253 |
-| `reset_password_screen.dart` | 269 |
-| `verify_otp_screen.dart` | 222 |
+| `register_screen.dart` | 252 |
+| `reset_password_screen.dart` | 268 |
+| `verify_otp_screen.dart` | 221 |
 
 ### Widgets
 
@@ -81,7 +81,7 @@ Generado: 2026-10-31 15:56
 | `auth_form_sheet.dart` | AuthFormSheet | 51 | ok |
 | `auth_glass.dart` | AuthGlass | 41 | ok |
 | `auth_glass.dart` | AuthChrome | 32 | ok |
-| `auth_glass.dart` | AuthSheetPanel | 26 | ok |
+| `auth_glass.dart` | AuthSheetPanel | 29 | ok |
 | `auth_location_field.dart` | AuthLocationField | 50 | ok |
 | `auth_location_field.dart` | _MapPreview | 53 | ok |
 | `auth_location_field.dart` | _StillMap | 20 | ok |
@@ -114,9 +114,6 @@ Generado: 2026-10-31 15:56
 | `drone_glyph.dart` | SpinningDrone | 10 | ok |
 | `drone_glyph.dart` | _SpinningDroneState | 23 | ok |
 | `drone_glyph.dart` | _DronePainter | 43 | ok |
-| `drone_mark.dart` | DroneMark | 10 | ok |
-| `drone_mark.dart` | _DroneMarkState | 50 | ok |
-| `drone_mark.dart` | _DroneMarkPainter | 58 | ok |
 | `email_change_card.dart` | EmailChangeCard | 59 | ok |
 | `email_change_card.dart` | _EmailChangeActions | 26 | ok |
 | `email_edit_sheet.dart` | EmailEditSheet | 10 | ok |
@@ -137,7 +134,7 @@ Generado: 2026-10-31 15:56
 | `login_form.dart` | LoginHeading | 36 | ok |
 | `login_form.dart` | LoginFields | 48 | ok |
 | `login_form.dart` | _PasswordField | 29 | ok |
-| `login_form.dart` | LoginActions | 55 | ok |
+| `login_form.dart` | LoginActions | 54 | ok |
 | `login_form_alert.dart` | AuthFormAlert | 37 | ok |
 | `login_intro.dart` | LoginIntro | 36 | ok |
 | `login_intro.dart` | _IntroHeader | 39 | ok |
@@ -212,7 +209,7 @@ Generado: 2026-10-31 15:56
 | `reset_success_view.dart` | _SealCheck | 37 | ok |
 | `reset_success_view.dart` | _OrbitDot | 12 | ok |
 | `reset_success_view.dart` | _DashedRing | 25 | ok |
-| `reset_success_view.dart` | _SuccessText | 56 | ok |
+| `reset_success_view.dart` | _SuccessText | 55 | ok |
 | `reset_success_view.dart` | _SuccessCopy | 33 | ok |
 | `search_picker_sheet.dart` | PickerOption | 31 | ok |
 | `search_picker_sheet.dart` | _PickerSheet | 19 | ok |
@@ -314,22 +311,40 @@ Generado: 2026-10-31 15:56
 | `admin_create_sheet.dart` | _CreateOption | 41 | ok |
 | `dispatcher_counts.dart` | DispatcherCounts | 38 | ok |
 | `dispatcher_tiles.dart` | DispatcherTiles | 28 | ok |
-| `flight_spotlight_card.dart` | FlightSpotlightCard | 50 | ok |
 | `home_grid.dart` | HomeGrid | 23 | ok |
 | `home_grid.dart` | HomeLabel | 14 | ok |
-| `home_header.dart` | HomeHeader | 58 | ok |
-| `home_header.dart` | _HeaderActions | 25 | ok |
-| `home_header.dart` | _Initials | 30 | ok |
+| `home_header.dart` | HomeHeader | 54 | ok |
+| `home_header.dart` | _BrandRow | 37 | ok |
+| `home_header.dart` | _Initials | 37 | ok |
 | `home_page.dart` | HomePage | 24 | ok |
-| `home_spotlight.dart` | HomeSpotlight | 46 | ok |
+| `home_spotlight.dart` | HomeSpotlight | 42 | ok |
+| `home_spotlight.dart` | _RadarStage | 24 | ok |
 | `home_spotlight.dart` | _Figure | 39 | ok |
 | `hub_notice.dart` | (sin clases) | 20 | ok |
+| `mission_card.dart` | MissionCard | 43 | ok |
+| `mission_card.dart` | _MissionBody | 40 | ok |
+| `mission_card.dart` | _LiveLabel | 31 | ok |
+| `mission_card.dart` | _Headline | 41 | ok |
+| `mission_card.dart` | _FlightChips | 20 | ok |
+| `mission_card.dart` | _Chip | 46 | ok |
+| `mission_route.dart` | MissionRoute | 10 | ok |
+| `mission_route.dart` | _MissionRouteState | 56 | ok |
+| `mission_route.dart` | _RouteCanvas | 58 | ok |
+| `mission_route.dart` | _RoutePainter | 50 | ok |
+| `next_delivery_card.dart` | NextDeliveryCard | 59 | ok |
+| `next_delivery_card.dart` | _Tag | 21 | ok |
 | `quick_tile.dart` | QuickTile | 48 | ok |
 | `quick_tile.dart` | _TileHead | 35 | ok |
+| `requester_stats.dart` | RequesterStats | 41 | ok |
+| `requester_stats.dart` | _DeliveredCard | 40 | ok |
+| `requester_stats.dart` | _WeeksCard | 38 | ok |
 | `section_form_page.dart` | SectionFormPage | 37 | ok |
 | `section_form_page.dart` | SectionStatePage | 18 | ok |
-| `section_header.dart` | SectionHeader | 55 | ok |
-| `section_header.dart` | _Titles | 29 | ok |
+| `section_header.dart` | SectionHeader | 53 | ok |
+| `section_header.dart` | _TitleRow | 23 | ok |
+| `section_header.dart` | _Titles | 35 | ok |
+| `section_header.dart` | _FlightGrid | 29 | ok |
+| `section_header.dart` | _GridPainter | 32 | ok |
 | `sign_out.dart` | (sin clases) | 20 | ok |
 
 ### Otros (presentation/ sin /widgets)
@@ -337,9 +352,10 @@ Generado: 2026-10-31 15:56
 | Archivo | Lineas |
 | --- | --- |
 | `admin_home.dart` | 104 |
-| `dispatcher_home.dart` | 79 |
+| `dispatcher_home.dart` | 87 |
 | `fleet_operator_home.dart` | 130 |
-| `requester_home.dart` | 143 |
+| `live_mission.dart` | 39 |
+| `requester_home.dart` | 165 |
 | `role_home.dart` | 71 |
 
 ## hubs
@@ -420,12 +436,12 @@ Generado: 2026-10-31 15:56
 | --- | --- |
 | `agenda_screen.dart` | 120 |
 | `dispatch_history_screen.dart` | 127 |
-| `emergency_screen.dart` | 73 |
+| `emergency_screen.dart` | 85 |
 | `hub_emergency_screen.dart` | 89 |
 | `hub_plan_form_screen.dart` | 120 |
 | `in_flight_screen.dart` | 36 |
 | `incoming_screen.dart` | 36 |
-| `order_detail_screen.dart` | 345 |
+| `order_detail_screen.dart` | 347 |
 | `order_history_screen.dart` | 41 |
 | `pending_load_screen.dart` | 67 |
 | `plan_detail_screen.dart` | 203 |
@@ -449,6 +465,10 @@ Generado: 2026-10-31 15:56
 | `cold_chain_banner.dart` | ColdChainBanner | 13 | ok |
 | `confirm_load_section.dart` | ConfirmLoadSection | 37 | ok |
 | `dispatcher_permissions.dart` | DispatcherPermissions | 56 | ok |
+| `emergency_banner.dart` | EmergencyBanner | 33 | ok |
+| `emergency_banner.dart` | _Scope | 29 | ok |
+| `emergency_banner.dart` | _Plan | 41 | ok |
+| `emergency_facts.dart` | EmergencyFacts | 51 | ok |
 | `fallback_card.dart` | FallbackCard | 55 | ok |
 | `fallback_card.dart` | FallbackOptionTile | 33 | ok |
 | `hub_request_fields.dart` | HubRequestFields | 60 | ok |
@@ -459,15 +479,26 @@ Generado: 2026-10-31 15:56
 | `in_flight_tile.dart` | InFlightTile | 21 | ok |
 | `in_flight_tile.dart` | _DroneTile | 13 | ok |
 | `in_flight_tile.dart` | _FlightInfo | 35 | ok |
+| `medication_carousel.dart` | MedicationCarousel | 58 | ok |
+| `medication_carousel.dart` | _OfferCard | 45 | ok |
+| `medication_carousel.dart` | _SearchCard | 44 | ok |
+| `medication_carousel.dart` | _CardShell | 54 | ok |
+| `medication_carousel.dart` | _Header | 15 | ok |
 | `occurrence_rules.dart` | OccurrenceRules | 45 | ok |
 | `occurrence_section.dart` | OccurrenceSection | 51 | ok |
 | `occurrence_section.dart` | _OccurrenceActions | 31 | ok |
 | `offer_option.dart` | (sin clases) | 23 | ok |
 | `order_assignment_card.dart` | OrderAssignmentCard | 38 | ok |
 | `order_form_scaffold.dart` | OrderFormScaffold | 54 | ok |
+| `order_journey.dart` | OrderJourney | 31 | ok |
+| `order_journey.dart` | _Track | 40 | ok |
+| `order_journey.dart` | _Stop | 49 | ok |
+| `order_journey.dart` | _Rail | 19 | ok |
+| `order_journey.dart` | _Dot | 38 | ok |
 | `order_kind_chip.dart` | OrderKindChip | 15 | ok |
-| `order_row_card.dart` | OrderRowCard | 46 | ok |
-| `order_row_card.dart` | _Lines | 27 | ok |
+| `order_row_card.dart` | OrderRowCard | 50 | ok |
+| `order_row_card.dart` | _Lines | 29 | ok |
+| `order_row_card.dart` | _ToneEdge | 23 | ok |
 | `order_status_chip.dart` | OrderStatusChip | 24 | ok |
 | `order_summary.dart` | OrderSummary | 53 | ok |
 | `order_summary.dart` | _SummaryLines | 53 | ok |
@@ -524,19 +555,29 @@ Generado: 2026-10-31 15:56
 
 | Archivo | Lineas |
 | --- | --- |
-| `tracking_screen.dart` | 115 |
+| `tracking_screen.dart` | 178 |
 
 ### Widgets
 
 | Archivo | Widget/clase | Lineas | Estado |
 | --- | --- | --- | --- |
-| `flight_card.dart` | FlightCard | 48 | ok |
-| `flight_card.dart` | _Arrival | 41 | ok |
-| `flight_card.dart` | _Stat | 58 | ok |
-| `flight_map.dart` | FlightMap | 58 | ok |
-| `flight_map.dart` | _EndpointsLayer | 39 | ok |
-| `flight_map.dart` | _RouteLayer | 56 | ok |
+| `flight_card.dart` | FlightCard | 49 | ok |
+| `flight_card.dart` | _FlightHero | 43 | ok |
+| `flight_card.dart` | _Eta | 37 | ok |
+| `flight_card.dart` | _Battery | 27 | ok |
+| `flight_card.dart` | _ProgressBeam | 41 | ok |
+| `flight_card.dart` | _Stat | 54 | ok |
+| `flight_card.dart` | _StatBox | 35 | ok |
+| `flight_hud.dart` | FlightLiveBar | 57 | ok |
+| `flight_hud.dart` | FlightHud | 43 | ok |
+| `flight_hud.dart` | _Gauge | 25 | ok |
+| `flight_map.dart` | FlightMap | 60 | ok |
+| `flight_map.dart` | _EndpointsLayer | 29 | ok |
+| `flight_map.dart` | _RouteLayer | 49 | ok |
 | `flight_notice.dart` | FlightNotice | 25 | ok |
+| `flight_timeline.dart` | FlightTimeline | 27 | ok |
+| `flight_timeline.dart` | _StepRow | 49 | ok |
+| `flight_timeline.dart` | _Rail | 50 | ok |
 
 ## users
 
@@ -574,7 +615,7 @@ Generado: 2026-10-31 15:56
 ## Resumen
 
 - Pantallas (43 archivos): 43
-- Archivos de widgets: 157 - clases de widget medidas: 345
+- Archivos de widgets: 165 - clases de widget medidas: 385
 - Widgets sobre 60 lineas: 5
 
 Detalle de los que exceden 60 lineas (candidatos a partir):

@@ -44,7 +44,8 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 10 | Cierre y pruebas de punta a punta | `test/flujos-front` | Hecha (PR #51) |
 | 11 | Rediseño visual total "Grafito y turquesa" | `style/rediseno-total-temporal` | Hecha (PR #99) |
 | 12 | Contratos de Nest pendientes y avisos de vidrio | `feature/front-pendientes-backend` | Hecha (PR pendiente) |
-| 13 | Auth con el espacio aéreo vivo | `style/auth-espacio-aereo` | Hecha (PR pendiente) |
+| 13 | Auth con el espacio aéreo vivo | `style/auth-espacio-aereo` | Hecha (PR #105) |
+| 14 | El resto de la app al diseño del espacio aéreo | `style/app-espacio-aereo` | Hecha (PR pendiente) |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -844,6 +845,69 @@ Pendiente:
   teclado abierto).
 - Fase siguiente: llevar el resto de la app al diseño aprobado en las
   maquetas (inicio, pedir urgencia, seguimiento).
+
+## Fase 14 — El resto de la app al diseño del espacio aéreo
+
+Rama `style/app-espacio-aereo` desde `develop` (con la Fase 13 ya
+mergeada). Solo apariencia y animación: no cambian `data/`, rutas,
+endpoints, validaciones ni textos de Nest. Se cambiaron sobre todo las
+piezas compartidas, así los cuatro roles cambian juntos.
+
+Hecho (2026-10-31):
+
+- **Superficies compartidas**: `AppSurfaces` (`lib/theme/`) con la hoja
+  del auth y sus campos; `FormSheetCard` la usa, así todos los formularios
+  (centrales, cuentas, drones, inventario, pedidos, planes, geovallas) tienen
+  la misma hoja oscura y campos con borde visible en claro. `GlassCard` en
+  oscuro lleva luz arriba. Botones en píldora en toda la app.
+- **Encabezados de sección**: título a 26 con tracking cerrado, contexto en
+  dos líneas y una trama de plano de vuelo detrás que se apaga hacia abajo.
+- **Los cuatro inicios**: barra de marca con el `DroneMark`, saludo a 34 y la
+  cifra principal en una tarjeta con el dron sobre un radar que barre
+  (`RadarSweep`).
+- **Solicitante**: el pedido en vuelo es una misión en curso (luz verde, ruta
+  de la central a su ubicación con el dron y la estela que corre). Pedir
+  urgencia tiene el aviso de prioridad con el radar (`EmergencyBanner`).
+- **Listas**: las tarjetas de pedido llevan una franja del color del estado.
+- **Seguimiento**: `FlightCard` con la etiqueta "EN VIVO" y datos en vidrio
+  iluminado (revisada con datos de ejemplo: sin backend no hay telemetría).
+- `flutter analyze` sin issues y `flutter test` en verde (229).
+  `docs/ui_inventory.md` regenerado: solo los `*_values` pasan de 60 líneas.
+  Revisado en la app (web, datos locales) con los cuatro roles en oscuro y
+  en claro.
+
+Segunda ronda (2026-10-31): Oscar pidió que la app quedara **igual a las
+maquetas aprobadas** (inicio con misión en curso, pedir urgencia con radar y
+deslizar para despegar, seguimiento con mapa oscuro y telemetría), con datos
+reales y algo propio donde no los hay.
+
+- **Seguimiento**: el mapa lleva la capa de vuelo (`MapHudOverlay`), la ruta
+  con corredor y brillo, la central con la cruz médica, el destino como un
+  blanco y el dron de la marca apuntando a su rumbo. Arriba "En vivo" con el
+  dron y la latencia, y el panel de altitud y rumbo; en la hoja, la fase, los
+  minutos en grande, el anillo de batería (solo la central de origen), la
+  barra de avance por la ruta, los datos y la línea de tiempo del vuelo.
+- **Inicio del solicitante**: la misión en curso con la telemetría en vivo
+  (minutos, ruta con el dron en su punto, altitud, velocidad y fase), los
+  entregados con su anillo, los pedidos del mes en barras y la próxima
+  entrega programada. La batería no se muestra: Nest no se la manda al
+  solicitante.
+- **Pedir urgencia**: el radar con la búsqueda y el Wingcopter 198, los
+  medicamentos en tarjetas con su stock, prioridad y ruta, y "Desliza para
+  despegar". No se muestra central, distancia ni llegada estimada: se saben
+  cuando el despachador autoriza.
+- **Despachador**: el primer vuelo de su central aparece como misión en curso
+  en su inicio. **Detalle del pedido**: el recorrido en cinco puntos.
+- `DroneMark` pasó a `core/widgets`. Con datos locales la telemetría ya no
+  llama al servidor (antes, con tu backend encendido, respondía 401 y cerraba
+  la sesión local).
+- `role_home_test` baja hasta los accesos (el inicio es más largo) y hay
+  pruebas nuevas del deslizador. `flutter test` en verde (231).
+
+Pendiente:
+
+- Ver el mapa de seguimiento con el backend real (socket de telemetría).
+- Probar en el emulador y en Windows.
 
 ## Pendiente del backend
 

@@ -2,7 +2,7 @@ import 'dart:ui' show PathMetric;
 
 import 'package:flutter/material.dart';
 
-import '../airspace/drone_mark.dart';
+import '../../../../../core/widgets/drone_mark.dart';
 import '../login/login_timeline.dart';
 
 /// El avance del registro como un plan de vuelo: una ruta con tres puntos

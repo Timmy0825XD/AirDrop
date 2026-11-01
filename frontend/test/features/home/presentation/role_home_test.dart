@@ -245,6 +245,8 @@ void main() {
 
     expect(find.text('Hola, Ana'), findsOneWidget);
     expect(find.text('Solicitante'), findsOneWidget);
+    // Los accesos van debajo de la misión y los números: se baja hasta ellos.
+    await tester.scrollUntilVisible(find.text('Mis pedidos'), 200);
     expect(find.text('Pedir urgencia'), findsOneWidget);
     expect(find.text('Entrega periódica'), findsOneWidget);
     expect(find.text('Mis planes'), findsOneWidget);

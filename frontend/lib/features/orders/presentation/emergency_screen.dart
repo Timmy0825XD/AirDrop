@@ -4,10 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/field_limits.dart';
 import '../../../core/widgets/app_snack.dart';
+import '../../../core/widgets/slide_to_launch.dart';
 import '../../auth/presentation/widgets/auth_field.dart';
-import '../../auth/presentation/widgets/auth_morph_button.dart';
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
+import 'widgets/requester_order/emergency_banner.dart';
+import 'widgets/requester_order/emergency_facts.dart';
+import 'widgets/requester_order/medication_carousel.dart';
 import 'widgets/order_form_scaffold.dart';
 import 'widgets/requester_order/requester_order_fields.dart';
 import 'widgets/requester_order/requester_order_state.dart';
@@ -47,7 +50,9 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen>
       emptyIcon: Icons.medication_outlined,
       emptyText: 'No hay medicamentos disponibles por ahora.',
       fields: (offers) => [
-        CatalogChoices(offers: offers, form: form),
+        const EmergencyBanner(),
+        const SizedBox(height: 18),
+        MedicationCarousel(offers: offers, form: form),
         const SizedBox(height: 16),
         AuthField(
           label: 'Para qué lo necesitas',
@@ -62,11 +67,18 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen>
         const SizedBox(height: 16),
         DestinationFields(form: form),
       ],
-      button: AuthMorphButton(
-        label: 'Pedir urgencia',
-        loadingLabel: 'Enviando la urgencia',
-        isLoading: sending,
-        onPressed: _send,
+      button: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const EmergencyFacts(),
+          const SizedBox(height: 12),
+          SlideToLaunch(
+            label: 'Desliza para despegar',
+            loadingLabel: 'Enviando la urgencia',
+            loading: sending,
+            onLaunch: _send,
+          ),
+        ],
       ),
     );
   }

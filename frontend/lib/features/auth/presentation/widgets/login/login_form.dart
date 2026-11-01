@@ -156,7 +156,6 @@ class LoginActions extends StatelessWidget {
         const SizedBox(height: 8),
         Center(
           child: AuthMorphButton(
-            pill: true,
             key: buttonKey,
             label: 'Iniciar sesión',
             loadingLabel: 'Iniciando sesión',

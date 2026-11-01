@@ -9,6 +9,8 @@ import '../../../core/widgets/status_pill.dart';
 import '../../auth/data/auth_models.dart';
 import '../../hubs/data/hub_models.dart';
 import '../../hubs/data/hub_providers.dart';
+import '../../orders/data/order_providers.dart';
+import 'live_mission.dart';
 import 'widgets/dispatcher/dispatcher_counts.dart';
 import 'widgets/dispatcher/dispatcher_tiles.dart';
 import 'widgets/dispatcher/hub_notice.dart';
@@ -19,7 +21,8 @@ import 'widgets/sign_out.dart';
 import '../../notifications/data/notice_providers.dart';
 
 /// Inicio del despachador: su central, las urgencias en cola como cifra
-/// principal, las bandejas en cuadrícula y los accesos de su central. Con
+/// principal, el primer vuelo de su central como misión en curso (con su
+/// telemetría), las bandejas en cuadrícula y los accesos de su central. Con
 /// la central suspendida (o sin central) solo quedan Mi central y Mis
 /// planes: Nest rechaza lo demás. Los números se refrescan cada 10 s.
 class DispatcherHome extends ConsumerWidget {
@@ -33,6 +36,10 @@ class DispatcherHome extends ConsumerWidget {
     final hub = hubState.value;
     final active = hub?.isActive ?? false;
     final counts = active ? DispatcherCounts.watch(ref) : null;
+    // El primer vuelo de su central, como misión en curso.
+    final flying = active
+        ? ref.watch(inFlightProvider).value?.firstOrNull
+        : null;
     return AutoRefresh(
       onTick: () {
         ref.invalidate(unreadCountProvider);
@@ -62,7 +69,8 @@ class DispatcherHome extends ConsumerWidget {
               tone: active ? PillTone.positive : PillTone.attention,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
+          if (flying != null) LiveMission(order: flying),
           DispatcherTiles(hub: hub, counts: counts),
         ],
       ),

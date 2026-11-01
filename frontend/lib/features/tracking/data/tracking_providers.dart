@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
 import '../../../core/api_exception.dart';
+import '../../../core/data/data_source.dart';
+import '../../../core/data/data_source_config.dart';
 import '../../../core/network/api_client.dart';
 import '../../orders/data/order_models.dart' show OrderStatus;
 import 'telemetry_client.dart';
@@ -78,6 +80,11 @@ class TrackingNotifier extends Notifier<TrackingState> {
 
   @override
   TrackingState build() {
+    // Los datos locales no traen telemetría: sin servidor que la publique,
+    // el vuelo queda "por empezar" en vez de pedirle al de verdad.
+    if (appDataSource == DataSource.local) {
+      return const TrackingState(loading: false, waitingForFlight: true);
+    }
     StreamSubscription<TelemetryEvent>? subscription;
     ref.onDispose(() => subscription?.cancel());
     unawaited(_start((s) => subscription = s));

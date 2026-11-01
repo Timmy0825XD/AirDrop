@@ -3,7 +3,7 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
-import '../../../../../theme/app_palette.dart';
+import '../../theme/app_palette.dart';
 
 /// El dron de la marca visto desde arriba: ala, fuselaje, dos largueros con
 /// cuatro hélices girando y las luces de navegación (roja a la izquierda,
