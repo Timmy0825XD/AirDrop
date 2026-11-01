@@ -2,67 +2,7 @@ import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 
-import '../../../../theme/app_palette.dart';
-
-/// Campos de la hoja: blancos con borde en claro, translúcidos en oscuro,
-/// y el ícono se enciende con el acento al enfocarlos. El vidrio del tema
-/// general se perdía sobre el blanco.
-InputDecorationThemeData _sheetFields(ThemeData theme) {
-  final colors = theme.colorScheme;
-  final dark = colors.brightness == Brightness.dark;
-  OutlineInputBorder border(Color color, [double width = 1]) =>
-      OutlineInputBorder(
-        borderRadius: BorderRadius.circular(16),
-        borderSide: BorderSide(color: color, width: width),
-      );
-  final rest = dark ? Colors.white.withValues(alpha: 0.09) : colors.outline;
-  return theme.inputDecorationTheme.copyWith(
-    fillColor: dark ? Colors.white.withValues(alpha: 0.04) : colors.surface,
-    border: border(rest),
-    enabledBorder: border(rest),
-    focusedBorder: border(colors.primary, 1.6),
-    prefixIconColor: WidgetStateColor.resolveWith(
-      (states) => states.contains(WidgetState.focused)
-          ? colors.primary
-          : colors.onSurfaceVariant,
-    ),
-  );
-}
-
-/// El fondo de la hoja: en oscuro baja de grafito a casi negro y en claro
-/// de blanco a un cielo muy suave, así una hoja larga no se ve plana.
-BoxDecoration _sheetDecoration(BuildContext context) {
-  final colors = Theme.of(context).colorScheme;
-  final backdrop = context.palette.backdrop;
-  final dark = colors.brightness == Brightness.dark;
-  return BoxDecoration(
-    gradient: LinearGradient(
-      begin: Alignment.topCenter,
-      end: Alignment.bottomCenter,
-      colors: dark
-          ? [Color.lerp(backdrop[1], colors.surface, 0.35)!, backdrop.last]
-          : [colors.surface, Color.lerp(colors.surface, backdrop[1], 0.6)!],
-    ),
-    borderRadius: const BorderRadius.vertical(
-      top: Radius.circular(AuthSheetPanel.radius),
-    ),
-    border: Border(
-      top: BorderSide(
-        color: dark
-            ? Colors.white.withValues(alpha: 0.12)
-            : colors.outline.withValues(alpha: 0.5),
-        width: 0.5,
-      ),
-    ),
-    boxShadow: [
-      BoxShadow(
-        color: Colors.black.withValues(alpha: dark ? 0.45 : 0.07),
-        blurRadius: 40,
-        offset: const Offset(0, -12),
-      ),
-    ],
-  );
-}
+import '../../../../theme/app_surfaces.dart';
 
 /// Vidrio esmerilado: desenfoca lo que hay detrás y le pone un tinte
 /// translúcido con un borde fino. Se usa con medida para no saturar.
@@ -154,9 +94,12 @@ class AuthSheetPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return DecoratedBox(
-      decoration: _sheetDecoration(context),
+      decoration: AppSurfaces.sheet(
+        context,
+        radius: const BorderRadius.vertical(top: Radius.circular(radius)),
+      ),
       child: Theme(
-        data: theme.copyWith(inputDecorationTheme: _sheetFields(theme)),
+        data: theme.copyWith(inputDecorationTheme: AppSurfaces.fields(theme)),
         child: Padding(
           padding: EdgeInsets.fromLTRB(22, 26, 22, 24 + bottomInset),
           child: child,

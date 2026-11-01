@@ -1,7 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/widgets/app_map.dart';
 import '../../../core/widgets/map_sheet.dart';
 import '../../../core/widgets/rise_in.dart';
 import '../../auth/data/auth_models.dart';
@@ -15,12 +18,16 @@ import '../../orders/presentation/widgets/order_status_chip.dart';
 import '../data/telemetry_models.dart';
 import '../data/tracking_providers.dart';
 import 'widgets/flight_card.dart';
+import 'widgets/flight_hud.dart';
 import 'widgets/flight_map.dart';
 import 'widgets/flight_notice.dart';
+import 'widgets/flight_timeline.dart';
 
 /// El vuelo de un pedido en vivo (`/tracking/:orderId`): el mapa a
-/// pantalla completa y, en la hoja de abajo, el estado, el aviso, "Recibir
-/// pedido" si aplica y la telemetría.
+/// pantalla completa con la barra "En vivo" y el panel de altitud y rumbo
+/// arriba; en la hoja de abajo, el medicamento con su estado, el aviso,
+/// "Recibir pedido" si aplica, la telemetría con el avance por la ruta y
+/// la línea de tiempo del vuelo.
 ///
 /// Del pedido (`GET /orders/:id`) saca el título y la ruta; de la
 /// telemetría (GET y luego socket) el punto del dron y la ficha. Al salir
@@ -68,6 +75,12 @@ class TrackingScreen extends ConsumerWidget {
     final assignment = order?.assignment;
     final back =
         (t?.returning ?? false) && (assignment?.hasReturnRoute ?? false);
+    final line = back
+        ? assignment!.returnCoordinates
+        : assignment?.coordinates ?? const <List<double>>[];
+    final points = line.map(latLngFromGeoJson).toList();
+    final split = closestRouteIndex(points, drone);
+    final routed = points.length >= 2 && drone != null;
     final coldAlert =
         (order?.coldChainAlert ?? false) ||
         flight.alert?.kind == FlightAlertKind.coldChain;
@@ -77,10 +90,23 @@ class TrackingScreen extends ConsumerWidget {
       // lleva al inicio en vez de dejar la pantalla sin salida.
       onBack: () => SectionHeader.backOrHome(context),
       trailing: status == null ? null : OrderStatusChip(status: status),
+      titleBar: t == null
+          ? null
+          : FlightLiveBar(
+              connected: flight.connected,
+              identifier: t.identifier,
+              latencyMs: t.vitals?.latencyMs,
+            ),
+      hud: drone == null
+          ? null
+          : FlightHud(
+              altitudeM: t!.altitudeM,
+              headingDeg: routed
+                  ? routeHeading(points, split) * 180 / math.pi
+                  : null,
+            ),
       map: (sheetHeight) => FlightMap(
-        route: back
-            ? assignment!.returnCoordinates
-            : assignment?.coordinates ?? const [],
+        route: line,
         returnLeg: back,
         drone: drone,
         sheetHeight: sheetHeight,
@@ -93,6 +119,8 @@ class TrackingScreen extends ConsumerWidget {
               ),
             ]
           : [
+              if (order != null && status != null)
+                _SheetTitle(name: order.medicationName, status: status),
               FlightNotice(state: flight, showReturn: !hideReturn),
               if (coldAlert && role != UserRole.requester)
                 Padding(
@@ -108,8 +136,43 @@ class TrackingScreen extends ConsumerWidget {
                   ),
                 ),
               if (t != null && !hideReturn)
-                RiseIn(child: FlightCard(telemetry: t)),
+                RiseIn(
+                  child: FlightCard(
+                    telemetry: t,
+                    progress: routed ? split / (points.length - 1) : null,
+                  ),
+                ),
+              const SizedBox(height: 18),
+              FlightTimeline(order: order, status: status, telemetry: t),
             ],
+    );
+  }
+}
+
+/// El medicamento y su estado, arriba de la hoja.
+class _SheetTitle extends StatelessWidget {
+  const _SheetTitle({required this.name, required this.status});
+
+  final String name;
+  final OrderStatus status;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+          ),
+          OrderStatusChip(status: status),
+        ],
+      ),
     );
   }
 }

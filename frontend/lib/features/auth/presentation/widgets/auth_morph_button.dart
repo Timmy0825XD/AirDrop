@@ -67,7 +67,7 @@ class AuthMorphButton extends StatelessWidget {
     required this.onPressed,
     this.isLoading = false,
     this.isDone = false,
-    this.pill = false,
+    this.pill = true,
   });
 
   static const double height = 58;
@@ -78,7 +78,7 @@ class AuthMorphButton extends StatelessWidget {
   final bool isLoading;
   final bool isDone;
 
-  /// Bordes del todo redondos (auth); el resto usa el radio 16 del tema.
+  /// Bordes del todo redondos, como en toda la app; en `false`, radio 16.
   final bool pill;
 
   @override

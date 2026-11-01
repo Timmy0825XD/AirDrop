@@ -4,7 +4,7 @@ import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 
 import '../auth_brand.dart';
-import '../airspace/drone_mark.dart';
+import '../../../../../core/widgets/drone_mark.dart';
 import '../auth_curved_header.dart';
 import '../auth_morph_button.dart';
 import '../check_mark.dart';
@@ -304,7 +304,6 @@ class _SuccessText extends StatelessWidget {
                     padding: const EdgeInsets.only(top: 28),
                     child: Center(
                       child: AuthMorphButton(
-                        pill: true,
                         label: 'Ir al inicio de sesión',
                         loadingLabel: 'Ir al inicio de sesión',
                         onPressed: onContinue,

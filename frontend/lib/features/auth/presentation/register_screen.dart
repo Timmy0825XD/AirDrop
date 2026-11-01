@@ -233,7 +233,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           const SizedBox(height: 22),
           Center(
             child: AuthMorphButton(
-              pill: true,
               label: 'Crear cuenta',
               loadingLabel: 'Creando cuenta',
               isLoading: _isLoading,

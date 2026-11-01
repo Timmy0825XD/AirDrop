@@ -35,9 +35,22 @@ class GlassCard extends StatelessWidget {
     // En oscuro la sombra se vería a través del vidrio y lo ensuciaría:
     // solo la llevan el vidrio fuerte y el modo claro.
     final light = Theme.of(context).brightness == Brightness.light;
+    // En oscuro el vidrio lleva luz arriba y se apaga hacia abajo, como un
+    // panel iluminado desde el techo; en claro y el fuerte, color parejo.
+    final lit = !strong && !light;
     Widget card = DecoratedBox(
       decoration: BoxDecoration(
-        color: strong ? palette.bar : palette.glass,
+        color: lit ? null : (strong ? palette.bar : palette.glass),
+        gradient: lit
+            ? LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  palette.glass,
+                  palette.glass.withValues(alpha: palette.glass.a * 0.4),
+                ],
+              )
+            : null,
         borderRadius: shape,
         border: Border.all(color: palette.glassBorder),
         boxShadow: [

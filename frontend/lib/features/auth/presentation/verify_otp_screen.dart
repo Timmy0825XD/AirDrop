@@ -179,7 +179,6 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen>
         duration: const Duration(milliseconds: 320),
         child: Center(
           child: AuthMorphButton(
-            pill: true,
             label: 'Verificar',
             loadingLabel: 'Verificando',
             isLoading: _isLoading,

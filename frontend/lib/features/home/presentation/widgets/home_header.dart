@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/widgets/status_pill.dart';
 import '../../../../theme/app_palette.dart';
+import '../../../../core/widgets/drone_mark.dart';
 import '../../../notifications/presentation/widgets/notice_bell.dart';
 
 /// El primer nombre para el saludo.
 String homeFirstName(String fullName) =>
     fullName.trim().split(RegExp(r'\s+')).first;
 
-/// El encabezado de un inicio: el rol en una pastilla, el saludo y una
-/// línea de contexto (la central, la ciudad). A la derecha, las iniciales
-/// sobre el acento, la campana de avisos (si la pantalla la pasa) y cerrar
-/// sesión.
+/// El encabezado de un inicio, como la cabina de la app: arriba la marca
+/// (el dron y "AirDrop") con la campana, las iniciales y cerrar sesión;
+/// debajo el rol en una pastilla, el saludo grande y una línea de contexto
+/// (la central, la ciudad).
 class HomeHeader extends StatelessWidget {
   const HomeHeader({
     super.key,
@@ -35,55 +36,63 @@ class HomeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              StatusPill(label: roleLabel, tone: PillTone.neutral),
-              const SizedBox(height: 10),
-              Text(
-                'Hola, ${homeFirstName(fullName)}',
-                style: theme.textTheme.headlineLarge,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                tagline,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
+        _BrandRow(header: this),
+        const SizedBox(height: 22),
+        StatusPill(label: roleLabel, tone: PillTone.neutral),
+        const SizedBox(height: 10),
+        Text(
+          'Hola, ${homeFirstName(fullName)}',
+          style: theme.textTheme.headlineLarge?.copyWith(
+            fontSize: 34,
+            letterSpacing: -1.2,
+            height: 1.05,
           ),
         ),
-        const SizedBox(width: 12),
-        _Initials(name: fullName),
-        const SizedBox(width: 8),
-        _HeaderActions(header: this),
+        const SizedBox(height: 6),
+        Text(
+          tagline,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
       ],
     );
   }
 }
 
-/// La campana (si hay) y cerrar sesión.
-class _HeaderActions extends StatelessWidget {
-  const _HeaderActions({required this.header});
+/// La marca a la izquierda y, a la derecha, la campana (si hay), las
+/// iniciales y cerrar sesión.
+class _BrandRow extends StatelessWidget {
+  const _BrandRow({required this.header});
 
   final HomeHeader header;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Row(
-      mainAxisSize: MainAxisSize.min,
       children: [
+        const DroneMark(size: 30),
+        const SizedBox(width: 8),
+        Text(
+          'AirDrop',
+          style: theme.textTheme.titleMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.4,
+          ),
+        ),
+        const Spacer(),
         if (header.onNotices case final open?) ...[
           NoticeBell(unread: header.unreadNotices, onTap: open),
-          const SizedBox(width: 4),
+          const SizedBox(width: 6),
         ],
+        _Initials(name: header.fullName),
+        const SizedBox(width: 6),
         IconButton.filledTonal(
           tooltip: 'Cerrar sesión',
           onPressed: header.onSignOut,
@@ -107,16 +116,23 @@ class _Initials extends StatelessWidget {
     final initials = parts.take(2).map((p) => p.isEmpty ? '' : p[0]).join();
     return ExcludeSemantics(
       child: Container(
-        width: 48,
-        height: 48,
+        width: 40,
+        height: 40,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           gradient: palette.accent,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: palette.accentGradient.first.withValues(alpha: 0.3),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
         child: Text(
           initials.toUpperCase(),
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
             color: palette.onAccent,
             fontWeight: FontWeight.w700,
           ),

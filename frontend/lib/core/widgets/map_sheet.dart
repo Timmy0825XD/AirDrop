@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_motion.dart';
 import '../../theme/app_palette.dart';
+import '../../theme/app_surfaces.dart';
 import 'glass_icon_button.dart';
 
 /// Las pantallas donde el mapa es el centro (el vuelo, elegir un punto):
 /// el mapa de fondo a pantalla completa, arriba volver y el título en
 /// vidrio, y abajo una hoja que se arrastra con lo demás. [map] recibe el
 /// alto que tapa la hoja para dejar libre la cámara y los botones.
+///
+/// Con [titleBar] la barra de vidrio lleva ese contenido en vez del título
+/// (el vuelo pone ahí "En vivo"); con [hud], un panel va a la izquierda,
+/// debajo de la barra.
 class MapSheetScaffold extends StatelessWidget {
   const MapSheetScaffold({
     super.key,
@@ -16,6 +21,8 @@ class MapSheetScaffold extends StatelessWidget {
     required this.onBack,
     required this.sheet,
     this.trailing,
+    this.titleBar,
+    this.hud,
     this.sheetFraction = 0.38,
   });
 
@@ -24,6 +31,8 @@ class MapSheetScaffold extends StatelessWidget {
   final VoidCallback onBack;
   final List<Widget> sheet;
   final Widget? trailing;
+  final Widget? titleBar;
+  final Widget? hud;
 
   /// Qué parte de la pantalla ocupa la hoja al abrir.
   final double sheetFraction;
@@ -40,8 +49,9 @@ class MapSheetScaffold extends StatelessWidget {
               left: 16,
               right: 16,
               top: top + 12,
-              child: _TopBar(title: title, onBack: onBack, trailing: trailing),
+              child: _TopBar(scaffold: this),
             ),
+            if (hud != null) Positioned(left: 16, top: top + 70, child: hud!),
             DraggableScrollableSheet(
               initialChildSize: sheetFraction,
               minChildSize: 0.18,
@@ -58,18 +68,16 @@ class MapSheetScaffold extends StatelessWidget {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.title, required this.onBack, this.trailing});
+  const _TopBar({required this.scaffold});
 
-  final String title;
-  final VoidCallback onBack;
-  final Widget? trailing;
+  final MapSheetScaffold scaffold;
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
     return Row(
       children: [
-        GlassIconButton.back(onPressed: onBack),
+        GlassIconButton.back(onPressed: scaffold.onBack),
         const SizedBox(width: 10),
         Expanded(
           child: Container(
@@ -80,19 +88,21 @@ class _TopBar extends StatelessWidget {
               borderRadius: BorderRadius.circular(15),
               border: Border.all(color: palette.glassBorder),
             ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleSmall,
-                  ),
+            child:
+                scaffold.titleBar ??
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        scaffold.title,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                    ),
+                    ?scaffold.trailing,
+                  ],
                 ),
-                ?trailing,
-              ],
-            ),
           ),
         ),
       ],
@@ -109,7 +119,6 @@ class _SheetBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = context.palette;
     final bottom = MediaQuery.paddingOf(context).bottom;
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 1, end: 0),
@@ -118,11 +127,9 @@ class _SheetBody extends StatelessWidget {
       builder: (context, t, child) =>
           FractionalTranslation(translation: Offset(0, t * 0.4), child: child),
       child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: palette.bar,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
-          border: Border.all(color: palette.glassBorder),
-          boxShadow: [BoxShadow(color: palette.shadow, blurRadius: 30)],
+        decoration: AppSurfaces.sheet(
+          context,
+          radius: const BorderRadius.vertical(top: Radius.circular(32)),
         ),
         child: ListView(
           controller: controller,

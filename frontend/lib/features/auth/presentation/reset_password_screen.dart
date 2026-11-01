@@ -223,7 +223,6 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen>
       body: _body(),
       action: Center(
         child: AuthMorphButton(
-          pill: true,
           key: _buttonKey,
           label: 'Actualizar contraseña',
           loadingLabel: 'Actualizando contraseña',
