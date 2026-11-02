@@ -36,6 +36,7 @@ Otras variables de `.env.example`:
 | `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME` | Envío del OTP por correo |
 | `REDIS_URL` | Snapshot de telemetría y pub/sub hacia el socket |
 | `DELIVERY_WAIT_MS` | Espera del código de entrega en milisegundos (por defecto 300000 = 5 min). Solo para acortarla en pruebas |
+| `DRONE_RECHARGE_PERCENT_PER_MIN` | Recarga de un dron en tierra, en % por minuto (por defecto 1.5). Súbela para que la demo no espere una hora |
 | `CORS_ORIGINS` | Orígenes de navegador permitidos, separados por comas. Sin ella: localhost en desarrollo y ninguno en producción |
 
 No subas `.env` a GitHub. Compártelo por un canal privado del equipo.

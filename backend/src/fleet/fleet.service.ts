@@ -10,6 +10,7 @@ import { DroneStatus } from '../common/enums/drone-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { HubsService } from '../hubs/hubs.service';
+import { batteryNow } from '../simulation/flight-energy.rules';
 import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
 import { CreateDroneDto } from './dto/create-drone.dto';
@@ -131,6 +132,13 @@ export class FleetService {
       status: drone.status,
       maintenanceReason: drone.maintenanceReason,
       maintenanceUntil: drone.maintenanceUntil,
+      /** Batería ahora, con lo que recargó en tierra desde el último vuelo. */
+      batteryPercent: batteryNow(
+        drone.batteryPercent ?? 100,
+        drone.batteryUpdatedAt ?? null,
+        new Date(),
+      ),
+      lastFlightEndedAt: drone.lastFlightEndedAt ?? null,
       createdAt: drone.createdAt,
     };
   }

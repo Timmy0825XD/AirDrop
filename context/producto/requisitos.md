@@ -214,7 +214,11 @@ Suministro, cantidad, calendario (días de la semana cada 1 a 4 semanas, un día
 
 Al autorizar: batería, carga, mantenimiento, clima simulado y ruta sin geovallas. La emergencia gana el dron si compite con un programado. Reserva el dron y no inicia el vuelo.
 
-La batería se evalúa con la misma cuenta del simulador: ida y regreso por el corredor (8 % de fases verticales por tramo más el crucero) y aterrizar todavía con la reserva crítica del 20 %. Cada vuelo sale con la batería llena, así que el Wingcopter 198 llega hasta **35,2 km** de ida. Más lejos, el dron no es elegible.
+La batería se evalúa con la misma cuenta del simulador: ida y regreso por el corredor (8 % de fases verticales por tramo más el crucero) y aterrizar todavía con la reserva crítica del 20 %. Con la batería llena, el Wingcopter 198 llega hasta **35,2 km** de ida. Más lejos, el dron no es elegible.
+
+La batería es la de cada dron: al volver guarda con cuánta llegó y en tierra recarga 1,5 % por minuto (de 0 a 100 % en algo más de una hora). Un dron que acaba de volver puede no alcanzar para otra misión larga, y entonces sale otro. El vuelo arranca con esa batería.
+
+Entre los drones que pueden cumplir, sale el que lleva más tiempo en tierra (el que nunca ha volado, primero). Si empatan, el de más batería. Así la flota se alterna y no vuela siempre el mismo.
 
 **Por qué.** Los 110 km del modelo son el alcance total en crucero. Si la ida y el regreso los consumen enteros, no queda batería para despegar y aterrizar ni reserva: el dron se apagaría volviendo.
 

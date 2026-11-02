@@ -28,6 +28,7 @@ import { Order } from '../orders/order.entity';
 import { departureCopy } from '../orders/plan-dispatch.rules';
 import { PlannedCorridor } from '../routing/routing.rules';
 import { RoutePlannerService } from '../routing/route-planner.service';
+import { batteryNow } from './flight-energy.rules';
 import { TELEMETRY_UNAVAILABLE } from '../telemetry/telemetry.rules';
 import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
 import { Mission } from './mission.entity';
@@ -376,6 +377,12 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
           }
       : (stored?.progress ?? {
           ...initialProgress(),
+          // Sale con la batería que tiene, no siempre llena (RF-11).
+          batteryPercent: batteryNow(
+            drone.batteryPercent ?? 100,
+            drone.batteryUpdatedAt ?? null,
+            new Date(),
+          ),
           coldChainExcursionAtMs: order.requiresColdChain
             ? planColdChainExcursion(
                 this.random(),
@@ -572,12 +579,17 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
               id: Not(orderId),
             },
           });
-          if (!busy) {
-            await this.drones.update(
-              { id: session.droneId },
-              { status: DroneStatus.AVAILABLE },
-            );
-          }
+          // Guarda con cuánta batería volvió; desde ahora recarga en tierra.
+          const landed = new Date();
+          await this.drones.update(
+            { id: session.droneId },
+            {
+              ...(busy ? {} : { status: DroneStatus.AVAILABLE }),
+              batteryPercent: step.progress.batteryPercent,
+              batteryUpdatedAt: landed,
+              lastFlightEndedAt: landed,
+            },
+          );
           await this.missions.update({ orderId }, { returnedAt: new Date() });
         } else if (landedAt) {
           this.waiting.set(orderId, landedAt);

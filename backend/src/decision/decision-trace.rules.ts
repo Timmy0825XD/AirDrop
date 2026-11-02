@@ -32,6 +32,7 @@ export type EvaluationView = {
   choice: { chosen: ChosenDrone | null; discarded: DiscardedDrone[] };
   etaMs: number | null;
   inRange: boolean;
+  batteryByDrone?: Map<string, number>;
 };
 
 type HubRef = { id: string; name: string };
@@ -151,12 +152,14 @@ function droneVerdicts(evaluation: EvaluationView): DroneVerdict[] {
   const { chosen, discarded } = evaluation.choice;
   const reasons = new Map(discarded.map((row) => [row.droneId, row.reason]));
   return evaluation.drones.map((drone) => {
+    const batteryPercent = evaluation.batteryByDrone?.get(drone.id) ?? null;
     if (chosen?.droneId === drone.id) {
       return {
         identifier: drone.identifier,
         status: 'chosen',
         reason: null,
         preempts: chosen.preemptsOrderId != null,
+        batteryPercent,
       };
     }
     const reason = reasons.get(drone.id);
@@ -165,6 +168,7 @@ function droneVerdicts(evaluation: EvaluationView): DroneVerdict[] {
       status: reason ? 'discarded' : 'eligible',
       reason: reason ?? null,
       preempts: false,
+      batteryPercent,
     };
   });
 }

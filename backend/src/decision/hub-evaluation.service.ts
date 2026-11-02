@@ -9,7 +9,10 @@ import { InventoryItem } from '../inventory/inventory-item.entity';
 import { Order } from '../orders/order.entity';
 import { PlannedCorridor } from '../routing/routing.rules';
 import { RoutePlannerService } from '../routing/route-planner.service';
-import { missionBatteryPercent } from '../simulation/flight-energy.rules';
+import {
+  batteryNow,
+  missionBatteryPercent,
+} from '../simulation/flight-energy.rules';
 import { outboundDurationMs } from '../simulation/simulation.rules';
 import {
   DroneCandidate,
@@ -28,6 +31,8 @@ export type HubEvaluation = {
   etaMs: number | null;
   /** RF-11: la batería llena alcanza ida, regreso y reserva por ese corredor. */
   inRange: boolean;
+  /** Batería de cada dron ahora, con lo que recargó en tierra. */
+  batteryByDrone: Map<string, number>;
 };
 
 /**
@@ -60,6 +65,7 @@ export class HubEvaluationService {
         choice: { chosen: null, discarded: [] },
         etaMs: null,
         inRange: false,
+        batteryByDrone: new Map(),
       };
     }
     const query = manager
@@ -71,6 +77,17 @@ export class HubEvaluationService {
     ).getMany();
     const modelsById = await this.modelsById(manager, drones);
     const heldByDrone = await this.heldByDrone(manager, drones);
+    const now = new Date();
+    const batteryByDrone = new Map(
+      drones.map((drone) => [
+        drone.id,
+        batteryNow(
+          drone.batteryPercent ?? 100,
+          drone.batteryUpdatedAt ?? null,
+          now,
+        ),
+      ]),
+    );
     const corridor = this.routes.plan(
       { longitude: hub.longitude, latitude: hub.latitude },
       {
@@ -90,7 +107,12 @@ export class HubEvaluationService {
         }
         return [
           {
-            drone: toCandidate(drone, model, heldByDrone.get(drone.id) ?? null),
+            drone: toCandidate(
+              drone,
+              model,
+              heldByDrone.get(drone.id) ?? null,
+              batteryByDrone.get(drone.id) ?? 100,
+            ),
             distanceKm: corridor?.distanceKm ?? null,
           },
         ];
@@ -111,7 +133,15 @@ export class HubEvaluationService {
               100,
           }
         : { etaMs: null, inRange: false };
-    return { lot, drones, modelsById, corridor, choice, ...reach };
+    return {
+      lot,
+      drones,
+      modelsById,
+      corridor,
+      choice,
+      ...reach,
+      batteryByDrone,
+    };
   }
 
   findFefoLot(
@@ -166,8 +196,11 @@ function toCandidate(
   drone: Drone,
   model: DroneModel,
   held: Order | null,
+  batteryPercent: number,
 ): DroneCandidate {
   return {
+    batteryPercent,
+    lastFlightEndedAt: drone.lastFlightEndedAt ?? null,
     id: drone.id,
     identifier: drone.identifier,
     status: drone.status,

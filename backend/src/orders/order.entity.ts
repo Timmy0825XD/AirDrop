@@ -49,6 +49,8 @@ export type DroneVerdict = {
   reason: string | null;
   /** Elegido quitándoselo a un programado pendiente de carga (RF-11). */
   preempts: boolean;
+  /** Batería del dron cuando se decidió. */
+  batteryPercent: number | null;
 };
 
 /** Lo que el motor vio en una central. Sin datos clínicos. */

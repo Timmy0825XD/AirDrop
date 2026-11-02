@@ -951,8 +951,15 @@ describe('DecisionService traza de la decisión', () => {
         status: 'discarded',
         reason: 'El dron está en mantenimiento.',
         preempts: false,
+        batteryPercent: 100,
       },
-      { identifier: 'WC-02', status: 'chosen', reason: null, preempts: false },
+      {
+        identifier: 'WC-02',
+        status: 'chosen',
+        reason: null,
+        preempts: false,
+        batteryPercent: 100,
+      },
     ]);
   });
 

@@ -37,6 +37,11 @@ function evaluation(overrides: Partial<EvaluationView> = {}): EvaluationView {
     },
     etaMs: 324_000,
     inRange: true,
+    batteryByDrone: new Map([
+      ['d1', 100],
+      ['d2', 82.5],
+      ['d3', 100],
+    ]),
     ...overrides,
   };
 }
@@ -50,13 +55,21 @@ describe('traceEvaluatedHub', () => {
         status: 'discarded',
         reason: DRONE_MAINTENANCE,
         preempts: false,
+        batteryPercent: 100,
       },
-      { identifier: 'WC-02', status: 'chosen', reason: null, preempts: false },
+      {
+        identifier: 'WC-02',
+        status: 'chosen',
+        reason: null,
+        preempts: false,
+        batteryPercent: 82.5,
+      },
       {
         identifier: 'WC-03',
         status: 'eligible',
         reason: null,
         preempts: false,
+        batteryPercent: 100,
       },
     ]);
   });

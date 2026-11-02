@@ -3,9 +3,11 @@ import { PlannedCorridor } from '../routing/routing.rules';
 import {
   CRITICAL_BATTERY_PERCENT,
   VERTICAL_BATTERY_PER_LEG,
+  batteryNow,
   legBatteryPercent,
   maxOneWayKm,
   missionBatteryPercent,
+  rechargePercentPerMin,
 } from './flight-energy.rules';
 import {
   FlightAlertKind,
@@ -81,5 +83,34 @@ describe('cuenta de energía (RF-11)', () => {
     const { landed } = flyRoundTrip(30);
     const spent = missionBatteryPercent(30, 110) - CRITICAL_BATTERY_PERCENT;
     expect(100 - (landed?.batteryPercent ?? 0)).toBeCloseTo(spent, 5);
+  });
+});
+
+describe('recarga en tierra', () => {
+  const landed = new Date('2026-11-02T15:00:00.000Z');
+  const later = (minutes: number) =>
+    new Date(landed.getTime() + minutes * 60_000);
+
+  it('recarga 1,5 % por minuto desde que aterrizó', () => {
+    expect(batteryNow(40, landed, later(10))).toBe(55);
+  });
+
+  it('nunca pasa de 100 %', () => {
+    expect(batteryNow(40, landed, later(120))).toBe(100);
+  });
+
+  it('un dron que nunca ha volado está lleno', () => {
+    expect(batteryNow(100, null, later(0))).toBe(100);
+  });
+
+  it('DRONE_RECHARGE_PERCENT_PER_MIN acelera la recarga en una demostración', () => {
+    process.env.DRONE_RECHARGE_PERCENT_PER_MIN = '10';
+    try {
+      expect(rechargePercentPerMin()).toBe(10);
+      expect(batteryNow(40, landed, later(3))).toBe(70);
+    } finally {
+      delete process.env.DRONE_RECHARGE_PERCENT_PER_MIN;
+    }
+    expect(rechargePercentPerMin()).toBe(1.5);
   });
 });

@@ -10,6 +10,7 @@ import {
 } from 'typeorm';
 import { DroneStatus } from '../common/enums/drone-status.enum';
 import { FIELD_LIMITS } from '../common/field-limits';
+import { NUMERIC_TRANSFORMER } from '../common/numeric.transformer';
 import { Hub } from '../hubs/hub.entity';
 import { DroneModel } from './drone-model.entity';
 
@@ -45,6 +46,24 @@ export class Drone {
     default: DroneStatus.AVAILABLE,
   })
   status: DroneStatus;
+
+  /** Batería al aterrizar la última vez; en tierra recarga (`batteryNow`). */
+  @Column({
+    type: 'numeric',
+    precision: 4,
+    scale: 1,
+    default: 100,
+    transformer: NUMERIC_TRANSFORMER,
+  })
+  batteryPercent: number;
+
+  /** Desde cuándo recarga. `null`: nunca ha volado, está llena. */
+  @Column({ type: 'timestamptz', nullable: true })
+  batteryUpdatedAt: Date | null;
+
+  /** Fin del último vuelo: la flota rota del que lleva más tiempo en tierra. */
+  @Column({ type: 'timestamptz', nullable: true })
+  lastFlightEndedAt: Date | null;
 
   @Column({ type: 'varchar', length: FIELD_LIMITS.reason, nullable: true })
   maintenanceReason: string | null;

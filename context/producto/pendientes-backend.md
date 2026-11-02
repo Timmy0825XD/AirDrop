@@ -446,3 +446,27 @@ intentó o es la central que pidió.»).
 **La app lo usará** en el detalle del pedido del despachador: un bloque
 «¿Por qué este dron?» con cada central y el veredicto de sus drones, y en
 una urgencia la escalera de centrales a las que se ofreció.
+
+## 15. Batería por dron y rotación de la flota — Hecho (rama `feature/fleet-rotacion-bateria`)
+
+**Qué pasaba:** cada vuelo salía con la batería al 100 % y, dentro de una
+central, el motor elegía siempre el mismo dron (el primero por
+identificador).
+
+**Qué hace ahora** ([`requisitos.md`](requisitos.md) RF-11):
+
+- Al volver a la central, el dron guarda con cuánta batería llegó. En tierra
+  recarga 1,5 % por minuto (`DRONE_RECHARGE_PERCENT_PER_MIN` la cambia para
+  la demo). El siguiente vuelo sale con esa batería.
+- Si no alcanza para ida, regreso y reserva, el dron se descarta con «La
+  batería no alcanza para la ida, el regreso y la reserva del 20 %.» y sale
+  otro.
+- Entre los que sirven sale el que lleva más tiempo en tierra; el que nunca
+  ha volado, primero. Con varias urgencias seguidas, los drones se alternan.
+- `GET /fleet/drones` (y la respuesta de alta, estado y mantenimiento) y el radar (`/radar/hubs/:id`) traen
+  `batteryPercent` (ahora, con la recarga) y `lastFlightEndedAt` (`null` si
+  nunca ha volado). En `GET /orders/:id/decision`, cada dron de la traza trae
+  `batteryPercent`.
+
+**La app lo usará** en la flota del operador (batería de cada dron en tierra
+y cuándo volvió) y en «¿Por qué este dron?».
