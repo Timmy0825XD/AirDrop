@@ -288,6 +288,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
   2. Descarta los que no cumplan batería (ida, regreso y reserva del 20 %: hasta 35,2 km de ida), carga, mantenimiento, clima simulado o ruta.
   3. Si una emergencia y un programado compiten por el mismo dron, se queda la emergencia.
   4. Reserva el elegido y deja el pedido en `pendiente de carga`.
+  5. Guarda en el pedido la traza: centrales evaluadas y el veredicto de cada dron, con su motivo.
 - **Si falla:** Ninguno sirve: CU-31.
 - **Después:** No hay telemetría de vuelo y el dron no se mueve.
 - **Por qué:** RF-11. La decisión ocurre al autorizar, no al despegar.

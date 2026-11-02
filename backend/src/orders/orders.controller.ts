@@ -231,6 +231,16 @@ export class OrdersController {
     });
   }
 
+  /** Traza del motor de decisión y escalera de ofertas de la urgencia. */
+  @Get(':id/decision')
+  @Roles(UserRole.DISPATCHER)
+  decision(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.ordersService.findDecision(user, id);
+  }
+
   @Get(':id')
   @Roles(UserRole.REQUESTER, UserRole.DISPATCHER)
   async findOne(

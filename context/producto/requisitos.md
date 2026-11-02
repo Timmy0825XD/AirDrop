@@ -218,6 +218,8 @@ La batería se evalúa con la misma cuenta del simulador: ida y regreso por el c
 
 **Por qué.** Los 110 km del modelo son el alcance total en crucero. Si la ida y el regreso los consumen enteros, no queda batería para despegar y aterrizar ni reserva: el dron se apagaría volviendo.
 
+Cada decisión queda explicada en el pedido: qué centrales miró el motor, si tenían lote y corredor, cuántos minutos de vuelo y cuánta batería pedía la misión, y qué pasó con cada dron (elegido, elegible o descartado con su motivo). El despachador que puede abrir el pedido la consulta. No guarda datos clínicos.
+
 ### RF-12 — Ruta
 
 Corredor a altitud fija, de ida y de retorno si hace falta, sin cruzar geovallas.

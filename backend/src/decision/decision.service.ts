@@ -25,7 +25,7 @@ import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { NotificationKind } from '../common/enums/notification-kind.enum';
 import { InboxService } from '../notifications/inbox.service';
 import { presentOrder } from '../orders/order.presenter';
-import { Order } from '../orders/order.entity';
+import { HubTrace, Order } from '../orders/order.entity';
 import { todayInColombia } from '../orders/orders.rules';
 import { SCHEDULE_LEAD_MS } from '../orders/plan-schedule.rules';
 import {
@@ -56,6 +56,12 @@ import {
   assertAuthorizingHub,
   assertCanAuthorize,
 } from './decision.rules';
+import {
+  HUB_SUSPENDED_NOTE,
+  buildDecisionTrace,
+  traceEvaluatedHub,
+  traceSkippedHub,
+} from './decision-trace.rules';
 import { assertOfferedTo } from './dispatch.rules';
 import { clearFallback } from './fallback.rules';
 import { FallbackService } from './fallback.service';
@@ -310,13 +316,23 @@ export class DecisionService {
       longitude: order.longitude as number,
     };
     if (isInsideGeofence(destination, polygons)) {
-      return this.rejectForbiddenDestination(manager, order);
+      return this.rejectForbiddenDestination(manager, order, now);
     }
+    const trace: HubTrace[] = [];
     if (origin.status !== HubStatus.ACTIVE) {
       if (!retrying) {
         throw new ForbiddenException('La central está suspendida.');
       }
-      return this.withFallback(manager, order, origin, today, polygons, now);
+      trace.push(traceSkippedHub(origin, false, HUB_SUSPENDED_NOTE));
+      return this.withFallback(
+        manager,
+        order,
+        origin,
+        today,
+        polygons,
+        now,
+        trace,
+      );
     }
     if (prescriptionVerified && !order.prescriptionVerifiedAt) {
       order.prescriptionVerifiedAt = now;
@@ -329,12 +345,21 @@ export class DecisionService {
       polygons,
       true,
     );
+    trace.push(traceEvaluatedHub(origin, evaluation));
     const lot = evaluation.lot;
     if (!lot) {
       if (!retrying) {
         throw new BadRequestException(LOT_NOT_AVAILABLE);
       }
-      return this.withFallback(manager, order, origin, today, polygons, now);
+      return this.withFallback(
+        manager,
+        order,
+        origin,
+        today,
+        polygons,
+        now,
+        trace,
+      );
     }
     const chosen = evaluation.choice.chosen;
     const corridor = evaluation.corridor;
@@ -345,9 +370,23 @@ export class DecisionService {
       ? evaluation.modelsById.get(drone.droneModelId)
       : undefined;
     if (!chosen || !corridor || !drone || !model) {
-      return this.withFallback(manager, order, origin, today, polygons, now);
+      return this.withFallback(
+        manager,
+        order,
+        origin,
+        today,
+        polygons,
+        now,
+        trace,
+      );
     }
     clearFallback(order);
+    // `applyReservation` deja el pedido en pendiente de carga y lo guarda.
+    order.decisionTrace = buildDecisionTrace(
+      { ...order, status: OrderStatus.PENDING_LOAD },
+      trace,
+      now,
+    );
     await this.applyReservation(
       manager,
       order,
@@ -465,6 +504,7 @@ export class DecisionService {
       return { ...presentOrder(order), assignment: null };
     }
     const polygons = await this.routes.loadPolygons(manager);
+    const trace: HubTrace[] = [];
     await this.fallback.resolve(
       manager,
       order,
@@ -472,8 +512,10 @@ export class DecisionService {
       todayInColombia(now),
       polygons,
       now,
+      trace,
     );
     order.statusReason = WINDOW_MISSED;
+    order.decisionTrace = buildDecisionTrace(order, trace, now);
     await manager.save(order);
     return { ...presentOrder(order), assignment: null };
   }
@@ -481,10 +523,12 @@ export class DecisionService {
   private async rejectForbiddenDestination(
     manager: EntityManager,
     order: Order,
+    now: Date,
   ) {
     clearFallback(order);
     order.status = OrderStatus.REJECTED;
     order.statusReason = DESTINATION_IN_GEOFENCE;
+    order.decisionTrace = buildDecisionTrace(order, [], now);
     await manager.save(order);
     return { ...presentOrder(order), assignment: null };
   }
@@ -496,6 +540,7 @@ export class DecisionService {
     today: string,
     polygons: GeoJsonPolygon[],
     now: Date,
+    trace: HubTrace[],
   ) {
     await this.fallback.resolve(
       manager,
@@ -504,7 +549,10 @@ export class DecisionService {
       today,
       polygons,
       now,
+      trace,
     );
+    order.decisionTrace = buildDecisionTrace(order, trace, now);
+    await manager.save(order);
     return { ...presentOrder(order), assignment: null };
   }
 

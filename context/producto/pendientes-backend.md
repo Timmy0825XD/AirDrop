@@ -399,3 +399,50 @@ atenderla» junto a autorizar y rechazar, que llama a `decline` y quita la
 fila. El solicitante no ve nada nuevo: su urgencia sigue `received` hasta
 que una central la autoriza, o pasa a `reassigned` con las centrales del
 traslado convencional.
+
+## 14. Por qué el motor eligió ese dron — Hecho (rama `feature/decision-traza`)
+
+**Qué pasaba:** el motor calculaba por qué descartaba cada dron y lo botaba.
+El despachador veía `reasignado` sin saber si fue por carga, batería,
+mantenimiento o geovalla.
+
+**Qué hace ahora:** cada autorización, reasignación, reintento, traslado
+convencional, rechazo por geovalla o vencimiento guarda la traza en el
+pedido.
+
+- **Nuevo:** `GET /orders/:id/decision`, rol despachador. La ve la central
+  que puede abrir el pedido (origen, destino, quien lo creó o a la que se
+  le ofreció la urgencia); otra central recibe 404.
+
+```json
+{
+  "orderId": "…",
+  "trace": {
+    "at": "2026-11-02T15:01:00.000Z",
+    "outcome": "assigned | reassigned | retry | conventional | rejected | expired",
+    "reason": null,
+    "hubs": [{
+      "hubId": "…", "name": "Hospital Rosario", "lot": true,
+      "corridorKm": 11, "etaMin": 5.4, "batteryNeededPercent": 56,
+      "inRange": true, "note": null,
+      "drones": [
+        { "identifier": "WC-01", "status": "discarded", "reason": "El dron está en mantenimiento.", "preempts": false },
+        { "identifier": "WC-02", "status": "chosen", "reason": null, "preempts": false }
+      ]
+    }]
+  },
+  "offers": [{ "hubId": "…", "name": "…", "etaMin": 6, "ready": true,
+               "offeredAt": "…", "declinedAt": null, "declineReason": null }]
+}
+```
+
+`trace` es `null` en pedidos que el motor todavía no evaluó o que se
+decidieron antes de esta rama. `offers` es `null` salvo en urgencias de un
+solicitante (RU-10). `note` explica una central sin drones evaluados («No
+tiene un lote vigente con la cantidad.», «No hay un corredor libre de
+geovallas.», «La central está suspendida.» o «Solo se revisó el stock: ya
+intentó o es la central que pidió.»).
+
+**La app lo usará** en el detalle del pedido del despachador: un bloque
+«¿Por qué este dron?» con cada central y el veredicto de sus drones, y en
+una urgencia la escalera de centrales a las que se ofreció.
