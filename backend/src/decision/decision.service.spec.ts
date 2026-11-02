@@ -169,6 +169,7 @@ function received(overrides: Partial<Order> = {}): Order {
     retryAfter: null,
     prescriptionVerifiedAt: null,
     dispatchOffers: null,
+    decisionTrace: null,
     nextEscalationAt: null,
     createdAt: new Date('2026-10-08T15:00:00.000Z'),
     updatedAt: new Date('2026-10-08T15:00:00.000Z'),
@@ -924,5 +925,81 @@ describe('DecisionService urgencia escalonada (RU-10)', () => {
     const result = await service.authorize(dispatcher(), order.id, {});
     expect(result.status).toBe(OrderStatus.REASSIGNED);
     expect(result.originHubId).toBe('far-hub');
+  });
+});
+
+describe('DecisionService traza de la decisión', () => {
+  it('al asignar guarda qué dron se eligió y cuánta batería pide el vuelo', async () => {
+    const spare = drone({ id: HELD_ID, identifier: 'WC-02' });
+    const { service, order } = build({
+      drones: [drone({ status: DroneStatus.MAINTENANCE }), spare],
+    });
+    await service.authorize(dispatcher(), order.id, {});
+    const trace = order.decisionTrace!;
+    expect(trace.outcome).toBe('assigned');
+    expect(trace.reason).toBeNull();
+    expect(trace.hubs).toHaveLength(1);
+    expect(trace.hubs[0]).toMatchObject({
+      hubId: HUB_ID,
+      lot: true,
+      corridorKm: 4.5,
+      inRange: true,
+    });
+    expect(trace.hubs[0].drones).toEqual([
+      {
+        identifier: 'WC-01',
+        status: 'discarded',
+        reason: 'El dron está en mantenimiento.',
+        preempts: false,
+      },
+      { identifier: 'WC-02', status: 'chosen', reason: null, preempts: false },
+    ]);
+  });
+
+  it('al reasignar guarda la central que falló y la que sí podía', async () => {
+    const spare = drone({
+      id: HELD_ID,
+      identifier: 'WC-02',
+      hubId: OTHER_HUB_ID,
+    });
+    const { service, order } = build({
+      drones: [drone({ status: DroneStatus.MAINTENANCE })],
+      hubs: [hub(), otherHub()],
+      lotsByHub: { [OTHER_HUB_ID]: lot() },
+      dronesByHub: { [OTHER_HUB_ID]: [spare] },
+    });
+    await service.authorize(dispatcher(), order.id, {});
+    const trace = order.decisionTrace!;
+    expect(trace.outcome).toBe('reassigned');
+    expect(trace.reason).toContain('Clínica Norte');
+    expect(trace.hubs.map((row) => row.name)).toEqual([
+      'Hospital Rosario',
+      'Clínica Norte',
+    ]);
+    expect(trace.hubs[0].drones[0].status).toBe('discarded');
+    expect(trace.hubs[1].drones[0].status).toBe('chosen');
+  });
+
+  it('un destino dentro de una geovalla deja la traza de rechazo', async () => {
+    const { service, order, routes } = build();
+    routes.loadPolygons.mockResolvedValue([
+      {
+        type: 'Polygon',
+        coordinates: [
+          [
+            [-73.26, 10.45],
+            [-73.24, 10.45],
+            [-73.24, 10.47],
+            [-73.26, 10.47],
+            [-73.26, 10.45],
+          ],
+        ],
+      },
+    ]);
+    await service.authorize(dispatcher(), order.id, {});
+    expect(order.decisionTrace).toMatchObject({
+      outcome: 'rejected',
+      hubs: [],
+    });
   });
 });

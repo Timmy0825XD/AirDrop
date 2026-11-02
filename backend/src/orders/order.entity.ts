@@ -41,6 +41,44 @@ export type DispatchOffer = {
   declineReason: string | null;
 };
 
+/** Veredicto del motor sobre un dron de una central evaluada. */
+export type DroneVerdict = {
+  identifier: string;
+  status: 'chosen' | 'eligible' | 'discarded';
+  /** Motivo del descarte (los mensajes de `decision.rules.ts`). */
+  reason: string | null;
+  /** Elegido quitándoselo a un programado pendiente de carga (RF-11). */
+  preempts: boolean;
+};
+
+/** Lo que el motor vio en una central. Sin datos clínicos. */
+export type HubTrace = {
+  hubId: string;
+  name: string;
+  /** Tiene un lote vigente con la cantidad del pedido. */
+  lot: boolean;
+  corridorKm: number | null;
+  etaMin: number | null;
+  /** Batería para ida, regreso y reserva por ese corredor (RF-11). */
+  batteryNeededPercent: number | null;
+  inRange: boolean;
+  /** Por qué no se evaluaron sus drones, si no se evaluaron. */
+  note: string | null;
+  drones: DroneVerdict[];
+};
+
+export type DecisionOutcome =
+  'assigned' | 'reassigned' | 'retry' | 'conventional' | 'rejected' | 'expired';
+
+/** Traza de la última decisión del motor sobre el pedido. */
+export type DecisionTrace = {
+  at: string;
+  outcome: DecisionOutcome;
+  /** Motivo que vio quien pidió, si no hubo dron. */
+  reason: string | null;
+  hubs: HubTrace[];
+};
+
 @Entity({ name: 'orders' })
 export class Order {
   @PrimaryGeneratedColumn('uuid')
@@ -238,6 +276,10 @@ export class Order {
    */
   @Column({ type: 'jsonb', nullable: true })
   dispatchOffers: DispatchOffer[] | null;
+
+  /** Por qué el motor eligió o descartó cada central y cada dron. */
+  @Column({ type: 'jsonb', nullable: true })
+  decisionTrace: DecisionTrace | null;
 
   /** Cuándo la oferta se amplía a la siguiente central. */
   @Index()

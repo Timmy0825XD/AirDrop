@@ -4,7 +4,7 @@ import { FallbackKind } from '../common/enums/fallback-kind.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { GeoJsonPolygon } from '../geofences/geofences.rules';
 import { Hub } from '../hubs/hub.entity';
-import { FallbackOption, Order } from '../orders/order.entity';
+import { FallbackOption, HubTrace, Order } from '../orders/order.entity';
 import {
   applyConventional,
   applyHubReassignment,
@@ -15,6 +15,11 @@ import {
   scheduledRetryMs,
   shouldRetry,
 } from './fallback.rules';
+import {
+  ONLY_STOCK_NOTE,
+  traceEvaluatedHub,
+  traceSkippedHub,
+} from './decision-trace.rules';
 import { HubEvaluationService } from './hub-evaluation.service';
 
 type Alternatives = {
@@ -38,6 +43,7 @@ export class FallbackService {
     today: string,
     polygons: GeoJsonPolygon[],
     now: Date,
+    trace: HubTrace[] = [],
   ): Promise<FallbackKind> {
     const retryMs = scheduledRetryMs();
     const nextRetryAt = new Date(now.getTime() + retryMs);
@@ -50,6 +56,7 @@ export class FallbackService {
         failingHub.id,
         today,
         polygons,
+        trace,
       );
       if (found.hub) {
         applyHubReassignment(order, failingHub.id, found.hub, now);
@@ -73,6 +80,7 @@ export class FallbackService {
     failingHubId: string,
     today: string,
     polygons: GeoJsonPolygon[],
+    trace: HubTrace[],
   ): Promise<Alternatives> {
     const active = await manager.find(Hub, {
       where: { status: HubStatus.ACTIVE },
@@ -99,6 +107,7 @@ export class FallbackService {
           polygons,
           false,
         );
+        trace.push(traceEvaluatedHub(hub, evaluation));
         if (evaluation.lot) {
           withStock.push(option);
         }
@@ -115,7 +124,18 @@ export class FallbackService {
         }
         continue;
       }
-      if (await this.hubs.findFefoLot(manager, hub.id, order, today, false)) {
+      const lot = await this.hubs.findFefoLot(
+        manager,
+        hub.id,
+        order,
+        today,
+        false,
+      );
+      // La central que falló ya quedó en la traza con su evaluación completa.
+      if (hub.id !== failingHubId) {
+        trace.push(traceSkippedHub(hub, lot != null, ONLY_STOCK_NOTE));
+      }
+      if (lot) {
         withStock.push(option);
       }
     }

@@ -512,6 +512,53 @@ describe('OrdersService status', () => {
   });
 });
 
+describe('OrdersService decisión (traza)', () => {
+  const trace = {
+    at: '2026-10-03T15:01:00.000Z',
+    outcome: 'assigned' as const,
+    reason: null,
+    hubs: [],
+  };
+
+  it('la central de origen ve por qué el motor eligió su dron', async () => {
+    const { service, orders } = build();
+    orders.findOne.mockResolvedValue(
+      receivedOrder({
+        status: OrderStatus.PENDING_LOAD,
+        originHubId: origin.id,
+        decisionTrace: trace,
+        dispatchOffers: null,
+      }),
+    );
+
+    const view = await service.findDecision(originDispatcher(), '1');
+
+    expect(view).toEqual({
+      orderId: '11111111-1111-4111-8111-111111111111',
+      trace,
+      offers: null,
+    });
+  });
+
+  it('otra central no la ve y el solicitante tampoco', async () => {
+    const { service, orders } = build();
+    orders.findOne.mockResolvedValue(
+      receivedOrder({
+        status: OrderStatus.PENDING_LOAD,
+        originHubId: origin.id,
+        decisionTrace: trace,
+      }),
+    );
+
+    await expect(service.findDecision(dispatcher(), '1')).rejects.toThrow(
+      NotFoundException,
+    );
+    await expect(service.findDecision(requester(), '1')).rejects.toThrow(
+      ForbiddenException,
+    );
+  });
+});
+
 describe('OrdersService queue', () => {
   const stock = [
     {

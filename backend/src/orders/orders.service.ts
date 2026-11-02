@@ -17,6 +17,7 @@ import { PlanStatus } from '../common/enums/plan-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { CIVIL_EMERGENCY_QUANTITY } from '../common/field-limits';
+import { presentDecision } from '../decision/decision-trace.rules';
 import { isOfferedTo } from '../decision/dispatch.rules';
 import { isAwaitingHub } from '../decision/fallback.rules';
 import { Hub } from '../hubs/hub.entity';
@@ -586,6 +587,18 @@ export class OrdersService {
   async findOne(user: User, id: string) {
     const order = await this.requireReadable(user, id);
     return this.toPublicOrder(order);
+  }
+
+  /**
+   * Por qué el motor eligió o descartó cada central y cada dron. Solo el
+   * despachador que puede abrir el pedido; el solicitante ve el resultado.
+   */
+  async findDecision(user: User, id: string) {
+    if (user.role !== UserRole.DISPATCHER) {
+      throw new ForbiddenException('Solo el despachador ve la decisión.');
+    }
+    const order = await this.requireReadable(user, id);
+    return presentDecision(order);
   }
 
   async reject(user: User, id: string, dto: RejectOrderDto) {
