@@ -560,6 +560,35 @@ describe('OrdersService queue', () => {
     });
   });
 
+  it('RU-10: una urgencia escalonada solo la ve la central a la que ya se ofreció', async () => {
+    const { service, orders, stockForHub } = build();
+    stockForHub.mockResolvedValue(stock);
+    const offer = (hubId: string, offeredAt: string | null) => ({
+      hubId,
+      name: hubId,
+      etaMs: 360_000,
+      ready: true,
+      offeredAt,
+      declinedAt: null,
+      declineReason: null,
+    });
+    orders.find.mockResolvedValue([
+      receivedOrder({
+        dispatchOffers: [
+          offer(destination.id, '2026-10-03T15:00:00.000Z'),
+          offer(origin.id, null),
+        ],
+      }),
+    ]);
+
+    // La central de origen tiene stock, pero la urgencia todavía no le llega.
+    expect(await service.listQueue(originDispatcher())).toEqual([]);
+    const rows = await service.listQueue(dispatcher());
+    expect(rows.map((row) => row.id)).toEqual([
+      '11111111-1111-4111-8111-111111111111',
+    ]);
+  });
+
   it('puts an order reassigned to the hub first and hides a conventional one', async () => {
     const { service, orders, stockForHub } = build();
     stockForHub.mockResolvedValue(stock);

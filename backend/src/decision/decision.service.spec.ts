@@ -30,6 +30,7 @@ import { RoutePlannerService } from '../routing/route-planner.service';
 import { FlightClockService } from '../simulation/flight-clock.service';
 import { User } from '../users/user.entity';
 import { DecisionService } from './decision.service';
+import { NOT_OFFERED_TO_HUB } from './dispatch.rules';
 import { EligibilityService } from './eligibility.service';
 import { CONVENTIONAL_WITH_STOCK } from './fallback.rules';
 import { FallbackService } from './fallback.service';
@@ -98,6 +99,7 @@ function model(): DroneModel {
     name: 'Wingcopter 198',
     maxPayloadKg: 6,
     maxRangeKm: 110,
+    maxSpeedKmh: 150,
   } as DroneModel;
 }
 
@@ -166,6 +168,8 @@ function received(overrides: Partial<Order> = {}): Order {
     reassignedAt: null,
     retryAfter: null,
     prescriptionVerifiedAt: null,
+    dispatchOffers: null,
+    nextEscalationAt: null,
     createdAt: new Date('2026-10-08T15:00:00.000Z'),
     updatedAt: new Date('2026-10-08T15:00:00.000Z'),
     ...overrides,
@@ -845,5 +849,80 @@ describe('DecisionService scheduled fallback', () => {
     // Sin lote propio ni otra central: sigue esperando hasta su día.
     expect(result?.fallback?.kind).toBe(FallbackKind.RETRY);
     expect(order.retryAfter?.getTime()).toBeGreaterThan(morning.getTime());
+  });
+});
+
+describe('DecisionService urgencia escalonada (RU-10)', () => {
+  const offered = (hubId: string, offeredAt: string | null) => ({
+    hubId,
+    name: hubId,
+    etaMs: 360_000,
+    ready: true,
+    offeredAt,
+    declinedAt: null,
+    declineReason: null,
+  });
+
+  it('no deja autorizar a una central a la que todavía no se le ofreció', async () => {
+    const order = received({
+      dispatchOffers: [
+        offered(OTHER_HUB_ID, '2026-10-08T15:00:00.000Z'),
+        offered(HUB_ID, null),
+      ],
+      nextEscalationAt: new Date('2026-10-08T15:01:30.000Z'),
+    });
+    const { service, drones } = build({ order });
+    await expect(service.authorize(dispatcher(), order.id, {})).rejects.toThrow(
+      new ForbiddenException(NOT_OFFERED_TO_HUB),
+    );
+    expect(drones[0].status).toBe(DroneStatus.AVAILABLE);
+  });
+
+  it('la central ofrecida autoriza y la oferta deja de ampliarse', async () => {
+    const order = received({
+      dispatchOffers: [
+        offered(HUB_ID, '2026-10-08T15:00:00.000Z'),
+        offered(OTHER_HUB_ID, null),
+      ],
+      nextEscalationAt: new Date('2026-10-08T15:01:30.000Z'),
+    });
+    const { service } = build({ order });
+    const result = await service.authorize(dispatcher(), order.id, {});
+    expect(result.status).toBe(OrderStatus.PENDING_LOAD);
+    expect(order.nextEscalationAt).toBeNull();
+  });
+
+  it('sin dron, reasigna a la central que llega antes por su corredor, no a la más cercana', async () => {
+    const nearDrone = drone({
+      id: HELD_ID,
+      identifier: 'WC-02',
+      hubId: OTHER_HUB_ID,
+    });
+    const fastDrone = drone({
+      id: LOT_ID,
+      identifier: 'WC-03',
+      hubId: 'far-hub',
+    });
+    const farHub = hub({
+      id: 'far-hub',
+      name: 'Hospital Sur',
+      latitude: 10.43,
+      longitude: -73.25,
+    });
+    const { service, order, routes } = build({
+      drones: [drone({ status: DroneStatus.MAINTENANCE })],
+      hubs: [hub(), otherHub(), farHub],
+      lotsByHub: { [OTHER_HUB_ID]: lot(), 'far-hub': lot() },
+      dronesByHub: { [OTHER_HUB_ID]: [nearDrone], 'far-hub': [fastDrone] },
+    });
+    // Clínica Norte está más cerca en línea recta, pero una geovalla la obliga
+    // a un rodeo de 25 km; Hospital Sur vuela 3,3 km directo.
+    routes.plan.mockImplementation((origin: { latitude: number }) => ({
+      ...corridor,
+      distanceKm: origin.latitude === 10.48 ? 25 : 3.3,
+    }));
+    const result = await service.authorize(dispatcher(), order.id, {});
+    expect(result.status).toBe(OrderStatus.REASSIGNED);
+    expect(result.originHubId).toBe('far-hub');
   });
 });

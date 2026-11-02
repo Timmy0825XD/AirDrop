@@ -360,3 +360,42 @@ de avisos. Mientras no use `schedule`, la app sigue funcionando con
 `frequency`. Los estados nuevos ya no rompen el parseo (`scheduled`,
 `awaiting_confirmation`, `skipped`, `expired`); la agenda y los botones de
 la franja todavía no están en las pantallas.
+
+## 13. Urgencia escalonada por cercanía (RU-10) — Hecho (rama `feature/decision-despacho-escalonado`)
+
+**Qué pasaba:** la urgencia de un solicitante aparecía en la cola de todas
+las centrales con stock y la autorizaba la primera que la viera, aunque
+estuviera dos o tres veces más lejos. Además cualquiera de ellas podía
+rechazarla y la cerraba para todas.
+
+**Qué hace ahora** ([`requisitos.md`](requisitos.md) RU-10):
+
+- Al crearla, entra solo a la cola de la central que llega antes (primero
+  las que tienen dron elegible). Si no la autoriza a tiempo (lo que ahorra
+  frente a la siguiente, entre 1 y 3 min), entra también a la cola de la
+  siguiente. La autoriza la primera que lo haga. El socket avisa a cada
+  central cuando le llega (`queue-changed`).
+- `GET /orders/queue`, `GET /orders/:id` y `GET /orders/:id/prescription`
+  solo la muestran a las centrales a las que ya se ofreció. Autorizar desde
+  otra central responde 403 «Esta urgencia todavía no está en la cola de tu
+  central.»
+- **Nuevo:** `POST /orders/:id/decline`, rol despachador, body opcional
+  `{ "reason": "Sin dron disponible" }` (hasta 160 caracteres). Responde el
+  pedido. La urgencia sale de la cola de esa central y entra en ese instante
+  a la de la siguiente. Errores: 400 «Solo se declina una urgencia recibida
+  que todavía no tiene central.», 403 «Esta urgencia todavía no está en la
+  cola de tu central.» o «Tu central ya declinó esta urgencia.»
+- Si ninguna central con el insumo tiene un dron que alcance el destino, la
+  urgencia queda `reassigned` con `fallback.kind = conventional` al crearla.
+  Si todas declinan, igual. La respuesta de `POST /orders/emergencies` ya
+  trae ese estado.
+- `POST /orders/:id/reject` queda para la fórmula que no cumple: cierra el
+  pedido.
+- El fallback al autorizar sin dron elige la central que llega antes por su
+  corredor, no la más cercana en línea recta.
+
+**La app lo usará** en la cola del despachador: un botón «No puedo
+atenderla» junto a autorizar y rechazar, que llama a `decline` y quita la
+fila. El solicitante no ve nada nuevo: su urgencia sigue `received` hasta
+que una central la autoriza, o pasa a `reassigned` con las centrales del
+traslado convencional.

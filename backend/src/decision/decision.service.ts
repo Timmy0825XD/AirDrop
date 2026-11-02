@@ -56,6 +56,7 @@ import {
   assertAuthorizingHub,
   assertCanAuthorize,
 } from './decision.rules';
+import { assertOfferedTo } from './dispatch.rules';
 import { clearFallback } from './fallback.rules';
 import { FallbackService } from './fallback.service';
 import { HubEvaluationService } from './hub-evaluation.service';
@@ -287,6 +288,12 @@ export class DecisionService {
     const today = todayInColombia(now);
     assertCanAuthorize(order, today, prescriptionVerified, now);
     assertAuthorizingHub(order.originHubId, dispatcherHub.id);
+    // Urgencia civil escalonada: solo la autoriza una central a la que ya se
+    // le ofreció (RU-10). Las urgencias anteriores no traen la lista.
+    if (order.originHubId == null && order.dispatchOffers) {
+      assertOfferedTo(order.dispatchOffers, dispatcherHub.id);
+    }
+    order.nextEscalationAt = null;
     const originHubId = order.originHubId ?? dispatcherHub.id;
     const origin = await manager.findOne(Hub, { where: { id: originHubId } });
     if (!origin) {

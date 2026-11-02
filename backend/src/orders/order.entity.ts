@@ -25,6 +25,22 @@ export type FallbackOption = {
   distanceKm: number;
 };
 
+/**
+ * Una central candidata para una urgencia civil, en el orden en que se le
+ * ofrece (ver `decision/dispatch.rules.ts`). Las fechas van en ISO.
+ */
+export type DispatchOffer = {
+  hubId: string;
+  name: string;
+  /** Duración de la ida por su corredor, de despegar a aterrizar. */
+  etaMs: number;
+  /** Tenía un dron elegible cuando se calculó la lista. */
+  ready: boolean;
+  offeredAt: string | null;
+  declinedAt: string | null;
+  declineReason: string | null;
+};
+
 @Entity({ name: 'orders' })
 export class Order {
   @PrimaryGeneratedColumn('uuid')
@@ -215,6 +231,18 @@ export class Order {
   @Index()
   @Column({ type: 'timestamptz', nullable: true })
   retryAfter: Date | null;
+
+  /**
+   * Urgencia civil: centrales a las que se ofrece, de la que llega primero a
+   * la última. `null` en los demás pedidos y en las urgencias anteriores.
+   */
+  @Column({ type: 'jsonb', nullable: true })
+  dispatchOffers: DispatchOffer[] | null;
+
+  /** Cuándo la oferta se amplía a la siguiente central. */
+  @Index()
+  @Column({ type: 'timestamptz', nullable: true })
+  nextEscalationAt: Date | null;
 
   /** El despachador verificó la fórmula; el reintento automático no la repite. */
   @Column({ type: 'timestamptz', nullable: true })

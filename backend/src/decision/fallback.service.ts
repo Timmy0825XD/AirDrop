@@ -62,9 +62,10 @@ export class FallbackService {
   }
 
   /**
-   * Recorre las centrales activas de la más cercana al destino a la más
-   * lejana. Gana la primera con lote, corredor y dron elegible. De paso
-   * guarda las que tienen el insumo, para el traslado convencional.
+   * Evalúa las centrales activas y, entre las que tienen lote, corredor y dron
+   * elegible, gana la que llega antes por su corredor (no la más cercana en
+   * línea recta: un rodeo largo puede perder con una central un poco más
+   * lejana). De paso guarda las que tienen el insumo, para el convencional.
    */
   private async alternatives(
     manager: EntityManager,
@@ -86,6 +87,7 @@ export class FallbackService {
     const skipDrones = droneSearchExclusions(order, failingHubId);
     const reassignable = canReassign(order);
     const withStock: FallbackOption[] = [];
+    let fastest: { option: FallbackOption; etaMs: number } | null = null;
     for (const { hub, distanceKm } of ranked) {
       const option = toOption(hub, distanceKm);
       if (reassignable && !skipDrones.has(hub.id)) {
@@ -97,11 +99,19 @@ export class FallbackService {
           polygons,
           false,
         );
-        if (evaluation.lot && evaluation.corridor && evaluation.choice.chosen) {
-          return { hub: option, withStock };
-        }
         if (evaluation.lot) {
           withStock.push(option);
+        }
+        const etaMs = Number.isFinite(evaluation.etaMs)
+          ? (evaluation.etaMs as number)
+          : Infinity;
+        if (
+          evaluation.lot &&
+          evaluation.corridor &&
+          evaluation.choice.chosen &&
+          (!fastest || etaMs < fastest.etaMs)
+        ) {
+          fastest = { option, etaMs };
         }
         continue;
       }
@@ -109,11 +119,15 @@ export class FallbackService {
         withStock.push(option);
       }
     }
-    return { hub: null, withStock };
+    return {
+      hub: fastest?.option ?? null,
+      withStock: withStock.filter((option) => option !== fastest?.option),
+    };
   }
 }
 
-function toOption(hub: Hub, distanceKm: number): FallbackOption {
+/** Datos de contacto de una central para el traslado convencional. */
+export function toOption(hub: Hub, distanceKm: number): FallbackOption {
   return {
     hubId: hub.id,
     name: hub.name,

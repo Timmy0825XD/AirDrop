@@ -49,8 +49,8 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
   1. Elige el medicamento y escribe una descripción breve.
   2. Si el tipo de venta es bajo fórmula, adjunta la imagen. El documento de la cuenta debe ser el del paciente escrito en la fórmula.
   3. Confirma la ubicación. Si no hay GPS, escribe la dirección.
-  4. El pedido queda en `recibido`, con prioridad alta, y entra a la cola de las centrales que pueden atenderlo.
-- **Si falla:** Bajo fórmula sin imagen, o documento distinto: no se crea. Control especial: no se crea y se explica que ese canal no existe aquí.
+  4. El pedido queda en `recibido`, con prioridad alta, y entra a la cola de la central que llega antes. Si no la autoriza a tiempo, entra también a la de la siguiente (RU-10).
+- **Si falla:** Bajo fórmula sin imagen, o documento distinto: no se crea. Control especial: no se crea y se explica que ese canal no existe aquí. Si ninguna central con el insumo tiene un dron que alcance el destino: queda en traslado convencional (CU-31).
 - **Después:** Ningún dron está reservado. El motor de decisión no corre.
 - **Por qué:** RU-02 y RU-25. Crear el pedido no es autorizar la salida.
 
@@ -145,7 +145,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
   3. Elige el lote que vence primero y que no esté vencido.
   4. Autoriza. Corre CU-26 y CU-27.
   5. Ve el identificador y el modelo del dron. El pedido queda en `pendiente de carga`.
-- **Si falla:** Sin stock: rechaza y el sistema busca otra central. Fórmula ilegible, incompleta o vencida: rechaza con motivo y no autoriza. Sin dron elegible: CU-31.
+- **Si falla:** Sin stock, sin dron o sin personal en una urgencia de un solicitante: declina ("No puedo atenderla") y la urgencia pasa en ese instante a la siguiente central (RU-10). Fórmula ilegible, incompleta o vencida: rechaza con motivo y no autoriza. Sin dron elegible al autorizar: CU-31.
 - **Después:** El dron está reservado. El inventario sigue igual. El vuelo no ha empezado.
 - **Por qué:** RU-10. Autorizar es la decisión del profesional. Cargar es otro acto.
 

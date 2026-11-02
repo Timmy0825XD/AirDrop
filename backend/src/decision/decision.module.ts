@@ -7,6 +7,7 @@ import { RoutingModule } from '../routing/routing.module';
 import { SimulationModule } from '../simulation/simulation.module';
 import { DecisionService } from './decision.service';
 import { EligibilityService } from './eligibility.service';
+import { EmergencyDispatchService } from './emergency-dispatch.service';
 import { FallbackService } from './fallback.service';
 import { HubEvaluationService } from './hub-evaluation.service';
 import { ScheduledRetryService } from './scheduled-retry.service';
@@ -25,7 +26,8 @@ import { ScheduledRetryService } from './scheduled-retry.service';
     HubEvaluationService,
     FallbackService,
     ScheduledRetryService,
+    EmergencyDispatchService,
   ],
-  exports: [DecisionService],
+  exports: [DecisionService, EmergencyDispatchService],
 })
 export class DecisionModule {}
