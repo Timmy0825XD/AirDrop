@@ -17,7 +17,7 @@ import {
   ONLY_RECEIVED_IS_AUTHORIZED,
   PAYLOAD_TOO_HEAVY,
   PRESCRIPTION_NOT_VERIFIED,
-  RANGE_TOO_SHORT,
+  BATTERY_TOO_LOW,
   SCHEDULED_TOO_EARLY,
   WEATHER_BLOCKS,
   assertAuthorizingHub,
@@ -158,9 +158,34 @@ describe('chooseDrone', () => {
     expect(result.discarded.map((row) => row.reason)).toEqual([
       DRONE_MAINTENANCE,
       DRONE_OUT_OF_SERVICE,
-      RANGE_TOO_SHORT,
+      BATTERY_TOO_LOW,
       NO_CORRIDOR,
     ]);
+  });
+
+  it('acepta una ida de 35 km: cabe ida, regreso y reserva', () => {
+    const result = chooseDrone({
+      missionType: MissionType.EMERGENCY,
+      quantity: 1,
+      weatherFlyable: true,
+      candidates: [
+        { drone: candidate({ id: 'ok', identifier: 'W-1' }), distanceKm: 35 },
+      ],
+    });
+    expect(result.chosen?.droneId).toBe('ok');
+  });
+
+  it('descarta una ida de 36 km por batería, aunque 2 × 36 cabe en 110 km', () => {
+    const result = chooseDrone({
+      missionType: MissionType.EMERGENCY,
+      quantity: 1,
+      weatherFlyable: true,
+      candidates: [
+        { drone: candidate({ id: 'far', identifier: 'W-1' }), distanceKm: 36 },
+      ],
+    });
+    expect(result.chosen).toBeNull();
+    expect(result.discarded[0].reason).toBe(BATTERY_TOO_LOW);
   });
 
   it('discards a load above 6 kg', () => {

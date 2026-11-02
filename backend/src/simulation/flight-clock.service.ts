@@ -382,7 +382,6 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
                 coldChainFailureRate(),
                 outboundDurationMs(corridor, {
                   maxSpeedKmh: drone.droneModel.maxSpeedKmh,
-                  maxRangeKm: drone.droneModel.maxRangeKm,
                 }),
               )
             : null,
