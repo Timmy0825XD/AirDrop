@@ -86,6 +86,12 @@ Entra a la central que el administrador le asignó. No se registra solo y no abr
 
 Ve la urgencia dirigida a su central, el stock, la fórmula si el destino es una persona, y autoriza o rechaza con motivo.
 
+Una urgencia de un solicitante no aparece a la vez en todas las centrales. El sistema ordena las centrales activas que tienen el lote, un corredor libre y batería para ida, regreso y reserva (RF-11 y RF-12): primero las que tienen un dron elegible y, dentro de cada grupo, la que llega antes por su corredor. La urgencia entra solo a la cola de la primera. Si no la autoriza a tiempo, también entra a la cola de la siguiente, sin salir de la primera, y la autoriza la que lo haga antes. Ese tiempo de ventaja es lo que la central ahorra frente a la siguiente, con un mínimo de 1 minuto y un máximo de 3.
+
+El despachador puede declinarla ("No puedo atenderla": sin dron, sin personal o sin lote). Entonces la ve la siguiente central en ese instante. Rechazar con motivo queda para una fórmula que no cumple, y cierra el pedido. Si ninguna central puede llegar, o todas declinan, el pedido pasa a traslado convencional (RF-18). Una urgencia entre centrales (RU-31) ya trae su central de origen y no se escalona.
+
+**Por qué.** Si la urgencia la toma la primera central que la ve, una central dos o tres veces más lejos puede ganarle a la cercana solo porque estaba mirando la cola. La ventaja medida en minutos de vuelo deja a la cercana atender primero y no hace esperar al paciente más de lo que ella ahorra.
+
 ### RU-11 y RU-14 — Inventario
 
 Cantidad, lote, vencimiento, tipo de venta y si exige frío.
@@ -246,7 +252,7 @@ Depende del servicio:
 
 | Servicio | Sin dron elegible en la central que autoriza |
 | --- | --- |
-| Urgencia a una persona | Pasa a la central activa más cercana al destino que tenga el lote, un corredor libre y un dron elegible. Queda `reasignado` y entra primero en su cola. |
+| Urgencia a una persona | Pasa a la central activa que llega antes por su corredor y tiene el lote y un dron elegible. Queda `reasignado` y entra primero en su cola. |
 | Urgencia entre centrales | Igual, con otra central de origen. Nunca la central que pidió. |
 | Programado | Sigue en recibido y se reintenta solo cada 15 minutos mientras el siguiente intento caiga dentro de la franja. Si la franja cierra sin despegue, queda vencido, suelta el dron si ya estaba reservado y busca otra central como una urgencia. Esa central autoriza sin la franja original. |
 

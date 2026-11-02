@@ -17,6 +17,7 @@ import { PlanStatus } from '../common/enums/plan-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { CIVIL_EMERGENCY_QUANTITY } from '../common/field-limits';
+import { isOfferedTo } from '../decision/dispatch.rules';
 import { isAwaitingHub } from '../decision/fallback.rules';
 import { Hub } from '../hubs/hub.entity';
 import { HubsService } from '../hubs/hubs.service';
@@ -724,12 +725,22 @@ export class OrdersService {
     if (order.originHubId) {
       return order.originHubId === hubId;
     }
+    // Urgencia civil escalonada: la ve solo la central a la que ya se ofreció.
+    if (order.dispatchOffers) {
+      return isOfferedTo(order.dispatchOffers, hubId);
+    }
     return this.availableAt(order, stock) >= order.quantity;
   }
 
   private async assertSupplyingHub(hubId: string, order: Order) {
     if (order.originHubId) {
       if (order.originHubId !== hubId) {
+        throw new ForbiddenException(NOT_THE_SUPPLYING_HUB);
+      }
+      return;
+    }
+    if (order.dispatchOffers) {
+      if (!isOfferedTo(order.dispatchOffers, hubId)) {
         throw new ForbiddenException(NOT_THE_SUPPLYING_HUB);
       }
       return;

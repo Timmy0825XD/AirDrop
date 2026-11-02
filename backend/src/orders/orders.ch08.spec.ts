@@ -19,6 +19,7 @@ import { SaleType } from '../common/enums/sale-type.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { DecisionService } from '../decision/decision.service';
+import { EmergencyDispatchService } from '../decision/emergency-dispatch.service';
 import { HubsService } from '../hubs/hubs.service';
 import { User } from '../users/user.entity';
 import { InventoryOfferQuery } from './inventory-offer.query';
@@ -102,6 +103,8 @@ describe('CH-08 — Interfaz – Inventario – Pedidos – BD (base de datos ca
       providers: [
         { provide: OrdersService, useValue: service },
         { provide: DecisionService, useValue: decision },
+        // Con la base caída la urgencia no se crea: no llega a ofrecerse.
+        { provide: EmergencyDispatchService, useValue: { start: jest.fn() } },
         {
           provide: PlanAgendaService,
           useValue: { withCapacity: (plan: object) => plan },

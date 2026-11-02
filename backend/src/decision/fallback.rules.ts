@@ -161,7 +161,7 @@ export function applyHubReassignment(
 /** Estado final: ningún dron despega y quien pidió ve dónde está el insumo. */
 export function applyConventional(
   order: FallbackOrder,
-  fromHubId: string,
+  fromHubId: string | null,
   withStock: FallbackOption[],
   now: Date,
 ): void {

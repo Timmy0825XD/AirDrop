@@ -19,6 +19,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { UserRole } from '../common/enums/user-role.enum';
 import { AuthorizeOrderDto } from '../decision/dto/authorize-order.dto';
 import { DecisionService } from '../decision/decision.service';
+import { EmergencyDispatchService } from '../decision/emergency-dispatch.service';
 import { User } from '../users/user.entity';
 import { AgendaQueryDto } from './dto/agenda-query.dto';
 import { CatalogQueryDto } from './dto/catalog-query.dto';
@@ -28,7 +29,9 @@ import { CreateHubPlanDto } from './dto/create-hub-plan.dto';
 import { CreatePlanDto } from './dto/create-plan.dto';
 import { HistoryQueryDto } from './dto/history-query.dto';
 import { PreviewPlanDto, UpdatePlanScheduleDto } from './dto/plan-schedule.dto';
+import { DeclineOrderDto } from './dto/decline-order.dto';
 import { RejectOrderDto } from './dto/reject-order.dto';
+import { presentOrder } from './order.presenter';
 import { OrdersService } from './orders.service';
 import { PlanAgendaService } from './plan-agenda.service';
 
@@ -40,6 +43,7 @@ export class OrdersController {
   constructor(
     private readonly ordersService: OrdersService,
     private readonly decisionService: DecisionService,
+    private readonly dispatch: EmergencyDispatchService,
     private readonly agenda: PlanAgendaService,
   ) {}
 
@@ -196,8 +200,13 @@ export class OrdersController {
 
   @Post('emergencies')
   @Roles(UserRole.REQUESTER)
-  createEmergency(@CurrentUser() user: User, @Body() dto: CreateEmergencyDto) {
-    return this.ordersService.createEmergency(user, dto);
+  async createEmergency(
+    @CurrentUser() user: User,
+    @Body() dto: CreateEmergencyDto,
+  ) {
+    const created = await this.ordersService.createEmergency(user, dto);
+    // RU-10: entra solo a la cola de la central que llega primero.
+    return presentOrder(await this.dispatch.start(created.id));
   }
 
   @Post('hub-emergencies')
@@ -252,6 +261,18 @@ export class OrdersController {
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ) {
     return this.decisionService.confirmLoad(user, id);
+  }
+
+  /** RU-10: la central no puede atender la urgencia; pasa a la siguiente. */
+  @Post(':id/decline')
+  @Roles(UserRole.DISPATCHER)
+  async decline(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() dto: DeclineOrderDto,
+  ) {
+    const order = await this.dispatch.decline(user, id, dto.reason ?? null);
+    return presentOrder(order);
   }
 
   @Post(':id/reject')

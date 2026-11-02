@@ -9,6 +9,8 @@ import { InventoryItem } from '../inventory/inventory-item.entity';
 import { Order } from '../orders/order.entity';
 import { PlannedCorridor } from '../routing/routing.rules';
 import { RoutePlannerService } from '../routing/route-planner.service';
+import { missionBatteryPercent } from '../simulation/flight-energy.rules';
+import { outboundDurationMs } from '../simulation/simulation.rules';
 import {
   DroneCandidate,
   chooseDrone,
@@ -22,6 +24,10 @@ export type HubEvaluation = {
   modelsById: Map<string, DroneModel>;
   corridor: PlannedCorridor | null;
   choice: ReturnType<typeof chooseDrone>;
+  /** Duración de la ida por el corredor con el modelo de la central. */
+  etaMs: number | null;
+  /** RF-11: la batería llena alcanza ida, regreso y reserva por ese corredor. */
+  inRange: boolean;
 };
 
 /**
@@ -52,6 +58,8 @@ export class HubEvaluationService {
         modelsById: new Map(),
         corridor: null,
         choice: { chosen: null, discarded: [] },
+        etaMs: null,
+        inRange: false,
       };
     }
     const query = manager
@@ -88,7 +96,22 @@ export class HubEvaluationService {
         ];
       }),
     });
-    return { lot, drones, modelsById, corridor, choice };
+    const chosenDrone = drones.find(
+      (drone) => drone.id === choice.chosen?.droneId,
+    );
+    const model = modelsById.get(
+      (chosenDrone ?? drones[0])?.droneModelId ?? '',
+    );
+    const reach =
+      corridor && model
+        ? {
+            etaMs: outboundDurationMs(corridor, model),
+            inRange:
+              missionBatteryPercent(corridor.distanceKm, model.maxRangeKm) <=
+              100,
+          }
+        : { etaMs: null, inRange: false };
+    return { lot, drones, modelsById, corridor, choice, ...reach };
   }
 
   findFefoLot(
