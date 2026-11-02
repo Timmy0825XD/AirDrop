@@ -17,6 +17,7 @@ Dirección acordada en el documento base. El detalle de carpetas y convenciones 
 ## 3. Base de datos
 
 - **PostgreSQL + PostGIS:** geovallas, distancias, “¿la ruta cruza zona restringida?”.
+- El planificador de corredores vive en `routing/`: `routing.rules.ts` (corredor de ida, regreso y cruces) y `visibility.rules.ts` (proyección a km, geovallas infladas con el margen y A*). PostGIS guarda los polígonos y las rutas; el cálculo es TypeScript puro para probarlo sin base de datos.
 - Persiste: pedidos, historial de misiones, inventario, geovallas, usuarios, configuración.
 - La imagen de la fórmula no va en la fila del pedido. Va a un bucket privado de Supabase Storage. Postgres guarda la clave. La sigue viendo solo el despachador que autoriza (RNF-06).
 

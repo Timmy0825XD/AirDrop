@@ -216,6 +216,10 @@ La batería se evalúa con la misma cuenta del simulador: ida y regreso por el c
 
 Corredor a altitud fija, de ida y de retorno si hace falta, sin cruzar geovallas.
 
+El corredor es el camino más corto que pasa a **150 m o más** del borde de toda geovalla. Si la línea recta cumple, es la línea recta. Si no, el planificador infla cada geovalla con ese margen y busca el camino más corto por sus esquinas (grafo de visibilidad con A*, un Dijkstra guiado hacia el destino), así esquiva varias geovallas seguidas o una cóncava. El margen no se exige a la central ni al destino: un destino a 100 m de una geovalla, pero fuera de ella, es válido. Si no hay camino, el dron no es elegible; si el camino existe pero es largo, lo descarta la batería (RF-11).
+
+El regreso se planea al salir de destino con las geovallas vigentes. Si una geovalla nueva bloquea la ruta, la rodea. Solo si el dron o la central quedaron dentro de una geovalla nueva, o la central quedó encerrada, el regreso la cruza: tiene que volver igual, y queda registrado.
+
 ### RF-13 y RF-14 — Telemetría
 
 El tick empieza después de confirmar la carga: posición, velocidad, altitud, batería, carga, temperatura, latencia y fase, por WebSocket. El operador ve ese paquete en vivo.
@@ -260,7 +264,7 @@ Alta y estado de drones sobre el modelo Wingcopter 198. Un dron en misión no ca
 
 ### RF-21 — Geovallas
 
-Crear, editar y borrar. Una ruta que las cruza no es válida.
+Crear, editar y borrar. Una ruta que las cruza, o que pasa a menos de 150 m de su borde, no es válida.
 
 ### RF-22 — Historial
 
