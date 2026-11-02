@@ -37,6 +37,7 @@ Dirección acordada en el documento base. El detalle de carpetas y convenciones 
 - Cada tick: avanza el dron en la ruta, recalcula batería según **fase** (vertical vs ala fija).
 - Specs desde `DroneModel` (Wingcopter 198), independientes de cada unidad de flota.
 - La cuenta de batería vive en `simulation/flight-energy.rules.ts`. El reloj la usa para gastar en cada tick y el motor de decisión para saber si el vuelo alcanza (RF-11).
+- Cada dron guarda la batería con que aterrizó y cuándo; la recarga en tierra se calcula al leerla (`batteryNow`), sin un reloj aparte.
 - El reloj **no** arranca cuando el despachador autoriza. Autorizar dispara el motor de decisión (reserva dron + ruta). El tick de vuelo empieza cuando el despachador **confirma la carga**.
 - En el punto de destino el reloj pasa a una fase de **espera** (5 min). Código válido → cierra misión. Sin código → simula el **retorno** a la central con el paquete.
 - Emergencia: asignación al autorizar; el dron queda reservado hasta la carga o el fallback.

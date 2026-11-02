@@ -12,6 +12,7 @@ import { InventoryItem } from '../inventory/inventory-item.entity';
 import { QuarantineRecord } from '../inventory/quarantine-record.entity';
 import { Order } from '../orders/order.entity';
 import { RoutePlannerService } from '../routing/route-planner.service';
+import { batteryNow } from '../simulation/flight-energy.rules';
 import { Mission } from '../simulation/mission.entity';
 import { LiveFlight } from '../simulation/simulation.rules';
 import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
@@ -109,6 +110,12 @@ export class RadarService {
         modelName: drone.droneModel?.name ?? null,
         status: drone.status,
         maintenanceReason: drone.maintenanceReason,
+        batteryPercent: batteryNow(
+          drone.batteryPercent ?? 100,
+          drone.batteryUpdatedAt ?? null,
+          new Date(),
+        ),
+        lastFlightEndedAt: drone.lastFlightEndedAt ?? null,
         flight: flightByDrone.get(drone.id) ?? null,
       })),
       inventory: {

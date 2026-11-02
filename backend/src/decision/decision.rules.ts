@@ -9,9 +9,6 @@ import { assertDispatchWindow } from '../orders/plan-dispatch.rules';
 import { missionBatteryPercent } from '../simulation/flight-energy.rules';
 import { isAwaitingHub } from './fallback.rules';
 
-/** Cada vuelo sale con la batería llena: el MVP no guarda carga entre misiones. */
-const FULL_BATTERY_PERCENT = 100;
-
 /** El inventario no guarda masa. Cada unidad cuenta 0,5 kg. */
 export const UNIT_MASS_KG = 0.5;
 
@@ -69,6 +66,10 @@ export type DroneCandidate = {
   maxPayloadKg: number;
   maxRangeKm: number;
   held: HeldMission | null;
+  /** Batería ahora, con lo que recargó en tierra. */
+  batteryPercent: number;
+  /** Fin de su último vuelo; `null` si nunca ha volado. */
+  lastFlightEndedAt: Date | null;
 };
 
 export type AuthorizableOrder = {
@@ -182,12 +183,7 @@ export function chooseDrone(input: {
     (entry) => entry.drone.status === DroneStatus.AVAILABLE,
   );
   const pool = free.length ? free : eligible;
-  pool.sort((left, right) => {
-    if (left.distanceKm !== right.distanceKm) {
-      return left.distanceKm - right.distanceKm;
-    }
-    return left.drone.identifier.localeCompare(right.drone.identifier);
-  });
+  pool.sort(byRotation);
   const winner = pool[0];
   if (!winner) {
     return { chosen: null, discarded };
@@ -204,6 +200,27 @@ export function chooseDrone(input: {
     },
     discarded,
   };
+}
+
+/**
+ * Entre los drones que pueden cumplir, gana el que lleva más tiempo en
+ * tierra (el que nunca ha volado, primero): así la flota se alterna y no
+ * vuela siempre el mismo. Empatan: el de más batería y, al final, el
+ * identificador, para que el resultado sea estable.
+ */
+function byRotation(left: RankedCandidate, right: RankedCandidate): number {
+  if (left.distanceKm !== right.distanceKm) {
+    return left.distanceKm - right.distanceKm;
+  }
+  const leftLanded = left.drone.lastFlightEndedAt?.getTime() ?? -Infinity;
+  const rightLanded = right.drone.lastFlightEndedAt?.getTime() ?? -Infinity;
+  if (leftLanded !== rightLanded) {
+    return leftLanded - rightLanded;
+  }
+  if (left.drone.batteryPercent !== right.drone.batteryPercent) {
+    return right.drone.batteryPercent - left.drone.batteryPercent;
+  }
+  return left.drone.identifier.localeCompare(right.drone.identifier);
 }
 
 export function discardReason(
@@ -233,7 +250,7 @@ export function discardReason(
   }
   if (
     missionBatteryPercent(distanceKm, candidate.maxRangeKm) >
-    FULL_BATTERY_PERCENT
+    candidate.batteryPercent
   ) {
     return BATTERY_TOO_LOW;
   }

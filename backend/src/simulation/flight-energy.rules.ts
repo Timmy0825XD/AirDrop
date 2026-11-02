@@ -58,3 +58,34 @@ export function maxOneWayKm(maxRangeKm: number, batteryPercent = 100): number {
     (batteryPercent - CRITICAL_BATTERY_PERCENT) / 2 - VERTICAL_BATTERY_PER_LEG;
   return Math.max(0, (cruiseBudget / 100) * maxRangeKm);
 }
+
+/**
+ * Recarga simulada en tierra: 1,5 % por minuto (de 0 a 100 % en algo más de
+ * una hora). `DRONE_RECHARGE_PERCENT_PER_MIN` la cambia para demostraciones.
+ */
+export const DEFAULT_RECHARGE_PERCENT_PER_MIN = 1.5;
+
+export function rechargePercentPerMin(): number {
+  const configured = Number(process.env.DRONE_RECHARGE_PERCENT_PER_MIN);
+  return Number.isFinite(configured) && configured > 0
+    ? configured
+    : DEFAULT_RECHARGE_PERCENT_PER_MIN;
+}
+
+/**
+ * Batería de un dron en tierra ahora: la que guardó al aterrizar más lo que
+ * recargó desde entonces, hasta 100 %. Se calcula al leer; no hay un reloj
+ * que la suba.
+ */
+export function batteryNow(
+  stored: number,
+  updatedAt: Date | null,
+  now: Date,
+  ratePerMin = rechargePercentPerMin(),
+): number {
+  if (!updatedAt) {
+    return Math.min(100, stored);
+  }
+  const minutes = Math.max(0, now.getTime() - updatedAt.getTime()) / 60_000;
+  return Math.min(100, Math.round((stored + minutes * ratePerMin) * 10) / 10);
+}

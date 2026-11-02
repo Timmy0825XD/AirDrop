@@ -256,7 +256,7 @@ describe('FlightClockService regreso', () => {
     );
     expect(drones.update).toHaveBeenCalledWith(
       { id: DRONE_ID },
-      { status: DroneStatus.AVAILABLE },
+      expect.objectContaining({ status: DroneStatus.AVAILABLE }),
     );
     expect(missions.update).toHaveBeenCalledWith(
       { orderId: ORDER_ID },
@@ -303,7 +303,7 @@ describe('FlightClockService regreso tras la entrega', () => {
 
     expect(drones.update).toHaveBeenCalledWith(
       { id: DRONE_ID },
-      { status: DroneStatus.AVAILABLE },
+      expect.objectContaining({ status: DroneStatus.AVAILABLE }),
     );
     expect(orders.update).not.toHaveBeenCalled();
     expect(notifications.statusChanged).not.toHaveBeenCalled();
@@ -329,7 +329,10 @@ describe('FlightClockService regreso tras la entrega', () => {
 
     await service['tick'](ORDER_ID);
 
-    expect(drones.update).not.toHaveBeenCalled();
+    // Guarda la batería con que volvió, pero no lo libera.
+    expect(drones.update).toHaveBeenCalledTimes(1);
+    const [, changes] = drones.update.mock.calls[0] as [object, object];
+    expect(changes).not.toHaveProperty('status');
     expect(missions.update).toHaveBeenCalledWith(
       { orderId: ORDER_ID },
       { returnedAt: expect.any(Date) as Date },
@@ -667,5 +670,53 @@ describe('FlightClockService returnWithPackage', () => {
       'sin base',
     );
     expect(service['waiting'].has(ORDER_ID)).toBe(true);
+  });
+});
+
+describe('FlightClockService batería entre vuelos', () => {
+  it('la ida sale con la batería que el dron tiene, no siempre llena', async () => {
+    const built = build();
+    built.orders.findOne.mockResolvedValue(order(OrderStatus.PENDING_LOAD));
+    const landed = new Date(Date.now() - 10 * 60_000);
+    built.drones.findOne.mockResolvedValue({
+      id: DRONE_ID,
+      identifier: 'WG-198-001',
+      batteryPercent: 40,
+      batteryUpdatedAt: landed,
+      droneModel: { maxSpeedKmh: 150, maxRangeKm: 110 },
+    });
+
+    await built.service['activate'](ORDER_ID);
+
+    // 40 % al aterrizar + 10 min × 1,5 %/min de recarga.
+    expect(
+      built.service['active'].get(ORDER_ID)?.progress.batteryPercent,
+    ).toBeCloseTo(55, 0);
+  });
+
+  it('al volver guarda la batería y cuándo terminó el vuelo', async () => {
+    const { service, drones } = build();
+    await service.expireDeliveryWaits(AFTER_WAIT);
+    const session = service['active'].get(ORDER_ID)!;
+    session.progress = {
+      ...returnProgress(null),
+      batteryPercent: 47.5,
+      phase: FlightPhase.LANDING,
+      phaseElapsedMs: LANDING_MS - 1,
+    };
+
+    await service['tick'](ORDER_ID);
+
+    const [, saved] = drones.update.mock.calls.at(-1) as [
+      object,
+      {
+        batteryPercent: number;
+        batteryUpdatedAt: Date;
+        lastFlightEndedAt: Date;
+      },
+    ];
+    expect(saved.batteryPercent).toBeLessThan(47.5);
+    expect(saved.batteryPercent).toBeGreaterThan(40);
+    expect(saved.batteryUpdatedAt).toEqual(saved.lastFlightEndedAt);
   });
 });

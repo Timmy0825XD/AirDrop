@@ -37,6 +37,8 @@ function candidate(
     maxPayloadKg: wingcopter.maxPayloadKg,
     maxRangeKm: wingcopter.maxRangeKm,
     held: null,
+    batteryPercent: 100,
+    lastFlightEndedAt: null,
     ...overrides,
   };
 }
@@ -302,5 +304,89 @@ describe('chooseDrone', () => {
         }).discarded[0].reason,
     );
     expect(reasons).toEqual([DRONE_IN_MISSION, DRONE_IN_MISSION]);
+  });
+});
+
+describe('rotación de la flota y batería entre vuelos', () => {
+  const choose = (candidates: DroneCandidate[], distanceKm = 10) =>
+    chooseDrone({
+      missionType: MissionType.EMERGENCY,
+      quantity: 1,
+      weatherFlyable: true,
+      candidates: candidates.map((drone) => ({ drone, distanceKm })),
+    });
+
+  it('alterna: gana el que lleva más tiempo en tierra, y el que nunca voló primero', () => {
+    const result = choose([
+      candidate({
+        id: 'a',
+        identifier: 'WC-01',
+        lastFlightEndedAt: new Date('2026-11-02T14:50:00.000Z'),
+      }),
+      candidate({
+        id: 'b',
+        identifier: 'WC-02',
+        lastFlightEndedAt: new Date('2026-11-02T13:00:00.000Z'),
+      }),
+      candidate({ id: 'c', identifier: 'WC-03', lastFlightEndedAt: null }),
+    ]);
+    expect(result.chosen?.identifier).toBe('WC-03');
+  });
+
+  it('tres urgencias seguidas salen con tres drones distintos', () => {
+    const fleet = ['WC-01', 'WC-02', 'WC-03'].map((identifier) =>
+      candidate({ id: identifier, identifier }),
+    );
+    const flown: string[] = [];
+    let clock = new Date('2026-11-02T15:00:00.000Z').getTime();
+    for (let mission = 0; mission < 4; mission += 1) {
+      const winner = choose(fleet).chosen!;
+      flown.push(winner.identifier);
+      clock += 30 * 60_000;
+      const drone = fleet.find((item) => item.id === winner.droneId)!;
+      drone.lastFlightEndedAt = new Date(clock);
+    }
+    expect(flown).toEqual(['WC-01', 'WC-02', 'WC-03', 'WC-01']);
+  });
+
+  it('descarta un dron que volvió con poca batería y elige otro', () => {
+    // A 10 km la misión pide 2 × (8 + 9,1) + 20 ≈ 54 %.
+    const result = choose([
+      candidate({
+        id: 'low',
+        identifier: 'WC-01',
+        batteryPercent: 45,
+        lastFlightEndedAt: null,
+      }),
+      candidate({
+        id: 'full',
+        identifier: 'WC-02',
+        batteryPercent: 100,
+        lastFlightEndedAt: new Date('2026-11-02T14:00:00.000Z'),
+      }),
+    ]);
+    expect(result.chosen?.droneId).toBe('full');
+    expect(result.discarded).toEqual([
+      { droneId: 'low', identifier: 'WC-01', reason: BATTERY_TOO_LOW },
+    ]);
+  });
+
+  it('con el mismo tiempo en tierra, gana el de más batería', () => {
+    const landed = new Date('2026-11-02T14:00:00.000Z');
+    const result = choose([
+      candidate({
+        id: 'a',
+        identifier: 'WC-01',
+        batteryPercent: 80,
+        lastFlightEndedAt: landed,
+      }),
+      candidate({
+        id: 'b',
+        identifier: 'WC-02',
+        batteryPercent: 95,
+        lastFlightEndedAt: landed,
+      }),
+    ]);
+    expect(result.chosen?.droneId).toBe('b');
   });
 });
