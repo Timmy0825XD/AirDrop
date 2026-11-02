@@ -6,7 +6,11 @@ import { MissionType } from '../common/enums/mission-type.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 import { assertDispatchWindow } from '../orders/plan-dispatch.rules';
+import { missionBatteryPercent } from '../simulation/flight-energy.rules';
 import { isAwaitingHub } from './fallback.rules';
+
+/** Cada vuelo sale con la batería llena: el MVP no guarda carga entre misiones. */
+const FULL_BATTERY_PERCENT = 100;
 
 /** El inventario no guarda masa. Cada unidad cuenta 0,5 kg. */
 export const UNIT_MASS_KG = 0.5;
@@ -47,7 +51,8 @@ export const DRONE_IN_MISSION = 'El dron ya está en misión.';
 
 export const PAYLOAD_TOO_HEAVY = 'La carga supera la capacidad del dron.';
 
-export const RANGE_TOO_SHORT = 'La ida y vuelta superan el alcance del dron.';
+export const BATTERY_TOO_LOW =
+  'La batería no alcanza para la ida, el regreso y la reserva del 20 %.';
 
 export const NO_CORRIDOR = 'No hay un corredor libre de geovallas.';
 
@@ -226,8 +231,11 @@ export function discardReason(
   if (distanceKm == null) {
     return NO_CORRIDOR;
   }
-  if (distanceKm * 2 > candidate.maxRangeKm) {
-    return RANGE_TOO_SHORT;
+  if (
+    missionBatteryPercent(distanceKm, candidate.maxRangeKm) >
+    FULL_BATTERY_PERCENT
+  ) {
+    return BATTERY_TOO_LOW;
   }
   return null;
 }

@@ -2,6 +2,14 @@ import { OrderStatus } from '../common/enums/order-status.enum';
 import { RouteLeg } from '../common/enums/route-leg.enum';
 import { UNIT_MASS_KG } from '../decision/decision.rules';
 import { PlannedCorridor } from '../routing/routing.rules';
+import {
+  CRITICAL_BATTERY_PERCENT,
+  DESCENT_BATTERY_PERCENT,
+  LANDING_BATTERY_PERCENT,
+  TAKEOFF_BATTERY_PERCENT,
+  TRANSITION_BATTERY_PERCENT,
+  cruiseBatteryPercent,
+} from './flight-energy.rules';
 
 /** RNF-08: en vuelo el snapshot sale cada 2 s. */
 export const TICK_MS = 2_000;
@@ -11,13 +19,13 @@ export const TRANSITION_MS = 10_000;
 export const DESCENT_MS = 15_000;
 export const LANDING_MS = 15_000;
 
-/** Porcentajes fijos de la fase. El crucero gasta según el alcance del modelo. */
-export const TAKEOFF_BATTERY_PERCENT = 3;
-export const TRANSITION_BATTERY_PERCENT = 1;
-export const DESCENT_BATTERY_PERCENT = 1;
-export const LANDING_BATTERY_PERCENT = 3;
-
-export const CRITICAL_BATTERY_PERCENT = 20;
+export {
+  CRITICAL_BATTERY_PERCENT,
+  DESCENT_BATTERY_PERCENT,
+  LANDING_BATTERY_PERCENT,
+  TAKEOFF_BATTERY_PERCENT,
+  TRANSITION_BATTERY_PERCENT,
+} from './flight-energy.rules';
 
 /** RF-17: rango de la cadena de frío y la lectura estable dentro de él. */
 export const COLD_CHAIN_RANGE_C = { min: 2, max: 8 } as const;
@@ -295,7 +303,7 @@ export function coldChainReading(
 /** Duración de la ida completa, de despegar a aterrizar. */
 export function outboundDurationMs(
   corridor: PlannedCorridor,
-  model: FlightModel,
+  model: Pick<FlightModel, 'maxSpeedKmh'>,
 ): number {
   return PHASE_SEQUENCE.reduce(
     (total, phase) => total + phaseDurationMs(phase, corridor, model),
@@ -335,8 +343,7 @@ function applyStep(
     const room = Math.max(0, corridor.distanceKm - progress.cruiseKm);
     const flown = Math.min(km, room);
     progress.cruiseKm += flown;
-    const drain = model.maxRangeKm > 0 ? (flown / model.maxRangeKm) * 100 : 100;
-    burn(progress, drain, alerts);
+    burn(progress, cruiseBatteryPercent(flown, model.maxRangeKm), alerts);
     return;
   }
   const cost = phaseBatteryPercent(progress.phase);
@@ -375,7 +382,7 @@ function burn(
 function phaseDurationMs(
   phase: FlightPhase,
   corridor: PlannedCorridor,
-  model: FlightModel,
+  model: Pick<FlightModel, 'maxSpeedKmh'>,
 ): number {
   switch (phase) {
     case FlightPhase.TAKEOFF:

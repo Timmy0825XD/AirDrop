@@ -285,7 +285,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Antes:** Un despachador autorizó y el pedido espera asignación
 - **Pasos:**
   1. Toma los drones de la central de origen.
-  2. Descarta los que no cumplan batería, carga, mantenimiento, clima simulado o ruta.
+  2. Descarta los que no cumplan batería (ida, regreso y reserva del 20 %: hasta 35,2 km de ida), carga, mantenimiento, clima simulado o ruta.
   3. Si una emergencia y un programado compiten por el mismo dron, se queda la emergencia.
   4. Reserva el elegido y deja el pedido en `pendiente de carga`.
 - **Si falla:** Ninguno sirve: CU-31.

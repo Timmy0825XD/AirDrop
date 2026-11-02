@@ -208,6 +208,10 @@ Suministro, cantidad, calendario (días de la semana cada 1 a 4 semanas, un día
 
 Al autorizar: batería, carga, mantenimiento, clima simulado y ruta sin geovallas. La emergencia gana el dron si compite con un programado. Reserva el dron y no inicia el vuelo.
 
+La batería se evalúa con la misma cuenta del simulador: ida y regreso por el corredor (8 % de fases verticales por tramo más el crucero) y aterrizar todavía con la reserva crítica del 20 %. Cada vuelo sale con la batería llena, así que el Wingcopter 198 llega hasta **35,2 km** de ida. Más lejos, el dron no es elegible.
+
+**Por qué.** Los 110 km del modelo son el alcance total en crucero. Si la ida y el regreso los consumen enteros, no queda batería para despegar y aterrizar ni reserva: el dron se apagaría volviendo.
+
 ### RF-12 — Ruta
 
 Corredor a altitud fija, de ida y de retorno si hace falta, sin cruzar geovallas.

@@ -148,7 +148,7 @@ export class PlanAgendaService {
     }
     return departBefore(
       closesAt,
-      outboundDurationMs(corridor, { maxSpeedKmh: kmh, maxRangeKm: 110 }),
+      outboundDurationMs(corridor, { maxSpeedKmh: kmh }),
     ).toISOString();
   }
 
