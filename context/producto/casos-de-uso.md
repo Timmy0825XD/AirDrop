@@ -296,7 +296,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 
 - **Actor:** Sistema
 - **Antes:** Hay un dron reservado
-- **Pasos:** Traza el corredor de ida entre la central de origen y el destino, a altitud fija, fuera de las geovallas. El regreso se calcula si luego corre CU-34.
+- **Pasos:** Traza el corredor de ida entre la central de origen y el destino, a altitud fija, a 150 m o más de toda geovalla, por el camino más corto (RF-12). El regreso se calcula al salir de destino, con las geovallas vigentes en ese momento.
 - **Si falla:** Si ese dron no tiene camino, vuelve a CU-26 con otro.
 - **Después:** La simulación espera CU-22.
 - **Por qué:** RF-12.

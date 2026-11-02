@@ -53,7 +53,10 @@ function order(status: OrderStatus) {
 }
 
 function build(
-  options: { affected?: number; planResult?: PlannedCorridor | null } = {},
+  options: {
+    affected?: number;
+    planResult?: { corridor: PlannedCorridor; crossesGeofence: boolean } | null;
+  } = {},
 ) {
   const manager = {
     findOne: jest.fn((entity: unknown) =>
@@ -85,10 +88,12 @@ function build(
       .fn()
       .mockResolvedValue(new Map([[ORDER_ID, outbound]])),
     loadPolygons: jest.fn().mockResolvedValue([]),
-    plan: jest
+    planReturn: jest
       .fn()
       .mockReturnValue(
-        options.planResult === undefined ? planned : options.planResult,
+        options.planResult === undefined
+          ? { corridor: planned, crossesGeofence: false }
+          : options.planResult,
       ),
     saveReturn: jest.fn().mockResolvedValue(undefined),
   };
@@ -183,10 +188,11 @@ describe('FlightClockService regreso', () => {
 
     await service.expireDeliveryWaits(AFTER_WAIT);
 
-    expect(routes.plan).toHaveBeenCalledWith(
+    expect(routes.planReturn).toHaveBeenCalledWith(
       { longitude: -73.25, latitude: 10.46 },
       { longitude: -73.26, latitude: 10.47 },
       [],
+      outbound,
     );
     expect(routes.saveReturn).toHaveBeenCalledWith(
       ORDER_ID,
@@ -199,8 +205,14 @@ describe('FlightClockService regreso', () => {
     expect(session?.progress.orderStatus).toBe(OrderStatus.RETURNING);
   });
 
-  it('si una geovalla bloquea el regreso, vuelve por donde vino', async () => {
-    const { service, routes } = build({ planResult: null });
+  it('guarda el regreso que eligió el planificador aunque cruce una geovalla', async () => {
+    const back = {
+      ...outbound,
+      coordinates: [...outbound.coordinates].reverse(),
+    };
+    const { service, routes } = build({
+      planResult: { corridor: back, crossesGeofence: true },
+    });
 
     await service.expireDeliveryWaits(AFTER_WAIT);
 
@@ -208,7 +220,7 @@ describe('FlightClockService regreso', () => {
       string,
       PlannedCorridor,
     ];
-    expect(saved.coordinates).toEqual([...outbound.coordinates].reverse());
+    expect(saved).toEqual(back);
   });
 
   it('reutiliza la ruta de regreso ya guardada', async () => {
@@ -217,7 +229,7 @@ describe('FlightClockService regreso', () => {
 
     await service.expireDeliveryWaits(AFTER_WAIT);
 
-    expect(routes.plan).not.toHaveBeenCalled();
+    expect(routes.planReturn).not.toHaveBeenCalled();
     expect(routes.saveReturn).not.toHaveBeenCalled();
     expect(service['active'].get(ORDER_ID)?.corridor).toEqual(planned);
   });

@@ -1,10 +1,17 @@
 import { GeoJsonPolygon } from '../geofences/geofences.rules';
+import {
+  inflateRing,
+  isInsideZone,
+  projectionAround,
+  segmentEntersZone,
+  shortestVisiblePath,
+} from './visibility.rules';
 
 /** RF-12: el corredor va a una altitud fija, tanto de ida como de regreso. */
 export const CORRIDOR_ALTITUDE_M = 100;
 
-/** Separación mínima, en grados, para salir del bounding box de una geovalla. */
-const DETOUR_MARGIN_DEGREES = 0.01;
+/** RF-21: el corredor pasa a 150 m o más del borde de cualquier geovalla. */
+export const GEOFENCE_MARGIN_KM = 0.15;
 
 const EARTH_RADIUS_KM = 6371;
 
@@ -22,39 +29,70 @@ export type PlannedCorridor = {
   coordinates: Array<[number, number]>;
 };
 
-type Box = {
-  minLng: number;
-  maxLng: number;
-  minLat: number;
-  maxLat: number;
-};
-
-/** Línea directa, o un rodeo al norte o al sur de la geovalla que la bloquea. */
-export function planOutboundCorridor(
+/**
+ * RF-12: el corredor más corto de `origin` a `destination` que no entra en
+ * ninguna geovalla ni en su margen. Si la línea recta está libre, es ella; si
+ * no, A* (Dijkstra guiado) sobre las esquinas de las geovallas infladas. `null` si un
+ * extremo está dentro de una geovalla o si no existe camino.
+ */
+export function planCorridor(
   origin: LngLat,
   destination: LngLat,
   geofences: GeoJsonPolygon[],
 ): PlannedCorridor | null {
-  const direct = [origin, destination];
-  if (!pathCrosses(direct, geofences)) {
-    return toCorridor(direct);
-  }
-  const blocking = geofences.find((fence) => pathCrosses(direct, [fence]));
-  if (!blocking) {
+  if (
+    isInsideGeofence(origin, geofences) ||
+    isInsideGeofence(destination, geofences)
+  ) {
     return null;
   }
-  let best: PlannedCorridor | null = null;
-  for (const side of ['north', 'south'] as const) {
-    const path = [origin, detourWaypoint(blocking, side), destination];
-    if (pathCrosses(path, geofences)) {
-      continue;
-    }
-    const planned = toCorridor(path);
-    if (!best || planned.distanceKm < best.distanceKm) {
-      best = planned;
-    }
+  const projection = projectionAround(origin.longitude, origin.latitude);
+  const toPlane = (point: LngLat) =>
+    projection.toPlane(point.longitude, point.latitude);
+  const ends = [toPlane(origin), toPlane(destination)];
+  const fences = geofences.map((fence) => {
+    const ring = fence.coordinates[0];
+    const zone = inflateRing(
+      ring.map(([longitude, latitude]) =>
+        projection.toPlane(longitude, latitude),
+      ),
+      GEOFENCE_MARGIN_KM,
+    );
+    // Un extremo dentro del margen (pero fuera de la geovalla) sí es válido:
+    // ese primer o último tramo solo tiene que no cruzar la geovalla real.
+    return { ring, zone, holdsEnd: ends.map((end) => isInsideZone(end, zone)) };
+  });
+  const corners = fences
+    .flatMap((fence) => fence.zone.hull)
+    .filter(
+      (corner) => !fences.some((fence) => isInsideZone(corner, fence.zone)),
+    );
+  const nodes = [...ends, ...corners];
+  const blocked = (from: number, to: number) =>
+    fences.some((fence) => {
+      const relaxed =
+        (from < 2 && fence.holdsEnd[from]) || (to < 2 && fence.holdsEnd[to]);
+      if (!relaxed) {
+        return segmentEntersZone(nodes[from], nodes[to], fence.zone);
+      }
+      const segment = [nodes[from], nodes[to]].map((point) => {
+        const [longitude, latitude] = projection.toLngLat(point);
+        return { longitude, latitude };
+      });
+      return crossesFence(segment, fence.ring);
+    });
+  const path = shortestVisiblePath(nodes, 0, 1, blocked);
+  if (!path) {
+    return null;
   }
-  return best;
+  return toCorridor(
+    path.map((index) => {
+      if (index === 0) return origin;
+      if (index === 1) return destination;
+      const [longitude, latitude] = projection.toLngLat(nodes[index]);
+      return { longitude, latitude };
+    }),
+  );
 }
 
 /** Un destino dentro de una geovalla no tiene corredor desde ninguna central. */
@@ -65,21 +103,51 @@ export function isInsideGeofence(
   return geofences.some((fence) => pointInRing(point, fence.coordinates[0]));
 }
 
-function detourWaypoint(
-  fence: GeoJsonPolygon,
-  side: 'north' | 'south',
-): LngLat {
-  const box = boundingBox(fence.coordinates[0]);
-  const span = Math.max(
-    DETOUR_MARGIN_DEGREES,
-    box.maxLng - box.minLng,
-    box.maxLat - box.minLat,
+/** ¿Algún tramo del corredor cruza una geovalla (sin contar el margen)? */
+export function corridorCrossesGeofence(
+  corridor: PlannedCorridor,
+  geofences: GeoJsonPolygon[],
+): boolean {
+  return pathCrosses(corridor.coordinates.map(toLngLat), geofences);
+}
+
+/**
+ * RF-12 y RF-30: regreso a la central con las geovallas vigentes al salir.
+ *  1. El corredor más corto con margen.
+ *  2. Si no hay, la ida al revés, siempre que no cruce ninguna geovalla.
+ *  3. Si el dron o la central quedaron dentro de una geovalla nueva, el dron
+ *     tiene que salir o llegar igual: se planea sin esas geovallas.
+ *  4. Último recurso: la ida al revés, marcada como insegura.
+ */
+export function planReturnCorridor(
+  from: LngLat,
+  hub: LngLat,
+  geofences: GeoJsonPolygon[],
+  outbound: PlannedCorridor | null,
+): { corridor: PlannedCorridor; crossesGeofence: boolean } | null {
+  const planned = planCorridor(from, hub, geofences);
+  if (planned) {
+    return { corridor: planned, crossesGeofence: false };
+  }
+  const back = outbound ? reverseCorridor(outbound) : null;
+  if (back && !corridorCrossesGeofence(back, geofences)) {
+    return { corridor: back, crossesGeofence: false };
+  }
+  const trapping = geofences.filter(
+    (fence) =>
+      isInsideGeofence(from, [fence]) || isInsideGeofence(hub, [fence]),
   );
-  const latitude = side === 'north' ? box.maxLat + span : box.minLat - span;
-  return {
-    longitude: clamp((box.minLng + box.maxLng) / 2, -180, 180),
-    latitude: clamp(latitude, -90, 90),
-  };
+  if (trapping.length) {
+    const escape = planCorridor(
+      from,
+      hub,
+      geofences.filter((fence) => !trapping.includes(fence)),
+    );
+    if (escape) {
+      return { corridor: escape, crossesGeofence: true };
+    }
+  }
+  return back ? { corridor: back, crossesGeofence: true } : null;
 }
 
 function pathCrosses(path: LngLat[], geofences: GeoJsonPolygon[]): boolean {
@@ -172,22 +240,6 @@ function pointInRing(point: LngLat, ring: number[][]): boolean {
   return inside;
 }
 
-function boundingBox(ring: number[][]): Box {
-  const box: Box = {
-    minLng: Infinity,
-    maxLng: -Infinity,
-    minLat: Infinity,
-    maxLat: -Infinity,
-  };
-  for (const [longitude, latitude] of ring) {
-    box.minLng = Math.min(box.minLng, longitude);
-    box.maxLng = Math.max(box.maxLng, longitude);
-    box.minLat = Math.min(box.minLat, latitude);
-    box.maxLat = Math.max(box.maxLat, latitude);
-  }
-  return box;
-}
-
 /** Regreso por donde vino: mismo corredor, recorrido al revés. */
 export function reverseCorridor(corridor: PlannedCorridor): PlannedCorridor {
   return { ...corridor, coordinates: [...corridor.coordinates].reverse() };
@@ -219,8 +271,4 @@ export function haversineKm(start: LngLat, end: LngLat): number {
 
 function toLngLat(pair: number[]): LngLat {
   return { longitude: pair[0], latitude: pair[1] };
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
 }

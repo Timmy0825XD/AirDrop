@@ -7,7 +7,8 @@ import {
   LngLat,
   PlannedCorridor,
   isInsideGeofence,
-  planOutboundCorridor,
+  planCorridor,
+  planReturnCorridor,
 } from './routing.rules';
 
 type RouteRow = {
@@ -26,7 +27,17 @@ export class RoutePlannerService {
     destination: LngLat,
     geofences: GeoJsonPolygon[],
   ): PlannedCorridor | null {
-    return planOutboundCorridor(origin, destination, geofences);
+    return planCorridor(origin, destination, geofences);
+  }
+
+  /** Regreso con las geovallas vigentes; ver `planReturnCorridor`. */
+  planReturn(
+    from: LngLat,
+    hub: LngLat,
+    geofences: GeoJsonPolygon[],
+    outbound: PlannedCorridor | null,
+  ) {
+    return planReturnCorridor(from, hub, geofences, outbound);
   }
 
   async assertDestinationAllowed(

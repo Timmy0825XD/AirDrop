@@ -26,7 +26,7 @@ import { InboxService } from '../notifications/inbox.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Order } from '../orders/order.entity';
 import { departureCopy } from '../orders/plan-dispatch.rules';
-import { PlannedCorridor, reverseCorridor } from '../routing/routing.rules';
+import { PlannedCorridor } from '../routing/routing.rules';
 import { RoutePlannerService } from '../routing/route-planner.service';
 import { TELEMETRY_UNAVAILABLE } from '../telemetry/telemetry.rules';
 import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
@@ -419,8 +419,8 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Ruta de regreso con las mismas reglas de geovalla que la ida. Si una
-   * geovalla nueva la bloquea, el dron vuelve por donde vino.
+   * Ruta de regreso con las mismas reglas de geovalla que la ida, contra las
+   * geovallas vigentes al salir. Si ninguna ruta las evita, queda en el log.
    */
   private async returnCorridor(
     order: Order,
@@ -440,17 +440,22 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       return undefined;
     }
     const polygons = await this.routes.loadPolygons(manager);
-    const planned =
-      this.routes.plan(
-        { longitude: order.longitude, latitude: order.latitude },
-        { longitude: origin.longitude, latitude: origin.latitude },
-        polygons,
-      ) ?? (outbound ? reverseCorridor(outbound) : null);
+    const planned = this.routes.planReturn(
+      { longitude: order.longitude, latitude: order.latitude },
+      { longitude: origin.longitude, latitude: origin.latitude },
+      polygons,
+      outbound ?? null,
+    );
     if (!planned) {
       return undefined;
     }
-    await this.routes.saveReturn(order.id, planned, manager);
-    return planned;
+    if (planned.crossesGeofence) {
+      this.logger.warn(
+        `El regreso de ${order.id} cruza una geovalla: no hay otra ruta a la central.`,
+      );
+    }
+    await this.routes.saveReturn(order.id, planned.corridor, manager);
+    return planned.corridor;
   }
 
   private async tickAll(): Promise<void> {
