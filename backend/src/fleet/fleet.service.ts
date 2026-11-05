@@ -8,7 +8,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DroneStatus } from '../common/enums/drone-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
-import { UserStatus } from '../common/enums/user-status.enum';
 import { HubsService } from '../hubs/hubs.service';
 import { batteryNow } from '../simulation/flight-energy.rules';
 import { assignedHubIds } from '../users/hub-assignment';
@@ -35,7 +34,6 @@ export class FleetService {
   }
 
   async createDrone(user: User, dto: CreateDroneDto) {
-    this.assertActiveOperator(user);
     const model = await this.models.findOne({
       where: { id: dto.droneModelId },
     });
@@ -68,7 +66,6 @@ export class FleetService {
    * del operador).
    */
   async listDrones(user: User, hubId: string) {
-    this.assertActiveOperator(user);
     if (user.role !== UserRole.ADMIN) {
       this.assertAssigned(user, hubId);
     }
@@ -84,7 +81,7 @@ export class FleetService {
   }
 
   async updateStatus(user: User, id: string, dto: UpdateDroneStatusDto) {
-    const drone = await this.requireActiveOperatorDrone(user, id);
+    const drone = await this.requireOwnDrone(user, id);
     this.assertNotInMission(drone);
     drone.status = dto.status;
     if (dto.status === DroneStatus.AVAILABLE) {
@@ -103,7 +100,7 @@ export class FleetService {
     id: string,
     dto: RegisterMaintenanceDto,
   ) {
-    const drone = await this.requireActiveOperatorDrone(user, id);
+    const drone = await this.requireOwnDrone(user, id);
     this.assertNotInMission(drone);
     drone.status = DroneStatus.OUT_OF_SERVICE;
     drone.maintenanceReason = dto.reason.trim();
@@ -143,8 +140,7 @@ export class FleetService {
     };
   }
 
-  private async requireActiveOperatorDrone(user: User, id: string) {
-    this.assertActiveOperator(user);
+  private async requireOwnDrone(user: User, id: string) {
     const drone = await this.drones.findOne({ where: { id } });
     if (!drone) {
       throw new NotFoundException('El dron no existe.');
@@ -163,14 +159,6 @@ export class FleetService {
     if (drone.status === DroneStatus.IN_MISSION) {
       throw new ConflictException(
         'No puedes cambiar el estado de un dron en misión.',
-      );
-    }
-  }
-
-  private assertActiveOperator(user: User): void {
-    if (user.status !== UserStatus.ACTIVE) {
-      throw new ForbiddenException(
-        'Tu cuenta debe estar activa para gestionar la flota.',
       );
     }
   }
