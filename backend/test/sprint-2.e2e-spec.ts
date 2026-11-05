@@ -21,6 +21,7 @@ import {
   registerRequester,
   removeFixtures,
   TEST_PASSWORD,
+  polygonOverRosario,
   valleduparPolygon,
 } from './e2e-helpers';
 
@@ -30,6 +31,11 @@ if (existsSync(envFile)) {
 }
 
 const describeIfDb = process.env.DATABASE_URL ? describe : describe.skip;
+
+/** AAAA-MM-DD a `days` días de hoy: el mantenimiento no acepta fechas pasadas. */
+function inDays(days: number): string {
+  return new Date(Date.now() + days * 86_400_000).toISOString().slice(0, 10);
+}
 
 describeIfDb('Sprint 2 (e2e)', () => {
   let app: INestApplication<App> | undefined;
@@ -171,13 +177,26 @@ describeIfDb('Sprint 2 (e2e)', () => {
       .set('Authorization', `Bearer ${operator.token}`)
       .send({
         reason: 'Revisión de hélices',
-        estimatedEndDate: '2026-10-01',
+        estimatedEndDate: inDays(7),
       })
       .expect(201);
     expect(maintained.body).toMatchObject({
       status: DroneStatus.OUT_OF_SERVICE,
       maintenanceReason: 'Revisión de hélices',
     });
+
+    const overHub = await request(app!.getHttpServer())
+      .post('/geofences')
+      .set('Authorization', `Bearer ${operator.token}`)
+      .send({
+        name: 'Sobre el hospital',
+        reason: 'No debe guardarse',
+        polygon: polygonOverRosario,
+      })
+      .expect(400);
+    expect((overHub.body as { message: string }).message).toContain(
+      'La geovalla no puede cubrir una central',
+    );
 
     const geofence = await request(app!.getHttpServer())
       .post('/geofences')

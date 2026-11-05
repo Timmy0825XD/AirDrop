@@ -1,4 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
+import { isInsideGeofence } from '../routing/routing.rules';
 
 export type GeoJsonPolygon = {
   type: 'Polygon';
@@ -45,4 +46,24 @@ export function assertGeoJsonPolygon(value: unknown): GeoJsonPolygon {
     );
   }
   return polygon;
+}
+
+type HubPoint = { name: string; latitude: number; longitude: number };
+
+/**
+ * Una central dentro de una geovalla se queda sin corredor para siempre: no
+ * vuelve a salir ni a llegar ningún dron. Por eso no se dibuja una encima.
+ */
+export function assertCoversNoHub(
+  polygon: GeoJsonPolygon,
+  hubs: HubPoint[],
+): void {
+  const covered = hubs.filter((hub) => isInsideGeofence(hub, [polygon]));
+  if (covered.length) {
+    throw new BadRequestException(
+      `La geovalla no puede cubrir una central: ${covered
+        .map((hub) => hub.name)
+        .join(', ')} queda dentro.`,
+    );
+  }
 }

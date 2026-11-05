@@ -26,6 +26,12 @@ import { DroneModel } from './drone-model.entity';
 import { WINGCOPTER_198_CODE } from './drone-model-seed.service';
 import { FleetService } from './fleet.service';
 
+/**
+ * Las fechas del documento (2026-10-20) eran futuras el día de la prueba. El
+ * reloj se fija ese día para que no caduquen con el calendario.
+ */
+const FIXED_NOW = new Date('2026-10-16T15:00:00.000Z');
+
 const wingcopter: DroneModel = {
   id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
   code: WINGCOPTER_198_CODE,
@@ -113,6 +119,14 @@ async function errors<T extends object>(
 }
 
 describe('CU-20 Gestionar flota', () => {
+  beforeAll(() => {
+    jest.useFakeTimers({ now: FIXED_NOW });
+  });
+
+  afterAll(() => {
+    jest.useRealTimers();
+  });
+
   it('CP-20-01 registra un Wingcopter 198 con identificador único y queda disponible', async () => {
     expect(await errors(CreateDroneDto, droneDto())).toEqual([]);
     const { service, drones } = build();

@@ -99,15 +99,30 @@ export const clinicPayload = {
   contactEmail: 'contacto.lauradaniela@hotmail.com',
 };
 
+/** Plaza Alfonso López: no cubre ninguna central de estas pruebas. */
 export const valleduparPolygon = {
   type: 'Polygon' as const,
   coordinates: [
     [
-      [-73.26, 10.46],
-      [-73.24, 10.46],
+      [-73.245, 10.476],
+      [-73.24, 10.476],
       [-73.24, 10.48],
-      [-73.26, 10.48],
-      [-73.26, 10.46],
+      [-73.245, 10.48],
+      [-73.245, 10.476],
+    ],
+  ],
+};
+
+/** Cuadro alrededor del Hospital Rosario Pumarejo (`hubPayload`). */
+export const polygonOverRosario = {
+  type: 'Polygon' as const,
+  coordinates: [
+    [
+      [-73.255, 10.462],
+      [-73.252, 10.462],
+      [-73.252, 10.465],
+      [-73.255, 10.465],
+      [-73.255, 10.462],
     ],
   ],
 };
