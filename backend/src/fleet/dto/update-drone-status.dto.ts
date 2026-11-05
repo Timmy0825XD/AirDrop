@@ -1,5 +1,6 @@
 import { Transform } from 'class-transformer';
 import {
+  IsDateString,
   IsIn,
   IsOptional,
   IsString,
@@ -9,6 +10,7 @@ import {
 } from 'class-validator';
 import { DroneStatus } from '../../common/enums/drone-status.enum';
 import { FIELD_LIMITS } from '../../common/field-limits';
+import { IsTodayOrLater } from './is-today-or-later.validator';
 
 export const OPERATOR_DRONE_STATUSES = [
   DroneStatus.AVAILABLE,
@@ -35,8 +37,13 @@ export class UpdateDroneStatusDto {
   reason?: string;
 
   @IsOptional()
+  @IsDateString(
+    { strict: true },
+    { message: 'La fecha estimada no es una fecha válida.' },
+  )
   @Matches(/^\d{4}-\d{2}-\d{2}$/, {
     message: 'La fecha estimada debe ser AAAA-MM-DD.',
   })
+  @IsTodayOrLater()
   estimatedEndDate?: string;
 }

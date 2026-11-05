@@ -5,11 +5,13 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { Hub } from '../hubs/hub.entity';
 import { User } from '../users/user.entity';
 import { CreateGeofenceDto } from './dto/create-geofence.dto';
 import { UpdateGeofenceDto } from './dto/update-geofence.dto';
 import { Geofence } from './geofence.entity';
 import {
+  assertCoversNoHub,
   assertGeoJsonPolygon,
   GeoJsonPolygon,
 } from './geofences.rules';
@@ -28,10 +30,13 @@ export class GeofencesService {
   constructor(
     @InjectRepository(Geofence)
     private readonly geofences: Repository<Geofence>,
+    @InjectRepository(Hub)
+    private readonly hubs: Repository<Hub>,
   ) {}
 
   async create(user: User, dto: CreateGeofenceDto) {
     const polygon = assertGeoJsonPolygon(dto.polygon);
+    await this.assertCoversNoHub(polygon);
     const rows = (await this.geofences.query(
       `INSERT INTO geofences (id, name, reason, polygon, "createdByUserId")
        VALUES (
@@ -70,6 +75,9 @@ export class GeofencesService {
     const polygon = dto.polygon
       ? assertGeoJsonPolygon(dto.polygon)
       : undefined;
+    if (polygon) {
+      await this.assertCoversNoHub(polygon);
+    }
     // En UPDATE, TypeORM devuelve `[rows, rowCount]` (PostgresQueryRunner)
     // y no las filas: sin desestructurar, `rows[0]` es el arreglo completo
     // y `toPublicGeofence` recibiría `polygon: undefined` → 500 en JSON.parse.
@@ -98,6 +106,14 @@ export class GeofencesService {
   async remove(id: string) {
     await this.requireGeofence(id);
     await this.geofences.delete(id);
+  }
+
+  /** Todas las centrales, también las suspendidas: pueden reactivarse. */
+  private async assertCoversNoHub(polygon: GeoJsonPolygon): Promise<void> {
+    const hubs = await this.hubs.find({
+      select: { id: true, name: true, latitude: true, longitude: true },
+    });
+    assertCoversNoHub(polygon, hubs);
   }
 
   private async requireGeofence(id: string) {

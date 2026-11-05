@@ -470,3 +470,37 @@ identificador).
 
 **La app lo usará** en la flota del operador (batería de cada dron en tierra
 y cuándo volvió) y en «¿Por qué este dron?».
+
+## 16. El operador de flota completo — En curso (seis ramas)
+
+Plan acordado el 2026-11-05 para cerrar el rol del operador en Nest:
+`refactor/fleet-codigo-muerto` (PR #113), `bugfix/validaciones-flota`,
+`feature/fleet-vuelos-ruta`, `feature/fleet-mapa-operador`,
+`feature/fleet-mantenimiento` y `feature/fleet-dashboard`. El operador solo
+recibe lo que sirve para su trabajo: nada de inventario, cola, contactos,
+solicitante, medicamento ni fórmula.
+
+**Hecho en `refactor/fleet-codigo-muerto`:** una cuenta no activa recibe 401
+del guard (`JwtStrategy`) antes de llegar a la flota o a las geovallas; el 403
+«Tu cuenta debe estar activa…» no salía nunca y se quitó.
+
+**Hecho en `bugfix/validaciones-flota`:**
+
+- `POST /fleet/drones/:id/maintenance` y `PATCH /fleet/drones/:id/status`:
+  - una fecha que no existe (`2026-02-31`) responde 400 «La fecha estimada no
+    es una fecha válida.» (antes, 500);
+  - una fecha anterior a hoy (día de Colombia) responde 400 «La fecha
+    estimada no puede ser anterior a hoy.»; hoy sí vale;
+  - el motivo del mantenimiento en blanco responde 400 «El motivo es
+    obligatorio.».
+- `POST /geofences`: nombre o motivo en blanco responden 400 «El nombre es
+  obligatorio.» / «El motivo es obligatorio.». `PATCH /geofences/:id`: si
+  vienen, no pueden ir en blanco («El nombre no puede quedar vacío.» / «El
+  motivo no puede quedar vacío.»).
+- Crear una geovalla, o mover su polígono, con una central dentro (activa o
+  suspendida) responde 400 «La geovalla no puede cubrir una central: <nombre>
+  queda dentro.». Una central fuera del polígono pero cerca del borde sí se
+  permite: el corredor puede salir de ahí.
+
+**La app lo usará** en el formulario de mantenimiento (el calendario ya
+empieza hoy) y en el dibujo de geovallas, mostrando el mensaje de Nest.
