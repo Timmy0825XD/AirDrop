@@ -504,3 +504,22 @@ del guard (`JwtStrategy`) antes de llegar a la flota o a las geovallas; el 403
 
 **La app lo usará** en el formulario de mantenimiento (el calendario ya
 empieza hoy) y en el dibujo de geovallas, mostrando el mensaje de Nest.
+
+**Hecho en `feature/fleet-vuelos-ruta`:** cada vuelo de `GET /fleet/flights`
+trae además (los datos en vivo son `null` sin Redis; la ruta no depende de
+Redis):
+
+- `altitudeM`, `speedKmh`, `payloadKg` y `latencyMs`, que con los que ya
+  venían completan el paquete de RU-18;
+- `route` (la ida) y `returnRoute` (`null` hasta que el dron empieza a
+  volver), con la forma de `assignment.route`: `{ altitudeM, distanceKm,
+  coordinates: [[lng, lat], …] }`;
+- `destination: { kind: 'person' | 'hub', hubId, latitude, longitude }`: el
+  final del corredor de ida (o el punto del pedido si aún no hay corredor).
+  `hubId` solo en un traslado. Es `null` si no hay ninguno.
+
+Sigue sin traer nada de quién recibe ni qué lleva (solicitante, dirección,
+medicamento, fórmula). Por eso el operador no necesita `GET /orders/:id`.
+
+**La app lo usará** en "Vuelos en curso" del operador para dibujar el
+corredor de ida y de regreso y el punto de llegada.

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { DroneStatus } from '../common/enums/drone-status.enum';
 import { Order } from '../orders/order.entity';
+import { RoutePlannerService } from '../routing/route-planner.service';
 import { Mission } from '../simulation/mission.entity';
 import { LiveFlight } from '../simulation/simulation.rules';
 import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
@@ -12,6 +13,7 @@ import { Drone } from './drone.entity';
 import {
   DRONE_HOLDING_STATUSES,
   activeOrderByDrone,
+  presentOperatorFlight,
 } from './fleet-flights.rules';
 
 /**
@@ -28,6 +30,7 @@ export class FleetFlightsService {
     @InjectRepository(Mission)
     private readonly missions: Repository<Mission>,
     private readonly telemetry: TelemetryPublisher,
+    private readonly routes: RoutePlannerService,
   ) {}
 
   /** `GET /fleet/drones`: cada dron en misión trae su pedido y su fase. */
@@ -64,13 +67,14 @@ export class FleetFlightsService {
     });
     const active = await this.activeOrders(drones.map((drone) => drone.id));
     const orders = [...active.values()];
-    const [flights, missions] = await Promise.all([
+    const orderIds = orders.map((order) => order.id);
+    const [flights, missions, outbound, back] = await Promise.all([
       this.readFlights(orders),
-      orders.length
-        ? this.missions.find({
-            where: { orderId: In(orders.map((order) => order.id)) },
-          })
+      orderIds.length
+        ? this.missions.find({ where: { orderId: In(orderIds) } })
         : Promise.resolve([]),
+      this.routes.findOutboundMany(orderIds),
+      this.routes.findReturnMany(orderIds),
     ]);
     const missionBy = new Map(
       missions.map((mission) => [mission.orderId, mission]),
@@ -80,30 +84,21 @@ export class FleetFlightsService {
       if (!order) {
         return [];
       }
-      const flight = flights.get(order.id) ?? null;
       const mission = missionBy.get(order.id);
       return [
-        {
-          droneId: drone.id,
-          identifier: drone.identifier,
-          hubId: drone.hubId,
-          orderId: order.id,
-          orderStatus: order.status,
-          missionType: order.missionType,
-          requiresColdChain: order.requiresColdChain,
-          phase: flight?.phase ?? null,
-          leg: flight?.leg ?? null,
-          latitude: flight?.latitude ?? null,
-          longitude: flight?.longitude ?? null,
-          batteryPercent: flight?.batteryPercent ?? null,
-          temperatureC: flight?.temperatureC ?? null,
-          etaSeconds: flight?.etaSeconds ?? null,
-          alerts: {
+        presentOperatorFlight(
+          drone,
+          order,
+          flights.get(order.id) ?? null,
+          {
             battery: mission?.batteryAlert ?? false,
             failure: mission?.failureAlert ?? false,
-            coldChain: order.coldChainAlertAt != null,
           },
-        },
+          {
+            route: outbound.get(order.id) ?? null,
+            returnRoute: back.get(order.id) ?? null,
+          },
+        ),
       ];
     });
   }
