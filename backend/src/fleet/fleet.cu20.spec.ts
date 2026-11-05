@@ -8,14 +8,17 @@ import {
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
+import { JwtStrategy } from '../auth/jwt.strategy';
 import { DroneStatus } from '../common/enums/drone-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { Hub } from '../hubs/hub.entity';
 import { HubsService } from '../hubs/hubs.service';
 import { User } from '../users/user.entity';
+import { UsersService } from '../users/users.service';
 import { CreateDroneDto } from './dto/create-drone.dto';
 import { UpdateDroneStatusDto } from './dto/update-drone-status.dto';
 import { Drone } from './drone.entity';
@@ -226,19 +229,23 @@ describe('CU-20 Gestionar flota', () => {
     expect(drones.save).not.toHaveBeenCalled();
   });
 
-  it('CP-20-09 rechaza el alta por un operador con la cuenta no activa (403)', async () => {
-    const { service, drones } = build();
-
-    const attempt = service.createDrone(
-      operator({ status: UserStatus.SUSPENDED }),
-      droneDto({ identifier: 'WG-198-012' }),
+  it('CP-20-09 rechaza el alta por un operador con la cuenta no activa (401)', async () => {
+    // La cuenta suspendida no llega a FleetService: JwtStrategy no la deja
+    // pasar y el guard responde 401 antes de tocar la flota.
+    const suspended = operator({ status: UserStatus.SUSPENDED });
+    const strategy = new JwtStrategy(
+      { getOrThrow: () => 'secreto-de-prueba' } as unknown as ConfigService,
+      {
+        findById: jest.fn().mockResolvedValue(suspended),
+      } as unknown as UsersService,
     );
 
-    await expect(attempt).rejects.toBeInstanceOf(ForbiddenException);
-    await expect(attempt).rejects.toThrow(
-      'Tu cuenta debe estar activa para gestionar la flota.',
-    );
-    expect(drones.save).not.toHaveBeenCalled();
+    const user = await strategy.validate({
+      sub: suspended.id,
+      role: UserRole.FLEET_OPERATOR,
+    });
+
+    expect(user).toBeNull();
   });
 
   it('CP-20-10 rechaza un mantenimiento sin motivo (motivo de 0 caracteres)', async () => {

@@ -1,12 +1,10 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { UserStatus } from '../common/enums/user-status.enum';
 import { User } from '../users/user.entity';
 import { CreateGeofenceDto } from './dto/create-geofence.dto';
 import { UpdateGeofenceDto } from './dto/update-geofence.dto';
@@ -33,7 +31,6 @@ export class GeofencesService {
   ) {}
 
   async create(user: User, dto: CreateGeofenceDto) {
-    this.assertActiveOperator(user);
     const polygon = assertGeoJsonPolygon(dto.polygon);
     const rows = (await this.geofences.query(
       `INSERT INTO geofences (id, name, reason, polygon, "createdByUserId")
@@ -50,8 +47,7 @@ export class GeofencesService {
     return this.toPublicGeofence(rows[0]);
   }
 
-  async list(user: User) {
-    this.assertActiveOperator(user);
+  async list() {
     const rows = (await this.geofences.query(
       `SELECT id, name, reason, ST_AsGeoJSON(polygon) AS polygon, "createdByUserId", "createdAt"
        FROM geofences
@@ -60,8 +56,7 @@ export class GeofencesService {
     return rows.map((row) => this.toPublicGeofence(row));
   }
 
-  async update(user: User, id: string, dto: UpdateGeofenceDto) {
-    this.assertActiveOperator(user);
+  async update(id: string, dto: UpdateGeofenceDto) {
     if (
       dto.name === undefined &&
       dto.reason === undefined &&
@@ -100,8 +95,7 @@ export class GeofencesService {
     return this.toPublicGeofence(rows[0]);
   }
 
-  async remove(user: User, id: string) {
-    this.assertActiveOperator(user);
+  async remove(id: string) {
     await this.requireGeofence(id);
     await this.geofences.delete(id);
   }
@@ -123,13 +117,5 @@ export class GeofencesService {
       createdByUserId: row.createdByUserId,
       createdAt: row.createdAt,
     };
-  }
-
-  private assertActiveOperator(user: User): void {
-    if (user.status !== UserStatus.ACTIVE) {
-      throw new ForbiddenException(
-        'Tu cuenta debe estar activa para gestionar geovallas.',
-      );
-    }
   }
 }

@@ -165,13 +165,6 @@ describe('FleetService', () => {
       service.createDrone(operator({ hubAssignments: [] }), dto),
     ).rejects.toBeInstanceOf(ForbiddenException);
   });
-
-  it('rejects an inactive operator', async () => {
-    const { service } = buildService({});
-    await expect(
-      service.createDrone(operator({ status: UserStatus.UNVERIFIED }), dto),
-    ).rejects.toBeInstanceOf(ForbiddenException);
-  });
 });
 
 describe('FleetService.listDrones', () => {
@@ -203,18 +196,6 @@ describe('FleetService.listDrones', () => {
     const admin = operator({ role: UserRole.ADMIN, hubAssignments: [] });
     await expect(service.listDrones(admin, hub.id)).rejects.toBeInstanceOf(
       NotFoundException,
-    );
-  });
-
-  it('el administrador con la cuenta inactiva no consulta', async () => {
-    const { service } = buildService({});
-    const admin = operator({
-      role: UserRole.ADMIN,
-      status: UserStatus.SUSPENDED,
-      hubAssignments: [],
-    });
-    await expect(service.listDrones(admin, hub.id)).rejects.toBeInstanceOf(
-      ForbiddenException,
     );
   });
 });

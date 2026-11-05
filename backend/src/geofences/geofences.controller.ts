@@ -35,25 +35,21 @@ export class GeofencesController {
   }
 
   @Get()
-  list(@CurrentUser() user: User) {
-    return this.geofencesService.list(user);
+  list() {
+    return this.geofencesService.list();
   }
 
   @Patch(':id')
   update(
-    @CurrentUser() user: User,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() dto: UpdateGeofenceDto,
   ) {
-    return this.geofencesService.update(user, id, dto);
+    return this.geofencesService.update(id, dto);
   }
 
   @Delete(':id')
   @HttpCode(204)
-  remove(
-    @CurrentUser() user: User,
-    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
-  ) {
-    return this.geofencesService.remove(user, id);
+  remove(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    return this.geofencesService.remove(id);
   }
 }
