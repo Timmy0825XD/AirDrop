@@ -22,6 +22,7 @@ import { ListFlightsQueryDto } from './dto/list-flights-query.dto';
 import { RegisterMaintenanceDto } from './dto/register-maintenance.dto';
 import { UpdateDroneStatusDto } from './dto/update-drone-status.dto';
 import { FleetFlightsService } from './fleet-flights.service';
+import { FleetMapService } from './fleet-map.service';
 import { FleetService } from './fleet.service';
 
 @ApiTags('Flota')
@@ -32,6 +33,7 @@ export class FleetController {
   constructor(
     private readonly fleetService: FleetService,
     private readonly fleetFlights: FleetFlightsService,
+    private readonly fleetMap: FleetMapService,
   ) {}
 
   @Get('models')
@@ -61,6 +63,13 @@ export class FleetController {
   @Roles(UserRole.FLEET_OPERATOR)
   listFlights(@CurrentUser() user: User, @Query() query: ListFlightsQueryDto) {
     return this.fleetFlights.listFlights(user, query.hubId);
+  }
+
+  /** Mapa del operador: sus centrales, las geovallas y los vuelos en curso. */
+  @Get('map')
+  @Roles(UserRole.FLEET_OPERATOR)
+  map(@CurrentUser() user: User, @Query() query: ListFlightsQueryDto) {
+    return this.fleetMap.map(user, query.hubId);
   }
 
   @Patch('drones/:id/status')

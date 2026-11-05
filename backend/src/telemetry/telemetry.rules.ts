@@ -1,5 +1,7 @@
+import { OrderStatus } from '../common/enums/order-status.enum';
+import { RouteLeg } from '../common/enums/route-leg.enum';
 import { UserRole } from '../common/enums/user-role.enum';
-import { LiveFlight } from '../simulation/simulation.rules';
+import { FlightPhase, LiveFlight } from '../simulation/simulation.rules';
 
 export const TELEMETRY_UNAVAILABLE =
   'La telemetría no está disponible. No se puede iniciar el vuelo.';
@@ -67,6 +69,49 @@ export function canWatchRadar(role: UserRole): boolean {
 /** En la sala de una central, solo el operador recibe las alertas del vuelo. */
 export function receivesHubAlerts(role: UserRole): boolean {
   return role === UserRole.FLEET_OPERATOR;
+}
+
+/**
+ * En la sala de una central, solo el operador recibe el mapa de la flota
+ * (`hub-telemetry`, `hub-flight-status`, `hub-flight-ended`).
+ */
+export function receivesHubFlights(role: UserRole): boolean {
+  return role === UserRole.FLEET_OPERATOR;
+}
+
+/** Estados en que el pedido tiene un dron reservado o en el aire. */
+const FLEET_TRACKED_STATUSES = new Set<OrderStatus>([
+  OrderStatus.PENDING_LOAD,
+  OrderStatus.IN_FLIGHT,
+  OrderStatus.AWAITING_DELIVERY,
+  OrderStatus.DELIVERED,
+  OrderStatus.RETURNING,
+]);
+
+/**
+ * ¿Un cambio de estado le importa al mapa de la flota? Sí si el pedido ya iba
+ * en el mapa (también cuando suelta el dron antes de despegar) o si toma o
+ * devuelve un dron.
+ */
+export function concernsFleetMap(
+  status: OrderStatus,
+  alreadyTracked: boolean,
+): boolean {
+  return (
+    alreadyTracked ||
+    FLEET_TRACKED_STATUSES.has(status) ||
+    status === OrderStatus.RETURNED
+  );
+}
+
+/** Tras este estado el pedido ya no ocupa un dron en el mapa. */
+export function leavesFleetMap(status: OrderStatus): boolean {
+  return !FLEET_TRACKED_STATUSES.has(status);
+}
+
+/** El dron aterrizó de vuelta en su central: el vuelo sale del mapa. */
+export function isFlightEnd(flight: LiveFlight): boolean {
+  return flight.leg === RouteLeg.RETURN && flight.phase === FlightPhase.LANDED;
 }
 
 export function presentTelemetry(flight: LiveFlight, view: TelemetryView) {

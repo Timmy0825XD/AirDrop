@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Socket } from 'socket.io';
 import { UserRole } from '../common/enums/user-role.enum';
@@ -239,6 +240,209 @@ describe('TelemetryGateway radar (vista web)', () => {
       orderId: ORDER_ID,
       status: 'in_flight',
     });
+  });
+});
+
+describe('TelemetryGateway mapa de la flota del operador', () => {
+  const HUB_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+  const DRONE_ID = '33333333-3333-4333-8333-333333333333';
+
+  const liveFlight = (leg: string, phase: string) => ({
+    orderId: ORDER_ID,
+    droneId: DRONE_ID,
+    identifier: 'WG-198-001',
+    latitude: 10.47,
+    longitude: -73.25,
+    altitudeM: 100,
+    speedKmh: 98,
+    batteryPercent: 71,
+    payloadKg: 1.2,
+    temperatureC: 5,
+    latencyMs: 40,
+    phase,
+    leg,
+    status: 'in_flight',
+    etaSeconds: 60,
+    progress: { secret: 'interno' },
+  });
+
+  /** Un gateway con un operador y un despachador en la sala de la central. */
+  async function room() {
+    const users: Record<string, User> = {
+      op: {
+        id: 'op',
+        role: UserRole.FLEET_OPERATOR,
+        status: UserStatus.ACTIVE,
+        hubAssignments: [{ hubId: HUB_ID }],
+      } as unknown as User,
+      disp: {
+        id: 'disp',
+        role: UserRole.DISPATCHER,
+        status: UserStatus.ACTIVE,
+        hubAssignments: [{ hubId: HUB_ID }],
+      } as unknown as User,
+    };
+    let next = 'op';
+    const built = build(() => Promise.resolve(users[next]));
+    const operator = socket(jest.fn(), 'op');
+    const dispatcher = socket(jest.fn(), 'disp');
+    await built.gateway.handleConnection(operator);
+    await built.gateway.subscribeHub(operator, { hubId: HUB_ID });
+    next = 'disp';
+    await built.gateway.handleConnection(dispatcher);
+    await built.gateway.subscribeHub(dispatcher, { hubId: HUB_ID });
+    built.access.originHubOf.mockResolvedValue(HUB_ID);
+    built.gateway.server = {
+      to: () => ({ emit: jest.fn() }),
+      in: (name: string) => ({
+        fetchSockets: () =>
+          Promise.resolve(
+            name === `hub:${HUB_ID}` ? [operator, dispatcher] : [],
+          ),
+      }),
+    } as never;
+    const send = (event: object) => built.gateway['dispatch'](event as never);
+    return { ...built, operator, dispatcher, send };
+  }
+
+  const cruise = () => ({
+    type: 'telemetry',
+    orderId: ORDER_ID,
+    flight: liveFlight('outbound', 'cruise'),
+  });
+
+  it('el operador recibe cada vuelo de su central; el despachador no', async () => {
+    const { operator, dispatcher, send } = await room();
+
+    await send(cruise());
+
+    expect(emitOf(operator)).toHaveBeenCalledWith(
+      'hub-telemetry',
+      expect.objectContaining({
+        hubId: HUB_ID,
+        orderId: ORDER_ID,
+        altitudeM: 100,
+        batteryPercent: 71,
+        payloadKg: 1.2,
+        latencyMs: 40,
+      }),
+    );
+    expect(emitOf(dispatcher)).not.toHaveBeenCalled();
+  });
+
+  it('no manda el estado interno del reloj', async () => {
+    const { operator, send } = await room();
+    await send(cruise());
+    const [, payload] = emitOf(operator).mock.calls[0] as [string, object];
+    expect(payload).not.toHaveProperty('progress');
+  });
+
+  it('consulta la central del vuelo una sola vez, no en cada tick', async () => {
+    const { access, send } = await room();
+    await send(cruise());
+    await send(cruise());
+    await send(cruise());
+    expect(access.originHubOf).toHaveBeenCalledTimes(1);
+  });
+
+  it('al aterrizar de regreso avisa que el vuelo terminó', async () => {
+    const { operator, access, send } = await room();
+    await send({
+      type: 'telemetry',
+      orderId: ORDER_ID,
+      flight: liveFlight('return', 'landed'),
+    });
+    expect(emitOf(operator)).toHaveBeenCalledWith('hub-flight-ended', {
+      hubId: HUB_ID,
+      orderId: ORDER_ID,
+      droneId: DRONE_ID,
+    });
+    // Ya no lo recuerda: un vuelo nuevo vuelve a consultar.
+    await send(cruise());
+    expect(access.originHubOf).toHaveBeenCalledTimes(2);
+  });
+
+  it('aterrizar en destino no termina el vuelo', async () => {
+    const { operator, send } = await room();
+    await send({
+      type: 'telemetry',
+      orderId: ORDER_ID,
+      flight: liveFlight('outbound', 'landed'),
+    });
+    expect(emitOf(operator)).not.toHaveBeenCalledWith(
+      'hub-flight-ended',
+      expect.anything(),
+    );
+  });
+
+  it('avisa los estados que mueven un dron', async () => {
+    const { operator, dispatcher, send } = await room();
+    await send({
+      type: 'order-status',
+      orderId: ORDER_ID,
+      status: 'in_flight',
+    });
+    expect(emitOf(operator)).toHaveBeenCalledWith('hub-flight-status', {
+      hubId: HUB_ID,
+      orderId: ORDER_ID,
+      status: 'in_flight',
+    });
+    expect(emitOf(dispatcher)).not.toHaveBeenCalled();
+  });
+
+  it('un pedido que nunca tuvo dron no llega al operador', async () => {
+    const { operator, access, send } = await room();
+    await send({ type: 'order-status', orderId: ORDER_ID, status: 'received' });
+    expect(emitOf(operator)).not.toHaveBeenCalled();
+    expect(access.originHubOf).not.toHaveBeenCalled();
+  });
+
+  it('si suelta el dron antes de despegar, avisa y deja de seguirlo', async () => {
+    const { operator, access, send } = await room();
+    const status = (value: string) => ({
+      type: 'order-status',
+      orderId: ORDER_ID,
+      status: value,
+    });
+    await send(status('pending_load'));
+    await send(status('reassigned'));
+    expect(emitOf(operator)).toHaveBeenLastCalledWith('hub-flight-status', {
+      hubId: HUB_ID,
+      orderId: ORDER_ID,
+      status: 'reassigned',
+    });
+    // Reasignado ya no le importa: no se vuelve a consultar ni a avisar.
+    await send(status('reassigned'));
+    expect(access.originHubOf).toHaveBeenCalledTimes(1);
+    expect(emitOf(operator)).toHaveBeenCalledTimes(2);
+  });
+
+  it('si el mapa de la flota falla, quien sigue el pedido igual recibe', async () => {
+    const { gateway, access, send } = await room();
+    const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+    access.originHubOf.mockRejectedValue(new Error('base caída'));
+    const follower = socket(jest.fn(), 'follower');
+    gateway['clients'].set('follower', {
+      ready: Promise.resolve(null),
+      orders: { [ORDER_ID]: { view: 'map', alerts: false } },
+      hubs: {},
+    });
+    gateway.server = {
+      to: () => ({ emit: jest.fn() }),
+      in: (name: string) => ({
+        fetchSockets: () =>
+          Promise.resolve(name === `order:${ORDER_ID}` ? [follower] : []),
+      }),
+    } as never;
+
+    await send(cruise());
+
+    expect(emitOf(follower)).toHaveBeenCalledWith(
+      'telemetry',
+      expect.objectContaining({ orderId: ORDER_ID }),
+    );
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
   });
 });
 

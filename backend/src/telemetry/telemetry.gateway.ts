@@ -18,8 +18,12 @@ import {
   TelemetryAccess,
   canFollowHub,
   canWatchRadar,
+  concernsFleetMap,
+  isFlightEnd,
+  leavesFleetMap,
   presentTelemetry,
   receivesHubAlerts,
+  receivesHubFlights,
 } from './telemetry.rules';
 
 const UUID_V4 =
@@ -33,9 +37,15 @@ type ClientState = {
    */
   ready: Promise<User | null>;
   orders: Record<string, TelemetryAccess>;
-  /** Salas de central a las que se unió, y si recibe ahí las alertas. */
-  hubs: Record<string, { alerts: boolean }>;
+  /**
+   * Salas de central a las que se unió: si recibe ahí las alertas y el mapa
+   * de la flota (las dos, solo el operador).
+   */
+  hubs: Record<string, { alerts: boolean; flights: boolean }>;
 };
+
+/** Tope de vuelos recordados; con más, se vacía y se vuelve a consultar. */
+const MAX_TRACKED_FLIGHTS = 1000;
 
 @WebSocketGateway({
   namespace: '/telemetry',
@@ -46,6 +56,11 @@ export class TelemetryGateway
 {
   private readonly logger = new Logger(TelemetryGateway.name);
   private readonly clients = new Map<string, ClientState>();
+  /**
+   * Central de origen de cada vuelo en el mapa de la flota. La telemetría
+   * llega cada ≤ 2 s: así no se consulta la base en cada tick.
+   */
+  private readonly fleetHubOf = new Map<string, string>();
 
   @WebSocketServer()
   server: Server;
@@ -97,7 +112,10 @@ export class TelemetryGateway
     return { event: 'subscribed', data: { orderId } };
   }
 
-  /** Sala de una central: hoy avisa cuando su cola cambia. */
+  /**
+   * Sala de una central: avisa cuando su cola cambia; al operador, además,
+   * le manda las alertas y el mapa de la flota en vivo.
+   */
   @SubscribeMessage('subscribe-hub')
   async subscribeHub(client: Socket, body: { hubId?: string }) {
     const hubId = body?.hubId ?? '';
@@ -114,7 +132,10 @@ export class TelemetryGateway
       };
     }
     if (state) {
-      state.hubs[hubId] = { alerts: receivesHubAlerts(user.role) };
+      state.hubs[hubId] = {
+        alerts: receivesHubAlerts(user.role),
+        flights: receivesHubFlights(user.role),
+      };
     }
     await client.join(hubRoom(hubId));
     return { event: 'subscribed-hub', data: { hubId } };
@@ -164,6 +185,95 @@ export class TelemetryGateway
     }
   }
 
+  /** El mapa de la flota nunca debe frenar la telemetría de quien sigue el pedido. */
+  private async emitHubFleetSafely(event: TelemetryEvent): Promise<void> {
+    try {
+      await this.emitHubFleet(event);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'flota';
+      this.logger.warn(
+        `No se pudo publicar en el mapa de la flota: ${message}`,
+      );
+    }
+  }
+
+  /**
+   * Mapa de la flota del operador: cada vuelo de la central, sus cambios de
+   * estado y el aterrizaje final. Lleva la vista completa de la aeronave y
+   * nada del pedido (ni quién recibe ni qué lleva).
+   */
+  private async emitHubFleet(event: TelemetryEvent): Promise<void> {
+    if (event.type === 'telemetry') {
+      const hubId = await this.fleetHub(event.orderId);
+      if (!hubId) {
+        return;
+      }
+      await this.emitToFleet(hubId, 'hub-telemetry', {
+        hubId,
+        ...presentTelemetry(event.flight, 'full'),
+      });
+      if (isFlightEnd(event.flight)) {
+        this.fleetHubOf.delete(event.orderId);
+        await this.emitToFleet(hubId, 'hub-flight-ended', {
+          hubId,
+          orderId: event.orderId,
+          droneId: event.flight.droneId,
+        });
+      }
+      return;
+    }
+    if (event.type !== 'order-status') {
+      return;
+    }
+    const tracked = this.fleetHubOf.has(event.orderId);
+    if (!concernsFleetMap(event.status, tracked)) {
+      return;
+    }
+    const hubId = await this.fleetHub(event.orderId);
+    if (!hubId) {
+      return;
+    }
+    if (leavesFleetMap(event.status)) {
+      this.fleetHubOf.delete(event.orderId);
+    }
+    await this.emitToFleet(hubId, 'hub-flight-status', {
+      hubId,
+      orderId: event.orderId,
+      status: event.status,
+    });
+  }
+
+  private async fleetHub(orderId: string): Promise<string | null> {
+    const known = this.fleetHubOf.get(orderId);
+    if (known) {
+      return known;
+    }
+    const hubId = await this.access.originHubOf(orderId);
+    if (hubId) {
+      if (this.fleetHubOf.size >= MAX_TRACKED_FLIGHTS) {
+        this.fleetHubOf.clear();
+      }
+      this.fleetHubOf.set(orderId, hubId);
+    }
+    return hubId;
+  }
+
+  private async emitToFleet(
+    hubId: string,
+    event: string,
+    payload: object,
+  ): Promise<void> {
+    if (!this.server) {
+      return;
+    }
+    const sockets = await this.server.in(hubRoom(hubId)).fetchSockets();
+    for (const socket of sockets) {
+      if (this.clients.get(socket.id)?.hubs[hubId]?.flights) {
+        socket.emit(event, payload);
+      }
+    }
+  }
+
   /** Usuario activo dueño del token, o `null` (y desconecta) si no lo hay. */
   private async authenticate(client: Socket): Promise<User | null> {
     const token = tokenFrom(client);
@@ -188,6 +298,7 @@ export class TelemetryGateway
   private async dispatch(event: TelemetryEvent): Promise<void> {
     try {
       this.emitRadar(event);
+      await this.emitHubFleetSafely(event);
       if (event.type === 'telemetry') {
         await this.emit(event.orderId, 'telemetry', (access) =>
           presentTelemetry(event.flight, access.view),

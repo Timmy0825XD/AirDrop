@@ -523,3 +523,46 @@ medicamento, fórmula). Por eso el operador no necesita `GET /orders/:id`.
 
 **La app lo usará** en "Vuelos en curso" del operador para dibujar el
 corredor de ida y de regreso y el punto de llegada.
+
+**Hecho en `feature/fleet-mapa-operador`:** el mapa del operador, como el
+radar web pero solo con lo de su trabajo.
+
+- `GET /fleet/map?hubId=` (operador; sin `hubId`, todas sus centrales; una
+  central ajena, 403):
+
+```json
+{
+  "hubs": [{ "id": "…", "name": "Hospital Rosario Pumarejo",
+             "type": "hospital", "status": "active",
+             "latitude": 10.46314, "longitude": -73.25322,
+             "fleet": { "available": 1, "inMission": 1, "maintenance": 1,
+                        "outOfService": 0, "total": 3 } }],
+  "geofences": [{ "id": "…", "name": "…", "reason": "…",
+                  "polygon": { "type": "Polygon", "coordinates": [] } }],
+  "flights": ["…lo mismo que GET /fleet/flights…"]
+}
+```
+
+  De la central no viajan dirección, contactos, inventario, cola ni quién la
+  creó.
+
+- Socket `/telemetry`, después de `subscribe-hub { hubId }` (solo el
+  operador recibe esto; el despachador en la misma sala, no):
+  - `hub-telemetry`: cada tick de cada vuelo de la central, `{ hubId,
+    orderId, droneId, identifier, latitude, longitude, altitudeM, speedKmh,
+    phase, leg, status, etaSeconds, batteryPercent, payloadKg, temperatureC,
+    latencyMs }`;
+  - `hub-flight-status { hubId, orderId, status }`: cuando un pedido toma un
+    dron (`pending_load`), despega, aterriza, se entrega, vuelve, queda
+    devuelto o suelta el dron antes de despegar (por ejemplo `reassigned`);
+  - `hub-flight-ended { hubId, orderId, droneId }`: el dron aterrizó de vuelta
+    en su central y el vuelo sale del mapa;
+  - `alert`, como ya llegaba.
+
+  Un `hub-telemetry` de un `orderId` que el mapa no tiene es un vuelo nuevo:
+  la app pide `GET /fleet/map` (o `/fleet/flights`) para traer su ruta. Con
+  `hub-flight-status` o `hub-flight-ended`, vuelve a pedirlo si quiere los
+  conteos de la flota al día.
+
+**La app lo usará** en una pantalla de mapa del operador: sus centrales, las
+geovallas y cada dron moviéndose con sus métricas.
