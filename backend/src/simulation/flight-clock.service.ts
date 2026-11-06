@@ -39,6 +39,7 @@ import { batteryNow, batteryToFinishPercent } from './flight-energy.rules';
 import { TELEMETRY_UNAVAILABLE } from '../telemetry/telemetry.rules';
 import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
 import {
+  applyEffect,
   chooseProtocol,
   emergencyCorridor,
   homeCorridor,
@@ -46,7 +47,12 @@ import {
   percentToLand,
   safeLandingPoint,
 } from './contingency.rules';
-import { FlightIncidentsService } from './flight-incidents.service';
+import {
+  FlightIncidentsService,
+  IncidentJson,
+  presentIncident,
+} from './flight-incidents.service';
+import { FlightIncident } from './flight-incident.entity';
 import { Mission } from './mission.entity';
 import { WeatherService } from '../weather/weather.service';
 import {
@@ -66,6 +72,13 @@ import {
   FlightPhase,
 } from './simulation.rules';
 import { simClock } from '../common/clock/sim-clock';
+
+export const DRONE_NOT_FLYING =
+  'Ese dron no está en vuelo: el evento no aplica.';
+export const NO_COLD_LOAD =
+  'Ese dron no lleva carga con cadena de frío: la falla de la refrigeración no aplica.';
+export const ALREADY_LANDING =
+  'Ese dron ya está aterrizando de emergencia: el evento no cambia nada.';
 
 /** RF-33: fases en que el dron todavía puede tomar otro camino. */
 const REROUTABLE_PHASES = new Set<FlightPhase>([
@@ -243,6 +256,37 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * CU-38: la consola lanza un incidente sobre un dron en vuelo. Si el dron
+   * no está volando, o el evento no aplica (frío sin carga fría), no se lanza
+   * y se dice por qué.
+   */
+  async launchIncident(
+    droneId: string,
+    kind: IncidentKind,
+  ): Promise<IncidentJson> {
+    for (let waited = 0; this.ticking && waited < 5_000; waited += 50) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    const session = [...this.active.values()].find(
+      (item) => item.droneId === droneId,
+    );
+    if (!session) {
+      throw new BadRequestException(DRONE_NOT_FLYING);
+    }
+    if (
+      kind === IncidentKind.COOLING_FAILURE &&
+      (!session.requiresColdChain || session.keepStatus)
+    ) {
+      throw new BadRequestException(NO_COLD_LOAD);
+    }
+    const incident = await this.handleIncident(session, kind);
+    if (!incident) {
+      throw new BadRequestException(ALREADY_LANDING);
+    }
+    return presentIncident(incident);
+  }
+
+  /**
    * RF-34 y CU-32: el reloj detectó un incidente. Las reglas eligen el
    * protocolo (`chooseProtocol`) y aquí se aplica: seguir, volver a la
    * central con el paquete o bajar en el punto seguro más cercano.
@@ -250,18 +294,25 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
   private async handleIncident(
     session: FlightSession,
     kind: IncidentKind,
-  ): Promise<void> {
+  ): Promise<FlightIncident | null> {
+    const terminal =
+      kind === IncidentKind.DRONE_LOST || kind === IncidentKind.COLLISION_MAJOR;
     if (
       session.progress.contingency?.protocol ===
-      ContingencyProtocol.EMERGENCY_LANDING
+        ContingencyProtocol.EMERGENCY_LANDING &&
+      !terminal
     ) {
-      return;
+      // Ya va bajando; solo perderlo o un choque grave cambian algo.
+      return null;
     }
+    this.applyIncidentEffect(session, kind);
     const polygons = await this.routes.loadPolygons(this.orders.manager);
     const cruiseKm = session.progress.cruiseKm;
     const at = splitCorridorAt(session.corridor, cruiseKm).at;
     const remainingKm = Math.max(0, session.corridor.distanceKm - cruiseKm);
     const maxRangeKm = session.model.maxRangeKm;
+    // Con el efecto ya aplicado: gasta más el resto del vuelo (RF-34).
+    const burn = session.progress.burnFactor ?? 1;
     const blocked = kind === IncidentKind.ROUTE_BLOCKED;
     const outbound = session.leg === RouteLeg.OUTBOUND;
     // De ida, la central se alcanza por un corredor nuevo desde aquí; de
@@ -269,11 +320,11 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     const home = outbound ? homeCorridor(at, session.hub, polygons) : null;
     const homePercent = outbound
       ? home
-        ? percentToLand(home.distanceKm, maxRangeKm)
+        ? burn * percentToLand(home.distanceKm, maxRangeKm)
         : null
       : blocked
         ? null
-        : percentToLand(remainingKm, maxRangeKm);
+        : burn * percentToLand(remainingKm, maxRangeKm);
     const protocol = chooseProtocol({
       kind,
       leg: session.leg,
@@ -281,7 +332,8 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       batteryPercent: session.progress.batteryPercent,
       finishPercent:
         outbound && !blocked
-          ? percentToFinish({
+          ? burn *
+            percentToFinish({
               remainingKm,
               returnKm: session.corridor.distanceKm,
               maxRangeKm,
@@ -305,7 +357,28 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     });
     if (protocol === ContingencyProtocol.RETURN_TO_HUB && home) {
       await this.turnHome(session, home, incident.id);
-      return;
+      return incident;
+    }
+    if (protocol === ContingencyProtocol.CRASH) {
+      // Cae donde va: no hay tramo hasta un punto seguro.
+      this.active.delete(session.orderId);
+      await this.groundDrone(
+        session,
+        session.progress.batteryPercent,
+        at,
+        incident.id,
+      );
+      return incident;
+    }
+    if (protocol === ContingencyProtocol.LOST) {
+      this.active.delete(session.orderId);
+      await this.incidents.lose(incident.id);
+      if (session.leg === RouteLeg.OUTBOUND) {
+        await this.notifyAborted(session.orderId);
+      } else {
+        await this.telemetry.forgetFlight(session.orderId);
+      }
+      return incident;
     }
     if (protocol === ContingencyProtocol.EMERGENCY_LANDING) {
       const landing = safeLandingPoint(at, polygons);
@@ -321,6 +394,38 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
         contingency: { protocol, incidentId: incident.id },
       };
     }
+    return incident;
+  }
+
+  /**
+   * RF-34: lo que el incidente le cambia al resto del vuelo, antes de elegir
+   * el protocolo: más consumo, menos velocidad, sin enlace o frío que sube.
+   */
+  private applyIncidentEffect(session: FlightSession, kind: IncidentKind) {
+    const effect = applyEffect(
+      {
+        burnFactor: session.progress.burnFactor ?? 1,
+        speedFactor: session.progress.speedFactor ?? 1,
+      },
+      kind,
+    );
+    const progress = {
+      ...session.progress,
+      burnFactor: effect.burnFactor,
+      speedFactor: effect.speedFactor,
+    };
+    if (kind === IncidentKind.LINK_LOSS) {
+      progress.linkLost = true;
+    }
+    if (kind === IncidentKind.COOLING_FAILURE) {
+      // RF-17: desde ya la carga se calienta; `coldChainReading` avisa.
+      const sinceLoad = simClock.nowMs() - session.loadConfirmedAt.getTime();
+      progress.coldChainExcursionAtMs = Math.min(
+        progress.coldChainExcursionAtMs ?? sinceLoad,
+        sinceLoad,
+      );
+    }
+    session.progress = progress;
   }
 
   /** RF-34: de ida, el dron da la vuelta con el paquete hacia su central. */
@@ -383,22 +488,37 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     step: FlightStep,
     incidentId: string,
   ): Promise<void> {
+    await this.groundDrone(
+      session,
+      step.progress.batteryPercent,
+      { latitude: step.latitude, longitude: step.longitude },
+      incidentId,
+    );
+  }
+
+  /** En tierra fuera de base, por aterrizaje de emergencia o por choque. */
+  private async groundDrone(
+    session: FlightSession,
+    batteryPercent: number,
+    at: LngLat,
+    incidentId: string,
+  ): Promise<void> {
     const landed = simClock.now();
     await this.drones.update(
       { id: session.droneId },
       {
         status: DroneStatus.GROUNDED,
-        batteryPercent: step.progress.batteryPercent,
+        batteryPercent,
         batteryUpdatedAt: landed,
         lastFlightEndedAt: landed,
       },
     );
-    await this.incidents.grounded(incidentId, {
-      latitude: step.latitude,
-      longitude: step.longitude,
-    });
+    await this.incidents.grounded(incidentId, at);
     if (session.leg === RouteLeg.OUTBOUND) {
       await this.notifyAborted(session.orderId);
+    } else {
+      // El radar deja de mostrarlo en el aire.
+      await this.telemetry.forgetFlight(session.orderId);
     }
   }
 
@@ -828,6 +948,13 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       // Entregado es definitivo: el regreso solo mueve al dron.
       step.progress.orderStatus = OrderStatus.DELIVERED;
       step.statusChanges = [];
+    }
+    if (
+      step.progress.phase === FlightPhase.LANDED &&
+      session.leg === RouteLeg.RETURN
+    ) {
+      // RF-34: en la central el enlace vuelve.
+      step.progress.linkLost = false;
     }
     const contingency = session.progress.contingency ?? null;
     if (contingency?.protocol === ContingencyProtocol.EMERGENCY_LANDING) {

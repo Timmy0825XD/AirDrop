@@ -25,6 +25,7 @@ import { ConsoleEventsService } from './console-events.service';
 import { ChangeClockDto } from './dto/change-clock.dto';
 import { CreateTemporaryGeofenceDto } from './dto/create-temporary-geofence.dto';
 import { CreateWeatherDto } from './dto/create-weather.dto';
+import { LaunchIncidentDto } from './dto/launch-incident.dto';
 import { PendingAlertsService } from './pending-alerts.service';
 import { ScenarioResetService } from './scenario-reset.service';
 import { clampTimelineLimit } from './timeline.rules';
@@ -75,6 +76,18 @@ export class ControlController {
   @Get('incidents')
   getIncidents(@Query('limit') limit?: string) {
     return this.incidents.recent(clampTimelineLimit(limit));
+  }
+
+  /**
+   * RF-34, CU-38: falla, choque o pérdida sobre un dron en vuelo. El
+   * protocolo lo eligen las reglas; la respuesta trae cuál.
+   */
+  @Post('drones/:droneId/incidents')
+  launchIncident(
+    @Param('droneId', new ParseUUIDPipe({ version: '4' })) droneId: string,
+    @Body() dto: LaunchIncidentDto,
+  ) {
+    return this.events.launchIncident(droneId, dto.kind);
   }
 
   /** RF-32: las celdas de clima que rigen ahora. */

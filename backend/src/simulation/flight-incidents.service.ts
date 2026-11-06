@@ -70,6 +70,8 @@ export type IncidentJson = {
   landingLongitude: number | null;
   rescueDueAt: string | null;
   packageOnBoard: boolean;
+  /** Choque grave o dron perdido con paquete a bordo. */
+  packageLost: boolean;
   occurredAt: string;
   resolvedAt: string | null;
 };
@@ -92,6 +94,7 @@ export function presentIncident(row: FlightIncident): IncidentJson {
     landingLongitude: row.landingLongitude,
     rescueDueAt: row.rescueDueAt ? row.rescueDueAt.toISOString() : null,
     packageOnBoard: row.packageQuantity != null,
+    packageLost: row.packageQuantity != null && losesPackage(row.kind),
     occurredAt: new Date(row.occurredAt).toISOString(),
     resolvedAt: row.resolvedAt ? row.resolvedAt.toISOString() : null,
   };
@@ -101,11 +104,27 @@ function initialOutcome(protocol: ContingencyProtocol): IncidentOutcome {
   if (protocol === ContingencyProtocol.RETURN_TO_HUB) {
     return IncidentOutcome.RETURNING;
   }
-  if (protocol === ContingencyProtocol.EMERGENCY_LANDING) {
+  if (
+    protocol === ContingencyProtocol.EMERGENCY_LANDING ||
+    protocol === ContingencyProtocol.CRASH
+  ) {
     return IncidentOutcome.LANDING;
+  }
+  if (protocol === ContingencyProtocol.LOST) {
+    return IncidentOutcome.LOST;
   }
   return IncidentOutcome.CONTINUED;
 }
+
+/** RF-34: con choque grave o dron perdido, el paquete no se recupera. */
+export function losesPackage(kind: IncidentKind): boolean {
+  return (
+    kind === IncidentKind.COLLISION_MAJOR || kind === IncidentKind.DRONE_LOST
+  );
+}
+
+export const CRASH_REASON = 'Daño por choque grave';
+export const LOST_REASON = 'Dron perdido en vuelo';
 
 /**
  * RF-34 y CU-32: guarda cada incidente y lo cuenta, deja el paquete en
@@ -162,7 +181,11 @@ export class FlightIncidentsService implements OnModuleInit, OnModuleDestroy {
         packageQuantity: order?.quantity ?? null,
         packageLot: order?.dispatchedLot ?? null,
         packageLotExpiresOn: order?.dispatchedLotExpiresOn ?? null,
-        resolvedAt: outcome === IncidentOutcome.CONTINUED ? now : null,
+        resolvedAt:
+          outcome === IncidentOutcome.CONTINUED ||
+          outcome === IncidentOutcome.LOST
+            ? now
+            : null,
       }),
     );
     await this.announce(saved);
@@ -267,8 +290,10 @@ export class FlightIncidentsService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * RF-34: el dron vuelve a su central y entra al taller. Su paquete queda
-   * en cuarentena. Si el pedido iba de regreso con ese paquete, llega con él.
+   * RF-34: el dron vuelve a su central y entra al taller, o queda fuera de
+   * servicio si fue un choque grave. Su paquete queda en cuarentena, salvo
+   * que se haya perdido. Si el pedido iba de regreso con ese paquete, llega
+   * con él.
    */
   private async rescue(id: string, now: Date): Promise<boolean> {
     const result = await this.dataSource.transaction(async (manager) => {
@@ -279,56 +304,11 @@ export class FlightIncidentsService implements OnModuleInit, OnModuleDestroy {
       if (!incident || incident.outcome !== IncidentOutcome.GROUNDED) {
         return null;
       }
-      const drone = await manager.findOne(Drone, {
-        where: { id: incident.droneId },
-        lock: { mode: 'pessimistic_write' },
+      const wreck = losesPackage(incident.kind);
+      const returned = await this.retire(manager, incident, now, {
+        status: wreck ? DroneStatus.OUT_OF_SERVICE : DroneStatus.MAINTENANCE,
+        reason: wreck ? CRASH_REASON : RESCUE_MAINTENANCE_REASON,
       });
-      if (drone?.status === DroneStatus.GROUNDED) {
-        drone.status = DroneStatus.MAINTENANCE;
-        drone.maintenanceReason = RESCUE_MAINTENANCE_REASON;
-        drone.maintenanceUntil = null;
-        await manager.save(drone);
-        await manager.save(
-          manager.create(DroneMaintenance, {
-            droneId: drone.id,
-            kind: DroneMaintenanceKind.MAINTENANCE,
-            reason: RESCUE_MAINTENANCE_REASON,
-            estimatedEndDate: null,
-            flightsAtStart: drone.flightsSinceMaintenance,
-            openedByUserId: null,
-            startedAt: now,
-            closedAt: null,
-            closedByUserId: null,
-          }),
-        );
-      }
-      await manager.update(
-        Mission,
-        {
-          orderId: incident.orderId,
-          droneId: incident.droneId,
-          returnedAt: IsNull(),
-        },
-        { returnedAt: now },
-      );
-      await this.quarantine(manager, incident);
-      const order = await manager.findOne(Order, {
-        where: { id: incident.orderId },
-        lock: { mode: 'pessimistic_write' },
-      });
-      // Volvía con el paquete (nadie lo retiró): llega con el rescate, ya
-      // en cuarentena.
-      let returned = false;
-      if (
-        order?.status === OrderStatus.RETURNING &&
-        order.droneId === incident.droneId
-      ) {
-        order.status = OrderStatus.RETURNED;
-        order.returnCheckedAt = now;
-        order.returnOutcome = ReturnOutcome.QUARANTINED;
-        await manager.save(order);
-        returned = true;
-      }
       incident.outcome = IncidentOutcome.RESCUED;
       incident.resolvedAt = now;
       return { incident: await manager.save(incident), returned };
@@ -344,6 +324,113 @@ export class FlightIncidentsService implements OnModuleInit, OnModuleDestroy {
     }
     await this.announce(result.incident);
     return true;
+  }
+
+  /**
+   * RF-34: dron perdido. No hay rescate: queda fuera de servicio ya y el
+   * paquete se da por perdido. Devuelve si el pedido volvía con él.
+   */
+  async lose(id: string): Promise<boolean> {
+    const now = simClock.now();
+    const returned = await this.dataSource.transaction(async (manager) => {
+      const incident = await manager.findOne(FlightIncident, {
+        where: { id },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!incident) {
+        return false;
+      }
+      return this.retire(manager, incident, now, {
+        status: DroneStatus.OUT_OF_SERVICE,
+        reason: LOST_REASON,
+      });
+    });
+    if (returned) {
+      const incident = await this.dataSource
+        .getRepository(FlightIncident)
+        .findOne({ where: { id } });
+      if (incident) {
+        await this.notifications.statusChanged(
+          incident.orderId,
+          OrderStatus.RETURNED,
+        );
+      }
+    }
+    return returned;
+  }
+
+  /** Saca al dron de la flota, cierra su misión y resuelve el paquete. */
+  private async retire(
+    manager: EntityManager,
+    incident: FlightIncident,
+    now: Date,
+    to: {
+      status: DroneStatus.MAINTENANCE | DroneStatus.OUT_OF_SERVICE;
+      reason: string;
+    },
+  ): Promise<boolean> {
+    const drone = await manager.findOne(Drone, {
+      where: { id: incident.droneId },
+      lock: { mode: 'pessimistic_write' },
+    });
+    if (
+      drone &&
+      (drone.status === DroneStatus.GROUNDED ||
+        drone.status === DroneStatus.IN_MISSION)
+    ) {
+      drone.status = to.status;
+      drone.maintenanceReason = to.reason;
+      drone.maintenanceUntil = null;
+      await manager.save(drone);
+      await manager.save(
+        manager.create(DroneMaintenance, {
+          droneId: drone.id,
+          kind:
+            to.status === DroneStatus.OUT_OF_SERVICE
+              ? DroneMaintenanceKind.OUT_OF_SERVICE
+              : DroneMaintenanceKind.MAINTENANCE,
+          reason: to.reason,
+          estimatedEndDate: null,
+          flightsAtStart: drone.flightsSinceMaintenance,
+          openedByUserId: null,
+          startedAt: now,
+          closedAt: null,
+          closedByUserId: null,
+        }),
+      );
+    }
+    await manager.update(
+      Mission,
+      {
+        orderId: incident.orderId,
+        droneId: incident.droneId,
+        returnedAt: IsNull(),
+      },
+      { returnedAt: now },
+    );
+    const lost = losesPackage(incident.kind);
+    if (!lost) {
+      await this.quarantine(manager, incident);
+    }
+    const order = await manager.findOne(Order, {
+      where: { id: incident.orderId },
+      lock: { mode: 'pessimistic_write' },
+    });
+    // Volvía con el paquete (nadie lo retiró): el pedido se cierra aquí, sin
+    // revisión del despachador.
+    if (
+      order?.status === OrderStatus.RETURNING &&
+      order.droneId === incident.droneId
+    ) {
+      order.status = OrderStatus.RETURNED;
+      order.returnCheckedAt = now;
+      order.returnOutcome = lost
+        ? ReturnOutcome.LOST
+        : ReturnOutcome.QUARANTINED;
+      await manager.save(order);
+      return true;
+    }
+    return false;
   }
 
   private async quarantine(

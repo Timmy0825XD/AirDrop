@@ -97,6 +97,12 @@ export type PeriodFacts = {
   period: Period;
   orders: OrderFact[];
   quarantinedUnits: number;
+  /** RF-34: incidentes en vuelo del periodo, de todo tipo. */
+  flightIncidents?: number;
+  /** RF-34: aterrizajes de emergencia, choques graves y drones perdidos. */
+  groundings?: number;
+  /** Misiones que despegaron en el periodo (un pedido puede tener varias). */
+  missionCount?: number;
 };
 
 export type FleetSnapshot = {
@@ -116,6 +122,9 @@ export const KPI_TARGETS = {
   coldChainAlerts: { kind: 'max', green: 0, amber: 1 },
   quarantinedUnits: { kind: 'max', green: 0, amber: 5 },
   batteryIncidents: { kind: 'max', green: 0, amber: 1 },
+  // RF-34 (decisión del 2026-11-06): por cada 100 misiones.
+  incidentRate: { kind: 'max', green: 2, amber: 5 },
+  groundings: { kind: 'max', green: 0, amber: 1 },
   lockedCodes: { kind: 'max', green: 0, amber: 2 },
   reassignmentRate: { kind: 'max', green: 10, amber: 20 },
   fleetUtilization: {
@@ -224,6 +233,8 @@ type PeriodMeasures = {
   coldChainAlerts: number;
   quarantinedUnits: number;
   batteryIncidents: number;
+  incidentRate: number | null;
+  groundings: number;
   lockedCodes: number;
   reassignmentRate: number | null;
   fleetUtilization: number | null;
@@ -279,6 +290,12 @@ export function measurePeriod(
     coldChainAlerts: orders.filter((order) => order.coldChainAlert).length,
     quarantinedUnits: facts.quarantinedUnits,
     batteryIncidents: orders.filter((order) => order.batteryIncident).length,
+    incidentRate: percent(
+      facts.flightIncidents ?? 0,
+      facts.missionCount ??
+        orders.filter((order) => order.loadConfirmedAt).length,
+    ),
+    groundings: facts.groundings ?? 0,
     lockedCodes: orders.filter((order) => order.codeLocked).length,
     reassignmentRate: percent(
       orders.filter((order) => order.reassigned).length,
@@ -434,6 +451,22 @@ export function buildKpis(
           measured.batteryIncidents,
           before.batteryIncidents,
           t.batteryIncidents,
+        ),
+        kpi(
+          'incidentRate',
+          'Incidentes en vuelo por cada 100 misiones',
+          'por 100',
+          measured.incidentRate,
+          before.incidentRate,
+          t.incidentRate,
+        ),
+        kpi(
+          'groundings',
+          'Aterrizajes de emergencia y drones perdidos',
+          'drones',
+          measured.groundings,
+          before.groundings,
+          t.groundings,
         ),
         kpi(
           'lockedCodes',

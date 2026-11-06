@@ -13,6 +13,8 @@ import { Hub } from '../hubs/hub.entity';
 import { QuarantineRecord } from '../inventory/quarantine-record.entity';
 import { Order } from '../orders/order.entity';
 import { Mission } from '../simulation/mission.entity';
+import { FlightIncident } from '../simulation/flight-incident.entity';
+import { ContingencyProtocol } from '../common/enums/contingency-protocol.enum';
 import { AnalyticsController } from './analytics.controller';
 import { Kpi } from './analytics.rules';
 import { AnalyticsService } from './analytics.service';
@@ -29,7 +31,7 @@ const ORDER_ID = '11111111-1111-4111-8111-111111111111';
 const created = new Date('2026-10-05T17:00:00.000Z');
 
 function build(orders: Partial<Order>[]) {
-  const repos = new Map<unknown, { find: jest.Mock }>([
+  const repos = new Map<unknown, { find: jest.Mock; count?: jest.Mock }>([
     [Order, { find: jest.fn().mockResolvedValue(orders) }],
     [
       QuarantineRecord,
@@ -47,7 +49,26 @@ function build(orders: Partial<Order>[]) {
         ]),
       },
     ],
-    [Mission, { find: jest.fn().mockResolvedValue([]) }],
+    [
+      Mission,
+      {
+        find: jest.fn().mockResolvedValue([]),
+        // Misiones que despegaron en el periodo, también las que se cayeron.
+        count: jest.fn().mockResolvedValue(4),
+      },
+    ],
+    [
+      FlightIncident,
+      {
+        // Uno que siguió y uno que aterrizó de emergencia (RF-34).
+        find: jest
+          .fn()
+          .mockResolvedValue([
+            { protocol: ContingencyProtocol.CONTINUE },
+            { protocol: ContingencyProtocol.EMERGENCY_LANDING },
+          ]),
+      },
+    ],
     [
       Drone,
       {
@@ -124,6 +145,20 @@ describe('AnalyticsService', () => {
     expect(kpi(result.groups, 'quarantinedUnits')?.value).toBe(2);
     expect(kpi(result.groups, 'expiringUnits')?.value).toBe(4);
     expect(result.byStatus).toEqual({ delivered: 1 });
+  });
+
+  it('cuenta los incidentes por cada 100 misiones y los drones que quedaron en tierra (RF-26, RF-34)', async () => {
+    const { service } = build([order()]);
+    const result = await service.kpis({ from: '2026-10-01', to: '2026-10-10' });
+    // 2 incidentes en 4 misiones (un pedido vuelto a despachar cuenta dos).
+    expect(kpi(result.groups, 'incidentRate')).toMatchObject({
+      value: 50,
+      status: 'red',
+    });
+    expect(kpi(result.groups, 'groundings')).toMatchObject({
+      value: 1,
+      status: 'amber',
+    });
   });
 
   it('con central, filtra los pedidos por la central de origen', async () => {

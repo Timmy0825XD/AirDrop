@@ -47,9 +47,54 @@ const LANDING_PHASES = new Set<FlightPhase>([
   FlightPhase.UNLOADING,
 ]);
 
+/** Los leves dejan seguir con alerta o degradan el vuelo; los graves no. */
+const MINOR_INCIDENTS = new Set<IncidentKind>([
+  IncidentKind.BATTERY_SHORT,
+  IncidentKind.BATTERY_DEGRADED,
+  IncidentKind.MOTOR_FAILURE,
+  IncidentKind.GPS_LOSS_MINOR,
+  IncidentKind.COOLING_FAILURE,
+  IncidentKind.COLLISION_MINOR,
+]);
+
 export function incidentSeverity(kind: IncidentKind): IncidentSeverity {
-  return kind === IncidentKind.BATTERY_SHORT ? 'minor' : 'major';
+  return MINOR_INCIDENTS.has(kind) ? 'minor' : 'major';
 }
+
+/**
+ * RF-34: cuánto cambia el resto del vuelo (decisión del 2026-11-06, efectos
+ * moderados). `burnFactor` multiplica el consumo; `speedFactor`, la velocidad.
+ */
+export type IncidentEffect = { burnFactor: number; speedFactor: number };
+
+export const INCIDENT_EFFECTS: Partial<Record<IncidentKind, IncidentEffect>> = {
+  [IncidentKind.BATTERY_DEGRADED]: { burnFactor: 1.25, speedFactor: 1 },
+  [IncidentKind.MOTOR_FAILURE]: { burnFactor: 1.15, speedFactor: 0.9 },
+  [IncidentKind.COLLISION_MINOR]: { burnFactor: 1.1, speedFactor: 1 },
+};
+
+/** Los efectos se acumulan: dos incidentes leves pesan los dos. */
+export function applyEffect(
+  current: IncidentEffect,
+  kind: IncidentKind,
+): IncidentEffect {
+  const effect = INCIDENT_EFFECTS[kind];
+  if (!effect) {
+    return current;
+  }
+  return {
+    burnFactor: current.burnFactor * effect.burnFactor,
+    speedFactor: current.speedFactor * effect.speedFactor,
+  };
+}
+
+/** RF-34: los que no dependen del alcance. */
+const FIXED_PROTOCOLS: Partial<Record<IncidentKind, ContingencyProtocol>> = {
+  [IncidentKind.DUAL_MOTOR_FAILURE]: ContingencyProtocol.EMERGENCY_LANDING,
+  [IncidentKind.GPS_LOSS_MAJOR]: ContingencyProtocol.EMERGENCY_LANDING,
+  [IncidentKind.GPS_LOSS_MINOR]: ContingencyProtocol.CONTINUE,
+  [IncidentKind.COOLING_FAILURE]: ContingencyProtocol.CONTINUE,
+};
 
 /** La batería con que tiene que llegar: la reserva, o el margen si ya es crítica. */
 export function reserveFor(kind: IncidentKind): number {
@@ -58,10 +103,15 @@ export function reserveFor(kind: IncidentKind): number {
     : CRITICAL_BATTERY_PERCENT;
 }
 
-/** Con viento sobre el límite o sin camino seguro, seguir no es opción. */
+/**
+ * Con viento sobre el límite, sin camino seguro o sin enlace (procedimiento
+ * de enlace perdido: vuelve solo), seguir no es opción.
+ */
 export function allowsContinuing(kind: IncidentKind): boolean {
   return (
-    kind !== IncidentKind.WIND_LIMIT && kind !== IncidentKind.ROUTE_BLOCKED
+    kind !== IncidentKind.WIND_LIMIT &&
+    kind !== IncidentKind.ROUTE_BLOCKED &&
+    kind !== IncidentKind.LINK_LOSS
   );
 }
 
@@ -82,10 +132,22 @@ export type ContingencyInput = {
  * 2. Si no, pero alcanza a volver a la central con la reserva, vuelve.
  * 3. Si tampoco, aterrizaje de emergencia.
  * De regreso, el paso 1 es llegar a la central.
+ * Un dron perdido o un choque grave no dejan elegir; dos motores o el GPS
+ * sin respaldo bajan siempre, y el GPS leve o el frío siguen con alerta.
  */
 export function chooseProtocol(input: ContingencyInput): ContingencyProtocol {
+  if (input.kind === IncidentKind.DRONE_LOST) {
+    return ContingencyProtocol.LOST;
+  }
+  if (input.kind === IncidentKind.COLLISION_MAJOR) {
+    return ContingencyProtocol.CRASH;
+  }
   if (LANDING_PHASES.has(input.phase)) {
     return ContingencyProtocol.CONTINUE;
+  }
+  const fixed = FIXED_PROTOCOLS[input.kind];
+  if (fixed) {
+    return fixed;
   }
   const reserve = reserveFor(input.kind);
   const reaches = (needed: number | null) =>

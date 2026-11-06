@@ -15,8 +15,11 @@ import { QuarantineRecord } from '../inventory/quarantine-record.entity';
 import { Order } from '../orders/order.entity';
 import { FlightIncident } from './flight-incident.entity';
 import {
+  CRASH_REASON,
   FlightIncidentsService,
+  LOST_REASON,
   RESCUE_MAINTENANCE_REASON,
+  presentIncident,
 } from './flight-incidents.service';
 
 const NOW = new Date('2026-11-06T15:00:00.000Z');
@@ -202,5 +205,66 @@ describe('Rescate del dron en tierra (RF-34, decisión del 2026-11-06)', () => {
     const [published] = notifications.incident.mock.calls[0] as [object];
     expect(JSON.stringify(published)).not.toContain('Insulina');
     expect(published).toMatchObject({ packageOnBoard: true });
+  });
+});
+
+describe('Choque grave y dron perdido: el paquete se pierde (RF-34)', () => {
+  beforeEach(() => {
+    jest.useFakeTimers({ now: NOW, doNotFake: ['nextTick', 'setImmediate'] });
+  });
+
+  afterEach(() => {
+    simClock.resetToRealTime();
+    jest.useRealTimers();
+  });
+
+  it('tras un choque grave lo recuperan, pero queda fuera de servicio y sin cuarentena', async () => {
+    const { service, saved, drone } = build({
+      row: incident({
+        kind: IncidentKind.COLLISION_MAJOR,
+        protocol: ContingencyProtocol.CRASH,
+      }),
+    });
+    await service.rescueDue(NOW);
+    expect(drone.status).toBe(DroneStatus.OUT_OF_SERVICE);
+    expect(saved.find((s) => s.entity === DroneMaintenance)?.row).toMatchObject(
+      {
+        kind: DroneMaintenanceKind.OUT_OF_SERVICE,
+        reason: CRASH_REASON,
+      },
+    );
+    expect(saved.some((s) => s.entity === QuarantineRecord)).toBe(false);
+  });
+
+  it('dron perdido: fuera de servicio ya; si volvía con el paquete, el pedido cierra como perdido', async () => {
+    const { service, saved, drone, order, notifications } = build({
+      row: incident({
+        kind: IncidentKind.DRONE_LOST,
+        protocol: ContingencyProtocol.LOST,
+        outcome: IncidentOutcome.LOST,
+      }),
+      order: { status: OrderStatus.RETURNING, droneId: 'drone-1' },
+    });
+    drone.status = DroneStatus.IN_MISSION;
+    await expect(service.lose('incident-1')).resolves.toBe(true);
+    expect(drone.status).toBe(DroneStatus.OUT_OF_SERVICE);
+    expect(saved.find((s) => s.entity === DroneMaintenance)?.row).toMatchObject(
+      { reason: LOST_REASON },
+    );
+    expect(saved.some((s) => s.entity === QuarantineRecord)).toBe(false);
+    expect(order).toMatchObject({
+      status: OrderStatus.RETURNED,
+      returnOutcome: ReturnOutcome.LOST,
+    });
+    expect(notifications.statusChanged).toHaveBeenCalledWith(
+      'order-1',
+      OrderStatus.RETURNED,
+    );
+  });
+
+  it('lo que se publica dice si el paquete se perdió', () => {
+    const lost = presentIncident(incident({ kind: IncidentKind.DRONE_LOST }));
+    expect(lost).toMatchObject({ packageOnBoard: true, packageLost: true });
+    expect(presentIncident(incident())).toMatchObject({ packageLost: false });
   });
 });

@@ -434,7 +434,24 @@ const INCIDENT_NAME: Record<IncidentKind, string> = {
   [IncidentKind.WIND_LIMIT]: 'viento sobre el límite',
   [IncidentKind.ROUTE_BLOCKED]: 'sin camino seguro',
   [IncidentKind.BATTERY_SHORT]: 'la batería no alcanza el desvío',
+  [IncidentKind.BATTERY_DEGRADED]: 'batería degradada',
+  [IncidentKind.MOTOR_FAILURE]: 'falla de un motor',
+  [IncidentKind.DUAL_MOTOR_FAILURE]: 'falla de dos motores',
+  [IncidentKind.GPS_LOSS_MINOR]: 'GPS con falla; usa el respaldo',
+  [IncidentKind.GPS_LOSS_MAJOR]: 'sin posición confiable',
+  [IncidentKind.LINK_LOSS]: 'perdió el enlace',
+  [IncidentKind.COOLING_FAILURE]: 'falla de la refrigeración',
+  [IncidentKind.COLLISION_MINOR]: 'choque leve',
+  [IncidentKind.COLLISION_MAJOR]: 'choque grave',
+  [IncidentKind.DRONE_LOST]: 'dron perdido',
 };
+
+/** Choque grave o dron perdido: el paquete no se recupera (RF-34). */
+function packageLost(kind: IncidentKind): boolean {
+  return (
+    kind === IncidentKind.COLLISION_MAJOR || kind === IncidentKind.DRONE_LOST
+  );
+}
 
 /**
  * RF-34 y CU-32: el incidente y lo que decidió el sistema, y después en qué
@@ -467,7 +484,10 @@ export function incidentDraft(
           incident.leg === RouteLeg.RETURN
             ? `${what}; sigue hacia la central`
             : `${what}; sigue su misión`,
-        detail: `${battery} Le alcanza con la reserva.`,
+        detail:
+          incident.kind === IncidentKind.COOLING_FAILURE
+            ? 'La carga se empieza a calentar: si sale de 2 a 8 °C, queda en cuarentena.'
+            : `${battery} Le alcanza con la reserva.`,
       };
     case IncidentOutcome.RETURNING:
       return {
@@ -477,6 +497,14 @@ export function incidentDraft(
         detail: `${battery} No le alcanza para entregar y volver; al aterrizar sale otro dron.`,
       };
     case IncidentOutcome.LANDING:
+      if (incident.protocol === ContingencyProtocol.CRASH) {
+        return {
+          ...base,
+          severity: 'danger',
+          title: `${what}; cae donde va`,
+          detail: 'Sale el rescate. El dron queda fuera de servicio.',
+        };
+      }
       return {
         ...base,
         severity: 'danger',
@@ -487,7 +515,10 @@ export function incidentDraft(
       return {
         ...base,
         severity: 'warning',
-        title: `${drone} aterrizó de emergencia`,
+        title:
+          incident.protocol === ContingencyProtocol.CRASH
+            ? `${drone} cayó por un choque grave`
+            : `${drone} aterrizó de emergencia`,
         detail:
           rescueMinutes != null
             ? `El rescate llega en unos ${rescueMinutes} min.`
@@ -503,6 +534,14 @@ export function incidentDraft(
           : null,
       };
     case IncidentOutcome.RESCUED:
+      if (packageLost(incident.kind)) {
+        return {
+          ...base,
+          severity: 'warning',
+          title: `Recuperaron ${drone}: queda fuera de servicio`,
+          detail: incident.packageOnBoard ? 'El paquete se perdió.' : null,
+        };
+      }
       return {
         ...base,
         severity: 'success',
@@ -510,6 +549,15 @@ export function incidentDraft(
         detail: incident.packageOnBoard
           ? 'El paquete queda en cuarentena.'
           : null,
+      };
+    case IncidentOutcome.LOST:
+      return {
+        ...base,
+        severity: 'danger',
+        title: `Se perdió el rastro de ${drone}`,
+        detail: incident.packageOnBoard
+          ? 'Queda fuera de servicio y el paquete se da por perdido.'
+          : 'Queda fuera de servicio.',
       };
   }
 }

@@ -6,6 +6,7 @@ import { haversineKm, isInsideGeofence } from '../routing/routing.rules';
 import {
   ContingencyInput,
   LANDING_CLEARANCE_KM,
+  applyEffect,
   chooseProtocol,
   emergencyCorridor,
   homeCorridor,
@@ -217,5 +218,69 @@ describe('Aterrizaje de emergencia y rescate (RF-34)', () => {
     const outside = { latitude: 10.46, longitude: -73.3 };
     const around = homeCorridor(outside, hub, [storm]);
     expect(around?.coordinates.length).toBeGreaterThan(2);
+  });
+});
+
+describe('Catálogo de la consola: protocolos fijos y efectos (RF-34)', () => {
+  it('perderlo o un choque grave no dejan elegir, ni siquiera bajando', () => {
+    expect(
+      chooseProtocol(
+        outbound({ kind: IncidentKind.DRONE_LOST, phase: FlightPhase.DESCENT }),
+      ),
+    ).toBe(ContingencyProtocol.LOST);
+    expect(
+      chooseProtocol(outbound({ kind: IncidentKind.COLLISION_MAJOR })),
+    ).toBe(ContingencyProtocol.CRASH);
+  });
+
+  it('dos motores o GPS sin respaldo bajan aunque la batería alcance', () => {
+    for (const kind of [
+      IncidentKind.DUAL_MOTOR_FAILURE,
+      IncidentKind.GPS_LOSS_MAJOR,
+    ]) {
+      expect(chooseProtocol(outbound({ kind, batteryPercent: 99 }))).toBe(
+        ContingencyProtocol.EMERGENCY_LANDING,
+      );
+    }
+  });
+
+  it('GPS leve y falla del frío siguen con alerta aunque la batería esté justa', () => {
+    for (const kind of [
+      IncidentKind.GPS_LOSS_MINOR,
+      IncidentKind.COOLING_FAILURE,
+    ]) {
+      expect(chooseProtocol(outbound({ kind, batteryPercent: 21 }))).toBe(
+        ContingencyProtocol.CONTINUE,
+      );
+    }
+  });
+
+  it('sin enlace vuelve a la central aunque le alcance para entregar', () => {
+    expect(
+      chooseProtocol(
+        outbound({ kind: IncidentKind.LINK_LOSS, batteryPercent: 99 }),
+      ),
+    ).toBe(ContingencyProtocol.RETURN_TO_HUB);
+  });
+
+  it('los efectos moderados y su acumulación', () => {
+    const none = { burnFactor: 1, speedFactor: 1 };
+    expect(applyEffect(none, IncidentKind.MOTOR_FAILURE)).toEqual({
+      burnFactor: 1.15,
+      speedFactor: 0.9,
+    });
+    const both = applyEffect(
+      applyEffect(none, IncidentKind.BATTERY_DEGRADED),
+      IncidentKind.COLLISION_MINOR,
+    );
+    expect(both.burnFactor).toBeCloseTo(1.375, 6);
+    expect(applyEffect(none, IncidentKind.GPS_LOSS_MINOR)).toEqual(none);
+  });
+
+  it('la gravedad del catálogo', () => {
+    expect(incidentSeverity(IncidentKind.MOTOR_FAILURE)).toBe('minor');
+    expect(incidentSeverity(IncidentKind.COLLISION_MINOR)).toBe('minor');
+    expect(incidentSeverity(IncidentKind.DUAL_MOTOR_FAILURE)).toBe('major');
+    expect(incidentSeverity(IncidentKind.DRONE_LOST)).toBe('major');
   });
 });

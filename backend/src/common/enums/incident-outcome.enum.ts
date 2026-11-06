@@ -10,6 +10,8 @@ export enum IncidentOutcome {
   LANDING = 'landing',
   /** En tierra fuera de base, esperando el rescate. */
   GROUNDED = 'grounded',
-  /** Lo rescataron: está en su central, en mantenimiento. */
+  /** Lo rescataron: está en su central, en mantenimiento (o fuera de servicio tras un choque grave). */
   RESCUED = 'rescued',
+  /** Sin rastro: el dron queda fuera de servicio y el paquete se pierde. */
+  LOST = 'lost',
 }

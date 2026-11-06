@@ -1,5 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { And, DataSource, In, LessThan, MoreThanOrEqual } from 'typeorm';
+import {
+  And,
+  DataSource,
+  FindOperator,
+  In,
+  LessThan,
+  MoreThanOrEqual,
+} from 'typeorm';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { DeliveryCode } from '../delivery/delivery-code.entity';
 import { DELIVERY_CODE_MAX_ATTEMPTS } from '../delivery/delivery.rules';
@@ -10,6 +17,8 @@ import { Order } from '../orders/order.entity';
 import { addCalendarDays, todayInColombia } from '../orders/orders.rules';
 import { latestMissionByOrder } from '../simulation/missions.rules';
 import { Mission } from '../simulation/mission.entity';
+import { FlightIncident } from '../simulation/flight-incident.entity';
+import { ContingencyProtocol } from '../common/enums/contingency-protocol.enum';
 import {
   EXPIRING_SOON_DAYS,
   FleetSnapshot,
@@ -31,6 +40,13 @@ type RouteKm = { orderId: string; km: string | number };
  * Carga los hechos del periodo y deja el cálculo a `analytics.rules`. Solo
  * lee: no expone nombres, documentos ni direcciones.
  */
+/** El dron terminó en tierra fuera de base o se perdió. */
+const GROUNDING_PROTOCOLS = new Set<ContingencyProtocol>([
+  ContingencyProtocol.EMERGENCY_LANDING,
+  ContingencyProtocol.CRASH,
+  ContingencyProtocol.LOST,
+]);
+
 @Injectable()
 export class AnalyticsService {
   constructor(private readonly dataSource: DataSource) {}
@@ -91,8 +107,28 @@ export class AnalyticsService {
       (sum, record) => sum + record.quantity,
       0,
     );
+    // RF-34: los incidentes cuentan por cuándo pasaron y la central del dron.
+    const incidents = await this.dataSource.getRepository(FlightIncident).find({
+      where: hubId
+        ? { occurredAt: createdAt, hubId }
+        : { occurredAt: createdAt },
+    });
+    const flightIncidents = incidents.length;
+    const groundings = incidents.filter((incident) =>
+      GROUNDING_PROTOCOLS.has(incident.protocol),
+    ).length;
+    // RF-35: un pedido despachado otra vez vuela más de una misión, y pierde
+    // la carga confirmada de la primera. Se cuentan las misiones que salieron.
+    const missionCount = await this.missionsStarted(createdAt, hubId);
     if (!orders.length) {
-      return { period, orders: [], quarantinedUnits };
+      return {
+        period,
+        orders: [],
+        quarantinedUnits,
+        flightIncidents,
+        groundings,
+        missionCount,
+      };
     }
     const ids = orders.map((order) => order.id);
     const [codes, missions, routes] = await Promise.all([
@@ -116,6 +152,9 @@ export class AnalyticsService {
     return {
       period,
       quarantinedUnits,
+      flightIncidents,
+      groundings,
+      missionCount,
       orders: orders.map((order) =>
         toFact(
           order,
@@ -125,6 +164,27 @@ export class AnalyticsService {
         ),
       ),
     };
+  }
+
+  /** Misiones que despegaron en el periodo; con `hubId`, las de sus drones. */
+  private async missionsStarted(
+    startedAt: FindOperator<Date>,
+    hubId?: string,
+  ): Promise<number> {
+    if (!hubId) {
+      return this.dataSource.getRepository(Mission).count({
+        where: { startedAt },
+      });
+    }
+    const drones = await this.dataSource
+      .getRepository(Drone)
+      .find({ where: { hubId }, select: { id: true } });
+    if (!drones.length) {
+      return 0;
+    }
+    return this.dataSource.getRepository(Mission).count({
+      where: { startedAt, droneId: In(drones.map((drone) => drone.id)) },
+    });
   }
 
   /** Estado de hoy de la flota y del stock; no depende del periodo. */

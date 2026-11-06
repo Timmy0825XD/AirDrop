@@ -1,3 +1,7 @@
+import { BadRequestException } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
+import { LaunchIncidentDto } from '../control/dto/launch-incident.dto';
 import { ContingencyProtocol } from '../common/enums/contingency-protocol.enum';
 import { DroneStatus } from '../common/enums/drone-status.enum';
 import { IncidentKind } from '../common/enums/incident-kind.enum';
@@ -8,7 +12,11 @@ import { incidentDraft } from '../control/timeline.rules';
 import { GeoJsonPolygon } from '../geofences/geofences.rules';
 import * as routingRules from '../routing/routing.rules';
 import { PlannedCorridor, isInsideGeofence } from '../routing/routing.rules';
-import { FlightClockService } from './flight-clock.service';
+import {
+  DRONE_NOT_FLYING,
+  FlightClockService,
+  NO_COLD_LOAD,
+} from './flight-clock.service';
 import { FlightPhase, initialProgress } from './simulation.rules';
 
 const ORDER_ID = '11111111-1111-4111-8111-111111111111';
@@ -63,10 +71,43 @@ function build(polygons: GeoJsonPolygon[] = []) {
     rerouted: jest.fn().mockResolvedValue(undefined),
   };
   const incidents = {
-    record: jest.fn().mockResolvedValue({ id: 'incident-1' }),
+    record: jest.fn(
+      (input: {
+        orderId: string;
+        droneId: string;
+        hubId: string;
+        kind: IncidentKind;
+        leg: RouteLeg;
+        protocol: ContingencyProtocol;
+        position: { latitude: number; longitude: number };
+        batteryPercent: number;
+        packageOf: object | null;
+      }) =>
+        Promise.resolve({
+          id: 'incident-1',
+          orderId: input.orderId,
+          droneId: input.droneId,
+          hubId: input.hubId,
+          kind: input.kind,
+          severity: 'major',
+          leg: input.leg,
+          protocol: input.protocol,
+          outcome: IncidentOutcome.CONTINUED,
+          latitude: input.position.latitude,
+          longitude: input.position.longitude,
+          batteryPercent: input.batteryPercent,
+          landingLatitude: null,
+          landingLongitude: null,
+          rescueDueAt: null,
+          packageQuantity: null,
+          occurredAt: new Date(),
+          resolvedAt: null,
+        }),
+    ),
     setLanding: jest.fn().mockResolvedValue(undefined),
     grounded: jest.fn().mockResolvedValue(null),
     returnedHome: jest.fn().mockResolvedValue(undefined),
+    lose: jest.fn().mockResolvedValue(false),
   };
   const service = new FlightClockService(
     orders as never,
@@ -100,6 +141,7 @@ function fly(
     keepStatus?: boolean;
     cruiseKm: number;
     batteryPercent: number;
+    cold?: boolean;
   },
 ) {
   built.service['active'].set(ORDER_ID, {
@@ -111,7 +153,7 @@ function fly(
     hub: HUB,
     identifier: 'WG-198-001',
     quantity: 1,
-    requiresColdChain: false,
+    requiresColdChain: options.cold ?? false,
     corridor: straight,
     model: { maxSpeedKmh: 150, maxRangeKm: 110 },
     progress: {
@@ -400,5 +442,201 @@ describe('El incidente en la línea de tiempo (RF-39)', () => {
       severity: 'success',
       title: 'WG-198-001 rescatado: entra a mantenimiento',
     });
+  });
+});
+
+describe('Catálogo de incidentes de la consola (RF-34, CU-38)', () => {
+  it('un dron que no está en vuelo no recibe el evento', async () => {
+    const built = build();
+    await expect(
+      built.service.launchIncident(DRONE_ID, IncidentKind.MOTOR_FAILURE),
+    ).rejects.toThrow(new BadRequestException(DRONE_NOT_FLYING));
+  });
+
+  it('falla de un motor: más consumo y menos velocidad; con batería de sobra sigue', async () => {
+    const built = build();
+    fly(built, { cruiseKm: 2, batteryPercent: 90 });
+    const incident = await built.service.launchIncident(
+      DRONE_ID,
+      IncidentKind.MOTOR_FAILURE,
+    );
+    expect(incident.protocol).toBe(ContingencyProtocol.CONTINUE);
+    const progress = built.service['active'].get(ORDER_ID)!.progress;
+    expect(progress.burnFactor).toBeCloseTo(1.15, 6);
+    expect(progress.speedFactor).toBeCloseTo(0.9, 6);
+  });
+
+  it('los efectos se acumulan: batería degradada y choque leve', async () => {
+    const built = build();
+    fly(built, { cruiseKm: 2, batteryPercent: 90 });
+    await built.service.launchIncident(DRONE_ID, IncidentKind.BATTERY_DEGRADED);
+    await built.service.launchIncident(DRONE_ID, IncidentKind.COLLISION_MINOR);
+    const progress = built.service['active'].get(ORDER_ID)!.progress;
+    expect(progress.burnFactor).toBeCloseTo(1.25 * 1.1, 6);
+  });
+
+  it('con el consumo ya subido, la misma batería que antes alcanzaba ahora no alcanza para entregar', async () => {
+    const built = build();
+    // Terminar pide ~31,4 %: con 52 % sobra la reserva del 20 %. Con +25 %
+    // pide ~39,3 % y ya no; volver a la central sí alcanza.
+    fly(built, { cruiseKm: 0.5, batteryPercent: 52 });
+    const incident = await built.service.launchIncident(
+      DRONE_ID,
+      IncidentKind.BATTERY_DEGRADED,
+    );
+    expect(incident.protocol).toBe(ContingencyProtocol.RETURN_TO_HUB);
+  });
+
+  it('dos motores o GPS sin respaldo: aterrizaje de emergencia; GPS leve sigue', async () => {
+    for (const [kind, protocol] of [
+      [IncidentKind.DUAL_MOTOR_FAILURE, ContingencyProtocol.EMERGENCY_LANDING],
+      [IncidentKind.GPS_LOSS_MAJOR, ContingencyProtocol.EMERGENCY_LANDING],
+      [IncidentKind.GPS_LOSS_MINOR, ContingencyProtocol.CONTINUE],
+    ] as const) {
+      const built = build();
+      fly(built, { cruiseKm: 2, batteryPercent: 90 });
+      const incident = await built.service.launchIncident(DRONE_ID, kind);
+      expect(incident.protocol).toBe(protocol);
+    }
+  });
+
+  it('sin enlace vuelve solo a la central, marcado; el enlace vuelve al aterrizar', async () => {
+    const built = build();
+    fly(built, { cruiseKm: 3, batteryPercent: 90 });
+    const incident = await built.service.launchIncident(
+      DRONE_ID,
+      IncidentKind.LINK_LOSS,
+    );
+    expect(incident.protocol).toBe(ContingencyProtocol.RETURN_TO_HUB);
+    const session = built.service['active'].get(ORDER_ID)!;
+    expect(session.progress.linkLost).toBe(true);
+    await untilLanded(built.service);
+    const published = built.telemetry.publishFlight.mock.calls.map(
+      ([flight]) => flight as { linkLost?: boolean; phase: FlightPhase },
+    );
+    expect(published.some((flight) => flight.linkLost === true)).toBe(true);
+    const last = published.at(-1)!;
+    expect(last.phase).toBe(FlightPhase.LANDED);
+    expect(last.linkLost).toBe(false);
+  });
+
+  it('falla de la refrigeración: sin carga fría no aplica; con ella sigue y la carga empieza a calentarse', async () => {
+    const dry = build();
+    fly(dry, { cruiseKm: 2, batteryPercent: 90 });
+    await expect(
+      dry.service.launchIncident(DRONE_ID, IncidentKind.COOLING_FAILURE),
+    ).rejects.toThrow(new BadRequestException(NO_COLD_LOAD));
+    const cold = build();
+    fly(cold, { cruiseKm: 2, batteryPercent: 90, cold: true });
+    const incident = await cold.service.launchIncident(
+      DRONE_ID,
+      IncidentKind.COOLING_FAILURE,
+    );
+    expect(incident.protocol).toBe(ContingencyProtocol.CONTINUE);
+    expect(
+      cold.service['active'].get(ORDER_ID)!.progress.coldChainExcursionAtMs,
+    ).not.toBeNull();
+  });
+
+  it('choque grave: cae donde va, queda en tierra y el pedido vuelve al motor', async () => {
+    const built = build();
+    fly(built, { cruiseKm: 5, batteryPercent: 90 });
+    const incident = await built.service.launchIncident(
+      DRONE_ID,
+      IncidentKind.COLLISION_MAJOR,
+    );
+    expect(incident.protocol).toBe(ContingencyProtocol.CRASH);
+    expect(built.service['active'].has(ORDER_ID)).toBe(false);
+    expect(built.drones.update).toHaveBeenCalledWith(
+      { id: DRONE_ID },
+      expect.objectContaining({ status: DroneStatus.GROUNDED }),
+    );
+    const [, at] = built.incidents.grounded.mock.calls[0] as [
+      string,
+      { latitude: number; longitude: number },
+    ];
+    expect(at.latitude).toBeCloseTo(10.46, 4);
+    expect(built.aborted).toHaveBeenCalledWith(ORDER_ID);
+  });
+
+  it('dron perdido: sin rescate, fuera de servicio ya y el pedido vuelve al motor', async () => {
+    const built = build();
+    fly(built, { cruiseKm: 5, batteryPercent: 90 });
+    const incident = await built.service.launchIncident(
+      DRONE_ID,
+      IncidentKind.DRONE_LOST,
+    );
+    expect(incident.protocol).toBe(ContingencyProtocol.LOST);
+    expect(built.incidents.lose).toHaveBeenCalledWith('incident-1');
+    expect(built.service['active'].has(ORDER_ID)).toBe(false);
+    expect(built.aborted).toHaveBeenCalledWith(ORDER_ID);
+  });
+
+  it('de regreso vacío, perder el dron no toca el pedido entregado', async () => {
+    const built = build();
+    fly(built, {
+      leg: RouteLeg.RETURN,
+      keepStatus: true,
+      cruiseKm: 2,
+      batteryPercent: 60,
+    });
+    await built.service.launchIncident(DRONE_ID, IncidentKind.DRONE_LOST);
+    expect(built.aborted).not.toHaveBeenCalled();
+    expect(built.telemetry.forgetFlight).toHaveBeenCalledWith(ORDER_ID);
+  });
+});
+
+describe('El catálogo en la línea de tiempo y en la consola (RF-39, CU-38)', () => {
+  const facts = {
+    orderId: ORDER_ID,
+    droneId: DRONE_ID,
+    hubId: 'hub-1',
+    kind: IncidentKind.COLLISION_MAJOR,
+    leg: RouteLeg.OUTBOUND,
+    protocol: ContingencyProtocol.CRASH,
+    outcome: IncidentOutcome.LANDING,
+    latitude: 10.46,
+    longitude: -73.25,
+    batteryPercent: 70,
+    landingLatitude: null,
+    landingLongitude: null,
+    packageOnBoard: true,
+  };
+
+  it('el choque grave cae donde va y, al recuperarlo, queda fuera de servicio', () => {
+    expect(incidentDraft(facts, 'WG-1').title).toBe(
+      'WG-1: choque grave; cae donde va',
+    );
+    expect(
+      incidentDraft({ ...facts, outcome: IncidentOutcome.RESCUED }, 'WG-1'),
+    ).toMatchObject({
+      title: 'Recuperaron WG-1: queda fuera de servicio',
+      detail: 'El paquete se perdió.',
+    });
+  });
+
+  it('el dron perdido se cuenta en rojo', () => {
+    expect(
+      incidentDraft(
+        {
+          ...facts,
+          kind: IncidentKind.DRONE_LOST,
+          protocol: ContingencyProtocol.LOST,
+          outcome: IncidentOutcome.LOST,
+        },
+        'WG-1',
+      ),
+    ).toMatchObject({
+      severity: 'danger',
+      title: 'Se perdió el rastro de WG-1',
+    });
+  });
+
+  it('la consola solo lanza incidentes del catálogo, no los que detecta el reloj', async () => {
+    const errors = async (kind: string) =>
+      (await validate(plainToInstance(LaunchIncidentDto, { kind }))).length;
+    await expect(errors(IncidentKind.MOTOR_FAILURE)).resolves.toBe(0);
+    await expect(errors(IncidentKind.WIND_LIMIT)).resolves.toBe(1);
+    await expect(errors('meteorito')).resolves.toBe(1);
   });
 });
