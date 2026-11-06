@@ -14,6 +14,7 @@ import { DroneMaintenance } from './drone-maintenance.entity';
 import { DroneModel } from './drone-model.entity';
 import { DroneModelSeedService } from './drone-model-seed.service';
 import { FleetController } from './fleet.controller';
+import { FleetDashboardService } from './fleet-dashboard.service';
 import { FleetFlightsService } from './fleet-flights.service';
 import { FleetMapService } from './fleet-map.service';
 import { FleetService } from './fleet.service';
@@ -41,6 +42,7 @@ import { MaintenanceSweepService } from './maintenance-sweep.service';
     FleetService,
     FleetFlightsService,
     FleetMapService,
+    FleetDashboardService,
     MaintenanceSweepService,
     DroneModelSeedService,
   ],

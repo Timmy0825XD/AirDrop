@@ -592,7 +592,13 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
               flightsSinceMaintenance: () => '"flightsSinceMaintenance" + 1',
             },
           );
-          await this.missions.update({ orderId }, { returnedAt: new Date() });
+          await this.missions.update(
+            { orderId },
+            {
+              returnedAt: new Date(),
+              landingBatteryPercent: step.progress.batteryPercent,
+            },
+          );
         } else if (landedAt) {
           this.waiting.set(orderId, landedAt);
           if (session.requiresColdChain) {
