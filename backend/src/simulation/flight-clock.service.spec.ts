@@ -260,7 +260,11 @@ describe('FlightClockService regreso', () => {
     );
     expect(missions.update).toHaveBeenCalledWith(
       { orderId: ORDER_ID },
-      { returnedAt: expect.any(Date) as Date },
+      {
+        returnedAt: expect.any(Date) as Date,
+        // Con cuánta batería volvió: alimenta el dashboard del operador.
+        landingBatteryPercent: expect.any(Number) as number,
+      },
     );
     expect(service['active'].has(ORDER_ID)).toBe(false);
     expect(service['waiting'].has(ORDER_ID)).toBe(false);
@@ -335,7 +339,11 @@ describe('FlightClockService regreso tras la entrega', () => {
     expect(changes).not.toHaveProperty('status');
     expect(missions.update).toHaveBeenCalledWith(
       { orderId: ORDER_ID },
-      { returnedAt: expect.any(Date) as Date },
+      {
+        returnedAt: expect.any(Date) as Date,
+        // Con cuánta batería volvió: alimenta el dashboard del operador.
+        landingBatteryPercent: expect.any(Number) as number,
+      },
     );
   });
 });

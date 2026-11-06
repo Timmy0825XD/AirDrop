@@ -471,7 +471,7 @@ identificador).
 **La app lo usará** en la flota del operador (batería de cada dron en tierra
 y cuándo volvió) y en «¿Por qué este dron?».
 
-## 16. El operador de flota completo — En curso (seis ramas)
+## 16. El operador de flota completo — Hecho (PR #113 a #117 y `feature/fleet-dashboard`)
 
 Plan acordado el 2026-11-05 para cerrar el rol del operador en Nest:
 `refactor/fleet-codigo-muerto` (PR #113), `bugfix/validaciones-flota`,
@@ -602,3 +602,58 @@ geovallas y cada dron moviéndose con sus métricas.
 **La app lo usará** en la flota del operador: el contador de vuelos con la
 marca de revisión, la marca de vencido, el historial de cada dron y los
 avisos nuevos en la campana.
+
+**Hecho en `feature/fleet-dashboard`** (CU-20 para el operador): `GET
+/fleet/dashboard?from=AAAA-MM-DD&to=AAAA-MM-DD&hubId=` (operador; mismas
+fechas y errores que `/analytics`, por defecto 30 días; sin `hubId`, todas
+sus centrales; una ajena, 403). Solo lo que sirve para cuidar la flota: no
+nombra medicamentos ni personas.
+
+```json
+{
+  "period": { "from": "2026-10-07", "to": "2026-11-05" },
+  "usage": {
+    "flights": 18, "km": 86.4,
+    "inMissionPercent": 12.5, "inShopPercent": 4, "availablePercent": 83.5,
+    "byDrone": [{ "droneId": "…", "identifier": "WG-198-001", "hubId": "…",
+                  "flights": 9, "km": 43.2, "inMissionPercent": 13,
+                  "inShopPercent": 0, "availablePercent": 87 }]
+  },
+  "health": {
+    "landingBattery": { "average": 61.2, "min": 38, "samples": 18 },
+    "maintenanceDue": 1, "maintenanceOverdue": 0,
+    "byDrone": [{ "droneId": "…", "identifier": "WG-198-001", "hubId": "…",
+                  "status": "available", "batteryPercent": 92,
+                  "flightsSinceMaintenance": 50, "maintenanceCycles": 50,
+                  "maintenanceDue": true, "maintenanceOverdue": false,
+                  "landingBattery": { "average": 60, "min": 38, "samples": 9 } }]
+  },
+  "incidents": {
+    "battery": 1, "failure": 0, "coldChain": 2, "returnedWithPackage": 1,
+    "byDrone": [{ "droneId": "…", "identifier": "…", "battery": 1,
+                  "failure": 0, "coldChain": 1, "returnedWithPackage": 0 }],
+    "byDay": [{ "date": "2026-11-04", "flights": 3, "battery": 0,
+                "failure": 0, "coldChain": 1, "returnedWithPackage": 0 }]
+  },
+  "zones": {
+    "flights": [{ "latitude": 10.485, "longitude": -73.245, "count": 5 }],
+    "geofenceBlocks": { "total": 4, "zones": [] }
+  }
+}
+```
+
+- **Tiempo:** en misión va de despegar a volver a la central; en taller,
+  los periodos de `drone_maintenances`; un dron dado de alta a mitad del
+  periodo cuenta desde su alta. `byDrone` de incidentes solo trae drones con
+  alguno.
+- **Batería al volver:** se guarda desde esta rama
+  (`missions.landingBatteryPercent`); los vuelos anteriores no cuentan
+  (`samples`).
+- **Zonas:** celdas de ~1 km donde termina la ida; una celda sale solo con 3
+  vuelos o más, como en `/analytics`. `geofenceBlocks.total` cuenta los
+  pedidos que una geovalla dejó sin corredor en sus centrales (o cuyo
+  destino cayó dentro de una), según la traza del motor.
+- **Esquema:** una columna nueva en `missions` (con `synchronize` fuera de
+  `production`).
+
+**La app lo usará** en una pestaña "Tablero" del operador.
