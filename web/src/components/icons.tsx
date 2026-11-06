@@ -215,3 +215,23 @@ export const CheckIcon = (p: IconProps) => (
     <path d="M8 12.5l2.7 2.7L16 9.8" />
   </Icon>
 );
+
+export const PauseIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M8.5 5v14M15.5 5v14" />
+  </Icon>
+);
+
+export const PlayIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M7 4.8v14.4a.8.8 0 0 0 1.2.7l11.3-7.2a.8.8 0 0 0 0-1.4L8.2 4.1a.8.8 0 0 0-1.2.7z" />
+  </Icon>
+);
+
+/** Flecha que vuelve: reiniciar el escenario. */
+export const ResetIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3.5 12a8.5 8.5 0 1 0 2.5-6" />
+    <path d="M3.5 3.5V8H8" />
+  </Icon>
+);

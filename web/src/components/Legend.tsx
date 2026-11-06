@@ -11,11 +11,11 @@ function Item({ mark, children }: { mark: ReactNode; children: ReactNode }) {
 }
 
 /** Qué significa cada color del mapa. Solo en pantallas medianas o más. */
-export function Legend() {
+export function Legend({ shifted }: { shifted: boolean }) {
   return (
     <ul
       aria-label="Leyenda del mapa"
-      className="glass pointer-events-none absolute bottom-4 left-4 z-10 hidden h-14 items-center gap-5 rounded-2xl px-4 text-xs text-muted md:flex"
+      className={`glass pointer-events-none absolute bottom-4 z-10 hidden h-14 items-center gap-5 rounded-2xl px-4 text-xs text-muted md:flex ${shifted ? "left-[412px]" : "left-4"}`}
     >
       <Item mark={<HubIcon size={16} className="text-accent" />}>Central</Item>
       <Item mark={<DroneIcon size={16} className="text-accent-from" />}>Ida</Item>

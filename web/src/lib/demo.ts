@@ -1,5 +1,6 @@
-import type { RadarSource } from "./source";
+import type { RadarHandlers, RadarSource } from "./source";
 import type {
+  ClockView,
   Corridor,
   FleetCounts,
   FlightDetail,
@@ -9,6 +10,7 @@ import type {
   RadarFlight,
   Snapshot,
   TelemetryEvent,
+  TimelineEntry,
 } from "./types";
 
 /**
@@ -131,9 +133,106 @@ const inventory: InventoryRow[] = [
   { id: "i3", name: "Sangre O negativo", quantity: 6, lot: "L-0932", expirationDate: "2026-11-09", requiresColdChain: true, saleType: "special_control" },
 ];
 
+/** Un paso inventado de la línea de tiempo, en la hora del reloj de demostración. */
+function demoEntry(at: string, partial: Partial<TimelineEntry> & Pick<TimelineEntry, "title">): TimelineEntry {
+  return {
+    id: `demo-${Math.random().toString(36).slice(2)}`,
+    at,
+    kind: "console",
+    severity: "info",
+    detail: null,
+    orderId: null,
+    droneId: null,
+    hubId: null,
+    latitude: null,
+    longitude: null,
+    source: "console",
+    ...partial,
+  };
+}
+
 export function demoSource(): RadarSource {
+  // La consola de demostración no manda nada al backend: su reloj vive aquí.
+  // Arranca la primera vez que se usa (no al prerenderizar la página).
+  let clock: ClockView | null = null;
+  let anchorReal = 0;
+  let listeners: RadarHandlers | null = null;
+  const realTime = (): ClockView => {
+    anchorReal = Date.now();
+    return { now: new Date(anchorReal).toISOString(), speed: 1, paused: false };
+  };
+  const current = (): ClockView => (clock ??= realTime());
+  const nowOf = () => {
+    const state = current();
+    return state.paused
+      ? state.now
+      : new Date(Date.parse(state.now) + (Date.now() - anchorReal) * state.speed).toISOString();
+  };
+  const story = (): TimelineEntry[] => {
+    const at = nowOf();
+    return [
+      demoEntry(at, {
+        kind: "flight",
+        title: "Carga confirmada: despegó WG-198-001",
+        detail: "Desde Hospital Norte (demo), Insulina (demo) hacia Clínica Centro (demo)",
+        orderId: "demo-order-1",
+        latitude: hubs[0].latitude,
+        longitude: hubs[0].longitude,
+        source: "system",
+      }),
+      demoEntry(at, {
+        kind: "decision",
+        title: "Hospital Norte (demo) autorizó: sale WG-198-001",
+        detail: "Eligió WG-198-001. Descartó WG-198-002 (batería insuficiente para ida, regreso y reserva).",
+        orderId: "demo-order-1",
+        source: "system",
+      }),
+      demoEntry(at, {
+        kind: "queue",
+        title: "Urgencia entre centrales en la cola de Hospital Norte (demo)",
+        latitude: hubs[0].latitude,
+        longitude: hubs[0].longitude,
+        source: "system",
+      }),
+    ];
+  };
   return {
     demo: true,
+    control: {
+      clock: async () => ({ ...current(), now: nowOf() }),
+      setClock: async (change) => {
+        const previous = current();
+        const next: ClockView = {
+          now: nowOf(),
+          speed: change.speed ?? previous.speed,
+          paused: change.paused ?? previous.paused,
+        };
+        clock = next;
+        anchorReal = Date.now();
+        listeners?.onClock(next);
+        listeners?.onTimeline(
+          demoEntry(next.now, {
+            title: next.paused ? "Reloj en pausa" : `Reloj a x${next.speed}`,
+          }),
+        );
+        return next;
+      },
+      timeline: async () => story(),
+      alerts: async () => [],
+      reset: async () => {
+        const fresh = realTime();
+        clock = fresh;
+        listeners?.onClock(fresh);
+        listeners?.onReset();
+        listeners?.onTimeline(
+          demoEntry(fresh.now, {
+            title: "Escenario reiniciado",
+            detail: "En modo demostración no se borra nada: es solo un ensayo.",
+          }),
+        );
+        return { orders: 0, drones: 0, inventoryItems: 0, geofences: 0 };
+      },
+    },
     snapshot: async (): Promise<Snapshot> => ({
       hubs,
       flights: missions.map((m) => flightOf(m, Date.now())),
@@ -189,7 +288,9 @@ export function demoSource(): RadarSource {
       };
     },
     connect(handlers) {
+      listeners = handlers;
       handlers.onConnection("live");
+      handlers.onClock({ ...current(), now: nowOf() });
       const timer = setInterval(() => {
         const now = Date.now();
         for (const m of missions) {
@@ -212,7 +313,10 @@ export function demoSource(): RadarSource {
           handlers.onTelemetry(event);
         }
       }, 2_000);
-      return () => clearInterval(timer);
+      return () => {
+        clearInterval(timer);
+        listeners = null;
+      };
     },
   };
 }
