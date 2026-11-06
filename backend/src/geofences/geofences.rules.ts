@@ -48,6 +48,27 @@ export function assertGeoJsonPolygon(value: unknown): GeoJsonPolygon {
   return polygon;
 }
 
+/**
+ * RF-36: una geovalla rige si no vence (del operador) o si su vencimiento
+ * todavía no llega en la hora simulada. `$param` es esa hora.
+ */
+export function activeGeofenceSql(param: string, alias = ''): string {
+  const column = `${alias ? `${alias}.` : ''}"expiresAt"`;
+  return `(${column} IS NULL OR ${column} > ${param})`;
+}
+
+export function isGeofenceActive(
+  fence: { expiresAt: Date | null },
+  now: Date,
+): boolean {
+  return fence.expiresAt === null || fence.expiresAt.getTime() > now.getTime();
+}
+
+/** Vencimiento de una geovalla temporal que dura `durationMin` desde `now`. */
+export function temporaryExpiry(now: Date, durationMin: number): Date {
+  return new Date(now.getTime() + durationMin * 60_000);
+}
+
 type HubPoint = { name: string; latitude: number; longitude: number };
 
 /**

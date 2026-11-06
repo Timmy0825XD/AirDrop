@@ -28,6 +28,7 @@ import {
   homeDraft,
   rerouteDraft,
   weatherDraft,
+  geofenceDraft,
   queueDraft,
   statusDraft,
 } from './timeline.rules';
@@ -143,6 +144,10 @@ export class TimelineService implements OnModuleInit {
     }
     if (event.type === 'weather') {
       await this.record(weatherDraft(event.action, event.cell));
+      return;
+    }
+    if (event.type === 'geofence') {
+      await this.record(geofenceDraft(event.action, event.geofence));
       return;
     }
     if (event.type === 'alert') {

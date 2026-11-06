@@ -56,8 +56,13 @@ export type ResetSummary = {
   drones: number;
   inventoryItems: number;
   geofences: number;
+  /** RF-36: geovallas temporales borradas. */
+  temporaryGeofences: number;
 };
 
 export function resetDetail(summary: ResetSummary): string {
-  return `${summary.orders} pedidos borrados; ${summary.drones} drones en su central; ${summary.inventoryItems} lotes y ${summary.geofences} geovallas como en la semilla.`;
+  const temporary = summary.temporaryGeofences
+    ? ` ${summary.temporaryGeofences} ${summary.temporaryGeofences === 1 ? 'geovalla temporal quitada' : 'geovallas temporales quitadas'}.`
+    : '';
+  return `${summary.orders} pedidos borrados; ${summary.drones} drones en su central; ${summary.inventoryItems} lotes y ${summary.geofences} geovallas como en la semilla.${temporary}`;
 }

@@ -188,6 +188,16 @@ async function addRouteHistory(boot: DataSource): Promise<void> {
   );
 }
 
+/** RF-36: geovallas temporales (sin `synchronize` en producción). */
+async function addGeofenceExpiry(boot: DataSource): Promise<void> {
+  if (!(await tableExists(boot, 'geofences'))) {
+    return;
+  }
+  await boot.query(
+    `ALTER TABLE geofences ADD COLUMN IF NOT EXISTS "expiresAt" timestamptz`,
+  );
+}
+
 export async function alignSprintSchema(
   options: TypeOrmModuleOptions,
 ): Promise<void> {
@@ -221,6 +231,7 @@ export async function alignSprintSchema(
     await dropHubCreatorUnique(boot);
     await migrateInventorySaleType(boot);
     await addRouteHistory(boot);
+    await addGeofenceExpiry(boot);
   } finally {
     if (boot.isInitialized) {
       await boot.destroy();

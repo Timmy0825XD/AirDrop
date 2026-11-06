@@ -60,6 +60,7 @@ const row = (polygon: GeoJsonPolygon) => ({
   polygon: JSON.stringify(polygon),
   createdByUserId: operator.id,
   createdAt: new Date('2026-11-05T15:00:00.000Z'),
+  expiresAt: null,
 });
 
 function build() {
@@ -75,10 +76,12 @@ function build() {
   };
   const hubs = { find: jest.fn().mockResolvedValue([rosario, clinica]) };
   const flights = { recheckRoutes: jest.fn().mockResolvedValue(undefined) };
+  const publisher = { publish: jest.fn().mockResolvedValue(undefined) };
   const service = new GeofencesService(
     geofences as never,
     hubs as never,
     flights as never,
+    publisher as never,
   );
   return { service, geofences, flights };
 }

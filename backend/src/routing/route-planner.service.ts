@@ -1,7 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { RouteLeg } from '../common/enums/route-leg.enum';
-import { GeoJsonPolygon } from '../geofences/geofences.rules';
+import { simClock } from '../common/clock/sim-clock';
+import {
+  GeoJsonPolygon,
+  activeGeofenceSql,
+} from '../geofences/geofences.rules';
 import { WeatherService } from '../weather/weather.service';
 import {
   DESTINATION_IN_GEOFENCE,
@@ -63,9 +67,12 @@ export class RoutePlannerService {
     ];
   }
 
+  /** Las del operador y las temporales que no han vencido (RF-36). */
   async loadGeofences(manager: EntityManager): Promise<GeoJsonPolygon[]> {
     const rows: Array<{ polygon: string }> = await manager.query(
-      `SELECT ST_AsGeoJSON(polygon) AS polygon FROM geofences`,
+      `SELECT ST_AsGeoJSON(polygon) AS polygon FROM geofences
+       WHERE ${activeGeofenceSql('$1')}`,
+      [simClock.now()],
     );
     return rows.map((row) => JSON.parse(row.polygon) as GeoJsonPolygon);
   }

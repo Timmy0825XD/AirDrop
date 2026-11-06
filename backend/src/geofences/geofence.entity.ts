@@ -31,6 +31,14 @@ export class Geofence {
   @Column({ type: 'uuid' })
   createdByUserId: string;
 
+  /**
+   * RF-36: una geovalla temporal de la consola vence en esta hora simulada.
+   * `null` es una geovalla del operador, que no vence.
+   */
+  @Index()
+  @Column({ type: 'timestamptz', nullable: true })
+  expiresAt: Date | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 

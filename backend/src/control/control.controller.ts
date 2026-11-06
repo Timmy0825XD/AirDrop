@@ -22,6 +22,7 @@ import { ClockControlService } from './clock-control.service';
 import { ControlEnabledGuard } from './control-enabled.guard';
 import { ConsoleEventsService } from './console-events.service';
 import { ChangeClockDto } from './dto/change-clock.dto';
+import { CreateTemporaryGeofenceDto } from './dto/create-temporary-geofence.dto';
 import { CreateWeatherDto } from './dto/create-weather.dto';
 import { PendingAlertsService } from './pending-alerts.service';
 import { ScenarioResetService } from './scenario-reset.service';
@@ -81,6 +82,27 @@ export class ControlController {
   @Delete('weather/:id')
   endWeather(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.events.endWeather(id);
+  }
+
+  /** RF-36: las geovallas temporales que rigen ahora. */
+  @Get('geofences')
+  getGeofences() {
+    return this.events.listGeofences();
+  }
+
+  /** RF-36, CU-38: una geovalla que vence sola (por ejemplo, un evento aéreo). */
+  @Post('geofences')
+  createGeofence(
+    @CurrentUser() user: User,
+    @Body() dto: CreateTemporaryGeofenceDto,
+  ) {
+    return this.events.createGeofence(user.id, dto);
+  }
+
+  /** Levanta una geovalla temporal antes de que venza. Las del operador no. */
+  @Delete('geofences/:id')
+  endGeofence(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    return this.events.endGeofence(id);
   }
 
   /** RF-40, CU-41: el escenario de la semilla, sin pedidos y en hora real. */
