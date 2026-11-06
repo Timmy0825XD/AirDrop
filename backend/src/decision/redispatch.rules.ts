@@ -47,9 +47,13 @@ export function redispatchPath(
  * quedó en el incidente; el siguiente lote se descuenta al confirmar la
  * carga de nuevo (productos.md). El pedido queda `received`.
  */
-export function releaseForRedispatch(order: Order, path: RedispatchPath): void {
+export function releaseForRedispatch(
+  order: Order,
+  path: RedispatchPath,
+  reason = REDISPATCH_REASON,
+): void {
   order.status = OrderStatus.RECEIVED;
-  order.statusReason = REDISPATCH_REASON;
+  order.statusReason = reason;
   order.droneId = null;
   order.inventoryItemId = null;
   order.authorizedAt = null;

@@ -4,6 +4,7 @@ import type { TimelineEntry } from '../control/timeline.rules';
 import type { WeatherCellJson } from '../weather/weather.service';
 import type { TemporaryGeofenceJson } from '../geofences/geofences.service';
 import type { IncidentJson } from '../simulation/flight-incidents.service';
+import type { HubOutageJson } from '../hubs/hub-outage.service';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { FlightAlertKind, LiveFlight } from '../simulation/simulation.rules';
 import {
@@ -29,6 +30,12 @@ export type TelemetryEvent =
       type: 'geofence';
       action: 'created' | 'ended';
       geofence: TemporaryGeofenceJson;
+    }
+  /** RF-36: una central se quedó sin energía, o le volvió. */
+  | {
+      type: 'hub-outage';
+      action: 'started' | 'ended';
+      outage: HubOutageJson;
     }
   /** RF-34: un incidente en vuelo nuevo, o un cambio en cómo va. */
   | { type: 'incident'; incident: IncidentJson }

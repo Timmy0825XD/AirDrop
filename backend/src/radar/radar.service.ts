@@ -25,6 +25,7 @@ import {
 } from './radar.rules';
 import { simClock } from '../common/clock/sim-clock';
 import { activeGeofenceSql } from '../geofences/geofences.rules';
+import { isPowered } from '../hubs/hub-power.rules';
 
 type GeofenceRow = {
   id: string;
@@ -70,6 +71,11 @@ export class RadarService {
         status: hub.status,
         latitude: hub.latitude,
         longitude: hub.longitude,
+        // RF-36: sin energía hasta esta hora simulada, o `null`.
+        powerOutageUntil:
+          hub.powerOutageUntil && !isPowered(hub, simClock.now())
+            ? new Date(hub.powerOutageUntil).toISOString()
+            : null,
         fleet: countFleet(drones.filter((drone) => drone.hubId === hub.id)),
       })),
       flights,

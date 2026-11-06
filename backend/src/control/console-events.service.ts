@@ -5,6 +5,7 @@ import {
   GeofencesService,
   NewTemporaryGeofence,
 } from '../geofences/geofences.service';
+import { HubOutageService } from '../hubs/hub-outage.service';
 import { FlightClockService } from '../simulation/flight-clock.service';
 import {
   NewWeatherCell,
@@ -14,7 +15,7 @@ import {
 
 /**
  * CU-38: los eventos que lanza la consola. Solo los entrega a su dominio
- * (clima, geovallas temporales, incidentes de dron) y avisa al reloj de vuelo si cambió lo que no se puede
+ * (clima, geovallas temporales, incidentes de dron, apagones) y avisa al reloj de vuelo si cambió lo que no se puede
  * cruzar. La respuesta a cada evento la deciden las reglas de ese dominio.
  */
 @Injectable()
@@ -23,6 +24,7 @@ export class ConsoleEventsService {
     private readonly weather: WeatherService,
     private readonly flights: FlightClockService,
     private readonly geofences: GeofencesService,
+    private readonly outages: HubOutageService,
   ) {}
 
   listWeather() {
@@ -53,6 +55,19 @@ export class ConsoleEventsService {
 
   endGeofence(id: string) {
     return this.geofences.endTemporary(id);
+  }
+
+  listOutages() {
+    return this.outages.active();
+  }
+
+  /** RF-36: la reubicación de sus pedidos la hace el motor de decisión. */
+  startOutage(hubId: string, durationMin: number) {
+    return this.outages.start(hubId, durationMin);
+  }
+
+  endOutage(hubId: string) {
+    return this.outages.end(hubId);
   }
 
   /** RF-34: lo aplica el reloj de vuelo, que es quien mueve al dron. */

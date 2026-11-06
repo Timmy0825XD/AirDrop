@@ -72,7 +72,8 @@ export class ScenarioResetService {
       await manager.update(
         Hub,
         { id: In(hubIds) },
-        { status: HubStatus.ACTIVE },
+        // RF-40: con energía otra vez (RF-36).
+        { status: HubStatus.ACTIVE, powerOutageUntil: null },
       );
       // RF-40: sin geovallas temporales; las del operador no se tocan.
       const temporaryGeofences =

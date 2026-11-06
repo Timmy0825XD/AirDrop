@@ -18,4 +18,8 @@ export enum NotificationKind {
   MAINTENANCE_OVERDUE = 'maintenance_overdue',
   /** Al operador: el dron cumplió los vuelos del preventivo. */
   MAINTENANCE_DUE = 'maintenance_due',
+  /** A los despachadores: su central se quedó sin energía (RF-36). */
+  HUB_OUTAGE = 'hub_outage',
+  /** A los despachadores: volvió la energía a su central. */
+  HUB_POWER_RESTORED = 'hub_power_restored',
 }

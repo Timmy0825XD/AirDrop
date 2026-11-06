@@ -449,8 +449,8 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Actor:** Sistema
 - **Antes:** La consola o el modo caos dejaron una central sin energía por un tiempo
 - **Pasos:**
-  1. Mientras dure, la central no autoriza ni confirma cargas y sus drones no son elegibles.
-  2. Sus urgencias pasan a la siguiente central como si hubiera declinado (RU-10).
-  3. Sus programados se reintentan dentro de la franja.
-- **Después:** Al terminar, vuelve a operar sola. Los drones que volvían a ella aterrizaron igual.
+  1. Mientras dure (de 5 a 240 minutos simulados), la central no autoriza ni confirma cargas y sus drones no son elegibles. Sus despachadores reciben un aviso.
+  2. Sus urgencias pasan a la siguiente central como si hubiera declinado (RU-10), también las que ya había autorizado sin cargar: sueltan el dron y el lote.
+  3. Sus programados autorizados sin cargar se reintentan dentro de la franja (RF-18). Los que nadie ha autorizado esperan en su cola.
+- **Después:** Al terminar, vuelve a operar sola y sus despachadores reciben otro aviso. Los drones que volvían a ella aterrizaron igual.
 - **Por qué:** RF-36. Una central caída no deja a la red sin respuesta.

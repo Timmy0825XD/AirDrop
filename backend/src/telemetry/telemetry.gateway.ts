@@ -332,6 +332,15 @@ export class TelemetryGateway
         });
         return;
       }
+      if (event.type === 'hub-outage') {
+        // RF-36: la consola marca la central; sus despachadores ya tienen el
+        // aviso en la bandeja.
+        this.server?.to(RADAR_ROOM).emit('radar-hub-outage', {
+          action: event.action,
+          outage: event.outage,
+        });
+        return;
+      }
       if (event.type === 'incident') {
         // RF-34 y CU-32: la consola y el mapa de la flota del operador. No
         // lleva qué medicamento iba (RNF-05).

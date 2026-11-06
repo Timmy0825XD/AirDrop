@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Drone } from '../fleet/drone.entity';
 import { GeofencesModule } from '../geofences/geofences.module';
+import { HubsModule } from '../hubs/hubs.module';
 import { Hub } from '../hubs/hub.entity';
 import { Order } from '../orders/order.entity';
 import { Mission } from '../simulation/mission.entity';
@@ -28,6 +29,7 @@ import { TimelineService } from './timeline.service';
     SimulationModule,
     WeatherModule,
     GeofencesModule,
+    HubsModule,
   ],
   controllers: [ControlController],
   providers: [

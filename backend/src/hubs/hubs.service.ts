@@ -161,6 +161,8 @@ export class HubsService {
       contactPhone: hub.contactPhone,
       contactEmail: hub.contactEmail,
       status: hub.status,
+      // RF-36: con fecha, la central está sin energía hasta entonces.
+      powerOutageUntil: hub.powerOutageUntil ?? null,
       createdAt: hub.createdAt,
     };
   }

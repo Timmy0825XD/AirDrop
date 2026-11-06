@@ -293,3 +293,18 @@ describe('EmergencyDispatchService.decline', () => {
     expect(built.state.order.nextEscalationAt).toBeNull();
   });
 });
+
+describe('Urgencias nuevas con una central sin energía (RF-36)', () => {
+  afterEach(() => {
+    hubs.A.powerOutageUntil = null;
+  });
+
+  it('no se le ofrece: la oferta empieza por la siguiente', async () => {
+    hubs.A.powerOutageUntil = new Date(Date.now() + 30 * MIN);
+    const { service, state } = build(threeHubs);
+    await service.start(ORDER_ID, t0);
+    const offers = state.order.dispatchOffers!;
+    expect(offers.map((item) => item.hubId)).toEqual(['B', 'C']);
+    expect(offers[0].offeredAt).not.toBeNull();
+  });
+});

@@ -1,3 +1,4 @@
+import { ConflictException } from '@nestjs/common';
 import {
   BadRequestException,
   ForbiddenException,
@@ -29,6 +30,11 @@ import {
 import { RoutePlannerService } from '../routing/route-planner.service';
 import { FlightClockService } from '../simulation/flight-clock.service';
 import { User } from '../users/user.entity';
+import {
+  HUB_WITHOUT_POWER,
+  HUB_WITHOUT_POWER_NOTE,
+  OUTAGE_REDISPATCH_REASON,
+} from '../hubs/hub-power.rules';
 import { DecisionService } from './decision.service';
 import { NOT_OFFERED_TO_HUB } from './dispatch.rules';
 import { EligibilityService } from './eligibility.service';
@@ -1166,5 +1172,122 @@ describe('DecisionService.redispatchAfterIncident (RF-35, CU-44)', () => {
       service.redispatchAfterIncident(order.id, morning),
     ).resolves.toBeNull();
     expect(routes.deleteLegs).not.toHaveBeenCalled();
+  });
+});
+
+describe('DecisionService con la central sin energía (RF-36, CU-45)', () => {
+  const morning = new Date('2026-10-16T15:00:00.000Z');
+  const dark = { powerOutageUntil: new Date(morning.getTime() + 30 * 60_000) };
+
+  beforeEach(() => {
+    jest.useFakeTimers({
+      now: morning,
+      doNotFake: ['nextTick', 'setImmediate'],
+    });
+  });
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  it('no autoriza ni confirma cargas hasta que vuelva la energía', async () => {
+    const built = build({ hubs: [hub(dark)] });
+    (
+      built as unknown as { service: { hubsService: unknown } }
+    ).service.hubsService = {
+      requireActive: jest.fn().mockResolvedValue(hub(dark)),
+    };
+    await expect(
+      built.service.authorize(dispatcher(), ORDER_ID, {}),
+    ).rejects.toThrow(new ConflictException(HUB_WITHOUT_POWER));
+    await expect(
+      built.service.confirmLoad(dispatcher(), ORDER_ID),
+    ).rejects.toThrow(new ConflictException(HUB_WITHOUT_POWER));
+  });
+
+  function queue(built: ReturnType<typeof build>, orders: Order[]) {
+    built.dataSource.getRepository.mockReturnValue({
+      find: jest.fn().mockResolvedValue(orders),
+    });
+  }
+
+  it('la urgencia autorizada sin cargar suelta el dron y vuelve a ofrecerse', async () => {
+    const order = received({
+      status: OrderStatus.PENDING_LOAD,
+      originHubId: HUB_ID,
+      droneId: DRONE_ID,
+      inventoryItemId: LOT_ID,
+    });
+    const built = build({ order, hubs: [hub(dark)] });
+    queue(built, [order]);
+    await expect(built.service.evacuateHub(HUB_ID, morning)).resolves.toEqual([
+      ORDER_ID,
+    ]);
+    expect(order).toMatchObject({
+      status: OrderStatus.RECEIVED,
+      originHubId: null,
+      droneId: null,
+      statusReason: OUTAGE_REDISPATCH_REASON,
+    });
+    expect(built.routes.deleteLegs).toHaveBeenCalledWith(
+      ORDER_ID,
+      expect.anything(),
+    );
+    expect(built.notifications.queueChanged).toHaveBeenCalledWith(
+      HUB_ID,
+      ORDER_ID,
+    );
+  });
+
+  it('el programado autorizado sin cargar se reintenta en su franja (RF-18)', async () => {
+    const order = received({
+      missionType: MissionType.SCHEDULED,
+      priority: OrderPriority.NORMAL,
+      scheduledFor: todayInColombia(morning),
+      status: OrderStatus.PENDING_LOAD,
+      originHubId: HUB_ID,
+      droneId: DRONE_ID,
+    });
+    const built = build({ order, hubs: [hub(dark)] });
+    queue(built, [order]);
+    await expect(built.service.evacuateHub(HUB_ID, morning)).resolves.toEqual(
+      [],
+    );
+    expect(order.status).toBe(OrderStatus.RECEIVED);
+    expect(order.fallbackKind).toBe(FallbackKind.RETRY);
+    expect(order.droneId).toBeNull();
+  });
+
+  it('un programado que nadie ha autorizado espera en la cola', async () => {
+    const order = received({
+      missionType: MissionType.SCHEDULED,
+      priority: OrderPriority.NORMAL,
+      scheduledFor: todayInColombia(morning),
+      originHubId: HUB_ID,
+    });
+    const built = build({ order, hubs: [hub(dark)] });
+    queue(built, [order]);
+    await built.service.evacuateHub(HUB_ID, morning);
+    expect(order.statusReason).toBeNull();
+    expect(order.fallbackKind).toBeNull();
+    expect(built.notifications.statusChanged).not.toHaveBeenCalled();
+  });
+
+  it('el reintento automático trata la central sin energía como suspendida', async () => {
+    const order = received({
+      missionType: MissionType.SCHEDULED,
+      priority: OrderPriority.NORMAL,
+      scheduledFor: todayInColombia(morning),
+      originHubId: HUB_ID,
+      fallbackKind: FallbackKind.RETRY,
+      retryAfter: new Date(morning.getTime() - 1),
+      prescriptionVerifiedAt: morning,
+    });
+    const built = build({ order, hubs: [hub(dark)] });
+    await built.service.retryScheduled(order.id, morning);
+    // Sigue reintentando en su franja, sin reservar dron en la central apagada.
+    expect(order.status).toBe(OrderStatus.RECEIVED);
+    expect(order.droneId).toBeNull();
+    expect(order.decisionTrace?.hubs[0]?.note).toBe(HUB_WITHOUT_POWER_NOTE);
   });
 });

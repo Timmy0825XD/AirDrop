@@ -562,6 +562,42 @@ export function incidentDraft(
   }
 }
 
+/** RF-36: una central se quedó sin energía, o le volvió. */
+export function hubOutageDraft(
+  action: 'started' | 'ended',
+  outage: { hubId: string; name: string; latitude: number; longitude: number },
+  minutes: number | null,
+): TimelineDraft {
+  const base = {
+    kind: 'console' as const,
+    orderId: null,
+    droneId: null,
+    hubId: outage.hubId,
+    latitude: outage.latitude,
+    longitude: outage.longitude,
+  };
+  if (action === 'ended') {
+    return {
+      ...base,
+      severity: 'success',
+      title: `Volvió la energía a ${outage.name}`,
+      detail: 'Ya puede autorizar y confirmar cargas.',
+      source: 'system',
+    };
+  }
+  return {
+    ...base,
+    severity: 'danger',
+    title:
+      minutes != null
+        ? `${outage.name} sin energía por ${minutes} min`
+        : `${outage.name} sin energía`,
+    detail:
+      'No autoriza ni carga: sus urgencias pasan a otra central y sus programados se reintentan en la franja.',
+    source: 'console',
+  };
+}
+
 /** RF-33: la ruta cambió en vuelo, o no quedó una segura. */
 export function rerouteDraft(
   order: OrderFacts,

@@ -435,7 +435,7 @@ El pedido no tiene un estado nuevo: la misión fallida guarda el incidente y el 
 Los lanza la consola (RU-32) o el modo caos (RF-38), cada uno con una duración en hora simulada:
 
 - **Geovalla temporal:** un polígono con vencimiento (por ejemplo, un evento aéreo), de 5 a 240 minutos simulados. Mientras dure cuenta como geovalla (RF-12, RF-21): no puede cubrir una central y puede cambiar rutas en vuelo (RF-33). Al vencer desaparece sola y la línea de tiempo lo cuenta. La consola puede levantarla antes, pero no toca las geovallas del operador, que no vencen.
-- **Central sin energía:** mientras dure, no autoriza ni confirma cargas y sus drones no son elegibles. Sus urgencias pasan a la siguiente central como si hubiera declinado (RU-10). Sus programados se reintentan dentro de la franja (RF-18). Los drones en el aire que vuelven a ella aterrizan igual.
+- **Central sin energía:** de 5 a 240 minutos simulados. Mientras dure, no autoriza ni confirma cargas y sus drones no son elegibles. Sus urgencias pasan a la siguiente central como si hubiera declinado (RU-10); lo que ya había autorizado sin cargar suelta el dron y el lote. Sus programados se reintentan dentro de la franja (RF-18); los que nadie ha autorizado esperan en su cola. Los drones en el aire que vuelven a ella aterrizan igual. Sus despachadores reciben un aviso al empezar y otro al volver la energía. No cambia el estado de la central, que es del administrador.
 - **Pico de urgencias:** el generador de RF-37 crea varias urgencias seguidas en una zona.
 - **Nadie retira el paquete:** en un pedido del receptor simulado, el código no se ingresa y corre RF-30.
 
