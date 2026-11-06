@@ -396,7 +396,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
   3. Guarda el incidente con tipo, gravedad, posición, protocolo y resultado.
   4. Avisa al operador, lo publica en la línea de tiempo y quien pidió ve el cambio de estado.
 - **Si falla:** Si al volver tampoco alcanza la batería, aterriza de emergencia.
-- **Después:** Si aterrizó de emergencia, el dron queda en tierra fuera de base hasta que lo rescatan y pasa a mantenimiento; el paquete queda en cuarentena. Con choque grave o dron perdido, el dron queda fuera de servicio y el paquete se pierde. Si la misión no llega a su destino, corre CU-44.
+- **Después:** Si aterrizó de emergencia, el dron queda en tierra fuera de base hasta que lo rescatan (según la distancia a su central) y pasa a mantenimiento; el paquete queda en cuarentena. Si volvió a la central, el paquete también queda en cuarentena. Con choque grave o dron perdido, el dron queda fuera de servicio y el paquete se pierde. Si la misión no llega a su destino, corre CU-44.
 - **Por qué:** RU-21 y RF-34. Un sistema autónomo no solo avisa: decide qué hace el dron con reglas que se pueden explicar.
 
 ### CU-33 — Esperar el código

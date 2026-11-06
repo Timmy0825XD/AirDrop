@@ -29,6 +29,7 @@ import {
   rerouteDraft,
   weatherDraft,
   geofenceDraft,
+  incidentDraft,
   queueDraft,
   statusDraft,
 } from './timeline.rules';
@@ -146,6 +147,10 @@ export class TimelineService implements OnModuleInit {
       await this.record(weatherDraft(event.action, event.cell));
       return;
     }
+    if (event.type === 'incident') {
+      await this.onIncident(event.incident);
+      return;
+    }
     if (event.type === 'geofence') {
       await this.record(geofenceDraft(event.action, event.geofence));
       return;
@@ -239,6 +244,25 @@ export class TimelineService implements OnModuleInit {
         latitude: hub.latitude,
         longitude: hub.longitude,
       }),
+    );
+  }
+
+  private async onIncident(
+    incident: Extract<TelemetryEvent, { type: 'incident' }>['incident'],
+  ): Promise<void> {
+    const drone = await this.drones.findOne({
+      where: { id: incident.droneId },
+    });
+    const rescueMinutes = incident.rescueDueAt
+      ? Math.max(
+          1,
+          Math.round(
+            (Date.parse(incident.rescueDueAt) - simClock.nowMs()) / 60_000,
+          ),
+        )
+      : null;
+    await this.record(
+      incidentDraft(incident, drone?.identifier ?? null, rescueMinutes),
     );
   }
 

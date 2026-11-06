@@ -8,8 +8,10 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Not, Repository } from 'typeorm';
+import { ContingencyProtocol } from '../common/enums/contingency-protocol.enum';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { DroneStatus } from '../common/enums/drone-status.enum';
+import { IncidentKind } from '../common/enums/incident-kind.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
 import { NotificationKind } from '../common/enums/notification-kind.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
@@ -26,11 +28,25 @@ import { InboxService } from '../notifications/inbox.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Order } from '../orders/order.entity';
 import { departureCopy } from '../orders/plan-dispatch.rules';
-import { PlannedCorridor, rerouteFromPosition } from '../routing/routing.rules';
+import {
+  LngLat,
+  PlannedCorridor,
+  rerouteFromPosition,
+  splitCorridorAt,
+} from '../routing/routing.rules';
 import { RoutePlannerService } from '../routing/route-planner.service';
 import { batteryNow, batteryToFinishPercent } from './flight-energy.rules';
 import { TELEMETRY_UNAVAILABLE } from '../telemetry/telemetry.rules';
 import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
+import {
+  chooseProtocol,
+  emergencyCorridor,
+  homeCorridor,
+  percentToFinish,
+  percentToLand,
+  safeLandingPoint,
+} from './contingency.rules';
+import { FlightIncidentsService } from './flight-incidents.service';
 import { Mission } from './mission.entity';
 import { WeatherService } from '../weather/weather.service';
 import {
@@ -70,6 +86,9 @@ type FlightSession = {
   keepStatus: boolean;
   orderId: string;
   droneId: string;
+  /** Central del dron: a ella vuelve si un incidente lo obliga (RF-34). */
+  hubId: string;
+  hub: LngLat;
   identifier: string;
   quantity: number;
   requiresColdChain: boolean;
@@ -96,6 +115,9 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
   private readonly pickups = new Map<string, Date>();
   /** Los tests lo reemplazan para fijar si hay falla de frío. */
   private random: () => number = Math.random;
+  /** RF-35: quién vuelve a despachar un pedido cuya misión no llegó. */
+  private readonly abortListeners: Array<(orderId: string) => Promise<void>> =
+    [];
   private timer: NodeJS.Timeout | null = null;
   private ticking = false;
 
@@ -111,6 +133,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     private readonly notifications: NotificationsService,
     private readonly inbox: InboxService,
     private readonly weather: WeatherService,
+    private readonly incidents: FlightIncidentsService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -140,6 +163,16 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * RF-35: lo llama el motor de decisión para volver a despachar un pedido
+   * cuya misión no llegó a su destino por un incidente. Corre cuando el dron
+   * ya está en tierra (en la central o en el punto de emergencia): un pedido
+   * no tiene dos vuelos a la vez.
+   */
+  onMissionAborted(listener: (orderId: string) => Promise<void>): void {
+    this.abortListeners.push(listener);
+  }
+
+  /**
    * RF-33: una zona nueva (geovalla, temporal o tormenta) puede cruzar el
    * tramo que le falta a un dron en el aire. Si lo cruza, el dron sigue por
    * un corredor nuevo desde donde va; la decisión es de `rerouteFromPosition`
@@ -151,7 +184,11 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     }
     const polygons = await this.routes.loadPolygons(this.orders.manager);
     for (const session of [...this.active.values()]) {
-      if (!REROUTABLE_PHASES.has(session.progress.phase)) {
+      if (
+        !REROUTABLE_PHASES.has(session.progress.phase) ||
+        session.progress.contingency?.protocol ===
+          ContingencyProtocol.EMERGENCY_LANDING
+      ) {
         continue;
       }
       const outcome = rerouteFromPosition(
@@ -163,7 +200,6 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
         continue;
       }
       if (outcome.kind === 'blocked') {
-        // Sin camino seguro: el protocolo lo decide RF-34 (rama de incidentes).
         await this.notifications.rerouted({
           orderId: session.orderId,
           droneId: session.droneId,
@@ -172,6 +208,8 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
           crossesGeofence: true,
           batteryShort: false,
         });
+        // Sin camino seguro: el protocolo lo decide RF-34.
+        await this.handleIncident(session, IncidentKind.ROUTE_BLOCKED);
         continue;
       }
       session.corridor = outcome.corridor;
@@ -188,14 +226,179 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
             : null,
         maxRangeKm: session.model.maxRangeKm,
       });
+      const batteryShort = session.progress.batteryPercent < needed;
       await this.notifications.rerouted({
         orderId: session.orderId,
         droneId: session.droneId,
         outcome: 'rerouted',
         addedKm: outcome.addedKm,
         crossesGeofence: outcome.crossesGeofence,
-        batteryShort: session.progress.batteryPercent < needed,
+        batteryShort,
       });
+      if (batteryShort) {
+        // El camino nuevo es más largo de lo que alcanza: RF-34 según alcance.
+        await this.handleIncident(session, IncidentKind.BATTERY_SHORT);
+      }
+    }
+  }
+
+  /**
+   * RF-34 y CU-32: el reloj detectó un incidente. Las reglas eligen el
+   * protocolo (`chooseProtocol`) y aquí se aplica: seguir, volver a la
+   * central con el paquete o bajar en el punto seguro más cercano.
+   */
+  private async handleIncident(
+    session: FlightSession,
+    kind: IncidentKind,
+  ): Promise<void> {
+    if (
+      session.progress.contingency?.protocol ===
+      ContingencyProtocol.EMERGENCY_LANDING
+    ) {
+      return;
+    }
+    const polygons = await this.routes.loadPolygons(this.orders.manager);
+    const cruiseKm = session.progress.cruiseKm;
+    const at = splitCorridorAt(session.corridor, cruiseKm).at;
+    const remainingKm = Math.max(0, session.corridor.distanceKm - cruiseKm);
+    const maxRangeKm = session.model.maxRangeKm;
+    const blocked = kind === IncidentKind.ROUTE_BLOCKED;
+    const outbound = session.leg === RouteLeg.OUTBOUND;
+    // De ida, la central se alcanza por un corredor nuevo desde aquí; de
+    // regreso, el que lleva ya va a la central.
+    const home = outbound ? homeCorridor(at, session.hub, polygons) : null;
+    const homePercent = outbound
+      ? home
+        ? percentToLand(home.distanceKm, maxRangeKm)
+        : null
+      : blocked
+        ? null
+        : percentToLand(remainingKm, maxRangeKm);
+    const protocol = chooseProtocol({
+      kind,
+      leg: session.leg,
+      phase: session.progress.phase,
+      batteryPercent: session.progress.batteryPercent,
+      finishPercent:
+        outbound && !blocked
+          ? percentToFinish({
+              remainingKm,
+              returnKm: session.corridor.distanceKm,
+              maxRangeKm,
+            })
+          : null,
+      homePercent,
+    });
+    const order = session.keepStatus
+      ? null
+      : await this.orders.findOne({ where: { id: session.orderId } });
+    const incident = await this.incidents.record({
+      orderId: session.orderId,
+      droneId: session.droneId,
+      hubId: session.hubId,
+      kind,
+      leg: session.leg,
+      protocol,
+      position: at,
+      batteryPercent: session.progress.batteryPercent,
+      packageOf: order,
+    });
+    if (protocol === ContingencyProtocol.RETURN_TO_HUB && home) {
+      await this.turnHome(session, home, incident.id);
+      return;
+    }
+    if (protocol === ContingencyProtocol.EMERGENCY_LANDING) {
+      const landing = safeLandingPoint(at, polygons);
+      const corridor = emergencyCorridor(session.corridor, cruiseKm, landing);
+      await this.routes.replaceLeg(session.orderId, session.leg, corridor);
+      await this.incidents.setLanding(incident.id, landing);
+      session.corridor = corridor;
+      session.progress = {
+        ...session.progress,
+        // Si aún despegaba, sigue directo al punto de aterrizaje.
+        phase: FlightPhase.CRUISE,
+        phaseElapsedMs: 0,
+        contingency: { protocol, incidentId: incident.id },
+      };
+    }
+  }
+
+  /** RF-34: de ida, el dron da la vuelta con el paquete hacia su central. */
+  private async turnHome(
+    session: FlightSession,
+    home: PlannedCorridor,
+    incidentId: string,
+  ): Promise<void> {
+    if (await this.routes.findReturn(session.orderId)) {
+      await this.routes.replaceLeg(session.orderId, RouteLeg.RETURN, home);
+    } else {
+      await this.routes.saveReturn(session.orderId, home, this.orders.manager);
+    }
+    session.leg = RouteLeg.RETURN;
+    session.corridor = home;
+    session.departure = null;
+    session.progress = {
+      ...session.progress,
+      phase: FlightPhase.CRUISE,
+      phaseElapsedMs: 0,
+      cruiseKm: 0,
+      // El viento ya se avisó: la misma celda no cuenta otro incidente.
+      orderStatus: OrderStatus.RETURNING,
+      contingency: {
+        protocol: ContingencyProtocol.RETURN_TO_HUB,
+        incidentId,
+      },
+    };
+    await this.orders.update(
+      { id: session.orderId },
+      { status: OrderStatus.RETURNING },
+    );
+    await this.notifications.statusChanged(
+      session.orderId,
+      OrderStatus.RETURNING,
+    );
+  }
+
+  /** RF-35: el pedido vuelve al motor de decisión. */
+  private async notifyAborted(orderId: string): Promise<void> {
+    await this.telemetry.forgetFlight(orderId);
+    for (const listener of this.abortListeners) {
+      try {
+        await listener(orderId);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'despacho';
+        this.logger.error(
+          `No se pudo volver a despachar ${orderId}: ${message}`,
+        );
+      }
+    }
+  }
+
+  /**
+   * RF-34: tocó tierra fuera de base. El dron queda `grounded` hasta que lo
+   * rescaten. Si iba de ida, el pedido vuelve al motor de decisión ya.
+   */
+  private async landEmergency(
+    session: FlightSession,
+    step: FlightStep,
+    incidentId: string,
+  ): Promise<void> {
+    const landed = simClock.now();
+    await this.drones.update(
+      { id: session.droneId },
+      {
+        status: DroneStatus.GROUNDED,
+        batteryPercent: step.progress.batteryPercent,
+        batteryUpdatedAt: landed,
+        lastFlightEndedAt: landed,
+      },
+    );
+    await this.incidents.grounded(incidentId, {
+      latitude: step.latitude,
+      longitude: step.longitude,
+    });
+    if (session.leg === RouteLeg.OUTBOUND) {
+      await this.notifyAborted(session.orderId);
     }
   }
 
@@ -446,13 +649,23 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     const corridor = returning
       ? await this.returnCorridor(order)
       : (await this.routes.findOutboundMany([orderId])).get(orderId);
-    if (!drone?.droneModel || !corridor) {
+    if (drone?.status === DroneStatus.GROUNDED) {
+      // RF-34: en tierra fuera de base, espera el rescate.
+      return;
+    }
+    const hub = drone
+      ? await this.orders.manager.findOne(Hub, { where: { id: drone.hubId } })
+      : null;
+    if (!drone?.droneModel || !corridor || !hub) {
       this.logger.error(
         `El pedido ${orderId} no tiene dron o corredor para volar.`,
       );
       return;
     }
-    const stored = await this.telemetry.readFlight(orderId);
+    // RF-35: tras un incidente, Redis todavía guarda el vuelo del dron
+    // anterior de este pedido. Solo se retoma el progreso del mismo dron.
+    const saved = await this.telemetry.readFlight(orderId);
+    const stored = saved?.droneId === drone.id ? saved : null;
     const progress = returning
       ? stored?.leg === RouteLeg.RETURN
         ? stored.progress
@@ -489,6 +702,8 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       keepStatus: delivered,
       orderId,
       droneId: drone.id,
+      hubId: hub.id,
+      hub: { latitude: hub.latitude, longitude: hub.longitude },
       identifier: drone.identifier,
       quantity: order.quantity,
       requiresColdChain: order.requiresColdChain,
@@ -614,6 +829,12 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       step.progress.orderStatus = OrderStatus.DELIVERED;
       step.statusChanges = [];
     }
+    const contingency = session.progress.contingency ?? null;
+    if (contingency?.protocol === ContingencyProtocol.EMERGENCY_LANDING) {
+      // Bajar de emergencia no es llegar: el pedido no cambia por aterrizar.
+      step.progress.orderStatus = session.progress.orderStatus;
+      step.statusChanges = [];
+    }
     // Tras entregar, el dron vuelve vacío: ya no hay carga que medir.
     const carriesColdLoad = session.requiresColdChain && !session.keepStatus;
     let temperatureC: number | null = null;
@@ -657,7 +878,22 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       if (step.alerts.includes('cold_chain')) {
         await this.markColdChainAlert(orderId);
       }
-      if (step.progress.phase === FlightPhase.LANDED) {
+      if (step.progress.phase !== FlightPhase.LANDED) {
+        // RF-34: lo que el reloj detecta solo también es un incidente.
+        if (step.alerts.includes('wind_limit')) {
+          await this.handleIncident(session, IncidentKind.WIND_LIMIT);
+        }
+        if (step.alerts.includes('battery_critical')) {
+          await this.handleIncident(session, IncidentKind.BATTERY_CRITICAL);
+        }
+      }
+      if (
+        step.progress.phase === FlightPhase.LANDED &&
+        contingency?.protocol === ContingencyProtocol.EMERGENCY_LANDING
+      ) {
+        this.active.delete(orderId);
+        await this.landEmergency(session, step, contingency.incidentId);
+      } else if (step.progress.phase === FlightPhase.LANDED) {
         this.active.delete(orderId);
         if (session.leg === RouteLeg.RETURN) {
           // Si el dron ya tiene otro pedido vivo, sigue en misión con ese.
@@ -682,12 +918,17 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
             },
           );
           await this.missions.update(
-            { orderId },
+            { orderId, droneId: session.droneId, returnedAt: IsNull() },
             {
               returnedAt: simClock.now(),
               landingBatteryPercent: step.progress.batteryPercent,
             },
           );
+          if (contingency?.protocol === ContingencyProtocol.RETURN_TO_HUB) {
+            // RF-34: el paquete queda en cuarentena; RF-35: dron nuevo.
+            await this.incidents.returnedHome(contingency.incidentId);
+            await this.notifyAborted(orderId);
+          }
         } else if (landedAt) {
           this.waiting.set(orderId, landedAt);
           if (session.requiresColdChain) {
@@ -787,8 +1028,13 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     if (!flying) {
       return null;
     }
+    // RF-35: un pedido despachado otra vez tiene una misión por dron.
     let mission = await this.missions.findOne({
-      where: { orderId: session.orderId },
+      where: {
+        orderId: session.orderId,
+        droneId: session.droneId,
+        returnedAt: IsNull(),
+      },
     });
     if (!mission) {
       mission = this.missions.create({

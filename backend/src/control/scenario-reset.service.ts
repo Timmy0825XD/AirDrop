@@ -132,6 +132,7 @@ export class ScenarioResetService {
         'prescription_images',
         'mission_routes',
         'missions',
+        'flight_incidents',
         'notifications',
       ]) {
         await manager.query(

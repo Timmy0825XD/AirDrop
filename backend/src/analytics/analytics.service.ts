@@ -8,6 +8,7 @@ import { Hub } from '../hubs/hub.entity';
 import { QuarantineRecord } from '../inventory/quarantine-record.entity';
 import { Order } from '../orders/order.entity';
 import { addCalendarDays, todayInColombia } from '../orders/orders.rules';
+import { latestMissionByOrder } from '../simulation/missions.rules';
 import { Mission } from '../simulation/mission.entity';
 import {
   EXPIRING_SOON_DAYS,
@@ -110,9 +111,7 @@ export class AnalyticsService {
       ),
     ]);
     const codeBy = new Map(codes.map((code) => [code.orderId, code]));
-    const missionBy = new Map(
-      missions.map((mission) => [mission.orderId, mission]),
-    );
+    const missionBy = latestMissionByOrder(missions);
     const kmBy = new Map(routes.map((row) => [row.orderId, Number(row.km)]));
     return {
       period,

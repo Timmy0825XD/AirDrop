@@ -6,6 +6,10 @@ import { OrderStatus } from '../common/enums/order-status.enum';
 import { DecisionTrace } from '../orders/order.entity';
 import { FlightAlertKind } from '../simulation/simulation.rules';
 import { WeatherKind } from '../common/enums/weather-kind.enum';
+import { ContingencyProtocol } from '../common/enums/contingency-protocol.enum';
+import { IncidentKind } from '../common/enums/incident-kind.enum';
+import { IncidentOutcome } from '../common/enums/incident-outcome.enum';
+import { RouteLeg } from '../common/enums/route-leg.enum';
 
 /**
  * RF-39: cada paso del flujo, contado para la TV. No lleva datos de personas
@@ -407,6 +411,107 @@ export function geofenceDraft(
     detail: `${fence.reason}. Las rutas la rodean y los drones en el aire cambian de camino.`,
     source: 'console',
   };
+}
+
+export type IncidentFacts = {
+  orderId: string;
+  droneId: string;
+  hubId: string;
+  kind: IncidentKind;
+  leg: RouteLeg;
+  protocol: ContingencyProtocol;
+  outcome: IncidentOutcome;
+  latitude: number;
+  longitude: number;
+  batteryPercent: number;
+  landingLatitude: number | null;
+  landingLongitude: number | null;
+  packageOnBoard: boolean;
+};
+
+const INCIDENT_NAME: Record<IncidentKind, string> = {
+  [IncidentKind.BATTERY_CRITICAL]: 'batería crítica',
+  [IncidentKind.WIND_LIMIT]: 'viento sobre el límite',
+  [IncidentKind.ROUTE_BLOCKED]: 'sin camino seguro',
+  [IncidentKind.BATTERY_SHORT]: 'la batería no alcanza el desvío',
+};
+
+/**
+ * RF-34 y CU-32: el incidente y lo que decidió el sistema, y después en qué
+ * quedó. `rescueMinutes` solo para el aterrizaje de emergencia.
+ */
+export function incidentDraft(
+  incident: IncidentFacts,
+  identifier: string | null,
+  rescueMinutes: number | null = null,
+): TimelineDraft {
+  const drone = identifier ?? 'El dron';
+  const landed = incident.landingLatitude != null;
+  const base = {
+    kind: 'alert' as const,
+    orderId: incident.orderId,
+    droneId: incident.droneId,
+    hubId: incident.hubId,
+    latitude: landed ? incident.landingLatitude : incident.latitude,
+    longitude: landed ? incident.landingLongitude : incident.longitude,
+    source: 'system' as const,
+  };
+  const battery = `Batería ${Math.round(incident.batteryPercent)} %.`;
+  const what = `${drone}: ${INCIDENT_NAME[incident.kind]}`;
+  switch (incident.outcome) {
+    case IncidentOutcome.CONTINUED:
+      return {
+        ...base,
+        severity: 'warning',
+        title:
+          incident.leg === RouteLeg.RETURN
+            ? `${what}; sigue hacia la central`
+            : `${what}; sigue su misión`,
+        detail: `${battery} Le alcanza con la reserva.`,
+      };
+    case IncidentOutcome.RETURNING:
+      return {
+        ...base,
+        severity: 'danger',
+        title: `${what}; vuelve a la central con el paquete`,
+        detail: `${battery} No le alcanza para entregar y volver; al aterrizar sale otro dron.`,
+      };
+    case IncidentOutcome.LANDING:
+      return {
+        ...base,
+        severity: 'danger',
+        title: `${what}; aterrizaje de emergencia`,
+        detail: `${battery} Baja en el punto más cercano fuera de toda zona.`,
+      };
+    case IncidentOutcome.GROUNDED:
+      return {
+        ...base,
+        severity: 'warning',
+        title: `${drone} aterrizó de emergencia`,
+        detail:
+          rescueMinutes != null
+            ? `El rescate llega en unos ${rescueMinutes} min.`
+            : 'Espera el rescate.',
+      };
+    case IncidentOutcome.RETURNED:
+      return {
+        ...base,
+        severity: 'info',
+        title: `${drone} llegó a la central tras el incidente`,
+        detail: incident.packageOnBoard
+          ? 'El paquete queda en cuarentena.'
+          : null,
+      };
+    case IncidentOutcome.RESCUED:
+      return {
+        ...base,
+        severity: 'success',
+        title: `${drone} rescatado: entra a mantenimiento`,
+        detail: incident.packageOnBoard
+          ? 'El paquete queda en cuarentena.'
+          : null,
+      };
+  }
 }
 
 /** RF-33: la ruta cambió en vuelo, o no quedó una segura. */

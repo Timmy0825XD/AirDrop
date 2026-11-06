@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, IsNull, Repository } from 'typeorm';
 import { Drone } from '../fleet/drone.entity';
 import { Order } from '../orders/order.entity';
+import { FlightIncidentsService } from '../simulation/flight-incidents.service';
 import { Mission } from '../simulation/mission.entity';
 import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
 import { PendingAlert, pendingAlertKinds } from './pending-alerts.rules';
@@ -21,6 +22,7 @@ export class PendingAlertsService {
     @InjectRepository(Drone)
     private readonly drones: Repository<Drone>,
     private readonly publisher: TelemetryPublisher,
+    private readonly incidents: FlightIncidentsService,
   ) {}
 
   async list(): Promise<PendingAlert[]> {
@@ -34,6 +36,9 @@ export class PendingAlertsService {
     ]);
     const orderById = new Map(orders.map((order) => [order.id, order]));
     const droneById = new Map(drones.map((drone) => [drone.id, drone]));
+    const landings = await this.incidents.openLandings(
+      open.map((m) => m.droneId),
+    );
     const alerts: PendingAlert[] = [];
     for (const mission of open) {
       const order = orderById.get(mission.orderId);
@@ -41,8 +46,23 @@ export class PendingAlertsService {
       if (!order || !drone) {
         continue;
       }
-      const kinds = pendingAlertKinds(mission, order);
+      const landing = landings.get(drone.id);
+      const grounded = landing?.orderId === mission.orderId;
+      const kinds = pendingAlertKinds(mission, order, grounded);
       if (!kinds.length) {
+        continue;
+      }
+      if (grounded && landing?.landingLatitude != null) {
+        // RF-34: la telemetría del pedido ya puede ser del dron nuevo.
+        alerts.push({
+          orderId: order.id,
+          droneId: drone.id,
+          identifier: drone.identifier,
+          hubId: drone.hubId,
+          kinds,
+          latitude: landing.landingLatitude,
+          longitude: landing.landingLongitude,
+        });
         continue;
       }
       const flight = await this.publisher.readFlight(order.id);

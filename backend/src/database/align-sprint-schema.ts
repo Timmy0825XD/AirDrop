@@ -198,6 +198,35 @@ async function addGeofenceExpiry(boot: DataSource): Promise<void> {
   );
 }
 
+/**
+ * RF-34 y RF-35: tras un incidente el pedido vuelve a despacharse, así que
+ * puede tener más de una misión y más de una cuarentena. El taller que abre
+ * el rescate no tiene usuario.
+ */
+async function allowIncidentHistory(boot: DataSource): Promise<void> {
+  for (const table of ['missions', 'quarantine_records']) {
+    if (!(await tableExists(boot, table))) {
+      continue;
+    }
+    const indexes = (await boot.query(
+      `SELECT indexname, indexdef FROM pg_indexes
+       WHERE schemaname = 'public' AND tablename = $1`,
+      [table],
+    )) as Array<{ indexname: string; indexdef: string }>;
+    for (const index of indexes) {
+      const definition = index.indexdef.toLowerCase();
+      if (definition.includes('unique') && definition.includes('("orderid")')) {
+        await boot.query(`DROP INDEX IF EXISTS "${index.indexname}"`);
+      }
+    }
+  }
+  if (await tableExists(boot, 'drone_maintenances')) {
+    await boot.query(
+      `ALTER TABLE drone_maintenances ALTER COLUMN "openedByUserId" DROP NOT NULL`,
+    );
+  }
+}
+
 export async function alignSprintSchema(
   options: TypeOrmModuleOptions,
 ): Promise<void> {
@@ -232,6 +261,9 @@ export async function alignSprintSchema(
     await migrateInventorySaleType(boot);
     await addRouteHistory(boot);
     await addGeofenceExpiry(boot);
+    await addEnumValue(boot, 'drone_status', 'grounded');
+    await addEnumValue(boot, 'quarantine_reason', 'incident');
+    await allowIncidentHistory(boot);
   } finally {
     if (boot.isInitialized) {
       await boot.destroy();

@@ -4,6 +4,7 @@ import { In, Repository } from 'typeorm';
 import { DroneStatus } from '../common/enums/drone-status.enum';
 import { Order } from '../orders/order.entity';
 import { RoutePlannerService } from '../routing/route-planner.service';
+import { latestMissionByOrder } from '../simulation/missions.rules';
 import { Mission } from '../simulation/mission.entity';
 import { LiveFlight } from '../simulation/simulation.rules';
 import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
@@ -76,9 +77,7 @@ export class FleetFlightsService {
       this.routes.findOutboundMany(orderIds),
       this.routes.findReturnMany(orderIds),
     ]);
-    const missionBy = new Map(
-      missions.map((mission) => [mission.orderId, mission]),
-    );
+    const missionBy = latestMissionByOrder(missions);
     return drones.flatMap((drone) => {
       const order = active.get(drone.id);
       if (!order) {

@@ -18,6 +18,7 @@ import { Mission } from '../simulation/mission.entity';
 import { User } from '../users/user.entity';
 import { UserHubAssignment } from '../users/user-hub-assignment.entity';
 import { WeatherCell } from '../weather/weather-cell.entity';
+import { FlightIncident } from '../simulation/flight-incident.entity';
 
 export function typeOrmOptions(config: ConfigService): TypeOrmModuleOptions {
   const url = config.get<string>('DATABASE_URL');
@@ -52,6 +53,7 @@ export function typeOrmOptions(config: ConfigService): TypeOrmModuleOptions {
       PrescriptionImage,
       DeliveryCode,
       WeatherCell,
+      FlightIncident,
     ],
     synchronize: config.get<string>('NODE_ENV') !== 'production',
     dropSchema: isTest && config.get<string>('E2E_DROP_SCHEMA') === 'true',

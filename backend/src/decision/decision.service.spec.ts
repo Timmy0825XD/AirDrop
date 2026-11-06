@@ -262,6 +262,7 @@ function build(state?: {
     plan: jest.fn().mockReturnValue(corridor),
     saveOutbound: jest.fn(),
     deleteOutbound: jest.fn(),
+    deleteLegs: jest.fn().mockResolvedValue(undefined),
     findOutboundMany: jest.fn().mockResolvedValue(new Map()),
     findReturnMany: jest.fn().mockResolvedValue(new Map()),
   };
@@ -1093,5 +1094,77 @@ describe('DecisionService traza de la decisión', () => {
       outcome: 'rejected',
       hubs: [],
     });
+  });
+});
+
+describe('DecisionService.redispatchAfterIncident (RF-35, CU-44)', () => {
+  const morning = new Date('2026-10-16T15:00:00.000Z');
+
+  afterEach(() => {
+    jest.useRealTimers();
+  });
+
+  function crashed(overrides: Partial<Order> = {}) {
+    return received({
+      status: OrderStatus.IN_FLIGHT,
+      originHubId: HUB_ID,
+      droneId: DRONE_ID,
+      inventoryItemId: LOT_ID,
+      authorizedAt: new Date('2026-10-16T14:50:00.000Z'),
+      loadConfirmedAt: new Date('2026-10-16T14:52:00.000Z'),
+      dispatchedLot: 'L-0001',
+      dispatchedLotExpiresOn: '2027-01-01',
+      ...overrides,
+    });
+  }
+
+  it('la urgencia a una persona vuelve a recibido, sin dron ni central, para ofrecerse otra vez', async () => {
+    const order = crashed();
+    const { service, routes, notifications } = build({ order });
+    await expect(
+      service.redispatchAfterIncident(order.id, morning),
+    ).resolves.toBe('offers');
+    expect(order).toMatchObject({
+      status: OrderStatus.RECEIVED,
+      droneId: null,
+      originHubId: null,
+      loadConfirmedAt: null,
+      dispatchedLot: null,
+    });
+    expect(routes.deleteLegs).toHaveBeenCalledWith(order.id, expect.anything());
+    expect(notifications.statusChanged).toHaveBeenCalledWith(
+      order.id,
+      OrderStatus.RECEIVED,
+    );
+    // La central que la tenía deja de verla en su cola de carga.
+    expect(notifications.queueChanged).toHaveBeenCalledWith(HUB_ID, order.id);
+  });
+
+  it('el programado dentro de su franja queda reintentando (RF-18)', async () => {
+    jest.useFakeTimers({
+      now: morning,
+      doNotFake: ['nextTick', 'setImmediate'],
+    });
+    const order = crashed({
+      missionType: MissionType.SCHEDULED,
+      priority: OrderPriority.NORMAL,
+      scheduledFor: todayInColombia(morning),
+    });
+    const { service } = build({ order });
+    await expect(
+      service.redispatchAfterIncident(order.id, morning),
+    ).resolves.toBe('scheduled');
+    expect(order.status).toBe(OrderStatus.RECEIVED);
+    expect(order.originHubId).toBe(HUB_ID);
+    expect(order.fallbackKind).toBe(FallbackKind.RETRY);
+  });
+
+  it('un pedido que ya no está en vuelo no se toca', async () => {
+    const order = crashed({ status: OrderStatus.DELIVERED });
+    const { service, routes } = build({ order });
+    await expect(
+      service.redispatchAfterIncident(order.id, morning),
+    ).resolves.toBeNull();
+    expect(routes.deleteLegs).not.toHaveBeenCalled();
   });
 });

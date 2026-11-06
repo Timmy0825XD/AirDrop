@@ -161,6 +161,13 @@ export class RoutePlannerService {
     return previous;
   }
 
+  /** RF-35: el pedido vuelve a despacharse; el dron nuevo tendrá su corredor. */
+  async deleteLegs(orderId: string, manager: EntityManager): Promise<void> {
+    await manager.query(`DELETE FROM mission_routes WHERE "orderId" = $1`, [
+      orderId,
+    ]);
+  }
+
   async deleteOutbound(orderId: string, manager: EntityManager): Promise<void> {
     await manager.query(
       `DELETE FROM mission_routes WHERE "orderId" = $1 AND leg = $2`,

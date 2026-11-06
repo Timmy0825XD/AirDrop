@@ -18,6 +18,8 @@ export type FleetCounts = {
   available: number;
   inMission: number;
   maintenance: number;
+  /** RF-34: aterrizó de emergencia y espera el rescate. */
+  grounded: number;
   outOfService: number;
   total: number;
 };
@@ -29,6 +31,7 @@ export function countFleet(
     available: 0,
     inMission: 0,
     maintenance: 0,
+    grounded: 0,
     outOfService: 0,
     total: drones.length,
   };
@@ -36,6 +39,8 @@ export function countFleet(
     if (drone.status === DroneStatus.AVAILABLE) counts.available += 1;
     else if (drone.status === DroneStatus.IN_MISSION) counts.inMission += 1;
     else if (drone.status === DroneStatus.MAINTENANCE) counts.maintenance += 1;
+    // RF-34: en tierra fuera de base tras un aterrizaje de emergencia.
+    else if (drone.status === DroneStatus.GROUNDED) counts.grounded += 1;
     else counts.outOfService += 1;
   }
   return counts;

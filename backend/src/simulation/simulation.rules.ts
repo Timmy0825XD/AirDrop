@@ -1,3 +1,4 @@
+import { ContingencyProtocol } from '../common/enums/contingency-protocol.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { RouteLeg } from '../common/enums/route-leg.enum';
 import { UNIT_MASS_KG } from '../decision/decision.rules';
@@ -87,6 +88,14 @@ export type FlightProgress = {
   coldChainExcursionAtMs: number | null;
   coldChainAlertSent: boolean;
   orderStatus: OrderStatus;
+  /**
+   * RF-34: el protocolo que sigue el dron tras un incidente. Va en el
+   * progreso para que un reinicio del backend lo recuerde (Redis).
+   */
+  contingency?: {
+    protocol: ContingencyProtocol;
+    incidentId: string;
+  } | null;
 };
 
 export type FlightModel = {

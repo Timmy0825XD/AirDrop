@@ -48,8 +48,9 @@ export class DroneMaintenance {
   @Column({ type: 'int' })
   flightsAtStart: number;
 
-  @Column({ type: 'uuid' })
-  openedByUserId: string;
+  /** `null`: lo abrió el sistema al rescatar un dron (RF-34). */
+  @Column({ type: 'uuid', nullable: true })
+  openedByUserId: string | null;
 
   @CreateDateColumn({ type: 'timestamptz' })
   startedAt: Date;
