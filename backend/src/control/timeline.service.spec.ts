@@ -225,6 +225,45 @@ describe('TimelineService (RF-39)', () => {
     expect(redis.pushCapped).not.toHaveBeenCalled();
   });
 
+  /** El último tick de un regreso: el dron ya está en tierra en su central. */
+  const landedHome = (status: OrderStatus) =>
+    ({
+      type: 'telemetry',
+      orderId: 'order-1',
+      flight: {
+        leg: 'return',
+        phase: 'landed',
+        status,
+        latitude: HUB.latitude,
+        longitude: HUB.longitude,
+      },
+    }) as never;
+
+  it('cuenta, una sola vez, que el dron volvió vacío a su central tras entregar', async () => {
+    const { service, redis } = build(
+      'true',
+      order({ status: OrderStatus.DELIVERED, droneId: 'drone-1' }),
+    );
+    await service.handle(landedHome(OrderStatus.DELIVERED));
+    await service.handle(landedHome(OrderStatus.DELIVERED));
+    expect(pushed(redis)).toHaveLength(1);
+    expect(pushed(redis)[0]).toMatchObject({
+      kind: 'flight',
+      severity: 'success',
+      title: `WC-03 volvió vacío a ${HUB.name}`,
+      latitude: HUB.latitude,
+    });
+  });
+
+  it('el regreso con el paquete no se cuenta dos veces: ya lo cuenta su estado', async () => {
+    const { service, redis } = build(
+      'true',
+      order({ status: OrderStatus.RETURNED }),
+    );
+    await service.handle(landedHome(OrderStatus.RETURNED));
+    expect(redis.pushCapped).not.toHaveBeenCalled();
+  });
+
   it('lee las últimas entradas y salta las dañadas', async () => {
     const { service, redis } = build();
     redis.readList.mockResolvedValue([JSON.stringify({ id: 'a' }), '{roto']);

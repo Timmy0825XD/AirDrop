@@ -15,6 +15,10 @@ import { MissionType } from '../common/enums/mission-type.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { Drone } from '../fleet/drone.entity';
+import {
+  DRONE_HOLDING_STATUSES,
+  activeOrderByDrone,
+} from '../fleet/fleet-flights.rules';
 import { DroneModel } from '../fleet/drone-model.entity';
 import { GeoJsonPolygon } from '../geofences/geofences.rules';
 import { Hub } from '../hubs/hub.entity';
@@ -222,11 +226,12 @@ export class DecisionService {
 
   /**
    * Vuelos en curso de la central del despachador: al despegar, el pedido
-   * sale de la cola y de pending-load, y esta es su entrada al mapa.
+   * sale de la cola y de pending-load, y esta es su entrada al mapa. Un
+   * pedido entregado sigue aquí mientras su dron vuelve vacío a la central.
    */
   async listInFlight(user: User) {
     const hub = await this.requireDispatcherHub(user);
-    const rows = await this.dataSource.getRepository(Order).find({
+    const live = await this.dataSource.getRepository(Order).find({
       where: {
         originHubId: hub.id,
         status: In([
@@ -237,7 +242,33 @@ export class DecisionService {
       },
       order: { updatedAt: 'DESC' },
     });
+    const rows = [...live, ...(await this.emptyReturns(hub.id))].sort(
+      (a, b) => b.updatedAt.getTime() - a.updatedAt.getTime(),
+    );
     return this.attachAssignments(rows.map((row) => presentOrder(row)));
+  }
+
+  /**
+   * Pedidos entregados cuyo dron todavía vuela de regreso a esta central.
+   * Un entregado conserva su `droneId` para siempre: solo cuenta si el dron
+   * sigue en misión y no tiene otro pedido vivo (la regla del mapa del
+   * operador, `activeOrderByDrone`).
+   */
+  private async emptyReturns(hubId: string): Promise<Order[]> {
+    const drones = await this.dataSource.getRepository(Drone).find({
+      where: { hubId, status: DroneStatus.IN_MISSION },
+    });
+    if (!drones.length) {
+      return [];
+    }
+    const droneIds = drones.map((drone) => drone.id);
+    const holding = await this.dataSource.getRepository(Order).find({
+      where: { droneId: In(droneIds), status: In(DRONE_HOLDING_STATUSES) },
+    });
+    return [...activeOrderByDrone(holding, droneIds).values()].filter(
+      (order) =>
+        order.status === OrderStatus.DELIVERED && order.originHubId === hubId,
+    );
   }
 
   async attachAssignments<T extends { id: string; droneId: string | null }>(

@@ -14,6 +14,7 @@ import {
   TelemetryPublisher,
 } from '../telemetry/telemetry.publisher';
 import { TelemetryRedis } from '../telemetry/telemetry.redis';
+import { isFlightEnd } from '../telemetry/telemetry.rules';
 import { isControlEnabled } from './control.rules';
 import {
   OrderFacts,
@@ -24,6 +25,7 @@ import {
   TimelineEntry,
   alertDraft,
   clockDraft,
+  homeDraft,
   queueDraft,
   statusDraft,
 } from './timeline.rules';
@@ -43,6 +45,8 @@ export class TimelineService implements OnModuleInit {
   private chain: Promise<void> = Promise.resolve();
   private readonly lastStatus = new Map<string, OrderStatus>();
   private readonly queued = new Set<string>();
+  /** Regresos vacíos ya contados (el aterrizaje llega en un solo tick). */
+  private readonly landedHome = new Set<string>();
 
   constructor(
     private readonly config: ConfigService,
@@ -88,6 +92,7 @@ export class TimelineService implements OnModuleInit {
     await this.redis.remove([TIMELINE_KEY]);
     this.lastStatus.clear();
     this.queued.clear();
+    this.landedHome.clear();
   }
 
   /** Una acción de la consola que no pasa por el bus (p. ej. el reinicio). */
@@ -119,6 +124,17 @@ export class TimelineService implements OnModuleInit {
       await this.onQueue(event.orderId, event.hubId);
       return;
     }
+    if (event.type === 'telemetry') {
+      // Solo el aterrizaje en la central tras entregar; el regreso con el
+      // paquete ya se cuenta por su estado (`returned`).
+      if (
+        isFlightEnd(event.flight) &&
+        event.flight.status === OrderStatus.DELIVERED
+      ) {
+        await this.onHome(event.orderId, event.flight);
+      }
+      return;
+    }
     if (event.type === 'alert') {
       await this.onAlert(
         event.orderId,
@@ -143,6 +159,26 @@ export class TimelineService implements OnModuleInit {
     if (draft) {
       await this.record(draft);
     }
+  }
+
+  private async onHome(
+    orderId: string,
+    flight: { latitude: number; longitude: number },
+  ): Promise<void> {
+    if (this.landedHome.has(orderId)) {
+      return;
+    }
+    this.remember(this.landedHome, () => this.landedHome.add(orderId));
+    const order = await this.orders.findOne({ where: { id: orderId } });
+    if (!order) {
+      return;
+    }
+    await this.record(
+      homeDraft(await this.factsOf(order), {
+        latitude: flight.latitude,
+        longitude: flight.longitude,
+      }),
+    );
   }
 
   /** RU-10: solo cuenta la urgencia que entra a una cola, una vez por central. */

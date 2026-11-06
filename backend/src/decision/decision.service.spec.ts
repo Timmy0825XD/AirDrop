@@ -655,6 +655,80 @@ describe('DecisionService.listInFlight', () => {
     expect(rows[0].status).toBe(OrderStatus.IN_FLIGHT);
     expect(rows[0].assignment?.identifier).toBe('WC-01');
   });
+
+  /** Arma la lista con un pedido entregado y lo que el dron tenga además. */
+  async function listWithDelivered(options: {
+    droneStatus: DroneStatus;
+    alsoLive?: boolean;
+  }) {
+    const delivered = received({
+      status: OrderStatus.DELIVERED,
+      originHubId: HUB_ID,
+      droneId: DRONE_ID,
+    });
+    const next = received({
+      id: '99999999-9999-4999-8999-999999999999',
+      status: OrderStatus.PENDING_LOAD,
+      originHubId: HUB_ID,
+      droneId: DRONE_ID,
+    });
+    const orders = {
+      find: jest.fn(({ where }: { where: { originHubId?: string } }) =>
+        Promise.resolve(
+          // La primera consulta (por central) trae los vivos; la segunda,
+          // por dron, lo que ocupa a cada dron en misión.
+          where.originHubId
+            ? options.alsoLive
+              ? [next]
+              : []
+            : options.alsoLive
+              ? [delivered, next]
+              : [delivered],
+        ),
+      ),
+    };
+    const fleet = [drone({ status: options.droneStatus })];
+    const drones = {
+      // Como la base: si se filtra por estado, solo devuelve los que lo tienen.
+      find: jest.fn(({ where }: { where?: { status?: DroneStatus } }) =>
+        Promise.resolve(
+          fleet.filter((row) => !where?.status || row.status === where.status),
+        ),
+      ),
+    };
+    const models = { find: jest.fn().mockResolvedValue([model()]) };
+    const { service, dataSource } = build();
+    dataSource.getRepository.mockImplementation((entity: unknown) => {
+      if (entity === Order) return orders;
+      if (entity === Drone) return drones;
+      if (entity === DroneModel) return models;
+      throw new Error('Repositorio inesperado');
+    });
+    return { rows: await service.listInFlight(dispatcher()), delivered };
+  }
+
+  it('keeps a delivered order while its drone flies back empty to the hub', async () => {
+    const { rows, delivered } = await listWithDelivered({
+      droneStatus: DroneStatus.IN_MISSION,
+    });
+    expect(rows.map((row) => row.id)).toEqual([delivered.id]);
+    expect(rows[0].status).toBe(OrderStatus.DELIVERED);
+  });
+
+  it('drops the delivered order once its drone is back at the hub', async () => {
+    const { rows } = await listWithDelivered({
+      droneStatus: DroneStatus.AVAILABLE,
+    });
+    expect(rows).toEqual([]);
+  });
+
+  it('does not show an old delivery when its drone already took another order', async () => {
+    const { rows, delivered } = await listWithDelivered({
+      droneStatus: DroneStatus.IN_MISSION,
+      alsoLive: true,
+    });
+    expect(rows.map((row) => row.id)).not.toContain(delivered.id);
+  });
 });
 
 describe('DecisionService.confirmLoad', () => {
