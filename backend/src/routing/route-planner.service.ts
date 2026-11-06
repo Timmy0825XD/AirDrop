@@ -97,6 +97,50 @@ export class RoutePlannerService {
     );
   }
 
+  /**
+   * RF-33: el corredor cambió en vuelo. El de antes queda en `previousPath`
+   * para que la consola lo muestre punteado.
+   */
+  async replaceLeg(
+    orderId: string,
+    leg: RouteLeg,
+    corridor: PlannedCorridor,
+    manager: EntityManager = this.dataSource.manager,
+  ): Promise<void> {
+    const path = JSON.stringify({
+      type: 'LineString',
+      coordinates: corridor.coordinates,
+    });
+    await manager.query(
+      `UPDATE mission_routes
+       SET "previousPath" = path,
+           path = ST_SetSRID(ST_GeomFromGeoJSON($3), 4326),
+           "distanceKm" = $4
+       WHERE "orderId" = $1 AND leg = $2`,
+      [orderId, leg, path, corridor.distanceKm],
+    );
+  }
+
+  /** Los corredores de antes de cambiar la ruta, por tramo. */
+  async findPrevious(
+    orderId: string,
+  ): Promise<Partial<Record<RouteLeg, Array<[number, number]>>>> {
+    const rows: Array<{ leg: RouteLeg; path: string }> =
+      await this.dataSource.query(
+        `SELECT leg, ST_AsGeoJSON("previousPath") AS path
+         FROM mission_routes
+         WHERE "orderId" = $1 AND "previousPath" IS NOT NULL`,
+        [orderId],
+      );
+    const previous: Partial<Record<RouteLeg, Array<[number, number]>>> = {};
+    for (const row of rows) {
+      previous[row.leg] = (
+        JSON.parse(row.path) as { coordinates: Array<[number, number]> }
+      ).coordinates;
+    }
+    return previous;
+  }
+
   async deleteOutbound(orderId: string, manager: EntityManager): Promise<void> {
     await manager.query(
       `DELETE FROM mission_routes WHERE "orderId" = $1 AND leg = $2`,

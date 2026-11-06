@@ -316,6 +316,15 @@ export class TelemetryGateway
         this.server?.to(RADAR_ROOM).emit('radar-reset', {});
         return;
       }
+      if (event.type === 'rerouted') {
+        // RF-33: el radar recarga la ruta del vuelo; el aviso va por la línea de tiempo.
+        this.server?.to(RADAR_ROOM).emit('radar-reroute', {
+          orderId: event.orderId,
+          droneId: event.droneId,
+          outcome: event.outcome,
+        });
+        return;
+      }
       this.emitRadar(event);
       await this.emitHubFleetSafely(event);
       if (event.type === 'telemetry') {

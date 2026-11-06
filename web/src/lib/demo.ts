@@ -283,6 +283,8 @@ export function demoSource(): RadarSource {
         flight,
         route: corridor(m, false),
         returnRoute: flight.leg === "return" ? corridor(m, true) : null,
+        previousRoute: null,
+        previousReturnRoute: null,
         originHub: { id: hubs[m.from].id, name: hubs[m.from].name },
         destinationHub: { id: hubs[m.to].id, name: hubs[m.to].name },
       };

@@ -7,6 +7,7 @@ import {
   activeOrderByDrone,
 } from '../fleet/fleet-flights.rules';
 import { Drone } from '../fleet/drone.entity';
+import { RouteLeg } from '../common/enums/route-leg.enum';
 import { Hub } from '../hubs/hub.entity';
 import { InventoryItem } from '../inventory/inventory-item.entity';
 import { QuarantineRecord } from '../inventory/quarantine-record.entity';
@@ -149,10 +150,11 @@ export class RadarService {
     if (!drone) {
       throw new NotFoundException('Ese vuelo no existe.');
     }
-    const [[flight], outbound, back, hubs] = await Promise.all([
+    const [[flight], outbound, back, previous, hubs] = await Promise.all([
       this.flightsOf([drone], [order]),
       this.routes.findOutboundMany([orderId]),
       this.routes.findReturnMany([orderId]),
+      this.routes.findPrevious(orderId),
       this.hubs.find({
         where: {
           id: In([order.originHubId, order.destinationHubId].filter(Boolean)),
@@ -163,6 +165,9 @@ export class RadarService {
       flight: flight ?? null,
       route: outbound.get(orderId) ?? null,
       returnRoute: back.get(orderId) ?? null,
+      /** RF-33: lo que iba a volar antes de cambiar la ruta (punteado en la consola). */
+      previousRoute: previous[RouteLeg.OUTBOUND] ?? null,
+      previousReturnRoute: previous[RouteLeg.RETURN] ?? null,
       originHub: this.hubName(hubs, order.originHubId),
       destinationHub: this.hubName(hubs, order.destinationHubId),
     };

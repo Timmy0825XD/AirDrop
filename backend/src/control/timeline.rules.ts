@@ -257,6 +257,64 @@ export function homeDraft(
   };
 }
 
+/** RF-33: la ruta cambió en vuelo, o no quedó una segura. */
+export function rerouteDraft(
+  order: OrderFacts,
+  change: {
+    outcome: 'rerouted' | 'blocked';
+    addedKm: number | null;
+    crossesGeofence: boolean;
+    batteryShort: boolean;
+  },
+  position: Position | null,
+): TimelineDraft {
+  const drone = order.drone?.identifier ?? 'El dron';
+  const base = {
+    kind: 'flight' as const,
+    orderId: order.id,
+    droneId: order.drone?.id ?? null,
+    hubId: order.originHub?.id ?? null,
+    latitude: position?.latitude ?? null,
+    longitude: position?.longitude ?? null,
+    source: 'system' as const,
+  };
+  if (change.outcome === 'blocked') {
+    return {
+      ...base,
+      severity: 'danger',
+      title: `${drone} no tiene una ruta segura`,
+      detail:
+        'Una zona nueva le cierra el camino y no hay un corredor que la rodee.',
+    };
+  }
+  const notes = [routeLengthNote(change.addedKm)];
+  if (change.crossesGeofence) {
+    notes.push('Tuvo que cruzar la zona: quedó dentro o su destino también.');
+  }
+  if (change.batteryShort) {
+    notes.push('Por el camino nuevo la batería no alcanza con la reserva.');
+  }
+  return {
+    ...base,
+    severity:
+      change.crossesGeofence || change.batteryShort ? 'danger' : 'warning',
+    title: `${drone} cambió de ruta`,
+    detail: notes.join(' '),
+  };
+}
+
+function routeLengthNote(addedKm: number | null): string {
+  if (addedKm == null || Math.abs(addedKm) < 0.05) {
+    return 'Una zona nueva cruzaba su camino.';
+  }
+  const km = Math.abs(addedKm).toLocaleString('es-CO', {
+    maximumFractionDigits: 1,
+  });
+  return addedKm > 0
+    ? `Una zona nueva cruzaba su camino: el desvío suma ${km} km.`
+    : `Una zona nueva cruzaba su camino: el nuevo es ${km} km más corto.`;
+}
+
 /** RU-10: la urgencia entró a la cola de una central. */
 export function queueDraft(
   order: OrderFacts,

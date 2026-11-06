@@ -13,6 +13,7 @@ import {
   decisionSummary,
   missionLabel,
   queueDraft,
+  rerouteDraft,
   statusDraft,
 } from './timeline.rules';
 
@@ -192,6 +193,59 @@ describe('línea de tiempo (RF-39)', () => {
     expect(clockDraft({ now: '', speed: 4, paused: true })).toMatchObject({
       title: 'Reloj en pausa',
       source: 'console',
+    });
+  });
+
+  it('cuenta el cambio de ruta con lo que suma el desvío (RF-33)', () => {
+    const draft = rerouteDraft(
+      facts(),
+      {
+        outcome: 'rerouted',
+        addedKm: 1.4,
+        crossesGeofence: false,
+        batteryShort: false,
+      },
+      null,
+    );
+    expect(draft).toMatchObject({
+      kind: 'flight',
+      severity: 'warning',
+      title: 'WC-03 cambió de ruta',
+      detail: 'Una zona nueva cruzaba su camino: el desvío suma 1,4 km.',
+    });
+  });
+
+  it('marca en rojo un desvío que cruza la zona o que deja corta la batería', () => {
+    const draft = rerouteDraft(
+      facts(),
+      {
+        outcome: 'rerouted',
+        addedKm: 2,
+        crossesGeofence: true,
+        batteryShort: true,
+      },
+      null,
+    );
+    expect(draft.severity).toBe('danger');
+    expect(draft.detail).toContain('Tuvo que cruzar la zona');
+    expect(draft.detail).toContain('la batería no alcanza');
+  });
+
+  it('sin camino seguro lo dice claro', () => {
+    expect(
+      rerouteDraft(
+        facts(),
+        {
+          outcome: 'blocked',
+          addedKm: null,
+          crossesGeofence: true,
+          batteryShort: false,
+        },
+        null,
+      ),
+    ).toMatchObject({
+      severity: 'danger',
+      title: 'WC-03 no tiene una ruta segura',
     });
   });
 

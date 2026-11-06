@@ -733,3 +733,93 @@ describe('FlightClockService batería entre vuelos', () => {
     );
   });
 });
+
+describe('FlightClockService recheckRoutes (RF-33)', () => {
+  /** Recta de unos 11 km y una zona nueva atravesada a mitad de camino. */
+  const straight: PlannedCorridor = {
+    altitudeM: 100,
+    distanceKm: 10.94,
+    coordinates: [
+      [-73.3, 10.46],
+      [-73.2, 10.46],
+    ],
+  };
+  const fence = {
+    type: 'Polygon' as const,
+    coordinates: [
+      [
+        [-73.255, 10.45],
+        [-73.245, 10.45],
+        [-73.245, 10.47],
+        [-73.255, 10.47],
+        [-73.255, 10.45],
+      ],
+    ],
+  };
+
+  function flying(phase: FlightPhase, cruiseKm: number) {
+    const built = build();
+    const routes = built.routes as typeof built.routes & {
+      replaceLeg: jest.Mock;
+    };
+    routes.loadPolygons.mockResolvedValue([fence]);
+    routes.replaceLeg = jest.fn().mockResolvedValue(undefined);
+    const notifications = built.notifications as typeof built.notifications & {
+      rerouted: jest.Mock;
+    };
+    notifications.rerouted = jest.fn().mockResolvedValue(undefined);
+    built.service['active'].set(ORDER_ID, {
+      leg: RouteLeg.OUTBOUND,
+      keepStatus: false,
+      orderId: ORDER_ID,
+      droneId: DRONE_ID,
+      identifier: 'WG-198-001',
+      quantity: 1,
+      requiresColdChain: false,
+      corridor: straight,
+      model: { maxSpeedKmh: 150, maxRangeKm: 110 },
+      progress: { ...initialProgress(), phase, cruiseKm, batteryPercent: 90 },
+      loadConfirmedAt: new Date('2026-10-19T14:00:00.000Z'),
+      departure: null,
+    });
+    return { ...built, routes, notifications };
+  }
+
+  it('el dron en crucero toma el desvío, se guarda la ruta vieja y se avisa', async () => {
+    const { service, routes, notifications } = flying(FlightPhase.CRUISE, 2);
+    await service.recheckRoutes();
+    const session = service['active'].get(ORDER_ID)!;
+    expect(session.corridor.coordinates.length).toBeGreaterThan(2);
+    expect(session.progress.cruiseKm).toBe(2);
+    expect(routes.replaceLeg).toHaveBeenCalledWith(
+      ORDER_ID,
+      RouteLeg.OUTBOUND,
+      session.corridor,
+    );
+    expect(notifications.rerouted).toHaveBeenCalledWith(
+      expect.objectContaining({
+        orderId: ORDER_ID,
+        outcome: 'rerouted',
+        crossesGeofence: false,
+        batteryShort: false,
+      }),
+    );
+  });
+
+  it('si ya está bajando en el destino, no cambia nada', async () => {
+    const { service, routes, notifications } = flying(FlightPhase.DESCENT, 0);
+    await service.recheckRoutes();
+    expect(service['active'].get(ORDER_ID)!.corridor).toBe(straight);
+    expect(routes.replaceLeg).not.toHaveBeenCalled();
+    expect(notifications.rerouted).not.toHaveBeenCalled();
+  });
+
+  it('avisa si por el camino nuevo no le alcanza la batería con la reserva', async () => {
+    const { service, notifications } = flying(FlightPhase.CRUISE, 2);
+    service['active'].get(ORDER_ID)!.progress.batteryPercent = 30;
+    await service.recheckRoutes();
+    expect(notifications.rerouted).toHaveBeenCalledWith(
+      expect.objectContaining({ batteryShort: true }),
+    );
+  });
+});

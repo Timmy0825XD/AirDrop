@@ -74,8 +74,13 @@ function build() {
     findOne: jest.fn().mockResolvedValue({ id: row(plaza).id }),
   };
   const hubs = { find: jest.fn().mockResolvedValue([rosario, clinica]) };
-  const service = new GeofencesService(geofences as never, hubs as never);
-  return { service, geofences };
+  const flights = { recheckRoutes: jest.fn().mockResolvedValue(undefined) };
+  const service = new GeofencesService(
+    geofences as never,
+    hubs as never,
+    flights as never,
+  );
+  return { service, geofences, flights };
 }
 
 async function errors<T extends object>(
@@ -87,6 +92,40 @@ async function errors<T extends object>(
     Object.values(failure.constraints ?? {}),
   );
 }
+
+describe('Una geovalla cambia la ruta de los drones en el aire (RF-33)', () => {
+  const operatorUser = { id: 'op-1' } as never;
+
+  it('crear una geovalla revisa los vuelos en curso', async () => {
+    const { service, flights } = build();
+    await service.create(operatorUser, {
+      name: 'Evento',
+      reason: 'Concierto',
+      polygon: plaza,
+    } as never);
+    expect(flights.recheckRoutes).toHaveBeenCalledTimes(1);
+  });
+
+  it('editar solo el nombre no revisa nada; mover el polígono sí', async () => {
+    const { service, flights } = build();
+    await service.update(row(plaza).id, { name: 'Otro nombre' } as never);
+    expect(flights.recheckRoutes).not.toHaveBeenCalled();
+    await service.update(row(plaza).id, { polygon: plaza } as never);
+    expect(flights.recheckRoutes).toHaveBeenCalledTimes(1);
+  });
+
+  it('si revisar los vuelos falla, la geovalla queda guardada igual', async () => {
+    const { service, flights } = build();
+    flights.recheckRoutes.mockRejectedValue(new Error('Redis caído'));
+    await expect(
+      service.create(operatorUser, {
+        name: 'Evento',
+        reason: 'Concierto',
+        polygon: plaza,
+      } as never),
+    ).resolves.toMatchObject({ name: expect.any(String) });
+  });
+});
 
 describe('Una geovalla no cubre una central', () => {
   it('la regla nombra la central que queda dentro', () => {
