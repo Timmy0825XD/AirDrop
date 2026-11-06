@@ -2,11 +2,6 @@ import { createHash, randomInt } from 'node:crypto';
 import * as bcrypt from 'bcryptjs';
 import { DocumentType } from '../common/enums/document-type.enum';
 import { User } from '../users/user.entity';
-import {
-  INSTITUTIONAL_ROLES,
-  PUBLIC_REGISTER_ROLES,
-  UserRole,
-} from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import {
   FIELD_LIMITS,
@@ -64,14 +59,6 @@ export async function passwordsMatch(
   passwordHash: string,
 ): Promise<boolean> {
   return bcrypt.compare(password, passwordHash);
-}
-
-export function requiresInstitutionalEmail(role: UserRole): boolean {
-  return INSTITUTIONAL_ROLES.includes(role);
-}
-
-export function isPublicRegisterRole(role: string): boolean {
-  return (PUBLIC_REGISTER_ROLES as string[]).includes(role);
 }
 
 const DOCUMENT_PATTERNS: Record<DocumentType, RegExp> = {

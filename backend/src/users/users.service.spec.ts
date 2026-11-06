@@ -61,8 +61,8 @@ describe('UsersService.setSuspension', () => {
         'cccccccc-cccc-cccc-cccc-cccccccccccc',
       ],
     };
-    await expect(
-      service.createInstitutional(user({ role: UserRole.ADMIN }), dto),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(service.createInstitutional(dto)).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 });

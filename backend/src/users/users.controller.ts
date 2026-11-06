@@ -30,11 +30,8 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  async create(
-    @CurrentUser() actor: User,
-    @Body() dto: CreateInstitutionalUserDto,
-  ) {
-    const saved = await this.usersService.createInstitutional(actor, dto);
+  async create(@Body() dto: CreateInstitutionalUserDto) {
+    const saved = await this.usersService.createInstitutional(dto);
     return this.usersService.toPublicUser(saved);
   }
 

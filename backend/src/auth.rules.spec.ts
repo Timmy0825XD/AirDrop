@@ -1,7 +1,6 @@
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import { DocumentType } from './common/enums/document-type.enum';
-import { PUBLIC_REGISTER_ROLES, UserRole } from './common/enums/user-role.enum';
 import { UserStatus } from './common/enums/user-status.enum';
 import {
   FIELD_LIMITS,
@@ -12,10 +11,8 @@ import {
   isLockActive,
   isOtpConsumed,
   isOtpExpired,
-  isPublicRegisterRole,
   nextFailedLoginState,
   normalizeDocumentNumber,
-  requiresInstitutionalEmail,
   clearLockState,
 } from './auth/auth.rules';
 import { RegisterDto } from './auth/dto/register.dto';
@@ -49,26 +46,11 @@ describe('auth.rules', () => {
     );
   });
 
-  it('requires email for dispatcher and fleet operator', () => {
-    expect(requiresInstitutionalEmail(UserRole.DISPATCHER)).toBe(true);
-    expect(requiresInstitutionalEmail(UserRole.FLEET_OPERATOR)).toBe(true);
-    expect(requiresInstitutionalEmail(UserRole.REQUESTER)).toBe(false);
-    expect(requiresInstitutionalEmail(UserRole.ADMIN)).toBe(false);
-  });
-
   it('keeps suspended status when clearing a lock', () => {
     const next = clearLockState(UserStatus.SUSPENDED);
     expect(next.status).toBe(UserStatus.SUSPENDED);
     expect(next.failedLoginCount).toBe(0);
     expect(next.lockedUntil).toBeNull();
-  });
-
-  it('allows only the requester on public register', () => {
-    expect(PUBLIC_REGISTER_ROLES).toEqual([UserRole.REQUESTER]);
-    expect(isPublicRegisterRole(UserRole.REQUESTER)).toBe(true);
-    expect(isPublicRegisterRole(UserRole.DISPATCHER)).toBe(false);
-    expect(isPublicRegisterRole(UserRole.ADMIN)).toBe(false);
-    expect(isPublicRegisterRole('recipient')).toBe(false);
   });
 
   it('accepts citizenship, foreigner id and PPT numbers', () => {

@@ -4,6 +4,8 @@
  * caso para que la terminal lo muestre en la captura.
  */
 import { ConflictException, ForbiddenException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtStrategy } from '../auth/jwt.strategy';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { SaleType } from '../common/enums/sale-type.enum';
@@ -12,6 +14,7 @@ import { UserStatus } from '../common/enums/user-status.enum';
 import { Hub } from '../hubs/hub.entity';
 import { HubsService } from '../hubs/hubs.service';
 import { User } from '../users/user.entity';
+import { UsersService } from '../users/users.service';
 import { CreateInventoryItemDto } from './dto/create-inventory-item.dto';
 import { InventoryItem } from './inventory-item.entity';
 import { InventoryService } from './inventory.service';
@@ -139,19 +142,23 @@ describe('CU-08 Gestionar inventario', () => {
     expect(items.save).not.toHaveBeenCalled();
   });
 
-  it('CP-08-08 rechaza la creación por un despachador con la cuenta no activa (403)', async () => {
-    const { service, items } = build();
-
-    const intento = service.create(
-      usuario({ status: UserStatus.SUSPENDED }),
-      valido,
+  it('CP-08-08 rechaza la creación por un despachador con la cuenta no activa (401)', async () => {
+    // La cuenta suspendida no llega al servicio: JwtStrategy no la deja
+    // pasar y el guard responde 401 antes de tocar el inventario.
+    const suspended = usuario({ status: UserStatus.SUSPENDED });
+    const strategy = new JwtStrategy(
+      { getOrThrow: () => 'secreto-de-prueba' } as unknown as ConfigService,
+      {
+        findById: jest.fn().mockResolvedValue(suspended),
+      } as unknown as UsersService,
     );
 
-    await expect(intento).rejects.toBeInstanceOf(ForbiddenException);
-    await expect(intento).rejects.toThrow(
-      'Tu cuenta debe estar activa para gestionar inventario.',
-    );
-    expect(items.save).not.toHaveBeenCalled();
+    const user = await strategy.validate({
+      sub: suspended.id,
+      role: UserRole.DISPATCHER,
+    });
+
+    expect(user).toBeNull();
   });
 
   it('CP-08-09 no da de baja un ítem comprometido en una misión (409)', async () => {

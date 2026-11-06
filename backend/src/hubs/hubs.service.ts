@@ -12,7 +12,6 @@ import { Drone } from '../fleet/drone.entity';
 import { Order } from '../orders/order.entity';
 import { UserRole } from '../common/enums/user-role.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
-import { UserStatus } from '../common/enums/user-status.enum';
 import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
 import { CreateHubDto } from './dto/create-hub.dto';
@@ -35,7 +34,7 @@ export class HubsService {
   ) {}
 
   async create(user: User, dto: CreateHubDto) {
-    this.assertActiveAdmin(user);
+    this.assertAdmin(user);
     const hub = this.hubs.create({
       name: dto.name.trim(),
       type: dto.type,
@@ -57,7 +56,7 @@ export class HubsService {
    * una geovalla.
    */
   async update(user: User, hubId: string, dto: UpdateHubDto) {
-    this.assertActiveAdmin(user, 'Solo el administrador edita centrales.');
+    this.assertAdmin(user, 'Solo el administrador edita centrales.');
     assertHubPatch(dto);
     const hub = await this.hubs.findOne({ where: { id: hubId } });
     if (!hub) {
@@ -82,7 +81,6 @@ export class HubsService {
   }
 
   async findMine(user: User) {
-    this.assertActiveAccount(user);
     if (user.role !== UserRole.DISPATCHER) {
       throw new ForbiddenException('Solo el despachador tiene una central.');
     }
@@ -106,7 +104,6 @@ export class HubsService {
   }
 
   async listAssigned(user: User) {
-    this.assertActiveAccount(user);
     const hubIds = assignedHubIds(user);
     if (!hubIds.length) {
       return [];
@@ -201,21 +198,12 @@ export class HubsService {
     }
   }
 
-  private assertActiveAdmin(
+  private assertAdmin(
     user: User,
     message = 'Solo el administrador crea centrales.',
   ): void {
-    this.assertActiveAccount(user);
     if (user.role !== UserRole.ADMIN) {
       throw new ForbiddenException(message);
-    }
-  }
-
-  private assertActiveAccount(user: User): void {
-    if (user.status !== UserStatus.ACTIVE) {
-      throw new ForbiddenException(
-        'Tu cuenta debe estar activa para gestionar la central.',
-      );
     }
   }
 }

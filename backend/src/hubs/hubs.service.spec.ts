@@ -103,15 +103,4 @@ describe('HubsService', () => {
       service.requireActive('bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
-
-  it('rejects an inactive admin', async () => {
-    const service = buildService({
-      findOne: jest.fn(),
-      create: jest.fn(),
-      save: jest.fn(),
-    });
-    await expect(
-      service.create(admin({ status: UserStatus.SUSPENDED }), dto),
-    ).rejects.toBeInstanceOf(ForbiddenException);
-  });
 });
