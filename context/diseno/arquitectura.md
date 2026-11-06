@@ -36,7 +36,7 @@ Dirección acordada en el documento base. El detalle de carpetas y convenciones 
 ## 6. Motor de simulación
 
 - Un **reloj** en el backend (intervalo configurable, techo 2 s reales en vuelo).
-- La hora la da `SimClockService` (RF-31): pausa, x1, x2, x4 o x8. Cada tick avanza el tiempo simulado que toque. JWT, OTP y login siguen en hora real.
+- La hora la da `simClock` (`common/clock/`, RF-31): pausa, x1, x2, x4 o x8. Cada tick avanza el tiempo simulado que toque. JWT, OTP y login siguen en hora real.
 - Cada tick: avanza el dron en la ruta, recalcula batería según **fase** (vertical vs ala fija).
 - Specs desde `DroneModel` (Wingcopter 198), independientes de cada unidad de flota.
 - La cuenta de batería vive en `simulation/flight-energy.rules.ts`. El reloj la usa para gastar en cada tick y el motor de decisión para saber si el vuelo alcanza (RF-11).

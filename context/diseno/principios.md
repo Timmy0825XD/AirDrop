@@ -65,7 +65,7 @@ No hace falta un “bounded context” formal ni eventos de dominio entre estos 
 - `RoutePlannerService`: calcula polyline / waypoints o falla si no hay corredor.
 - `FlightClockService`: avanza simulación en intervalos (RNF-08: ≤ 2 s).
 - `FallbackService`: alternativa cuando elegibilidad es vacía (RF-18, CU-31).
-- `SimClockService`: dice qué hora es en la simulación y a qué velocidad corre (RF-31). Nadie más llama a `new Date()` en una regla.
+- `simClock`: dice qué hora es en la simulación y a qué velocidad corre (RF-31). Nadie más llama a `new Date()` en una regla. `ClockControlService` solo lo cambia, lo guarda y lo publica.
 - `contingency.rules.ts`: dado un incidente y el estado del vuelo, elige el protocolo (RF-34). El reloj de vuelo lo ejecuta, no lo decide.
 
 **O — Abierto/cerrado**

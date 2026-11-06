@@ -20,6 +20,7 @@ import {
   simulatedWeather,
 } from './decision.rules';
 import { EligibilityService } from './eligibility.service';
+import { simClock } from '../common/clock/sim-clock';
 
 export type HubEvaluation = {
   lot: InventoryItem | null;
@@ -77,7 +78,7 @@ export class HubEvaluationService {
     ).getMany();
     const modelsById = await this.modelsById(manager, drones);
     const heldByDrone = await this.heldByDrone(manager, drones);
-    const now = new Date();
+    const now = simClock.now();
     const batteryByDrone = new Map(
       drones.map((drone) => [
         drone.id,

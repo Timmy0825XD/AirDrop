@@ -22,6 +22,7 @@ import {
   RETURN_ALREADY_CHECKED,
   quarantineReasonFor,
 } from './restock.rules';
+import { simClock } from '../common/clock/sim-clock';
 
 export const DISPATCHED_LOT_MISSING =
   'No se encontró el lote que salió con este pedido.';
@@ -88,7 +89,7 @@ export class RestockService {
           current.inventoryItemId,
         );
       }
-      current.returnCheckedAt = new Date();
+      current.returnCheckedAt = simClock.now();
       current.returnOutcome = reason
         ? ReturnOutcome.QUARANTINED
         : ReturnOutcome.RESTOCKED;

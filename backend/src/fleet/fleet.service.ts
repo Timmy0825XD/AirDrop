@@ -27,6 +27,7 @@ import {
   maintenanceCycles,
   periodKindFor,
 } from './maintenance.rules';
+import { simClock } from '../common/clock/sim-clock';
 
 type StatusChange = {
   status: DroneStatus;
@@ -173,7 +174,7 @@ export class FleetService {
       // del dron dice qué estaba cerrando.
       const closing = open?.kind ?? periodKindFor(drone.status);
       if (open) {
-        open.closedAt = new Date();
+        open.closedAt = simClock.now();
         open.closedByUserId = user.id;
         await this.maintenances.save(open);
       }
@@ -231,7 +232,7 @@ export class FleetService {
       batteryPercent: batteryNow(
         drone.batteryPercent ?? 100,
         drone.batteryUpdatedAt ?? null,
-        new Date(),
+        simClock.now(),
       ),
       lastFlightEndedAt: drone.lastFlightEndedAt ?? null,
       /** CU-17: vuelos desde la última revisión y cada cuántos toca. */

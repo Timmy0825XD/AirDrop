@@ -48,6 +48,7 @@ import {
   returnProgress,
   FlightPhase,
 } from './simulation.rules';
+import { simClock } from '../common/clock/sim-clock';
 
 /** Pedido con frío que espera el código: la carga se sigue midiendo. */
 type ColdWait = {
@@ -234,7 +235,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
   /**
    * CU-29: sin código válido a tiempo, el pedido pasa a `returning`.
    */
-  async expireDeliveryWaits(now = new Date()): Promise<void> {
+  async expireDeliveryWaits(now = simClock.now()): Promise<void> {
     for (const [orderId, landedAt] of [...this.waiting]) {
       if (isDeliveryWaitOver(landedAt, now)) {
         await this.returnWithPackage(orderId);
@@ -276,7 +277,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
    */
   async schedulePickup(
     orderId: string,
-    deliveredAt = new Date(),
+    deliveredAt = simClock.now(),
   ): Promise<void> {
     this.waiting.delete(orderId);
     this.coldWaits.delete(orderId);
@@ -302,7 +303,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** Terminó el minuto de retiro: el dron despega de regreso, ya vacío. */
-  private async releasePickups(now = new Date()): Promise<void> {
+  private async releasePickups(now = simClock.now()): Promise<void> {
     for (const [orderId, readyAt] of [...this.pickups]) {
       if (now < readyAt) {
         continue;
@@ -331,7 +332,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     const code = await this.orders.manager.findOne(DeliveryCode, {
       where: { orderId },
     });
-    await this.schedulePickup(orderId, code?.usedAt ?? new Date());
+    await this.schedulePickup(orderId, code?.usedAt ?? simClock.now());
   }
 
   private async activate(orderId: string): Promise<void> {
@@ -381,7 +382,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
           batteryPercent: batteryNow(
             drone.batteryPercent ?? 100,
             drone.batteryUpdatedAt ?? null,
-            new Date(),
+            simClock.now(),
           ),
           coldChainExcursionAtMs: order.requiresColdChain
             ? planColdChainExcursion(
@@ -512,7 +513,8 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     const step = advanceFlight({
       leg: session.leg,
       progress: session.progress,
-      elapsedMs: TICK_MS,
+      // RF-31: cada tick son 2 s reales; a x8, 16 s simulados; en pausa, 0.
+      elapsedMs: simClock.scale(TICK_MS),
       corridor: session.corridor,
       model: session.model,
       loadConfirmedAt: session.loadConfirmedAt,
@@ -531,7 +533,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     if (carriesColdLoad) {
       const reading = coldChainReading(
         step.progress,
-        Date.now() - session.loadConfirmedAt.getTime(),
+        simClock.nowMs() - session.loadConfirmedAt.getTime(),
       );
       temperatureC = reading.temperatureC;
       step.progress.coldChainAlertSent = reading.alertSent;
@@ -580,7 +582,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
             },
           });
           // Guarda con cuánta batería volvió; desde ahora recarga en tierra.
-          const landed = new Date();
+          const landed = simClock.now();
           await this.drones.update(
             { id: session.droneId },
             {
@@ -595,7 +597,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
           await this.missions.update(
             { orderId },
             {
-              returnedAt: new Date(),
+              returnedAt: simClock.now(),
               landingBatteryPercent: step.progress.batteryPercent,
             },
           );
@@ -620,7 +622,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
    * Se recalcula la temperatura, se publica y, si sale de rango, se alerta.
    * Al entregar o al iniciar el regreso, deja de medirse aquí.
    */
-  private async watchColdWaits(now = new Date()): Promise<void> {
+  private async watchColdWaits(now = simClock.now()): Promise<void> {
     for (const [orderId, cold] of [...this.coldWaits]) {
       if (!this.waiting.has(orderId) || this.active.has(orderId)) {
         this.coldWaits.delete(orderId);
@@ -654,7 +656,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     }
     session.departure = null;
     const arrival = new Date(
-      Date.now() + outboundDurationMs(session.corridor, session.model),
+      simClock.nowMs() + outboundDurationMs(session.corridor, session.model),
     );
     const notice = {
       kind: NotificationKind.DEPARTED,
@@ -680,7 +682,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
   /** La marca impide reingresar el insumo (cuarentena de productos.md). */
   private async markColdChainAlert(
     orderId: string,
-    now = new Date(),
+    now = simClock.now(),
   ): Promise<void> {
     await this.orders.update(
       { id: orderId, coldChainAlertAt: IsNull() },
@@ -705,7 +707,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       mission = this.missions.create({
         orderId: session.orderId,
         droneId: session.droneId,
-        startedAt: new Date(),
+        startedAt: simClock.now(),
         landedAt: null,
         returnedAt: null,
         batteryAlert: false,
@@ -722,7 +724,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       step.progress.orderStatus === OrderStatus.AWAITING_DELIVERY &&
       !mission.landedAt
     ) {
-      mission.landedAt = new Date();
+      mission.landedAt = simClock.now();
     }
     await this.missions.save(mission);
     return mission.landedAt;

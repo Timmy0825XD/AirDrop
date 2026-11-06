@@ -4,6 +4,8 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AuthModule } from './auth/auth.module';
+import { ClockModule } from './common/clock/clock.module';
+import { ControlModule } from './control/control.module';
 import { alignSprintSchema } from './database/align-sprint-schema';
 import { ensurePrescriptionBucket } from './database/ensure-prescription-bucket';
 import { enablePostgis } from './database/enable-postgis';
@@ -40,6 +42,7 @@ import { UsersModule } from './users/users.module';
         return options;
       },
     }),
+    ClockModule,
     UsersModule,
     AuthModule,
     HubsModule,
@@ -55,6 +58,7 @@ import { UsersModule } from './users/users.module';
     DeliveryModule,
     AnalyticsModule,
     RadarModule,
+    ControlModule,
   ],
 })
 export class AppModule {}

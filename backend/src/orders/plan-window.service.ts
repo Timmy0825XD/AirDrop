@@ -10,6 +10,7 @@ import { MissionType } from '../common/enums/mission-type.enum';
 import { DecisionService } from '../decision/decision.service';
 import { Order } from './order.entity';
 import { MISSED_STATUSES } from './plan-dispatch.rules';
+import { simClock } from '../common/clock/sim-clock';
 
 const SWEEP_MS = 60 * 1000;
 const BATCH = 200;
@@ -31,10 +32,9 @@ export class PlanWindowService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit(): void {
-    this.timer = setInterval(() => {
+    this.timer = simClock.every(SWEEP_MS, () => {
       void this.runDue();
-    }, SWEEP_MS);
-    this.timer.unref();
+    });
   }
 
   onModuleDestroy(): void {
@@ -44,7 +44,7 @@ export class PlanWindowService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async runDue(now = new Date()): Promise<void> {
+  async runDue(now = simClock.now()): Promise<void> {
     if (this.running) {
       return;
     }

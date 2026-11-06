@@ -76,6 +76,7 @@ import {
 import { PreviewPlanDto, UpdatePlanScheduleDto } from './dto/plan-schedule.dto';
 import { PrescriptionImage } from './prescription-image.entity';
 import { PrescriptionStorage } from './prescription-storage';
+import { simClock } from '../common/clock/sim-clock';
 
 export const RULE_PLAN_NOT_EXTENDED =
   'Para alargar este plan cambia su calendario.';
@@ -332,7 +333,7 @@ export class OrdersService {
     if (plan.status === PlanStatus.CANCELLED) {
       throw new BadRequestException(PLAN_ALREADY_CANCELLED);
     }
-    const now = new Date();
+    const now = simClock.now();
     const result = buildSchedule(dto.schedule, {
       now,
       prescriptionValidUntil: plan.prescriptionValidUntil,
@@ -858,7 +859,7 @@ export class OrdersService {
       this.orders.create({
         missionType: MissionType.SCHEDULED,
         destinationKind: plan.destinationKind,
-        ...initialOccurrenceState(plan, occurrence, new Date()),
+        ...initialOccurrenceState(plan, occurrence, simClock.now()),
         priority: OrderPriority.NORMAL,
         medicationName: plan.medicationName,
         saleType: plan.saleType,

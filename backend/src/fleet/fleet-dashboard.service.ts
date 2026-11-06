@@ -23,6 +23,7 @@ import {
   blockedByGeofence,
   buildFleetDashboard,
 } from './fleet-dashboard.rules';
+import { simClock } from '../common/clock/sim-clock';
 
 type RouteFact = {
   orderId: string;
@@ -39,7 +40,7 @@ type RouteFact = {
 export class FleetDashboardService {
   constructor(private readonly dataSource: DataSource) {}
 
-  async dashboard(user: User, query: AnalyticsQueryDto, now = new Date()) {
+  async dashboard(user: User, query: AnalyticsQueryDto, now = simClock.now()) {
     const assigned = assignedHubIds(user);
     if (query.hubId && !assigned.includes(query.hubId)) {
       throw new ForbiddenException('Esa central no está asignada a tu cuenta.');

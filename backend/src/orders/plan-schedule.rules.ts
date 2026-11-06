@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { PlanFrequency } from '../common/enums/plan-frequency.enum';
 import { ScheduleKind } from '../common/enums/schedule-kind.enum';
 import { addCalendarDays, todayInColombia } from './orders.rules';
+import { simClock } from '../common/clock/sim-clock';
 
 /** RU-30: la primera franja empieza a las 07:00 y la última a las 17:00. */
 export const FIRST_SLOT_HOUR = 7;
@@ -82,7 +83,7 @@ export function buildSchedule(
   input: ScheduleInput,
   options: { now?: Date; prescriptionValidUntil?: string | null } = {},
 ): ScheduleResult {
-  const now = options.now ?? new Date();
+  const now = options.now ?? simClock.now();
   const today = todayInColombia(now);
   assertTime(input.time);
   const schedule = normalize(input, today);

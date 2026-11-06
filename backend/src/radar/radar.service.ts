@@ -21,6 +21,7 @@ import {
   countFleet,
   presentRadarFlight,
 } from './radar.rules';
+import { simClock } from '../common/clock/sim-clock';
 
 type GeofenceRow = {
   id: string;
@@ -113,7 +114,7 @@ export class RadarService {
         batteryPercent: batteryNow(
           drone.batteryPercent ?? 100,
           drone.batteryUpdatedAt ?? null,
-          new Date(),
+          simClock.now(),
         ),
         lastFlightEndedAt: drone.lastFlightEndedAt ?? null,
         flight: flightByDrone.get(drone.id) ?? null,

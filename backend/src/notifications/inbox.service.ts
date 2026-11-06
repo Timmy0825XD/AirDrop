@@ -10,6 +10,7 @@ import { renderNoticeEmail } from '../mail/notice-email';
 import { UserHubAssignment } from '../users/user-hub-assignment.entity';
 import { User } from '../users/user.entity';
 import { Notification } from './notification.entity';
+import { simClock } from '../common/clock/sim-clock';
 
 export type Notice = {
   kind: NotificationKind;
@@ -88,14 +89,14 @@ export class InboxService {
     if (!notification) {
       throw new NotFoundException('El aviso no existe.');
     }
-    notification.readAt ??= new Date();
+    notification.readAt ??= simClock.now();
     return this.notifications.save(notification);
   }
 
   async markAllRead(user: User) {
     const result = await this.notifications.update(
       { userId: user.id, readAt: IsNull() },
-      { readAt: new Date() },
+      { readAt: simClock.now() },
     );
     return { updated: result.affected ?? 0 };
   }

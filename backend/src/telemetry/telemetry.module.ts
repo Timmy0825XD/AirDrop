@@ -28,6 +28,6 @@ import { TelemetryRedis } from './telemetry.redis';
     TelemetryAccessService,
     TelemetryGateway,
   ],
-  exports: [TelemetryPublisher],
+  exports: [TelemetryPublisher, TelemetryRedis],
 })
 export class TelemetryModule {}

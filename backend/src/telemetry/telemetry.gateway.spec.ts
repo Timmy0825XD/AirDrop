@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Socket } from 'socket.io';
+import { simClock } from '../common/clock/sim-clock';
 import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { User } from '../users/user.entity';
@@ -74,6 +75,47 @@ describe('TelemetryGateway.subscribe', () => {
   });
 });
 
+describe('TelemetryGateway reloj simulado (RF-31)', () => {
+  afterEach(() => {
+    simClock.resetToRealTime();
+  });
+
+  it('al conectar, una cuenta activa recibe la hora simulada', async () => {
+    const { gateway } = build(() =>
+      Promise.resolve({ id: USER_ID, status: UserStatus.ACTIVE } as User),
+    );
+    const client = socket();
+    simClock.change({ speed: 4 });
+
+    await gateway.handleConnection(client);
+
+    expect(emitOf(client)).toHaveBeenCalledWith(
+      'clock',
+      expect.objectContaining({ speed: 4, paused: false }),
+    );
+  });
+
+  it('un token sin cuenta activa no recibe la hora', async () => {
+    const { gateway } = build(() => Promise.resolve(null));
+    const client = socket();
+
+    await gateway.handleConnection(client);
+
+    expect(emitOf(client)).not.toHaveBeenCalled();
+  });
+
+  it('un cambio del reloj llega a todos los conectados', async () => {
+    const { gateway } = build(() => Promise.resolve(null));
+    const emit = jest.fn();
+    gateway.server = { emit } as never;
+    const clock = { now: '2026-11-05T15:00:00.000Z', speed: 8, paused: false };
+
+    await gateway['dispatch']({ type: 'clock', clock } as never);
+
+    expect(emit).toHaveBeenCalledWith('clock', clock);
+  });
+});
+
 describe('TelemetryGateway.subscribeHub', () => {
   const HUB_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 
@@ -140,6 +182,8 @@ describe('TelemetryGateway alertas por central (CU-32)', () => {
     const client = socket(jest.fn(), id);
     await built.gateway.handleConnection(client);
     await built.gateway.subscribeHub(client, { hubId: HUB_ID });
+    // Al conectar llega la hora simulada; aquí solo se miran las alertas.
+    emitOf(client).mockClear();
     return { ...built, client };
   }
 
@@ -291,6 +335,9 @@ describe('TelemetryGateway mapa de la flota del operador', () => {
     next = 'disp';
     await built.gateway.handleConnection(dispatcher);
     await built.gateway.subscribeHub(dispatcher, { hubId: HUB_ID });
+    // Al conectar llega la hora simulada; aquí solo se mira el mapa.
+    emitOf(operator).mockClear();
+    emitOf(dispatcher).mockClear();
     built.access.originHubOf.mockResolvedValue(HUB_ID);
     built.gateway.server = {
       to: () => ({ emit: jest.fn() }),

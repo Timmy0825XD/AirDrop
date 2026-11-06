@@ -8,6 +8,7 @@ import { PlanStatus } from '../common/enums/plan-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 import { PRESCRIPTION_MAX_BYTES } from '../common/field-limits';
 import { User } from '../users/user.entity';
+import { simClock } from '../common/clock/sim-clock';
 
 export const SPECIAL_CONTROL_MESSAGE =
   'El control especial no se pide por este canal.';
@@ -67,7 +68,7 @@ export const UNATTENDED_EMERGENCY_MS = 5 * 60 * 1000;
 
 const PRESCRIPTION_MIMES = new Set(['image/jpeg', 'image/png']);
 
-export function todayInColombia(now = new Date()): string {
+export function todayInColombia(now = simClock.now()): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Bogota',
     year: 'numeric',
@@ -272,7 +273,7 @@ export function datesForExtension(
 /** Se calcula al abrir la cola. No cambia el estado ni autoriza. */
 export function isUnattendedEmergency(
   createdAt: Date,
-  now = new Date(),
+  now = simClock.now(),
 ): boolean {
   return now.getTime() - createdAt.getTime() > UNATTENDED_EMERGENCY_MS;
 }

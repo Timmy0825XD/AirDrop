@@ -9,6 +9,7 @@ import {
   addCalendarDays,
   todayInColombia,
 } from '../orders/orders.rules';
+import { simClock } from '../common/clock/sim-clock';
 
 /** Sin fechas, el tablero mira los últimos 30 días. */
 export const DEFAULT_PERIOD_DAYS = 30;
@@ -231,7 +232,7 @@ type PeriodMeasures = {
 export function measurePeriod(
   facts: PeriodFacts,
   fleetSize: number,
-  now = new Date(),
+  now = simClock.now(),
 ): PeriodMeasures {
   const orders = facts.orders;
   const requested = orders.filter(
@@ -295,7 +296,7 @@ export function buildKpis(
   current: PeriodFacts,
   previous: PeriodFacts,
   snapshot: FleetSnapshot,
-  now = new Date(),
+  now = simClock.now(),
 ): KpiGroup[] {
   const fleetSize = snapshot.drones.filter(
     (drone) => drone.status !== DroneStatus.OUT_OF_SERVICE,
@@ -600,7 +601,7 @@ export function buildHubRanking(
   facts: PeriodFacts,
   snapshot: FleetSnapshot,
   hubNames: Map<string, string>,
-  now = new Date(),
+  now = simClock.now(),
 ) {
   return snapshot.activeHubIds
     .map((hubId) => {

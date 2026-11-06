@@ -37,6 +37,7 @@ import {
   isDeliveryCodeLocked,
   isDeliveryCodeUsable,
 } from './delivery.rules';
+import { simClock } from '../common/clock/sim-clock';
 
 /** Pedidos para los que ya hay un código que mostrar. */
 const CODE_VISIBLE = [
@@ -93,7 +94,7 @@ export class DeliveryService {
       const mission = await manager.findOne(Mission, { where: { orderId } });
       if (mission?.landedAt) {
         expiresAt = deliveryExpiresAt(mission.landedAt);
-        if (expiresAt.getTime() <= Date.now()) {
+        if (expiresAt.getTime() <= simClock.nowMs()) {
           throw new BadRequestException(DELIVERY_WAIT_EXPIRED);
         }
       }
@@ -144,7 +145,7 @@ export class DeliveryService {
       const state =
         (await manager.findOne(DeliveryCode, { where: { orderId } })) ??
         manager.create(DeliveryCode, { orderId, usedAt: null, attempts: 0 });
-      const now = new Date();
+      const now = simClock.now();
       if (!isDeliveryCodeUsable(state, mission.landedAt, now)) {
         throw new BadRequestException(DELIVERY_CODE_REJECTED);
       }
