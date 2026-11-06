@@ -138,3 +138,55 @@ export type Selection =
   | { kind: "hub"; id: string }
   | { kind: "flight"; id: string }
   | null;
+
+/* Consola de simulación (`/control/*` y el socket). Ver backend/src/control. */
+
+export type ClockSpeed = 1 | 2 | 4 | 8;
+
+/** Evento `clock` y `GET /control/clock` (RF-31). */
+export type ClockView = { now: string; speed: ClockSpeed; paused: boolean };
+
+export type TimelineKind =
+  | "order"
+  | "queue"
+  | "decision"
+  | "flight"
+  | "delivery"
+  | "fallback"
+  | "alert"
+  | "console";
+
+/** Evento `radar-timeline` y `GET /control/timeline` (RF-39). */
+export type TimelineEntry = {
+  id: string;
+  at: string;
+  kind: TimelineKind;
+  severity: "info" | "success" | "warning" | "danger";
+  title: string;
+  detail: string | null;
+  orderId: string | null;
+  droneId: string | null;
+  hubId: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  source: "system" | "console";
+};
+
+/** `GET /control/alerts`: alertas de vuelo abiertas (RF-39). */
+export type PendingAlert = {
+  orderId: string;
+  droneId: string;
+  identifier: string;
+  hubId: string;
+  kinds: AlertEvent["kind"][];
+  latitude: number | null;
+  longitude: number | null;
+};
+
+/** `POST /control/reset` (RF-40). */
+export type ResetSummary = {
+  orders: number;
+  drones: number;
+  inventoryItems: number;
+  geofences: number;
+};

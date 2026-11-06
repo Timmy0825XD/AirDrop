@@ -34,6 +34,9 @@ const VALLEDUPAR = { longitude: -73.2532, latitude: 10.4631, zoom: 11 };
 /** El panel lateral mide 400 px más su margen: el mapa deja ese espacio al encuadrar. */
 const PANEL_PX = 416;
 
+/** Un punto que la consola pide mostrar (un paso de la línea de tiempo o una alerta). */
+export type MapFocus = { latitude: number; longitude: number; key: number };
+
 /**
  * Mapa base oscuro de Esri (sin API key). Se puede cambiar con
  * `NEXT_PUBLIC_TILES_URL` (plantilla `{z}/{x}/{y}`) si el proveedor cambia.
@@ -86,6 +89,9 @@ type Props = {
   showGeofences: boolean;
   selection: Selection;
   routes: { route: Corridor | null; returnRoute: Corridor | null };
+  /** Espacio que tapan la línea de tiempo (izquierda) y el panel (derecha). */
+  insetLeft: number;
+  focus: MapFocus | null;
   onSelect: (selection: Selection) => void;
 };
 
@@ -108,6 +114,8 @@ export function RadarMap({
   showGeofences,
   selection,
   routes,
+  insetLeft,
+  focus,
   onSelect,
 }: Props) {
   const mapRef = useRef<MapRef>(null);
@@ -137,11 +145,13 @@ export function RadarMap({
         [Math.max(...lngs), Math.max(...lats)],
       ],
       {
-        padding: { top: 140, bottom: 100, left: 80, right: PANEL_PX + 40 },
+        padding: { top: 140, bottom: 100, left: 80 + insetLeft, right: PANEL_PX + 40 },
         maxZoom: 13,
         duration: 0,
       },
     );
+    // Solo la primera vez: después el encuadre es de quien mira.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready, hubs]);
 
   // Al elegir una central, el mapa la lleva al centro del espacio libre.
@@ -151,10 +161,42 @@ export function RadarMap({
     if (!hub) return;
     mapRef.current?.easeTo({
       center: [hub.longitude, hub.latitude],
-      padding: { right: PANEL_PX },
+      padding: { left: insetLeft, right: PANEL_PX },
       duration: 600,
     });
+    // El panel ya abierto no vuelve a mover el mapa al plegar la línea de tiempo.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedHubId, hubs]);
+
+  // RF-39: la consola lleva el mapa a donde pasó algo.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!focus || !map) return;
+    map.easeTo({
+      center: [focus.longitude, focus.latitude],
+      zoom: Math.max(map.getZoom(), 13),
+      padding: { left: insetLeft, right: PANEL_PX },
+      duration: 700,
+    });
+    // Solo cuando llega un foco nuevo (`key`), no al plegar paneles.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focus?.key]);
+
+  const focusCollection = useMemo(
+    () => ({
+      type: "FeatureCollection" as const,
+      features: focus
+        ? [
+            {
+              type: "Feature" as const,
+              properties: {},
+              geometry: { type: "Point" as const, coordinates: [focus.longitude, focus.latitude] },
+            },
+          ]
+        : [],
+    }),
+    [focus],
+  );
 
   const routeCollection = useMemo(
     () => ({
@@ -255,6 +297,22 @@ export function RadarMap({
             "line-color": COLORS.returning,
             "line-width": 3,
             "line-dasharray": [2, 1.5],
+          }}
+        />
+      </Source>
+
+      {/* El punto que la consola pidió mostrar. */}
+      <Source id="focus" type="geojson" data={focusCollection}>
+        <Layer
+          id="focus-ring"
+          type="circle"
+          paint={{
+            "circle-radius": 26,
+            "circle-color": COLORS.accent,
+            "circle-opacity": 0.08,
+            "circle-stroke-color": COLORS.accent,
+            "circle-stroke-width": 2,
+            "circle-stroke-opacity": 0.9,
           }}
         />
       </Source>

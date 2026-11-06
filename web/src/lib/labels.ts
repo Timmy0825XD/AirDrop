@@ -63,3 +63,10 @@ export function daysUntil(isoDate: string, now = Date.now()): number {
   const target = new Date(`${isoDate}T00:00:00-05:00`).getTime();
   return Math.ceil((target - now) / 86_400_000);
 }
+
+/** Alertas de vuelo (`radar-alert`, `GET /control/alerts`). */
+export const ALERT_KIND: Record<string, string> = {
+  battery_critical: "Batería crítica",
+  failure: "Falla",
+  cold_chain: "Frío fuera de rango",
+};

@@ -148,6 +148,10 @@ body {
   .maplibregl-map .maplibregl-ctrl-bottom-left .maplibregl-ctrl {
     margin: 0 0 76px 16px;
   }
+  /* Con la línea de tiempo abierta, el zoom se corre a su derecha. */
+  main[data-timeline] .maplibregl-map .maplibregl-ctrl-bottom-left .maplibregl-ctrl {
+    margin-left: 412px;
+  }
 }
 
 @keyframes slide-in {

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "./api";
+import type { ReceivedClock } from "./sim-time";
 import type { Connection, RadarSource } from "./source";
 import type {
   AlertEvent,
@@ -10,6 +11,7 @@ import type {
   RadarFlight,
   Snapshot,
   TelemetryEvent,
+  TimelineEntry,
 } from "./types";
 
 /** Cada cuánto se agrupan los mensajes del socket antes de repintar. */
@@ -24,6 +26,14 @@ export type RadarData = {
   connection: Connection;
   message: string | null;
   loaded: boolean;
+  /** RF-31: la última hora simulada que mandó el backend. */
+  clock: ReceivedClock | null;
+};
+
+/** Lo que la consola escucha del mismo socket (un solo canal en tiempo real). */
+export type ConsoleListener = {
+  onTimeline: (entry: TimelineEntry) => void;
+  onReset: () => void;
 };
 
 function fromTelemetry(event: TelemetryEvent, previous?: RadarFlight): RadarFlight {
@@ -56,7 +66,11 @@ function fromTelemetry(event: TelemetryEvent, previous?: RadarFlight): RadarFlig
  * El estado del radar: una foto inicial (REST) y los eventos del socket,
  * agrupados para repintar unas 4 veces por segundo y no en cada mensaje.
  */
-export function useRadar(source: RadarSource, onUnauthorized: () => void) {
+export function useRadar(
+  source: RadarSource,
+  onUnauthorized: () => void,
+  listener: ConsoleListener,
+) {
   const [data, setData] = useState<RadarData>({
     hubs: [],
     flights: [],
@@ -64,6 +78,11 @@ export function useRadar(source: RadarSource, onUnauthorized: () => void) {
     connection: "connecting",
     message: null,
     loaded: false,
+    clock: null,
+  });
+  const consoleListener = useRef(listener);
+  useEffect(() => {
+    consoleListener.current = listener;
   });
   const flights = useRef(new Map<string, RadarFlight>());
   const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -153,6 +172,17 @@ export function useRadar(source: RadarSource, onUnauthorized: () => void) {
         if (event.kind === "cold_chain") alerts.coldChain = true;
         flights.current.set(event.orderId, { ...previous, alerts });
         flush();
+      },
+      onClock: (clock) => {
+        setData((current) => ({ ...current, clock: { ...clock, receivedAt: Date.now() } }));
+      },
+      onTimeline: (entry) => consoleListener.current.onTimeline(entry),
+      onReset: () => {
+        // RF-40: los vuelos de antes ya no existen; se pide la foto nueva.
+        flights.current = new Map();
+        setData((current) => ({ ...current, flights: [] }));
+        consoleListener.current.onReset();
+        void refresh();
       },
     });
     return () => {

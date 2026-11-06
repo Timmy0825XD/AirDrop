@@ -38,6 +38,8 @@ type Props = {
   showGeofences: boolean;
   onToggleGeofences: () => void;
   onLogout: () => void;
+  /** El reloj simulado y sus controles (RF-31). */
+  clock: ReactNode;
 };
 
 /** La barra flotante de vidrio, como la de la app. */
@@ -50,6 +52,7 @@ export function TopBar({
   showGeofences,
   onToggleGeofences,
   onLogout,
+  clock,
 }: Props) {
   const status = CONNECTION[connection];
   const available = hubs.reduce((sum, hub) => sum + hub.fleet.available, 0);
@@ -64,7 +67,7 @@ export function TopBar({
         </span>
         <div className="hidden min-w-0 leading-tight sm:block">
           <div className="text-base font-semibold tracking-tight">AirDrop Radar</div>
-          <div className="text-xs text-muted">Valledupar · tiempo real</div>
+          <div className="text-xs text-muted">Valledupar · consola de simulación</div>
         </div>
         {demo && (
           // En celular va debajo de la barra para no tapar los contadores.
@@ -74,7 +77,7 @@ export function TopBar({
         )}
       </div>
 
-      <div className="flex flex-1 items-center justify-center gap-4 sm:gap-6">
+      <div className="hidden flex-1 items-center justify-center gap-4 sm:flex sm:gap-6">
         <Counter icon={<HubIcon size={16} />} value={hubs.length} label="Centrales" />
         <Counter icon={<DroneIcon size={16} />} value={flights.length} label="En vuelo" />
         <Counter icon={<CheckIcon size={16} />} value={available} label="Drones libres" />
@@ -84,6 +87,10 @@ export function TopBar({
           </Pill>
         )}
       </div>
+
+      <div className="hidden h-10 w-px bg-glass-border md:block" />
+      {clock}
+      <div className="hidden h-10 w-px bg-glass-border md:block" />
 
       <div className="flex items-center gap-2">
         <span role="status" title={status.text}>
