@@ -66,6 +66,7 @@ import { assertOfferedTo } from './dispatch.rules';
 import { clearFallback } from './fallback.rules';
 import { FallbackService } from './fallback.service';
 import { HubEvaluationService } from './hub-evaluation.service';
+import { simClock } from '../common/clock/sim-clock';
 
 export type OrderAssignment = {
   droneId: string;
@@ -102,7 +103,7 @@ export class DecisionService {
         hub,
         orderId,
         dto.prescriptionVerified === true,
-        new Date(),
+        simClock.now(),
       ),
     );
     await this.announce(result, false);
@@ -113,7 +114,7 @@ export class DecisionService {
    * Reintento automático de un programado que esperaba dron. Autoriza como
    * la central que lo intentó, con la fórmula que ya verificó.
    */
-  async retryScheduled(orderId: string, now = new Date()) {
+  async retryScheduled(orderId: string, now = simClock.now()) {
     const result = await this.dataSource.transaction(async (manager) => {
       const order = await manager.findOne(Order, {
         where: { id: orderId },
@@ -155,7 +156,7 @@ export class DecisionService {
   }
 
   /** La franja cerró con el dron en tierra: suelta la reserva y aplica RF-18. */
-  async expireMissed(orderId: string, now = new Date()) {
+  async expireMissed(orderId: string, now = simClock.now()) {
     const result = await this.dataSource.transaction(async (manager) => {
       const order = await manager.findOne(Order, {
         where: { id: orderId },
@@ -196,13 +197,13 @@ export class DecisionService {
       if (current.originHubId !== hub.id) {
         throw new ForbiddenException(NOT_THE_LOADING_HUB);
       }
-      assertDispatchWindow(current, new Date());
+      assertDispatchWindow(current, simClock.now());
       const corridor = await this.routes.findOutboundMany([orderId]);
       if (!current.droneId || !corridor.has(orderId)) {
         throw new BadRequestException(FLIGHT_NOT_READY);
       }
       await this.dischargeLot(manager, current);
-      current.loadConfirmedAt = new Date();
+      current.loadConfirmedAt = simClock.now();
       return manager.save(current);
     });
     await this.flights.start(order.id);
@@ -439,7 +440,7 @@ export class DecisionService {
     drone.status = DroneStatus.IN_MISSION;
     await manager.save(drone);
     order.status = OrderStatus.PENDING_LOAD;
-    order.authorizedAt = new Date();
+    order.authorizedAt = simClock.now();
     order.droneId = drone.id;
     order.inventoryItemId = lot.id;
     order.originHubId = originHubId;

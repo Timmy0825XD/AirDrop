@@ -16,6 +16,7 @@ import {
   maintenanceCycles,
   overdueNotice,
 } from './maintenance.rules';
+import { simClock } from '../common/clock/sim-clock';
 
 const SWEEP_MS = 10 * 60 * 1000;
 
@@ -37,10 +38,9 @@ export class MaintenanceSweepService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit(): void {
-    this.timer = setInterval(() => {
+    this.timer = simClock.every(SWEEP_MS, () => {
       void this.runDue();
-    }, SWEEP_MS);
-    this.timer.unref();
+    });
   }
 
   onModuleDestroy(): void {
@@ -50,7 +50,7 @@ export class MaintenanceSweepService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async runDue(now = new Date()): Promise<void> {
+  async runDue(now = simClock.now()): Promise<void> {
     if (this.running) {
       return;
     }

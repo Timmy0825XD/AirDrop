@@ -19,6 +19,7 @@ import {
   assertRecipient,
   rescheduledSlot,
 } from './plan-occurrence.rules';
+import { simClock } from '../common/clock/sim-clock';
 
 const AWAITING_ANSWER = [
   OrderStatus.SCHEDULED,
@@ -44,7 +45,7 @@ export class PlanOccurrencesService {
     }
     await this.apply(id, AWAITING_ANSWER, {
       status: OrderStatus.RECEIVED,
-      confirmedAt: new Date(),
+      confirmedAt: simClock.now(),
     });
     return this.present(id);
   }
@@ -61,7 +62,7 @@ export class PlanOccurrencesService {
   /** Mover la entrega cuenta como confirmarla: la persona eligió la hora. */
   async reschedule(user: User, id: string, dto: RescheduleOccurrenceDto) {
     const order = await this.requireOccurrence(user, id);
-    const now = new Date();
+    const now = simClock.now();
     const slot = rescheduledSlot(order, dto.date, dto.time, now);
     await this.apply(id, NOT_YET_AUTHORIZED, {
       status: OrderStatus.RECEIVED,
@@ -80,7 +81,7 @@ export class PlanOccurrencesService {
       throw new NotFoundException('El pedido no existe.');
     }
     assertRecipient(user, order);
-    assertChangeable(order, new Date());
+    assertChangeable(order, simClock.now());
     return order;
   }
 

@@ -35,8 +35,9 @@ import {
 import { applyConventional, rankHubsByDistance } from './fallback.rules';
 import { toOption } from './fallback.service';
 import { HubEvaluationService } from './hub-evaluation.service';
+import { simClock } from '../common/clock/sim-clock';
 
-/** Cada cuánto se buscan las urgencias cuya oferta hay que ampliar. */
+/** Cada cuánto (en hora simulada) se buscan las urgencias cuya oferta hay que ampliar. */
 const SWEEP_MS = 15 * 1000;
 
 type Notice = {
@@ -68,10 +69,9 @@ export class EmergencyDispatchService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit(): void {
-    this.timer = setInterval(() => {
+    this.timer = simClock.every(SWEEP_MS, () => {
       void this.escalateDue();
-    }, SWEEP_MS);
-    this.timer.unref();
+    });
   }
 
   onModuleDestroy(): void {
@@ -86,7 +86,7 @@ export class EmergencyDispatchService implements OnModuleInit, OnModuleDestroy {
    * ninguna central con el insumo tiene un corredor que la batería alcance,
    * pasa de una vez a traslado convencional (RF-18).
    */
-  async start(orderId: string, now = new Date()): Promise<Order> {
+  async start(orderId: string, now = simClock.now()): Promise<Order> {
     const { order, notice } = await this.dataSource.transaction(
       async (manager) => {
         const current = await this.lockOrder(manager, orderId);
@@ -115,7 +115,7 @@ export class EmergencyDispatchService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** Amplía la oferta de las urgencias cuya ventaja ya venció. */
-  async escalateDue(now = new Date()): Promise<void> {
+  async escalateDue(now = simClock.now()): Promise<void> {
     if (this.running) {
       return;
     }
@@ -146,7 +146,7 @@ export class EmergencyDispatchService implements OnModuleInit, OnModuleDestroy {
     user: User,
     orderId: string,
     reason: string | null,
-    now = new Date(),
+    now = simClock.now(),
   ): Promise<Order> {
     const hub = await this.requireDispatcherHub(user);
     const { order, notice } = await this.dataSource.transaction(

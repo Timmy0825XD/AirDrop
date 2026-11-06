@@ -21,6 +21,7 @@ import {
   describeSlot,
 } from './plan-occurrence.rules';
 import { SCHEDULE_LEAD_MS, slotFor } from './plan-schedule.rules';
+import { simClock } from '../common/clock/sim-clock';
 
 const SWEEP_MS = 60 * 1000;
 const BATCH = 200;
@@ -46,10 +47,9 @@ export class PlanRemindersService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit(): void {
-    this.timer = setInterval(() => {
+    this.timer = simClock.every(SWEEP_MS, () => {
       void this.runDue();
-    }, SWEEP_MS);
-    this.timer.unref();
+    });
   }
 
   onModuleDestroy(): void {
@@ -59,7 +59,7 @@ export class PlanRemindersService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async runDue(now = new Date()): Promise<void> {
+  async runDue(now = simClock.now()): Promise<void> {
     if (this.running) {
       return;
     }

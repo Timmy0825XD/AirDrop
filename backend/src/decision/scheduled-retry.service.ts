@@ -11,6 +11,7 @@ import { OrderStatus } from '../common/enums/order-status.enum';
 import { Order } from '../orders/order.entity';
 import { DecisionService } from './decision.service';
 import { scheduledRetryMs } from './fallback.rules';
+import { simClock } from '../common/clock/sim-clock';
 
 /** Cada cuánto se buscan los programados cuyo reintento ya venció. */
 const SWEEP_MS = 60 * 1000;
@@ -33,13 +34,9 @@ export class ScheduledRetryService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   onModuleInit(): void {
-    this.timer = setInterval(
-      () => {
-        void this.runDue();
-      },
-      Math.min(SWEEP_MS, scheduledRetryMs()),
-    );
-    this.timer.unref();
+    this.timer = simClock.every(Math.min(SWEEP_MS, scheduledRetryMs()), () => {
+      void this.runDue();
+    });
   }
 
   onModuleDestroy(): void {
@@ -49,7 +46,7 @@ export class ScheduledRetryService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  async runDue(now = new Date()): Promise<void> {
+  async runDue(now = simClock.now()): Promise<void> {
     if (this.running) {
       return;
     }

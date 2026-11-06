@@ -9,6 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { JwtPayload } from '../auth/jwt-payload';
+import { simClock } from '../common/clock/sim-clock';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
@@ -84,7 +85,11 @@ export class TelemetryGateway
       hubs: {},
     };
     this.clients.set(client.id, state);
-    await state.ready;
+    const user = await state.ready;
+    if (user) {
+      // RF-31: la web y la app cuentan el tiempo con la hora simulada.
+      client.emit('clock', simClock.view());
+    }
   }
 
   handleDisconnect(client: Socket): void {
@@ -297,6 +302,11 @@ export class TelemetryGateway
 
   private async dispatch(event: TelemetryEvent): Promise<void> {
     try {
+      if (event.type === 'clock') {
+        // A todos: el reloj es uno solo para la web y la app.
+        this.server?.emit('clock', event.clock);
+        return;
+      }
       this.emitRadar(event);
       await this.emitHubFleetSafely(event);
       if (event.type === 'telemetry') {
