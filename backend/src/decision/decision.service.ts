@@ -106,7 +106,7 @@ export class DecisionService {
         simClock.now(),
       ),
     );
-    await this.announce(result, false);
+    await this.announce(result);
     return result;
   }
 
@@ -147,7 +147,7 @@ export class DecisionService {
       );
     });
     if (result) {
-      await this.announce(result, true);
+      await this.announce(result);
       if (result.statusReason === WINDOW_MISSED) {
         await this.notifyMissed(result);
       }
@@ -170,7 +170,7 @@ export class DecisionService {
     if (!result) {
       return null;
     }
-    await this.announce(result, true);
+    await this.announce(result);
     await this.notifyMissed(result);
     return result;
   }
@@ -600,14 +600,17 @@ export class DecisionService {
     }
   }
 
-  private async announce(
-    order: { id: string; status: OrderStatus; originHubId: string | null },
-    retried: boolean,
-  ): Promise<void> {
+  /** CU-29: cada salida del motor que cambia el pedido se avisa por el socket. */
+  private async announce(order: {
+    id: string;
+    status: OrderStatus;
+    originHubId: string | null;
+  }): Promise<void> {
     const changed =
       order.status === OrderStatus.REASSIGNED ||
       order.status === OrderStatus.REJECTED ||
-      (retried && order.status === OrderStatus.PENDING_LOAD);
+      order.status === OrderStatus.EXPIRED ||
+      order.status === OrderStatus.PENDING_LOAD;
     if (!changed) {
       return;
     }

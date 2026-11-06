@@ -146,6 +146,7 @@ function build(
     hubsService,
     {} as never,
     { assertDestinationAllowed: () => Promise.resolve() } as never,
+    { statusChanged: jest.fn().mockResolvedValue(undefined) } as never,
   );
   return { service, pedidos, imagenes, almacenamiento, buscarOferta };
 }

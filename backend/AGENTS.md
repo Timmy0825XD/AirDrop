@@ -41,6 +41,8 @@ Nombres alineados al glosario:
 
 **Reloj:** toda regla que dependa de la hora usa `simClock.now()` / `simClock.nowMs()` (`common/clock/sim-clock.ts`, RF-31), nunca `new Date()` ni `Date.now()`. Es un solo objeto en el proceso, no un servicio inyectado, porque también lo leen las validaciones de los DTO. Un barrido periódico usa `simClock.every(ms, tarea)` (ms simulados), no `setInterval`. Las fechas de creación (`@CreateDateColumn`) toman la hora simulada por `SimTimeSubscriber`. Excepción: auth (JWT, OTP, límite de intentos de login) y el consentimiento siguen en hora real. La velocidad la cambia `PUT /control/clock` (admin, `CONTROL_ENABLED`), se guarda en Redis y llega por el socket como el evento `clock` (`{ now, speed, paused }`), también al conectar.
 
+**Línea de tiempo (RF-39):** `TimelineService` escucha los eventos que ya publica `NotificationsService` (estado, cola, alerta) y el reloj, los cuenta en español sin datos de personas, los guarda en Redis (`control:timeline`, tope 200) y los manda a la sala `radar` como `radar-timeline`. `GET /control/timeline?limit=` los lee y `GET /control/alerts` lista las alertas de vuelo abiertas (misión sin `returnedAt`) con la posición del dron. Por eso todo cambio de estado de un pedido pasa por `NotificationsService.statusChanged` (CU-29): si un servicio cambia un estado sin anunciarlo, la consola no lo ve.
+
 Un módulo = controllers + services + entities de **ese** tema. El motor de decisión **no** vive dentro de `Simulation`. El reloj de vuelo **no** autoriza pedidos ni asume la carga a bordo.
 
 ## Patrones permitidos

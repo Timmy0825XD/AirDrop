@@ -88,6 +88,7 @@ function build(medicationName = 'Insulina glargina') {
     {} as HubsService,
     plans as never,
     { assertDestinationAllowed: () => Promise.resolve() } as never,
+    { statusChanged: jest.fn().mockResolvedValue(undefined) } as never,
   );
   return { service, orders, plans };
 }
