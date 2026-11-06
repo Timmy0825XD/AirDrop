@@ -96,6 +96,29 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 
 **Suma: 227 SP.**
 
+## Módulo 9 — Consola de simulación (ampliación)
+
+Se agregó después de planear los seis sprints, para presentar el sistema en una TV (RU-32). No cambia los 227 SP del plan original y se cuenta aparte.
+
+| ID | Historia | Pri | SP | Sprint |
+| --- | --- | --- | --- | --- |
+| HU-39 | Reloj simulado: pausa, x1, x2, x4, x8 para todo el sistema (RF-31) | Alta | 13 | 6 |
+| HU-40 | Línea de tiempo y alertas pendientes en la sala del radar (RF-39) | Alta | 8 | 6 |
+| HU-41 | Escenario de demostración y reinicio (RF-40) | Alta | 5 | 6 |
+| HU-42 | Consola en la web: barra de tiempo, interruptores, línea de tiempo y alertas | Alta | 8 | 6 |
+| HU-43 | Cambio de ruta en vuelo (RF-33) | Alta | 13 | 6 |
+| HU-44 | Clima simulado por zonas en decisión, rutas y vuelo (RF-32) | Alta | 8 | 6 |
+| HU-45 | Geovallas temporales (RF-36) | Media | 5 | 6 |
+| HU-46 | Incidentes y protocolos; volver a despachar la urgencia (RF-34, RF-35) | Alta | 13 | 6 |
+| HU-47 | Catálogo de fallas y choques del dron (RF-34) | Alta | 5 | 6 |
+| HU-48 | Central sin energía y pico de urgencias (RF-36) | Media | 5 | 6 |
+| HU-49 | Eventos sobre el mapa y capas de clima, incidentes y rutas en la web | Alta | 8 | 6 |
+| HU-50 | Actores simulados: despachador automático, generador y receptor (RF-37) | Alta | 8 | 6 |
+| HU-51 | Modo caos realista (RF-38) | Media | 5 | 6 |
+| HU-52 | Contrato de estados, avisos y hora simulada para la app | Media | 3 | 6 |
+
+**Suma del módulo 9: 107 SP.**
+
 ---
 
 ## Incrementos

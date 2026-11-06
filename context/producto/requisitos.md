@@ -132,7 +132,7 @@ Entra con la cuenta que creó el administrador y ve una o varias centrales. No s
 
 ### RU-17 — Estado del dron
 
-Disponible, en misión, en mantenimiento o fuera de servicio.
+Disponible, en misión, en tierra fuera de base, en mantenimiento o fuera de servicio. En tierra fuera de base es el dron que aterrizó de emergencia lejos de su central (RF-34); cuando se recupera pasa a mantenimiento.
 
 ### RU-18 — Telemetría
 
@@ -144,7 +144,7 @@ Dibujar, editar y borrar polígonos. Toda ruta nueva los respeta.
 
 ### RU-20 y RU-21 — Alertas de vuelo
 
-Temperatura fuera de rango. Batería crítica o falla.
+Temperatura fuera de rango. Batería crítica, falla o incidente, con el protocolo que aplicó el sistema (RF-34).
 
 ### RU-22 — Mantenimiento
 
@@ -169,6 +169,12 @@ Crea despachadores (una central, correo institucional) y operadores (una o varia
 ### RU-28 — Métricas
 
 Número de misiones, tiempo promedio e incidencias, incluidos los retornos sin entrega.
+
+### RU-32 — Consola de simulación
+
+En la web, sobre el mapa del radar y en la misma pantalla (una TV), maneja el reloj simulado, lanza eventos sobre un dron, una zona o una central, enciende el despachador automático y el modo caos, sigue la línea de tiempo y las alertas pendientes, y reinicia el escenario. No crea pedidos a mano, no autoriza ni pilotea: los eventos los resuelve el sistema con sus propias reglas.
+
+**Por qué.** Mostrar drones volando no demuestra nada. La consola pone al sistema frente a situaciones realistas (clima, fallas, choques, una central caída) y deja ver en vivo cómo decide, mientras otras personas usan la app en su celular.
 
 ## Funcionales
 
@@ -220,6 +226,8 @@ La batería es la de cada dron: al volver guarda con cuánta llegó y en tierra 
 
 Entre los drones que pueden cumplir, sale el que lleva más tiempo en tierra (el que nunca ha volado, primero). Si empatan, el de más batería. Así la flota se alterna y no vuela siempre el mismo.
 
+El clima simulado (RF-32) también decide: un dron no es elegible si su corredor cruza una tormenta, o si en algún tramo el viento sostenido pasa de **15 m/s** o las ráfagas de **20 m/s**. La batería se cuenta con el viento de cada tramo.
+
 **Por qué.** Los 110 km del modelo son el alcance total en crucero. Si la ida y el regreso los consumen enteros, no queda batería para despegar y aterrizar ni reserva: el dron se apagaría volviendo.
 
 Cada decisión queda explicada en el pedido: qué centrales miró el motor, si tenían lote y corredor, cuántos minutos de vuelo y cuánta batería pedía la misión, y qué pasó con cada dron (elegido, elegible o descartado con su motivo). El despachador que puede abrir el pedido la consulta. No guarda datos clínicos.
@@ -229,6 +237,8 @@ Cada decisión queda explicada en el pedido: qué centrales miró el motor, si t
 Corredor a altitud fija, de ida y de retorno si hace falta, sin cruzar geovallas.
 
 El corredor es el camino más corto que pasa a **150 m o más** del borde de toda geovalla. Si la línea recta cumple, es la línea recta. Si no, el planificador infla cada geovalla con ese margen y busca el camino más corto por sus esquinas (grafo de visibilidad con A*, un Dijkstra guiado hacia el destino), así esquiva varias geovallas seguidas o una cóncava. El margen no se exige a la central ni al destino: un destino a 100 m de una geovalla, pero fuera de ella, es válido. Si no hay camino, el dron no es elegible; si el camino existe pero es largo, lo descarta la batería (RF-11).
+
+Para rutas, una geovalla temporal vigente o una tormenta (RF-32, RF-36) cuentan igual que una geovalla del operador. Si una de esas zonas aparece con el dron en el aire y cruza el tramo que falta, la ruta cambia en vuelo (RF-33).
 
 El regreso se planea al salir de destino con las geovallas vigentes. Si una geovalla nueva bloquea la ruta, la rodea. Solo si el dron o la central quedaron dentro de una geovalla nueva, o la central quedó encerrada, el regreso la cruza: tiene que volver igual, y queda registrado.
 
@@ -248,7 +258,7 @@ Cambios de estado, llegada, espera de código, retorno, temperatura, batería y 
 
 Si el ítem lo exige, la temperatura simulada se compara con el rango en ida, espera y retorno. Fuera de rango: alerta, y la cuarentena de [../entregas/productos.md](../entregas/productos.md).
 
-El rango es **2–8 °C** para todo ítem con frío. La carga viaja estable alrededor de 5 °C. Uno de cada diez vuelos con frío (`COLD_CHAIN_FAILURE_RATE`, 10 % por defecto) sufre una falla en un momento al azar de la ida: desde ahí la carga se calienta y sale de rango en unos dos minutos, y sigue caliente en la espera y en el retorno. La alerta sale una vez por pedido y queda marcada en él. Tras una entrega el dron vuelve vacío y ya no se mide.
+El rango es **2–8 °C** para todo ítem con frío. La carga viaja estable alrededor de 5 °C. Uno de cada diez vuelos con frío (`COLD_CHAIN_FAILURE_RATE`, 10 % por defecto) sufre una falla en un momento al azar de la ida: desde ahí la carga se calienta y sale de rango en unos dos minutos, y sigue caliente en la espera y en el retorno. La alerta sale una vez por pedido y queda marcada en él. Tras una entrega el dron vuelve vacío y ya no se mide. La consola o el modo caos también pueden provocar la falla de la refrigeración en un vuelo con frío (RF-34); desde ahí sigue la misma cuenta.
 
 ### RF-18 — Fallback
 
@@ -272,7 +282,7 @@ Un solo uso. Se ingresa con el dron en destino. La espera dura 5 minutos. Un có
 
 ### RF-20 — Flota
 
-Alta y estado de drones sobre el modelo Wingcopter 198. Un dron en misión no cambia de estado hasta cerrarla.
+Alta y estado de drones sobre el modelo Wingcopter 198. Un dron en misión no cambia de estado hasta cerrarla, salvo por un incidente (RF-34): pasa a en tierra fuera de base o a fuera de servicio.
 
 ### RF-21 — Geovallas
 
@@ -328,6 +338,144 @@ El despachador ve el dron asignado. Si el destino es una persona, registra la in
 
 Sin código a los 5 minutos: vuelo de regreso, estados `en retorno` y luego `devuelto`. El reingreso sigue [../entregas/productos.md](../entregas/productos.md). En un traslado recibido correctamente, el stock entra en la central de destino, no vuelve al origen.
 
+### RF-31 — Reloj simulado
+
+Un solo reloj para todo el sistema, también para la app: vuelos, batería y recarga en tierra, los 5 minutos del código, la cadena de frío, las franjas y los avisos de los programados, los reintentos, el escalonamiento de urgencias (RU-10), el mantenimiento y las métricas. Velocidades: **pausa, x1, x2, x4 y x8**. Las cambia el administrador desde la consola (RU-32).
+
+La hora simulada es la hora en que se fijó la velocidad, más el tiempo real transcurrido por la velocidad. Al cambiar de velocidad se toma la hora simulada de ese momento como punto de partida. En pausa no avanza: los drones se quedan quietos en el aire y las esperas no corren. El tick sigue cada 2 s reales (RNF-08); a x8 cada tick avanza 16 s simulados. El estado del reloj vive en Redis y se publica por el socket, para que la web y la app muestren cuentas regresivas con esa hora.
+
+**No se aceleran:** la expiración del JWT, los OTP, el bloqueo por intentos de login ni el envío de correos. Son seguridad, no simulación.
+
+Al reiniciar el escenario (RF-40) el reloj vuelve a la hora real, a x1.
+
+**Por qué.** Un vuelo de 15 minutos no cabe en una demostración. Si solo se aceleraran los vuelos, a x8 el dron llegaría en dos minutos y se quedaría cinco minutos reales esperando el código. Un reloj único mantiene coherentes todas las reglas.
+
+### RF-32 — Clima simulado
+
+El clima son celdas: una zona en el mapa, con un tipo, una intensidad y una duración en hora simulada. Las crea la consola (RU-32) o el modo caos (RF-38); no hay datos de clima reales.
+
+| Tipo | Efecto |
+| --- | --- |
+| Viento | Dirección y velocidad. En contra baja la velocidad sobre el suelo y sube el consumo del crucero; a favor, al revés. Sobre 15 m/s sostenidos o 20 m/s en ráfagas no se vuela |
+| Lluvia | Se vuela, con más consumo |
+| Tormenta | Zona no volable mientras dure: cuenta como geovalla para rutas (RF-12) |
+
+Al autorizar, el motor de decisión mira el clima del corredor (RF-11). En vuelo, una tormenta que cruza el tramo que falta cambia la ruta (RF-33), y un viento sobre el límite donde va el dron es un incidente (RF-34). Al vencer, la celda desaparece sola.
+
+**Por qué.** El alcance ya pedía clima simulado en la decisión, y estaba fijo en "se puede volar". Los límites de viento (15 m/s sostenido, 20 m/s en ráfagas) son los que publica un distribuidor del Wingcopter 198; la página del fabricante solo dice que resiste vientos fuertes ([../sustentacion/fuentes.md](../sustentacion/fuentes.md)).
+
+### RF-33 — Cambio de ruta en vuelo
+
+Si con el dron en el aire aparece una zona (geovalla del operador, geovalla temporal o tormenta) que cruza el tramo que falta, el planificador traza un corredor nuevo desde la posición actual hasta el mismo destino, con las reglas de RF-12. Si la batería alcanza para terminar con la reserva del 20 %, el dron lo sigue. Si no, corre RF-34 con el protocolo de volver o aterrizar. Si el dron quedó dentro de la zona nueva, sale por el camino más corto y queda registrado.
+
+La ruta vieja se guarda y la consola la muestra punteada debajo de la nueva. El cambio queda en la línea de tiempo (RF-39) y avisa al operador.
+
+**Por qué.** Antes una geovalla nueva solo afectaba la ruta siguiente. Con clima y zonas temporales, dejar el corredor viejo haría volar al dron dentro de una tormenta.
+
+### RF-34 — Incidentes y protocolos
+
+Un incidente es algo que le pasa a un dron en vuelo. Lo lanza la consola sobre un dron (RU-32), lo sortea el modo caos (RF-38) o lo detecta el reloj de vuelo (viento sobre el límite, batería crítica). Cada uno se guarda con su tipo, gravedad, posición, protocolo y resultado.
+
+| Incidente | Efecto | Protocolo |
+| --- | --- | --- |
+| Batería que se degrada | Sube el consumo | Según alcance (abajo) |
+| Falla de 1 motor | Vuelo degradado: más consumo, menos velocidad. El 198 tiene 8 motores | Según alcance |
+| Falla de 2 motores | — | Aterrizaje de emergencia |
+| Pérdida de GPS, leve | Sigue con el sistema de posición de respaldo | Seguir, con alerta |
+| Pérdida de GPS, grave | Sin posición confiable | Aterrizaje de emergencia |
+| Pérdida de enlace | La telemetría queda marcada sin enlace | Volver a la central (procedimiento de enlace perdido) |
+| Falla de la refrigeración | La carga con frío se calienta (RF-17) | Seguir; alerta de frío y cuarentena |
+| Choque leve (ave u obstáculo) | Sube el consumo | Según alcance |
+| Choque grave | — | Aterrizaje de emergencia |
+| Dron perdido | Sin rastro | El dron queda fuera de servicio |
+| Viento sobre el límite | — | Volver a la central o, si no alcanza, aterrizaje de emergencia |
+
+**Según alcance**, con la misma cuenta de batería de RF-11 y el efecto ya aplicado:
+
+1. Si termina la misión (llegar al destino y volver) con la reserva del 20 %: sigue.
+2. Si no, pero alcanza a volver a la central con la reserva: vuelve con el paquete.
+3. Si tampoco: aterrizaje de emergencia en el punto más cercano fuera de toda geovalla y tormenta.
+
+De regreso, el paso 1 es llegar a la central.
+
+**Después del incidente:**
+
+- **Aterrizaje de emergencia:** el dron queda en tierra fuera de base. Tras el tiempo de rescate simulado vuelve a su central y pasa a mantenimiento. El paquete se recupera con él y queda en cuarentena: no vuelve al stock.
+- **Choque grave o dron perdido:** el dron queda fuera de servicio y el paquete se da por perdido.
+- **Vuelta a la central con el paquete:** al aterrizar aplica la cuarentena de [../entregas/productos.md](../entregas/productos.md).
+- **Misión que no llega a su destino:** el pedido sigue RF-35.
+
+Todo incidente avisa al operador de esas centrales, sale en la línea de tiempo (RF-39) y cuenta en las métricas (RF-26). Quien pidió ve el cambio de estado, no el detalle técnico.
+
+**Por qué.** Antes el aviso era la única respuesta a una falla. Un sistema autónomo tiene que decidir qué hace el dron, con reglas que se puedan explicar. Las de aquí son las de la operación real de drones de entrega: degradar, volver o aterrizar en un lugar seguro.
+
+### RF-35 — Volver a despachar tras un incidente
+
+Si un incidente impide que la misión llegue a su destino:
+
+| Servicio | Qué pasa |
+| --- | --- |
+| Urgencia (a una persona o entre centrales) | Vuelve al motor de decisión en ese momento, con prioridad de emergencia (RF-11): un dron de la misma central o de otra con el lote. Queda `asignado` → `pendiente de carga` con el dron nuevo y **hay que confirmar la carga otra vez** (RF-28); el lote se descuenta en esa central. Si ninguna puede, aplica RF-18 |
+| Programado | Si el siguiente intento cae dentro de la franja, vuelve a recibido y se reintenta como en RF-18. Si no, queda vencido y aplica RF-18 |
+
+El pedido no tiene un estado nuevo: la misión fallida guarda el incidente y el pedido sigue su camino normal con otro dron. Un pedido reasignado por RF-18 se sigue reasignando una sola vez.
+
+**Por qué.** La urgencia es del paciente, no del dron que se cayó. Volver a pasar por la carga mantiene la regla de que ningún dron despega sin el insumo confirmado.
+
+### RF-36 — Eventos de entorno
+
+Los lanza la consola (RU-32) o el modo caos (RF-38), cada uno con una duración en hora simulada:
+
+- **Geovalla temporal:** un polígono con vencimiento (por ejemplo, un evento aéreo). Mientras dure cuenta como geovalla (RF-12, RF-21) y puede cambiar rutas en vuelo (RF-33). Al vencer desaparece sola.
+- **Central sin energía:** mientras dure, no autoriza ni confirma cargas y sus drones no son elegibles. Sus urgencias pasan a la siguiente central como si hubiera declinado (RU-10). Sus programados se reintentan dentro de la franja (RF-18). Los drones en el aire que vuelven a ella aterrizan igual.
+- **Pico de urgencias:** el generador de RF-37 crea varias urgencias seguidas en una zona.
+- **Nadie retira el paquete:** en un pedido del receptor simulado, el código no se ingresa y corre RF-30.
+
+### RF-37 — Actores simulados
+
+Para la demostración híbrida (personas reales con la app y el sistema mostrando el flujo solo) hay tres actores. Llaman a **los mismos servicios** que una persona, sin atajos:
+
+- **Despachador automático.** La consola lo enciende o lo apaga. Encendido, en cualquier central activa autoriza y confirma la carga de cualquier pedido, de una persona real o generado, unos segundos simulados después de que le toca. Con fórmula, da la verificación por cumplida. La traza del pedido dice que lo autorizó el despachador automático. Apagado, lo hace un despachador real en la app.
+- **Generador de pedidos.** Crea urgencias y programados de solicitantes simulados (cuentas marcadas como simuladas, sin datos de personas reales), con destinos dentro de las zonas del MVP, fuera de geovallas y con insumos que alguna central tiene en stock.
+- **Receptor simulado.** En los pedidos generados, ingresa el código a tiempo o deja vencer los 5 minutos, con cierta probabilidad.
+
+**Por qué.** En la presentación no siempre hay alguien en cada rol. Si los actores usan los mismos servicios, lo que se ve en la TV es el motor real decidiendo, no una animación.
+
+### RF-38 — Modo caos
+
+Interruptor de la consola, **apagado por defecto**. Encendido, sortea eventos del catálogo de RF-32, RF-34 y RF-36 con pesos realistas: tormentas más probables en la tarde simulada, choques raros y fallas según las horas de vuelo. Tiene tres intensidades: baja, media y alta. Cada evento sale en la línea de tiempo marcado como caos.
+
+### RF-39 — Línea de tiempo y alertas pendientes
+
+El sistema publica por la sala `radar` del socket cada paso del flujo:
+
+- pedido creado;
+- decisión, con la explicación de RF-11 (qué dron eligió y por qué descartó a los otros);
+- asignado;
+- carga confirmada;
+- despegue;
+- alerta;
+- incidente y protocolo;
+- cambio de ruta;
+- entrega o retorno;
+- cada acción de la consola.
+
+Las últimas se guardan en Redis con un tope, para que una recarga no las pierda. Las alertas abiertas tienen posición: la consola las lista y las enfoca en el mapa hasta que se resuelven. No lleva datos de personas ni el medicamento de una entrega a una persona.
+
+### RF-40 — Acceso a la consola y reinicio
+
+`/control/*` es solo para el administrador y existe solo si el backend arranca con `CONTROL_ENABLED`; en producción va apagado. Cada acción queda en la línea de tiempo.
+
+**Reiniciar el escenario:**
+
+- Borra los pedidos, incidentes, celdas de clima, geovallas temporales y eventos de la demostración.
+- Deja la flota y el stock de demostración como en la semilla.
+- Apaga el modo caos.
+- Devuelve el reloj a la hora real, a x1.
+
+Las cuentas de las personas reales no se borran.
+
+
 ## No funcionales
 
 | ID | Exigencia | Por qué |
@@ -339,7 +487,7 @@ Sin código a los 5 minutos: vuelo de regreso, estados `en retorno` y luego `dev
 | RNF-05 | Consentimiento explícito. La fórmula no va a logs y solo la ve el despachador que autoriza. El dashboard no identifica | [../legal/datos.md](../legal/datos.md) |
 | RNF-06 | La imagen de la fórmula se guarda con acceso restringido | Es dato sensible, no un adjunto público |
 | RNF-07 | 95 % de las peticiones REST por debajo de 800 ms en carga normal | La cola de urgencia no puede esperar al tablero |
-| RNF-08 | Telemetría al menos cada 2 s en vuelo. En la espera del código puede ir más espaciada | En crucero el mapa tiene que moverse. En el punto, el dato que importa es el código |
+| RNF-08 | Telemetría al menos cada 2 s **reales** en vuelo, sea cual sea la velocidad del reloj simulado (RF-31). En la espera del código puede ir más espaciada | En crucero el mapa tiene que moverse. En el punto, el dato que importa es el código |
 | RNF-09 | 99 % en horario de uso. Un mantenimiento se anuncia con al menos 24 h | |
 | RNF-10 | Android e iOS, texto y contraste legibles | |
 | RNF-11 | Más centrales, drones y misiones sin romper RNF-07. Lo durable va a Postgres. Lo vivo, a Redis | |

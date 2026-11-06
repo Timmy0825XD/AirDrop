@@ -20,13 +20,23 @@
 - Cadena de frío simulada y alerta si la temperatura sale de rango.
 - Fallback: alternativa de entrega si ningún dron es elegible al autorizar.
 - Dashboard epidemiológico simple: qué se pide más y desde dónde.
+- **Consola de simulación** en la web del administrador, proyectada en una TV (RU-32). Sirve para demostrar que el sistema responde bien ante situaciones realistas:
+  - Reloj simulado único para todo el sistema, también para la app: pausa, x1, x2, x4 y x8 (RF-31).
+  - Clima simulado por zonas (viento, lluvia, tormenta) que el motor de decisión, las rutas y el vuelo sí tienen en cuenta (RF-32).
+  - Cambio de ruta en pleno vuelo cuando una zona nueva cruza el tramo que falta (RF-33).
+  - Incidentes en vuelo (fallas, choques) con protocolos autónomos: seguir, cambiar de ruta, volver a la central o aterrizar de emergencia; una urgencia abortada se vuelve a despachar (RF-34, RF-35).
+  - Eventos de entorno: geovalla temporal, central sin energía, pico de urgencias, nadie retira el paquete (RF-36).
+  - Actores simulados (despachador automático, generador de pedidos, receptor) para una demo híbrida con personas reales usando la app (RF-37).
+  - Modo caos realista, apagado por defecto (RF-38), línea de tiempo con alertas pendientes (RF-39) y reinicio del escenario (RF-40).
 
 ## Limitaciones explícitas
 
 | Limitación | Implicación |
 | --- | --- |
 | Dron 100 % simulado | Sin hardware ni API de fabricante |
-| Clima simulado | Sin OpenWeather ni equivalente |
+| Clima simulado | Sin OpenWeather ni equivalente. El clima lo crean la consola o el modo caos |
+| Incidentes simulados | Sin física de choques ni aerodinámica: cada incidente tiene un efecto simple y nombrado (más consumo, menos velocidad, protocolo) |
+| Consola, no gestión | La web no reemplaza la app: no tiene formularios de pedidos, inventario, centrales ni flota |
 | Sin 3D de terreno | Geovallas + altitud fija, como operadores reales de delivery |
 | Geografía acotada | Multi-ciudad no desplegada |
 | Inventario manual | El despachador carga stock; no hay HIS/hospital |

@@ -33,9 +33,13 @@ Columnas con tipo PostgreSQL real y longitud coherente (no `varchar(255)` por de
 
 Nombres alineados al glosario:
 
-`Auth`, `Users`, `Hubs`, `Inventory`, `Fleet`, `Geofences`, `Orders`, `Decision`, `Routing`, `Simulation`, `Telemetry`, `Notifications`, `Analytics`, `Radar`. Existe además `Mail` (envío del OTP por Brevo), que no es un dominio de negocio.
+`Auth`, `Users`, `Hubs`, `Inventory`, `Fleet`, `Geofences`, `Orders`, `Decision`, `Routing`, `Simulation`, `Telemetry`, `Notifications`, `Analytics`, `Radar`, `Weather`, `Control`. Existe además `Mail` (envío del OTP por Brevo), que no es un dominio de negocio.
 
 `Analytics` (RF-23, RF-26) vive en `analytics/`: el servicio solo carga datos y `analytics.rules.ts` calcula KPI, metas y el dashboard. `FallbackService` (RF-18) vive en `decision/`. `Radar` (`radar/`) solo lee, para la vista web [`../web/`](../web/AGENTS.md): `GET /radar/snapshot`, `/radar/hubs/:id` y `/radar/flights/:orderId` (solo `admin`) y la sala `radar` del socket (`subscribe-radar`); no revela a quién va una entrega ni el medicamento de una entrega a una persona.
+
+`Weather` (`weather/`) guarda las celdas de clima simulado (RF-32) y responde si una ruta o un punto se puede volar; la usan `Decision`, `Routing` y `Simulation`. `Control` (`control/`) es la consola de simulación de la web (RF-31 a RF-40): reloj simulado, eventos, actores simulados, modo caos, línea de tiempo y reinicio del escenario. Sus endpoints `/control/*` son solo `admin` y existen solo con `CONTROL_ENABLED=true`. `Control` no tiene reglas de negocio propias: los actores simulados llaman a los mismos servicios que una persona (`OrdersService`, la confirmación de carga, la validación del código) y los eventos los aplican `Weather`, `Geofences`, `Hubs` y `Simulation`.
+
+**Reloj:** toda regla que dependa de la hora usa `SimClockService.now()` (RF-31), nunca `new Date()` ni `Date.now()`. Excepción: JWT, OTP y límite de intentos de login siguen en hora real.
 
 Un módulo = controllers + services + entities de **ese** tema. El motor de decisión **no** vive dentro de `Simulation`. El reloj de vuelo **no** autoriza pedidos ni asume la carga a bordo.
 
@@ -51,13 +55,13 @@ Un módulo = controllers + services + entities de **ese** tema. El motor de deci
 
 - Hexagonal completo, CQRS, outbox, sagas, gRPC interno.
 - Repositorio genérico abstracto de 4 niveles.
-- Cola Redis para “todo”; Redis es telemetría y, si acaso, cache de OTP.
+- Cola Redis para “todo”; Redis es telemetría, el estado del reloj simulado, la línea de tiempo con tope (RF-39) y, si acaso, cache de OTP.
 
 ## Motores (lo que hay que poder dibujar en el tablero)
 
 1. **Decision** — entrada: pedido **autorizado** + drones candidatos. Salida: dron + ruta **pendiente de carga**, o “nadie” → Fallback. **No** arranca el reloj. Emergencia gana (RF-11).
 2. **Routing** — origen hub, destino pedido, geovallas PostGIS. Corredor a altitud fija (ida; retorno si timeout). Si no hay camino, el dron no es elegible.
-3. **Simulation** — arranca **solo** tras confirmar carga (RF-28). Intervalo ≤ 2 s en vuelo (RNF-08). En destino espera 5 min el código (RF-29); si no, vuelo de retorno con el paquete (RF-30) y la cuarentena de [`../context/entregas/productos.md`](../context/entregas/productos.md). Fases eVTOL y batería distinta en vertical vs crucero. Temperatura solo si el ítem tiene flag de frío. Un traslado entre centrales, al recibirse bien, ingresa el lote en la central de destino ([`../context/entregas/centrales.md`](../context/entregas/centrales.md)).
+3. **Simulation** — arranca **solo** tras confirmar carga (RF-28). Intervalo ≤ 2 s **reales** en vuelo (RNF-08); cada tick avanza el tiempo simulado que toque según la velocidad del reloj (RF-31). Si una zona nueva cruza el tramo que falta, cambia la ruta en el aire (RF-33). Ante un incidente aplica el protocolo de `contingency.rules.ts` (RF-34): un servicio de contingencia decide y el reloj de vuelo ejecuta; el reloj no decide. En destino espera 5 min el código (RF-29); si no, vuelo de retorno con el paquete (RF-30) y la cuarentena de [`../context/entregas/productos.md`](../context/entregas/productos.md). Fases eVTOL y batería distinta en vertical vs crucero. Temperatura solo si el ítem tiene flag de frío. Un traslado entre centrales, al recibirse bien, ingresa el lote en la central de destino ([`../context/entregas/centrales.md`](../context/entregas/centrales.md)).
 4. **Telemetry** — escribe Redis, publica WSS. Al cerrar misión (entregado o devuelto), persiste resumen en Postgres.
 
 Calibración: `DroneModel` tipo Wingcopter 198 ([`../context/diseno/arquitectura.md`](../context/diseno/arquitectura.md)).
@@ -68,4 +72,4 @@ bcrypt, JWT con expiración, rate limit de login (5 intentos), no SQL concatenad
 
 ## Pruebas
 
-Unitarias de Decision/Routing/Simulation (casos del documento: sin despegue al autorizar, espera de código, retorno). Un e2e feliz de auth + crear recurso protegido. No exigir 100 % coverage.
+Unitarias de Decision/Routing/Simulation (casos del documento: sin despegue al autorizar, espera de código, retorno). También del reloj simulado (a x2 el vuelo dura la mitad, la pausa congela, el login no se acelera) y de cada protocolo de contingencia. Un e2e feliz de auth + crear recurso protegido. No exigir 100 % coverage.

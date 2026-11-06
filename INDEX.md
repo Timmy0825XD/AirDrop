@@ -10,7 +10,7 @@ Este archivo es el **índice raíz** del repositorio: objetivo, esencia y mapa d
 
 AirDrop decide **qué central** despacha, **qué dron** puede cumplir la misión y **qué ruta** es segura, para dos tipos de servicio: **emergencia** (bajo demanda, prioridad máxima) y **reabastecimiento programado** (sangre, vacunas y otros insumos). Si ningún dron es viable, el sistema **sugiere una alternativa** en lugar de rechazar el pedido.
 
-No es un dron aislado: es un **sistema de decisión** más un **motor de simulación** calibrado con el [Wingcopter 198](https://wingcopter.com/). No hay hardware real ni aplicación web.
+No es un dron aislado: es un **sistema de decisión** más un **motor de simulación** calibrado con el [Wingcopter 198](https://wingcopter.com/). No hay hardware real. La única web es el radar y consola de simulación del administrador ([`web/`](web/AGENTS.md)), que se proyecta en una TV.
 
 ---
 
@@ -44,7 +44,7 @@ Objetivos ampliados: [`context/sustentacion/objetivos.md`](context/sustentacion/
 
 ## 4. Qué entra en el MVP (y qué no)
 
-**Sí (Valledupar + 1–2 zonas cercanas):** pedidos de emergencia y programados, a una persona o entre centrales ([`context/entregas/`](context/entregas/)), flota simulada, geovallas, motor de decisión al autorizar, confirmación de carga antes del despegue, rutas por corredores a altitud fija, telemetría en vivo, espera de código de entrega (5 min) o retorno con el paquete, cadena de frío simulada, fallback, dashboard epidemiológico simple.
+**Sí (Valledupar + 1–2 zonas cercanas):** pedidos de emergencia y programados, a una persona o entre centrales ([`context/entregas/`](context/entregas/)), flota simulada, geovallas, motor de decisión al autorizar, confirmación de carga antes del despegue, rutas por corredores a altitud fija, telemetría en vivo, espera de código de entrega (5 min) o retorno con el paquete, cadena de frío simulada, fallback, dashboard epidemiológico simple. Para demostrarlo: reloj simulado, clima simulado por zonas, incidentes en vuelo con protocolos autónomos, actores simulados y modo caos, manejados desde la consola web.
 
 **No:** dron real, clima real, navegación 3D, multi-ciudad desplegada, integración hospitalaria, reemplazar la atención médica ni el traslado del paciente.
 
@@ -59,7 +59,7 @@ Alcance completo: [`context/producto/alcance.md`](context/producto/alcance.md).
 | **Solicitante** | Persona civil. Única cuenta que se autoregistra. Pide urgencias y entregas periódicas a su ubicación. |
 | **Despachador** | Persona de **una** central, creada por el admin. Inventario, autoriza, carga y puede pedir abastecimiento a otra central. |
 | **Operador de flota** | Persona creada por el admin. Drones, geovallas, telemetría y mantenimiento de **una o varias** centrales. |
-| **Administrador** | Crea y suspende centrales y sus cuentas. Ve métricas. No despacha. |
+| **Administrador** | Crea y suspende centrales y sus cuentas. Ve métricas. Maneja la consola de simulación. No despacha. |
 
 La central es el lugar, no un rol. No hay rol de **receptor**. Detalle: [`context/app/roles.md`](context/app/roles.md).
 
@@ -69,11 +69,12 @@ La central es el lugar, no un rol. No hay rol de **receptor**. Detalle: [`contex
 
 ```
 App Flutter (un solo código: tres roles operativos + admin)
-        │  HTTPS + WSS
+Web Next.js (radar + consola de simulación, solo admin)
+        │  HTTPS + WSS (el mismo socket)
         ▼
 Backend NestJS (módulos por dominio, no microservicios)
         ├── PostgreSQL + PostGIS   → lo que persiste (pedidos, flota, geovallas…)
-        └── Redis                  → telemetría en vivo (posición, batería, fase)
+        └── Redis                  → telemetría en vivo (posición, batería, fase), reloj simulado y línea de tiempo
 ```
 
 Piezas de valor (las que hay que poder explicar en la sustentación):
@@ -82,6 +83,7 @@ Piezas de valor (las que hay que poder explicar en la sustentación):
 2. **Cálculo de rutas** — corredores a altitud fija; no se cruza una geovalla.
 3. **Motor de simulación** — “reloj” del backend: arranca **después** de confirmar la carga; en destino espera el código o regresa con el paquete.
 4. **Fallback** — si no hay dron, hay alternativa, no un rechazo ciego.
+5. **Contingencia** — ante un incidente en vuelo (clima, falla, choque), reglas explícitas eligen seguir, cambiar de ruta, volver o aterrizar de emergencia; una urgencia abortada se vuelve a despachar.
 
 Stack y conceptos: [`context/diseno/arquitectura.md`](context/diseno/arquitectura.md).  
 Cómo programamos (simple + SOLID, sin arquitectura de tesis): [`context/diseno/principios.md`](context/diseno/principios.md).
@@ -98,7 +100,7 @@ AGENTS.md                ← reglas globales para quien implemente (humano o age
 README.md                ← entrada corta del repositorio
 context/                 ← esencia del proyecto (fuente de verdad de negocio y diseño)
 frontend/                ← app Flutter (reglas en frontend/AGENTS.md)
-web/                     ← radar web en tiempo real, Next.js (reglas en web/AGENTS.md)
+web/                     ← radar y consola de simulación, Next.js (reglas en web/AGENTS.md)
 backend/                 ← API NestJS (reglas en backend/AGENTS.md)
 ```
 

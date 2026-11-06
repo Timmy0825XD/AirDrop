@@ -18,4 +18,12 @@ Si en 5 minutos nadie ingresa el código, el paquete vuelve a la central de orig
 - Sin alerta de temperatura, y con el empaque íntegro: puede reingresar al inventario de origen.
 - Con alerta de temperatura, o si el despachador marca el empaque comprometido: no reingresa y no se vuelve a dispensar ni a trasladar.
 
+Tras un incidente en vuelo (RF-34):
+
+- Si el dron vuelve a la central con el paquete, aplica la misma cuarentena.
+- Si aterriza de emergencia, el paquete se recupera con el dron y queda en cuarentena: no reingresa.
+- Con choque grave o dron perdido, el paquete se da por perdido.
+
+Si la urgencia se vuelve a despachar, sale otro lote, que se descuenta al confirmar la carga.
+
 En un traslado que sí se recibe, el inventario entra en la central de destino solo si la remisión coincide y no hubo alerta de frío. Si no coincide, no entra: vuelve a origen y aplica la misma cuarentena.

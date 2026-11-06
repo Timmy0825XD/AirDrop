@@ -27,14 +27,14 @@ AirDrop se **sustenta**. El código debe verse profesional y ser fácil de expli
 - Un módulo (Nest) o una feature (Flutter) por dominio de negocio: autenticación, centrales, inventario, flota, geovallas, pedidos, decisión, rutas, simulación/telemetría, entregas, métricas.
 - Servicios con una responsabilidad clara (p. ej. `EligibilityService` decide; `FlightSimulationService` mueve el dron; `TelemetryGateway` publica).
 - Reglas de negocio en código explícito (if/funciones con nombre), no en un “framework” interno.
-- Tests del camino feliz y de los bordes que importan: emergencia vs programado, dron no elegible → fallback, geovalla bloquea ruta, **no hay vuelo sin confirmar carga**, código a tiempo vs timeout de 5 min → retorno con paquete.
+- Tests del camino feliz y de los bordes que importan: emergencia vs programado, dron no elegible → fallback, geovalla bloquea ruta, **no hay vuelo sin confirmar carga**, código a tiempo vs timeout de 5 min → retorno con paquete, incidente en vuelo → protocolo, reloj simulado acelerado o en pausa.
 
 **No hacer**
 
 - Microservicios, event buses, CQRS, hexagonal/clean con puertos y adaptadores en cada módulo.
 - Repositorios genéricos de 4 niveles, factories de factories, “engine plugins”.
 - Abstracciones para un segundo modelo de dron que no existe en el MVP (hoy el modelo es Wingcopter 198 vía `DroneModel`).
-- Una app web de gestión, un admin separado en otro framework, o un segundo canal de tiempo real además de WebSockets. **Única excepción:** [`web/`](web/AGENTS.md), el radar en tiempo real que pidió el profesor (Next.js y Tailwind): solo lectura, solo para el administrador, sobre el mismo WebSocket.
+- Una app web de gestión, un admin separado en otro framework, o un segundo canal de tiempo real además de WebSockets. **Única excepción:** [`web/`](web/AGENTS.md), el radar en tiempo real que pidió el profesor (Next.js y Tailwind), que también es la **consola de simulación** que se proyecta en una TV: solo para el administrador, sobre el mismo WebSocket. Maneja el reloj simulado, lanza eventos, enciende los actores simulados y el modo caos, y reinicia el escenario (RF-31 a RF-40). No es un panel de gestión: no tiene formularios de pedidos, inventario, centrales ni flota.
 
 ---
 

@@ -7,7 +7,7 @@ Documento base del proyecto (Word). Conservadas para la sustentación y el marco
 3. Instituto Nacional de Salud (INS). 1.546 accidentes ofídicos han sido reportados en 2024 en el país.
 4. Comportamiento epidemiológico del accidente ofídico en Colombia (2007–2015).
 5. El Heraldo. Las 7 vías con mayor accidentalidad en el Caribe.
-6. Wingcopter GmbH. Especificaciones técnicas del Wingcopter 198.
+6. Wingcopter GmbH. Especificaciones técnicas del Wingcopter 198 (https://wingcopter.com/wingcopter-198): ocho motores con ocho controladores, dos baterías, sensores de velocidad y de posición duplicados. No publica una cifra de viento.
 7. IEEE Spectrum / TechCrunch. Cobertura de la operación de Zipline en Ruanda y Ghana.
 8. Valencia-Arias, A. et al. (2022). Factors Associated with the Adoption of Drones for Product Delivery in the Context of the COVID-19 Pandemic in Medellín, Colombia. *Drones*, 6(9), 225.
 9. Rodríguez, S. (2025). Drones en la distribución de insumos médicos para esclerosis múltiple: desafíos y oportunidades en Colombia. *Neurología Argentina*, 17(2), 128-133.
@@ -20,3 +20,4 @@ Documento base del proyecto (Word). Conservadas para la sustentación y el marco
 16. Resolución 3690 de 2016. Cadena de frío en el transporte, incluido el aéreo.
 17. Ley 1581 de 2012 y Decreto 1377 de 2013, compilado en el Decreto 1074 de 2015. Datos personales, datos sensibles de salud y consentimiento.
 18. Resolución 820 de 2026. Autorización territorial para establecimientos farmacéuticos minoristas. El simulador no la reemplaza.
+19. Sphere Drones. Ficha del Wingcopter 198 (https://spheredrones.com.au/pages/wingcopter-198): resistencia al viento de 15 m/s sostenido y 20 m/s en ráfagas. Es la cifra que usa el clima simulado (RF-32).
