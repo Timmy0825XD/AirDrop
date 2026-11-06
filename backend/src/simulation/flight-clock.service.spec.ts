@@ -118,6 +118,7 @@ function build(
     telemetry as never,
     notifications as never,
     { notifyUser: jest.fn(), notifyHubDispatchers: jest.fn() } as never,
+    { active: () => [] } as never,
   );
   service['waiting'].set(ORDER_ID, LANDED_AT);
   return {

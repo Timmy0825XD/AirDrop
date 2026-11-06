@@ -352,15 +352,15 @@ Al reiniciar el escenario (RF-40) el reloj vuelve a la hora real, a x1.
 
 ### RF-32 — Clima simulado
 
-El clima son celdas: una zona en el mapa, con un tipo, una intensidad y una duración en hora simulada. Las crea la consola (RU-32) o el modo caos (RF-38); no hay datos de clima reales.
+El clima son celdas: un círculo en el mapa (centro y radio), con un tipo, una intensidad y una duración en hora simulada. Las crea la consola (RU-32) o el modo caos (RF-38); no hay datos de clima reales.
 
 | Tipo | Efecto |
 | --- | --- |
-| Viento | Dirección y velocidad. En contra baja la velocidad sobre el suelo y sube el consumo del crucero; a favor, al revés. Sobre 15 m/s sostenidos o 20 m/s en ráfagas no se vuela |
-| Lluvia | Se vuela, con más consumo |
+| Viento | Dirección y velocidad. Solo cuenta la parte del viento a lo largo del tramo: en contra, la velocidad sobre el suelo es la del dron menos esa parte; a favor, más. El crucero gasta por tiempo en el aire, así que por km gasta en la proporción velocidad en el aire / velocidad sobre el suelo (10 m/s en contra a 150 km/h: 114 km/h y 1,32 veces el consumo). Sobre 15 m/s sostenidos o 20 m/s en ráfagas no se vuela |
+| Lluvia | Se vuela, con un 10 % más de consumo en crucero |
 | Tormenta | Zona no volable mientras dure: cuenta como geovalla para rutas (RF-12) |
 
-Al autorizar, el motor de decisión mira el clima del corredor (RF-11). En vuelo, una tormenta que cruza el tramo que falta cambia la ruta (RF-33), y un viento sobre el límite donde va el dron es un incidente (RF-34). Al vencer, la celda desaparece sola.
+Al autorizar, el motor de decisión mira el clima del corredor de ida y del regreso por el mismo camino (RF-11). La batería se cuenta en km equivalentes: el crucero con viento en contra cuesta como uno más largo. En vuelo, una tormenta que cruza el tramo que falta cambia la ruta (RF-33), y un viento sobre el límite donde va el dron es un incidente (RF-34). Mientras ese protocolo no exista, se avisa y el dron sigue. Una tormenta no impide crear un pedido con destino bajo ella: lo que no deja es volar hasta que pase. Al vencer, la celda desaparece sola y la línea de tiempo lo cuenta.
 
 **Por qué.** El alcance ya pedía clima simulado en la decisión, y estaba fijo en "se puede volar". Los límites de viento (15 m/s sostenido, 20 m/s en ráfagas) son los que publica un distribuidor del Wingcopter 198; la página del fabricante solo dice que resiste vientos fuertes ([../sustentacion/fuentes.md](../sustentacion/fuentes.md)).
 

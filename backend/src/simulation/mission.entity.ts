@@ -40,4 +40,8 @@ export class Mission {
 
   @Column({ type: 'boolean', default: false })
   failureAlert: boolean;
+
+  /** RF-32: en algún momento voló con viento sobre el límite. */
+  @Column({ type: 'boolean', default: false })
+  windAlert: boolean;
 }

@@ -105,11 +105,6 @@ type RankedCandidate = {
   distanceKm: number;
 };
 
-/** En este MVP el clima simulado deja volar. Los tests pueden inyectar un bloqueo. */
-export function simulatedWeather(): { flyable: boolean } {
-  return { flyable: true };
-}
-
 export function assertCanAuthorize(
   order: AuthorizableOrder,
   today: string,
@@ -154,6 +149,12 @@ export function chooseDrone(input: {
   missionType: MissionType;
   quantity: number;
   weatherFlyable: boolean;
+  /** Por qué no deja volar el clima (tormenta o viento); sin él, el genérico. */
+  weatherReason?: string | null;
+  /**
+   * Km del corredor, o km equivalentes con el clima (RF-32): con viento en
+   * contra el crucero cuesta como uno más largo.
+   */
   candidates: Array<{ drone: DroneCandidate; distanceKm: number | null }>;
 }): { chosen: ChosenDrone | null; discarded: DiscardedDrone[] } {
   const discarded: DiscardedDrone[] = [];
@@ -165,6 +166,7 @@ export function chooseDrone(input: {
       input.weatherFlyable,
       candidate.drone,
       candidate.distanceKm,
+      input.weatherReason,
     );
     if (reason) {
       discarded.push({
@@ -229,9 +231,10 @@ export function discardReason(
   weatherFlyable: boolean,
   candidate: DroneCandidate,
   distanceKm: number | null,
+  weatherReason?: string | null,
 ): string | null {
   if (!weatherFlyable) {
-    return WEATHER_BLOCKS;
+    return weatherReason ?? WEATHER_BLOCKS;
   }
   if (candidate.status === DroneStatus.MAINTENANCE) {
     return DRONE_MAINTENANCE;

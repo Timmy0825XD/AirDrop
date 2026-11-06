@@ -37,7 +37,17 @@ Nombres alineados al glosario:
 
 `Analytics` (RF-23, RF-26) vive en `analytics/`: el servicio solo carga datos y `analytics.rules.ts` calcula KPI, metas y el dashboard. `FallbackService` (RF-18) vive en `decision/`. `Radar` (`radar/`) solo lee, para la vista web [`../web/`](../web/AGENTS.md): `GET /radar/snapshot`, `/radar/hubs/:id` y `/radar/flights/:orderId` (solo `admin`) y la sala `radar` del socket (`subscribe-radar`); no revela a quién va una entrega ni el medicamento de una entrega a una persona.
 
-`Weather` (`weather/`) guarda las celdas de clima simulado (RF-32) y responde si una ruta o un punto se puede volar; la usan `Decision`, `Routing` y `Simulation`. `Control` (`control/`) es la consola de simulación de la web (RF-31 a RF-40): reloj simulado, eventos, actores simulados, modo caos, línea de tiempo y reinicio del escenario. Sus endpoints `/control/*` son solo `admin` y existen solo con `CONTROL_ENABLED=true`. `Control` no tiene reglas de negocio propias: los actores simulados llaman a los mismos servicios que una persona (`OrdersService`, la confirmación de carga, la validación del código) y los eventos los aplican `Weather`, `Geofences`, `Hubs` y `Simulation`.
+`Weather` (`weather/`) guarda las celdas de clima simulado (RF-32): círculos con duración en hora simulada. Las tiene en memoria porque el reloj de vuelo las lee en cada tick, y Postgres (`weather_cells`) las conserva. Las reglas puras están en `weather.rules.ts`:
+- `conditionsAt`: viento a lo largo del tramo y lluvia donde va el dron.
+- `corridorWeather`: si se puede volar un corredor y sus km equivalentes.
+- `stormPolygon`: la tormenta como polígono de 16 lados.
+
+Quién las usa:
+- `Routing`: `loadPolygons` suma las tormentas vigentes a las geovallas. `assertDestinationAllowed` mira solo geovallas.
+- `Decision`: `HubEvaluationService` evalúa la ida y el regreso, y pasa km equivalentes al motor.
+- `Simulation`: `advanceFlight` recibe `weather`. El crucero termina al llegar al final del corredor, no a una hora fija, y avisa `wind_limit` una vez por tramo.
+
+La consola usa `GET`/`POST /control/weather` y `DELETE /control/weather/:id`; una tormenta hace `recheckRoutes()`. `Control` (`control/`) es la consola de simulación de la web (RF-31 a RF-40): reloj simulado, eventos, actores simulados, modo caos, línea de tiempo y reinicio del escenario. Sus endpoints `/control/*` son solo `admin` y existen solo con `CONTROL_ENABLED=true`. `Control` no tiene reglas de negocio propias: los actores simulados llaman a los mismos servicios que una persona (`OrdersService`, la confirmación de carga, la validación del código) y los eventos los aplican `Weather`, `Geofences`, `Hubs` y `Simulation`.
 
 **Reloj:** toda regla que dependa de la hora usa `simClock.now()` / `simClock.nowMs()` (`common/clock/sim-clock.ts`, RF-31), nunca `new Date()` ni `Date.now()`. Es un solo objeto en el proceso, no un servicio inyectado, porque también lo leen las validaciones de los DTO. Un barrido periódico usa `simClock.every(ms, tarea)` (ms simulados), no `setInterval`. Las fechas de creación (`@CreateDateColumn`) toman la hora simulada por `SimTimeSubscriber`. Excepción: auth (JWT, OTP, límite de intentos de login) y el consentimiento siguen en hora real. La velocidad la cambia `PUT /control/clock` (admin, `CONTROL_ENABLED`), se guarda en Redis y llega por el socket como el evento `clock` (`{ now, speed, paused }`), también al conectar.
 

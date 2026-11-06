@@ -4,6 +4,7 @@ import { Drone } from '../fleet/drone.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { Order } from '../orders/order.entity';
 import { RoutingModule } from '../routing/routing.module';
+import { WeatherModule } from '../weather/weather.module';
 import { TelemetryModule } from '../telemetry/telemetry.module';
 import { FlightClockService } from './flight-clock.service';
 import { Mission } from './mission.entity';
@@ -14,6 +15,7 @@ import { Mission } from './mission.entity';
     RoutingModule,
     TelemetryModule,
     NotificationsModule,
+    WeatherModule,
   ],
   providers: [FlightClockService],
   exports: [FlightClockService],

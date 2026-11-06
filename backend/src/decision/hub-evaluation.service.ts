@@ -13,12 +13,16 @@ import {
   batteryNow,
   missionBatteryPercent,
 } from '../simulation/flight-energy.rules';
-import { outboundDurationMs } from '../simulation/simulation.rules';
 import {
-  DroneCandidate,
-  chooseDrone,
-  simulatedWeather,
-} from './decision.rules';
+  DESCENT_MS,
+  LANDING_MS,
+  TAKEOFF_MS,
+  TRANSITION_MS,
+} from '../simulation/simulation.rules';
+import { reverseCorridor } from '../routing/routing.rules';
+import { corridorWeather } from '../weather/weather.rules';
+import { WeatherService } from '../weather/weather.service';
+import { DroneCandidate, chooseDrone } from './decision.rules';
 import { EligibilityService } from './eligibility.service';
 import { simClock } from '../common/clock/sim-clock';
 
@@ -34,6 +38,8 @@ export type HubEvaluation = {
   inRange: boolean;
   /** Batería de cada dron ahora, con lo que recargó en tierra. */
   batteryByDrone: Map<string, number>;
+  /** RF-32: km que "cuesta" el crucero con el clima (ida y regreso, promedio). */
+  energyKm: number | null;
 };
 
 /**
@@ -46,6 +52,7 @@ export class HubEvaluationService {
   constructor(
     private readonly routes: RoutePlannerService,
     private readonly eligibility: EligibilityService,
+    private readonly weather: WeatherService,
   ) {}
 
   async evaluate(
@@ -67,6 +74,7 @@ export class HubEvaluationService {
         etaMs: null,
         inRange: false,
         batteryByDrone: new Map(),
+        energyKm: null,
       };
     }
     const query = manager
@@ -97,10 +105,24 @@ export class HubEvaluationService {
       },
       polygons,
     );
+    // RF-32: el clima del corredor de ida y del regreso por el mismo camino.
+    const speed = modelsById.get(drones[0]?.droneModelId ?? '')?.maxSpeedKmh;
+    // Sin celdas vigentes el cielo está despejado: cuentan los km del corredor.
+    const cells = this.weather.active(now);
+    const withWeather = cells.length > 0 && corridor != null && speed != null;
+    const there = withWeather ? corridorWeather(corridor, cells, speed) : null;
+    const back = withWeather
+      ? corridorWeather(reverseCorridor(corridor), cells, speed)
+      : null;
+    const energyKm =
+      there && back
+        ? Math.round(((there.energyKm + back.energyKm) / 2) * 100) / 100
+        : (corridor?.distanceKm ?? null);
     const choice = this.eligibility.choose({
       missionType: order.missionType,
       quantity: order.quantity,
-      weatherFlyable: simulatedWeather().flyable,
+      weatherFlyable: (there?.flyable ?? true) && (back?.flyable ?? true),
+      weatherReason: there?.reason ?? back?.reason ?? null,
       candidates: drones.flatMap((drone) => {
         const model = modelsById.get(drone.droneModelId);
         if (!model) {
@@ -114,7 +136,7 @@ export class HubEvaluationService {
               heldByDrone.get(drone.id) ?? null,
               batteryByDrone.get(drone.id) ?? 100,
             ),
-            distanceKm: corridor?.distanceKm ?? null,
+            distanceKm: corridor ? energyKm : null,
           },
         ];
       }),
@@ -128,10 +150,19 @@ export class HubEvaluationService {
     const reach =
       corridor && model
         ? {
-            etaMs: outboundDurationMs(corridor, model),
+            // La ida con el viento que hay: el crucero puede tardar más.
+            etaMs:
+              TAKEOFF_MS +
+              TRANSITION_MS +
+              (there?.cruiseMs ??
+                (corridor.distanceKm / model.maxSpeedKmh) * 3_600_000) +
+              DESCENT_MS +
+              LANDING_MS,
             inRange:
-              missionBatteryPercent(corridor.distanceKm, model.maxRangeKm) <=
-              100,
+              missionBatteryPercent(
+                energyKm ?? corridor.distanceKm,
+                model.maxRangeKm,
+              ) <= 100,
           }
         : { etaMs: null, inRange: false };
     return {
@@ -142,6 +173,7 @@ export class HubEvaluationService {
       choice,
       ...reach,
       batteryByDrone,
+      energyKm,
     };
   }
 

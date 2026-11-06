@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { WeatherModule } from '../weather/weather.module';
 import { HubsModule } from '../hubs/hubs.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { Order } from '../orders/order.entity';
@@ -19,6 +20,7 @@ import { ScheduledRetryService } from './scheduled-retry.service';
     RoutingModule,
     SimulationModule,
     NotificationsModule,
+    WeatherModule,
   ],
   providers: [
     DecisionService,

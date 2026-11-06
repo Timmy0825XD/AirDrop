@@ -316,6 +316,14 @@ export class TelemetryGateway
         this.server?.to(RADAR_ROOM).emit('radar-reset', {});
         return;
       }
+      if (event.type === 'weather') {
+        // RF-32: la consola dibuja el clima; la app no lo necesita.
+        this.server?.to(RADAR_ROOM).emit('radar-weather', {
+          action: event.action,
+          cell: event.cell,
+        });
+        return;
+      }
       if (event.type === 'rerouted') {
         // RF-33: el radar recarga la ruta del vuelo; el aviso va por la línea de tiempo.
         this.server?.to(RADAR_ROOM).emit('radar-reroute', {

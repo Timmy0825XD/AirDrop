@@ -24,6 +24,7 @@ import {
   stockRows,
 } from './scenario-reset.rules';
 import { TimelineService } from './timeline.service';
+import { WeatherService } from '../weather/weather.service';
 
 /**
  * RF-40, CU-41: devuelve el escenario de `pnpm seed:demo` a su estado
@@ -43,6 +44,7 @@ export class ScenarioResetService {
     private readonly timeline: TimelineService,
     private readonly redis: TelemetryRedis,
     private readonly publisher: TelemetryPublisher,
+    private readonly weather: WeatherService,
   ) {}
 
   async reset(admin: User): Promise<ResetSummary> {
@@ -54,6 +56,8 @@ export class ScenarioResetService {
     }
     // Primero el reloj: los vencimientos y el mantenimiento cuentan desde hoy.
     await this.clock.resetToRealTime();
+    // Sin clima: las tormentas ya no cuentan para las rutas de la semilla.
+    await this.weather.clearAll();
     const hubIds = hubs.map((hub) => hub.id);
     const orders = await this.scopedOrders(hubIds);
     const orderIds = orders.map((order) => order.id);

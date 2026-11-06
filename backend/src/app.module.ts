@@ -24,6 +24,7 @@ import { OrdersModule } from './orders/orders.module';
 import { RadarModule } from './radar/radar.module';
 import { RoutingModule } from './routing/routing.module';
 import { UsersModule } from './users/users.module';
+import { WeatherModule } from './weather/weather.module';
 
 @Module({
   imports: [
@@ -58,6 +59,7 @@ import { UsersModule } from './users/users.module';
     DeliveryModule,
     AnalyticsModule,
     RadarModule,
+    WeatherModule,
     ControlModule,
   ],
 })

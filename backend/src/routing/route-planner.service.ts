@@ -2,6 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { DataSource, EntityManager } from 'typeorm';
 import { RouteLeg } from '../common/enums/route-leg.enum';
 import { GeoJsonPolygon } from '../geofences/geofences.rules';
+import { WeatherService } from '../weather/weather.service';
 import {
   DESTINATION_IN_GEOFENCE,
   LngLat,
@@ -20,7 +21,10 @@ type RouteRow = {
 
 @Injectable()
 export class RoutePlannerService {
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(
+    private readonly dataSource: DataSource,
+    private readonly weather: WeatherService,
+  ) {}
 
   plan(
     origin: LngLat,
@@ -44,13 +48,22 @@ export class RoutePlannerService {
     destination: LngLat,
     manager: EntityManager = this.dataSource.manager,
   ): Promise<void> {
-    const polygons = await this.loadPolygons(manager);
+    // Solo geovallas: una tormenta pasa, el punto de entrega sigue valiendo.
+    const polygons = await this.loadGeofences(manager);
     if (isInsideGeofence(destination, polygons)) {
       throw new BadRequestException(DESTINATION_IN_GEOFENCE);
     }
   }
 
+  /** RF-12 y RF-32: lo que una ruta no puede cruzar: geovallas y tormentas vigentes. */
   async loadPolygons(manager: EntityManager): Promise<GeoJsonPolygon[]> {
+    return [
+      ...(await this.loadGeofences(manager)),
+      ...this.weather.stormPolygons(),
+    ];
+  }
+
+  async loadGeofences(manager: EntityManager): Promise<GeoJsonPolygon[]> {
     const rows: Array<{ polygon: string }> = await manager.query(
       `SELECT ST_AsGeoJSON(polygon) AS polygon FROM geofences`,
     );

@@ -275,6 +275,8 @@ function build(state?: {
   const hubEvaluation = new HubEvaluationService(
     routes as unknown as RoutePlannerService,
     new EligibilityService(),
+    // Sin clima: el cielo despejado de antes de RF-32.
+    { active: () => [] } as never,
   );
   const inbox = {
     notifyUser: jest.fn().mockResolvedValue(undefined),

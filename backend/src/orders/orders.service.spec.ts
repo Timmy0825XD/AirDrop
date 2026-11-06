@@ -186,9 +186,10 @@ function build(options?: {
   const polygons = (options?.geofences ?? []).map((polygon) => ({
     polygon: JSON.stringify(polygon),
   }));
-  const routes = new RoutePlannerService({
-    manager: { query: jest.fn().mockResolvedValue(polygons) },
-  } as never);
+  const routes = new RoutePlannerService(
+    { manager: { query: jest.fn().mockResolvedValue(polygons) } } as never,
+    { stormPolygons: () => [] } as never,
+  );
   const service = new OrdersService(
     orders as never,
     images as never,

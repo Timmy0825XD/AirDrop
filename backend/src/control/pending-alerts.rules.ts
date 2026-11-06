@@ -28,6 +28,7 @@ export function pendingAlertKinds(
   mission: {
     batteryAlert: boolean;
     failureAlert: boolean;
+    windAlert?: boolean;
     returnedAt: Date | null;
   },
   order: { status: OrderStatus; coldChainAlertAt: Date | null },
@@ -38,6 +39,7 @@ export function pendingAlertKinds(
   const kinds: FlightAlertKind[] = [];
   if (mission.batteryAlert) kinds.push('battery_critical');
   if (mission.failureAlert) kinds.push('failure');
+  if (mission.windAlert) kinds.push('wind_limit');
   if (order.coldChainAlertAt) kinds.push('cold_chain');
   return kinds;
 }

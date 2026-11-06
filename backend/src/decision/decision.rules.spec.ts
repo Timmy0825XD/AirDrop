@@ -23,7 +23,6 @@ import {
   assertAuthorizingHub,
   assertCanAuthorize,
   chooseDrone,
-  simulatedWeather,
 } from './decision.rules';
 
 const wingcopter = { maxPayloadKg: 6, maxRangeKm: 110 };
@@ -58,11 +57,7 @@ function order(overrides: Partial<AuthorizableOrder> = {}): AuthorizableOrder {
   };
 }
 
-describe('simulated weather and authorize guards', () => {
-  it('lets the simulated forecast fly in production', () => {
-    expect(simulatedWeather()).toEqual({ flyable: true });
-  });
-
+describe('authorize guards', () => {
   it('requires a checked prescription, a due date and a destination', () => {
     expect(() =>
       assertCanAuthorize(

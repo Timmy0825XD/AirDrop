@@ -26,15 +26,13 @@ import { InboxService } from '../notifications/inbox.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Order } from '../orders/order.entity';
 import { departureCopy } from '../orders/plan-dispatch.rules';
-import {
-  PlannedCorridor,
-  rerouteFromPosition,
-} from '../routing/routing.rules';
+import { PlannedCorridor, rerouteFromPosition } from '../routing/routing.rules';
 import { RoutePlannerService } from '../routing/route-planner.service';
 import { batteryNow, batteryToFinishPercent } from './flight-energy.rules';
 import { TELEMETRY_UNAVAILABLE } from '../telemetry/telemetry.rules';
 import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
 import { Mission } from './mission.entity';
+import { WeatherService } from '../weather/weather.service';
 import {
   FLIGHT_NOT_READY,
   FlightModel,
@@ -112,6 +110,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     private readonly telemetry: TelemetryPublisher,
     private readonly notifications: NotificationsService,
     private readonly inbox: InboxService,
+    private readonly weather: WeatherService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -605,6 +604,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       corridor: session.corridor,
       model: session.model,
       loadConfirmedAt: session.loadConfirmedAt,
+      weather: this.weather.active(),
     });
     if (!step) {
       return;
@@ -806,6 +806,9 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     }
     if (step.alerts.includes('failure')) {
       mission.failureAlert = true;
+    }
+    if (step.alerts.includes('wind_limit')) {
+      mission.windAlert = true;
     }
     if (
       step.progress.orderStatus === OrderStatus.AWAITING_DELIVERY &&
