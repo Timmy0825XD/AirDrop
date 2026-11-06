@@ -234,6 +234,29 @@ export function statusDraft(
   }
 }
 
+/**
+ * El dron aterrizó en su central tras entregar: el pedido ya no cambia de
+ * estado, así que este es el único aviso de que el vuelo terminó.
+ */
+export function homeDraft(
+  order: OrderFacts,
+  position: Position | null,
+): TimelineDraft {
+  const drone = order.drone?.identifier ?? 'El dron';
+  return {
+    kind: 'flight',
+    severity: 'success',
+    title: `${drone} volvió vacío a ${order.originHub?.name ?? 'su central'}`,
+    detail: 'Queda disponible para otra misión.',
+    orderId: order.id,
+    droneId: order.drone?.id ?? null,
+    hubId: order.originHub?.id ?? null,
+    latitude: position?.latitude ?? null,
+    longitude: position?.longitude ?? null,
+    source: 'system',
+  };
+}
+
 /** RU-10: la urgencia entró a la cola de una central. */
 export function queueDraft(
   order: OrderFacts,
