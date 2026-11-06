@@ -218,7 +218,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Actores:** Operador
 - **Antes:** El dron existe y pertenece a una central suya
 - **Pasos:** Lo pasa a disponible, mantenimiento o fuera de servicio.
-- **Si falla:** Si está reservado, en vuelo, en espera o de regreso, el cambio espera a que la misión cierre.
+- **Si falla:** Si está reservado, en vuelo, en espera o de regreso, el cambio espera a que la misión cierre. Si está en tierra fuera de base (CU-32), espera a que lo recuperen.
 - **Por qué:** Un dron en el aire no se saca de la misión desde el tablero de estados.
 
 ### CU-17 — Mantenimiento
@@ -231,7 +231,8 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 
 - **Actores:** Operador
 - **Pasos:** Dibuja un polígono, le pone nombre y motivo. Puede editarlo o borrarlo. Las rutas que se calculen después no lo cruzan.
-- **Por qué:** RU-19. Una geovalla no reescribe una misión que ya va en el aire; sí impide la siguiente ruta, incluida la de retorno si todavía no se calculó.
+- **Después:** Si un dron en el aire tiene esa geovalla en el tramo que le falta, cambia de ruta (CU-43).
+- **Por qué:** RU-19 y RF-33. Seguir el corredor viejo haría cruzar la geovalla a un dron que ya va volando.
 
 ### CU-19 — Telemetría
 
@@ -277,6 +278,58 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Pasos:** Ve conteos por tipo, tiempo promedio e incidencias, incluidos los retornos sin entrega.
 - **Por qué:** RU-28. No abre imágenes de fórmula.
 
+### CU-37 — Manejar el reloj
+
+- **Actores:** Administrador, desde la consola de simulación
+- **Antes:** Sesión de administrador y backend con `CONTROL_ENABLED`
+- **Pasos:** Elige pausa, x1, x2, x4 o x8.
+- **Después:** Todo el sistema corre a esa velocidad (RF-31): vuelos, esperas, franjas, mantenimiento. La web y la app muestran la hora simulada. JWT, OTP y login siguen en hora real.
+- **Por qué:** RF-31.
+
+### CU-38 — Lanzar un evento
+
+- **Actores:** Administrador, desde la consola de simulación
+- **Antes:** Lo mismo que CU-37
+- **Pasos:**
+  1. Elige en el mapa un dron, una zona o una central.
+  2. Elige un evento que aplique a eso: clima (RF-32), incidente de dron (RF-34) o evento de entorno (RF-36), con su intensidad y duración si las tiene.
+  3. El sistema lo aplica y lo publica en la línea de tiempo.
+- **Si falla:** Un evento que no aplica (por ejemplo, una falla de motor a un dron en tierra) no se lanza y se dice por qué.
+- **Después:** El sistema responde solo: CU-32, CU-43, CU-44 o CU-45.
+- **Por qué:** RU-32. El administrador provoca la situación; la respuesta la decide el sistema.
+
+### CU-39 — Encender los actores simulados
+
+- **Actores:** Administrador, desde la consola de simulación
+- **Antes:** Lo mismo que CU-37
+- **Pasos:** Enciende o apaga el despachador automático. Pide al generador urgencias o programados.
+- **Después:** Con el despachador automático encendido, los pedidos se autorizan y se cargan solos, con los mismos servicios que usa un despachador. Los pedidos generados los recibe el receptor simulado (RF-37).
+- **Por qué:** RF-37. La demostración sigue aunque no haya una persona en cada rol.
+
+### CU-40 — Modo caos
+
+- **Actores:** Administrador, desde la consola de simulación
+- **Antes:** Lo mismo que CU-37. Arranca apagado.
+- **Pasos:** Lo enciende y elige la intensidad: baja, media o alta.
+- **Después:** El sistema sortea eventos realistas (RF-38) y los resuelve como en CU-38. Apagarlo no deshace los eventos que ya corren.
+- **Por qué:** RF-38.
+
+### CU-41 — Reiniciar el escenario
+
+- **Actores:** Administrador, desde la consola de simulación
+- **Antes:** Lo mismo que CU-37
+- **Pasos:** Pide reiniciar y lo confirma.
+- **Después:** Queda el escenario de la semilla, sin pedidos ni eventos de la demostración, con el modo caos apagado y el reloj en la hora real a x1 (RF-40). Las cuentas de personas reales siguen.
+- **Por qué:** RF-40. Cada presentación empieza igual.
+
+### CU-42 — Seguir el flujo
+
+- **Actores:** Administrador, desde la consola de simulación
+- **Antes:** Sesión de administrador
+- **Pasos:** Ve la línea de tiempo (pedido creado, decisión con su explicación, asignación, carga, despegue, alertas, incidentes, cambios de ruta, entrega o retorno) y la lista de alertas pendientes. Al tocar una, el mapa la enfoca.
+- **Si falla:** Si se corta el socket, reconecta y recupera las últimas entradas guardadas.
+- **Por qué:** RF-39. En la TV se tiene que ver qué decide el sistema y por qué, no solo dónde va el dron.
+
 ## Sistema
 
 ### CU-26 — Elegir dron
@@ -307,7 +360,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Actor:** Motor de simulación
 - **Antes:** Hay ruta y la carga ya se confirmó
 - **Pasos:** Despega, publica ticks, recorre las fases y aterriza. El pedido pasa a `en espera de entrega` y corre CU-33.
-- **Si falla:** Con frío, cada tick lleva temperatura (CU-30). Con batería crítica, corre CU-32.
+- **Si falla:** Con frío, cada tick lleva temperatura (CU-30). Con batería crítica, una falla o un incidente, corre CU-32. Si una zona nueva cruza el tramo que falta, corre CU-43.
 - **Después:** Está en el punto y el pedido no está `entregado`.
 - **Por qué:** RF-13. La simulación no entrega sola.
 
@@ -333,13 +386,18 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Después:** Quien pidió ve la alternativa. Ningún dron despegó vacío.
 - **Por qué:** RU-06. El rechazo mudo no es una respuesta.
 
-### CU-32 — Batería o falla
+### CU-32 — Batería, falla o incidente
 
-- **Actor:** Sistema
-- **Antes:** El dron va en vuelo, de ida o de regreso
-- **Pasos:** Avisa en el panel del operador.
-- **Después:** En este MVP el aviso es la acción. No hay un protocolo de aborto aparte.
-- **Por qué:** RU-21.
+- **Actor:** Motor de simulación
+- **Antes:** El dron va en vuelo, de ida o de regreso, y le pasa un incidente: lo lanzó la consola (CU-38), lo sorteó el modo caos (CU-40) o lo detectó el reloj (batería crítica, viento sobre el límite)
+- **Pasos:**
+  1. Aplica el efecto del incidente (más consumo, menos velocidad, sin enlace, frío que sube).
+  2. Elige el protocolo con las reglas de RF-34: seguir, volver a la central con el paquete o aterrizar de emergencia en el punto seguro más cercano.
+  3. Guarda el incidente con tipo, gravedad, posición, protocolo y resultado.
+  4. Avisa al operador, lo publica en la línea de tiempo y quien pidió ve el cambio de estado.
+- **Si falla:** Si al volver tampoco alcanza la batería, aterriza de emergencia.
+- **Después:** Si aterrizó de emergencia, el dron queda en tierra fuera de base hasta que lo rescatan y pasa a mantenimiento; el paquete queda en cuarentena. Con choque grave o dron perdido, el dron queda fuera de servicio y el paquete se pierde. Si la misión no llega a su destino, corre CU-44.
+- **Por qué:** RU-21 y RF-34. Un sistema autónomo no solo avisa: decide qué hace el dron con reglas que se pueden explicar.
 
 ### CU-33 — Esperar el código
 
@@ -362,3 +420,37 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Si falla:** Batería crítica en el regreso: CU-32.
 - **Después:** La misión cerró sin entrega. El insumo no queda en el punto.
 - **Por qué:** RF-30. Volver no es lo mismo que reponer el estante: el frío comprometido no se dispensa otra vez.
+
+### CU-43 — Cambiar la ruta en vuelo
+
+- **Actor:** Sistema
+- **Antes:** Un dron va en el aire y aparece una zona (geovalla, geovalla temporal o tormenta) que cruza el tramo que le falta
+- **Pasos:**
+  1. Traza un corredor nuevo desde la posición actual hasta el mismo destino (RF-12).
+  2. Si la batería alcanza con la reserva del 20 %, el dron lo sigue y la ruta vieja queda guardada.
+  3. Avisa al operador y lo publica en la línea de tiempo.
+- **Si falla:** Si no hay corredor o la batería no alcanza, corre CU-32 para volver o aterrizar.
+- **Por qué:** RF-33.
+
+### CU-44 — Volver a despachar tras un incidente
+
+- **Actor:** Motor de decisión
+- **Antes:** CU-32 dejó una misión sin llegar a su destino
+- **Pasos:**
+  1. Si es una urgencia, corre CU-26 en ese momento con prioridad de emergencia, en la misma central o en otra con el lote.
+  2. El pedido queda en `asignado` y luego en `pendiente de carga` con el dron nuevo. La carga se confirma otra vez (CU-22) y el lote se descuenta en esa central.
+  3. Si es un programado y el siguiente intento cae en la franja, vuelve a `recibido` y se reintenta.
+- **Si falla:** Urgencia sin dron en ninguna central: CU-31. Programado sin franja: vencido y CU-31.
+- **Después:** El pedido sigue su flujo normal. La misión fallida guarda el incidente.
+- **Por qué:** RF-35. La urgencia es del paciente, no del dron que se cayó.
+
+### CU-45 — Central sin energía
+
+- **Actor:** Sistema
+- **Antes:** La consola o el modo caos dejaron una central sin energía por un tiempo
+- **Pasos:**
+  1. Mientras dure, la central no autoriza ni confirma cargas y sus drones no son elegibles.
+  2. Sus urgencias pasan a la siguiente central como si hubiera declinado (RU-10).
+  3. Sus programados se reintentan dentro de la franja.
+- **Después:** Al terminar, vuelve a operar sola. Los drones que volvían a ella aterrizaron igual.
+- **Por qué:** RF-36. Una central caída no deja a la red sin respuesta.

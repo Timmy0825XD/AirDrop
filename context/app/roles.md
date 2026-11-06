@@ -13,7 +13,9 @@ La **central** es el lugar donde están el inventario y los drones. No es una cu
 | Operador de flota | Técnico de los drones | Lo crea el administrador, en **una o varias** centrales | No dispensa ni autoriza pedidos |
 | Administrador | Operación de la plataforma | La primera cuenta nace del sistema | No pide insumos, no autoriza una salida y no pilotea la flota |
 
-El administrador crea la central, puede suspenderla, crea a los despachadores y a los operadores, y ve las métricas.
+El administrador crea la central, puede suspenderla, crea a los despachadores y a los operadores, y ve las métricas. En la web maneja la consola de simulación (RU-32): reloj, eventos, actores simulados, modo caos y reinicio. Con eso no autoriza ni pilotea. Lanza la situación, y la respuesta la deciden las reglas del sistema. Cuando el despachador automático está encendido, el que autoriza es ese actor simulado, en nombre de la central (RF-37).
+
+Los solicitantes simulados del generador (RF-37) no son personas: son cuentas marcadas como simuladas, sin datos reales.
 
 No hay rol receptor. El código de un uso lo ingresa el solicitante o, si el destino es una central, el despachador que pidió el abastecimiento.
 

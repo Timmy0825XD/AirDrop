@@ -31,6 +31,18 @@ Términos que deben usarse igual en código, UI y sustentación.
 | Fallback multimodal | Alternativa cuando no hay dron elegible (otra central o aviso de traslado convencional). |
 | Telemetría | Snapshot en vivo: posición, altitud, velocidad, batería, payload, temperatura, ping, fase. |
 | Fase de vuelo | Despegue, transición, crucero, descenso, aterrizaje. |
+| Consola de simulación | La web del administrador, en una TV: reloj, eventos, actores simulados, modo caos, línea de tiempo y reinicio. |
+| Reloj simulado | La hora de todo el sistema, que puede ir en pausa, x1, x2, x4 u x8. JWT, OTP y login siguen en hora real. |
+| Celda de clima | Zona con viento, lluvia o tormenta simulados y una duración. |
+| Geovalla temporal | Geovalla con vencimiento que lanza la consola o el modo caos. |
+| Cambio de ruta en vuelo | Corredor nuevo desde la posición del dron cuando una zona nueva cruza el tramo que falta. |
+| Incidente | Algo que le pasa a un dron en vuelo: falla, choque, pérdida de GPS o enlace, viento sobre el límite. |
+| Protocolo | Lo que el sistema decide ante un incidente: seguir, volver a la central o aterrizar de emergencia. |
+| Aterrizaje de emergencia | Aterrizar en el punto seguro más cercano, fuera de toda geovalla y tormenta. |
+| En tierra fuera de base | Estado del dron que aterrizó de emergencia, hasta que lo rescatan. |
+| Actor simulado | Despachador automático, generador de pedidos o receptor simulado. Usa los mismos servicios que una persona. |
+| Modo caos | Sorteo de eventos realistas, apagado por defecto. |
+| Línea de tiempo | Pasos del flujo publicados en vivo por la sala del radar. |
 | OTP | Código de un uso para verificar cuenta. |
 | JWT | Token de sesión de la API. |
 

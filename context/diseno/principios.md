@@ -26,6 +26,7 @@ Una sola raíz de git.
 | --- | --- | --- |
 | `frontend/` | Una app Flutter (Android e iOS), todos los roles | Varias apps, un panel web |
 | `backend/` | Una API NestJS | Varios servicios desplegables |
+| `web/` | Radar y consola de simulación del administrador (Next.js), para una TV | Un panel de gestión ni otra app de roles |
 
 Comparten el **contrato** (HTTP + WebSocket) y el **vocabulario** del [`glosario.md`](glosario.md). No comparten código de UI ni de ORM.
 
@@ -49,6 +50,8 @@ Los mismos nombres en backend (módulos Nest) y, en lo posible, en frontend (fea
 10. **Telemetry** — Redis + gateway WebSocket.
 11. **Notifications** — push por cambio de estado y alertas.
 12. **Analytics** — dashboard epidemiológico y métricas admin (consultas SQL, no un data warehouse).
+13. **Weather** — celdas de clima simulado; responde si un punto o una ruta se puede volar y con qué viento.
+14. **Control** — consola de simulación: reloj, eventos, actores simulados, modo caos, línea de tiempo y reinicio. No tiene reglas propias: usa los servicios de los demás dominios.
 
 No hace falta un “bounded context” formal ni eventos de dominio entre estos módulos: llamadas de servicio y, si hace falta, un `EventEmitter` de Nest **dentro del mismo proceso**.
 
@@ -62,6 +65,8 @@ No hace falta un “bounded context” formal ni eventos de dominio entre estos 
 - `RoutePlannerService`: calcula polyline / waypoints o falla si no hay corredor.
 - `FlightClockService`: avanza simulación en intervalos (RNF-08: ≤ 2 s).
 - `FallbackService`: alternativa cuando elegibilidad es vacía (RF-18, CU-31).
+- `SimClockService`: dice qué hora es en la simulación y a qué velocidad corre (RF-31). Nadie más llama a `new Date()` en una regla.
+- `contingency.rules.ts`: dado un incidente y el estado del vuelo, elige el protocolo (RF-34). El reloj de vuelo lo ejecuta, no lo decide.
 
 **O — Abierto/cerrado**
 
@@ -81,7 +86,7 @@ No hace falta un “bounded context” formal ni eventos de dominio entre estos 
 | Dónde | Qué |
 | --- | --- |
 | PostgreSQL + PostGIS | Pedidos, misiones históricas, inventario, geovallas, usuarios, configuración del dron |
-| Redis | Snapshot de telemetría mientras hay misión activa; pub/sub hacia el gateway |
+| Redis | Snapshot de telemetría mientras hay misión activa; pub/sub hacia el gateway; estado del reloj simulado; línea de tiempo con tope |
 
 Al terminar la misión, un resumen (tiempos, incidencias de temperatura/batería) **sí** se persiste. No se vuelca cada tick de 2 s a Postgres.
 
@@ -96,6 +101,9 @@ Pedido (emergencia o ocurrencia de un plan programado)
   → Motor de decisión (batería, payload, mantenimiento, clima simulado, ruta)
        ├─ hay dron → mostrar referencia al despachador → confirmar carga
        │                 → calcular/usar ruta → simular vuelo → telemetría
+       │                      ├─ zona nueva en el camino → cambiar ruta en vuelo
+       │                      └─ incidente → protocolo (seguir, volver, aterrizar de emergencia)
+       │                           → si no llega: urgencia vuelve al motor de decisión
        │                 → en destino esperar código (5 min)
        │                      ├─ código válido → entregado
        │                      └─ timeout → retorno a la central con el paquete
@@ -111,7 +119,7 @@ Emergencia **siempre** gana el dron si hay competencia (RF-11, HU-22, CU-26).
 
 `DroneModel` (Wingcopter 198): velocidad máxima ~150 km/h, payload hasta 6 kg, alcance hasta 110 km con carga ligera. Consumo de batería **por fase**: despegue vertical, transición, crucero ala fija, descenso, aterrizaje.
 
-No se modela aerodinámica, viento real ni colisiones 3D. Obstáculos = geovallas + banda de altitud fija.
+No se modela aerodinámica, viento real ni colisiones 3D. Obstáculos = geovallas + banda de altitud fija. El viento simulado (RF-32) es un número por zona que cambia la velocidad sobre el suelo y el consumo del crucero, y un incidente es un efecto con nombre (más consumo, menos velocidad), no física.
 
 ---
 
@@ -125,7 +133,7 @@ Mapa y WebSockets son críticos (sprint 5); deben quedar en un módulo de client
 
 ## 9. Pruebas (suficientes para defender calidad)
 
-- Unitarias: elegibilidad, prioridad, “ruta cruza geovalla”, gasto de batería por fase, timeout de 5 min → retorno, no despegar sin carga (números redondos, no un paper).
+- Unitarias: elegibilidad, prioridad, “ruta cruza geovalla”, gasto de batería por fase, timeout de 5 min → retorno, no despegar sin carga, reloj a x2 y en pausa, cada protocolo de contingencia (números redondos, no un paper).
 - Integración: registro → pedido → autorizar → dron asignado → confirmar carga → vuelo → código o retorno.
 - No se exige cobertura 100 % ni pirámide de testing corporativa.
 
