@@ -104,6 +104,9 @@ export type FlightDetail = {
   flight: RadarFlight | null;
   route: Corridor | null;
   returnRoute: Corridor | null;
+  /** RF-33: lo que iba a volar antes de cambiar la ruta en el aire. */
+  previousRoute: Array<[number, number]> | null;
+  previousReturnRoute: Array<[number, number]> | null;
   originHub: { id: string; name: string } | null;
   destinationHub: { id: string; name: string } | null;
 };

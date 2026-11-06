@@ -26,9 +26,12 @@ import { InboxService } from '../notifications/inbox.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Order } from '../orders/order.entity';
 import { departureCopy } from '../orders/plan-dispatch.rules';
-import { PlannedCorridor } from '../routing/routing.rules';
+import {
+  PlannedCorridor,
+  rerouteFromPosition,
+} from '../routing/routing.rules';
 import { RoutePlannerService } from '../routing/route-planner.service';
-import { batteryNow } from './flight-energy.rules';
+import { batteryNow, batteryToFinishPercent } from './flight-energy.rules';
 import { TELEMETRY_UNAVAILABLE } from '../telemetry/telemetry.rules';
 import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
 import { Mission } from './mission.entity';
@@ -49,6 +52,13 @@ import {
   FlightPhase,
 } from './simulation.rules';
 import { simClock } from '../common/clock/sim-clock';
+
+/** RF-33: fases en que el dron todavía puede tomar otro camino. */
+const REROUTABLE_PHASES = new Set<FlightPhase>([
+  FlightPhase.TAKEOFF,
+  FlightPhase.TRANSITION,
+  FlightPhase.CRUISE,
+]);
 
 /** Pedido con frío que espera el código: la carga se sigue midiendo. */
 type ColdWait = {
@@ -128,6 +138,66 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
 
   isReady(): boolean {
     return this.telemetry.isReady();
+  }
+
+  /**
+   * RF-33: una zona nueva (geovalla, temporal o tormenta) puede cruzar el
+   * tramo que le falta a un dron en el aire. Si lo cruza, el dron sigue por
+   * un corredor nuevo desde donde va; la decisión es de `rerouteFromPosition`
+   * y aquí solo se aplica. Lo llama quien cambia las zonas.
+   */
+  async recheckRoutes(): Promise<void> {
+    if (!this.active.size) {
+      return;
+    }
+    const polygons = await this.routes.loadPolygons(this.orders.manager);
+    for (const session of [...this.active.values()]) {
+      if (!REROUTABLE_PHASES.has(session.progress.phase)) {
+        continue;
+      }
+      const outcome = rerouteFromPosition(
+        session.corridor,
+        session.progress.cruiseKm,
+        polygons,
+      );
+      if (outcome.kind === 'clear') {
+        continue;
+      }
+      if (outcome.kind === 'blocked') {
+        // Sin camino seguro: el protocolo lo decide RF-34 (rama de incidentes).
+        await this.notifications.rerouted({
+          orderId: session.orderId,
+          droneId: session.droneId,
+          outcome: 'blocked',
+          addedKm: null,
+          crossesGeofence: true,
+          batteryShort: false,
+        });
+        continue;
+      }
+      session.corridor = outcome.corridor;
+      await this.routes.replaceLeg(
+        session.orderId,
+        session.leg,
+        outcome.corridor,
+      );
+      const needed = batteryToFinishPercent({
+        remainingKm: outcome.remainingKm,
+        returnKm:
+          session.leg === RouteLeg.OUTBOUND
+            ? outcome.corridor.distanceKm
+            : null,
+        maxRangeKm: session.model.maxRangeKm,
+      });
+      await this.notifications.rerouted({
+        orderId: session.orderId,
+        droneId: session.droneId,
+        outcome: 'rerouted',
+        addedKm: outcome.addedKm,
+        crossesGeofence: outcome.crossesGeofence,
+        batteryShort: session.progress.batteryPercent < needed,
+      });
+    }
   }
 
   /**

@@ -1,11 +1,13 @@
 import {
   BadRequestException,
+  Logger,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Hub } from '../hubs/hub.entity';
+import { FlightClockService } from '../simulation/flight-clock.service';
 import { User } from '../users/user.entity';
 import { CreateGeofenceDto } from './dto/create-geofence.dto';
 import { UpdateGeofenceDto } from './dto/update-geofence.dto';
@@ -32,7 +34,24 @@ export class GeofencesService {
     private readonly geofences: Repository<Geofence>,
     @InjectRepository(Hub)
     private readonly hubs: Repository<Hub>,
+    private readonly flights: FlightClockService,
   ) {}
+
+  private readonly logger = new Logger(GeofencesService.name);
+
+  /**
+   * RF-33 y CU-43: una geovalla nueva o editada cambia la ruta de los drones
+   * en el aire que la tengan en el tramo que les falta. Si falla, la geovalla
+   * queda guardada igual.
+   */
+  private async recheckFlights(): Promise<void> {
+    try {
+      await this.flights.recheckRoutes();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'rutas';
+      this.logger.warn(`No se pudieron revisar los vuelos: ${message}`);
+    }
+  }
 
   async create(user: User, dto: CreateGeofenceDto) {
     const polygon = assertGeoJsonPolygon(dto.polygon);
@@ -49,6 +68,7 @@ export class GeofencesService {
        RETURNING id, name, reason, ST_AsGeoJSON(polygon) AS polygon, "createdByUserId", "createdAt"`,
       [dto.name.trim(), dto.reason.trim(), JSON.stringify(polygon), user.id],
     )) as GeofenceRow[];
+    await this.recheckFlights();
     return this.toPublicGeofence(rows[0]);
   }
 
@@ -100,6 +120,9 @@ export class GeofencesService {
         polygon ? JSON.stringify(polygon) : null,
       ],
     )) as [GeofenceRow[], number];
+    if (polygon) {
+      await this.recheckFlights();
+    }
     return this.toPublicGeofence(rows[0]);
   }
 

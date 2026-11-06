@@ -45,6 +45,15 @@ export class MissionRoute {
   })
   path: string;
 
+  /** RF-33: el corredor que tenía antes de cambiar la ruta en vuelo. */
+  @Column({
+    type: 'geometry',
+    spatialFeatureType: 'LineString',
+    srid: 4326,
+    nullable: true,
+  })
+  previousPath: string | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 }

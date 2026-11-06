@@ -26,6 +26,7 @@ import {
   alertDraft,
   clockDraft,
   homeDraft,
+  rerouteDraft,
   queueDraft,
   statusDraft,
 } from './timeline.rules';
@@ -135,6 +136,10 @@ export class TimelineService implements OnModuleInit {
       }
       return;
     }
+    if (event.type === 'rerouted') {
+      await this.onReroute(event);
+      return;
+    }
     if (event.type === 'alert') {
       await this.onAlert(
         event.orderId,
@@ -159,6 +164,25 @@ export class TimelineService implements OnModuleInit {
     if (draft) {
       await this.record(draft);
     }
+  }
+
+  private async onReroute(
+    event: Extract<TelemetryEvent, { type: 'rerouted' }>,
+  ): Promise<void> {
+    const order = await this.orders.findOne({ where: { id: event.orderId } });
+    if (!order) {
+      return;
+    }
+    const flight = await this.publisher.readFlight(event.orderId);
+    await this.record(
+      rerouteDraft(
+        await this.factsOf(order),
+        event,
+        flight
+          ? { latitude: flight.latitude, longitude: flight.longitude }
+          : null,
+      ),
+    );
   }
 
   private async onHome(

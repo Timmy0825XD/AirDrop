@@ -19,6 +19,17 @@ export type TelemetryEvent =
   | { type: 'timeline'; entry: TimelineEntry }
   /** RF-40: el escenario volvió a la semilla; el radar recarga todo. */
   | { type: 'scenario-reset' }
+  /** RF-33: una zona nueva cruzaba el tramo que le faltaba al dron. */
+  | {
+      type: 'rerouted';
+      orderId: string;
+      droneId: string;
+      outcome: 'rerouted' | 'blocked';
+      addedKm: number | null;
+      crossesGeofence: boolean;
+      /** Por el tramo nuevo no le alcanza para terminar con la reserva. */
+      batteryShort: boolean;
+    }
   | {
       type: 'alert';
       orderId: string;

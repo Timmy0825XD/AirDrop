@@ -272,3 +272,128 @@ export function haversineKm(start: LngLat, end: LngLat): number {
 function toLngLat(pair: number[]): LngLat {
   return { longitude: pair[0], latitude: pair[1] };
 }
+
+/** Un corredor partido donde va el dron: lo volado y lo que falta. */
+export type CorridorSplit = {
+  flown: Array<[number, number]>;
+  at: LngLat;
+  remaining: Array<[number, number]>;
+};
+
+/**
+ * Corta el corredor a `km` del inicio, en el mismo punto que calcula el
+ * simulador para el dron. El punto de corte cierra lo volado y abre lo que
+ * falta.
+ */
+export function splitCorridorAt(
+  corridor: PlannedCorridor,
+  km: number,
+): CorridorSplit {
+  const coordinates = corridor.coordinates;
+  if (coordinates.length < 2 || km <= 0) {
+    const start = toLngLat(coordinates[0] ?? [0, 0]);
+    return {
+      flown: coordinates.slice(0, 1),
+      at: start,
+      remaining: coordinates,
+    };
+  }
+  let left = km;
+  for (let index = 1; index < coordinates.length; index += 1) {
+    const start = toLngLat(coordinates[index - 1]);
+    const end = toLngLat(coordinates[index]);
+    const segment = haversineKm(start, end);
+    if (left < segment) {
+      const ratio = segment === 0 ? 0 : left / segment;
+      const point: [number, number] = [
+        start.longitude + (end.longitude - start.longitude) * ratio,
+        start.latitude + (end.latitude - start.latitude) * ratio,
+      ];
+      return {
+        flown: [...coordinates.slice(0, index), point],
+        at: toLngLat(point),
+        remaining: [point, ...coordinates.slice(index)],
+      };
+    }
+    left -= segment;
+  }
+  const last = coordinates[coordinates.length - 1];
+  return { flown: coordinates, at: toLngLat(last), remaining: [last] };
+}
+
+export type RerouteOutcome =
+  /** El tramo que falta no cruza ninguna zona: sigue igual. */
+  | { kind: 'clear' }
+  | {
+      kind: 'rerouted';
+      /** Lo volado más el tramo nuevo: el simulador sigue en el mismo km. */
+      corridor: PlannedCorridor;
+      /** Lo que le falta volar por el tramo nuevo. */
+      remainingKm: number;
+      /** Cuánto más (o menos) vuela que por el tramo viejo. */
+      addedKm: number;
+      /** Tuvo que cruzar la zona: el dron o el destino quedaron dentro. */
+      crossesGeofence: boolean;
+    }
+  /** No hay camino ni saliendo de la zona: lo resuelve RF-34. */
+  | { kind: 'blocked' };
+
+/**
+ * RF-33: si una zona nueva cruza el tramo que le falta al dron, traza uno
+ * nuevo desde donde va hasta el mismo destino, con las reglas de RF-12. Si
+ * el dron o el destino quedaron dentro de la zona, la cruza lo justo para
+ * salir o llegar, y queda marcado.
+ */
+export function rerouteFromPosition(
+  corridor: PlannedCorridor,
+  flownKm: number,
+  geofences: GeoJsonPolygon[],
+): RerouteOutcome {
+  const split = splitCorridorAt(corridor, flownKm);
+  const remainingPath = split.remaining.map(toLngLat);
+  if (remainingPath.length < 2 || !pathCrosses(remainingPath, geofences)) {
+    return { kind: 'clear' };
+  }
+  const destination = remainingPath[remainingPath.length - 1];
+  let planned = planCorridor(split.at, destination, geofences);
+  let crossesGeofence = false;
+  if (!planned) {
+    const trapping = geofences.filter(
+      (fence) =>
+        isInsideGeofence(split.at, [fence]) ||
+        isInsideGeofence(destination, [fence]),
+    );
+    planned = trapping.length
+      ? planCorridor(
+          split.at,
+          destination,
+          geofences.filter((fence) => !trapping.includes(fence)),
+        )
+      : null;
+    crossesGeofence = planned != null;
+  }
+  if (!planned) {
+    return { kind: 'blocked' };
+  }
+  const flownDistance = pathKm(split.flown.map(toLngLat));
+  const oldRemaining = pathKm(remainingPath);
+  return {
+    kind: 'rerouted',
+    corridor: {
+      altitudeM: corridor.altitudeM,
+      distanceKm: Math.round((flownDistance + planned.distanceKm) * 100) / 100,
+      coordinates: [...split.flown, ...planned.coordinates.slice(1)],
+    },
+    remainingKm: planned.distanceKm,
+    addedKm: Math.round((planned.distanceKm - oldRemaining) * 100) / 100,
+    crossesGeofence,
+  };
+}
+
+function pathKm(path: LngLat[]): number {
+  let total = 0;
+  for (let index = 1; index < path.length; index += 1) {
+    total += haversineKm(path[index - 1], path[index]);
+  }
+  return total;
+}

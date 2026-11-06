@@ -53,6 +53,27 @@ export function missionBatteryPercent(
 }
 
 /**
+ * RF-33: la batería que pide terminar desde el crucero por un tramo nuevo:
+ * lo que falta del crucero, bajar y aterrizar, el regreso entero si va de
+ * ida (por el mismo corredor, como en RF-11) y la reserva crítica.
+ */
+export function batteryToFinishPercent(input: {
+  remainingKm: number;
+  returnKm: number | null;
+  maxRangeKm: number;
+}): number {
+  return (
+    cruiseBatteryPercent(input.remainingKm, input.maxRangeKm) +
+    DESCENT_BATTERY_PERCENT +
+    LANDING_BATTERY_PERCENT +
+    (input.returnKm != null
+      ? legBatteryPercent(input.returnKm, input.maxRangeKm)
+      : 0) +
+    CRITICAL_BATTERY_PERCENT
+  );
+}
+
+/**
  * Recarga simulada en tierra: 1,5 % por minuto (de 0 a 100 % en algo más de
  * una hora). `DRONE_RECHARGE_PERCENT_PER_MIN` la cambia para demostraciones.
  */

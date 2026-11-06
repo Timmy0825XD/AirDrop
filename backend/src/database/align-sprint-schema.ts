@@ -177,6 +177,17 @@ async function migrateInventorySaleType(boot: DataSource): Promise<void> {
   }
 }
 
+/** RF-33: la ruta de antes de cambiarla en vuelo (sin `synchronize` en producción). */
+async function addRouteHistory(boot: DataSource): Promise<void> {
+  if (!(await tableExists(boot, 'mission_routes'))) {
+    return;
+  }
+  await boot.query(
+    `ALTER TABLE mission_routes
+     ADD COLUMN IF NOT EXISTS "previousPath" geometry(LineString, 4326)`,
+  );
+}
+
 export async function alignSprintSchema(
   options: TypeOrmModuleOptions,
 ): Promise<void> {
@@ -209,6 +220,7 @@ export async function alignSprintSchema(
     await copyLegacyHubAssignments(boot);
     await dropHubCreatorUnique(boot);
     await migrateInventorySaleType(boot);
+    await addRouteHistory(boot);
   } finally {
     if (boot.isInitialized) {
       await boot.destroy();

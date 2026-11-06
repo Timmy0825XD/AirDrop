@@ -127,6 +127,29 @@ describe('TelemetryGateway reloj simulado (RF-31)', () => {
     expect(to).toHaveBeenCalledWith('radar');
     expect(emit).toHaveBeenCalledWith('radar-timeline', entry);
   });
+
+  it('un cambio de ruta avisa al radar para que recargue el vuelo (RF-33)', async () => {
+    const { gateway } = build(() => Promise.resolve(null));
+    const emit = jest.fn();
+    const to = jest.fn(() => ({ emit }));
+    gateway.server = { to, emit: jest.fn() } as never;
+
+    await gateway['dispatch']({
+      type: 'rerouted',
+      orderId: ORDER_ID,
+      droneId: 'd1',
+      outcome: 'rerouted',
+      addedKm: 1,
+      crossesGeofence: false,
+      batteryShort: false,
+    } as never);
+
+    expect(emit).toHaveBeenCalledWith('radar-reroute', {
+      orderId: ORDER_ID,
+      droneId: 'd1',
+      outcome: 'rerouted',
+    });
+  });
 });
 
 describe('TelemetryGateway.subscribeHub', () => {

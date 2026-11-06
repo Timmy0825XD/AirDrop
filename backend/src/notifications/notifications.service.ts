@@ -1,7 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { FlightAlertKind } from '../simulation/simulation.rules';
-import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
+import {
+  TelemetryEvent,
+  TelemetryPublisher,
+} from '../telemetry/telemetry.publisher';
 
 const ALERT_MESSAGES: Record<FlightAlertKind, string> = {
   battery_critical: 'Batería crítica en el dron en vuelo.',
@@ -20,6 +23,13 @@ export class NotificationsService {
   /** La cola de una central cambió (p. ej. le llegó un pedido reasignado). */
   queueChanged(hubId: string, orderId: string): Promise<void> {
     return this.telemetry.publish({ type: 'queue-changed', hubId, orderId });
+  }
+
+  /** RF-33: la ruta cambió en vuelo, o no hay una segura. */
+  rerouted(
+    event: Omit<Extract<TelemetryEvent, { type: 'rerouted' }>, 'type'>,
+  ): Promise<void> {
+    return this.telemetry.publish({ type: 'rerouted', ...event });
   }
 
   alert(
