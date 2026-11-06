@@ -1,8 +1,11 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
+  Param,
+  ParseUUIDPipe,
   Post,
   Put,
   Query,
@@ -17,7 +20,9 @@ import { UserRole } from '../common/enums/user-role.enum';
 import { User } from '../users/user.entity';
 import { ClockControlService } from './clock-control.service';
 import { ControlEnabledGuard } from './control-enabled.guard';
+import { ConsoleEventsService } from './console-events.service';
 import { ChangeClockDto } from './dto/change-clock.dto';
+import { CreateWeatherDto } from './dto/create-weather.dto';
 import { PendingAlertsService } from './pending-alerts.service';
 import { ScenarioResetService } from './scenario-reset.service';
 import { clampTimelineLimit } from './timeline.rules';
@@ -35,6 +40,7 @@ export class ControlController {
     private readonly timeline: TimelineService,
     private readonly alerts: PendingAlertsService,
     private readonly scenario: ScenarioResetService,
+    private readonly events: ConsoleEventsService,
   ) {}
 
   @Get('clock')
@@ -57,6 +63,24 @@ export class ControlController {
   @Get('alerts')
   getAlerts() {
     return this.alerts.list();
+  }
+
+  /** RF-32: las celdas de clima que rigen ahora. */
+  @Get('weather')
+  getWeather() {
+    return this.events.listWeather();
+  }
+
+  /** RF-32, CU-38: viento, lluvia o tormenta sobre una zona del mapa. */
+  @Post('weather')
+  createWeather(@CurrentUser() user: User, @Body() dto: CreateWeatherDto) {
+    return this.events.createWeather(user.id, dto);
+  }
+
+  /** Corta una celda de clima antes de tiempo. */
+  @Delete('weather/:id')
+  endWeather(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
+    return this.events.endWeather(id);
   }
 
   /** RF-40, CU-41: el escenario de la semilla, sin pedidos y en hora real. */

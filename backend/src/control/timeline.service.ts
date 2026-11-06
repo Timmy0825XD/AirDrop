@@ -27,6 +27,7 @@ import {
   clockDraft,
   homeDraft,
   rerouteDraft,
+  weatherDraft,
   queueDraft,
   statusDraft,
 } from './timeline.rules';
@@ -138,6 +139,10 @@ export class TimelineService implements OnModuleInit {
     }
     if (event.type === 'rerouted') {
       await this.onReroute(event);
+      return;
+    }
+    if (event.type === 'weather') {
+      await this.record(weatherDraft(event.action, event.cell));
       return;
     }
     if (event.type === 'alert') {

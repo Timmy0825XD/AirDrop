@@ -5,8 +5,10 @@ import { Hub } from '../hubs/hub.entity';
 import { Order } from '../orders/order.entity';
 import { Mission } from '../simulation/mission.entity';
 import { SimulationModule } from '../simulation/simulation.module';
+import { WeatherModule } from '../weather/weather.module';
 import { TelemetryModule } from '../telemetry/telemetry.module';
 import { ClockControlService } from './clock-control.service';
+import { ConsoleEventsService } from './console-events.service';
 import { ControlEnabledGuard } from './control-enabled.guard';
 import { ControlController } from './control.controller';
 import { PendingAlertsService } from './pending-alerts.service';
@@ -23,6 +25,7 @@ import { TimelineService } from './timeline.service';
     TypeOrmModule.forFeature([Order, Hub, Drone, Mission]),
     TelemetryModule,
     SimulationModule,
+    WeatherModule,
   ],
   controllers: [ControlController],
   providers: [
@@ -31,6 +34,7 @@ import { TimelineService } from './timeline.service';
     TimelineService,
     PendingAlertsService,
     ScenarioResetService,
+    ConsoleEventsService,
   ],
 })
 export class ControlModule {}

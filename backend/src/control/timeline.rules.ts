@@ -5,6 +5,7 @@ import { MissionType } from '../common/enums/mission-type.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { DecisionTrace } from '../orders/order.entity';
 import { FlightAlertKind } from '../simulation/simulation.rules';
+import { WeatherKind } from '../common/enums/weather-kind.enum';
 
 /**
  * RF-39: cada paso del flujo, contado para la TV. No lleva datos de personas
@@ -257,6 +258,95 @@ export function homeDraft(
   };
 }
 
+/** Lo que la línea de tiempo necesita de una celda de clima. */
+export type WeatherFacts = {
+  kind: WeatherKind;
+  latitude: number;
+  longitude: number;
+  radiusKm: number;
+  windSpeedMs: number | null;
+  windFromDeg: number | null;
+  startsAt: string;
+  endsAt: string;
+};
+
+const WEATHER_NAME: Record<WeatherKind, string> = {
+  [WeatherKind.WIND]: 'Viento',
+  [WeatherKind.RAIN]: 'Lluvia',
+  [WeatherKind.STORM]: 'Tormenta',
+};
+
+const WEATHER_ENDED: Record<WeatherKind, string> = {
+  [WeatherKind.WIND]: 'Se calmó el viento',
+  [WeatherKind.RAIN]: 'Paró la lluvia',
+  [WeatherKind.STORM]: 'Pasó la tormenta',
+};
+
+const COMPASS = [
+  'norte',
+  'noreste',
+  'este',
+  'sureste',
+  'sur',
+  'suroeste',
+  'oeste',
+  'noroeste',
+];
+
+/** "del noreste": de dónde sopla, en ocho rumbos. */
+export function windFrom(degrees: number): string {
+  return `del ${COMPASS[Math.round((((degrees % 360) + 360) % 360) / 45) % 8]}`;
+}
+
+/** RF-32: empezó o terminó una celda de clima. */
+export function weatherDraft(
+  action: 'created' | 'ended',
+  cell: WeatherFacts,
+): TimelineDraft {
+  const name = WEATHER_NAME[cell.kind];
+  const radius = cell.radiusKm.toLocaleString('es-CO', {
+    maximumFractionDigits: 1,
+  });
+  const base = {
+    kind: 'console' as const,
+    orderId: null,
+    droneId: null,
+    hubId: null,
+    latitude: cell.latitude,
+    longitude: cell.longitude,
+  };
+  if (action === 'ended') {
+    return {
+      ...base,
+      severity: 'success',
+      title: WEATHER_ENDED[cell.kind],
+      detail: null,
+      source: 'system',
+    };
+  }
+  const minutes = Math.round(
+    (Date.parse(cell.endsAt) - Date.parse(cell.startsAt)) / 60_000,
+  );
+  const wind =
+    cell.kind === WeatherKind.WIND && cell.windSpeedMs != null
+      ? ` de ${cell.windSpeedMs.toLocaleString('es-CO', { maximumFractionDigits: 1 })} m/s${
+          cell.windFromDeg != null ? ` ${windFrom(cell.windFromDeg)}` : ''
+        }`
+      : '';
+  return {
+    ...base,
+    severity: cell.kind === WeatherKind.STORM ? 'danger' : 'warning',
+    title: `${name}${wind} en ${radius} km por ${minutes} min`,
+    detail:
+      cell.kind === WeatherKind.STORM
+        ? 'Zona no volable: las rutas la rodean y los drones en el aire cambian de camino.'
+        : cell.kind === WeatherKind.RAIN
+          ? 'Se vuela con un 10 % más de consumo.'
+          : 'En contra frena al dron y gasta más; a favor, al revés.',
+    source: 'console',
+  };
+}
+
 /** RF-33: la ruta cambió en vuelo, o no quedó una segura. */
 export function rerouteDraft(
   order: OrderFacts,
@@ -339,6 +429,7 @@ const ALERT_TITLES: Record<FlightAlertKind, string> = {
   battery_critical: 'Batería crítica',
   failure: 'Falla de batería',
   cold_chain: 'Carga fuera de 2 a 8 °C',
+  wind_limit: 'Viento sobre el límite',
 };
 
 export function alertDraft(

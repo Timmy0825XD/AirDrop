@@ -3,6 +3,12 @@ import { RouteLeg } from '../common/enums/route-leg.enum';
 import { UNIT_MASS_KG } from '../decision/decision.rules';
 import { PlannedCorridor } from '../routing/routing.rules';
 import {
+  FlightConditions,
+  WeatherCellView,
+  bearingDeg,
+  conditionsAt,
+} from '../weather/weather.rules';
+import {
   CRITICAL_BATTERY_PERCENT,
   DESCENT_BATTERY_PERCENT,
   LANDING_BATTERY_PERCENT,
@@ -61,7 +67,12 @@ const PHASE_SEQUENCE: FlightPhase[] = [
   FlightPhase.LANDED,
 ];
 
-export type FlightAlertKind = 'battery_critical' | 'failure' | 'cold_chain';
+export type FlightAlertKind =
+  | 'battery_critical'
+  | 'failure'
+  | 'cold_chain'
+  /** RF-32: el viento donde va el dron pasa del límite del Wingcopter. */
+  | 'wind_limit';
 
 export type FlightProgress = {
   phase: FlightPhase;
@@ -70,6 +81,8 @@ export type FlightProgress = {
   batteryPercent: number;
   batteryAlertSent: boolean;
   failureAlertSent: boolean;
+  /** RF-32: ya se avisó que el viento pasó del límite en este tramo. */
+  windAlertSent?: boolean;
   /** Ms desde la confirmación de carga en que falla el frío, o `null`. */
   coldChainExcursionAtMs: number | null;
   coldChainAlertSent: boolean;
@@ -124,6 +137,7 @@ export function initialProgress(): FlightProgress {
     batteryPercent: 100,
     batteryAlertSent: false,
     failureAlertSent: false,
+    windAlertSent: false,
     coldChainExcursionAtMs: null,
     coldChainAlertSent: false,
     orderStatus: OrderStatus.PENDING_LOAD,
@@ -148,7 +162,11 @@ export function returnProgress(
   };
 }
 
-/** Sin confirmación de carga no hay tick. El objeto de entrada no se muta. */
+/**
+ * Sin confirmación de carga no hay tick. El objeto de entrada no se muta.
+ * `weather` son las celdas de clima vigentes (RF-32): en crucero, el viento
+ * cambia la velocidad sobre el suelo y la lluvia el consumo.
+ */
 export function advanceFlight(input: {
   leg?: RouteLeg;
   progress: FlightProgress;
@@ -156,6 +174,7 @@ export function advanceFlight(input: {
   corridor: PlannedCorridor;
   model: FlightModel;
   loadConfirmedAt: Date | null;
+  weather?: WeatherCellView[];
 }): FlightStep | null {
   if (input.loadConfirmedAt == null) {
     return null;
@@ -173,7 +192,25 @@ export function advanceFlight(input: {
     progress.orderStatus = OrderStatus.IN_FLIGHT;
     statusChanges.push(OrderStatus.IN_FLIGHT);
   }
+  const cells = input.weather ?? [];
   while (elapsed > 0 && progress.phase !== FlightPhase.LANDED) {
+    if (progress.phase === FlightPhase.CRUISE) {
+      // El crucero termina al llegar al final del corredor, no a una hora fija:
+      // con viento en contra tarda más.
+      elapsed = cruiseStep(
+        progress,
+        elapsed,
+        input.corridor,
+        input.model,
+        cells,
+        alerts,
+      );
+      if (progress.cruiseKm >= input.corridor.distanceKm - CRUISE_END_KM) {
+        progress.cruiseKm = input.corridor.distanceKm;
+        finishPhase(progress, statusChanges, leg);
+      }
+      continue;
+    }
     const duration = phaseDurationMs(
       progress.phase,
       input.corridor,
@@ -192,8 +229,86 @@ export function advanceFlight(input: {
       finishPhase(progress, statusChanges, leg);
     }
   }
-  const pose = poseOf(progress, input.corridor, input.model);
+  const pose = poseOf(progress, input.corridor, input.model, cells);
   return { progress, ...pose, statusChanges, alerts };
+}
+
+/** Margen para dar por terminado el crucero (unos centímetros). */
+const CRUISE_END_KM = 1e-6;
+
+/**
+ * Un tramo de crucero con el clima de donde va el dron. Gasta por tiempo en
+ * el aire (`cruiseBatteryPercent` de lo que habría volado sin viento) y avanza
+ * a la velocidad sobre el suelo. Devuelve el tiempo que sobra del tick.
+ */
+function cruiseStep(
+  progress: FlightProgress,
+  elapsedMs: number,
+  corridor: PlannedCorridor,
+  model: FlightModel,
+  cells: WeatherCellView[],
+  alerts: FlightAlertKind[],
+): number {
+  const here = cruiseConditions(progress, corridor, model, cells);
+  if (here.overLimit && !progress.windAlertSent) {
+    progress.windAlertSent = true;
+    alerts.push('wind_limit');
+  }
+  const room = Math.max(0, corridor.distanceKm - progress.cruiseKm);
+  const msToEnd = (room / here.groundSpeedKmh) * 3_600_000;
+  const step = Math.min(elapsedMs, msToEnd);
+  progress.cruiseKm = Math.min(
+    corridor.distanceKm,
+    progress.cruiseKm + (here.groundSpeedKmh * step) / 3_600_000,
+  );
+  progress.phaseElapsedMs += step;
+  const airKm = (model.maxSpeedKmh * step) / 3_600_000;
+  burn(
+    progress,
+    cruiseBatteryPercent(airKm, model.maxRangeKm) * here.burnFactor,
+    alerts,
+  );
+  return elapsedMs - step;
+}
+
+/** El clima donde va el dron, con el rumbo del tramo en que está. */
+function cruiseConditions(
+  progress: FlightProgress,
+  corridor: PlannedCorridor,
+  model: FlightModel,
+  cells: WeatherCellView[],
+): FlightConditions {
+  if (!cells.length) {
+    return {
+      groundSpeedKmh: model.maxSpeedKmh,
+      burnFactor: 1,
+      windMs: 0,
+      gustMs: 0,
+      overLimit: false,
+    };
+  }
+  const point = pointAt(corridor.coordinates, progress.cruiseKm);
+  return conditionsAt(
+    cells,
+    point,
+    trackAt(corridor.coordinates, progress.cruiseKm),
+    model.maxSpeedKmh,
+  );
+}
+
+/** El rumbo del tramo del corredor en que va el dron. */
+function trackAt(coordinates: Array<[number, number]>, km: number): number {
+  let left = km;
+  for (let index = 1; index < coordinates.length; index += 1) {
+    const start = toLngLat(coordinates[index - 1]);
+    const end = toLngLat(coordinates[index]);
+    const segment = haversineKm(start, end);
+    if (left <= segment || index === coordinates.length - 1) {
+      return bearingDeg(start, end);
+    }
+    left -= segment;
+  }
+  return 0;
 }
 
 export function buildLiveFlight(input: {
@@ -422,6 +537,7 @@ function poseOf(
   progress: FlightProgress,
   corridor: PlannedCorridor,
   model: FlightModel,
+  cells: WeatherCellView[] = [],
 ): Pick<
   FlightStep,
   'latitude' | 'longitude' | 'altitudeM' | 'speedKmh' | 'etaSeconds'
@@ -448,7 +564,12 @@ function poseOf(
     case FlightPhase.CRUISE:
       altitudeM = altitude;
       point = pointAt(corridor.coordinates, progress.cruiseKm);
-      speedKmh = model.maxSpeedKmh;
+      speedKmh = cruiseConditions(
+        progress,
+        corridor,
+        model,
+        cells,
+      ).groundSpeedKmh;
       break;
     case FlightPhase.DESCENT:
       altitudeM = altitude * (1 - progress.phaseElapsedMs / DESCENT_MS);
@@ -465,7 +586,7 @@ function poseOf(
     longitude: roundTo(point.longitude, 6),
     altitudeM: roundTo(altitudeM, 1),
     speedKmh: roundTo(speedKmh, 1),
-    etaSeconds: etaSeconds(progress, corridor, model),
+    etaSeconds: etaSeconds(progress, corridor, model, cells),
   };
 }
 
@@ -473,6 +594,7 @@ function etaSeconds(
   progress: FlightProgress,
   corridor: PlannedCorridor,
   model: FlightModel,
+  cells: WeatherCellView[] = [],
 ): number | null {
   if (progress.phase === FlightPhase.LANDED) {
     return null;
@@ -481,6 +603,21 @@ function etaSeconds(
   const start = phases.indexOf(progress.phase);
   let remainingMs = 0;
   for (let index = start; index < phases.length; index += 1) {
+    if (
+      phases[index] === FlightPhase.CRUISE &&
+      progress.phase === FlightPhase.CRUISE
+    ) {
+      // En crucero, lo que falta a la velocidad que lleva ahora.
+      const room = Math.max(0, corridor.distanceKm - progress.cruiseKm);
+      const ground = cruiseConditions(
+        progress,
+        corridor,
+        model,
+        cells,
+      ).groundSpeedKmh;
+      remainingMs += (room / ground) * 3_600_000;
+      continue;
+    }
     const duration = phaseDurationMs(phases[index], corridor, model);
     remainingMs +=
       phases[index] === progress.phase

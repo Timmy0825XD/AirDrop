@@ -33,6 +33,8 @@ export type EvaluationView = {
   etaMs: number | null;
   inRange: boolean;
   batteryByDrone?: Map<string, number>;
+  /** RF-32: km equivalentes con el clima; sin él, los del corredor. */
+  energyKm?: number | null;
 };
 
 type HubRef = { id: string; name: string };
@@ -56,7 +58,13 @@ export function traceEvaluatedHub(
         : null,
     batteryNeededPercent:
       corridorKm != null && model
-        ? roundTo(missionBatteryPercent(corridorKm, model.maxRangeKm), 1)
+        ? roundTo(
+            missionBatteryPercent(
+              evaluation.energyKm ?? corridorKm,
+              model.maxRangeKm,
+            ),
+            1,
+          )
         : null,
     inRange: evaluation.inRange,
     note: noteFor(evaluation),

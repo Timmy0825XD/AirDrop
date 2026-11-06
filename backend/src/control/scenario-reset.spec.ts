@@ -134,6 +134,7 @@ function build(hubs: Array<Partial<Hub>>) {
   };
   const redis = { remove: jest.fn().mockResolvedValue(undefined) };
   const publisher = { publish: jest.fn().mockResolvedValue(undefined) };
+  const weather = { clearAll: jest.fn().mockResolvedValue(undefined) };
   const service = new ScenarioResetService(
     dataSource as never,
     flights as never,
@@ -141,9 +142,11 @@ function build(hubs: Array<Partial<Hub>>) {
     timeline as never,
     redis as never,
     publisher as never,
+    weather as never,
   );
   return {
     service,
+    weather,
     manager,
     dataSource,
     flights,
@@ -206,6 +209,8 @@ describe('ScenarioResetService (RF-40, CU-41)', () => {
     const built = build([{ id: 'hub-1', name: plan.name }]);
     await built.service.reset(admin);
     expect(built.order).toEqual(['clock', 'forget', 'clear', 'record']);
+    // RF-40: sin clima, las tormentas ya no cuentan para las rutas.
+    expect(built.weather.clearAll).toHaveBeenCalled();
     expect(built.publisher.publish).toHaveBeenCalledWith({
       type: 'scenario-reset',
     });

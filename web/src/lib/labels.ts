@@ -69,4 +69,5 @@ export const ALERT_KIND: Record<string, string> = {
   battery_critical: "Batería crítica",
   failure: "Falla",
   cold_chain: "Frío fuera de rango",
+  wind_limit: "Viento sobre el límite",
 };

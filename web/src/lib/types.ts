@@ -133,7 +133,7 @@ export type StatusEvent = { orderId: string; status: string };
 export type AlertEvent = {
   orderId: string;
   droneId: string;
-  kind: "battery_critical" | "failure" | "cold_chain";
+  kind: "battery_critical" | "failure" | "cold_chain" | "wind_limit";
   message: string;
 };
 
