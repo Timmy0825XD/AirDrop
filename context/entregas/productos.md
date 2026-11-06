@@ -20,7 +20,7 @@ Si en 5 minutos nadie ingresa el código, el paquete vuelve a la central de orig
 
 Tras un incidente en vuelo (RF-34):
 
-- Si el dron vuelve a la central con el paquete, aplica la misma cuarentena.
+- Si el dron vuelve a la central con el paquete, el paquete queda en cuarentena: no reingresa. El pedido ya sigue con otro dron (RF-35), así que no pasa por la revisión del despachador.
 - Si aterriza de emergencia, el paquete se recupera con el dron y queda en cuarentena: no reingresa.
 - Con choque grave o dron perdido, el paquete se da por perdido.
 

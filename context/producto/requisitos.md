@@ -396,13 +396,15 @@ Un incidente es algo que le pasa a un dron en vuelo. Lo lanza la consola sobre u
 2. Si no, pero alcanza a volver a la central con la reserva: vuelve con el paquete.
 3. Si tampoco: aterrizaje de emergencia en el punto más cercano fuera de toda geovalla y tormenta.
 
-De regreso, el paso 1 es llegar a la central.
+De regreso, el paso 1 es llegar a la central. Si el dron ya va bajando, termina de bajar.
+
+En **batería crítica** la reserva del 20 % ya se gastó: en los pasos 1 y 2 basta con llegar con un 5 % para aterrizar. Así un dron a 500 m de su central sigue y aterriza en ella. Con viento sobre el límite o sin camino seguro, el paso 1 no aplica.
 
 **Después del incidente:**
 
-- **Aterrizaje de emergencia:** el dron queda en tierra fuera de base. Tras el tiempo de rescate simulado vuelve a su central y pasa a mantenimiento. El paquete se recupera con él y queda en cuarentena: no vuelve al stock.
+- **Aterrizaje de emergencia:** el dron queda en tierra fuera de base (`grounded`). El rescate sale por tierra desde su central a 30 km/h y tarda 10 minutos en recogerlo (a 6 km, 22 minutos simulados). Entonces el dron vuelve a su central y pasa a mantenimiento, abierto por el sistema y sin fecha estimada. El paquete se recupera con él y queda en cuarentena: no vuelve al stock.
 - **Choque grave o dron perdido:** el dron queda fuera de servicio y el paquete se da por perdido.
-- **Vuelta a la central con el paquete:** al aterrizar aplica la cuarentena de [../entregas/productos.md](../entregas/productos.md).
+- **Vuelta a la central con el paquete:** al aterrizar, el paquete queda en cuarentena sin pasar por la revisión del despachador ([../entregas/productos.md](../entregas/productos.md)).
 - **Misión que no llega a su destino:** el pedido sigue RF-35.
 
 Todo incidente avisa al operador de esas centrales, sale en la línea de tiempo (RF-39) y cuenta en las métricas (RF-26). Quien pidió ve el cambio de estado, no el detalle técnico.
@@ -415,7 +417,7 @@ Si un incidente impide que la misión llegue a su destino:
 
 | Servicio | Qué pasa |
 | --- | --- |
-| Urgencia (a una persona o entre centrales) | Vuelve al motor de decisión en ese momento, con prioridad de emergencia (RF-11): un dron de la misma central o de otra con el lote. Queda `asignado` → `pendiente de carga` con el dron nuevo y **hay que confirmar la carga otra vez** (RF-28); el lote se descuenta en esa central. Si ninguna puede, aplica RF-18 |
+| Urgencia (a una persona o entre centrales) | Vuelve al motor de decisión cuando el dron toca tierra: en el punto de emergencia, o en la central si volvió con el paquete. Un pedido no tiene dos vuelos a la vez. Va con prioridad de emergencia (RF-11): un dron de la misma central o de otra con el lote. Queda `asignado` → `pendiente de carga` con el dron nuevo y **hay que confirmar la carga otra vez** (RF-28); el lote se descuenta en esa central. Si ninguna puede, aplica RF-18 |
 | Programado | Si el siguiente intento cae dentro de la franja, vuelve a recibido y se reintenta como en RF-18. Si no, queda vencido y aplica RF-18 |
 
 El pedido no tiene un estado nuevo: la misión fallida guarda el incidente y el pedido sigue su camino normal con otro dron. Un pedido reasignado por RF-18 se sigue reasignando una sola vez.

@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { OrderStatus } from '../common/enums/order-status.enum';
+import type { IncidentJson } from '../simulation/flight-incidents.service';
 import { FlightAlertKind } from '../simulation/simulation.rules';
 import {
   TelemetryEvent,
@@ -32,6 +33,11 @@ export class NotificationsService {
     event: Omit<Extract<TelemetryEvent, { type: 'rerouted' }>, 'type'>,
   ): Promise<void> {
     return this.telemetry.publish({ type: 'rerouted', ...event });
+  }
+
+  /** RF-34 y CU-32: el incidente, su protocolo y en qué va. */
+  incident(incident: IncidentJson): Promise<void> {
+    return this.telemetry.publish({ type: 'incident', incident });
   }
 
   alert(

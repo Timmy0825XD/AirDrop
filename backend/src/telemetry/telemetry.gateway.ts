@@ -332,6 +332,15 @@ export class TelemetryGateway
         });
         return;
       }
+      if (event.type === 'incident') {
+        // RF-34 y CU-32: la consola y el mapa de la flota del operador. No
+        // lleva qué medicamento iba (RNF-05).
+        this.server?.to(RADAR_ROOM).emit('radar-incident', event.incident);
+        await this.emitToFleet(event.incident.hubId, 'hub-incident', {
+          ...event.incident,
+        });
+        return;
+      }
       if (event.type === 'rerouted') {
         // RF-33: el radar recarga la ruta del vuelo; el aviso va por la línea de tiempo.
         this.server?.to(RADAR_ROOM).emit('radar-reroute', {

@@ -11,6 +11,7 @@ import { EligibilityService } from './eligibility.service';
 import { EmergencyDispatchService } from './emergency-dispatch.service';
 import { FallbackService } from './fallback.service';
 import { HubEvaluationService } from './hub-evaluation.service';
+import { IncidentRedispatchService } from './incident-redispatch.service';
 import { ScheduledRetryService } from './scheduled-retry.service';
 
 @Module({
@@ -29,6 +30,7 @@ import { ScheduledRetryService } from './scheduled-retry.service';
     FallbackService,
     ScheduledRetryService,
     EmergencyDispatchService,
+    IncidentRedispatchService,
   ],
   exports: [DecisionService, EmergencyDispatchService],
 })

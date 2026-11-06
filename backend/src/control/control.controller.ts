@@ -18,6 +18,7 @@ import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 import { UserRole } from '../common/enums/user-role.enum';
 import { User } from '../users/user.entity';
+import { FlightIncidentsService } from '../simulation/flight-incidents.service';
 import { ClockControlService } from './clock-control.service';
 import { ControlEnabledGuard } from './control-enabled.guard';
 import { ConsoleEventsService } from './console-events.service';
@@ -42,6 +43,7 @@ export class ControlController {
     private readonly alerts: PendingAlertsService,
     private readonly scenario: ScenarioResetService,
     private readonly events: ConsoleEventsService,
+    private readonly incidents: FlightIncidentsService,
   ) {}
 
   @Get('clock')
@@ -64,6 +66,15 @@ export class ControlController {
   @Get('alerts')
   getAlerts() {
     return this.alerts.list();
+  }
+
+  /**
+   * RF-34: los últimos incidentes en vuelo, con su protocolo, en qué quedó y
+   * dónde bajó el dron si aterrizó de emergencia.
+   */
+  @Get('incidents')
+  getIncidents(@Query('limit') limit?: string) {
+    return this.incidents.recent(clampTimelineLimit(limit));
   }
 
   /** RF-32: las celdas de clima que rigen ahora. */

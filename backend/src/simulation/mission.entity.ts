@@ -1,13 +1,17 @@
 import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
 import { NUMERIC_TRANSFORMER } from '../common/numeric.transformer';
 
-/** Resumen de la misión. Cada tick de 2 s se queda en Redis. */
+/**
+ * Resumen de la misión. Cada tick de 2 s se queda en Redis. Un pedido puede
+ * tener varias si un incidente obligó a volver a despacharlo (RF-35): la
+ * vigente es la que no tiene `returnedAt`.
+ */
 @Entity({ name: 'missions' })
 export class Mission {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index({ unique: true })
+  @Index()
   @Column({ type: 'uuid' })
   orderId: string;
 

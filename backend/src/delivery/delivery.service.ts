@@ -91,7 +91,11 @@ export class DeliveryService {
     }
     let expiresAt: Date | null = null;
     if (order.status === OrderStatus.AWAITING_DELIVERY) {
-      const mission = await manager.findOne(Mission, { where: { orderId } });
+      // RF-35: tras un incidente hay más de una; la vigente es la última.
+      const mission = await manager.findOne(Mission, {
+        where: { orderId },
+        order: { startedAt: 'DESC' },
+      });
       if (mission?.landedAt) {
         expiresAt = deliveryExpiresAt(mission.landedAt);
         if (expiresAt.getTime() <= simClock.nowMs()) {
@@ -138,7 +142,11 @@ export class DeliveryService {
       if (order.status !== OrderStatus.AWAITING_DELIVERY) {
         throw new BadRequestException(ONLY_AWAITING_DELIVERY_IS_DELIVERED);
       }
-      const mission = await manager.findOne(Mission, { where: { orderId } });
+      // RF-35: tras un incidente hay más de una; la vigente es la última.
+      const mission = await manager.findOne(Mission, {
+        where: { orderId },
+        order: { startedAt: 'DESC' },
+      });
       if (!mission?.landedAt || !order.loadConfirmedAt) {
         throw new BadRequestException(ONLY_AWAITING_DELIVERY_IS_DELIVERED);
       }

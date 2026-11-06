@@ -14,6 +14,7 @@ import { QuarantineRecord } from '../inventory/quarantine-record.entity';
 import { Order } from '../orders/order.entity';
 import { RoutePlannerService } from '../routing/route-planner.service';
 import { batteryNow } from '../simulation/flight-energy.rules';
+import { latestMissionByOrder } from '../simulation/missions.rules';
 import { Mission } from '../simulation/mission.entity';
 import { LiveFlight } from '../simulation/simulation.rules';
 import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
@@ -208,7 +209,7 @@ export class RadarService {
         : Promise.resolve([] as Mission[]),
     ]);
     const liveBy = new Map(orders.map((order, i) => [order.id, lives[i]]));
-    const missionBy = new Map(missions.map((m) => [m.orderId, m]));
+    const missionBy = latestMissionByOrder(missions);
     return busy.flatMap((drone) => {
       const order = active.get(drone.id);
       if (!order) {

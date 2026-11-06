@@ -35,6 +35,10 @@ type StatusChange = {
   estimatedEndDate?: string;
 };
 
+/** RF-34: el dron está en tierra fuera de su central, esperando el rescate. */
+export const DRONE_GROUNDED =
+  'El dron aterrizó de emergencia y espera el rescate; al volver entra a mantenimiento.';
+
 @Injectable()
 export class FleetService {
   constructor(
@@ -264,6 +268,10 @@ export class FleetService {
       throw new ConflictException(
         'No puedes cambiar el estado de un dron en misión.',
       );
+    }
+    if (drone.status === DroneStatus.GROUNDED) {
+      // RF-34: al rescatarlo entra solo al taller.
+      throw new ConflictException(DRONE_GROUNDED);
     }
   }
 }

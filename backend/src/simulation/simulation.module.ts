@@ -7,17 +7,19 @@ import { RoutingModule } from '../routing/routing.module';
 import { WeatherModule } from '../weather/weather.module';
 import { TelemetryModule } from '../telemetry/telemetry.module';
 import { FlightClockService } from './flight-clock.service';
+import { FlightIncident } from './flight-incident.entity';
+import { FlightIncidentsService } from './flight-incidents.service';
 import { Mission } from './mission.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Order, Drone, Mission]),
+    TypeOrmModule.forFeature([Order, Drone, Mission, FlightIncident]),
     RoutingModule,
     TelemetryModule,
     NotificationsModule,
     WeatherModule,
   ],
-  providers: [FlightClockService],
-  exports: [FlightClockService],
+  providers: [FlightClockService, FlightIncidentsService],
+  exports: [FlightClockService, FlightIncidentsService],
 })
 export class SimulationModule {}

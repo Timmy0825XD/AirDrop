@@ -35,6 +35,7 @@ describe('countFleet', () => {
       available: 2,
       inMission: 1,
       maintenance: 1,
+      grounded: 0,
       outOfService: 1,
       total: 5,
     });

@@ -11,14 +11,15 @@ import { FIELD_LIMITS } from '../common/field-limits';
 
 /**
  * Insumo devuelto que no vuelve al estante: no se dispensa ni se traslada
- * otra vez. Una fila por pedido.
+ * otra vez. Casi siempre una fila por pedido; puede haber más si un incidente
+ * obligó a volver a despacharlo (RF-35).
  */
 @Entity({ name: 'quarantine_records' })
 export class QuarantineRecord {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Index({ unique: true })
+  @Index()
   @Column({ type: 'uuid' })
   orderId: string;
 

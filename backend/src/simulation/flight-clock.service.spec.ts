@@ -110,6 +110,12 @@ function build(
     save: jest.fn(),
     update: jest.fn().mockResolvedValue(undefined),
   };
+  const incidents = {
+    record: jest.fn().mockResolvedValue({ id: 'incident-1' }),
+    setLanding: jest.fn().mockResolvedValue(undefined),
+    grounded: jest.fn().mockResolvedValue(null),
+    returnedHome: jest.fn().mockResolvedValue(undefined),
+  };
   const service = new FlightClockService(
     orders as never,
     drones as never,
@@ -119,10 +125,12 @@ function build(
     notifications as never,
     { notifyUser: jest.fn(), notifyHubDispatchers: jest.fn() } as never,
     { active: () => [] } as never,
+    incidents as never,
   );
   service['waiting'].set(ORDER_ID, LANDED_AT);
   return {
     service,
+    incidents,
     orders,
     drones,
     missions,
@@ -260,7 +268,8 @@ describe('FlightClockService regreso', () => {
       expect.objectContaining({ status: DroneStatus.AVAILABLE }),
     );
     expect(missions.update).toHaveBeenCalledWith(
-      { orderId: ORDER_ID },
+      // RF-35: solo la misión abierta de ese dron.
+      { orderId: ORDER_ID, droneId: DRONE_ID, returnedAt: IsNull() },
       {
         returnedAt: expect.any(Date) as Date,
         // Con cuánta batería volvió: alimenta el dashboard del operador.
@@ -339,7 +348,8 @@ describe('FlightClockService regreso tras la entrega', () => {
     const [, changes] = drones.update.mock.calls[0] as [object, object];
     expect(changes).not.toHaveProperty('status');
     expect(missions.update).toHaveBeenCalledWith(
-      { orderId: ORDER_ID },
+      // RF-35: solo la misión abierta de ese dron.
+      { orderId: ORDER_ID, droneId: DRONE_ID, returnedAt: IsNull() },
       {
         returnedAt: expect.any(Date) as Date,
         // Con cuánta batería volvió: alimenta el dashboard del operador.
@@ -774,6 +784,8 @@ describe('FlightClockService recheckRoutes (RF-33)', () => {
       keepStatus: false,
       orderId: ORDER_ID,
       droneId: DRONE_ID,
+      hubId: 'hub-1',
+      hub: { latitude: 10.46, longitude: -73.27 },
       identifier: 'WG-198-001',
       quantity: 1,
       requiresColdChain: false,
@@ -822,5 +834,28 @@ describe('FlightClockService recheckRoutes (RF-33)', () => {
     expect(notifications.rerouted).toHaveBeenCalledWith(
       expect.objectContaining({ batteryShort: true }),
     );
+  });
+});
+
+describe('FlightClockService con un dron nuevo para el mismo pedido (RF-35)', () => {
+  it('no retoma el vuelo que dejó en Redis el dron del incidente', async () => {
+    const built = build();
+    built.orders.findOne.mockResolvedValue(order(OrderStatus.PENDING_LOAD));
+    // El primer dron volvió a la central: su vuelo quedó aterrizado.
+    built.telemetry.readFlight.mockResolvedValue({
+      orderId: ORDER_ID,
+      droneId: 'otro-dron',
+      leg: RouteLeg.RETURN,
+      progress: {
+        ...initialProgress(),
+        phase: FlightPhase.LANDED,
+        orderStatus: OrderStatus.RETURNED,
+      },
+    });
+    await built.service['activate'](ORDER_ID);
+    const session = built.service['active'].get(ORDER_ID)!;
+    expect(session.leg).toBe(RouteLeg.OUTBOUND);
+    expect(session.progress.phase).toBe(FlightPhase.TAKEOFF);
+    expect(session.progress.orderStatus).toBe(OrderStatus.PENDING_LOAD);
   });
 });

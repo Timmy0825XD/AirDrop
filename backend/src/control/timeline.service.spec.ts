@@ -329,6 +329,7 @@ describe('alertas pendientes (RF-39)', () => {
           .fn()
           .mockResolvedValue({ latitude: 10.3, longitude: -73.3 }),
       } as never,
+      { openLandings: jest.fn().mockResolvedValue(new Map()) } as never,
     );
     await expect(service.list()).resolves.toEqual([
       {

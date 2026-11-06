@@ -3,6 +3,7 @@ import { ClockView } from '../common/clock/clock.rules';
 import type { TimelineEntry } from '../control/timeline.rules';
 import type { WeatherCellJson } from '../weather/weather.service';
 import type { TemporaryGeofenceJson } from '../geofences/geofences.service';
+import type { IncidentJson } from '../simulation/flight-incidents.service';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { FlightAlertKind, LiveFlight } from '../simulation/simulation.rules';
 import {
@@ -29,6 +30,8 @@ export type TelemetryEvent =
       action: 'created' | 'ended';
       geofence: TemporaryGeofenceJson;
     }
+  /** RF-34: un incidente en vuelo nuevo, o un cambio en cómo va. */
+  | { type: 'incident'; incident: IncidentJson }
   /** RF-33: una zona nueva cruzaba el tramo que le faltaba al dron. */
   | {
       type: 'rerouted';
@@ -86,6 +89,14 @@ export class TelemetryPublisher implements OnModuleInit {
       orderId: flight.orderId,
       flight,
     });
+  }
+
+  /**
+   * RF-35: el pedido vuelve a despacharse. El vuelo del dron anterior no
+   * debe retomarse con el dron nuevo.
+   */
+  async forgetFlight(orderId: string): Promise<void> {
+    await this.redis.remove([telemetryKey(orderId)]);
   }
 
   async readFlight(orderId: string): Promise<LiveFlight | null> {

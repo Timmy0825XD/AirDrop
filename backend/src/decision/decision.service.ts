@@ -68,6 +68,12 @@ import {
 } from './decision-trace.rules';
 import { assertOfferedTo } from './dispatch.rules';
 import { clearFallback } from './fallback.rules';
+import {
+  RedispatchPath,
+  canRedispatch,
+  redispatchPath,
+  releaseForRedispatch,
+} from './redispatch.rules';
 import { FallbackService } from './fallback.service';
 import { HubEvaluationService } from './hub-evaluation.service';
 import { simClock } from '../common/clock/sim-clock';
@@ -157,6 +163,75 @@ export class DecisionService {
       }
     }
     return result;
+  }
+
+  /**
+   * RF-35 y CU-44: la misión no llegó por un incidente. El pedido suelta el
+   * dron y el lote, y vuelve al motor: la urgencia a una persona se ofrece
+   * otra vez (lo hace `EmergencyDispatchService` con el camino `offers`), la
+   * urgencia entre centrales vuelve a la cola de su central y el programado
+   * sigue RF-18. En todos, la carga se confirma otra vez.
+   */
+  async redispatchAfterIncident(
+    orderId: string,
+    now = simClock.now(),
+  ): Promise<RedispatchPath | null> {
+    const result = await this.dataSource.transaction(async (manager) => {
+      const order = await manager.findOne(Order, {
+        where: { id: orderId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (!order || !canRedispatch(order)) {
+        return null;
+      }
+      const path = redispatchPath(order);
+      const failingHubId = order.originHubId;
+      await this.routes.deleteLegs(order.id, manager);
+      releaseForRedispatch(order, path);
+      if (path !== 'scheduled') {
+        await manager.save(order);
+        return { order, path, failingHubId };
+      }
+      const hub = failingHubId
+        ? await manager.findOne(Hub, { where: { id: failingHubId } })
+        : null;
+      if (!hub || isWindowClosed(order, now)) {
+        await this.expireLocked(manager, order, now);
+        return { order, path, failingHubId };
+      }
+      const polygons = await this.routes.loadPolygons(manager);
+      await this.withFallback(
+        manager,
+        order,
+        hub,
+        todayInColombia(now),
+        polygons,
+        now,
+        [],
+      );
+      return { order, path, failingHubId };
+    });
+    if (!result) {
+      return null;
+    }
+    const { order, path, failingHubId } = result;
+    try {
+      await this.notifications.statusChanged(order.id, order.status);
+      for (const hubId of new Set(
+        [failingHubId, order.originHubId].filter(
+          (id): id is string => id != null,
+        ),
+      )) {
+        await this.notifications.queueChanged(hubId, order.id);
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'socket';
+      this.logger.warn(`No se pudo avisar del pedido ${order.id}: ${message}`);
+    }
+    if (order.statusReason === WINDOW_MISSED) {
+      await this.notifyMissed(presentOrder(order));
+    }
+    return path;
   }
 
   /** La franja cerró con el dron en tierra: suelta la reserva y aplica RF-18. */

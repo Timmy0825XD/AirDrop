@@ -181,7 +181,8 @@ export type PendingAlert = {
   droneId: string;
   identifier: string;
   hubId: string;
-  kinds: AlertEvent["kind"][];
+  /** `emergency_landing`: el dron espera el rescate fuera de su central (RF-34). */
+  kinds: Array<AlertEvent["kind"] | "emergency_landing">;
   latitude: number | null;
   longitude: number | null;
 };

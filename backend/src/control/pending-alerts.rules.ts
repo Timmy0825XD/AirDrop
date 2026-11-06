@@ -14,12 +14,15 @@ export const ALERT_OPEN_STATUSES = [
   OrderStatus.DELIVERED,
 ];
 
+/** RF-34: además de las de vuelo, el dron que espera el rescate. */
+export type PendingAlertKind = FlightAlertKind | 'emergency_landing';
+
 export type PendingAlert = {
   orderId: string;
   droneId: string;
   identifier: string;
   hubId: string;
-  kinds: FlightAlertKind[];
+  kinds: PendingAlertKind[];
   latitude: number | null;
   longitude: number | null;
 };
@@ -32,11 +35,26 @@ export function pendingAlertKinds(
     returnedAt: Date | null;
   },
   order: { status: OrderStatus; coldChainAlertAt: Date | null },
-): FlightAlertKind[] {
-  if (mission.returnedAt || !ALERT_OPEN_STATUSES.includes(order.status)) {
+  /**
+   * RF-34: el dron de esta misión aterrizó de emergencia y no lo han
+   * rescatado. Sigue abierta aunque el pedido ya salga con otro dron (RF-35).
+   */
+  grounded = false,
+): PendingAlertKind[] {
+  if (mission.returnedAt) {
     return [];
   }
-  const kinds: FlightAlertKind[] = [];
+  if (grounded) {
+    const kinds: PendingAlertKind[] = ['emergency_landing'];
+    if (mission.batteryAlert) kinds.push('battery_critical');
+    if (mission.failureAlert) kinds.push('failure');
+    if (mission.windAlert) kinds.push('wind_limit');
+    return kinds;
+  }
+  if (!ALERT_OPEN_STATUSES.includes(order.status)) {
+    return [];
+  }
+  const kinds: PendingAlertKind[] = [];
   if (mission.batteryAlert) kinds.push('battery_critical');
   if (mission.failureAlert) kinds.push('failure');
   if (mission.windAlert) kinds.push('wind_limit');
