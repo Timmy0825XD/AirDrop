@@ -102,7 +102,8 @@ describe('HubsService.update', () => {
     expect(result).toMatchObject({ latitude: 10.48, longitude: -73.25 });
     expect(manager.query).toHaveBeenCalledWith(
       expect.any(String),
-      [-73.25, 10.48],
+      // RF-36: la hora simulada decide qué geovallas temporales rigen.
+      [-73.25, 10.48, expect.any(Date)],
     );
   });
 

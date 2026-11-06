@@ -25,6 +25,7 @@ import {
 } from './scenario-reset.rules';
 import { TimelineService } from './timeline.service';
 import { WeatherService } from '../weather/weather.service';
+import { GeofencesService } from '../geofences/geofences.service';
 
 /**
  * RF-40, CU-41: devuelve el escenario de `pnpm seed:demo` a su estado
@@ -45,6 +46,7 @@ export class ScenarioResetService {
     private readonly redis: TelemetryRedis,
     private readonly publisher: TelemetryPublisher,
     private readonly weather: WeatherService,
+    private readonly geofenceService: GeofencesService,
   ) {}
 
   async reset(admin: User): Promise<ResetSummary> {
@@ -72,12 +74,16 @@ export class ScenarioResetService {
         { id: In(hubIds) },
         { status: HubStatus.ACTIVE },
       );
+      // RF-40: sin geovallas temporales; las del operador no se tocan.
+      const temporaryGeofences =
+        await this.geofenceService.clearTemporary(manager);
       const fences = await this.resetGeofences(manager, admin);
       return {
         orders: orderIds.length,
         drones,
         inventoryItems,
         geofences: fences,
+        temporaryGeofences,
       };
     });
 

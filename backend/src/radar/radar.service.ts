@@ -23,12 +23,14 @@ import {
   presentRadarFlight,
 } from './radar.rules';
 import { simClock } from '../common/clock/sim-clock';
+import { activeGeofenceSql } from '../geofences/geofences.rules';
 
 type GeofenceRow = {
   id: string;
   name: string;
   reason: string;
   polygon: string;
+  expiresAt: Date | null;
 };
 
 /**
@@ -246,15 +248,19 @@ export class RadarService {
 
   private async geofences() {
     const rows: GeofenceRow[] = await this.dataSource.query(
-      `SELECT id, name, reason, ST_AsGeoJSON(polygon) AS polygon
+      `SELECT id, name, reason, ST_AsGeoJSON(polygon) AS polygon, "expiresAt"
        FROM geofences
+       WHERE ${activeGeofenceSql('$1')}
        ORDER BY name ASC`,
+      [simClock.now()],
     );
     return rows.map((row) => ({
       id: row.id,
       name: row.name,
       reason: row.reason,
       polygon: JSON.parse(row.polygon) as unknown,
+      // RF-36: con fecha, es temporal y la consola la dibuja distinta.
+      expiresAt: row.expiresAt ? new Date(row.expiresAt).toISOString() : null,
     }));
   }
 }

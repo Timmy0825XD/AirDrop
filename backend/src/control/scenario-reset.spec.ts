@@ -61,9 +61,29 @@ describe('reinicio del escenario: reglas (RF-40)', () => {
 
   it('resume lo que hizo', () => {
     expect(
-      resetDetail({ orders: 4, drones: 15, inventoryItems: 18, geofences: 3 }),
+      resetDetail({
+        orders: 4,
+        drones: 15,
+        inventoryItems: 18,
+        geofences: 3,
+        temporaryGeofences: 0,
+      }),
     ).toBe(
       '4 pedidos borrados; 15 drones en su central; 18 lotes y 3 geovallas como en la semilla.',
+    );
+  });
+
+  it('cuenta las geovallas temporales que quitó (RF-36)', () => {
+    expect(
+      resetDetail({
+        orders: 0,
+        drones: 15,
+        inventoryItems: 18,
+        geofences: 3,
+        temporaryGeofences: 2,
+      }),
+    ).toBe(
+      '0 pedidos borrados; 15 drones en su central; 18 lotes y 3 geovallas como en la semilla. 2 geovallas temporales quitadas.',
     );
   });
 });
@@ -135,6 +155,7 @@ function build(hubs: Array<Partial<Hub>>) {
   const redis = { remove: jest.fn().mockResolvedValue(undefined) };
   const publisher = { publish: jest.fn().mockResolvedValue(undefined) };
   const weather = { clearAll: jest.fn().mockResolvedValue(undefined) };
+  const geofences = { clearTemporary: jest.fn().mockResolvedValue(1) };
   const service = new ScenarioResetService(
     dataSource as never,
     flights as never,
@@ -143,10 +164,12 @@ function build(hubs: Array<Partial<Hub>>) {
     redis as never,
     publisher as never,
     weather as never,
+    geofences as never,
   );
   return {
     service,
     weather,
+    geofences,
     manager,
     dataSource,
     flights,
@@ -211,6 +234,8 @@ describe('ScenarioResetService (RF-40, CU-41)', () => {
     expect(built.order).toEqual(['clock', 'forget', 'clear', 'record']);
     // RF-40: sin clima, las tormentas ya no cuentan para las rutas.
     expect(built.weather.clearAll).toHaveBeenCalled();
+    // RF-40: las geovallas temporales se van dentro de la misma transacción.
+    expect(built.geofences.clearTemporary).toHaveBeenCalledWith(built.manager);
     expect(built.publisher.publish).toHaveBeenCalledWith({
       type: 'scenario-reset',
     });

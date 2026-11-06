@@ -347,6 +347,68 @@ export function weatherDraft(
   };
 }
 
+export type GeofenceFacts = {
+  name: string;
+  reason: string;
+  polygon: { coordinates: number[][][] };
+  createdAt: string;
+  expiresAt: string;
+};
+
+/** Promedio de los vértices (sin repetir el de cierre): dónde enfocar el mapa. */
+export function polygonCenter(polygon: {
+  coordinates: number[][][];
+}): Position | null {
+  const ring = polygon.coordinates[0] ?? [];
+  const points = ring.length > 1 ? ring.slice(0, -1) : ring;
+  if (!points.length) {
+    return null;
+  }
+  const sum = points.reduce(
+    (acc, [lng, lat]) => ({ lng: acc.lng + lng, lat: acc.lat + lat }),
+    { lng: 0, lat: 0 },
+  );
+  return {
+    latitude: sum.lat / points.length,
+    longitude: sum.lng / points.length,
+  };
+}
+
+/** RF-36: empezó o terminó una geovalla temporal. */
+export function geofenceDraft(
+  action: 'created' | 'ended',
+  fence: GeofenceFacts,
+): TimelineDraft {
+  const center = polygonCenter(fence.polygon);
+  const base = {
+    kind: 'console' as const,
+    orderId: null,
+    droneId: null,
+    hubId: null,
+    latitude: center?.latitude ?? null,
+    longitude: center?.longitude ?? null,
+  };
+  if (action === 'ended') {
+    return {
+      ...base,
+      severity: 'success',
+      title: `Terminó la geovalla temporal ${fence.name}`,
+      detail: 'Las rutas nuevas ya pueden cruzar esa zona.',
+      source: 'system',
+    };
+  }
+  const minutes = Math.round(
+    (Date.parse(fence.expiresAt) - Date.parse(fence.createdAt)) / 60_000,
+  );
+  return {
+    ...base,
+    severity: 'warning',
+    title: `Geovalla temporal ${fence.name} por ${minutes} min`,
+    detail: `${fence.reason}. Las rutas la rodean y los drones en el aire cambian de camino.`,
+    source: 'console',
+  };
+}
+
 /** RF-33: la ruta cambió en vuelo, o no quedó una segura. */
 export function rerouteDraft(
   order: OrderFacts,

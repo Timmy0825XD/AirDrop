@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { WeatherKind } from '../common/enums/weather-kind.enum';
+import {
+  GeofencesService,
+  NewTemporaryGeofence,
+} from '../geofences/geofences.service';
 import { FlightClockService } from '../simulation/flight-clock.service';
 import {
   NewWeatherCell,
@@ -9,7 +13,7 @@ import {
 
 /**
  * CU-38: los eventos que lanza la consola. Solo los entrega a su dominio
- * (aquí, el clima) y avisa al reloj de vuelo si cambió lo que no se puede
+ * (clima, geovallas temporales) y avisa al reloj de vuelo si cambió lo que no se puede
  * cruzar. La respuesta a cada evento la deciden las reglas de ese dominio.
  */
 @Injectable()
@@ -17,6 +21,7 @@ export class ConsoleEventsService {
   constructor(
     private readonly weather: WeatherService,
     private readonly flights: FlightClockService,
+    private readonly geofences: GeofencesService,
   ) {}
 
   listWeather() {
@@ -34,5 +39,18 @@ export class ConsoleEventsService {
 
   async endWeather(id: string) {
     return presentWeatherCell(await this.weather.end(id));
+  }
+
+  listGeofences() {
+    return this.geofences.listTemporary();
+  }
+
+  /** RF-36: el servicio de geovallas ya revisa los vuelos en el aire (RF-33). */
+  createGeofence(userId: string, input: NewTemporaryGeofence) {
+    return this.geofences.createTemporary(userId, input);
+  }
+
+  endGeofence(id: string) {
+    return this.geofences.endTemporary(id);
   }
 }

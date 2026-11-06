@@ -324,6 +324,14 @@ export class TelemetryGateway
         });
         return;
       }
+      if (event.type === 'geofence') {
+        // RF-36: la consola dibuja o quita la geovalla temporal.
+        this.server?.to(RADAR_ROOM).emit('radar-geofence', {
+          action: event.action,
+          geofence: event.geofence,
+        });
+        return;
+      }
       if (event.type === 'rerouted') {
         // RF-33: el radar recarga la ruta del vuelo; el aviso va por la línea de tiempo.
         this.server?.to(RADAR_ROOM).emit('radar-reroute', {

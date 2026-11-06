@@ -118,7 +118,11 @@ describe('el clima en el resto del sistema', () => {
   it('la tormenta de la consola hace revisar las rutas en el aire; la lluvia no', async () => {
     const { service } = build();
     const flights = { recheckRoutes: jest.fn().mockResolvedValue(undefined) };
-    const events = new ConsoleEventsService(service, flights as never);
+    const events = new ConsoleEventsService(
+      service,
+      flights as never,
+      {} as never,
+    );
     await events.createWeather('admin', {
       ...storm,
       kind: WeatherKind.RAIN,

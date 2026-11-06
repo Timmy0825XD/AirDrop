@@ -12,6 +12,8 @@ import { Drone } from '../fleet/drone.entity';
 import { Order } from '../orders/order.entity';
 import { UserRole } from '../common/enums/user-role.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
+import { simClock } from '../common/clock/sim-clock';
+import { activeGeofenceSql } from '../geofences/geofences.rules';
 import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
 import { CreateHubDto } from './dto/create-hub.dto';
@@ -190,8 +192,9 @@ export class HubsService {
       `SELECT EXISTS (
          SELECT 1 FROM geofences
          WHERE ST_Contains(polygon, ST_SetSRID(ST_MakePoint($1, $2), 4326))
+           AND ${activeGeofenceSql('$3')}
        ) AS inside`,
-      [longitude, latitude],
+      [longitude, latitude, simClock.now()],
     );
     if (rows[0]?.inside) {
       throw new BadRequestException(HUB_INSIDE_GEOFENCE);

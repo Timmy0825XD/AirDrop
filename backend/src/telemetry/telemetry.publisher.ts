@@ -2,6 +2,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ClockView } from '../common/clock/clock.rules';
 import type { TimelineEntry } from '../control/timeline.rules';
 import type { WeatherCellJson } from '../weather/weather.service';
+import type { TemporaryGeofenceJson } from '../geofences/geofences.service';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { FlightAlertKind, LiveFlight } from '../simulation/simulation.rules';
 import {
@@ -22,6 +23,12 @@ export type TelemetryEvent =
   | { type: 'scenario-reset' }
   /** RF-32: empezó o terminó una celda de clima. */
   | { type: 'weather'; action: 'created' | 'ended'; cell: WeatherCellJson }
+  /** RF-36: empezó o terminó una geovalla temporal. */
+  | {
+      type: 'geofence';
+      action: 'created' | 'ended';
+      geofence: TemporaryGeofenceJson;
+    }
   /** RF-33: una zona nueva cruzaba el tramo que le faltaba al dron. */
   | {
       type: 'rerouted';
