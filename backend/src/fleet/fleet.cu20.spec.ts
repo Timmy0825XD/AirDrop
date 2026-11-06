@@ -97,12 +97,19 @@ function build(
       .fn()
       .mockResolvedValue(opts.model === undefined ? wingcopter : opts.model),
   };
+  const maintenances = {
+    findOne: jest.fn().mockResolvedValue(null),
+    find: jest.fn().mockResolvedValue([]),
+    create: jest.fn((value: object) => value),
+    save: jest.fn((value: object) => Promise.resolve(value)),
+  };
   const hubsService = {
     requireActive: jest.fn((id: string) => Promise.resolve({ id } as Hub)),
   } as unknown as HubsService;
   const service = new FleetService(
     drones as never,
     models as never,
+    maintenances as never,
     hubsService,
   );
   return { service, drones };

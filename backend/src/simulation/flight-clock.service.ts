@@ -588,6 +588,8 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
               batteryPercent: step.progress.batteryPercent,
               batteryUpdatedAt: landed,
               lastFlightEndedAt: landed,
+              // Un ciclo más para el preventivo; el aviso lo decide la flota.
+              flightsSinceMaintenance: () => '"flightsSinceMaintenance" + 1',
             },
           );
           await this.missions.update({ orderId }, { returnedAt: new Date() });

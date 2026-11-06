@@ -82,6 +82,16 @@ export class FleetController {
     return this.fleetService.updateStatus(user, id, dto);
   }
 
+  /** CU-17: historial de taller del dron (el administrador solo lo lee). */
+  @Get('drones/:id/maintenance')
+  @Roles(UserRole.FLEET_OPERATOR, UserRole.ADMIN)
+  listMaintenance(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.fleetService.listMaintenance(user, id);
+  }
+
   @Post('drones/:id/maintenance')
   @Roles(UserRole.FLEET_OPERATOR)
   registerMaintenance(

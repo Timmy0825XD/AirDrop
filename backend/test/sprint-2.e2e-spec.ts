@@ -181,9 +181,17 @@ describeIfDb('Sprint 2 (e2e)', () => {
       })
       .expect(201);
     expect(maintained.body).toMatchObject({
-      status: DroneStatus.OUT_OF_SERVICE,
+      status: DroneStatus.MAINTENANCE,
       maintenanceReason: 'Revisión de hélices',
+      maintenanceOverdue: false,
     });
+
+    // El cambio a mantenimiento y el registro son un mismo periodo de taller.
+    const history = await request(app!.getHttpServer())
+      .get(`/fleet/drones/${droneId}/maintenance`)
+      .set('Authorization', `Bearer ${operator.token}`)
+      .expect(200);
+    expect(history.body).toHaveLength(1);
 
     const overHub = await request(app!.getHttpServer())
       .post('/geofences')

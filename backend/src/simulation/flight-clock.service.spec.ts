@@ -713,10 +713,15 @@ describe('FlightClockService batería entre vuelos', () => {
         batteryPercent: number;
         batteryUpdatedAt: Date;
         lastFlightEndedAt: Date;
+        flightsSinceMaintenance: () => string;
       },
     ];
     expect(saved.batteryPercent).toBeLessThan(47.5);
     expect(saved.batteryPercent).toBeGreaterThan(40);
     expect(saved.batteryUpdatedAt).toEqual(saved.lastFlightEndedAt);
+    // Un ciclo más para el preventivo, sumado en la base (sin leer y escribir).
+    expect(saved.flightsSinceMaintenance()).toBe(
+      '"flightsSinceMaintenance" + 1',
+    );
   });
 });

@@ -14,4 +14,8 @@ export enum NotificationKind {
   DEPARTED = 'departed',
   /** La franja cerró sin despegue. */
   DELIVERY_MISSED = 'delivery_missed',
+  /** Al operador: la fecha estimada del mantenimiento ya pasó. */
+  MAINTENANCE_OVERDUE = 'maintenance_overdue',
+  /** Al operador: el dron cumplió los vuelos del preventivo. */
+  MAINTENANCE_DUE = 'maintenance_due',
 }

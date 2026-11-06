@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { OneTimeCode } from '../auth/one-time-code.entity';
 import { DeliveryCode } from '../delivery/delivery-code.entity';
 import { Drone } from '../fleet/drone.entity';
+import { DroneMaintenance } from '../fleet/drone-maintenance.entity';
 import { DroneModel } from '../fleet/drone-model.entity';
 import { Hub } from '../hubs/hub.entity';
 import { InventoryItem } from '../inventory/inventory-item.entity';
@@ -38,6 +39,7 @@ export function typeOrmOptions(config: ConfigService): TypeOrmModuleOptions {
       Hub,
       DroneModel,
       Drone,
+      DroneMaintenance,
       InventoryItem,
       QuarantineRecord,
       Notification,

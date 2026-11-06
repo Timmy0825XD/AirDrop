@@ -65,6 +65,18 @@ export class Drone {
   @Column({ type: 'timestamptz', nullable: true })
   lastFlightEndedAt: Date | null;
 
+  /** Vuelos desde el último mantenimiento (CU-17, preventivo). */
+  @Column({ type: 'int', default: 0 })
+  flightsSinceMaintenance: number;
+
+  /** Ya se avisó que le toca revisión; se limpia al cerrar un mantenimiento. */
+  @Column({ type: 'timestamptz', nullable: true })
+  maintenanceDueNotifiedAt: Date | null;
+
+  /** Ya se avisó que el mantenimiento venció; se limpia al cambiar la fecha. */
+  @Column({ type: 'timestamptz', nullable: true })
+  maintenanceOverdueNotifiedAt: Date | null;
+
   @Column({ type: 'varchar', length: FIELD_LIMITS.reason, nullable: true })
   maintenanceReason: string | null;
 
