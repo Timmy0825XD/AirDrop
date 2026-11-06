@@ -68,6 +68,12 @@ function buildService(opts: {
     findOne: jest.fn().mockResolvedValue(model),
     ...opts.models,
   };
+  const maintenances = {
+    findOne: jest.fn().mockResolvedValue(null),
+    find: jest.fn().mockResolvedValue([]),
+    create: jest.fn((value: object) => value),
+    save: jest.fn((value: object) => Promise.resolve(value)),
+  };
   const hubsService = {
     findById: jest
       .fn()
@@ -80,7 +86,12 @@ function buildService(opts: {
         : jest.fn().mockResolvedValue(opts.hub === undefined ? hub : opts.hub),
   } as unknown as HubsService;
   return {
-    service: new FleetService(drones as never, models as never, hubsService),
+    service: new FleetService(
+      drones as never,
+      models as never,
+      maintenances as never,
+      hubsService,
+    ),
     drones,
     models,
     hubsService,
@@ -134,7 +145,7 @@ describe('FleetService', () => {
     ).rejects.toBeInstanceOf(ConflictException);
   });
 
-  it('registers maintenance as out of service', async () => {
+  it('registra el mantenimiento como mantenimiento, no fuera de servicio', async () => {
     const drone = {
       id: 'ffffffff-ffff-ffff-ffff-ffffffffffff',
       hubId: hub.id,
@@ -154,7 +165,7 @@ describe('FleetService', () => {
       reason: 'Revisión de hélices',
       estimatedEndDate: '2026-09-30',
     });
-    expect(result.status).toBe(DroneStatus.OUT_OF_SERVICE);
+    expect(result.status).toBe(DroneStatus.MAINTENANCE);
     expect(result.maintenanceReason).toBe('Revisión de hélices');
     expect(drones.save).toHaveBeenCalled();
   });

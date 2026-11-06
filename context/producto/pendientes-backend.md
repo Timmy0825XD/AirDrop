@@ -566,3 +566,39 @@ radar web pero solo con lo de su trabajo.
 
 **La app lo usará** en una pantalla de mapa del operador: sus centrales, las
 geovallas y cada dron moviéndose con sus métricas.
+
+**Hecho en `feature/fleet-mantenimiento`** (CU-16, CU-17):
+
+- **Dos estados distintos.** `maintenance` es temporal, con fecha estimada
+  de fin; `out_of_service` es indefinido y no guarda fecha (si llega
+  `estimatedEndDate`, se ignora).
+- **Cambio de contrato:** `POST /fleet/drones/:id/maintenance` deja el dron
+  en `maintenance`, ya no en `out_of_service`. La app dice hoy «dron fuera de
+  servicio» al registrarlo: cambiar el texto.
+- **Historial:** cada salida de la flota abre un periodo y volver a
+  `available` lo cierra; entre mantenimiento y fuera de servicio se cierra
+  uno y se abre otro. `GET /fleet/drones/:id/maintenance` (operador de esa
+  central; administrador en lectura) devuelve, del más reciente al más
+  viejo, `[{ id, kind: 'maintenance' | 'out_of_service', reason,
+  estimatedEndDate, flightsAtStart, startedAt, closedAt }]`.
+- **Preventivo:** cada vuelo que vuelve a la central suma uno. Cada dron
+  (en `GET /fleet/drones` y en las respuestas de alta y de estado) trae
+  `flightsSinceMaintenance`, `maintenanceCycles` (50 por defecto;
+  `DRONE_MAINTENANCE_CYCLES` lo cambia) y `maintenanceDue`. Cerrar un
+  **mantenimiento** pone los vuelos en 0; volver de fuera de servicio no.
+  `maintenanceDue` no saca al dron de la flota.
+- **Vencido:** `maintenanceOverdue` es `true` si el dron sigue en
+  mantenimiento y su fecha estimada es anterior a hoy (día de Colombia). No
+  se libera solo: lo libera el técnico o mueve la fecha.
+- **Avisos al operador** (bandeja y correo, a los operadores activos de la
+  central, una sola vez; se revisa cada 10 min): `maintenance_overdue`
+  «Mantenimiento vencido» y `maintenance_due` «Le toca revisión a un dron».
+  Mover la fecha vuelve a habilitar el de vencido; cerrar un mantenimiento,
+  el de revisión.
+- **Esquema:** tabla `drone_maintenances`, el enum `drone_maintenance_kind`,
+  tres columnas en `drones` y dos valores nuevos en `notification_kind`. Se
+  crean con `synchronize` (fuera de `production`).
+
+**La app lo usará** en la flota del operador: el contador de vuelos con la
+marca de revisión, la marca de vencido, el historial de cada dron y los
+avisos nuevos en la campana.

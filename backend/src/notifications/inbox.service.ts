@@ -48,12 +48,22 @@ export class InboxService {
   }
 
   /** A los despachadores activos de una central. */
-  async notifyHubDispatchers(hubId: string, notice: Notice): Promise<void> {
+  notifyHubDispatchers(hubId: string, notice: Notice): Promise<void> {
+    return this.notifyHubRole(hubId, UserRole.DISPATCHER, notice);
+  }
+
+  /** A los operadores de flota activos de una central. */
+  notifyHubOperators(hubId: string, notice: Notice): Promise<void> {
+    return this.notifyHubRole(hubId, UserRole.FLEET_OPERATOR, notice);
+  }
+
+  private async notifyHubRole(
+    hubId: string,
+    role: UserRole,
+    notice: Notice,
+  ): Promise<void> {
     const rows = await this.assignments.find({
-      where: {
-        hubId,
-        user: { role: UserRole.DISPATCHER, status: UserStatus.ACTIVE },
-      },
+      where: { hubId, user: { role, status: UserStatus.ACTIVE } },
       relations: { user: true },
     });
     for (const row of rows) {
