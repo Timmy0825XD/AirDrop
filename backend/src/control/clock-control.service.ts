@@ -46,8 +46,18 @@ export class ClockControlService implements OnModuleInit {
   }
 
   async change(change: ClockChange): Promise<ClockView> {
-    const state = simClock.change(change);
-    await this.redis.write(CLOCK_STATE_KEY, JSON.stringify(state));
+    simClock.change(change);
+    return this.saveAndPublish();
+  }
+
+  /** RF-40: al reiniciar el escenario, la hora real a x1. */
+  async resetToRealTime(): Promise<ClockView> {
+    simClock.resetToRealTime();
+    return this.saveAndPublish();
+  }
+
+  private async saveAndPublish(): Promise<ClockView> {
+    await this.redis.write(CLOCK_STATE_KEY, JSON.stringify(simClock.current()));
     const view = simClock.view();
     await this.publisher.publish({ type: 'clock', clock: view });
     return view;

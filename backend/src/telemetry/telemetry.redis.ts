@@ -87,6 +87,12 @@ export class TelemetryRedis implements OnModuleInit, OnModuleDestroy {
     return (await this.client?.get(key)) ?? null;
   }
 
+  async remove(keys: string[]): Promise<void> {
+    if (keys.length) {
+      await this.client?.del(...keys);
+    }
+  }
+
   /** Agrega al principio y deja solo las `max` más recientes (RF-39). */
   async pushCapped(key: string, value: string, max: number): Promise<void> {
     await this.client

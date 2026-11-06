@@ -17,6 +17,8 @@ export type TelemetryEvent =
   | { type: 'clock'; clock: ClockView }
   /** RF-39: un paso del flujo contado para la consola. */
   | { type: 'timeline'; entry: TimelineEntry }
+  /** RF-40: el escenario volvió a la semilla; el radar recarga todo. */
+  | { type: 'scenario-reset' }
   | {
       type: 'alert';
       orderId: string;
