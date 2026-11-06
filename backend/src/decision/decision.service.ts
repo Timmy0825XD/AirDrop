@@ -22,6 +22,12 @@ import {
 import { DroneModel } from '../fleet/drone-model.entity';
 import { GeoJsonPolygon } from '../geofences/geofences.rules';
 import { Hub } from '../hubs/hub.entity';
+import {
+  HUB_WITHOUT_POWER,
+  HUB_WITHOUT_POWER_NOTE,
+  OUTAGE_REDISPATCH_REASON,
+  isPowered,
+} from '../hubs/hub-power.rules';
 import { HubsService } from '../hubs/hubs.service';
 import { InventoryItem } from '../inventory/inventory-item.entity';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -107,6 +113,7 @@ export class DecisionService {
 
   async authorize(user: User, orderId: string, dto: AuthorizeOrderDto = {}) {
     const hub = await this.requireDispatcherHub(user);
+    assertPowered(hub);
     const result = await this.dataSource.transaction((manager) =>
       this.authorizeIn(
         manager,
@@ -234,6 +241,115 @@ export class DecisionService {
     return path;
   }
 
+  /**
+   * RF-36 y CU-45: la central se quedó sin energía. Lo que esperaba en su
+   * cola sale de ella (decisión del 2026-11-06): lo autorizado sin cargar
+   * suelta el dron y el lote; la urgencia a una persona se ofrece otra vez
+   * (camino `offers`, lo abre `EmergencyDispatchService`), la urgencia entre
+   * centrales pasa a otra central y el programado sigue RF-18. Los
+   * programados que nadie ha autorizado esperan en la cola.
+   * Devuelve los pedidos que deben volver a ofrecerse.
+   */
+  async evacuateHub(hubId: string, now = simClock.now()): Promise<string[]> {
+    const queued = await this.dataSource.getRepository(Order).find({
+      where: {
+        originHubId: hubId,
+        status: In([OrderStatus.RECEIVED, OrderStatus.PENDING_LOAD]),
+      },
+    });
+    const toOffer: string[] = [];
+    for (const candidate of queued) {
+      try {
+        const result = await this.dataSource.transaction((manager) =>
+          this.evacuateOrder(manager, candidate.id, hubId, now),
+        );
+        if (!result) {
+          continue;
+        }
+        if (result.path === 'offers') {
+          toOffer.push(result.order.id);
+        }
+        await this.notifications.statusChanged(
+          result.order.id,
+          result.order.status,
+        );
+        await this.notifications.queueChanged(hubId, result.order.id);
+        if (result.order.originHubId && result.order.originHubId !== hubId) {
+          await this.notifications.queueChanged(
+            result.order.originHubId,
+            result.order.id,
+          );
+        }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'pedido';
+        this.logger.warn(
+          `No se pudo mover el pedido ${candidate.id} de la central sin energía: ${message}`,
+        );
+      }
+    }
+    return toOffer;
+  }
+
+  private async evacuateOrder(
+    manager: EntityManager,
+    orderId: string,
+    hubId: string,
+    now: Date,
+  ): Promise<{ order: Order; path: RedispatchPath } | null> {
+    const order = await manager.findOne(Order, {
+      where: { id: orderId },
+      lock: { mode: 'pessimistic_write' },
+    });
+    if (!order || order.originHubId !== hubId || order.loadConfirmedAt) {
+      return null;
+    }
+    const reserved = order.status === OrderStatus.PENDING_LOAD;
+    const path = redispatchPath(order);
+    if (!reserved && order.status !== OrderStatus.RECEIVED) {
+      return null;
+    }
+    if (!reserved && path === 'scheduled' && order.fallbackKind == null) {
+      // Nadie lo ha autorizado: espera en la cola a que vuelva la energía.
+      return null;
+    }
+    if (reserved && order.droneId) {
+      const drone = await manager.findOne(Drone, {
+        where: { id: order.droneId },
+        lock: { mode: 'pessimistic_write' },
+      });
+      if (drone?.status === DroneStatus.IN_MISSION) {
+        drone.status = DroneStatus.AVAILABLE;
+        await manager.save(drone);
+      }
+      await this.routes.deleteLegs(order.id, manager);
+    }
+    releaseForRedispatch(order, path, OUTAGE_REDISPATCH_REASON);
+    if (path === 'offers') {
+      await manager.save(order);
+      return { order, path };
+    }
+    const hub = await manager.findOne(Hub, { where: { id: hubId } });
+    if (!hub) {
+      await manager.save(order);
+      return { order, path };
+    }
+    if (path === 'scheduled' && isWindowClosed(order, now)) {
+      await this.expireLocked(manager, order, now);
+      return { order, path };
+    }
+    const polygons = await this.routes.loadPolygons(manager);
+    await this.withFallback(
+      manager,
+      order,
+      hub,
+      todayInColombia(now),
+      polygons,
+      now,
+      [traceSkippedHub(hub, false, HUB_WITHOUT_POWER_NOTE)],
+    );
+    return { order, path };
+  }
+
   /** La franja cerró con el dron en tierra: suelta la reserva y aplica RF-18. */
   async expireMissed(orderId: string, now = simClock.now()) {
     const result = await this.dataSource.transaction(async (manager) => {
@@ -256,6 +372,7 @@ export class DecisionService {
 
   async confirmLoad(user: User, orderId: string) {
     const hub = await this.requireDispatcherHub(user);
+    assertPowered(hub);
     if (!this.flights.isReady()) {
       throw new ServiceUnavailableException(TELEMETRY_UNAVAILABLE);
     }
@@ -426,11 +543,21 @@ export class DecisionService {
       return this.rejectForbiddenDestination(manager, order, now);
     }
     const trace: HubTrace[] = [];
-    if (origin.status !== HubStatus.ACTIVE) {
+    // RF-36: sin energía cuenta como suspendida para el reintento automático.
+    const powered = isPowered(origin, now);
+    if (origin.status !== HubStatus.ACTIVE || !powered) {
       if (!retrying) {
-        throw new ForbiddenException('La central está suspendida.');
+        throw new ForbiddenException(
+          powered ? 'La central está suspendida.' : HUB_WITHOUT_POWER,
+        );
       }
-      trace.push(traceSkippedHub(origin, false, HUB_SUSPENDED_NOTE));
+      trace.push(
+        traceSkippedHub(
+          origin,
+          false,
+          powered ? HUB_SUSPENDED_NOTE : HUB_WITHOUT_POWER_NOTE,
+        ),
+      );
       return this.withFallback(
         manager,
         order,
@@ -767,5 +894,12 @@ export class DecisionService {
       );
     }
     return this.hubsService.requireActive(hubIds[0]);
+  }
+}
+
+/** RF-36: sin energía no se autoriza ni se confirma la carga. */
+function assertPowered(hub: Hub): void {
+  if (!isPowered(hub, simClock.now())) {
+    throw new ConflictException(HUB_WITHOUT_POWER);
   }
 }

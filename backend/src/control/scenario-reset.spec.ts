@@ -274,6 +274,8 @@ describe('ScenarioResetService (RF-40, CU-41)', () => {
     expect(savedStock).toHaveLength(plan.stock.length);
     expect(built.manager.update).toHaveBeenCalledWith(Hub, expect.anything(), {
       status: HubStatus.ACTIVE,
+      // RF-36: el reinicio también devuelve la energía.
+      powerOutageUntil: null,
     });
   });
 });

@@ -14,6 +14,7 @@ import { MissionType } from '../common/enums/mission-type.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { Hub } from '../hubs/hub.entity';
+import { OUTAGE_DECLINE_REASON, isPowered } from '../hubs/hub-power.rules';
 import { HubsService } from '../hubs/hubs.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { FallbackOption, Order } from '../orders/order.entity';
@@ -31,6 +32,7 @@ import {
   everyHubDeclined,
   openNextOffer,
   rankDispatchCandidates,
+  withdrawHub,
 } from './dispatch.rules';
 import { applyConventional, rankHubsByDistance } from './fallback.rules';
 import { toOption } from './fallback.service';
@@ -179,6 +181,74 @@ export class EmergencyDispatchService implements OnModuleInit, OnModuleDestroy {
     return order;
   }
 
+  /**
+   * RF-36 y CU-45: la central se quedó sin energía. Sale de la oferta de
+   * cada urgencia abierta como si la hubiera declinado; si era la que la
+   * tenía, se ofrece ya a la siguiente. Devuelve cuántas cambiaron.
+   */
+  async withdrawHub(hubId: string, now = simClock.now()): Promise<number> {
+    const open = await this.dataSource.getRepository(Order).find({
+      where: {
+        missionType: MissionType.EMERGENCY,
+        destinationKind: DestinationKind.PERSON,
+        status: OrderStatus.RECEIVED,
+        originHubId: IsNull(),
+      },
+    });
+    let changed = 0;
+    for (const candidate of open) {
+      if (!candidate.dispatchOffers?.some((offer) => offer.hubId === hubId)) {
+        continue;
+      }
+      const notice = await this.dataSource.transaction(async (manager) => {
+        const order = await this.lockOrder(manager, candidate.id);
+        if (!isOpenEmergency(order) || !order.dispatchOffers) {
+          return null;
+        }
+        const result = withdrawHub(
+          order.dispatchOffers,
+          hubId,
+          OUTAGE_DECLINE_REASON,
+          now,
+        );
+        if (!result) {
+          return null;
+        }
+        if (!result.step) {
+          // No le tocaba todavía: la escalera sigue su tiempo.
+          order.dispatchOffers = result.offers;
+          await manager.save(order);
+          return { orderId: order.id, hubIds: [hubId], conventional: false };
+        }
+        if (!everyHubDeclined(result.step.offers)) {
+          return (await this.saveStep(manager, order, result.step, [hubId]))
+            .notice;
+        }
+        order.dispatchOffers = result.step.offers;
+        const { withStock } = await this.candidates(
+          manager,
+          order,
+          todayInColombia(now),
+        );
+        return (
+          await this.toConventional(
+            manager,
+            order,
+            withStock,
+            EVERY_HUB_DECLINED,
+            now,
+            [hubId],
+          )
+        ).notice;
+      });
+      if (notice) {
+        changed += 1;
+        await this.announce(notice);
+      }
+    }
+    return changed;
+  }
+
   private async escalate(orderId: string, now: Date): Promise<void> {
     try {
       const notice = await this.dataSource.transaction(async (manager) => {
@@ -214,9 +284,11 @@ export class EmergencyDispatchService implements OnModuleInit, OnModuleDestroy {
     order: Order,
     today: string,
   ): Promise<{ candidates: DispatchCandidate[]; withStock: FallbackOption[] }> {
-    const active = await manager.find(Hub, {
-      where: { status: HubStatus.ACTIVE },
-    });
+    const now = simClock.now();
+    // RF-36: una central sin energía no recibe urgencias nuevas.
+    const active = (
+      await manager.find(Hub, { where: { status: HubStatus.ACTIVE } })
+    ).filter((hub) => isPowered(hub, now));
     const polygons = await this.routes.loadPolygons(manager);
     const ranked = rankHubsByDistance(active, destinationOf(order));
     const candidates: DispatchCandidate[] = [];

@@ -122,6 +122,7 @@ describe('el clima en el resto del sistema', () => {
       service,
       flights as never,
       {} as never,
+      {} as never,
     );
     await events.createWeather('admin', {
       ...storm,

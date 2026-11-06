@@ -137,6 +137,40 @@ export function declineOffer(
   return openNextOffer(declined, now);
 }
 
+/**
+ * RF-36: la central se quedó sin energía. Sale de la lista como si hubiera
+ * declinado, aunque todavía no le tocara: así la escalera ya no se la
+ * ofrece. Si era la que la tenía abierta, se abre la siguiente ya.
+ * `null` si la central no estaba en la lista o ya la había declinado.
+ */
+export function withdrawHub(
+  offers: DispatchOffer[],
+  hubId: string,
+  reason: string,
+  now: Date,
+): { offers: DispatchOffer[]; step: OfferStep | null } | null {
+  const own = offers.find((offer) => offer.hubId === hubId);
+  if (!own || own.declinedAt != null) {
+    return null;
+  }
+  const wasOpen = own.offeredAt != null;
+  const stamp = now.toISOString();
+  const withdrawn = offers.map((offer) =>
+    offer.hubId === hubId
+      ? {
+          ...offer,
+          offeredAt: offer.offeredAt ?? stamp,
+          declinedAt: stamp,
+          declineReason: reason,
+        }
+      : offer,
+  );
+  return {
+    offers: withdrawn,
+    step: wasOpen ? openNextOffer(withdrawn, now) : null,
+  };
+}
+
 /** Todas las centrales de la lista la vieron y la declinaron. */
 export function everyHubDeclined(offers: DispatchOffer[]): boolean {
   return offers.every((offer) => offer.declinedAt != null);

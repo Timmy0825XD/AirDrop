@@ -12,6 +12,7 @@ import { EmergencyDispatchService } from './emergency-dispatch.service';
 import { FallbackService } from './fallback.service';
 import { HubEvaluationService } from './hub-evaluation.service';
 import { IncidentRedispatchService } from './incident-redispatch.service';
+import { HubOutageRelocationService } from './hub-outage-relocation.service';
 import { ScheduledRetryService } from './scheduled-retry.service';
 
 @Module({
@@ -31,6 +32,7 @@ import { ScheduledRetryService } from './scheduled-retry.service';
     ScheduledRetryService,
     EmergencyDispatchService,
     IncidentRedispatchService,
+    HubOutageRelocationService,
   ],
   exports: [DecisionService, EmergencyDispatchService],
 })

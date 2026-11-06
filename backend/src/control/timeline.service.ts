@@ -1,3 +1,4 @@
+import { isOfferedTo } from '../decision/dispatch.rules';
 import { randomUUID } from 'node:crypto';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -30,6 +31,7 @@ import {
   weatherDraft,
   geofenceDraft,
   incidentDraft,
+  hubOutageDraft,
   queueDraft,
   statusDraft,
 } from './timeline.rules';
@@ -42,6 +44,17 @@ const MAX_REMEMBERED = 5_000;
  * cola, alerta, reloj), los cuenta en español, los guarda en Redis con tope
  * y los publica en la sala del radar. No decide nada del negocio.
  */
+/** La urgencia está en la cola de esa central: es su origen o se le ofreció. */
+function isInQueueOf(
+  order: Pick<Order, 'originHubId' | 'dispatchOffers'>,
+  hubId: string,
+): boolean {
+  if (order.originHubId != null) {
+    return order.originHubId === hubId;
+  }
+  return order.dispatchOffers ? isOfferedTo(order.dispatchOffers, hubId) : true;
+}
+
 @Injectable()
 export class TimelineService implements OnModuleInit {
   private readonly logger = new Logger(TimelineService.name);
@@ -151,6 +164,19 @@ export class TimelineService implements OnModuleInit {
       await this.onIncident(event.incident);
       return;
     }
+    if (event.type === 'hub-outage') {
+      const minutes =
+        event.action === 'started'
+          ? Math.max(
+              1,
+              Math.round(
+                (Date.parse(event.outage.until) - simClock.nowMs()) / 60_000,
+              ),
+            )
+          : null;
+      await this.record(hubOutageDraft(event.action, event.outage, minutes));
+      return;
+    }
     if (event.type === 'geofence') {
       await this.record(geofenceDraft(event.action, event.geofence));
       return;
@@ -230,8 +256,11 @@ export class TimelineService implements OnModuleInit {
     if (
       !order ||
       order.status !== OrderStatus.RECEIVED ||
-      order.missionType !== MissionType.EMERGENCY
+      order.missionType !== MissionType.EMERGENCY ||
+      !isInQueueOf(order, hubId)
     ) {
+      // También avisa la cola de la que sale (declinó o se quedó sin
+      // energía): eso no es entrar.
       return;
     }
     const hub = await this.hubs.findOne({ where: { id: hubId } });

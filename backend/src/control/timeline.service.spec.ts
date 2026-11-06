@@ -136,7 +136,23 @@ describe('TimelineService (RF-39)', () => {
   });
 
   it('cuenta la urgencia que entra a la cola de cada central, una vez por central', async () => {
-    const { service, redis } = build();
+    const stamp = '2026-11-06T15:00:00.000Z';
+    // RU-10: sin central de origen, ofrecida a las dos.
+    const { service, redis } = build(
+      'true',
+      order({
+        originHubId: null,
+        dispatchOffers: [HUB, OTHER].map((hub) => ({
+          hubId: hub.id,
+          name: hub.name,
+          etaMs: 1,
+          ready: true,
+          offeredAt: stamp,
+          declinedAt: null,
+          declineReason: null,
+        })),
+      }),
+    );
     await service.handle({
       type: 'queue-changed',
       hubId: HUB.id,
@@ -179,6 +195,49 @@ describe('TimelineService (RF-39)', () => {
     });
     expect(redis.pushCapped).not.toHaveBeenCalled();
     expect(scheduled.redis.pushCapped).not.toHaveBeenCalled();
+  });
+
+  it('la cola de la que sale la urgencia (declinó o se quedó sin energía) no cuenta como entrar', async () => {
+    const stamp = '2026-11-06T15:00:00.000Z';
+    const { service, redis } = build(
+      'true',
+      order({
+        originHubId: null,
+        dispatchOffers: [
+          {
+            hubId: HUB.id,
+            name: HUB.name,
+            etaMs: 1,
+            ready: true,
+            offeredAt: stamp,
+            declinedAt: stamp,
+            declineReason: 'Central sin energía',
+          },
+          {
+            hubId: OTHER.id,
+            name: OTHER.name,
+            etaMs: 2,
+            ready: true,
+            offeredAt: stamp,
+            declinedAt: null,
+            declineReason: null,
+          },
+        ],
+      }),
+    );
+    await service.handle({
+      type: 'queue-changed',
+      hubId: HUB.id,
+      orderId: 'order-1',
+    });
+    await service.handle({
+      type: 'queue-changed',
+      hubId: OTHER.id,
+      orderId: 'order-1',
+    });
+    expect(pushed(redis).map((entry) => entry.title)).toEqual([
+      `Urgencia a una persona en la cola de ${OTHER.name}`,
+    ]);
   });
 
   it('cuenta la alerta donde va el dron', async () => {

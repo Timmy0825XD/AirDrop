@@ -283,6 +283,14 @@ export async function alignSprintSchema(
     await addEnumValue(boot, 'contingency_protocol', 'crash');
     await addEnumValue(boot, 'contingency_protocol', 'lost');
     await addEnumValue(boot, 'return_outcome', 'lost');
+    // RF-36: central sin energía.
+    await addEnumValue(boot, 'notification_kind', 'hub_outage');
+    await addEnumValue(boot, 'notification_kind', 'hub_power_restored');
+    if (await tableExists(boot, 'hubs')) {
+      await boot.query(
+        `ALTER TABLE hubs ADD COLUMN IF NOT EXISTS "powerOutageUntil" timestamptz`,
+      );
+    }
   } finally {
     if (boot.isInitialized) {
       await boot.destroy();

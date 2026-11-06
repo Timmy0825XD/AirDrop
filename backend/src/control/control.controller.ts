@@ -26,6 +26,7 @@ import { ChangeClockDto } from './dto/change-clock.dto';
 import { CreateTemporaryGeofenceDto } from './dto/create-temporary-geofence.dto';
 import { CreateWeatherDto } from './dto/create-weather.dto';
 import { LaunchIncidentDto } from './dto/launch-incident.dto';
+import { StartHubOutageDto } from './dto/start-hub-outage.dto';
 import { PendingAlertsService } from './pending-alerts.service';
 import { ScenarioResetService } from './scenario-reset.service';
 import { clampTimelineLimit } from './timeline.rules';
@@ -88,6 +89,29 @@ export class ControlController {
     @Body() dto: LaunchIncidentDto,
   ) {
     return this.events.launchIncident(droneId, dto.kind);
+  }
+
+  /** RF-36: las centrales sin energía ahora y hasta cuándo. */
+  @Get('hubs/outages')
+  getOutages() {
+    return this.events.listOutages();
+  }
+
+  /** RF-36, CU-45: deja una central sin energía por un tiempo. */
+  @Post('hubs/:hubId/outage')
+  startOutage(
+    @Param('hubId', new ParseUUIDPipe({ version: '4' })) hubId: string,
+    @Body() dto: StartHubOutageDto,
+  ) {
+    return this.events.startOutage(hubId, dto.durationMin);
+  }
+
+  /** Devuelve la energía antes de tiempo. */
+  @Delete('hubs/:hubId/outage')
+  endOutage(
+    @Param('hubId', new ParseUUIDPipe({ version: '4' })) hubId: string,
+  ) {
+    return this.events.endOutage(hubId);
   }
 
   /** RF-32: las celdas de clima que rigen ahora. */

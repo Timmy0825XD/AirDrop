@@ -59,6 +59,14 @@ export class Hub {
   })
   status: HubStatus;
 
+  /**
+   * RF-36: sin energía hasta esta hora simulada. No autoriza ni confirma
+   * cargas y sus drones no son elegibles. `null`: con energía. No cambia el
+   * estado, que es del administrador.
+   */
+  @Column({ type: 'timestamptz', nullable: true })
+  powerOutageUntil: Date | null;
+
   @Index()
   @Column({ type: 'uuid' })
   createdByUserId: string;

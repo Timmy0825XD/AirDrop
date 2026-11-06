@@ -3,6 +3,8 @@ import { EntityManager } from 'typeorm';
 import { FallbackKind } from '../common/enums/fallback-kind.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { GeoJsonPolygon } from '../geofences/geofences.rules';
+import { isPowered } from '../hubs/hub-power.rules';
+import { simClock } from '../common/clock/sim-clock';
 import { Hub } from '../hubs/hub.entity';
 import { FallbackOption, HubTrace, Order } from '../orders/order.entity';
 import {
@@ -82,9 +84,10 @@ export class FallbackService {
     polygons: GeoJsonPolygon[],
     trace: HubTrace[],
   ): Promise<Alternatives> {
-    const active = await manager.find(Hub, {
-      where: { status: HubStatus.ACTIVE },
-    });
+    // RF-36: una central sin energía no recibe pedidos reasignados.
+    const active = (
+      await manager.find(Hub, { where: { status: HubStatus.ACTIVE } })
+    ).filter((hub) => isPowered(hub, simClock.now()));
     const ranked = rankHubsByDistance(
       active.filter((hub) => hub.id !== order.destinationHubId),
       {
