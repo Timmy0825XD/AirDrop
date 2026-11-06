@@ -312,6 +312,10 @@ export class TelemetryGateway
         this.server?.to(RADAR_ROOM).emit('radar-timeline', event.entry);
         return;
       }
+      if (event.type === 'scenario-reset') {
+        this.server?.to(RADAR_ROOM).emit('radar-reset', {});
+        return;
+      }
       this.emitRadar(event);
       await this.emitHubFleetSafely(event);
       if (event.type === 'telemetry') {

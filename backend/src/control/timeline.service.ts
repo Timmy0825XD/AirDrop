@@ -83,6 +83,29 @@ export class TimelineService implements OnModuleInit {
     });
   }
 
+  /** RF-40: el reinicio empieza una línea de tiempo nueva. */
+  async clear(): Promise<void> {
+    await this.redis.remove([TIMELINE_KEY]);
+    this.lastStatus.clear();
+    this.queued.clear();
+  }
+
+  /** Una acción de la consola que no pasa por el bus (p. ej. el reinicio). */
+  async recordConsole(title: string, detail: string | null): Promise<void> {
+    await this.record({
+      kind: 'console',
+      severity: 'info',
+      title,
+      detail,
+      orderId: null,
+      droneId: null,
+      hubId: null,
+      latitude: null,
+      longitude: null,
+      source: 'console',
+    });
+  }
+
   async handle(event: TelemetryEvent): Promise<void> {
     if (event.type === 'clock') {
       await this.record(clockDraft(event.clock));

@@ -43,6 +43,8 @@ Nombres alineados al glosario:
 
 **Línea de tiempo (RF-39):** `TimelineService` escucha los eventos que ya publica `NotificationsService` (estado, cola, alerta) y el reloj, los cuenta en español sin datos de personas, los guarda en Redis (`control:timeline`, tope 200) y los manda a la sala `radar` como `radar-timeline`. `GET /control/timeline?limit=` los lee y `GET /control/alerts` lista las alertas de vuelo abiertas (misión sin `returnedAt`) con la posición del dron. Por eso todo cambio de estado de un pedido pasa por `NotificationsService.statusChanged` (CU-29): si un servicio cambia un estado sin anunciarlo, la consola no lo ve.
 
+**Reinicio (RF-40, CU-41):** `POST /control/reset` (`ScenarioResetService`) devuelve el escenario de `pnpm seed:demo` a su estado inicial, sin crear ni borrar centrales ni cuentas. Si no encuentra las centrales de la semilla responde 409. Pone el reloj en hora real y borra **todo** pedido que sale, llega o está ofrecido a una central de la demo (también los de personas reales), con sus códigos, rutas, misiones, avisos, cuarentenas y planes. Deja los drones en su central con la batería llena y el estado de la semilla, el stock y las geovallas de la semilla, y las centrales activas. También limpia la telemetría y la línea de tiempo, y avisa al radar con `radar-reset`. Los datos de la semilla viven en `control/demo-scenario.ts`; el script y el reinicio leen el mismo archivo. Las fotos de fórmula quedan en el bucket, igual que con el script.
+
 Un módulo = controllers + services + entities de **ese** tema. El motor de decisión **no** vive dentro de `Simulation`. El reloj de vuelo **no** autoriza pedidos ni asume la carga a bordo.
 
 ## Patrones permitidos

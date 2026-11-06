@@ -130,6 +130,23 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     return this.telemetry.isReady();
   }
 
+  /**
+   * RF-40: el reinicio del escenario borró estos pedidos. El reloj deja de
+   * moverlos; si un tick está en curso, espera a que termine para que no
+   * vuelva a escribir una misión que ya no existe.
+   */
+  async forget(orderIds: string[]): Promise<void> {
+    for (let waited = 0; this.ticking && waited < 5_000; waited += 50) {
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+    for (const orderId of orderIds) {
+      this.active.delete(orderId);
+      this.waiting.delete(orderId);
+      this.coldWaits.delete(orderId);
+      this.pickups.delete(orderId);
+    }
+  }
+
   async start(orderId: string): Promise<void> {
     if (!this.isReady()) {
       throw new ServiceUnavailableException(TELEMETRY_UNAVAILABLE);
