@@ -52,13 +52,6 @@ export function missionBatteryPercent(
   );
 }
 
-/** Ida más larga que cabe con la batería llena: 35,2 km para el Wingcopter 198. */
-export function maxOneWayKm(maxRangeKm: number, batteryPercent = 100): number {
-  const cruiseBudget =
-    (batteryPercent - CRITICAL_BATTERY_PERCENT) / 2 - VERTICAL_BATTERY_PER_LEG;
-  return Math.max(0, (cruiseBudget / 100) * maxRangeKm);
-}
-
 /**
  * Recarga simulada en tierra: 1,5 % por minuto (de 0 a 100 % en algo más de
  * una hora). `DRONE_RECHARGE_PERCENT_PER_MIN` la cambia para demostraciones.

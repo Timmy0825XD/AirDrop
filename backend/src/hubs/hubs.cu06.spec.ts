@@ -4,6 +4,8 @@
  * la terminal lo muestre en la captura.
  */
 import { ForbiddenException } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { JwtStrategy } from '../auth/jwt.strategy';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { HubStatus } from '../common/enums/hub-status.enum';
@@ -11,6 +13,7 @@ import { HubType } from '../common/enums/hub-type.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { User } from '../users/user.entity';
+import { UsersService } from '../users/users.service';
 import { CreateHubDto } from './dto/create-hub.dto';
 import { Hub } from './hub.entity';
 import { HubsService } from './hubs.service';
@@ -132,18 +135,22 @@ describe('CU-06 Crear central', () => {
     expect(hubs.save).not.toHaveBeenCalled();
   });
 
-  it('CP-06-08 rechaza la creación por un administrador con la cuenta no activa (403)', async () => {
-    const { service, hubs } = build();
-
-    const intento = service.create(
-      usuario({ status: UserStatus.SUSPENDED }),
-      valido,
+  it('CP-06-08 rechaza la creación por un administrador con la cuenta no activa (401)', async () => {
+    // La cuenta suspendida no llega al servicio: JwtStrategy no la deja
+    // pasar y el guard responde 401 antes de tocar las centrales.
+    const suspended = usuario({ status: UserStatus.SUSPENDED });
+    const strategy = new JwtStrategy(
+      { getOrThrow: () => 'secreto-de-prueba' } as unknown as ConfigService,
+      {
+        findById: jest.fn().mockResolvedValue(suspended),
+      } as unknown as UsersService,
     );
 
-    await expect(intento).rejects.toBeInstanceOf(ForbiddenException);
-    await expect(intento).rejects.toThrow(
-      'Tu cuenta debe estar activa para gestionar la central.',
-    );
-    expect(hubs.save).not.toHaveBeenCalled();
+    const user = await strategy.validate({
+      sub: suspended.id,
+      role: UserRole.ADMIN,
+    });
+
+    expect(user).toBeNull();
   });
 });

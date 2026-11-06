@@ -9,7 +9,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
-import { UserStatus } from '../common/enums/user-status.enum';
 import { HubsService } from '../hubs/hubs.service';
 import { Order } from '../orders/order.entity';
 import { assignedHubIds } from '../users/hub-assignment';
@@ -125,11 +124,6 @@ export class InventoryService {
   }
 
   private async requireDispatcherHub(user: User) {
-    if (user.status !== UserStatus.ACTIVE) {
-      throw new ForbiddenException(
-        'Tu cuenta debe estar activa para gestionar inventario.',
-      );
-    }
     if (user.role !== UserRole.DISPATCHER) {
       throw new ForbiddenException(
         'Solo el despachador gestiona el inventario de su central.',

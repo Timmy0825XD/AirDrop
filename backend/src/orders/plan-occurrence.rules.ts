@@ -121,27 +121,6 @@ export function rescheduledSlot(
   return slot;
 }
 
-/** T-24 h: toca avisar a quien recibe. */
-export function isReminderDue(order: OccurrenceOrder, now: Date): boolean {
-  const start = startOf(order);
-  return (
-    order.status === OrderStatus.SCHEDULED &&
-    start != null &&
-    start.getTime() - now.getTime() <= REMINDER_LEAD_MS
-  );
-}
-
-/** T-2 h sin confirmar (o con el plan en pausa): la entrega se omite. */
-export function isPastConfirmation(order: OccurrenceOrder, now: Date): boolean {
-  const start = startOf(order);
-  return (
-    (order.status === OrderStatus.SCHEDULED ||
-      order.status === OrderStatus.AWAITING_CONFIRMATION) &&
-    start != null &&
-    start.getTime() - now.getTime() < SCHEDULE_LEAD_MS
-  );
-}
-
 /** «jueves 5 de noviembre, de 10:00 a 11:00», en hora de Colombia. */
 export function describeSlot(start: Date, end: Date): string {
   const day = new Intl.DateTimeFormat('es-CO', {

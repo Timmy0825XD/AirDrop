@@ -5,7 +5,6 @@ import {
   VERTICAL_BATTERY_PER_LEG,
   batteryNow,
   legBatteryPercent,
-  maxOneWayKm,
   missionBatteryPercent,
   rechargePercentPerMin,
 } from './flight-energy.rules';
@@ -62,7 +61,6 @@ describe('cuenta de energía (RF-11)', () => {
   });
 
   it('con la batería llena, la ida más larga del Wingcopter 198 es 35,2 km', () => {
-    expect(maxOneWayKm(110)).toBeCloseTo(35.2, 5);
     expect(missionBatteryPercent(35.2, 110)).toBeCloseTo(100, 5);
   });
 

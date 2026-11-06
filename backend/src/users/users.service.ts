@@ -103,15 +103,7 @@ export class UsersService {
     };
   }
 
-  async createInstitutional(
-    actor: User,
-    dto: CreateInstitutionalUserDto,
-  ): Promise<User> {
-    if (actor.status !== UserStatus.ACTIVE) {
-      throw new ForbiddenException(
-        'Tu cuenta debe estar activa para gestionar usuarios.',
-      );
-    }
+  async createInstitutional(dto: CreateInstitutionalUserDto): Promise<User> {
     if (!INSTITUTIONAL_ROLES.includes(dto.role)) {
       throw new BadRequestException(
         'El rol debe ser despachador u operador de flota.',
@@ -161,11 +153,6 @@ export class UsersService {
     targetId: string,
     suspended: boolean,
   ): Promise<User> {
-    if (actor.status !== UserStatus.ACTIVE) {
-      throw new ForbiddenException(
-        'Tu cuenta debe estar activa para gestionar usuarios.',
-      );
-    }
     const target = await this.findById(targetId);
     if (!target) {
       throw new NotFoundException('El usuario no existe.');

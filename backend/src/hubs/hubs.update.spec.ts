@@ -153,10 +153,5 @@ describe('HubsService.update', () => {
         name: 'X',
       }),
     ).rejects.toThrow(ForbiddenException);
-    await expect(
-      build().service.update(admin({ status: UserStatus.SUSPENDED }), HUB_ID, {
-        name: 'X',
-      }),
-    ).rejects.toThrow(ForbiddenException);
   });
 });

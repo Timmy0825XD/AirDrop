@@ -12,8 +12,6 @@ import {
   confirmBy,
   describeSlot,
   initialOccurrenceState,
-  isPastConfirmation,
-  isReminderDue,
   rescheduledSlot,
 } from './plan-occurrence.rules';
 import { SCHEDULE_BAD_TIME, slotFor } from './plan-schedule.rules';
@@ -129,38 +127,6 @@ describe('rescheduledSlot', () => {
     expect(() => rescheduledSlot(today, '2026-11-02', '09:00', NOW)).toThrow(
       new BadRequestException(RESCHEDULE_TOO_SOON),
     );
-  });
-});
-
-describe('relojes de T-24 h y T-2 h', () => {
-  it('avisa desde 24 horas antes', () => {
-    expect(isReminderDue(occurrence({ scheduledAt: at(25) }), NOW)).toBe(false);
-    expect(isReminderDue(occurrence({ scheduledAt: at(24) }), NOW)).toBe(true);
-    expect(
-      isReminderDue(
-        occurrence({
-          scheduledAt: at(5),
-          status: OrderStatus.AWAITING_CONFIRMATION,
-        }),
-        NOW,
-      ),
-    ).toBe(false);
-  });
-
-  it('a menos de 2 horas, lo que no se confirmó se pasa', () => {
-    const waiting = { status: OrderStatus.AWAITING_CONFIRMATION };
-    expect(
-      isPastConfirmation(occurrence({ ...waiting, scheduledAt: at(2) }), NOW),
-    ).toBe(false);
-    expect(
-      isPastConfirmation(occurrence({ ...waiting, scheduledAt: at(1.9) }), NOW),
-    ).toBe(true);
-    expect(
-      isPastConfirmation(
-        occurrence({ status: OrderStatus.RECEIVED, scheduledAt: at(1) }),
-        NOW,
-      ),
-    ).toBe(false);
   });
 });
 
