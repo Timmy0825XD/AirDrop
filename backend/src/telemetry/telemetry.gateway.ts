@@ -307,6 +307,11 @@ export class TelemetryGateway
         this.server?.emit('clock', event.clock);
         return;
       }
+      if (event.type === 'timeline') {
+        // RF-39: la línea de tiempo es solo de la consola del administrador.
+        this.server?.to(RADAR_ROOM).emit('radar-timeline', event.entry);
+        return;
+      }
       this.emitRadar(event);
       await this.emitHubFleetSafely(event);
       if (event.type === 'telemetry') {

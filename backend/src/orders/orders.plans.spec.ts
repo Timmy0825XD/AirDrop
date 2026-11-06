@@ -126,6 +126,7 @@ function build(state: { plan?: DeliveryPlan; occurrences?: Order[] } = {}) {
     hubsService,
     plans as never,
     { assertDestinationAllowed: () => Promise.resolve() } as never,
+    { statusChanged: jest.fn().mockResolvedValue(undefined) } as never,
   );
   return { service, orders, plans, saved, storage };
 }

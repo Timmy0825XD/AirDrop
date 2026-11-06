@@ -198,6 +198,7 @@ function build(options?: {
     hubsService,
     plans as never,
     routes,
+    { statusChanged: jest.fn().mockResolvedValue(undefined) } as never,
   );
   return { service, orders, images, storage, stockForHub, plans, saved };
 }

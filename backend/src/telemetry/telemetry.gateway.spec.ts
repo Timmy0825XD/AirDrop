@@ -114,6 +114,19 @@ describe('TelemetryGateway reloj simulado (RF-31)', () => {
 
     expect(emit).toHaveBeenCalledWith('clock', clock);
   });
+
+  it('la línea de tiempo va solo a la sala del radar (RF-39)', async () => {
+    const { gateway } = build(() => Promise.resolve(null));
+    const emit = jest.fn();
+    const to = jest.fn(() => ({ emit }));
+    gateway.server = { to, emit: jest.fn() } as never;
+    const entry = { id: 'e1', title: 'Reloj a x2' };
+
+    await gateway['dispatch']({ type: 'timeline', entry } as never);
+
+    expect(to).toHaveBeenCalledWith('radar');
+    expect(emit).toHaveBeenCalledWith('radar-timeline', entry);
+  });
 });
 
 describe('TelemetryGateway.subscribeHub', () => {

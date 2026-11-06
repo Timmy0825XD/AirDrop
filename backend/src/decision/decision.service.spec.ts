@@ -334,6 +334,15 @@ describe('DecisionService.authorize', () => {
     expect(flights.start).not.toHaveBeenCalled();
   });
 
+  it('avisa por el socket que el pedido quedó pendiente de carga (CU-29)', async () => {
+    const { service, order, notifications } = build();
+    await service.authorize(dispatcher(), order.id, {});
+    expect(notifications.statusChanged).toHaveBeenCalledWith(
+      order.id,
+      OrderStatus.PENDING_LOAD,
+    );
+  });
+
   it('gives an emergency the drone reserved by a scheduled load', async () => {
     const reserved = drone({ status: DroneStatus.IN_MISSION });
     const held = received({

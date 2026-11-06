@@ -2,11 +2,13 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { And, In, LessThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { resolvePeriod } from '../analytics/analytics.rules';
+import { NotificationsService } from '../notifications/notifications.service';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
@@ -115,6 +117,8 @@ const DEFAULT_HISTORY_PAGE_SIZE = 20;
 
 @Injectable()
 export class OrdersService {
+  private readonly logger = new Logger(OrdersService.name);
+
   constructor(
     @InjectRepository(Order)
     private readonly orders: Repository<Order>,
@@ -128,6 +132,7 @@ export class OrdersService {
     @InjectRepository(DeliveryPlan)
     private readonly plans: Repository<DeliveryPlan>,
     private readonly routes: RoutePlannerService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async catalog(user: User, query: CatalogQueryDto) {
@@ -194,6 +199,7 @@ export class OrdersService {
         dto.prescriptionMime ?? 'image/jpeg',
       );
     }
+    await this.announce(saved.id, OrderStatus.RECEIVED);
     return this.toPublicOrder(saved);
   }
 
@@ -234,6 +240,7 @@ export class OrdersService {
         scheduledFor: null,
       }),
     );
+    await this.announce(saved.id, OrderStatus.RECEIVED);
     return this.toPublicOrder(saved);
   }
 
@@ -612,7 +619,19 @@ export class OrdersService {
     await this.assertSupplyingHub(hub.id, order);
     order.status = OrderStatus.REJECTED;
     order.statusReason = dto.reason;
-    return this.toPublicOrder(await this.orders.save(order));
+    const saved = await this.orders.save(order);
+    await this.announce(saved.id, OrderStatus.REJECTED);
+    return this.toPublicOrder(saved);
+  }
+
+  /** CU-29: el aviso por el socket nunca tumba la operación que ya se guardó. */
+  private async announce(orderId: string, status: OrderStatus) {
+    try {
+      await this.notifications.statusChanged(orderId, status);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'socket';
+      this.logger.warn(`No se pudo avisar del pedido ${orderId}: ${message}`);
+    }
   }
 
   private async assertDestinationAllowed(coords: {

@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ClockView } from '../common/clock/clock.rules';
+import type { TimelineEntry } from '../control/timeline.rules';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { FlightAlertKind, LiveFlight } from '../simulation/simulation.rules';
 import {
@@ -14,6 +15,8 @@ export type TelemetryEvent =
   | { type: 'queue-changed'; hubId: string; orderId: string }
   /** RF-31: cambió la velocidad o la pausa del reloj simulado. */
   | { type: 'clock'; clock: ClockView }
+  /** RF-39: un paso del flujo contado para la consola. */
+  | { type: 'timeline'; entry: TimelineEntry }
   | {
       type: 'alert';
       orderId: string;

@@ -87,6 +87,20 @@ export class TelemetryRedis implements OnModuleInit, OnModuleDestroy {
     return (await this.client?.get(key)) ?? null;
   }
 
+  /** Agrega al principio y deja solo las `max` más recientes (RF-39). */
+  async pushCapped(key: string, value: string, max: number): Promise<void> {
+    await this.client
+      ?.multi()
+      .lpush(key, value)
+      .ltrim(key, 0, max - 1)
+      .exec();
+  }
+
+  /** Las `count` más recientes, primero la última. */
+  async readList(key: string, count: number): Promise<string[]> {
+    return (await this.client?.lrange(key, 0, count - 1)) ?? [];
+  }
+
   async publish(channel: string, message: string): Promise<void> {
     await this.client?.publish(channel, message);
   }

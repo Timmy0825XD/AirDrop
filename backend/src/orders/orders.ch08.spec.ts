@@ -93,6 +93,7 @@ describe('CH-08 — Interfaz – Inventario – Pedidos – BD (base de datos ca
       {} as HubsService,
       {} as never,
       { assertDestinationAllowed: () => Promise.resolve() } as never,
+      { statusChanged: jest.fn().mockResolvedValue(undefined) } as never,
     );
     const decision = {
       attachAssignments: (rows: object[]) =>
