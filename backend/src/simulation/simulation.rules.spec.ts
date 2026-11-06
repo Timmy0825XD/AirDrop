@@ -308,3 +308,54 @@ describe('cadena de frío (RF-17)', () => {
     ).toBe(9);
   });
 });
+
+describe('Vuelo degradado por un incidente (RF-34, efectos moderados)', () => {
+  const cruising = (overrides: object = {}) => ({
+    ...initialProgress(),
+    phase: FlightPhase.CRUISE,
+    orderStatus: OrderStatus.IN_FLIGHT,
+    ...overrides,
+  });
+  const fly = (progress: ReturnType<typeof cruising>) =>
+    advanceFlight({
+      progress,
+      elapsedMs: 60_000,
+      corridor,
+      model,
+      loadConfirmedAt: confirmed,
+    })!.progress;
+
+  it('con +25 % de consumo gasta un cuarto más en el mismo minuto', () => {
+    const normal = 100 - fly(cruising()).batteryPercent;
+    const degraded = 100 - fly(cruising({ burnFactor: 1.25 })).batteryPercent;
+    expect(degraded / normal).toBeCloseTo(1.25, 6);
+  });
+
+  it('con un motor menos avanza un 10 % menos y gasta por km lo mismo, más su factor', () => {
+    const normal = fly(cruising());
+    const motor = fly(cruising({ speedFactor: 0.9, burnFactor: 1.15 }));
+    expect(motor.cruiseKm / normal.cruiseKm).toBeCloseTo(0.9, 6);
+    const perKm = (p: { batteryPercent: number; cruiseKm: number }) =>
+      (100 - p.batteryPercent) / p.cruiseKm;
+    expect(perKm(motor) / perKm(normal)).toBeCloseTo(1.15, 6);
+  });
+
+  it('sin enlace, la telemetría sale marcada', () => {
+    const step = advanceFlight({
+      progress: cruising({ linkLost: true }),
+      elapsedMs: 2_000,
+      corridor,
+      model,
+      loadConfirmedAt: confirmed,
+    })!;
+    const live = buildLiveFlight({
+      orderId: 'o',
+      droneId: 'd',
+      identifier: 'WG',
+      quantity: 1,
+      requiresColdChain: false,
+      step,
+    });
+    expect(live.linkLost).toBe(true);
+  });
+});

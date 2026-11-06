@@ -127,6 +127,8 @@ export function presentTelemetry(flight: LiveFlight, view: TelemetryView) {
     leg: flight.leg,
     status: flight.status,
     etaSeconds: flight.etaSeconds,
+    // RF-34: sin enlace la posición es estimada; la app y el radar lo marcan.
+    linkLost: flight.linkLost === true,
   };
   if (view === 'map') {
     return map;

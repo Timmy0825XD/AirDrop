@@ -264,6 +264,25 @@ export async function alignSprintSchema(
     await addEnumValue(boot, 'drone_status', 'grounded');
     await addEnumValue(boot, 'quarantine_reason', 'incident');
     await allowIncidentHistory(boot);
+    // RF-34: catálogo de incidentes de la consola y su desenlace.
+    for (const kind of [
+      'battery_degraded',
+      'motor_failure',
+      'dual_motor_failure',
+      'gps_loss_minor',
+      'gps_loss_major',
+      'link_loss',
+      'cooling_failure',
+      'collision_minor',
+      'collision_major',
+      'drone_lost',
+    ]) {
+      await addEnumValue(boot, 'incident_kind', kind);
+    }
+    await addEnumValue(boot, 'incident_outcome', 'lost');
+    await addEnumValue(boot, 'contingency_protocol', 'crash');
+    await addEnumValue(boot, 'contingency_protocol', 'lost');
+    await addEnumValue(boot, 'return_outcome', 'lost');
   } finally {
     if (boot.isInitialized) {
       await boot.destroy();

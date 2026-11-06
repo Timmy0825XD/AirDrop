@@ -6,4 +6,8 @@ export enum ContingencyProtocol {
   RETURN_TO_HUB = 'return_to_hub',
   /** Baja en el punto más cercano fuera de toda geovalla y tormenta. */
   EMERGENCY_LANDING = 'emergency_landing',
+  /** Choque grave: cae donde va. */
+  CRASH = 'crash',
+  /** Dron perdido: no hay nada que aplicar. */
+  LOST = 'lost',
 }

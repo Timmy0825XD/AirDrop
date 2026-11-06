@@ -319,6 +319,8 @@ Cada KPI trae meta y semáforo (verde, ámbar, rojo) y se compara con el periodo
 | Fallas | Alertas de frío | 0 | 1 |
 | Fallas | Unidades en cuarentena | 0 | ≤ 5 |
 | Fallas | Batería crítica o falla de dron | 0 | 1 |
+| Fallas | Incidentes en vuelo por cada 100 misiones (RF-34) | ≤ 2 | ≤ 5 |
+| Fallas | Aterrizajes de emergencia y drones perdidos (RF-34) | 0 | 1 |
 | Fallas | Códigos bloqueados | 0 | ≤ 2 |
 | Fallas | Pedidos reasignados a otra central | ≤ 10 % | ≤ 20 % |
 | Deficiencias | Uso de la flota (tiempo en misión / tiempo disponible) | 30–80 % | 15–90 % |
@@ -389,6 +391,10 @@ Un incidente es algo que le pasa a un dron en vuelo. Lo lanza la consola sobre u
 | Choque grave | — | Aterrizaje de emergencia |
 | Dron perdido | Sin rastro | El dron queda fuera de servicio |
 | Viento sobre el límite | — | Volver a la central o, si no alcanza, aterrizaje de emergencia |
+
+Los efectos se aplican al resto del vuelo y se suman si hay más de uno: batería degradada, +25 % de consumo; falla de 1 motor, +15 % de consumo por km y -10 % de velocidad; choque leve, +10 % de consumo. Sin enlace, la posición sigue avanzando en el radar y en la app marcada como estimada, y el enlace vuelve al aterrizar en la central. El choque grave no busca un punto seguro: el dron cae donde va. El dron perdido no tiene rescate.
+
+La consola lanza estos incidentes sobre un dron en vuelo (CU-38). El viento sobre el límite, la batería crítica y el camino bloqueado o sin batería tras un desvío los detecta el reloj.
 
 **Según alcance**, con la misma cuenta de batería de RF-11 y el efecto ya aplicado:
 

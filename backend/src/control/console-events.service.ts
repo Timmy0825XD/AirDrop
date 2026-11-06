@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { IncidentKind } from '../common/enums/incident-kind.enum';
 import { WeatherKind } from '../common/enums/weather-kind.enum';
 import {
   GeofencesService,
@@ -13,7 +14,7 @@ import {
 
 /**
  * CU-38: los eventos que lanza la consola. Solo los entrega a su dominio
- * (clima, geovallas temporales) y avisa al reloj de vuelo si cambió lo que no se puede
+ * (clima, geovallas temporales, incidentes de dron) y avisa al reloj de vuelo si cambió lo que no se puede
  * cruzar. La respuesta a cada evento la deciden las reglas de ese dominio.
  */
 @Injectable()
@@ -52,5 +53,10 @@ export class ConsoleEventsService {
 
   endGeofence(id: string) {
     return this.geofences.endTemporary(id);
+  }
+
+  /** RF-34: lo aplica el reloj de vuelo, que es quien mueve al dron. */
+  launchIncident(droneId: string, kind: IncidentKind) {
+    return this.flights.launchIncident(droneId, kind);
   }
 }

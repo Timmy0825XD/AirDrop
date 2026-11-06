@@ -96,6 +96,12 @@ export type FlightProgress = {
     protocol: ContingencyProtocol;
     incidentId: string;
   } | null;
+  /** RF-34: multiplica el consumo del resto del vuelo (batería, motor, choque). */
+  burnFactor?: number;
+  /** RF-34: multiplica la velocidad en el aire (falla de un motor). */
+  speedFactor?: number;
+  /** RF-34: sin enlace; la posición que se publica es estimada. */
+  linkLost?: boolean;
 };
 
 export type FlightModel = {
@@ -130,6 +136,8 @@ export type LiveFlight = {
   leg: RouteLeg;
   status: OrderStatus;
   etaSeconds: number | null;
+  /** RF-34: sin enlace, la posición es estimada hasta aterrizar en la central. */
+  linkLost?: boolean;
   progress: FlightProgress;
 };
 
@@ -271,7 +279,9 @@ function cruiseStep(
     progress.cruiseKm + (here.groundSpeedKmh * step) / 3_600_000,
   );
   progress.phaseElapsedMs += step;
-  const airKm = (model.maxSpeedKmh * step) / 3_600_000;
+  // Con un motor menos vuela más lento: gasta por km igual, más el factor.
+  const airKm =
+    (model.maxSpeedKmh * (progress.speedFactor ?? 1) * step) / 3_600_000;
   burn(
     progress,
     cruiseBatteryPercent(airKm, model.maxRangeKm) * here.burnFactor,
@@ -287,9 +297,10 @@ function cruiseConditions(
   model: FlightModel,
   cells: WeatherCellView[],
 ): FlightConditions {
+  const airSpeedKmh = model.maxSpeedKmh * (progress.speedFactor ?? 1);
   if (!cells.length) {
     return {
-      groundSpeedKmh: model.maxSpeedKmh,
+      groundSpeedKmh: airSpeedKmh,
       burnFactor: 1,
       windMs: 0,
       gustMs: 0,
@@ -301,7 +312,7 @@ function cruiseConditions(
     cells,
     point,
     trackAt(corridor.coordinates, progress.cruiseKm),
-    model.maxSpeedKmh,
+    airSpeedKmh,
   );
 }
 
@@ -349,6 +360,7 @@ export function buildLiveFlight(input: {
     leg: input.leg ?? RouteLeg.OUTBOUND,
     status: input.step.progress.orderStatus,
     etaSeconds: input.step.etaSeconds,
+    linkLost: input.step.progress.linkLost === true,
     progress: input.step.progress,
   };
 }
@@ -482,7 +494,11 @@ function burn(
   if (amount <= 0) {
     return;
   }
-  const next = Math.max(0, progress.batteryPercent - amount);
+  // RF-34: batería degradada, un motor menos o un choque leve gastan más.
+  const next = Math.max(
+    0,
+    progress.batteryPercent - amount * (progress.burnFactor ?? 1),
+  );
   const stored = next <= 0.000_001 ? 0 : next;
   if (
     !progress.batteryAlertSent &&
