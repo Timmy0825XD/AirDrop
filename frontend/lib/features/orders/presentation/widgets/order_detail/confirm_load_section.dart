@@ -4,7 +4,8 @@ import '../../../../../core/widgets/detail_section.dart';
 import '../../../../auth/presentation/widgets/auth_morph_button.dart';
 
 /// Confirmar la carga: el despachador de la central de origen avisa que el
-/// insumo ya va en el dron. Recién ahí arranca la simulación del vuelo.
+/// insumo ya va en el dron. Recién ahí arranca la simulación del vuelo. El
+/// botón abre la revisión (`showLoadCheckSheet`); el vuelo sale al deslizar.
 class ConfirmLoadSection extends StatelessWidget {
   const ConfirmLoadSection({
     super.key,
@@ -26,13 +27,13 @@ class ConfirmLoadSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Pon el insumo en el dron y confírmalo. El vuelo arranca en '
-            'segundos.',
+            'Pon el insumo en el dron y revisa lo que va. Al deslizar para '
+            'despegar, el vuelo arranca en segundos.',
             style: Theme.of(context).textTheme.bodyMedium,
           ),
           const SizedBox(height: 14),
           AuthMorphButton(
-            label: 'Confirmar carga',
+            label: 'Revisar y cargar',
             loadingLabel: 'Confirmando la carga',
             isLoading: loading,
             onPressed: busy ? null : onConfirm,

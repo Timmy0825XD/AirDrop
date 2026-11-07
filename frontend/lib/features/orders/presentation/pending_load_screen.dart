@@ -7,6 +7,7 @@ import '../../../core/widgets/app_snack.dart';
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
 import 'widgets/order_tray.dart';
+import 'widgets/pending_load/load_check_sheet.dart';
 import 'widgets/pending_load/pending_load_tile.dart';
 
 /// Bandeja "Pendiente de carga" del despachador (`GET /orders/pending-load`).
@@ -25,7 +26,10 @@ class _PendingLoadScreenState extends ConsumerState<PendingLoadScreen> {
   /// Filas esperando la respuesta, para apagar solo su botón.
   final _confirming = <String>{};
 
-  Future<void> _confirm(String id) async {
+  /// Primero la revisión y el deslizador: un toque no lanza el vuelo.
+  Future<void> _confirm(Order order) async {
+    if (!await showLoadCheckSheet(context, order) || !mounted) return;
+    final id = order.id;
     setState(() => _confirming.add(id));
     try {
       await ref.read(orderDispatchProvider.notifier).confirmLoad(id);
@@ -59,7 +63,7 @@ class _PendingLoadScreenState extends ConsumerState<PendingLoadScreen> {
       itemBuilder: (context, order) => PendingLoadTile(
         order: order,
         confirming: _confirming.contains(order.id),
-        onConfirm: () => _confirm(order.id),
+        onConfirm: () => _confirm(order),
         onOpen: () => context.push('/orders/${order.id}'),
       ),
     );

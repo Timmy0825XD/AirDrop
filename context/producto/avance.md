@@ -46,7 +46,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 12 | Contratos de Nest pendientes y avisos de vidrio | `feature/front-pendientes-backend` | Hecha (PR pendiente) |
 | 13 | Auth con el espacio aéreo vivo | `style/auth-espacio-aereo` | Hecha (PR #105) |
 | 14 | El resto de la app al diseño del espacio aéreo | `style/app-espacio-aereo` | Hecha (PR pendiente) |
-| 15 | Bloqueantes de la auditoría 31 (Bloque 1) | `bugfix/hojas-sobre-la-barra`, `bugfix/estado-dron-grounded`, `feature/confirmar-carga-segura` | En curso: pasos 1 y 2 hechos |
+| 15 | Bloqueantes de la auditoría 31 (Bloque 1) | `bugfix/hojas-sobre-la-barra`, `bugfix/estado-dron-grounded`, `feature/confirmar-carga-segura` | Hecha (PR #138, #139 y PR pendiente) |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -944,8 +944,21 @@ TV. Una rama por paso, cada una desde `develop`.
   central) siguen fallando a propósito: sin conocerlos la app no sabe qué
   regla aplicar. Pruebas: `fleet_models_test` y `unknown_status_test`.
   Sin revisión visual: los datos locales no traen un dron en tierra.
-- Paso 3 (`feature/confirmar-carga-segura`): confirmar la carga pide revisar
-  el paquete y deslizar para despegar.
+- Paso 3 (`feature/confirmar-carga-segura`), hecho el 2026-11-07: "no hay
+  vuelo sin confirmar carga" es la regla que más pesa, y confirmarla
+  costaba un toque sin confirmación desde la bandeja (un toque accidental
+  lanzaba el dron). Ahora "Revisar y cargar" (bandeja "Pendiente de carga"
+  y detalle del pedido) abre `showLoadCheckSheet`
+  (`orders/presentation/widgets/pending_load/load_check_sheet.dart`): lo que
+  se revisa con el paquete en la mano (medicamento y cantidad, "Va en
+  nevera" si es cadena de frío, el tipo de venta si es bajo fórmula, el dron
+  y el destino) y "Desliza para despegar" (`SlideToLaunch`, el mismo gesto de
+  pedir una urgencia). Cerrar la hoja no confirma nada. El lote no se
+  muestra: Nest lo descuenta del inventario recién al confirmar. Prueba:
+  `pending_load_test` (un toque no despega; deslizar sí). Revisado en web a
+  360×640 con datos locales: el deslizador cabe sin scroll.
+
+Cierre: `flutter analyze` sin issues y `flutter test` en verde (239).
 
 ## Pendiente del backend
 
