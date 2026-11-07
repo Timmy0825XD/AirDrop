@@ -307,38 +307,84 @@ export const hubPlans: DemoHubPlan[] = [
   },
 ];
 
-/** Cuadrado de lado `2 * half` grados, como polígono GeoJSON cerrado. */
-function square(lat: number, lng: number, half: number) {
-  return {
-    type: 'Polygon' as const,
-    coordinates: [
-      [
-        [lng - half, lat - half],
-        [lng + half, lat - half],
-        [lng + half, lat + half],
-        [lng - half, lat + half],
-        [lng - half, lat - half],
-      ],
-    ],
-  };
-}
-
+/**
+ * Las geovallas del operador, con la forma que les dio el operador de flota
+ * en la app (copiadas de la base el 2026-11-06). Cada anillo es
+ * [longitud, latitud] y cierra en el mismo punto donde empieza.
+ */
 export const geofences = [
   {
     name: 'Zona de eventos Parque de la Leyenda',
     reason:
       'Evento masivo: no sobrevolar. Obliga a rodear entre dos centrales.',
-    polygon: square(10.466, -73.254, 0.003),
+    polygon: {
+      type: 'Polygon' as const,
+      coordinates: [
+        [
+          [-73.264866, 10.490875],
+          [-73.262852, 10.489512],
+          [-73.26064, 10.491005],
+          [-73.258164, 10.492564],
+          [-73.258791, 10.494804],
+          [-73.260475, 10.496849],
+          [-73.262918, 10.49779],
+          [-73.264833, 10.498862],
+          [-73.26688, 10.499771],
+          [-73.268696, 10.499901],
+          [-73.2683, 10.49844],
+          [-73.268399, 10.497271],
+          [-73.268399, 10.496459],
+          [-73.264866, 10.490875],
+        ],
+      ],
+    },
   },
   {
     name: 'Restricción aeroportuaria',
     reason: 'Aproximación del aeropuerto. Un destino aquí no tiene corredor.',
-    polygon: square(10.435, -73.25, 0.006),
+    polygon: {
+      type: 'Polygon' as const,
+      coordinates: [
+        [
+          [-73.250049, 10.445489],
+          [-73.250808, 10.434384],
+          [-73.252396, 10.425085],
+          [-73.250481, 10.424696],
+          [-73.248467, 10.428203],
+          [-73.247139, 10.434403],
+          [-73.245521, 10.445768],
+          [-73.250049, 10.445489],
+        ],
+      ],
+    },
   },
   {
     name: 'Zona de seguridad militar',
     reason: 'Instalación restringida entre dos centrales.',
-    polygon: square(10.483, -73.254, 0.003),
+    polygon: {
+      type: 'Polygon' as const,
+      coordinates: [
+        [
+          [-73.280155, 10.468212],
+          [-73.275626, 10.468304],
+          [-73.275112, 10.469108],
+          [-73.274786, 10.470508],
+          [-73.270863, 10.469498],
+          [-73.269789, 10.467776],
+          [-73.268599, 10.466789],
+          [-73.266988, 10.465985],
+          [-73.266684, 10.464746],
+          [-73.269066, 10.463712],
+          [-73.271144, 10.462748],
+          [-73.273758, 10.462404],
+          [-73.275906, 10.462725],
+          [-73.277097, 10.462679],
+          [-73.278101, 10.462312],
+          [-73.280155, 10.466881],
+          [-73.280155, 10.468212],
+        ],
+      ],
+    },
   },
 ];
 
