@@ -323,3 +323,38 @@ export type HubOutage = {
   longitude: number;
   until: string;
 };
+
+/** RF-37: los actores simulados encendidos. Arrancan apagados. */
+export type ActorsState = {
+  /** Autoriza y confirma la carga en cualquier central activa. */
+  autoDispatcher: boolean;
+  /** Un pedido de un solicitante simulado cada 3 min simulados. */
+  orderFlow: boolean;
+};
+
+export type GeneratedKind = "emergency" | "scheduled";
+
+/** CU-39: lo que creó el generador. Sin datos de personas: el solicitante es simulado. */
+export type GeneratedOrder = {
+  kind: GeneratedKind;
+  orderId: string | null;
+  planId: string | null;
+  address: string;
+  latitude: number;
+  longitude: number;
+};
+
+/** RF-36: pico de urgencias dentro de un círculo del mapa. */
+export type NewSurge = {
+  latitude: number;
+  longitude: number;
+  radiusKm: number;
+  count: number;
+};
+
+export type SurgeResult = {
+  requested: number;
+  created: GeneratedOrder[];
+  /** Por qué no salieron las que faltan, tal como lo dijo Nest. */
+  failures: string[];
+};

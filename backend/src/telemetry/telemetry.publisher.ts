@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ClockView } from '../common/clock/clock.rules';
+import type { ActorsState } from '../control/sim-actors.rules';
 import type { TimelineEntry } from '../control/timeline.rules';
 import type { WeatherCellJson } from '../weather/weather.service';
 import type { TemporaryGeofenceJson } from '../geofences/geofences.service';
@@ -21,6 +22,8 @@ export type TelemetryEvent =
   | { type: 'clock'; clock: ClockView }
   /** RF-39: un paso del flujo contado para la consola. */
   | { type: 'timeline'; entry: TimelineEntry }
+  /** RF-37: se encendió o se apagó un actor simulado. */
+  | { type: 'actors'; actors: ActorsState }
   /** RF-40: el escenario volvió a la semilla; el radar recarga todo. */
   | { type: 'scenario-reset' }
   /** RF-32: empezó o terminó una celda de clima. */

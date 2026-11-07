@@ -1,20 +1,25 @@
 import { io } from "socket.io-client";
 import { API_URL, api } from "./api";
 import type {
+  ActorsState,
   AlertEvent,
   ClockSpeed,
   ClockView,
   ConsoleIncidentKind,
   FlightDetail,
+  GeneratedKind,
+  GeneratedOrder,
   HubDetail,
   HubOutage,
   Incident,
+  NewSurge,
   NewWeather,
   NewZone,
   PendingAlert,
   ResetSummary,
   Snapshot,
   StatusEvent,
+  SurgeResult,
   TelemetryEvent,
   TemporaryZone,
   TimelineEntry,
@@ -39,6 +44,8 @@ export type RadarHandlers = {
    * incidente, apagón o una ruta en el aire). Se vuelven a leer las capas.
    */
   onWorld: (what: WorldChange) => void;
+  /** RF-37: se encendió o se apagó un actor simulado. */
+  onActors: (actors: ActorsState) => void;
 };
 
 export type WorldChange = "weather" | "zone" | "incident" | "outage" | "reroute";
@@ -64,6 +71,11 @@ export type ConsoleApi = {
   outages: () => Promise<HubOutage[]>;
   startOutage: (hubId: string, durationMin: number) => Promise<HubOutage>;
   endOutage: (hubId: string) => Promise<HubOutage>;
+  /* RF-37, CU-39: los actores simulados. */
+  actors: () => Promise<ActorsState>;
+  setActors: (change: Partial<ActorsState>) => Promise<ActorsState>;
+  generateOrder: (kind: GeneratedKind) => Promise<GeneratedOrder>;
+  surge: (input: NewSurge) => Promise<SurgeResult>;
 };
 
 /** De dónde sale el radar: Nest (en vivo) o el simulador de demostración. */
@@ -120,6 +132,22 @@ export function liveSource(token: string): RadarSource {
         }),
       endOutage: (hubId) =>
         api<HubOutage>(`/control/hubs/${hubId}/outage`, token, { method: "DELETE" }),
+      actors: () => api<ActorsState>("/control/actors", token),
+      setActors: (change) =>
+        api<ActorsState>("/control/actors", token, {
+          method: "PUT",
+          body: JSON.stringify(change),
+        }),
+      generateOrder: (kind) =>
+        api<GeneratedOrder>("/control/actors/orders", token, {
+          method: "POST",
+          body: JSON.stringify({ kind }),
+        }),
+      surge: (input) =>
+        api<SurgeResult>("/control/actors/surge", token, {
+          method: "POST",
+          body: JSON.stringify(input),
+        }),
     },
     connect(handlers) {
       const socket = io(`${API_URL}/telemetry`, {
@@ -146,6 +174,7 @@ export function liveSource(token: string): RadarSource {
       socket.on("radar-incident", () => handlers.onWorld("incident"));
       socket.on("radar-hub-outage", () => handlers.onWorld("outage"));
       socket.on("radar-reroute", () => handlers.onWorld("reroute"));
+      socket.on("radar-actors", handlers.onActors);
       return () => {
         socket.removeAllListeners();
         socket.disconnect();

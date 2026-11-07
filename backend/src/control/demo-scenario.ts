@@ -342,8 +342,76 @@ export const geofences = [
   },
 ];
 
+/**
+ * RF-37: los solicitantes del generador de pedidos. No son personas: no
+ * tienen documento ni celular, y su correo usa el dominio reservado
+ * `.invalid`, que no existe.
+ */
+export const simulatedRequesters = [1, 2, 3, 4].map((number) => ({
+  fullName: `Solicitante simulado ${number}`,
+  email: `solicitante.simulado${number}@airdrop.invalid`,
+}));
+
+/**
+ * RF-37: a dónde piden los solicitantes simulados. Barrios de Valledupar
+ * dentro de la zona de las tres centrales y fuera de las geovallas.
+ */
+export const simulatedDestinations = [
+  {
+    address: 'Barrio Los Mayales, Valledupar',
+    latitude: 10.488,
+    longitude: -73.238,
+  },
+  {
+    address: 'Barrio Novalito, Valledupar',
+    latitude: 10.47,
+    longitude: -73.24,
+  },
+  {
+    address: 'Barrio Primero de Mayo, Valledupar',
+    latitude: 10.452,
+    longitude: -73.247,
+  },
+  {
+    address: 'Barrio San Joaquín, Valledupar',
+    latitude: 10.462,
+    longitude: -73.272,
+  },
+  {
+    address: 'Barrio Villa Castro, Valledupar',
+    latitude: 10.447,
+    longitude: -73.262,
+  },
+  {
+    address: 'Barrio La Nevada, Valledupar',
+    latitude: 10.497,
+    longitude: -73.257,
+  },
+  {
+    address: 'Barrio Los Cortijos, Valledupar',
+    latitude: 10.478,
+    longitude: -73.276,
+  },
+  {
+    address: 'Barrio Garupal, Valledupar',
+    latitude: 10.448,
+    longitude: -73.233,
+  },
+  {
+    address: 'Barrio El Prado, Valledupar',
+    latitude: 10.472,
+    longitude: -73.258,
+  },
+  {
+    address: 'Barrio Villa Miriam, Valledupar',
+    latitude: 10.493,
+    longitude: -73.246,
+  },
+];
+
 export const allEmails = [
   ...requesters.map((person) => person.email),
+  ...simulatedRequesters.map((person) => person.email),
   operator.email,
   ...hubPlans.flatMap((plan) => plan.dispatchers.map((d) => d.email)),
 ];

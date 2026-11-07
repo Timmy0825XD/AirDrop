@@ -387,3 +387,23 @@ export const BoltIcon = (p: IconProps) => (
     <path d="M13 2.5L5 13.5h6l-1 8 8-11h-6z" />
   </Icon>
 );
+
+/** Actor simulado (RF-37): cabeza de robot con antena. */
+export const BotIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="4.5" y="8" width="15" height="11" rx="3.5" />
+    <path d="M12 8V4.5M10.5 4h3M2.5 12.5v3M21.5 12.5v3" />
+    <circle cx="9.3" cy="13.3" r="1.2" fill="currentColor" stroke="none" />
+    <circle cx="14.7" cy="13.3" r="1.2" fill="currentColor" stroke="none" />
+    <path d="M10 16.5h4" />
+  </Icon>
+);
+
+/** Pico de urgencias (RF-36): tres puntos de pedido juntos. */
+export const SurgeIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 20s-4.5-3.9-4.5-7.6a4.5 4.5 0 0 1 9 0c0 3.7-4.5 7.6-4.5 7.6z" />
+    <circle cx="12" cy="12.4" r="1.4" />
+    <path d="M5.2 15.5C3.6 14 2.5 12.3 2.5 10.6a3.4 3.4 0 0 1 4.9-3.1M18.8 15.5c1.6-1.5 2.7-3.2 2.7-4.9a3.4 3.4 0 0 0-4.9-3.1" />
+  </Icon>
+);

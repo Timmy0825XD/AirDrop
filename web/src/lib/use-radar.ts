@@ -5,6 +5,7 @@ import { ApiError } from "./api";
 import type { ReceivedClock } from "./sim-time";
 import type { Connection, RadarSource, WorldChange } from "./source";
 import type {
+  ActorsState,
   AlertEvent,
   Geofence,
   HubSummary,
@@ -36,6 +37,8 @@ export type ConsoleListener = {
   onReset: () => void;
   /** CU-38: clima, zona, incidente, apagón o ruta cambiaron. */
   onWorld: (what: WorldChange) => void;
+  /** RF-37: cambiaron los interruptores de los actores. */
+  onActors: (actors: ActorsState) => void;
 };
 
 function fromTelemetry(event: TelemetryEvent, previous?: RadarFlight): RadarFlight {
@@ -182,6 +185,7 @@ export function useRadar(
         setData((current) => ({ ...current, clock: { ...clock, receivedAt: Date.now() } }));
       },
       onTimeline: (entry) => consoleListener.current.onTimeline(entry),
+      onActors: (actors) => consoleListener.current.onActors(actors),
       onWorld: (what) => {
         // Zonas, apagones e incidentes cambian el mapa y los contadores.
         if (what !== "weather") scheduleRefresh();

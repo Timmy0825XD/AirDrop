@@ -113,14 +113,33 @@ export class DecisionService {
 
   async authorize(user: User, orderId: string, dto: AuthorizeOrderDto = {}) {
     const hub = await this.requireDispatcherHub(user);
+    return this.authorizeAt(hub, orderId, dto.prescriptionVerified === true);
+  }
+
+  /**
+   * RF-37: el despachador automático autoriza en nombre de la central, con
+   * las mismas reglas que un despachador. Con fórmula, la da por verificada.
+   */
+  async autoAuthorize(hubId: string, orderId: string) {
+    const hub = await this.hubsService.requireActive(hubId);
+    return this.authorizeAt(hub, orderId, true, true);
+  }
+
+  private async authorizeAt(
+    hub: Hub,
+    orderId: string,
+    prescriptionVerified: boolean,
+    autoDispatched = false,
+  ) {
     assertPowered(hub);
     const result = await this.dataSource.transaction((manager) =>
       this.authorizeIn(
         manager,
         hub,
         orderId,
-        dto.prescriptionVerified === true,
+        prescriptionVerified,
         simClock.now(),
+        autoDispatched,
       ),
     );
     await this.announce(result);
@@ -372,6 +391,16 @@ export class DecisionService {
 
   async confirmLoad(user: User, orderId: string) {
     const hub = await this.requireDispatcherHub(user);
+    return this.confirmLoadAt(hub, orderId);
+  }
+
+  /** RF-37: el despachador automático confirma la carga en su central. */
+  async autoConfirmLoad(hubId: string, orderId: string) {
+    const hub = await this.hubsService.requireActive(hubId);
+    return this.confirmLoadAt(hub, orderId);
+  }
+
+  private async confirmLoadAt(hub: Hub, orderId: string) {
     assertPowered(hub);
     if (!this.flights.isReady()) {
       throw new ServiceUnavailableException(TELEMETRY_UNAVAILABLE);
@@ -507,6 +536,8 @@ export class DecisionService {
     orderId: string,
     prescriptionVerified: boolean,
     now: Date,
+    /** Sin valor (reintento automático) conserva quién autorizó antes. */
+    autoDispatched?: boolean,
   ) {
     const order = await manager.findOne(Order, {
       where: { id: orderId },
@@ -615,6 +646,9 @@ export class DecisionService {
       );
     }
     clearFallback(order);
+    if (autoDispatched !== undefined) {
+      order.autoDispatched = autoDispatched;
+    }
     // `applyReservation` deja el pedido en pendiente de carga y lo guarda.
     order.decisionTrace = buildDecisionTrace(
       { ...order, status: OrderStatus.PENDING_LOAD },

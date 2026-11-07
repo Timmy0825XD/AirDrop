@@ -302,7 +302,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 
 - **Actores:** Administrador, desde la consola de simulación
 - **Antes:** Lo mismo que CU-37
-- **Pasos:** Enciende o apaga el despachador automático. Pide al generador urgencias o programados.
+- **Pasos:** Enciende o apaga el despachador automático. Pide al generador una urgencia o un programado, enciende su flujo continuo o lanza un pico de urgencias sobre el mapa.
 - **Después:** Con el despachador automático encendido, los pedidos se autorizan y se cargan solos, con los mismos servicios que usa un despachador. Los pedidos generados los recibe el receptor simulado (RF-37).
 - **Por qué:** RF-37. La demostración sigue aunque no haya una persona en cada rol.
 

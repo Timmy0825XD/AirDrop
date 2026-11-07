@@ -41,6 +41,8 @@ type Props = {
   onLogout: () => void;
   /** El reloj simulado y sus controles (RF-31). */
   clock: ReactNode;
+  /** Los actores simulados (RF-37), si la consola está encendida. */
+  actors?: ReactNode;
 };
 
 /** La barra flotante de vidrio, como la de la app. */
@@ -54,6 +56,7 @@ export function TopBar({
   onToggleGeofences,
   onLogout,
   clock,
+  actors,
 }: Props) {
   const status = CONNECTION[connection];
   const available = hubs.reduce((sum, hub) => sum + hub.fleet.available, 0);
@@ -85,6 +88,7 @@ export function TopBar({
 
       <div className="hidden h-10 w-px bg-glass-border md:block" />
       {clock}
+      {actors}
       <div className="hidden h-10 w-px bg-glass-border md:block" />
 
       <div className="flex items-center gap-2">

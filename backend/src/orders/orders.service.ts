@@ -516,6 +516,24 @@ export class OrdersService {
       }));
   }
 
+  /**
+   * RF-37: las centrales activas que tienen este pedido en su cola o su
+   * agenda, con la misma regla de `listQueue` y `listScheduled`.
+   */
+  async hubsAwaiting(order: Order): Promise<string[]> {
+    if (!isAwaitingHub(order)) {
+      return [];
+    }
+    const hubs = await this.hubs.find({ where: { status: HubStatus.ACTIVE } });
+    const ids: string[] = [];
+    for (const hub of hubs) {
+      if (this.isDirectedToHub(order, hub.id, await this.stockByKey(hub.id))) {
+        ids.push(hub.id);
+      }
+    }
+    return ids;
+  }
+
   async readPrescription(user: User, id: string) {
     const hub = await this.requireDispatcherHub(user);
     const order = await this.orders.findOne({ where: { id } });
