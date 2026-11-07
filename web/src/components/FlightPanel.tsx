@@ -1,7 +1,8 @@
 "use client";
 
 import { formatEta, label, ORDER_STATUS, PHASE } from "@/lib/labels";
-import type { FlightDetail, RadarFlight, Selection } from "@/lib/types";
+import type { ConsoleIncidentKind, FlightDetail, RadarFlight, Selection } from "@/lib/types";
+import { IncidentActions } from "./IncidentActions";
 import {
   AlertIcon,
   AltitudeIcon,
@@ -10,6 +11,7 @@ import {
   ClockIcon,
   DroneIcon,
   HubIcon,
+  LinkOffIcon,
   PackageIcon,
   PhaseIcon,
   RouteIcon,
@@ -98,13 +100,19 @@ function Route({ detail, flight }: { detail: FlightDetail | null; flight: RadarF
         <Stat label="Distancia" value={detail?.route?.distanceKm ?? "—"} unit="km" />
         <Stat label="Altitud de ruta" value={detail?.route?.altitudeM ?? "—"} unit="m" />
       </div>
-      <div className="mt-3 flex gap-5 text-xs text-muted">
+      <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted">
         <span className="flex items-center gap-2">
           <span className="h-[3px] w-6 rounded-full bg-accent" /> Ida
         </span>
         <span className="flex items-center gap-2">
           <span className="w-6 border-t-[3px] border-dashed border-warning" /> Regreso
         </span>
+        {(detail?.previousRoute || detail?.previousReturnRoute) && (
+          // RF-33: cambió en el aire; la de antes queda punteada.
+          <span className="flex items-center gap-2">
+            <span className="w-6 border-t-2 border-dotted border-muted" /> Ruta anterior
+          </span>
+        )}
       </div>
     </Section>
   );
@@ -117,9 +125,21 @@ type Props = {
   /** El vuelo en vivo (socket). */
   live: RadarFlight | undefined;
   onSelect: (selection: Selection) => void;
+  /** CU-38: lanzar un incidente sobre este dron. */
+  busy: boolean;
+  incidentBlocked: string | null;
+  onIncident: (droneId: string, kind: ConsoleIncidentKind) => void;
 };
 
-export function FlightPanel({ detail, error, live, onSelect }: Props) {
+export function FlightPanel({
+  detail,
+  error,
+  live,
+  onSelect,
+  busy,
+  incidentBlocked,
+  onIncident,
+}: Props) {
   const flight = live ?? detail?.flight ?? null;
   const close = () => onSelect(null);
 
@@ -155,6 +175,12 @@ export function FlightPanel({ detail, error, live, onSelect }: Props) {
           {flight.requiresColdChain && (
             <Pill tone="info" icon={<SnowflakeIcon size={12} />}>
               Cadena de frío
+            </Pill>
+          )}
+          {flight.linkLost && (
+            // RF-34: vuelve solo; lo que se ve es su posición estimada.
+            <Pill tone="warn" icon={<LinkOffIcon size={12} />}>
+              Sin enlace · posición estimada
             </Pill>
           )}
         </>
@@ -211,6 +237,13 @@ export function FlightPanel({ detail, error, live, onSelect }: Props) {
       </Section>
 
       <Route detail={detail} flight={flight} />
+
+      <IncidentActions
+        cold={flight.requiresColdChain && flight.leg !== "return"}
+        busy={busy}
+        disabledReason={incidentBlocked}
+        onLaunch={(kind) => onIncident(flight.droneId, kind)}
+      />
 
       {detail?.originHub && (
         <div className="px-5 py-4">

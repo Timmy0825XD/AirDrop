@@ -235,3 +235,155 @@ export const ResetIcon = (p: IconProps) => (
     <path d="M3.5 3.5V8H8" />
   </Icon>
 );
+
+/* Consola: clima, zonas, energía y el catálogo de incidentes (RF-32 a RF-36). */
+
+export const WindIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3 8.5h11a2.5 2.5 0 1 0-2.5-2.5" />
+    <path d="M3 12.5h15a2.5 2.5 0 1 1-2.5 2.5" />
+    <path d="M3 16.5h7" />
+  </Icon>
+);
+
+export const RainIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M7 15.5a4.5 4.5 0 0 1-.6-9 5.5 5.5 0 0 1 10.6 1.2A3.9 3.9 0 0 1 17 15.5z" />
+    <path d="M8.5 18.5l-1 2M12.5 18.5l-1 2M16.5 18.5l-1 2" />
+  </Icon>
+);
+
+export const StormIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M7 14.5a4.5 4.5 0 0 1-.6-9 5.5 5.5 0 0 1 10.6 1.2A3.9 3.9 0 0 1 17 14.5" />
+    <path d="M12.5 11l-2.5 4.5h4l-2.5 4.5" />
+  </Icon>
+);
+
+/** Zona temporal: hexágono con borde de trazos. */
+export const ZoneIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z" strokeDasharray="3 2.4" />
+    <path d="M12 9v3.5l2.2 1.4" />
+  </Icon>
+);
+
+/** Rayo tachado: sin energía. */
+export const PowerOffIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M13 3L6.5 13H12l-1 8 6.5-10H12z" />
+    <path d="M3.5 3.5l17 17" />
+  </Icon>
+);
+
+export const PowerIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M13 3L6.5 13H12l-1 8 6.5-10H12z" />
+  </Icon>
+);
+
+export const PlusIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 5v14M5 12h14" />
+  </Icon>
+);
+
+export const MinusIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5 12h14" />
+  </Icon>
+);
+
+/** Recentrar: mira con punto. */
+export const RecenterIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="7" />
+    <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
+    <path d="M12 2.5V5M12 19v2.5M2.5 12H5M19 12h2.5" />
+  </Icon>
+);
+
+export const ArrowRightIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4.5 12h15M13.5 6l6 6-6 6" />
+  </Icon>
+);
+
+export const LockIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="4.5" y="10.5" width="15" height="10" rx="2.5" />
+    <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+    <circle cx="12" cy="15.5" r="1.2" fill="currentColor" stroke="none" />
+  </Icon>
+);
+
+export const EyeIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
+    <circle cx="12" cy="12" r="3" />
+  </Icon>
+);
+
+export const PinIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" />
+    <circle cx="12" cy="10" r="2.3" />
+  </Icon>
+);
+
+/** Batería con la carga cayendo. */
+export const BatteryLowIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="2.5" y="7" width="17" height="10" rx="2.5" />
+    <path d="M21.5 10.5v3M6 10.5v3" />
+  </Icon>
+);
+
+/** Hélice: un motor del dron. */
+export const MotorIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="2" />
+    <path d="M12 10c-1-3.5 0-6.5 2.5-6.5S16 7 12 10zM14 12c3.5-1 6.5 0 6.5 2.5S17 16 14 12zM12 14c1 3.5 0 6.5-2.5 6.5S8 17 12 14zM10 12c-3.5 1-6.5 0-6.5-2.5S7 8 10 12z" />
+  </Icon>
+);
+
+/** Satélite: posición GPS. */
+export const GpsIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M6.5 13.5l4 4M9 11l4 4M4 16l4 4" />
+    <path d="M13.5 6.5l4 4-4.5 4.5-4-4z" />
+    <path d="M16 4a5 5 0 0 1 4 4M16.5 1.5a8 8 0 0 1 6 6" />
+  </Icon>
+);
+
+/** Antena tachada: sin enlace. */
+export const LinkOffIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M5 12.5a9.5 9.5 0 0 1 14 0M8 15.5a5.2 5.2 0 0 1 8 0" />
+    <circle cx="12" cy="19" r="1.2" fill="currentColor" stroke="none" />
+    <path d="M3.5 3.5l17 17" />
+  </Icon>
+);
+
+/** Choque: estallido. */
+export const CollisionIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 2.5l1.8 5 4.7-2.3-2 4.9 5 1.4-4.6 2.5 2.6 4.5-5-1.2L12 21.5l-1.5-4.2-5 1.2 2.6-4.5-4.6-2.5 5-1.4-2-4.9 4.7 2.3z" />
+  </Icon>
+);
+
+/** Signo de pregunta en un círculo: dron perdido. */
+export const LostIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="9" strokeDasharray="3 2.6" />
+    <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6" />
+    <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none" />
+  </Icon>
+);
+
+/** Rayo: lanzar un evento. */
+export const BoltIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M13 2.5L5 13.5h6l-1 8 8-11h-6z" />
+  </Icon>
+);

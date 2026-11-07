@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import type { Connection } from "@/lib/source";
 import type { HubSummary, RadarFlight } from "@/lib/types";
+import { BrandLockup } from "./BrandMark";
 import { AlertIcon, CheckIcon, DroneIcon, HubIcon, LogoutIcon, ShieldIcon } from "./icons";
 import { GlassButton, Pill, type Tone } from "./ui";
 
@@ -16,11 +17,11 @@ const CONNECTION: Record<Connection, { text: string; tone: Tone; pulse: boolean 
 function Counter({ icon, value, label }: { icon: ReactNode; value: number; label: string }) {
   return (
     <div className="flex items-center gap-2" title={label}>
-      <span className="grid size-8 place-items-center rounded-[10px] border border-glass-border bg-glass text-accent">
+      <span className="grid size-9 place-items-center rounded-[12px] border border-glass-border bg-glass text-accent">
         {icon}
       </span>
       <div className="leading-none">
-        <div className="text-lg font-semibold tabular-nums">{value}</div>
+        <div className="text-[22px] font-semibold tracking-[-0.03em] tabular-nums">{value}</div>
         <div className="mt-0.5 hidden text-[10px] font-semibold uppercase tracking-[0.12em] text-muted lg:block">
           {label}
         </div>
@@ -60,15 +61,9 @@ export function TopBar({
     (f) => f.alerts.battery || f.alerts.failure || f.alerts.coldChain,
   ).length;
   return (
-    <header className="glass absolute inset-x-3 top-3 z-30 flex h-[68px] items-center gap-3 rounded-[22px] px-3 sm:inset-x-4 sm:top-4 sm:gap-5 sm:px-4">
+    <header className="glass absolute inset-x-3 top-3 z-30 flex h-[72px] items-center gap-3 rounded-[26px] px-3 sm:inset-x-4 sm:top-4 sm:gap-5 sm:px-4">
       <div className="flex min-w-0 items-center gap-3">
-        <span className="grid size-11 shrink-0 place-items-center rounded-[14px] bg-accent-gradient text-on-accent shadow-[0_8px_24px_-6px_var(--accent-glow)]">
-          <DroneIcon size={24} strokeWidth={2} />
-        </span>
-        <div className="hidden min-w-0 leading-tight sm:block">
-          <div className="text-base font-semibold tracking-tight">AirDrop Radar</div>
-          <div className="text-xs text-muted">Valledupar · consola de simulación</div>
-        </div>
+        <BrandLockup size={38} subtitle="Consola de simulación · Valledupar" />
         {demo && (
           // En celular va debajo de la barra para no tapar los contadores.
           <span className="absolute left-3 top-full mt-2 sm:static sm:mt-0">
@@ -113,7 +108,7 @@ export function TopBar({
           onClick={onToggleGeofences}
           aria-pressed={showGeofences}
           title="Zonas restringidas"
-          className={`hidden h-10 items-center gap-2 rounded-[13px] border px-3 text-xs font-semibold transition active:scale-95 focus-visible:outline-2 focus-visible:outline-accent md:flex ${
+          className={`hidden h-[46px] items-center gap-2 rounded-[15px] border px-3.5 text-xs font-semibold transition active:scale-95 focus-visible:outline-2 focus-visible:outline-accent md:flex ${
             showGeofences
               ? "border-danger/40 bg-danger/12 text-danger"
               : "border-glass-border bg-glass text-muted hover:text-text"

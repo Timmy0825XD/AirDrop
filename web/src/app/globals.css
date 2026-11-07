@@ -34,6 +34,12 @@
   --warning: #fbbf6a;
   --danger: #ff8fa3;
   --info: #a9c8e6;
+
+  /* El dron de la marca en oscuro (DroneMark de la app): claro sobre grafito. */
+  --mark-body: #eef3f5;
+  --mark-wing: #d4dde1;
+  --mark-boom: #a6b4ba;
+  --mark-prop: #84d5d9;
 }
 
 @theme inline {
@@ -96,12 +102,35 @@ body {
   color: var(--muted);
 }
 
-/* Velo sobre el mapa: oscurece los bordes y lo lleva al tono de la app. */
-.map-vignette {
+/*
+ * La capa de pantalla de vuelo de la app (MapHudOverlay): un velo parejo,
+ * una retícula fina del acento cada 32 px, una luz del acento arriba y los
+ * bordes que se apagan hacia el fondo. No capta clics.
+ */
+.map-hud {
   background:
-    radial-gradient(90% 70% at 50% 50%, transparent 55%, rgb(11 14 16 / 0.55)),
-    radial-gradient(60% 60% at 0% 0%, var(--sky-glow), transparent 70%),
-    radial-gradient(60% 60% at 100% 100%, var(--accent-glow), transparent 70%);
+    radial-gradient(95% 95% at 50% 50%, transparent 55%, rgb(11 14 16 / 0.85)),
+    radial-gradient(90% 90% at 80% 0%, rgb(79 195 201 / 0.16), transparent 70%),
+    repeating-linear-gradient(0deg, rgb(79 195 201 / 0.07) 0 1px, transparent 1px 32px),
+    repeating-linear-gradient(90deg, rgb(79 195 201 / 0.07) 0 1px, transparent 1px 32px),
+    rgb(11 14 16 / 0.12);
+}
+
+/*
+ * Tarjeta de vidrio de la app (GlassCard, oscuro): luz arriba que se apaga
+ * hacia abajo, como un panel iluminado desde el techo, y borde fino.
+ */
+@utility glass-card {
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.028));
+  border: 1px solid var(--glass-border);
+}
+
+/* Botón principal de la app: cápsula con el acento en degradado. */
+@utility stadium {
+  border-radius: 9999px;
+  background-image: linear-gradient(135deg, var(--accent-from), var(--accent-to));
+  color: var(--on-accent);
+  box-shadow: 0 14px 34px -12px rgb(79 195 201 / 0.55);
 }
 
 /* Las centrales quedan por encima del velo del mapa (z-index 1). */
@@ -116,25 +145,6 @@ body {
   }
 }
 
-/* Controles del mapa en vidrio. */
-.maplibregl-ctrl-group {
-  background: var(--bar) !important;
-  border: 1px solid var(--glass-border);
-  border-radius: 14px !important;
-  overflow: hidden;
-  box-shadow: 0 12px 28px -10px var(--shadow) !important;
-  backdrop-filter: blur(18px);
-}
-.maplibregl-ctrl-group button {
-  width: 36px !important;
-  height: 36px !important;
-}
-.maplibregl-ctrl-group button + button {
-  border-top: 1px solid var(--glass-border) !important;
-}
-.maplibregl-ctrl-icon {
-  filter: invert(1) opacity(0.8);
-}
 .maplibregl-ctrl-attrib {
   background: var(--bar) !important;
   color: var(--muted) !important;
@@ -143,17 +153,6 @@ body {
 .maplibregl-ctrl-attrib a {
   color: var(--muted) !important;
 }
-/* La leyenda ocupa la esquina inferior izquierda desde pantallas medianas. */
-@media (min-width: 768px) {
-  .maplibregl-map .maplibregl-ctrl-bottom-left .maplibregl-ctrl {
-    margin: 0 0 76px 16px;
-  }
-  /* Con la línea de tiempo abierta, el zoom se corre a su derecha. */
-  main[data-timeline] .maplibregl-map .maplibregl-ctrl-bottom-left .maplibregl-ctrl {
-    margin-left: 412px;
-  }
-}
-
 @keyframes slide-in {
   from {
     transform: translateX(24px);
@@ -187,6 +186,59 @@ body {
   }
 }
 
+/* Hélices del dron de la marca: unas 9 vueltas por segundo, en pares opuestos. */
+@keyframes rotor-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Luz de navegación: apagada casi todo el ciclo y un destello corto. */
+@keyframes nav-flash {
+  0%,
+  84% {
+    opacity: 0.15;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.15;
+  }
+}
+
+/* El halo que late bajo el dron y en la central elegida. */
+@keyframes halo-pulse {
+  from {
+    transform: scale(0.6);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(1.7);
+    opacity: 0;
+  }
+}
+
+.brand-mark-live .rotor-cw,
+.brand-mark-live .rotor-ccw {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: rotor-spin 110ms linear infinite;
+}
+.brand-mark-live .rotor-ccw {
+  animation-direction: reverse;
+}
+.brand-mark-live .nav-light {
+  animation: nav-flash 1.4s linear infinite;
+}
+.brand-mark-live .nav-light-late {
+  animation-delay: -0.7s;
+}
+
+.halo-pulse {
+  animation: halo-pulse 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 .panel-enter {
   animation: slide-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
@@ -201,7 +253,11 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .panel-enter,
-  .rise-in {
+  .rise-in,
+  .halo-pulse,
+  .brand-mark-live .rotor-cw,
+  .brand-mark-live .rotor-ccw,
+  .brand-mark-live .nav-light {
     animation: none;
   }
   .hub-ping {

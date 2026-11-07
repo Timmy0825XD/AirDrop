@@ -7,12 +7,16 @@ Vista web en tiempo real del ecosistema, tipo Flightradar, y **consola de simula
 - **Alertas pendientes (RF-39):** arriba, las alertas de vuelo abiertas. Al tocar una, el mapa va al dron.
 - **Reiniciar (RF-40):** deja el escenario de `pnpm seed:demo` como al empezar. Pide confirmación porque borra todos los pedidos de las centrales de la demo.
 
-Los eventos sobre el mapa, el despachador automático y el modo caos llegan en sus ramas.
+- **Eventos sobre el mapa (CU-38):** abajo, una barra flotante como la de la app: Viento, Lluvia, Tormenta y Zona temporal. Se elige uno, se toca el mapa en el centro y una tarjeta pide el radio, la duración y, para el viento, la fuerza y de dónde sopla; el círculo se ve antes de lanzarlo. Cada clima o zona activa lleva un chip en el mapa; al tocarlo, un panel la describe y permite terminarla.
+- **Incidentes (RF-34):** en el panel de un dron en vuelo, el catálogo de fallas, choques y pérdidas. Los graves piden un segundo toque. El sistema decide qué hace el dron; el aviso dice qué eligió.
+- **Apagón (RF-36):** en el panel de una central, dejarla sin energía por un tiempo o devolvérsela.
 
-- **Centrales:** un mosaico de vidrio con el ícono de su tipo (hospital, clínica, farmacia, banco de sangre, vacunación) y cuántos drones tiene en vuelo. Al tocarlo, un panel a la derecha con su flota (drones y estado), pedidos en marcha, inventario (vencimientos, cadena de frío y cuarentena) y contacto.
-- **Drones en vuelo:** un cuadricóptero visto desde arriba (turquesa de ida, ámbar de regreso, rosado con alerta), que se desliza entre cada dato de telemetría y gira hacia donde va. Sin ruta, hasta que se elige uno.
-- **Un dron elegido:** panel con batería, velocidad, altitud, temperatura, ETA, fase, alertas y la ruta de ida (línea continua) y de regreso (discontinua) sobre el mapa.
-- **Zonas restringidas:** las geovallas, con un interruptor arriba.
+El despachador automático y el modo caos llegan en sus ramas.
+
+- **Centrales:** un cuadro de vidrio con el borde y el brillo del acento y el ícono de su tipo (hospital, clínica, farmacia, banco de sangre, vacunación), cuántos drones tiene en vuelo y cuántos pedidos esperan en su cola. Sin energía, se apaga en ámbar con un rayo tachado. Al tocarlo, un panel a la derecha con su flota (drones y estado), pedidos en marcha, inventario (vencimientos, cadena de frío y cuarentena) y contacto.
+- **Drones en vuelo:** el dron de la marca en un disco grafito con el borde y el halo del color de la misión (turquesa de ida, ámbar de regreso, rosado con alerta), que se desliza entre cada dato de telemetría y gira hacia donde va. Sin enlace se ve atenuado: su posición es estimada. Un dron caído o aterrizado de emergencia queda marcado donde bajó, con la cuenta del rescate.
+- **Un dron elegido:** panel con batería, velocidad, altitud, temperatura, ETA, fase, alertas y la ruta de ida (línea continua) y de regreso (discontinua) sobre el mapa. Si la ruta cambió en el aire, la de antes queda punteada en gris.
+- **Zonas restringidas:** las geovallas del operador en rosado, con un interruptor arriba. Las temporales, en ámbar, con lo que les falta para vencer. El clima, en círculos: viento y lluvia en azul cielo (el viento con su flecha) y la tormenta en rosado, latiendo.
 - Se cierra el panel con la `✕`, con `Esc` o tocando el mapa vacío.
 
 ## Cómo correrla
@@ -44,7 +48,14 @@ Para tener drones de verdad en el mapa: `pnpm seed:demo` en `backend/`, arrancar
 
 ## Apariencia
 
-La misma identidad de la app Flutter, "Grafito y turquesa": fondo grafito con velos de cielo y turquesa, vidrio esmerilado en la barra y los paneles, acento turquesa en degradado y la tipografía Space Grotesk. Los colores viven en `src/app/globals.css` (y `src/lib/theme.ts` para el mapa) y copian `frontend/lib/theme/app_palette.dart`.
+La misma identidad y el mismo estilo de la app Flutter, "Grafito y turquesa", solo en oscuro (se proyecta en una TV):
+
+- la marca: el dron de AirDrop visto desde arriba con "AirDrop" (`BrandMark.tsx`, copia de `drone_mark.dart`), con las hélices girando y las luces de navegación;
+- la entrada como la de la app: el espacio aéreo arriba y la hoja con el encabezado en mayúsculas, campos con ícono y el botón cápsula con flecha;
+- vidrio en la barra y los paneles, tarjetas de vidrio iluminadas para las cifras (`MetricTile`), pastillas con punto (`StatusPill`), chips para elegir (`ChoicePill`) y botones de vidrio de 46 px (`GlassIconButton`), también para acercar, alejar y recentrar el mapa;
+- sobre el mapa, la capa de pantalla de vuelo de la app (`MapHudOverlay`): retícula fina del acento, luz arriba y bordes que se apagan.
+
+El mapa base no tiene que ser el mismo de la app. Los colores viven en `src/app/globals.css` (y `src/lib/theme.ts` para el mapa) y copian `frontend/lib/theme/app_palette.dart`.
 
 ## Cómo está hecha
 
@@ -55,10 +66,14 @@ src/
     RadarApp.tsx       sesión o demostración
     Dashboard.tsx      mapa + barra + línea de tiempo + alertas + panel
     ClockControl.tsx   hora simulada, velocidades y reinicio
+    EventDock.tsx      barra y tarjeta para lanzar clima y zonas (CU-38)
+    EventPanel.tsx     el clima o la zona elegidos, y terminarlos
+    IncidentActions.tsx el catálogo de incidentes de un dron (RF-34)
+    BrandMark.tsx      el dron de la marca, como en la app
     TimelinePanel.tsx  línea de tiempo (RF-39)
     AlertsTray.tsx     alertas pendientes
     ResetDialog.tsx    confirmación del reinicio
-    map/               RadarMap, marcadores de central, ícono y movimiento del dron
+    map/               RadarMap, marcadores (central, clima, zona, rescate), ícono y movimiento del dron
     icons.tsx          íconos de trazo (dron, tipos de central, métricas)
     ui.tsx             piezas de vidrio compartidas (pastillas, cifras, panel)
     Legend.tsx         leyenda de colores del mapa
@@ -70,11 +85,12 @@ src/
     use-radar.ts       estado del radar: foto inicial + eventos del socket
     use-console.ts     estado y órdenes de la consola
     sim-time.ts        hora simulada en pantalla
+    geo.ts             círculos en el mapa (clima y zona de 16 lados) y la rosa de los vientos
     use-polled.ts      recarga de los paneles
 ```
 
-- **Datos:** `GET /radar/snapshot` al abrir y cada 30 s, y el socket `/telemetry` para todo lo demás. Se entra a la sala del radar con `subscribe-radar` (solo admin) y llegan `radar-telemetry`, `radar-status`, `radar-alert`, `radar-timeline` y `radar-reset`; `clock` llega a todos. Es el **mismo** WebSocket de la app móvil, no hay un segundo canal.
-- **Consola:** `GET`/`PUT /control/clock`, `GET /control/timeline` al abrir, `GET /control/alerts` cada 5 s y `POST /control/reset`. La hora la manda el backend; entre un aviso y otro, `lib/sim-time.ts` la avanza con la velocidad que trae.
+- **Datos:** `GET /radar/snapshot` al abrir y cada 30 s, y el socket `/telemetry` para todo lo demás. Se entra a la sala del radar con `subscribe-radar` (solo admin) y llegan `radar-telemetry`, `radar-status`, `radar-alert`, `radar-timeline`, `radar-reset`, `radar-weather`, `radar-geofence`, `radar-incident`, `radar-hub-outage` y `radar-reroute`; `clock` llega a todos. Es el **mismo** WebSocket de la app móvil, no hay un segundo canal.
+- **Consola:** `GET`/`PUT /control/clock`, `GET /control/timeline` al abrir, `GET /control/alerts` cada 5 s y `POST /control/reset`. Eventos: `GET`/`POST /control/weather` y `DELETE /control/weather/:id`; `GET`/`POST /control/geofences` y `DELETE /control/geofences/:id`; `GET /control/incidents` y `POST /control/drones/:droneId/incidents`; `POST`/`DELETE /control/hubs/:hubId/outage`. El clima y los incidentes se releen cuando el socket avisa (y cada 30 s); las zonas temporales y los apagones vienen en el snapshot. La hora la manda el backend; entre un aviso y otro, `lib/sim-time.ts` la avanza con la velocidad que trae.
 - **Detalle:** `GET /radar/hubs/:id` (cada 5 s mientras el panel está abierto) y `GET /radar/flights/:orderId` (la ruta, cada 8 s).
 - **Eficiencia:** los mensajes del socket se agrupan y se repinta unas 4 veces por segundo, no en cada mensaje. Los drones van en una capa WebGL del mapa que se actualiza con un bucle propio (~30 cuadros por segundo) sin pasar por React, así 50 vuelos no repintan el árbol de componentes; si ningún dron se mueve, el bucle no toca el mapa. Los marcadores de central no se repintan con cada dato del socket. El mapa solo dibuja la ruta del vuelo elegido.
 - **Privacidad:** el radar no muestra a quién va una entrega ni, si va a una persona, qué medicamento lleva. En los traslados entre centrales sí dice el insumo. La ruta de un vuelo a una persona termina en su punto de entrega.

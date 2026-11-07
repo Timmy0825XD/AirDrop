@@ -42,7 +42,10 @@ export function Pill({
   );
 }
 
-/** Una cifra con su etiqueta, como `MetricTile` en la app. */
+/**
+ * Una cifra en una tarjeta de vidrio, como `MetricTile` en la app: la
+ * etiqueta en mayúsculas arriba y el número grande debajo.
+ */
 export function Stat({
   label,
   value,
@@ -57,16 +60,16 @@ export function Stat({
   tone?: Tone;
 }) {
   return (
-    <div className="rounded-2xl border border-glass-border bg-glass p-3">
+    <div className="glass-card rounded-[20px] px-3.5 pb-3.5 pt-3">
       <div className="flex items-center gap-1.5 text-muted">
         {icon}
-        <span className="eyebrow truncate !tracking-[0.1em]">{label}</span>
+        <span className="eyebrow truncate !tracking-[0.12em]">{label}</span>
       </div>
       <div
-        className={`mt-2 text-xl font-semibold leading-none tracking-tight tabular-nums ${tone ? TONE_TEXT[tone] : "text-text"}`}
+        className={`mt-2 text-[26px] font-semibold leading-none tracking-[-0.03em] tabular-nums ${tone ? TONE_TEXT[tone] : "text-text"}`}
       >
         {value}
-        {unit && <span className="ml-1 text-xs font-medium text-muted">{unit}</span>}
+        {unit && <span className="ml-1 text-sm font-medium tracking-normal text-muted">{unit}</span>}
       </div>
     </div>
   );
@@ -115,17 +118,26 @@ export function IconTile({
   return <span className={`grid shrink-0 place-items-center ${box} ${fill}`}>{children}</span>;
 }
 
+/**
+ * Botón cuadrado de vidrio con un ícono, como `GlassIconButton` de la app:
+ * 46 px, esquinas de un tercio del lado y sombra. Con `active` toma el
+ * acento en degradado (encendido).
+ */
 export function GlassButton({
   label,
   onClick,
   children,
   pressed,
+  active = false,
+  disabled = false,
   className = "",
 }: {
   label: string;
   onClick: () => void;
   children: ReactNode;
   pressed?: boolean;
+  active?: boolean;
+  disabled?: boolean;
   className?: string;
 }) {
   return (
@@ -135,8 +147,83 @@ export function GlassButton({
       aria-label={label}
       aria-pressed={pressed}
       title={label}
-      className={`grid size-10 shrink-0 place-items-center rounded-[13px] border border-glass-border bg-glass text-text transition hover:bg-white/12 active:scale-95 focus-visible:outline-2 focus-visible:outline-accent ${className}`}
+      disabled={disabled}
+      className={`grid size-[46px] shrink-0 place-items-center rounded-[15px] border border-glass-border shadow-[0_8px_18px_-6px_var(--shadow)] transition active:scale-[0.92] disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-accent ${
+        active ? "bg-accent-gradient text-on-accent" : "bg-bar text-text hover:bg-surface"
+      } ${className}`}
     >
+      {children}
+    </button>
+  );
+}
+
+/**
+ * El botón principal de la app: cápsula con el acento en degradado y una
+ * flecha. `tone="danger"` para lo que no se deshace (apagar una central).
+ */
+export function PrimaryButton({
+  children,
+  onClick,
+  disabled,
+  busy,
+  tone = "accent",
+  type = "button",
+  className = "",
+}: {
+  children: ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  busy?: boolean;
+  tone?: "accent" | "danger";
+  type?: "button" | "submit";
+  className?: string;
+}) {
+  const look =
+    tone === "danger"
+      ? "rounded-full border border-danger/45 bg-danger/15 text-danger hover:bg-danger/25"
+      : "stadium hover:brightness-110";
+  return (
+    <button
+      type={type}
+      onClick={onClick}
+      disabled={disabled || busy}
+      className={`flex h-12 items-center justify-center gap-2 px-6 text-[15px] font-bold transition active:scale-[0.97] disabled:opacity-55 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent ${look} ${className}`}
+    >
+      {busy && (
+        <span className="size-4 animate-spin rounded-full border-2 border-current/30 border-t-current motion-reduce:animate-none" />
+      )}
+      {children}
+    </button>
+  );
+}
+
+/** Chip redondo que se elige con un toque, como `ChoicePill` de la app. */
+export function Chip({
+  selected,
+  onClick,
+  children,
+  icon,
+  disabled,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: ReactNode;
+  icon?: ReactNode;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={selected}
+      disabled={disabled}
+      className={`flex h-10 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold tabular-nums transition active:scale-95 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-accent ${
+        selected
+          ? "border-transparent bg-accent-gradient text-on-accent shadow-[0_6px_18px_-6px_var(--accent-glow)]"
+          : "border-glass-border bg-glass text-text hover:bg-white/10"
+      }`}
+    >
+      {icon}
       {children}
     </button>
   );
@@ -165,10 +252,10 @@ export function PanelShell({
       <header className="flex items-start gap-3.5 px-5 pb-4 pt-5">
         {icon}
         <div className="min-w-0 flex-1">
-          <h2 className="truncate text-xl font-semibold leading-tight tracking-tight">{title}</h2>
+          <h2 className="truncate text-[22px] font-semibold leading-[1.08] tracking-[-0.03em]">{title}</h2>
           {subtitle && <p className="mt-0.5 truncate text-sm text-muted">{subtitle}</p>}
         </div>
-        <GlassButton label="Cerrar panel" onClick={onClose} className="size-9 rounded-xl">
+        <GlassButton label="Cerrar panel" onClick={onClose} className="!size-10 !rounded-[13px]">
           <CloseIcon size={16} />
         </GlassButton>
       </header>

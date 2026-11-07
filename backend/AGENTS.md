@@ -35,7 +35,7 @@ Nombres alineados al glosario:
 
 `Auth`, `Users`, `Hubs`, `Inventory`, `Fleet`, `Geofences`, `Orders`, `Decision`, `Routing`, `Simulation`, `Telemetry`, `Notifications`, `Analytics`, `Radar`, `Weather`, `Control`. Existe además `Mail` (envío del OTP por Brevo), que no es un dominio de negocio.
 
-`Analytics` (RF-23, RF-26) vive en `analytics/`: el servicio solo carga datos y `analytics.rules.ts` calcula KPI, metas y el dashboard. `FallbackService` (RF-18) vive en `decision/`. `Radar` (`radar/`) solo lee, para la vista web [`../web/`](../web/AGENTS.md): `GET /radar/snapshot`, `/radar/hubs/:id` y `/radar/flights/:orderId` (solo `admin`) y la sala `radar` del socket (`subscribe-radar`); no revela a quién va una entrega ni el medicamento de una entrega a una persona.
+`Analytics` (RF-23, RF-26) vive en `analytics/`: el servicio solo carga datos y `analytics.rules.ts` calcula KPI, metas y el dashboard. `FallbackService` (RF-18) vive en `decision/`. `Radar` (`radar/`) solo lee, para la vista web [`../web/`](../web/AGENTS.md): `GET /radar/snapshot` (cada central trae su `queue`: lo que espera su autorización o su carga, más las urgencias que se le ofrecieron), `/radar/hubs/:id` y `/radar/flights/:orderId` (solo `admin`) y la sala `radar` del socket (`subscribe-radar`); no revela a quién va una entrega ni el medicamento de una entrega a una persona.
 
 `Weather` (`weather/`) guarda las celdas de clima simulado (RF-32): círculos con duración en hora simulada. Las tiene en memoria porque el reloj de vuelo las lee en cada tick, y Postgres (`weather_cells`) las conserva. Las reglas puras están en `weather.rules.ts`:
 - `conditionsAt`: viento a lo largo del tramo y lluvia donde va el dron.

@@ -12,6 +12,7 @@ export const DRONE_STATUS: Record<string, string> = {
   available: "Disponible",
   in_mission: "En misión",
   maintenance: "Mantenimiento",
+  grounded: "En tierra, espera rescate",
   out_of_service: "Fuera de servicio",
 };
 
@@ -72,3 +73,24 @@ export const ALERT_KIND: Record<string, string> = {
   wind_limit: "Viento sobre el límite",
   emergency_landing: "Aterrizaje de emergencia",
 };
+
+/** RF-32: los tres tipos de clima. */
+export const WEATHER_KIND: Record<string, string> = {
+  wind: "Viento",
+  rain: "Lluvia",
+  storm: "Tormenta",
+};
+
+/** RF-34: lo que el sistema hizo con el dron. */
+export const PROTOCOL: Record<string, string> = {
+  continue: "Sigue su misión",
+  return_to_hub: "Vuelve a la central",
+  emergency_landing: "Aterrizaje de emergencia",
+  crash: "Cayó",
+  lost: "Perdido",
+};
+
+/** Minutos que faltan (hora simulada) para `iso`; nunca negativo. */
+export function minutesLeft(iso: string, now: number): number {
+  return Math.max(0, Math.ceil((Date.parse(iso) - now) / 60_000));
+}

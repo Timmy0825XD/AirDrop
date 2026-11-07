@@ -2,14 +2,26 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "./api";
-import type { ClockChange, RadarSource } from "./source";
+import type { ClockChange, RadarSource, WorldChange } from "./source";
 import type { ConsoleListener } from "./use-radar";
-import type { PendingAlert, ResetSummary, TimelineEntry } from "./types";
+import type {
+  ConsoleIncidentKind,
+  Incident,
+  NewWeather,
+  NewZone,
+  PendingAlert,
+  ResetSummary,
+  TimelineEntry,
+  WeatherCell,
+} from "./types";
 
 /** Cuántos pasos se muestran; los más viejos se van. */
 const TIMELINE_SIZE = 80;
 /** Las alertas abiertas se recargan por REST (RF-39), no por polling rápido. */
 const ALERTS_REFRESH_MS = 5_000;
+/** El clima y los incidentes también llegan por el socket; esto es la red de seguridad. */
+const WORLD_REFRESH_MS = 30_000;
+const INCIDENTS_SIZE = 40;
 
 export type ConsoleStatus = "loading" | "on" | "off";
 
@@ -19,8 +31,14 @@ export type ConsoleState = {
   offMessage: string | null;
   timeline: TimelineEntry[];
   alerts: PendingAlert[];
+  /** RF-32: las celdas de clima que rigen. */
+  weather: WeatherCell[];
+  /** RF-34: los últimos incidentes en vuelo. */
+  incidents: Incident[];
   busy: boolean;
   error: string | null;
+  /** Lo que salió bien de la última orden, para avisarlo un momento. */
+  notice: string | null;
   lastReset: ResetSummary | null;
 };
 
@@ -28,8 +46,9 @@ const messageOf = (error: unknown) =>
   error instanceof Error ? error.message : "No se pudo completar la acción.";
 
 /**
- * La consola de simulación (RU-32): línea de tiempo, alertas pendientes y las
- * órdenes del reloj y del reinicio. Escucha el mismo socket del radar.
+ * La consola de simulación (RU-32): línea de tiempo, alertas pendientes, el
+ * clima y los incidentes del mapa, y las órdenes (reloj, eventos y reinicio).
+ * Escucha el mismo socket del radar.
  */
 export function useConsole(source: RadarSource) {
   const [state, setState] = useState<ConsoleState>({
@@ -37,12 +56,16 @@ export function useConsole(source: RadarSource) {
     offMessage: null,
     timeline: [],
     alerts: [],
+    weather: [],
+    incidents: [],
     busy: false,
     error: null,
+    notice: null,
     lastReset: null,
   });
   const on = state.status === "on";
   const alertsTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const worldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadAlerts = useCallback(async () => {
     try {
@@ -50,6 +73,18 @@ export function useConsole(source: RadarSource) {
       setState((current) => ({ ...current, alerts }));
     } catch {
       // Se reintenta en la siguiente vuelta; la línea de tiempo sigue.
+    }
+  }, [source]);
+
+  const loadWorld = useCallback(async () => {
+    try {
+      const [weather, incidents] = await Promise.all([
+        source.control.weather(),
+        source.control.incidents(INCIDENTS_SIZE),
+      ]);
+      setState((current) => ({ ...current, weather, incidents }));
+    } catch {
+      // Igual que las alertas: la siguiente vuelta lo intenta otra vez.
     }
   }, [source]);
 
@@ -80,9 +115,24 @@ export function useConsole(source: RadarSource) {
   useEffect(() => {
     if (!on) return;
     void loadAlerts();
-    const timer = setInterval(() => void loadAlerts(), ALERTS_REFRESH_MS);
-    return () => clearInterval(timer);
-  }, [on, loadAlerts]);
+    void loadWorld();
+    const alerts = setInterval(() => void loadAlerts(), ALERTS_REFRESH_MS);
+    const world = setInterval(() => void loadWorld(), WORLD_REFRESH_MS);
+    return () => {
+      clearInterval(alerts);
+      clearInterval(world);
+    };
+  }, [on, loadAlerts, loadWorld]);
+
+  /** Varios avisos seguidos del socket piden una sola recarga. */
+  const reloadSoon = useCallback(
+    (what: "alerts" | "world") => {
+      const timer = what === "alerts" ? alertsTimer : worldTimer;
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => void (what === "alerts" ? loadAlerts() : loadWorld()), 300);
+    },
+    [loadAlerts, loadWorld],
+  );
 
   const listener: ConsoleListener = useMemo(
     () => ({
@@ -94,37 +144,52 @@ export function useConsole(source: RadarSource) {
             TIMELINE_SIZE,
           ),
         }));
-        if (entry.kind === "alert") {
-          // Una alerta nueva entra a la bandeja sin esperar la siguiente vuelta.
-          if (alertsTimer.current) clearTimeout(alertsTimer.current);
-          alertsTimer.current = setTimeout(() => void loadAlerts(), 300);
-        }
+        // Una alerta nueva entra a la bandeja sin esperar la siguiente vuelta.
+        if (entry.kind === "alert") reloadSoon("alerts");
       },
       onReset: () => {
-        setState((current) => ({ ...current, timeline: [], alerts: [] }));
+        setState((current) => ({
+          ...current,
+          timeline: [],
+          alerts: [],
+          weather: [],
+          incidents: [],
+        }));
+      },
+      onWorld: (what: WorldChange) => {
+        if (what === "weather" || what === "incident") reloadSoon("world");
+        if (what === "incident") reloadSoon("alerts");
       },
     }),
-    [loadAlerts],
+    [reloadSoon],
   );
 
   useEffect(
     () => () => {
       if (alertsTimer.current) clearTimeout(alertsTimer.current);
+      if (worldTimer.current) clearTimeout(worldTimer.current);
     },
     [],
   );
 
-  const run = useCallback(async <T,>(action: () => Promise<T>): Promise<T | null> => {
-    setState((current) => ({ ...current, busy: true, error: null }));
-    try {
-      const result = await action();
-      setState((current) => ({ ...current, busy: false }));
-      return result;
-    } catch (error) {
-      setState((current) => ({ ...current, busy: false, error: messageOf(error) }));
-      return null;
-    }
-  }, []);
+  const run = useCallback(
+    async <T,>(action: () => Promise<T>, notice?: (result: T) => string): Promise<T | null> => {
+      setState((current) => ({ ...current, busy: true, error: null, notice: null }));
+      try {
+        const result = await action();
+        setState((current) => ({
+          ...current,
+          busy: false,
+          notice: notice ? notice(result) : null,
+        }));
+        return result;
+      } catch (error) {
+        setState((current) => ({ ...current, busy: false, error: messageOf(error) }));
+        return null;
+      }
+    },
+    [],
+  );
 
   const setClock = useCallback(
     (change: ClockChange) => run(() => source.control.setClock(change)),
@@ -137,10 +202,88 @@ export function useConsole(source: RadarSource) {
     return summary;
   }, [run, source]);
 
+  const createWeather = useCallback(
+    async (input: NewWeather) => {
+      const cell = await run(() => source.control.createWeather(input), () => "Clima lanzado.");
+      if (cell) void loadWorld();
+      return cell;
+    },
+    [run, source, loadWorld],
+  );
+
+  const endWeather = useCallback(
+    async (id: string) => {
+      const cell = await run(() => source.control.endWeather(id), () => "Clima terminado.");
+      if (cell) void loadWorld();
+      return cell;
+    },
+    [run, source, loadWorld],
+  );
+
+  const createZone = useCallback(
+    (input: NewZone) =>
+      run(() => source.control.createZone(input), () => "Geovalla temporal lanzada."),
+    [run, source],
+  );
+
+  const endZone = useCallback(
+    (id: string) => run(() => source.control.endZone(id), () => "Geovalla temporal levantada."),
+    [run, source],
+  );
+
+  const launchIncident = useCallback(
+    async (droneId: string, kind: ConsoleIncidentKind) => {
+      const incident = await run(
+        () => source.control.launchIncident(droneId, kind),
+        (result) => PROTOCOL_NOTICE[result.protocol],
+      );
+      if (incident) void loadWorld();
+      return incident;
+    },
+    [run, source, loadWorld],
+  );
+
+  const startOutage = useCallback(
+    (hubId: string, durationMin: number) =>
+      run(
+        () => source.control.startOutage(hubId, durationMin),
+        (outage) => `${outage.name} quedó sin energía.`,
+      ),
+    [run, source],
+  );
+
+  const endOutage = useCallback(
+    (hubId: string) =>
+      run(() => source.control.endOutage(hubId), (outage) => `Volvió la energía a ${outage.name}.`),
+    [run, source],
+  );
+
   const dismissError = useCallback(
-    () => setState((current) => ({ ...current, error: null, lastReset: null })),
+    () => setState((current) => ({ ...current, error: null, notice: null, lastReset: null })),
     [],
   );
 
-  return { state, listener, setClock, reset, dismissError };
+  return {
+    state,
+    listener,
+    setClock,
+    reset,
+    createWeather,
+    endWeather,
+    createZone,
+    endZone,
+    launchIncident,
+    startOutage,
+    endOutage,
+    dismissError,
+  };
 }
+
+/** Lo que decidió el sistema, dicho en una línea (RF-34). */
+const PROTOCOL_NOTICE: Record<Incident["protocol"], string> = {
+  continue: "El dron sigue su misión con alerta.",
+  return_to_hub: "El dron vuelve a su central con el paquete.",
+  emergency_landing: "El dron aterriza de emergencia.",
+  crash: "El dron cayó: sale el rescate.",
+  lost: "Se perdió el rastro del dron.",
+};
