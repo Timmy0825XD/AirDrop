@@ -15,12 +15,14 @@ class UserLabels {
     UserStatus.active => 'Activa',
     UserStatus.locked => 'Bloqueada',
     UserStatus.suspended => 'Suspendida',
+    UserStatus.unknown => 'Estado desconocido',
   };
 
   static PillTone tone(UserStatus status) => switch (status) {
     UserStatus.active => PillTone.positive,
     UserStatus.unverified => PillTone.attention,
     UserStatus.suspended || UserStatus.locked => PillTone.negative,
+    UserStatus.unknown => PillTone.neutral,
   };
 
   /// Lo que se le puede hacer a la cuenta, igual que en

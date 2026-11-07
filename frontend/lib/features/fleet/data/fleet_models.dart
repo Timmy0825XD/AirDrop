@@ -10,16 +10,25 @@ library;
 
 import '../../tracking/data/telemetry_models.dart' show FlightPhase;
 
-/// Los cuatro valores de `DroneStatus` en Nest.
+/// Los cinco valores de `DroneStatus` en Nest, más [unknown].
 ///
 /// [inMission] lo asigna el motor de decisión al autorizar un pedido; la
 /// pantalla de flota nunca lo envía, porque `FleetService.assertNotInMission`
 /// responde `409 No puedes cambiar el estado de un dron en misión.`
+///
+/// [grounded] lo pone el sistema (RF-34): el dron aterrizó de emergencia
+/// fuera de su central y espera el rescate; al rescatarlo pasa solo a
+/// `maintenance`. El operador no lo elige ni lo cambia.
 enum DroneStatus {
   available('available', 'Disponible'),
   inMission('in_mission', 'En misión'),
+  grounded('grounded', 'En tierra, espera rescate'),
   maintenance('maintenance', 'En mantenimiento'),
-  outOfService('out_of_service', 'Fuera de servicio');
+  outOfService('out_of_service', 'Fuera de servicio'),
+
+  /// Un estado que Nest agregó y la app todavía no conoce: el dron se
+  /// muestra sin acciones, en vez de tumbar la lista de la flota.
+  unknown('unknown', 'Estado desconocido');
 
   const DroneStatus(this.apiValue, this.label);
 
@@ -31,7 +40,7 @@ enum DroneStatus {
   static DroneStatus fromJson(String value) {
     return DroneStatus.values.firstWhere(
       (status) => status.apiValue == value,
-      orElse: () => throw FormatException('Estado de dron desconocido: $value'),
+      orElse: () => DroneStatus.unknown,
     );
   }
 
@@ -46,7 +55,15 @@ enum DroneStatus {
   /// Un dron en misión no admite cambio de estado ni mantenimiento.
   bool get isInMission => this == inMission;
 
-  bool get isOperable => !isInMission;
+  /// Si el operador puede cambiarle el estado: no en misión, no en tierra
+  /// esperando el rescate (lo resuelve el sistema) ni en un estado que la
+  /// app no conoce.
+  bool get isOperable =>
+      this != inMission && this != grounded && this != unknown;
+
+  /// Fuera de la flota activa: en taller o en tierra esperando el rescate.
+  bool get isOutOfFleet =>
+      this == maintenance || this == outOfService || this == grounded;
 }
 
 /// Modelo de dron. `FleetService.toPublicModel`: `id`, `code`, `name`,

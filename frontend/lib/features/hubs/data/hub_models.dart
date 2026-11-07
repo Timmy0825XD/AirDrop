@@ -8,7 +8,10 @@ library;
 
 enum HubStatus {
   active('active'),
-  suspended('suspended');
+  suspended('suspended'),
+
+  /// Un estado que Nest agregó y la app todavía no conoce.
+  unknown('unknown');
 
   const HubStatus(this.apiValue);
 
@@ -17,8 +20,7 @@ enum HubStatus {
   static HubStatus fromJson(String value) {
     return HubStatus.values.firstWhere(
       (status) => status.apiValue == value,
-      orElse: () =>
-          throw FormatException('Estado de central desconocido: $value'),
+      orElse: () => HubStatus.unknown,
     );
   }
 

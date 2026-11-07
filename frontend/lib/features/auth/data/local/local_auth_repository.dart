@@ -268,7 +268,8 @@ class LocalAuthRepository implements AuthRepository {
       'Tu cuenta está suspendida. Habla con el administrador.',
       statusCode: 403,
     ),
-    UserStatus.active => null,
+    // Los datos locales no traen estados que la app no conozca.
+    UserStatus.active || UserStatus.unknown => null,
   };
 
   LocalUser _requireUser(AuthContact contact) {

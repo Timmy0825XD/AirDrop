@@ -39,11 +39,9 @@ void main() {
       reason: '   ',
       estimatedEndDate: null,
     );
-    expect(
-      blankReason.toJson(),
-      {'status': 'maintenance'},
-      reason: 'un motivo en blanco solo ensuciaría el cuerpo',
-    );
+    expect(blankReason.toJson(), {
+      'status': 'maintenance',
+    }, reason: 'un motivo en blanco solo ensuciaría el cuerpo');
   });
 
   test('el body del POST de mantenimiento es obligatorio y recortado', () {
@@ -96,10 +94,36 @@ void main() {
     expect(bare.hasMaintenanceData, isFalse);
   });
 
-  test('un estado desconocido lanza FormatException', () {
-    expect(
-      () => DroneStatus.fromJson('flying'),
-      throwsA(isA<FormatException>()),
-    );
+  test('grounded y un estado desconocido no tumban la flota', () {
+    Map<String, dynamic> row(String id, String status) => {
+      'id': id,
+      'identifier': id.toUpperCase(),
+      'droneModelId': 'm1',
+      'hubId': 'h1',
+      'status': status,
+    };
+    // Así llega `GET /fleet/drones` cuando el modo caos baja un dron.
+    final drones = [
+      row('d1', 'available'),
+      row('d2', 'grounded'),
+      row('d3', 'loquesea'),
+    ].map(Drone.fromJson).toList();
+
+    expect(drones.map((d) => d.status), [
+      DroneStatus.available,
+      DroneStatus.grounded,
+      DroneStatus.unknown,
+    ]);
+    expect(DroneStatus.grounded.label, 'En tierra, espera rescate');
+  });
+
+  test('el operador no gestiona un dron en tierra ni uno desconocido', () {
+    expect(DroneStatus.grounded.isOperable, isFalse);
+    expect(DroneStatus.unknown.isOperable, isFalse);
+    expect(DroneStatus.maintenance.isOperable, isTrue);
+    expect(DroneStatus.operatorStatuses, isNot(contains(DroneStatus.grounded)));
+    // En tierra cuenta fuera de la flota activa, no como disponible.
+    expect(DroneStatus.grounded.isOutOfFleet, isTrue);
+    expect(DroneStatus.available.isOutOfFleet, isFalse);
   });
 }

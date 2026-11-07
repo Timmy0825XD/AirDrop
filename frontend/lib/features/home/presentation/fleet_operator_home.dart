@@ -80,18 +80,14 @@ class FleetOperatorHome extends ConsumerWidget {
                   highlight: 1,
                   values: [
                     for (final s in DroneStatus.values)
-                      count((d) => d == s) ?? 0,
+                      if (s != DroneStatus.unknown) count((d) => d == s) ?? 0,
                   ],
                 ),
               ),
               MetricTile(
                 label: 'En taller',
-                value: count(
-                  (s) =>
-                      s == DroneStatus.maintenance ||
-                      s == DroneStatus.outOfService,
-                ),
-                caption: 'Mantenimiento o fuera de servicio',
+                value: count((s) => s.isOutOfFleet),
+                caption: 'Mantenimiento, fuera de servicio o en tierra',
                 color: StatusPill.colorOf(context, PillTone.negative),
                 onTap: () => context.go('/fleet'),
               ),

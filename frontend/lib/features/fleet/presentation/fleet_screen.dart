@@ -130,7 +130,7 @@ class _DroneList extends ConsumerWidget {
             child: DroneTile(
               drone: drone,
               modelName: _modelName(models, drone.droneModelId),
-              onActions: drone.status.isInMission || !hubActive
+              onActions: !drone.status.isOperable || !hubActive
                   ? null
                   : () => _openDroneActions(context, ref, drone),
             ),
