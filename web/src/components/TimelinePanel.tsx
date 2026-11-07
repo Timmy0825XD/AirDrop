@@ -1,107 +1,129 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { formatTime } from "@/lib/sim-time";
-import type { TimelineEntry, TimelineKind } from "@/lib/types";
+import type { TimelineEntry } from "@/lib/types";
 import type { ConsoleStatus } from "@/lib/use-console";
-import {
-  AlertIcon,
-  CheckIcon,
-  ChevronIcon,
-  ClockIcon,
-  DroneIcon,
-  HubIcon,
-  ListIcon,
-  PackageIcon,
-  RouteIcon,
-} from "./icons";
-import { Pill } from "./ui";
+import { ChevronIcon, ListIcon } from "./icons";
+import { IconButton } from "./ui";
 
-const ICON: Record<TimelineKind, (size: number) => ReactNode> = {
-  order: (size) => <PackageIcon size={size} />,
-  queue: (size) => <HubIcon size={size} />,
-  decision: (size) => <CheckIcon size={size} />,
-  flight: (size) => <DroneIcon size={size} />,
-  delivery: (size) => <PackageIcon size={size} />,
-  fallback: (size) => <RouteIcon size={size} />,
-  alert: (size) => <AlertIcon size={size} />,
-  console: (size) => <ClockIcon size={size} />,
+/** El punto de cada paso: el tono dice si salió bien, si preocupa o si falló. */
+const MARK: Record<TimelineEntry["severity"], string> = {
+  info: "bg-faint",
+  success: "bg-success",
+  warning: "bg-warning",
+  danger: "bg-danger",
 };
 
-const TONE: Record<TimelineEntry["severity"], { text: string; tile: string }> = {
-  info: { text: "text-accent", tile: "border-accent/30 bg-accent/10" },
-  success: { text: "text-success", tile: "border-success/30 bg-success/10" },
-  warning: { text: "text-warning", tile: "border-warning/30 bg-warning/10" },
-  danger: { text: "text-danger", tile: "border-danger/35 bg-danger/12" },
-};
+export type FleetCounters = { hubs: number; flights: number; available: number };
 
 type Props = {
   open: boolean;
   status: ConsoleStatus;
   offMessage: string | null;
   entries: TimelineEntry[];
+  counters: FleetCounters;
   onToggle: () => void;
   onPick: (entry: TimelineEntry) => void;
 };
 
+function Counter({ value, label }: { value: number; label: string }) {
+  return (
+    <div className="px-4 py-3.5 first:pl-5">
+      <div className="figures text-[26px] font-medium leading-none">{value}</div>
+      <div className="mt-1.5 text-[12px] text-muted">{label}</div>
+    </div>
+  );
+}
+
 /**
- * RF-39: cada paso del flujo, el más reciente arriba. Tocar uno lleva el mapa
- * a donde pasó (y abre el vuelo si sigue en el aire).
+ * El riel izquierdo: arriba, el estado de la flota en tres cifras; debajo,
+ * RF-39, cada paso del flujo como una bitácora, el más reciente arriba.
+ * Tocar un paso lleva el mapa a donde pasó (y abre el vuelo si sigue en el
+ * aire). Plegado deja una franja con el botón para abrirlo.
  */
-export function TimelinePanel({ open, status, offMessage, entries, onToggle, onPick }: Props) {
+export function TimelinePanel({
+  open,
+  status,
+  offMessage,
+  entries,
+  counters,
+  onToggle,
+  onPick,
+}: Props) {
   if (!open) {
     return (
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={false}
-        className="glass absolute left-3 top-[132px] z-20 flex h-12 items-center gap-2.5 rounded-2xl px-4 text-sm font-semibold text-text transition hover:bg-white/10 active:scale-95 focus-visible:outline-2 focus-visible:outline-accent sm:left-4 sm:top-[96px]"
-      >
-        <ListIcon size={18} className="text-accent" />
-        Línea de tiempo
-        {entries.length > 0 && <Pill tone="info">{entries.length}</Pill>}
-        <ChevronIcon size={16} className="text-muted" />
-      </button>
+      <>
+        <div className="hidden w-14 shrink-0 flex-col items-center gap-3 border-r border-line bg-panel py-3 md:flex">
+          <IconButton label="Abrir la línea de tiempo" onClick={onToggle}>
+            <ListIcon size={18} />
+          </IconButton>
+          {entries.length > 0 && (
+            <span className="figures text-[12px] text-muted">{entries.length}</span>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={onToggle}
+          className="press surface absolute left-3 top-3 z-20 flex h-10 items-center gap-2 rounded-lg px-3 text-[14px] font-medium md:hidden"
+        >
+          <ListIcon size={16} className="text-muted" />
+          Línea de tiempo
+        </button>
+      </>
     );
   }
 
   return (
     <aside
-      aria-label="Línea de tiempo"
-      className="glass absolute inset-x-3 bottom-3 top-[96px] z-20 flex flex-col overflow-hidden rounded-[28px] sm:inset-x-auto sm:bottom-4 sm:left-4 sm:w-[380px]"
+      aria-label="Estado y línea de tiempo"
+      className="absolute inset-0 z-30 flex flex-col bg-panel md:static md:z-auto md:w-[360px] md:shrink-0 md:border-r md:border-line"
     >
-      <header className="flex items-center gap-3 px-5 pb-3 pt-4">
-        <ListIcon size={20} className="text-accent" />
-        <h2 className="flex-1 text-lg font-semibold tracking-tight">Línea de tiempo</h2>
-        <button
-          type="button"
-          onClick={onToggle}
-          aria-expanded
-          aria-label="Plegar la línea de tiempo"
-          title="Plegar"
-          className="grid size-9 place-items-center rounded-xl border border-glass-border bg-glass text-muted transition hover:text-text active:scale-95 focus-visible:outline-2 focus-visible:outline-accent"
-        >
-          <ChevronIcon size={16} className="rotate-180" />
-        </button>
+      <div className="grid grid-cols-3 divide-x divide-line border-b border-line">
+        <Counter value={counters.hubs} label="Centrales" />
+        <Counter value={counters.flights} label="En vuelo" />
+        <Counter value={counters.available} label="Drones libres" />
+      </div>
+
+      <header className="flex items-center gap-2 px-5 pb-2 pt-4">
+        <h2 className="flex-1 text-[14px] font-semibold">
+          Línea de tiempo
+          {entries.length > 0 && (
+            <span className="figures ml-2 text-[12px] font-normal text-faint">{entries.length}</span>
+          )}
+        </h2>
+        <IconButton label="Plegar la línea de tiempo" onClick={onToggle} className="!size-8">
+          <ChevronIcon size={15} className="rotate-180" />
+        </IconButton>
       </header>
-      <div className="h-px bg-glass-border" />
 
       {status === "off" ? (
-        <p className="px-5 py-10 text-center text-[15px] text-muted">
+        <p className="px-5 py-8 text-[14px] leading-relaxed text-muted">
           {offMessage ?? "La consola de simulación está apagada."}
         </p>
       ) : status === "loading" ? (
-        <div role="status" className="flex justify-center py-10">
-          <span className="size-6 animate-spin rounded-full border-2 border-glass-border border-t-accent motion-reduce:animate-none" />
-        </div>
+        <ol aria-busy className="space-y-4 px-5 py-4">
+          {[0, 1, 2].map((row) => (
+            <li key={row} className="grid grid-cols-[60px_1fr] gap-3">
+              <span className="h-3 w-12 rounded bg-raised" />
+              <span className="space-y-2">
+                <span className="block h-3 w-4/5 rounded bg-raised" />
+                <span className="block h-3 w-3/5 rounded bg-raised" />
+              </span>
+            </li>
+          ))}
+        </ol>
       ) : !entries.length ? (
-        <p className="px-5 py-10 text-center text-[15px] leading-relaxed text-muted">
-          Todavía no pasa nada. Cuando alguien pida o una central despache, aquí aparece cada paso.
-        </p>
+        <div className="px-5 py-8 text-[14px] leading-relaxed text-muted">
+          <p className="text-text">Todavía no pasa nada.</p>
+          <p className="mt-1">
+            Cuando alguien pida, una central despache o lances un evento, cada paso queda aquí con su
+            hora.
+          </p>
+        </div>
       ) : (
-        <ol className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3">
+        <ol className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 pb-3">
           {entries.map((entry, index) => (
-            <li key={entry.id} className={index === 0 ? "rise-in" : undefined}>
+            <li key={entry.id} className={index === 0 ? "enter-up" : undefined}>
               <EntryRow entry={entry} onPick={onPick} />
             </li>
           ))}
@@ -112,40 +134,38 @@ export function TimelinePanel({ open, status, offMessage, entries, onToggle, onP
 }
 
 function EntryRow({ entry, onPick }: { entry: TimelineEntry; onPick: (entry: TimelineEntry) => void }) {
-  const tone = TONE[entry.severity];
   const pickable = entry.orderId != null || entry.latitude != null;
   const body = (
     <>
-      <span
-        className={`mt-0.5 grid size-9 shrink-0 place-items-center rounded-xl border ${tone.tile} ${tone.text}`}
-      >
-        {ICON[entry.kind](17)}
+      <span className="pt-px">
+        <span className="figures block text-[12px] text-faint">{formatTime(entry.at)}</span>
+        {entry.source === "console" && (
+          <span className="mt-1 block text-[11px] font-medium text-accent">Consola</span>
+        )}
+        {entry.source === "chaos" && (
+          <span className="mt-1 block text-[11px] font-medium text-danger">Caos</span>
+        )}
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-baseline gap-2">
-          <span className="text-[15px] font-semibold leading-snug text-text">{entry.title}</span>
+      <span className="min-w-0">
+        <span className="flex items-start gap-2">
+          <span className={`mt-[7px] size-1.5 shrink-0 rounded-full ${MARK[entry.severity]}`} />
+          <span className="text-[14px] font-medium leading-snug text-text">{entry.title}</span>
         </span>
         {entry.detail && (
-          <span className="mt-0.5 block text-[13px] leading-snug text-muted">{entry.detail}</span>
+          <span className="mt-1 block pl-3.5 text-[13px] leading-snug text-muted">{entry.detail}</span>
         )}
-        <span className="mt-1 flex items-center gap-2 text-[12px] font-medium tabular-nums text-muted">
-          {formatTime(entry.at)}
-          {entry.source === "console" && <span className="text-accent">· Consola</span>}
-          {entry.source === "chaos" && <span className="font-semibold text-danger">· Caos</span>}
-        </span>
       </span>
     </>
   );
-  const shell = "flex w-full items-start gap-3 rounded-2xl px-2.5 py-2.5 text-left";
+  const shell = "grid w-full grid-cols-[64px_1fr] gap-2 rounded-md px-3 py-3 text-left";
   if (!pickable) return <div className={shell}>{body}</div>;
   return (
     <button
       type="button"
       onClick={() => onPick(entry)}
-      className={`${shell} transition hover:bg-white/6 active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-accent`}
+      className={`${shell} transition-colors duration-150 hover:bg-hover`}
     >
       {body}
     </button>
   );
 }
-

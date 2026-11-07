@@ -42,3 +42,6 @@ next-env.d.ts
 
 # worker de MapLibre copiado por scripts/copy-maplibre.mjs
 /public/maplibre/
+
+# Skills de diseño locales (impeccable, Emil Kowalski): no se versionan.
+/.claude/

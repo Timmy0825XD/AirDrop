@@ -14,12 +14,12 @@ const WEATHER_ICON = {
 } as const;
 
 const WEATHER_TONE = {
-  wind: "border-info/50 text-info",
-  rain: "border-info/50 text-info",
-  storm: "border-danger/60 text-danger",
+  wind: "border-info/45 text-info",
+  rain: "border-info/45 text-info",
+  storm: "border-danger/55 text-danger",
 } as const;
 
-/** Chip de vidrio en el mapa: se toca para ver el evento y terminarlo. */
+/** Placa sólida en el mapa: se toca para ver el evento y terminarlo. */
 function Chip({
   tone,
   icon,
@@ -43,15 +43,13 @@ function Chip({
         onClick();
       }}
       aria-pressed={selected}
-      className={`flex items-center gap-2 rounded-full border-[1.5px] bg-bar py-1.5 pl-2 pr-3 shadow-[0_8px_20px_-8px_var(--shadow)] backdrop-blur-md transition hover:scale-105 active:scale-95 focus-visible:outline-2 focus-visible:outline-accent ${tone} ${
-        selected ? "ring-2 ring-accent ring-offset-2 ring-offset-transparent" : ""
+      className={`press flex items-center gap-2 whitespace-nowrap rounded-md border bg-panel/95 py-1.5 pl-2 pr-2.5 shadow-[0_6px_16px_-8px_var(--shadow)] ${tone} ${
+        selected ? "outline-2 outline-offset-2 outline-accent" : ""
       }`}
     >
       {icon}
-      <span className="flex flex-col text-left leading-tight">
-        <span className="text-[12px] font-semibold text-text">{title}</span>
-        <span className="text-[10px] font-semibold tabular-nums">{detail}</span>
-      </span>
+      <span className="text-[12.5px] font-medium text-text">{title}</span>
+      <span className="figures text-[11.5px]">{detail}</span>
     </button>
   );
 }
@@ -73,7 +71,7 @@ function WeatherMarkerView({
     <Marker longitude={cell.longitude} latitude={cell.latitude} anchor="center">
       <Chip
         tone={WEATHER_TONE[cell.kind]}
-        icon={WEATHER_ICON[cell.kind](18)}
+        icon={WEATHER_ICON[cell.kind](16)}
         title={`${WEATHER_KIND[cell.kind]}${wind}`}
         detail={`${minutesLeft(cell.endsAt, now)} min`}
         selected={selected}
@@ -99,10 +97,10 @@ function ZoneMarkerView({
   return (
     <Marker longitude={center[0]} latitude={center[1]} anchor="center">
       <Chip
-        tone="border-warning/60 text-warning"
-        icon={<ZoneIcon size={18} />}
+        tone="border-warning/50 text-warning"
+        icon={<ZoneIcon size={16} />}
         title={zone.name}
-        detail={`Zona temporal · ${minutesLeft(zone.expiresAt, now)} min`}
+        detail={`${minutesLeft(zone.expiresAt, now)} min`}
         selected={selected}
         onClick={() => onSelect(zone.id)}
       />
@@ -133,13 +131,14 @@ function IncidentMarkerView({
       anchor="center"
     >
       <span className="relative block">
-        <span className="halo-pulse absolute inset-0 rounded-full border-2 border-danger" />
-        <span className="relative grid size-11 place-items-center rounded-full border-[1.5px] border-danger bg-bar text-danger shadow-[0_0_16px_rgb(255_143_163/0.55)]">
-          {crash ? <CollisionIcon size={20} /> : <AlertIcon size={20} />}
+        {/* Espera rescate: el anillo que se abre dice que sigue pendiente. */}
+        <span className="ring-out absolute inset-0 rounded-full border-2 border-danger" />
+        <span className="relative grid size-9 place-items-center rounded-full border-[1.5px] border-danger bg-panel text-danger">
+          {crash ? <CollisionIcon size={18} /> : <AlertIcon size={18} />}
         </span>
-        <span className="pointer-events-none absolute left-full top-1/2 ml-3 flex -translate-y-1/2 flex-col whitespace-nowrap rounded-[10px] border border-danger/40 bg-bar px-2.5 py-1 shadow-lg backdrop-blur-md">
-          <span className="text-[12px] font-semibold text-text">{identifier}</span>
-          <span className="text-[10px] font-semibold tabular-nums text-danger">
+        <span className="pointer-events-none absolute left-full top-1/2 ml-2 flex -translate-y-1/2 items-center gap-2 whitespace-nowrap rounded-md border border-danger/40 bg-panel/95 py-1 pl-2 pr-2.5">
+          <span className="figures text-[12.5px] font-medium text-text">{identifier}</span>
+          <span className="text-[11.5px] font-medium text-danger">
             {waiting
               ? `Rescate en ${minutesLeft(incident.rescueDueAt as string, now)} min`
               : crash

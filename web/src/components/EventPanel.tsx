@@ -5,7 +5,7 @@ import { WEATHER_KIND, minutesLeft } from "@/lib/labels";
 import { formatTime } from "@/lib/sim-time";
 import type { Geofence, Selection, WeatherCell } from "@/lib/types";
 import { ClockIcon, RainIcon, StormIcon, WindIcon, ZoneIcon } from "./icons";
-import { IconTile, PanelShell, Pill, PrimaryButton, Section, Stat } from "./ui";
+import { Button, PanelShell, Pill, Section, Stat } from "./ui";
 
 const EFFECT: Record<WeatherCell["kind"], string> = {
   wind: "Solo cuenta la parte del viento a lo largo del tramo: en contra frena al dron y gasta más; a favor, al revés. Sobre 15 m/s sostenidos o 20 m/s en ráfagas no se vuela.",
@@ -39,12 +39,12 @@ export function EventPanel({
   if (weather) {
     const storm = weather.kind === "storm";
     const icon =
-      weather.kind === "wind" ? <WindIcon size={24} /> : storm ? <StormIcon size={24} /> : <RainIcon size={24} />;
+      weather.kind === "wind" ? <WindIcon size={20} /> : storm ? <StormIcon size={20} /> : <RainIcon size={20} />;
     return (
       <PanelShell
         title={WEATHER_KIND[weather.kind]}
         subtitle={`Hasta las ${formatTime(weather.endsAt)}`}
-        icon={<IconTile tone={storm ? "bad" : "info"}>{icon}</IconTile>}
+        icon={<span className={storm ? "text-danger" : "text-info"}>{icon}</span>}
         onClose={close}
         badge={
           <>
@@ -55,7 +55,7 @@ export function EventPanel({
           </>
         }
       >
-        <div className="grid grid-cols-2 gap-2 px-5 py-4">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-5 px-5 py-5">
           <Stat label="Radio" value={weather.radiusKm.toLocaleString("es-CO")} unit="km" />
           <Stat label="Quedan" value={minutesLeft(weather.endsAt, now)} unit="min" />
           {weather.kind === "wind" && weather.windSpeedMs != null && (
@@ -68,18 +68,18 @@ export function EventPanel({
               />
               <Stat
                 label="Sopla del"
-                value={<span className="text-xl">{compassOf(weather.windFromDeg ?? 0).long}</span>}
+                value={<span className="font-sans text-[17px]">{compassOf(weather.windFromDeg ?? 0).long}</span>}
               />
             </>
           )}
         </div>
         <Section title="Qué hace">
-          <p className="text-[15px] leading-relaxed text-muted">{EFFECT[weather.kind]}</p>
+          <p className="text-[14px] leading-relaxed text-muted">{EFFECT[weather.kind]}</p>
         </Section>
         <div className="px-5 py-4">
-          <PrimaryButton tone="danger" busy={busy} disabled={!canEnd} className="w-full" onClick={onEnd}>
+          <Button tone="danger" busy={busy} disabled={!canEnd} className="w-full" onClick={onEnd}>
             Terminar ahora
-          </PrimaryButton>
+          </Button>
         </div>
       </PanelShell>
     );
@@ -90,11 +90,7 @@ export function EventPanel({
       <PanelShell
         title={zone.name}
         subtitle={`Vence a las ${formatTime(zone.expiresAt)}`}
-        icon={
-          <IconTile tone="warn">
-            <ZoneIcon size={24} />
-          </IconTile>
-        }
+        icon={<ZoneIcon size={20} className="text-warning" />}
         onClose={close}
         badge={
           <>
@@ -106,16 +102,16 @@ export function EventPanel({
         }
       >
         <Section title="Qué hace">
-          <p className="text-[15px] leading-relaxed text-muted">
+          <p className="text-[14px] leading-relaxed text-muted">
             Mientras dure cuenta como cualquier geovalla: las rutas la rodean y un dron en el aire que
             la tiene adelante cambia de camino. Al vencer desaparece sola.
           </p>
           <p className="mt-3 text-sm text-muted">Motivo: {zone.reason}</p>
         </Section>
         <div className="px-5 py-4">
-          <PrimaryButton tone="danger" busy={busy} disabled={!canEnd} className="w-full" onClick={onEnd}>
+          <Button tone="danger" busy={busy} disabled={!canEnd} className="w-full" onClick={onEnd}>
             Levantar la zona
-          </PrimaryButton>
+          </Button>
         </div>
       </PanelShell>
     );
@@ -123,7 +119,7 @@ export function EventPanel({
 
   return (
     <PanelShell title="Evento" onClose={close}>
-      <p className="px-5 py-10 text-center text-[15px] text-muted">Este evento ya terminó.</p>
+      <p className="px-5 py-10 text-center text-[14px] text-muted">Este evento ya terminó.</p>
     </PanelShell>
   );
 }

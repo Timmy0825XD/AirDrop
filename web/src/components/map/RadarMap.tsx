@@ -22,13 +22,18 @@ import type {
   WeatherKind,
 } from "@/lib/types";
 import { MinusIcon, PlusIcon, RecenterIcon } from "../icons";
-import { GlassButton } from "../ui";
+import { Legend } from "../Legend";
+import { IconButton } from "../ui";
 import {
   ICON_ALERT,
   ICON_OUTBOUND,
   ICON_RETURN,
   ICON_WIND,
+  PATTERN_HATCH,
+  PIXEL_RATIO,
   addDroneIcons,
+  drawHubPlate,
+  type HubPlate,
 } from "./drone-icons";
 import { IncidentMarker, WeatherMarker, ZoneMarker } from "./EventMarkers";
 import { HubMarker } from "./HubMarker";
@@ -38,10 +43,8 @@ import { useDroneTracks } from "./use-drone-tracks";
 if (typeof window !== "undefined") setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
 const VALLEDUPAR = { longitude: -73.2532, latitude: 10.4631, zoom: 11 };
-/** El panel lateral mide 400 px más su margen: el mapa deja ese espacio al encuadrar. */
+/** El inspector mide 400 px más su margen: el mapa deja ese espacio al encuadrar. */
 const PANEL_PX = 416;
-/** El halo del dron y la tormenta laten en este ciclo (como `DroneMarker`). */
-const PULSE_MS = 1_800;
 
 /** Un punto que la consola pide mostrar (un paso de la línea de tiempo o una alerta). */
 export type MapFocus = { latitude: number; longitude: number; key: number };
@@ -79,25 +82,49 @@ const STYLE: StyleSpecification = {
       maxzoom: 16,
     },
   },
-  // El gris de Esri sobre un fondo grafito turquesa, como el mapa de la app.
+  // El gris de Esri apagado sobre el grafito de la consola: el mapa es el
+  // fondo, lo vivo (drones, centrales, zonas) es lo que resalta.
   layers: [
-    { id: "tint", type: "background", paint: { "background-color": COLORS.mapTint } },
+    { id: "ground", type: "background", paint: { "background-color": COLORS.ground } },
     {
       id: "base",
       type: "raster",
       source: "base",
       paint: {
-        "raster-opacity": 0.62,
-        "raster-brightness-max": 0.85,
-        "raster-contrast": 0.12,
+        "raster-opacity": 0.6,
+        "raster-saturation": -1,
+        "raster-brightness-max": 0.72,
+        "raster-contrast": 0.08,
         "raster-fade-duration": 200,
       },
     },
-    { id: "labels", type: "raster", source: "labels", paint: { "raster-opacity": 0.7 } },
+    {
+      id: "labels",
+      type: "raster",
+      source: "labels",
+      paint: { "raster-opacity": 0.55, "raster-saturation": -1 },
+    },
   ],
 };
 
 const EMPTY = { type: "FeatureCollection", features: [] } as const;
+
+const plateImage = (hubId: string) => `plate-${hubId}`;
+
+/** El nombre de la central y lo que importa de ella ahora (B10, RF-36). */
+function hubPlateOf(hub: HubSummary, dark: boolean): HubPlate {
+  if (dark) return { name: hub.name, detail: "sin energía", detailColor: COLORS.returning };
+  const queue = hub.queue ?? 0;
+  const parts = [
+    hub.fleet.inMission > 0 ? `${hub.fleet.inMission} en vuelo` : null,
+    queue > 0 ? `${queue} en cola` : null,
+  ].filter(Boolean);
+  return {
+    name: hub.name,
+    detail: parts.length ? parts.join(" · ") : null,
+    detailColor: queue > 0 ? COLORS.returning : COLORS.muted,
+  };
+}
 
 type Props = {
   hubs: HubSummary[];
@@ -140,9 +167,6 @@ function lineOf(coordinates: Array<[number, number]> | undefined, leg: string) {
     : [];
 }
 
-const reducedMotion = () =>
-  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-
 export function RadarMap({
   hubs,
   flights,
@@ -166,7 +190,27 @@ export function RadarMap({
   const [hovering, setHovering] = useState(false);
   const fitted = useRef(false);
 
-  useDroneTracks(mapRef, flights, ready);
+  const { fontsReady } = useDroneTracks(mapRef, flights, ready);
+  const darkHubs = useMemo(
+    () =>
+      new Set(
+        hubs
+          .filter((hub) => hub.powerOutageUntil && Date.parse(hub.powerOutageUntil) > now)
+          .map((hub) => hub.id),
+      ),
+    [hubs, now],
+  );
+  /** Lo que dice cada placa ya dibujada, para no redibujarla igual. */
+  const plates = useRef(new globalThis.Map<string, string>());
+
+  // El riel de la izquierda se pliega y el mapa cambia de ancho: se reacomoda.
+  useEffect(() => {
+    const map = mapRef.current?.getMap();
+    if (!ready || !map) return;
+    const observer = new ResizeObserver(() => map.resize());
+    observer.observe(map.getContainer());
+    return () => observer.disconnect();
+  }, [ready]);
 
   const onLoad = useCallback(() => {
     const map = mapRef.current?.getMap();
@@ -236,48 +280,40 @@ export function RadarMap({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focus?.key]);
 
-  // El halo del dron y la tormenta laten, como en la app. Se cambian
-  // propiedades de pintura (sin pasar por React ni volver a subir datos).
-  const hasPulse = flights.length > 0 || weather.some((cell) => cell.kind === "storm");
+  // Las placas de las centrales: se redibujan solo cuando cambia lo que dicen.
   useEffect(() => {
     const map = mapRef.current?.getMap();
-    if (!ready || !map || !hasPulse) return;
-    const paint = (t: number) => {
-      if (map.getLayer("drone-pulse")) {
-        map.setPaintProperty("drone-pulse", "circle-radius", 15 + 21 * t);
-        map.setPaintProperty("drone-pulse", "circle-stroke-opacity", 0.7 * (1 - t));
-        map.setPaintProperty("drone-pulse", "circle-opacity", 0.12 * (1 - t));
-      }
-      if (map.getLayer("weather-fill")) {
-        const wave = 0.5 + 0.5 * Math.sin(t * Math.PI * 2);
-        map.setPaintProperty("weather-fill", "fill-opacity", [
-          "match",
-          ["get", "kind"],
-          "storm",
-          0.16 + 0.1 * wave,
-          "rain",
-          0.14,
-          0.08,
-        ]);
-      }
-    };
-    if (reducedMotion()) {
-      paint(0.35);
-      return;
+    if (!ready || !fontsReady || !map) return;
+    const seen = new Set<string>();
+    for (const hub of hubs) {
+      seen.add(hub.id);
+      const plate = hubPlateOf(hub, darkHubs.has(hub.id));
+      const key = `${plate.name}|${plate.detail}|${plate.detailColor}`;
+      if (plates.current.get(hub.id) === key && map.hasImage(plateImage(hub.id))) continue;
+      plates.current.set(hub.id, key);
+      if (map.hasImage(plateImage(hub.id))) map.removeImage(plateImage(hub.id));
+      map.addImage(plateImage(hub.id), drawHubPlate(plate), { pixelRatio: PIXEL_RATIO });
     }
-    let frame = 0;
-    let last = 0;
-    const tick = (time: number) => {
-      frame = requestAnimationFrame(tick);
-      if (time - last < 50) return;
-      last = time;
-      // Sale rápido y frena, como `fastOutSlowIn`.
-      const p = (time % PULSE_MS) / PULSE_MS;
-      paint(1 - (1 - p) ** 3);
-    };
-    frame = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(frame);
-  }, [ready, hasPulse]);
+    for (const id of [...plates.current.keys()]) {
+      if (seen.has(id)) continue;
+      plates.current.delete(id);
+      if (map.hasImage(plateImage(id))) map.removeImage(plateImage(id));
+    }
+  }, [ready, fontsReady, hubs, darkHubs]);
+
+  const plateCollection = useMemo(
+    () => ({
+      type: "FeatureCollection" as const,
+      features: fontsReady
+        ? hubs.map((hub) => ({
+            type: "Feature" as const,
+            properties: { plate: plateImage(hub.id), hubId: hub.id },
+            geometry: { type: "Point" as const, coordinates: [hub.longitude, hub.latitude] },
+          }))
+        : [],
+    }),
+    [hubs, fontsReady],
+  );
 
   const focusCollection = useMemo(
     () => ({
@@ -307,7 +343,7 @@ export function RadarMap({
     [routes],
   );
 
-  // RF-36: las del operador en rosado; las temporales en ámbar, aparte.
+  // RF-36: las del operador, rayadas en magenta; las temporales en ámbar, aparte.
   const geofenceCollection = useMemo(
     () => ({
       type: "FeatureCollection" as const,
@@ -385,10 +421,6 @@ export function RadarMap({
 
   const selectedFlightId = selection?.kind === "flight" ? selection.id : "";
   const geofenceVisibility = showGeofences ? "visible" : "none";
-  const darkHubs = useMemo(
-    () => new Set(hubs.filter((hub) => hub.powerOutageUntil && Date.parse(hub.powerOutageUntil) > now).map((hub) => hub.id)),
-    [hubs, now],
-  );
 
   return (
     <>
@@ -413,25 +445,20 @@ export function RadarMap({
             type="fill"
             filter={["!", ["get", "temporary"]]}
             layout={{ visibility: geofenceVisibility }}
-            paint={{ "fill-color": COLORS.geofence, "fill-opacity": 0.12 }}
+            paint={{ "fill-pattern": PATTERN_HATCH }}
           />
           <Layer
             id="geofences-line"
             type="line"
             filter={["!", ["get", "temporary"]]}
             layout={{ visibility: geofenceVisibility }}
-            paint={{
-              "line-color": COLORS.geofence,
-              "line-width": 1.5,
-              "line-opacity": 0.85,
-              "line-dasharray": [2, 2],
-            }}
+            paint={{ "line-color": COLORS.geofence, "line-width": 1.6, "line-opacity": 0.9 }}
           />
           <Layer
             id="zones-fill"
             type="fill"
             filter={["get", "temporary"]}
-            paint={{ "fill-color": COLORS.zone, "fill-opacity": 0.14 }}
+            paint={{ "fill-color": COLORS.zone, "fill-opacity": 0.08 }}
           />
           <Layer
             id="zones-line"
@@ -439,7 +466,7 @@ export function RadarMap({
             filter={["get", "temporary"]}
             paint={{
               "line-color": COLORS.zone,
-              "line-width": 2.5,
+              "line-width": 1.8,
               "line-opacity": 0.95,
               "line-dasharray": [3, 2],
             }}
@@ -461,7 +488,7 @@ export function RadarMap({
                 COLORS.rain,
                 COLORS.wind,
               ],
-              "fill-opacity": 0.12,
+              "fill-opacity": ["match", ["get", "kind"], "storm", 0.16, 0.08],
             }}
           />
           <Layer
@@ -478,9 +505,9 @@ export function RadarMap({
                 COLORS.rain,
                 COLORS.wind,
               ],
-              "line-width": ["match", ["get", "kind"], "storm", 2.5, 1.5],
-              "line-opacity": 0.85,
-              "line-dasharray": [1.5, 1.5],
+              "line-width": ["match", ["get", "kind"], "storm", 1.8, 1.2],
+              "line-opacity": 0.8,
+              "line-dasharray": [2, 2],
             }}
           />
           <Layer
@@ -503,14 +530,14 @@ export function RadarMap({
           <Layer
             id="draft-fill"
             type="fill"
-            paint={{ "fill-color": COLORS.accent, "fill-opacity": 0.1 }}
+            paint={{ "fill-color": COLORS.accent, "fill-opacity": 0.08 }}
           />
           <Layer
             id="draft-line"
             type="line"
             paint={{
               "line-color": COLORS.accent,
-              "line-width": 2,
+              "line-width": 1.6,
               "line-dasharray": [2, 1.5],
             }}
           />
@@ -530,18 +557,18 @@ export function RadarMap({
             }}
           />
           <Layer
-            id="route-glow"
+            id="route-casing"
             type="line"
-            filter={["==", ["get", "leg"], "outbound"]}
+            filter={["!=", ["get", "leg"], "previous"]}
             layout={{ "line-cap": "round", "line-join": "round" }}
-            paint={{ "line-color": COLORS.outbound, "line-width": 10, "line-opacity": 0.18, "line-blur": 6 }}
+            paint={{ "line-color": COLORS.ink, "line-width": 5, "line-opacity": 0.7 }}
           />
           <Layer
             id="route-outbound"
             type="line"
             filter={["==", ["get", "leg"], "outbound"]}
             layout={{ "line-cap": "round", "line-join": "round" }}
-            paint={{ "line-color": COLORS.outbound, "line-width": 3, "line-opacity": 0.95 }}
+            paint={{ "line-color": COLORS.accent, "line-width": 2.4 }}
           />
           <Layer
             id="route-return"
@@ -550,7 +577,7 @@ export function RadarMap({
             layout={{ "line-cap": "round", "line-join": "round" }}
             paint={{
               "line-color": COLORS.returning,
-              "line-width": 3,
+              "line-width": 2.4,
               "line-dasharray": [2, 1.5],
             }}
           />
@@ -562,56 +589,68 @@ export function RadarMap({
             id="focus-ring"
             type="circle"
             paint={{
-              "circle-radius": 30,
-              "circle-color": COLORS.accent,
-              "circle-opacity": 0.08,
+              "circle-radius": 28,
+              "circle-opacity": 0,
               "circle-stroke-color": COLORS.accent,
-              "circle-stroke-width": 2,
-              "circle-stroke-opacity": 0.9,
+              "circle-stroke-width": 1.6,
+            }}
+          />
+        </Source>
+
+        {/* Bajo los drones: si una placa choca con un bloque de datos, la placa se oculta. */}
+        <Source id="hub-plates" type="geojson" data={plateCollection}>
+          <Layer
+            id="hub-plates"
+            type="symbol"
+            layout={{
+              "icon-image": ["get", "plate"],
+              "icon-anchor": "top",
+              "icon-offset": [0, 24],
+              "icon-allow-overlap": false,
+              "icon-ignore-placement": false,
+              "icon-padding": 4,
+              "symbol-sort-key": ["case", ["==", ["get", "hubId"], selectedHubId ?? ""], 0, 1],
             }}
           />
         </Source>
 
         <Source id="drones" type="geojson" data={EMPTY}>
-          {/* El halo que late debajo de cada dron (DroneMarker de la app). */}
-          <Layer
-            id="drone-pulse"
-            type="circle"
-            paint={{
-              "circle-radius": 20,
-              "circle-opacity": 0.1,
-              "circle-stroke-width": 1.5,
-              "circle-stroke-opacity": 0.5,
-              "circle-color": [
-                "case",
-                ["get", "alert"],
-                COLORS.alert,
-                ["==", ["get", "leg"], "return"],
-                COLORS.returning,
-                COLORS.outbound,
-              ],
-              "circle-stroke-color": [
-                "case",
-                ["get", "alert"],
-                COLORS.alert,
-                ["==", ["get", "leg"], "return"],
-                COLORS.returning,
-                COLORS.outbound,
-              ],
-            }}
-          />
+          {/* El elegido lleva un anillo del color de selección. */}
           <Layer
             id="drone-halo"
             type="circle"
             filter={["==", ["get", "orderId"], selectedFlightId]}
             paint={{
-              "circle-radius": 31,
-              "circle-color": COLORS.accent,
-              "circle-opacity": 0.08,
+              "circle-radius": 22,
+              "circle-opacity": 0,
               "circle-stroke-color": COLORS.accent,
-              "circle-stroke-width": 2,
-              "circle-stroke-opacity": 0.95,
+              "circle-stroke-width": 1.8,
             }}
+          />
+          {/* El bloque de datos: no gira con el dron, se lee siempre igual. */}
+          <Layer
+            id="drone-blocks"
+            type="symbol"
+            filter={["!=", ["get", "block"], ""]}
+            layout={{
+              "icon-image": ["get", "block"],
+              "icon-anchor": "bottom-left",
+              "icon-offset": [6, -6],
+              // Dos bloques que chocan no se enciman: queda el elegido, luego el
+              // que tiene alerta; el otro dron sigue visible y se puede tocar.
+              "icon-allow-overlap": false,
+              "icon-ignore-placement": false,
+              "icon-padding": 2,
+              "symbol-sort-key": [
+                "case",
+                ["==", ["get", "orderId"], selectedFlightId],
+                0,
+                ["get", "alert"],
+                1,
+                2,
+              ],
+            }}
+            paint={{ "icon-opacity": ["case", ["get", "linkLost"], 0.6, 1] }}
           />
           <Layer
             id="drones"
@@ -625,7 +664,7 @@ export function RadarMap({
                 ICON_RETURN,
                 ICON_OUTBOUND,
               ],
-              "icon-size": ["interpolate", ["linear"], ["zoom"], 9, 0.8, 14, 1],
+              "icon-size": ["interpolate", ["linear"], ["zoom"], 9, 0.85, 14, 1],
               "icon-rotate": ["get", "bearing"],
               "icon-rotation-alignment": "map",
               "icon-allow-overlap": true,
@@ -668,19 +707,21 @@ export function RadarMap({
         ))}
       </Map>
 
-      {/* Acercar, alejar y recentrar: botones de vidrio, como `_MapControls` de la app. */}
+      {/* Acercar, alejar, recentrar y la leyenda, en una columna a la derecha. */}
       <div
-        className={`absolute bottom-28 z-20 hidden flex-col gap-2.5 transition-[right] duration-300 sm:flex ${panelOpen ? "right-[432px]" : "right-4"}`}
+        className={`absolute bottom-4 z-20 hidden flex-col gap-1.5 transition-[right] duration-200 ease-out sm:flex ${panelOpen ? "right-[424px]" : "right-4"}`}
       >
-        <GlassButton label="Acercar" onClick={() => mapRef.current?.zoomIn()}>
-          <PlusIcon size={20} />
-        </GlassButton>
-        <GlassButton label="Alejar" onClick={() => mapRef.current?.zoomOut()}>
-          <MinusIcon size={20} />
-        </GlassButton>
-        <GlassButton label="Ver todas las centrales" onClick={() => fitHubs(700)}>
-          <RecenterIcon size={20} />
-        </GlassButton>
+        <Legend />
+        <span className="h-1.5" />
+        <IconButton label="Acercar" onClick={() => mapRef.current?.zoomIn()}>
+          <PlusIcon size={18} />
+        </IconButton>
+        <IconButton label="Alejar" onClick={() => mapRef.current?.zoomOut()}>
+          <MinusIcon size={18} />
+        </IconButton>
+        <IconButton label="Ver todas las centrales" onClick={() => fitHubs(700)}>
+          <RecenterIcon size={18} />
+        </IconButton>
       </div>
     </>
   );

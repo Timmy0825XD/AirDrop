@@ -14,8 +14,7 @@ import { ClockControl } from "./ClockControl";
 import { EventComposer, EventDock, type EventLaunch, type EventTool } from "./EventDock";
 import { EventPanel } from "./EventPanel";
 import { FlightPanel } from "./FlightPanel";
-import { AlertIcon, CheckIcon, DroneIcon } from "./icons";
-import { Legend } from "./Legend";
+import { AlertIcon, CheckIcon } from "./icons";
 import { HubPanel } from "./HubPanel";
 import { RadarMap, type EventDraft, type MapFocus } from "./map/RadarMap";
 import { ResetDialog } from "./ResetDialog";
@@ -23,8 +22,6 @@ import { TimelinePanel } from "./TimelinePanel";
 import { TopBar } from "./TopBar";
 
 const FLIGHT_REFRESH_MS = 8_000;
-/** Lo que mide la línea de tiempo abierta, más su margen. */
-const TIMELINE_PX = 396;
 /** Cuánto se quedan los avisos de la consola. */
 const NOTICE_MS = 7_000;
 /** Incidentes, apagones y ráfagas en un ensayo no tienen backend. */
@@ -212,7 +209,8 @@ export function Dashboard({ source, userName, onLogout }: Props) {
   const realBlocked = offReason ?? (source.demo ? DEMO_BLOCKED : null);
 
   const live = flightId ? data.flights.find((f) => f.orderId === flightId) : undefined;
-  const leftInset = timelineOpen ? TIMELINE_PX : 0;
+  // El riel ocupa su propia columna: el mapa no queda debajo de él.
+  const leftInset = 0;
   const panelOpen = selection != null;
 
   // RF-34: drones caídos o aterrizando de emergencia, con su nombre de la bandeja.
@@ -256,42 +254,22 @@ export function Dashboard({ source, userName, onLogout }: Props) {
       ? `Escenario reiniciado: ${consola.state.lastReset.orders} pedidos borrados y ${consola.state.lastReset.drones} drones en su central.`
       : null);
 
+  const available = data.hubs.reduce((sum, hub) => sum + hub.fleet.available, 0);
+
   return (
     <main
       data-panel={panelOpen ? "" : undefined}
-      data-timeline={timelineOpen ? "" : undefined}
-      className="relative h-dvh w-full overflow-hidden bg-backdrop"
+      className="flex h-dvh w-full flex-col overflow-hidden bg-ground"
     >
-      <RadarMap
-        hubs={data.hubs}
-        flights={data.flights}
-        geofences={data.geofences}
-        showGeofences={showGeofences}
-        selection={selection}
-        routes={routes}
-        insetLeft={leftInset}
-        panelOpen={panelOpen}
-        focus={focus}
-        onSelect={setSelection}
-        weather={consola.state.weather}
-        landings={landings}
-        now={mapNow}
-        picking={tool != null}
-        draft={draft}
-        onPick={pick}
-      />
-      {/* La pantalla de vuelo de la app sobre los tiles; no capta clics. */}
-      <div className="map-hud pointer-events-none absolute inset-0 z-[1]" />
-
       <TopBar
-        hubs={data.hubs}
-        flights={data.flights}
         connection={data.connection}
         demo={source.demo}
         userName={userName}
         showGeofences={showGeofences}
         onToggleGeofences={() => setShowGeofences((value) => !value)}
         onLogout={onLogout}
+        onReset={consoleOn ? () => setConfirmReset(true) : null}
+        busy={consola.state.busy}
         clock={
           <ClockControl
             clock={data.clock}
@@ -299,7 +277,6 @@ export function Dashboard({ source, userName, onLogout }: Props) {
             offMessage={consola.state.offMessage}
             busy={consola.state.busy}
             onChange={(change) => void consola.setClock(change)}
-            onReset={() => setConfirmReset(true)}
           />
         }
         actors={
@@ -316,59 +293,79 @@ export function Dashboard({ source, userName, onLogout }: Props) {
         }
       />
 
-      <Legend panelOpen={panelOpen} />
-
-      <TimelinePanel
-        open={timelineOpen}
-        status={consola.state.status}
-        offMessage={consola.state.offMessage}
-        entries={consola.state.timeline}
-        onToggle={() => setTimelineOpen((value) => !value)}
-        onPick={pickEntry}
-      />
-      <AlertsTray
-        alerts={consola.state.alerts}
-        className={`left-3 right-3 ${timelineOpen ? "sm:left-[412px]" : "sm:left-4"} ${panelOpen ? "sm:right-[432px]" : "sm:right-4"}`}
-        onPick={pickAlert}
-      />
-
-      <EventDock tool={tool} disabled={!consoleOn} onTool={chooseTool} />
-      {tool && (
-        <EventComposer
-          key={tool}
-          tool={tool}
-          center={draft ? { latitude: draft.latitude, longitude: draft.longitude } : null}
-          busy={consola.state.busy}
-          onDraft={setDraft}
-          onLaunch={(event) => void launch(event)}
-          onClose={closeTool}
+      <div className="relative flex min-h-0 flex-1">
+        <TimelinePanel
+          open={timelineOpen}
+          status={consola.state.status}
+          offMessage={consola.state.offMessage}
+          entries={consola.state.timeline}
+          counters={{ hubs: data.hubs.length, flights: data.flights.length, available }}
+          onToggle={() => setTimelineOpen((value) => !value)}
+          onPick={pickEntry}
         />
-      )}
 
-      {toast && (
-        <p
-          role="alert"
-          className="glass rise-in absolute left-1/2 top-[168px] z-50 flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-2.5 rounded-2xl !border-danger/40 px-4 py-3 text-sm font-medium text-danger"
-        >
-          <AlertIcon size={18} className="shrink-0" />
-          {toast}
-        </p>
-      )}
-      {success && !toast && (
-        <p
-          role="status"
-          className="glass rise-in absolute left-1/2 top-[168px] z-30 flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-2.5 rounded-2xl !border-success/40 px-4 py-3 text-sm font-medium text-success"
-        >
-          <CheckIcon size={18} className="shrink-0" />
-          {success}
-        </p>
-      )}
-      {data.loaded && !data.flights.length && !selection && !tool && (
-        <p className="glass rise-in pointer-events-none absolute bottom-[104px] left-1/2 z-10 flex w-max max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-2.5 rounded-full px-4 py-2.5 text-sm text-muted">
-          <DroneIcon size={16} className="shrink-0 text-accent" />
-          No hay drones en vuelo ahora. Toca una central para ver su flota.
-        </p>
-      )}
+        <div className="relative min-w-0 flex-1">
+          <RadarMap
+            hubs={data.hubs}
+            flights={data.flights}
+            geofences={data.geofences}
+            showGeofences={showGeofences}
+            selection={selection}
+            routes={routes}
+            insetLeft={leftInset}
+            panelOpen={panelOpen}
+            focus={focus}
+            onSelect={setSelection}
+            weather={consola.state.weather}
+            landings={landings}
+            now={mapNow}
+            picking={tool != null}
+            draft={draft}
+            onPick={pick}
+          />
+
+          <AlertsTray
+            alerts={consola.state.alerts}
+            className={`left-3 right-3 ${panelOpen ? "sm:right-[424px]" : ""}`}
+            onPick={pickAlert}
+          />
+
+          <EventDock tool={tool} disabled={!consoleOn} onTool={chooseTool} />
+          {tool && (
+            <EventComposer
+              key={tool}
+              tool={tool}
+              center={draft ? { latitude: draft.latitude, longitude: draft.longitude } : null}
+              busy={consola.state.busy}
+              onDraft={setDraft}
+              onLaunch={(event) => void launch(event)}
+              onClose={closeTool}
+            />
+          )}
+
+          {toast && (
+            <p
+              role="alert"
+              className="enter-up absolute left-1/2 top-16 z-50 flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-2.5 rounded-lg border border-danger/45 bg-panel px-4 py-2.5 text-[14px] text-danger shadow-[0_10px_30px_-14px_var(--shadow)]"
+            >
+              <AlertIcon size={17} className="shrink-0" />
+              {toast}
+            </p>
+          )}
+          {success && !toast && (
+            <p
+              role="status"
+              className="enter-up absolute left-1/2 top-16 z-30 flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-2.5 rounded-lg border border-success/40 bg-panel px-4 py-2.5 text-[14px] text-text shadow-[0_10px_30px_-14px_var(--shadow)]"
+            >
+              <CheckIcon size={17} className="shrink-0 text-success" />
+              {success}
+            </p>
+          )}
+          {data.loaded && !data.flights.length && !selection && !tool && (
+            <p className="pointer-events-none absolute bottom-[96px] left-1/2 z-10 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 text-center text-[13px] text-muted [text-shadow:0_1px_8px_var(--ground)]">
+              No hay drones en vuelo. Toca una central para ver su flota.
+            </p>
+          )}
 
       {selection?.kind === "hub" && (
         <HubPanel
@@ -407,6 +404,9 @@ export function Dashboard({ source, userName, onLogout }: Props) {
           onSelect={setSelection}
         />
       )}
+
+        </div>
+      </div>
 
       {confirmReset && (
         <ResetDialog

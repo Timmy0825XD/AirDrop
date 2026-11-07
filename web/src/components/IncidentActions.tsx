@@ -64,8 +64,8 @@ export function IncidentActions({
 
   return (
     <Section title="Lanzar un incidente">
-      {disabledReason && <p className="mb-3 text-sm text-muted">{disabledReason}</p>}
-      <div className="grid grid-cols-2 gap-2">
+      {disabledReason && <p className="mb-3 text-[13px] text-muted">{disabledReason}</p>}
+      <div className="grid grid-cols-2 gap-1.5">
         {CATALOG.filter((item) => item.kind !== "cooling_failure" || cold).map((item) => {
           const confirming = armed === item.kind;
           return (
@@ -81,22 +81,24 @@ export function IncidentActions({
                 setArmed(null);
                 onLaunch(item.kind);
               }}
-              className={`flex min-h-[64px] items-start gap-2.5 rounded-[18px] border px-3 py-2.5 text-left transition active:scale-[0.97] disabled:opacity-45 focus-visible:outline-2 focus-visible:outline-accent ${
+              className={`press flex min-h-[60px] items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left disabled:opacity-40 ${
                 confirming
-                  ? "border-danger bg-danger/20"
+                  ? "border-danger bg-danger/16"
                   : item.severe
-                    ? "border-danger/35 bg-danger/8 hover:bg-danger/15"
-                    : "glass-card hover:bg-white/8"
+                    ? "border-danger/30 hover:border-danger/55 hover:bg-danger/8"
+                    : "border-line hover:border-line-strong hover:bg-hover"
               }`}
             >
-              <span className={`mt-0.5 shrink-0 ${item.severe ? "text-danger" : "text-accent"}`}>
-                {item.icon(18)}
+              <span className={`mt-px shrink-0 ${item.severe ? "text-danger" : "text-muted"}`}>
+                {item.icon(17)}
               </span>
               <span className="min-w-0">
-                <span className="block text-[13px] font-semibold leading-tight text-text">
+                <span
+                  className={`block text-[13px] font-medium leading-tight ${confirming ? "text-danger" : "text-text"}`}
+                >
                   {confirming ? "Toca otra vez para lanzar" : item.label}
                 </span>
-                <span className="mt-0.5 block text-[11px] leading-tight text-muted">{item.effect}</span>
+                <span className="mt-1 block text-[11.5px] leading-tight text-muted">{item.effect}</span>
               </span>
             </button>
           );
