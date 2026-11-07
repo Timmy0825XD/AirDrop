@@ -657,3 +657,123 @@ nombra medicamentos ni personas.
   `production`).
 
 **La app lo usará** en una pestaña "Tablero" del operador.
+
+## 17. La consola de simulación: lo que cambia para la app — Hecho (PR #120 a #134)
+
+La web pasó a ser la consola de simulación del administrador (RU-32, RF-31 a
+RF-40). La app no gana pantallas obligatorias y no se quitó ningún endpoint,
+pero cambian la hora, algunos estados y llegan avisos nuevos. Todo lo de
+abajo está en el código de `backend/src`; los mensajes son los de Nest.
+
+### Para todos los roles
+
+- **Hora simulada (RF-31).** Al conectar al socket `/telemetry`, y cada vez
+  que el administrador la cambia, llega `clock` a **todos**:
+  `{ now: "2026-11-06T15:04:10.000Z", speed: 1 | 2 | 4 | 8, paused: boolean }`.
+  La hora de la app es `now + (ahora_real − hora_de_llegada) × speed` (sin
+  avanzar si `paused`). Las cuentas regresivas van con esa hora: los 5 min
+  del código (`expiresAt`), la ETA, las franjas de los programados y los
+  vencimientos. A x8, los 5 min del código son 37,5 s reales. Las fechas que
+  manda Nest (`createdAt`, `expiresAt`, `scheduledAt`…) ya vienen en hora
+  simulada. JWT, OTP y el límite de intentos de login siguen en hora real.
+  Sin `CONTROL_ENABLED` el reloj es el real a x1.
+- **Más `order-status`.** Ahora también se anuncian por el socket: crear una
+  urgencia o una urgencia entre centrales (`received`), rechazar
+  (`rejected`), autorizar (`pending_load`, también desde HTTP) y vencer
+  (`expired`). Si la app recargaba la lista a mano en esos casos, ya puede
+  esperar el aviso.
+- **`linkLost`** en `telemetry` y `hub-telemetry`: sin enlace, la posición
+  es estimada hasta que el dron aterriza en su central. Mostrarla con otro
+  aspecto ("Sin enlace").
+
+### Solicitante
+
+- **Incidente en vuelo (RF-34, RF-35).** Si el dron de una urgencia aterriza
+  de emergencia o cae, el pedido vuelve de `in_flight` a `received` con
+  `statusReason` «El dron tuvo un incidente en vuelo; el pedido vuelve a
+  despacharse.» y entra otra vez a la oferta de las centrales. Otro dron lo
+  lleva: pasa de nuevo por `pending_load` → `in_flight`. **El código de
+  entrega cambia** al confirmar la carga otra vez (sale de `loadConfirmedAt`):
+  hay que volver a pedir `GET /orders/:id/delivery-code` y no mostrar el
+  anterior. Un programado con incidente sigue RF-18 (reintento o
+  `reassigned`).
+- **Paquete perdido:** con choque grave o dron perdido, `returnOutcome` puede
+  ser `lost` (además de `restocked` y `quarantined`).
+
+### Despachador
+
+- **Central sin energía (RF-36, CU-45).** `powerOutageUntil` en la central
+  (`null` con energía). Mientras dure, `POST /orders/:id/authorize` y
+  `POST /orders/:id/confirm-load` responden **409** «La central está sin
+  energía: no puede autorizar ni confirmar cargas hasta que vuelva.». Las
+  urgencias pasan a otra central; lo autorizado sin cargar suelta el dron con
+  `statusReason` «La central se quedó sin energía; el pedido pasa a otra
+  central o se reintenta.». Avisos nuevos en la bandeja: `hub_outage` y
+  `hub_power_restored`.
+- **Vuelos en curso.** `GET /orders/in-flight` incluye los pedidos
+  `delivered` cuyo dron todavía vuelve vacío a la central. Mostrarlos como
+  "Volviendo a la central", no como "Entregado".
+- **Despachador automático (RF-37).** Si la consola lo enciende, autoriza y
+  confirma la carga en cualquier central. El pedido trae `autoDispatched:
+  true`; mostrar "Autorizado por el despachador automático". Un despachador
+  real puede seguir trabajando a la vez: lo que el automático ya tomó
+  responde los errores de siempre (ya autorizado, ya cargado).
+- **Incidentes.** Una urgencia entre centrales con incidente vuelve a la cola
+  de su central de origen (`received`, con el `statusReason` de arriba) y se
+  autoriza y carga otra vez. Un pedido puede tener varias misiones; la
+  vigente es la última. El paquete que vuelve tras un aterrizaje de
+  emergencia entra a la cuarentena con el motivo `incident` (además de
+  `cold_chain` y `packaging`).
+- **Traza del motor.** Una central sin energía sale con la nota «La central
+  está sin energía.».
+
+### Operador de flota
+
+- **Estado nuevo del dron: `grounded`.** Aterrizó de emergencia fuera de su
+  central y espera el rescate. Al rescatarlo pasa a `maintenance` con un
+  periodo que abrió el sistema (`openedByUserId` nulo). Tras un choque grave
+  queda `out_of_service`; un dron perdido, `out_of_service` de inmediato.
+  Los conteos de `GET /fleet/map` traen `grounded` junto a los demás.
+- **Socket `hub-incident`** en la sala de la central (`subscribe-hub`, el
+  operador): `{ id, orderId, droneId, hubId, kind, severity, leg, protocol,
+  outcome, latitude, longitude, batteryPercent, landingLatitude,
+  landingLongitude, rescueDueAt, packageOnBoard, packageLost, occurredAt,
+  resolvedAt }`. No trae el medicamento.
+  - `protocol`: `continue`, `return_to_hub`, `emergency_landing`, `crash`
+    o `lost`.
+  - `outcome`: `continued`, `returning`, `returned`, `landing`, `grounded`,
+    `rescued` o `lost`.
+  - `kind`: los de `IncidentKind` (`battery_critical`, `wind_limit`,
+    `route_blocked`, `battery_short`, `battery_degraded`, `motor_failure`,
+    `dual_motor_failure`, `gps_loss_minor`, `gps_loss_major`, `link_loss`,
+    `cooling_failure`, `collision_minor`, `collision_major`, `drone_lost`).
+  - Con `landingLatitude`/`landingLongitude` se dibuja dónde bajó el dron.
+- **Alerta nueva:** `alert` con `kind: 'wind_limit'` (el viento pasa del
+  límite del Wingcopter donde va el dron).
+- **Geovallas temporales (RF-36).** `GET /geofences` trae `expiresAt`: con
+  fecha es temporal (la puso la consola y vence sola); `null`, del operador.
+  Mostrarlas distinto y con la hora de vencimiento.
+- **Ruta cambiada en el aire (RF-33).** `GET /fleet/flights` y
+  `GET /fleet/map` traen la ruta nueva; la app no recibe un aviso propio
+  (ver pendientes).
+
+### Administrador
+
+- **KPI nuevas** en `/analytics`: `incidentRate` (incidentes por cada 100
+  misiones que despegaron; meta verde ≤ 2, ámbar ≤ 5) y `groundings`
+  (drones que no volvieron a su central: aterrizaje de emergencia, choque
+  grave o dron perdido; verde 0, ámbar 1).
+- **Solicitantes simulados.** Los pedidos que genera la consola salen de
+  cuentas `simulated` («Solicitante simulado 1» … 4, correo `.invalid`, sin
+  documento ni celular). Nadie inicia sesión con ellas.
+
+### Pendiente
+
+- **Aviso de reruteo al operador.** El cambio de ruta en el aire solo se ve en
+  la consola web y en la ruta de `/fleet/flights`. Falta un evento propio en
+  la sala de la central si la app lo quiere avisar.
+
+**La app lo usará** para que las cuentas regresivas coincidan con la TV
+durante la demostración, para no mostrar un código viejo después de un
+incidente y para que el operador y el despachador vean incidentes, apagones
+y drones en tierra con sus estados reales.
