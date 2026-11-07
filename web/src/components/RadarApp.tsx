@@ -8,10 +8,10 @@ import { Dashboard } from "./Dashboard";
 import { LoginForm } from "./LoginForm";
 
 const SPLASH = (
-  <main className="app-backdrop grid min-h-dvh place-items-center">
-    <div role="status" className="flex flex-col items-center gap-4 text-sm text-muted">
-      <span className="size-8 animate-spin rounded-full border-2 border-glass-border border-t-accent motion-reduce:animate-none" />
-      Cargando…
+  <main className="grid min-h-dvh place-items-center bg-ground">
+    <div role="status" className="flex items-center gap-3 text-[14px] text-muted">
+      <span className="size-4 animate-spin rounded-full border-2 border-line-strong border-t-accent motion-reduce:animate-none" />
+      Cargando la consola…
     </div>
   </main>
 );

@@ -1,267 +1,195 @@
 @import "tailwindcss";
 
 /*
- * "Grafito y turquesa", la misma paleta oscura de la app Flutter
- * (frontend/lib/theme/app_palette.dart y app_theme.dart).
+ * "Carta aeronáutica": la consola se proyecta en una TV, en una sala con
+ * poca luz, así que es oscura. Paneles sólidos con líneas finas, sin vidrio
+ * ni brillos. El color hace trabajos concretos: azul señal para lo elegido y
+ * las acciones, magenta de carta para las zonas restringidas y el semáforo
+ * solo para el estado.
  */
 :root {
-  /* Degradado del fondo: arriba, en medio y abajo. */
-  --backdrop-1: #1f2a30;
-  --backdrop-2: #14191d;
-  --backdrop-3: #0b0e10;
-  --surface: #1a2126;
-  --sunk: #12171a;
-  --line: #2c363c;
-  --text: #eef3f5;
-  --muted: #a6b4ba;
+  /* Fondo y superficies, de la más honda a la más alta. */
+  --ground: #090c10;
+  --panel: #0f141a;
+  --raised: #151b23;
+  --hover: #1a212a;
+  --line: #222a34;
+  --line-strong: #323c48;
 
-  /* Vidrio: tarjetas translúcidas, la barra y los paneles sobre el mapa. */
-  --glass: rgb(255 255 255 / 0.07);
-  --glass-border: rgb(255 255 255 / 0.1);
-  --bar: rgb(22 28 32 / 0.94);
-  --shadow: rgb(0 0 0 / 0.4);
+  /* Texto. */
+  --text: #e7ecf1;
+  --muted: #8c99a6;
+  --faint: #5f6b78;
 
-  /* Acento en degradado y su color de texto. */
-  --accent: #4fc3c9;
-  --accent-from: #6ed6d9;
-  --accent-to: #3fa9c0;
-  --on-accent: #071214;
-  --accent-glow: rgb(79 195 201 / 0.2);
-  --sky-glow: rgb(191 210 226 / 0.12);
+  /* Acción y selección. */
+  --accent: #7aa7ff;
+  --accent-strong: #9dbdff;
+  --on-accent: #07101f;
 
-  /* Semáforo. */
-  --success: #4ade80;
-  --warning: #fbbf6a;
-  --danger: #ff8fa3;
-  --info: #a9c8e6;
+  /* Estado. */
+  --success: #4cc38a;
+  --warning: #f0b445;
+  --danger: #ff6b6b;
+  --info: #8ec5ff;
 
-  /* El dron de la marca en oscuro (DroneMark de la app): claro sobre grafito. */
-  --mark-body: #eef3f5;
-  --mark-wing: #d4dde1;
-  --mark-boom: #a6b4ba;
-  --mark-prop: #84d5d9;
+  /* Carta: zonas restringidas. */
+  --magenta: #e05ad6;
+
+  --shadow: rgb(0 0 0 / 0.45);
+
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
 }
 
 @theme inline {
-  --color-backdrop: var(--backdrop-2);
-  --color-ink: var(--backdrop-3);
-  --color-surface: var(--surface);
-  --color-sunk: var(--sunk);
+  --color-ground: var(--ground);
+  --color-panel: var(--panel);
+  --color-raised: var(--raised);
+  --color-hover: var(--hover);
   --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
   --color-text: var(--text);
   --color-muted: var(--muted);
-  --color-glass: var(--glass);
-  --color-glass-border: var(--glass-border);
-  --color-bar: var(--bar);
+  --color-faint: var(--faint);
   --color-accent: var(--accent);
-  --color-accent-from: var(--accent-from);
-  --color-accent-to: var(--accent-to);
+  --color-accent-strong: var(--accent-strong);
   --color-on-accent: var(--on-accent);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
   --color-info: var(--info);
-  --font-sans: var(--font-space-grotesk);
+  --color-magenta: var(--magenta);
+  --font-sans: var(--font-geist);
+  --font-mono: var(--font-geist-mono);
 }
 
 html,
 body {
   height: 100%;
-  background: var(--backdrop-3);
+  background: var(--ground);
   color: var(--text);
-  font-family: var(--font-space-grotesk), system-ui, sans-serif;
+  font-family: var(--font-geist), system-ui, sans-serif;
+  font-feature-settings: "ss01", "cv11";
 }
 
-/* El fondo de la app: degradado de grafito con velo de cielo y turquesa. */
-@utility app-backdrop {
-  background:
-    radial-gradient(120% 120% at 0% 0%, var(--sky-glow), transparent 60%),
-    radial-gradient(110% 110% at 100% 100%, var(--accent-glow), transparent 60%),
-    linear-gradient(135deg, var(--backdrop-1), var(--backdrop-2) 48%, var(--backdrop-3));
+/* Lo que el navegador dibuja por su cuenta también es de la consola. */
+::selection {
+  background: rgb(122 167 255 / 0.32);
+  color: var(--text);
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+}
+input {
+  caret-color: var(--accent);
 }
 
-/* Vidrio más opaco, como la barra flotante y las hojas sobre el mapa. */
-@utility glass {
-  background: var(--bar);
-  border: 1px solid var(--glass-border);
-  box-shadow: 0 18px 44px -12px var(--shadow);
-  backdrop-filter: blur(18px) saturate(140%);
-  -webkit-backdrop-filter: blur(18px) saturate(140%);
+/* Cifras de tablero: mono y del mismo ancho, para que no bailen al cambiar. */
+@utility figures {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
-@utility bg-accent-gradient {
-  background-image: linear-gradient(135deg, var(--accent-from), var(--accent-to));
+/* Panel sólido sobre el mapa: borde fino y una sombra baja con desplazamiento. */
+@utility surface {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 10px 30px -14px var(--shadow);
 }
 
-/* Etiquetas: mayúsculas pequeñas con aire (labelSmall de la app). */
-@utility eyebrow {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--muted);
-}
-
-/*
- * La capa de pantalla de vuelo de la app (MapHudOverlay): un velo parejo,
- * una retícula fina del acento cada 32 px, una luz del acento arriba y los
- * bordes que se apagan hacia el fondo. No capta clics.
- */
-.map-hud {
-  background:
-    radial-gradient(95% 95% at 50% 50%, transparent 55%, rgb(11 14 16 / 0.85)),
-    radial-gradient(90% 90% at 80% 0%, rgb(79 195 201 / 0.16), transparent 70%),
-    repeating-linear-gradient(0deg, rgb(79 195 201 / 0.07) 0 1px, transparent 1px 32px),
-    repeating-linear-gradient(90deg, rgb(79 195 201 / 0.07) 0 1px, transparent 1px 32px),
-    rgb(11 14 16 / 0.12);
-}
-
-/*
- * Tarjeta de vidrio de la app (GlassCard, oscuro): luz arriba que se apaga
- * hacia abajo, como un panel iluminado desde el techo, y borde fino.
- */
-@utility glass-card {
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.07), rgb(255 255 255 / 0.028));
-  border: 1px solid var(--glass-border);
-}
-
-/* Botón principal de la app: cápsula con el acento en degradado. */
-@utility stadium {
-  border-radius: 9999px;
-  background-image: linear-gradient(135deg, var(--accent-from), var(--accent-to));
-  color: var(--on-accent);
-  box-shadow: 0 14px 34px -12px rgb(79 195 201 / 0.55);
-}
-
-/* Las centrales quedan por encima del velo del mapa (z-index 1). */
+/* Las centrales y los chips quedan sobre las capas del mapa. */
 .maplibregl-marker {
   z-index: 2;
 }
 
-/* Con un panel abierto, la atribución quedaría debajo de él: se recoge. */
-@media (min-width: 640px) {
-  main[data-panel] .maplibregl-ctrl-bottom-right {
-    display: none;
-  }
-}
-
 .maplibregl-ctrl-attrib {
-  background: var(--bar) !important;
-  color: var(--muted) !important;
-  border-radius: 10px !important;
+  background: var(--panel) !important;
+  color: var(--faint) !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
 }
 .maplibregl-ctrl-attrib a {
-  color: var(--muted) !important;
+  color: var(--faint) !important;
 }
-@keyframes slide-in {
-  from {
-    transform: translateX(24px);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
+.maplibregl-ctrl-attrib-button {
+  filter: invert(0.7);
 }
 
-@keyframes rise-in {
+/* Entradas cortas, siempre desde algo ya visible (nunca desde cero). */
+@keyframes enter-up {
   from {
-    transform: translateY(12px);
+    transform: translateY(6px);
     opacity: 0;
   }
-  to {
-    transform: translateY(0);
-    opacity: 1;
+}
+@keyframes enter-side {
+  from {
+    transform: translateX(10px);
+    opacity: 0;
   }
 }
-
-@keyframes hub-ping {
+@keyframes enter-pop {
   from {
-    transform: scale(1);
-    opacity: 0.55;
-  }
-  to {
-    transform: scale(1.9);
+    transform: scale(0.97) translateY(-4px);
     opacity: 0;
   }
 }
 
-/* Hélices del dron de la marca: unas 9 vueltas por segundo, en pares opuestos. */
-@keyframes rotor-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-/* Luz de navegación: apagada casi todo el ciclo y un destello corto. */
-@keyframes nav-flash {
-  0%,
-  84% {
-    opacity: 0.15;
-  }
-  90% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0.15;
-  }
-}
-
-/* El halo que late bajo el dron y en la central elegida. */
-@keyframes halo-pulse {
+/* El dron que espera rescate: un anillo que se abre (estado, no adorno). */
+@keyframes ring-out {
   from {
-    transform: scale(0.6);
-    opacity: 0.8;
+    transform: scale(0.8);
+    opacity: 0.7;
   }
   to {
-    transform: scale(1.7);
+    transform: scale(1.8);
     opacity: 0;
   }
 }
 
-.brand-mark-live .rotor-cw,
-.brand-mark-live .rotor-ccw {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: rotor-spin 110ms linear infinite;
+.enter-up {
+  animation: enter-up 220ms var(--ease-out) both;
 }
-.brand-mark-live .rotor-ccw {
-  animation-direction: reverse;
+.enter-side {
+  animation: enter-side 220ms var(--ease-out) both;
 }
-.brand-mark-live .nav-light {
-  animation: nav-flash 1.4s linear infinite;
+.enter-pop {
+  transform-origin: top right;
+  animation: enter-pop 180ms var(--ease-out) both;
 }
-.brand-mark-live .nav-light-late {
-  animation-delay: -0.7s;
+.ring-out {
+  animation: ring-out 1.6s var(--ease-out) infinite;
 }
 
-.halo-pulse {
-  animation: halo-pulse 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+/* Responder al toque: los botones ceden un poco al presionarlos. */
+.press {
+  transition:
+    transform 140ms var(--ease-out),
+    background-color 140ms ease,
+    border-color 140ms ease,
+    color 140ms ease;
 }
-
-.panel-enter {
-  animation: slide-in 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-
-.rise-in {
-  animation: rise-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
-}
-
-.hub-ping {
-  animation: hub-ping 1.6s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+.press:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .panel-enter,
-  .rise-in,
-  .halo-pulse,
-  .brand-mark-live .rotor-cw,
-  .brand-mark-live .rotor-ccw,
-  .brand-mark-live .nav-light {
+  .enter-up,
+  .enter-side,
+  .enter-pop {
     animation: none;
   }
-  .hub-ping {
+  .ring-out {
     animation: none;
     opacity: 0;
+  }
+  .press:active:not(:disabled) {
+    transform: none;
   }
 }

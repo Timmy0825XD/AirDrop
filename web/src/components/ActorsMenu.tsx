@@ -2,8 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { ActorsState, ChaosIntensity, ChaosState, GeneratedKind } from "@/lib/types";
-import { BotIcon, CloseIcon, PackageIcon, StormIcon, SurgeIcon } from "./icons";
-import { Chip, GlassButton, IconTile } from "./ui";
+import { BotIcon, ChaosIcon, PackageIcon, SurgeIcon } from "./icons";
 
 const INTENSITIES: Array<{ value: ChaosIntensity; label: string; every: string }> = [
   { value: "low", label: "Baja", every: "~15 min" },
@@ -21,16 +20,15 @@ type Props = {
 };
 
 /**
- * RF-37, CU-39 y RF-38: los actores simulados y el modo caos. Un botón en
- * la barra abre la tarjeta con los interruptores (despachador automático,
- * flujo continuo y caos con su intensidad) y el generador a pedido. El pico
- * de urgencias va en la barra de eventos, porque se elige sobre el mapa. Con
- * el caos encendido el botón se pone rojo y lo dice, para verlo en la TV.
+ * RF-37, CU-39 y RF-38: los actores simulados y el modo caos. Un botón de la
+ * barra abre la tarjeta con los interruptores y el generador a pedido. El
+ * pico de urgencias va en la barra de eventos, porque se elige sobre el mapa.
+ * Con el caos encendido el botón se pone rojo y lo dice, para verlo en la TV.
  */
 export function ActorsMenu({ actors, chaos, busy, onChange, onChaos, onGenerate }: Props) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
-  const on = Number(actors.autoDispatcher) + Number(actors.orderFlow) + Number(chaos.enabled);
+  const on = Number(actors.autoDispatcher) + Number(actors.orderFlow);
   const chaosLabel = INTENSITIES.find((item) => item.value === chaos.intensity)?.label ?? "";
 
   useEffect(() => {
@@ -57,26 +55,18 @@ export function ActorsMenu({ actors, chaos, busy, onChange, onChaos, onGenerate 
         aria-expanded={open}
         aria-haspopup="dialog"
         title="Actores simulados y modo caos"
-        className={`flex h-10 items-center gap-2 rounded-[13px] border px-3 text-sm font-semibold transition active:scale-95 focus-visible:outline-2 focus-visible:outline-accent ${
+        className={`press flex h-10 items-center gap-2 rounded-lg border px-3 text-[14px] font-medium ${
           chaos.enabled
-            ? "border-danger/50 bg-danger/15 text-danger"
-            : on > 0
-              ? "border-accent/45 bg-accent/12 text-accent"
-              : "border-glass-border bg-glass text-text hover:text-accent"
+            ? "border-danger/55 bg-danger/12 text-danger"
+            : open || on > 0
+              ? "border-accent/50 bg-accent/12 text-accent"
+              : "border-line bg-panel text-muted hover:border-line-strong hover:bg-hover hover:text-text"
         }`}
       >
-        {chaos.enabled ? <StormIcon size={17} /> : <BotIcon size={17} />}
-        {chaos.enabled ? (
-          <span>Caos · {chaosLabel.toLowerCase()}</span>
-        ) : (
-          <span className="hidden 2xl:inline">Actores</span>
-        )}
+        {chaos.enabled ? <ChaosIcon size={17} /> : <BotIcon size={17} />}
+        {chaos.enabled ? <span>Caos · {chaosLabel.toLowerCase()}</span> : <span>Actores</span>}
         {on > 0 && (
-          <span
-            className={`grid size-5 place-items-center rounded-full text-[11px] font-bold tabular-nums ${
-              chaos.enabled ? "bg-danger text-on-accent" : "bg-accent text-on-accent"
-            }`}
-          >
+          <span className="figures grid h-5 min-w-5 place-items-center rounded-md bg-current/15 px-1 text-[12px]">
             {on}
           </span>
         )}
@@ -85,30 +75,20 @@ export function ActorsMenu({ actors, chaos, busy, onChange, onChaos, onGenerate 
       {open && (
         <section
           role="dialog"
-          aria-label="Actores simulados"
-          className="glass rise-in absolute right-0 top-[calc(100%+18px)] z-40 w-[400px] rounded-[28px] p-5"
+          aria-label="Actores simulados y modo caos"
+          className="surface enter-pop absolute right-0 top-[calc(100%+12px)] z-40 w-[400px] overflow-hidden rounded-xl"
         >
-          <header className="flex items-start gap-3.5">
-            <IconTile tone="info">
-              <BotIcon size={24} />
-            </IconTile>
-            <div className="min-w-0 flex-1">
-              <h2 className="text-[22px] font-semibold leading-[1.08] tracking-[-0.03em]">
-                Actores simulados
-              </h2>
-              <p className="mt-1 text-[13px] leading-snug text-muted">
-                Usan los mismos servicios que una persona: el motor decide de verdad.
-              </p>
-            </div>
-            <GlassButton label="Cerrar" onClick={() => setOpen(false)} className="!size-10 !rounded-[13px]">
-              <CloseIcon size={16} />
-            </GlassButton>
+          <header className="px-5 pb-3 pt-4">
+            <h2 className="text-[17px] font-semibold tracking-[-0.01em]">Actores simulados</h2>
+            <p className="mt-1 text-[13px] leading-snug text-muted">
+              Usan los mismos servicios que una persona: el motor decide de verdad.
+            </p>
           </header>
 
-          <div className="mt-4 space-y-2">
+          <div className="divide-y divide-line border-y border-line">
             <SwitchRow
               title="Despachador automático"
-              hint="Autoriza a los 10 s y confirma la carga a los 20 s, en cualquier central activa. Pedidos reales y generados."
+              hint="Autoriza a los 10 s y confirma la carga a los 20 s, en cualquier central activa."
               checked={actors.autoDispatcher}
               disabled={busy}
               onChange={(value) => onChange({ autoDispatcher: value })}
@@ -122,21 +102,19 @@ export function ActorsMenu({ actors, chaos, busy, onChange, onChaos, onGenerate 
             />
           </div>
 
-          <div className="mt-4">
-            <span className="eyebrow">Generar ahora</span>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <GenerateButton disabled={busy} onClick={() => onGenerate("emergency")}>
-                <SurgeIcon size={18} />
-                Urgencia
-              </GenerateButton>
-              <GenerateButton disabled={busy} onClick={() => onGenerate("scheduled")}>
-                <PackageIcon size={18} />
-                Programado
-              </GenerateButton>
-            </div>
+          <div className="flex items-center gap-2 px-5 py-4">
+            <span className="flex-1 text-[13px] text-muted">Generar ahora</span>
+            <GenerateButton disabled={busy} onClick={() => onGenerate("emergency")}>
+              <SurgeIcon size={16} />
+              Urgencia
+            </GenerateButton>
+            <GenerateButton disabled={busy} onClick={() => onGenerate("scheduled")}>
+              <PackageIcon size={16} />
+              Programado
+            </GenerateButton>
           </div>
 
-          <div className="mt-4 border-t border-glass-border pt-4">
+          <div className="border-t border-line bg-ground/40">
             <SwitchRow
               title="Modo caos"
               hint="Sortea clima, fallas, choques y eventos del entorno con pesos realistas. Lo grave (dron perdido, choque grave, apagón) solo en alta."
@@ -145,27 +123,39 @@ export function ActorsMenu({ actors, chaos, busy, onChange, onChaos, onGenerate 
               danger
               onChange={(value) => onChaos({ enabled: value })}
             />
-            <div className="mt-2 grid grid-cols-3 gap-1.5" role="group" aria-label="Intensidad del caos">
-              {INTENSITIES.map((item) => (
-                <Chip
-                  key={item.value}
-                  selected={chaos.intensity === item.value}
-                  disabled={busy}
-                  onClick={() => onChaos({ intensity: item.value })}
-                >
-                  <span className="flex w-full flex-col items-center leading-tight">
-                    <span>{item.label}</span>
-                    <span className="text-[10px] font-medium opacity-75">{item.every}</span>
-                  </span>
-                </Chip>
-              ))}
+            <div
+              role="group"
+              aria-label="Intensidad del caos"
+              className="mx-5 mb-4 grid grid-cols-3 rounded-lg border border-line bg-ground p-0.5"
+            >
+              {INTENSITIES.map((item) => {
+                const selected = chaos.intensity === item.value;
+                return (
+                  <button
+                    key={item.value}
+                    type="button"
+                    aria-pressed={selected}
+                    disabled={busy}
+                    onClick={() => onChaos({ intensity: item.value })}
+                    className={`press flex flex-col items-center rounded-md py-1.5 text-[13px] font-medium disabled:opacity-50 ${
+                      selected
+                        ? chaos.enabled
+                          ? "bg-danger/14 text-danger"
+                          : "bg-raised text-text shadow-[inset_0_0_0_1px_var(--line-strong)]"
+                        : "text-muted hover:text-text"
+                    }`}
+                  >
+                    {item.label}
+                    <span className="figures text-[11px] font-normal opacity-75">{item.every}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          <p className="mt-4 rounded-2xl border border-glass-border bg-white/4 px-4 py-3 text-[13px] leading-snug text-muted">
+          <p className="border-t border-line px-5 py-3.5 text-[12.5px] leading-snug text-muted">
             El receptor simulado ingresa el código a tiempo en el 85 % de los pedidos generados; en el
-            resto vencen los 5 min y el dron vuelve con el paquete. El pico de urgencias se lanza
-            desde la barra de abajo.
+            resto vencen los 5 min y el dron vuelve con el paquete.
           </p>
         </section>
       )}
@@ -196,26 +186,28 @@ function SwitchRow({
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`flex w-full items-center gap-3 rounded-[20px] border px-4 py-3 text-left transition active:scale-[0.99] disabled:opacity-55 focus-visible:outline-2 focus-visible:outline-accent ${
-        checked
-          ? danger
-            ? "border-danger/45 bg-danger/12"
-            : "border-accent/40 bg-accent/10"
-          : "border-glass-border bg-white/4 hover:bg-white/8"
-      }`}
+      className="flex w-full items-start gap-4 px-5 py-3.5 text-left transition-colors hover:bg-hover disabled:opacity-55"
     >
       <span className="min-w-0 flex-1">
-        <span className="block text-[16px] font-semibold">{title}</span>
-        <span className="mt-0.5 block text-[13px] leading-snug text-muted">{hint}</span>
+        <span className={`block text-[14px] font-medium ${checked && danger ? "text-danger" : "text-text"}`}>
+          {title}
+        </span>
+        <span className="mt-0.5 block text-[12.5px] leading-snug text-muted">{hint}</span>
       </span>
       <span
         aria-hidden
-        className={`relative h-7 w-12 shrink-0 rounded-full transition ${
-          checked ? (danger ? "bg-danger" : "bg-accent-gradient") : "bg-white/15"
+        className={`relative mt-0.5 h-6 w-10 shrink-0 rounded-full border transition-colors duration-150 ${
+          checked
+            ? danger
+              ? "border-danger bg-danger"
+              : "border-accent bg-accent"
+            : "border-line-strong bg-ground"
         }`}
       >
         <span
-          className={`absolute top-1 size-5 rounded-full bg-white shadow transition-all ${checked ? "left-6" : "left-1"}`}
+          className={`absolute top-[3px] size-4 rounded-full transition-[left,background-color] duration-150 ease-out ${
+            checked ? "left-[19px] bg-on-accent" : "left-[3px] bg-muted"
+          }`}
         />
       </span>
     </button>
@@ -236,7 +228,7 @@ function GenerateButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="flex h-12 items-center justify-center gap-2 rounded-[16px] border border-glass-border bg-glass text-[15px] font-semibold text-text transition hover:border-accent/40 hover:text-accent active:scale-95 disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-accent"
+      className="press flex h-9 items-center gap-1.5 rounded-lg border border-line-strong bg-raised px-3 text-[13px] font-medium text-text hover:bg-hover disabled:opacity-50"
     >
       {children}
     </button>

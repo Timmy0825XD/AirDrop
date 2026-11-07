@@ -14,8 +14,8 @@ Vista web en tiempo real del ecosistema, tipo Flightradar, y **consola de simula
 - **Actores simulados (RF-37, CU-39):** el botón con el robot de la barra superior. Enciende o apaga el despachador automático (autoriza a los 10 s y confirma la carga a los 20 s, en cualquier central) y el flujo continuo de pedidos (uno cada 3 min de reloj, 70 % urgencias), y genera una urgencia o un programado a pedido. El número en el botón dice cuántos están encendidos. El receptor simulado no tiene interruptor: siempre atiende los pedidos generados.
 - **Modo caos (RF-38, CU-40):** en la misma tarjeta, abajo. Apagado por defecto. Encendido sortea clima, fallas, choques y eventos del entorno; la intensidad baja, media o alta pone un evento cada ~15, ~8 o ~4 min de reloj. Lo grave (dron perdido, choque grave, dos motores, apagón) solo sale en alta. Con el caos encendido, el botón de la barra se pone rojo y dice "Caos · media"; cada evento sorteado sale en la línea de tiempo con la marca **Caos**.
 
-- **Centrales:** un cuadro de vidrio con el borde y el brillo del acento y el ícono de su tipo (hospital, clínica, farmacia, banco de sangre, vacunación), cuántos drones tiene en vuelo y cuántos pedidos esperan en su cola. Sin energía, se apaga en ámbar con un rayo tachado. Al tocarlo, un panel a la derecha con su flota (drones y estado), pedidos en marcha, inventario (vencimientos, cadena de frío y cuarentena) y contacto.
-- **Drones en vuelo:** el dron de la marca en un disco grafito con el borde y el halo del color de la misión (turquesa de ida, ámbar de regreso, rosado con alerta), que se desliza entre cada dato de telemetría y gira hacia donde va. Sin enlace se ve atenuado: su posición es estimada. Un dron caído o aterrizado de emergencia queda marcado donde bajó, con la cuenta del rescate.
+- **Centrales:** un cuadro sólido con el ícono de su tipo y, debajo, su nombre con dos cifras: drones en vuelo y pedidos en cola. Tipos: (hospital, clínica, farmacia, banco de sangre, vacunación). Elegida toma el azul de selección. Sin energía, se apaga en ámbar con un rayo tachado. Al tocarlo, un panel a la derecha con su flota (drones y estado), pedidos en marcha, inventario (vencimientos, cadena de frío y cuarentena) y contacto.
+- **Drones en vuelo:** la silueta del dron (claro de ida, ámbar de regreso, rojo con alerta) con su bloque de datos al lado, que se desliza entre cada dato de telemetría y gira hacia donde va. Sin enlace se ve atenuado: su posición es estimada. Un dron caído o aterrizado de emergencia queda marcado donde bajó, con la cuenta del rescate.
 - **Un dron elegido:** panel con batería, velocidad, altitud, temperatura, ETA, fase, alertas y la ruta de ida (línea continua) y de regreso (discontinua) sobre el mapa. Si la ruta cambió en el aire, la de antes queda punteada en gris.
 - **Zonas restringidas:** las geovallas del operador en rosado, con un interruptor arriba. Las temporales, en ámbar, con lo que les falta para vencer. El clima, en círculos: viento y lluvia en azul cielo (el viento con su flecha) y la tormenta en rosado, latiendo.
 - Se cierra el panel con la `✕`, con `Esc` o tocando el mapa vacío.
@@ -49,14 +49,17 @@ Para tener drones de verdad en el mapa: `pnpm seed:demo` en `backend/`, arrancar
 
 ## Apariencia
 
-La misma identidad y el mismo estilo de la app Flutter, "Grafito y turquesa", solo en oscuro (se proyecta en una TV):
+"Carta aeronáutica": una consola de operación sobre un mapa, oscura porque se proyecta en una TV. No copia la app Flutter.
 
-- la marca: el dron de AirDrop visto desde arriba con "AirDrop" (`BrandMark.tsx`, copia de `drone_mark.dart`), con las hélices girando y las luces de navegación;
-- la entrada como la de la app: el espacio aéreo arriba y la hoja con el encabezado en mayúsculas, campos con ícono y el botón cápsula con flecha;
-- vidrio en la barra y los paneles, tarjetas de vidrio iluminadas para las cifras (`MetricTile`), pastillas con punto (`StatusPill`), chips para elegir (`ChoicePill`) y botones de vidrio de 46 px (`GlassIconButton`), también para acercar, alejar y recentrar el mapa;
-- sobre el mapa, la capa de pantalla de vuelo de la app (`MapHudOverlay`): retícula fina del acento, luz arriba y bordes que se apagan.
+- **Estructura en franjas:** una barra fina arriba (marca, hora simulada grande con su velocidad, estado y mandos), un riel fijo a la izquierda (tres cifras de la flota y la línea de tiempo como bitácora), el mapa al resto y el inspector a la derecha solo cuando se elige algo. La leyenda está plegada en un botón junto a los mandos del mapa.
+- **Superficies sólidas** con líneas finas de 1 px; sin vidrio, brillos ni degradados. Botones de 8 px de radio, paneles de 12.
+- **Tipografía:** Geist para todo y Geist Mono para las cifras (hora, identificadores, métricas), con números tabulares.
+- **Color con trabajo:** azul señal para lo elegido y las acciones; magenta de carta, rayado, para las zonas restringidas; verde, ámbar y rojo solo para el estado. El mapa base de Esri va apagado y sin color para que resalte lo vivo.
+- **Dron:** una silueta vectorial (`src/lib/drone-shape.ts`, la misma del ícono y la marca) que apunta a su rumbo, con su bloque de datos al lado (identificador; altura, velocidad y batería) unido por una línea guía, como en un radar. Se lee sin pasar el mouse.
+- **Íconos** dibujados a mano en una cuadrícula de 24 con un solo trazo (`src/components/icons.tsx`).
+- **Movimiento** solo para estado: entradas cortas (180–220 ms, `ease-out` fuerte), botones que ceden al presionarlos y el anillo del dron que espera rescate. Con "reducir movimiento" se apagan.
 
-El mapa base no tiene que ser el mismo de la app. Los colores viven en `src/app/globals.css` (y `src/lib/theme.ts` para el mapa) y copian `frontend/lib/theme/app_palette.dart`.
+Los tokens viven en `src/app/globals.css` (y `src/lib/theme.ts` para el mapa). Las skills de diseño usadas (`impeccable` y las de Emil Kowalski) están en `web/.claude/skills/`.
 
 ## Cómo está hecha
 
@@ -76,7 +79,7 @@ src/
     ResetDialog.tsx    confirmación del reinicio
     map/               RadarMap, marcadores (central, clima, zona, rescate), ícono y movimiento del dron
     icons.tsx          íconos de trazo (dron, tipos de central, métricas)
-    ui.tsx             piezas de vidrio compartidas (pastillas, cifras, panel)
+    ui.tsx             piezas compartidas (estados, cifras, botones, panel)
     Legend.tsx         leyenda de colores del mapa
     HubPanel.tsx       panel de la central
     FlightPanel.tsx    panel del vuelo

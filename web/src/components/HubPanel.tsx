@@ -10,21 +10,19 @@ import {
   ChevronIcon,
   DroneIcon,
   HubTypeIcon,
-  ListIcon,
   MailIcon,
-  PackageIcon,
   PhoneIcon,
   PowerIcon,
   PowerOffIcon,
   SnowflakeIcon,
 } from "./icons";
 import {
+  Button,
   Chip,
-  IconTile,
+  Note,
   PanelMessage,
   PanelShell,
   Pill,
-  PrimaryButton,
   Section,
   Stat,
   TONE_TEXT,
@@ -53,40 +51,41 @@ function PowerSection({
 }) {
   const [minutes, setMinutes] = useState(30);
   return (
-    <Section title="Energía" icon={until ? <PowerOffIcon size={14} /> : <PowerIcon size={14} />}>
-      {blocked && <p className="mb-3 text-sm text-muted">{blocked}</p>}
+    <Section title="Energía">
+      {blocked && <p className="mb-3 text-[13px] text-muted">{blocked}</p>}
       {until ? (
-        <>
-          <p className="mb-3 rounded-2xl border border-warning/35 bg-warning/10 px-3.5 py-3 text-sm font-medium text-warning">
-            Sin energía hasta las {formatTime(until)}. No autoriza ni carga; sus urgencias pasan a otra
-            central.
-          </p>
-          <PrimaryButton busy={busy} disabled={blocked != null} className="w-full" onClick={onEnd}>
+        <div className="space-y-3">
+          <Note tone="warn">
+            Sin energía hasta las <span className="figures">{formatTime(until)}</span>. No autoriza ni
+            carga; sus urgencias pasan a otra central.
+          </Note>
+          <Button busy={busy} disabled={blocked != null} className="w-full" onClick={onEnd}>
+            <PowerIcon size={16} />
             Devolver la energía
-          </PrimaryButton>
-        </>
+          </Button>
+        </div>
       ) : !active ? (
-        <p className="text-sm text-muted">Una central suspendida no se apaga: ya no despacha.</p>
+        <p className="text-[13px] text-muted">Una central suspendida no se apaga: ya no despacha.</p>
       ) : (
         <>
-          <span className="eyebrow">Apagón de</span>
-          <div className="mb-3 mt-2 flex flex-wrap gap-1.5">
+          <span className="text-[13px] text-muted">Apagón de</span>
+          <div className="mb-3 mt-2 grid grid-cols-4 gap-1">
             {OUTAGE_MINUTES.map((value) => (
               <Chip key={value} selected={minutes === value} onClick={() => setMinutes(value)}>
                 {value < 60 ? `${value} min` : `${value / 60} h`}
               </Chip>
             ))}
           </div>
-          <PrimaryButton
+          <Button
             tone="danger"
             busy={busy}
             disabled={blocked != null}
             className="w-full"
             onClick={() => onStart(minutes)}
           >
-            <PowerOffIcon size={17} />
+            <PowerOffIcon size={16} />
             Dejar sin energía
-          </PrimaryButton>
+          </Button>
         </>
       )}
     </Section>
@@ -107,15 +106,11 @@ function DroneRow({ drone, onSelect }: { drone: HubDrone; onSelect: (s: Selectio
   const flight = drone.flight;
   const tone = droneTone[drone.status];
   return (
-    <li className="flex items-center gap-3 rounded-2xl border border-glass-border bg-glass px-3 py-2.5">
-      <span
-        className={`grid size-9 shrink-0 place-items-center rounded-xl bg-sunk ${TONE_TEXT[tone]}`}
-      >
-        <DroneIcon size={20} />
-      </span>
+    <li className="flex items-center gap-3 py-2.5">
+      <DroneIcon size={19} className={`shrink-0 ${TONE_TEXT[tone]}`} />
       <div className="min-w-0 flex-1">
-        <div className="truncate text-sm font-semibold">{drone.identifier}</div>
-        <div className="truncate text-xs text-muted">
+        <div className="figures truncate text-[14px] font-medium">{drone.identifier}</div>
+        <div className="truncate text-[12px] text-muted">
           {drone.status === "maintenance" && drone.maintenanceReason
             ? drone.maintenanceReason
             : flight
@@ -131,7 +126,7 @@ function DroneRow({ drone, onSelect }: { drone: HubDrone; onSelect: (s: Selectio
         <button
           type="button"
           onClick={() => onSelect({ kind: "flight", id: flight.orderId })}
-          className="flex shrink-0 items-center gap-0.5 rounded-xl bg-accent-gradient py-1.5 pl-2.5 pr-1.5 text-xs font-bold text-on-accent transition hover:brightness-110 active:scale-95 focus-visible:outline-2 focus-visible:outline-text"
+          className="press flex h-7 shrink-0 items-center gap-0.5 rounded-md border border-accent/50 pl-2.5 pr-1.5 text-[12px] font-medium text-accent hover:bg-accent/12"
         >
           Ver vuelo
           <ChevronIcon size={14} strokeWidth={2.4} />
@@ -145,17 +140,17 @@ function ExpiryPill({ date }: { date: string }) {
   const days = daysUntil(date);
   if (days < 0) return <Pill tone="bad">Vencido</Pill>;
   if (days <= 30) return <Pill tone="warn">Vence en {days} d</Pill>;
-  return <span className="text-xs tabular-nums text-muted">{date}</span>;
+  return <span className="figures text-[12px] text-muted">{date}</span>;
 }
 
 function InventoryTable({ items }: { items: InventoryRow[] }) {
-  if (!items.length) return <p className="text-sm text-muted">Sin existencias registradas.</p>;
+  if (!items.length) return <p className="text-[13px] text-muted">Sin existencias registradas.</p>;
   return (
-    <ul className="divide-y divide-glass-border overflow-hidden rounded-2xl border border-glass-border bg-glass">
+    <ul className="divide-y divide-line">
       {items.map((item) => (
-        <li key={item.id} className="flex items-center gap-3 px-3.5 py-3">
+        <li key={item.id} className="flex items-center gap-3 py-2.5">
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 text-sm font-medium">
+            <div className="flex items-center gap-1.5 text-[14px] font-medium">
               {item.requiresColdChain && (
                 <span title="Cadena de frío" className="shrink-0 text-info">
                   <SnowflakeIcon size={14} />
@@ -163,12 +158,12 @@ function InventoryTable({ items }: { items: InventoryRow[] }) {
               )}
               <span className="truncate">{item.name}</span>
             </div>
-            <div className="truncate text-xs text-muted">
+            <div className="truncate text-[12px] text-muted">
               Lote {item.lot} · {label(SALE_TYPE, item.saleType)}
             </div>
           </div>
           <div className="flex flex-col items-end gap-1">
-            <div className="text-sm font-semibold tabular-nums">{item.quantity}</div>
+            <div className="figures text-[14px] font-medium">{item.quantity}</div>
             <ExpiryPill date={item.expirationDate} />
           </div>
         </li>
@@ -181,15 +176,15 @@ function HubBody({ hub, onSelect }: { hub: HubDetail; onSelect: (s: Selection) =
   const queue = Object.entries(hub.queue);
   return (
     <>
-      <Section title="Flota" icon={<DroneIcon size={14} />}>
-        <div className="grid grid-cols-4 gap-2">
+      <Section title="Flota">
+        <div className="grid grid-cols-4 gap-3">
           <Stat label="Libres" value={hub.fleet.available} tone="good" />
-          <Stat label="Vuelo" value={hub.fleet.inMission} tone="info" />
+          <Stat label="En vuelo" value={hub.fleet.inMission} />
           <Stat label="Taller" value={hub.fleet.maintenance} tone={hub.fleet.maintenance ? "warn" : undefined} />
           <Stat label="Total" value={hub.fleet.total} />
         </div>
         {hub.drones.length > 0 && (
-          <ul className="mt-3 space-y-2">
+          <ul className="mt-4 divide-y divide-line border-t border-line">
             {hub.drones.map((drone) => (
               <DroneRow key={drone.id} drone={drone} onSelect={onSelect} />
             ))}
@@ -197,37 +192,35 @@ function HubBody({ hub, onSelect }: { hub: HubDetail; onSelect: (s: Selection) =
         )}
       </Section>
 
-      <Section title="Pedidos en marcha" icon={<ListIcon size={14} />}>
+      <Section title="Pedidos en marcha">
         {queue.length ? (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-x-6 gap-y-3">
             {queue.map(([status, count]) => (
-              <span
-                key={status}
-                className="flex items-baseline gap-1.5 rounded-xl border border-glass-border bg-glass px-3 py-2 text-xs"
-              >
-                <span className="text-base font-semibold tabular-nums">{count}</span>
+              <span key={status} className="flex items-baseline gap-1.5 text-[13px]">
+                <span className="figures text-[20px] font-medium">{count}</span>
                 <span className="text-muted">{label(QUEUE_STATUS, status)}</span>
               </span>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-muted">No hay pedidos en marcha.</p>
+          <p className="text-[13px] text-muted">No hay pedidos en marcha.</p>
         )}
       </Section>
 
       <Section
         title="Inventario"
-        icon={<PackageIcon size={14} />}
         aside={
-          <span className="text-xs text-muted">
-            <span className="font-semibold tabular-nums text-text">{hub.inventory.totalUnits}</span> unidades
+          <span className="text-[12px] text-muted">
+            <span className="figures text-text">{hub.inventory.totalUnits}</span> unidades
           </span>
         }
       >
         {hub.inventory.quarantinedUnits > 0 && (
-          <p className="mb-3 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2.5 text-xs font-medium text-warning">
-            {hub.inventory.quarantinedUnits} unidades en cuarentena (no están a la venta).
-          </p>
+          <div className="mb-3">
+            <Note tone="warn">
+              {hub.inventory.quarantinedUnits} unidades en cuarentena (no están a la venta).
+            </Note>
+          </div>
         )}
         <InventoryTable items={hub.inventory.items} />
       </Section>
@@ -266,7 +259,7 @@ export function HubPanel({
     return (
       <PanelShell
         title="Central"
-        icon={<IconTile><HubTypeIcon type="" size={24} /></IconTile>}
+        icon={<HubTypeIcon type="" size={20} />}
         onClose={close}
       >
         <PanelMessage failed={Boolean(error)}>{error ?? "Cargando la central…"}</PanelMessage>
@@ -278,15 +271,11 @@ export function HubPanel({
     <PanelShell
       title={data.name}
       subtitle={data.address}
-      icon={
-        <IconTile tone={active ? "info" : "neutral"}>
-          <HubTypeIcon type={data.type} size={24} />
-        </IconTile>
-      }
+      icon={<HubTypeIcon type={data.type} size={20} className={active ? "text-text" : "text-faint"} />}
       onClose={close}
       badge={
         <>
-          <Pill tone="info" icon={<HubTypeIcon type={data.type} size={12} strokeWidth={2.2} />}>
+          <Pill tone="neutral" icon={<HubTypeIcon type={data.type} size={12} />}>
             {label(HUB_TYPE, data.type)}
           </Pill>
           <Pill tone={active ? "good" : "bad"}>{active ? "Activa" : "Suspendida"}</Pill>
@@ -298,25 +287,25 @@ export function HubPanel({
         </>
       }
     >
-      <div className="flex flex-wrap gap-2 px-5 py-4 text-sm">
+      <div className="flex flex-wrap gap-x-5 gap-y-2 px-5 py-4 text-[13px]">
         <a
           href={`tel:${data.contactPhone}`}
-          className="flex items-center gap-2 rounded-xl border border-glass-border bg-glass px-3 py-2 text-muted transition hover:text-text"
+          className="figures flex items-center gap-2 text-muted transition-colors hover:text-text"
         >
-          <PhoneIcon size={14} className="text-accent" />
+          <PhoneIcon size={14} />
           {data.contactPhone}
         </a>
         {data.contactEmail && (
           <a
             href={`mailto:${data.contactEmail}`}
-            className="flex min-w-0 items-center gap-2 rounded-xl border border-glass-border bg-glass px-3 py-2 text-muted transition hover:text-text"
+            className="flex min-w-0 items-center gap-2 text-muted transition-colors hover:text-text"
           >
-            <MailIcon size={14} className="shrink-0 text-accent" />
+            <MailIcon size={14} className="shrink-0" />
             <span className="truncate">{data.contactEmail}</span>
           </a>
         )}
         {error && (
-          <p role="alert" className="w-full text-xs text-danger">
+          <p role="alert" className="w-full text-[12px] text-danger">
             Sin conexión: {error}
           </p>
         )}

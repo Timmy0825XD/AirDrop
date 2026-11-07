@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useRef, type RefObject } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import type { GeoJSONSource } from "maplibre-gl";
 import type { MapRef } from "react-map-gl/maplibre";
+import { COLORS } from "@/lib/theme";
 import type { RadarFlight } from "@/lib/types";
+import { BLOCK_FONTS, PIXEL_RATIO, drawDataBlock, type DataBlock } from "./drone-icons";
 
 /** La telemetría llega cada ~2 s: el dron se desliza ese tiempo entre dos puntos. */
 const GLIDE_MS = 2_000;
@@ -17,6 +19,26 @@ type Track = {
   start: number;
   bearing: number;
 };
+
+const hasAlert = (flight: RadarFlight) =>
+  Boolean(flight.alerts.battery || flight.alerts.failure || flight.alerts.coldChain);
+
+/** Lo que dice el bloque de datos de un vuelo: su ID y altura, velocidad y batería. */
+function dataBlockOf(flight: RadarFlight): DataBlock {
+  const part = (value: number | null, unit: string) =>
+    value == null ? `— ${unit}` : `${Math.round(value)} ${unit}`;
+  const color = hasAlert(flight)
+    ? COLORS.alert
+    : flight.leg === "return"
+      ? COLORS.returning
+      : COLORS.outbound;
+  const detail = flight.linkLost
+    ? "sin enlace · estimada"
+    : `${part(flight.altitudeM, "m")} · ${part(flight.speedKmh, "km/h")} · ${part(flight.batteryPercent, "%")}`;
+  return { title: flight.identifier, detail, color };
+}
+
+export const dataBlockImage = (orderId: string) => `block-${orderId}`;
 
 function bearing(from: [number, number], to: [number, number]): number | null {
   const dx = (to[0] - from[0]) * Math.cos((from[1] * Math.PI) / 180);
@@ -37,6 +59,26 @@ export function useDroneTracks(
 ) {
   const tracks = useRef(new Map<string, Track>());
   const meta = useRef(new Map<string, RadarFlight>());
+  /** Lo que dice cada bloque de datos ya dibujado, para no redibujarlo igual. */
+  const blocks = useRef(new Map<string, string>());
+  /**
+   * El lienzo no pide la fuente: si dibuja antes de que cargue, sale la de
+   * respaldo. Se espera a Geist Mono y, al llegar, se redibujan los bloques.
+   */
+  const [fontsReady, setFontsReady] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    void Promise.all(BLOCK_FONTS().map((font) => document.fonts.load(font)))
+      .catch(() => undefined)
+      .then(() => {
+        if (cancelled) return;
+        blocks.current.clear();
+        setFontsReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   /** Llegaron datos que el mapa aún no dibuja. */
   const changed = useRef(true);
 
@@ -64,8 +106,28 @@ export function useDroneTracks(
         meta.current.delete(id);
       }
     }
+    // El bloque de datos se redibuja solo cuando cambian sus cifras.
+    const map = ready && fontsReady ? mapRef.current?.getMap() : undefined;
+    if (map) {
+      for (const flight of flights) {
+        if (!seen.has(flight.orderId)) continue;
+        const block = dataBlockOf(flight);
+        const key = `${block.title}|${block.detail}|${block.color}`;
+        if (blocks.current.get(flight.orderId) === key) continue;
+        blocks.current.set(flight.orderId, key);
+        const name = dataBlockImage(flight.orderId);
+        if (map.hasImage(name)) map.removeImage(name);
+        map.addImage(name, drawDataBlock(block).image, { pixelRatio: PIXEL_RATIO });
+      }
+      for (const id of [...blocks.current.keys()]) {
+        if (seen.has(id)) continue;
+        blocks.current.delete(id);
+        if (map.hasImage(dataBlockImage(id))) map.removeImage(dataBlockImage(id));
+      }
+    }
     changed.current = true;
-  }, [flights]);
+  }, [flights, ready, fontsReady, mapRef]);
+
 
   useEffect(() => {
     if (!ready) return;
@@ -90,7 +152,6 @@ export function useDroneTracks(
           track.from[1] + (track.to[1] - track.from[1]) * p,
         ];
         const flight = meta.current.get(orderId);
-        const alerts = flight?.alerts;
         return {
           type: "Feature" as const,
           geometry: { type: "Point" as const, coordinates: track.cur },
@@ -98,8 +159,9 @@ export function useDroneTracks(
             orderId,
             bearing: track.bearing,
             leg: flight?.leg ?? "outbound",
-            alert: Boolean(alerts && (alerts.battery || alerts.failure || alerts.coldChain)),
+            alert: flight ? hasAlert(flight) : false,
             linkLost: flight?.linkLost === true,
+            block: blocks.current.has(orderId) ? dataBlockImage(orderId) : "",
           },
         };
       });
@@ -108,4 +170,7 @@ export function useDroneTracks(
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [ready, mapRef]);
+
+  /** Las placas de las centrales también se dibujan en lienzo: esperan la misma fuente. */
+  return { fontsReady };
 }

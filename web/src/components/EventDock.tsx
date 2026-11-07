@@ -15,7 +15,7 @@ import {
   WindIcon,
   ZoneIcon,
 } from "./icons";
-import { Chip, GlassButton, IconTile, PrimaryButton } from "./ui";
+import { Button, Chip, IconButton } from "./ui";
 
 export type EventTool = WeatherKind | "zone" | "surge";
 
@@ -71,8 +71,8 @@ export type EventLaunch = {
 };
 
 /**
- * CU-38: la barra flotante con los eventos que se lanzan sobre el mapa, como
- * la barra de navegación de la app. Uno elegido se pinta con el acento.
+ * CU-38: la barra con los eventos que se lanzan sobre el mapa. El elegido se
+ * marca con el azul de selección.
  */
 export function EventDock({
   tool,
@@ -86,13 +86,8 @@ export function EventDock({
   return (
     <nav
       aria-label="Lanzar un evento en el mapa"
-      className="glass absolute bottom-4 left-1/2 z-20 hidden h-[72px] -translate-x-1/2 items-center gap-1 rounded-[26px] px-2 md:flex"
+      className="surface absolute bottom-4 left-1/2 z-20 hidden -translate-x-1/2 items-center gap-0.5 rounded-xl p-1 md:flex"
     >
-      <span className="eyebrow px-3 !text-[10px] leading-tight">
-        Lanzar en
-        <br />
-        el mapa
-      </span>
       {TOOLS.map((item) => {
         const active = tool === item.tool;
         return (
@@ -102,13 +97,12 @@ export function EventDock({
             disabled={disabled}
             aria-pressed={active}
             onClick={() => onTool(active ? null : item.tool)}
-            className={`relative flex h-14 min-w-[88px] flex-col items-center justify-center gap-1 rounded-[18px] px-3 text-[12px] font-semibold transition active:scale-95 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-accent ${
-              active ? "bg-accent/14 text-accent" : "text-muted hover:bg-white/6 hover:text-text"
+            className={`press flex h-14 min-w-[84px] flex-col items-center justify-center gap-1 rounded-lg px-3 text-[12.5px] font-medium disabled:opacity-40 ${
+              active ? "bg-accent/14 text-accent" : "text-muted hover:bg-hover hover:text-text"
             }`}
           >
-            {item.icon(20)}
+            {item.icon(19)}
             {item.label}
-            {active && <span className="absolute bottom-1 h-[3px] w-5 rounded-full bg-accent" />}
           </button>
         );
       })}
@@ -145,7 +139,6 @@ export function EventComposer({
   const [windFromDeg, setFrom] = useState(45);
   const [name, setName] = useState("Evento aéreo");
   const copy = COPY[tool];
-  const tile = TOOLS.find((item) => item.tool === tool) as (typeof TOOLS)[number];
 
   const changeRadius = (value: number) => {
     setRadius(value);
@@ -155,27 +148,25 @@ export function EventComposer({
   return (
     <section
       aria-label={`Lanzar ${copy.title.toLowerCase()}`}
-      className="glass rise-in absolute bottom-[100px] left-1/2 z-30 w-[min(480px,calc(100%-1.5rem))] -translate-x-1/2 rounded-[28px] p-5"
+      className="surface enter-up absolute bottom-[92px] left-1/2 z-30 w-[min(440px,calc(100%-1.5rem))] -translate-x-1/2 rounded-xl"
     >
-      <header className="flex items-start gap-3.5">
-        <IconTile tone={tool === "storm" || surge ? "bad" : zone ? "warn" : "info"}>
-          {tile.icon(24)}
-        </IconTile>
+      <header className="flex items-start gap-3 px-5 pb-4 pt-4">
         <div className="min-w-0 flex-1">
-          <h2 className="text-[22px] font-semibold leading-[1.08] tracking-[-0.03em]">{copy.title}</h2>
+          <h2 className="text-[17px] font-semibold tracking-[-0.01em]">{copy.title}</h2>
           <p className="mt-1 text-[13px] leading-snug text-muted">{copy.hint}</p>
         </div>
-        <GlassButton label="Cancelar" onClick={onClose} className="!size-10 !rounded-[13px]">
-          <CloseIcon size={16} />
-        </GlassButton>
+        <IconButton label="Cancelar" onClick={onClose} className="!size-8">
+          <CloseIcon size={15} />
+        </IconButton>
       </header>
 
       {!center ? (
-        <p className="mt-4 rounded-2xl border border-accent/30 bg-accent/10 px-4 py-3 text-[15px] font-medium text-accent">
+        <p className="mx-5 mb-5 flex items-center gap-2.5 rounded-lg border border-dashed border-accent/50 px-4 py-3 text-[14px] text-accent">
+          <span className="size-2 rounded-full bg-accent" />
           Toca el mapa donde va el centro.
         </p>
       ) : (
-        <div className="mt-4 space-y-4">
+        <div className="space-y-5 border-t border-line px-5 pb-5 pt-4">
           <Slider
             label="Radio"
             value={radiusKm}
@@ -198,8 +189,8 @@ export function EventComposer({
                 onChange={setSpeed}
               />
               <div>
-                <span className="eyebrow">De dónde sopla</span>
-                <div className="mt-2 flex flex-wrap gap-1.5">
+                <span className="text-[13px] text-muted">De dónde sopla</span>
+                <div className="mt-2 grid grid-cols-8 gap-1">
                   {COMPASS.map((point) => (
                     <Chip
                       key={point.deg}
@@ -215,16 +206,16 @@ export function EventComposer({
           )}
           {zone && (
             <label className="block">
-              <span className="eyebrow">Motivo</span>
+              <span className="text-[13px] text-muted">Motivo</span>
               <input
                 value={name}
                 maxLength={80}
                 onChange={(event) => setName(event.target.value)}
-                className="mt-2 h-11 w-full rounded-2xl border border-white/9 bg-white/4 px-4 text-[15px] outline-none transition focus:border-accent focus:ring-[1.6px] focus:ring-accent"
+                className="mt-2 h-10 w-full rounded-lg border border-line bg-ground px-3 text-[14px] outline-none transition-[border-color] focus:border-accent"
               />
             </label>
           )}
-          {surge && (
+          {surge ? (
             <Counter
               label="Urgencias"
               value={count}
@@ -232,24 +223,23 @@ export function EventComposer({
               max={SURGE_MAX}
               onChange={setCount}
             />
-          )}
-          {!surge && (
-          <div>
-            <span className="eyebrow">Dura</span>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {DURATIONS.map((minutes) => (
-                <Chip
-                  key={minutes}
-                  selected={durationMin === minutes}
-                  onClick={() => setDuration(minutes)}
-                >
-                  {minutes < 60 ? `${minutes} min` : `${minutes / 60} h`}
-                </Chip>
-              ))}
+          ) : (
+            <div>
+              <span className="text-[13px] text-muted">Dura</span>
+              <div className="mt-2 grid grid-cols-4 gap-1">
+                {DURATIONS.map((minutes) => (
+                  <Chip
+                    key={minutes}
+                    selected={durationMin === minutes}
+                    onClick={() => setDuration(minutes)}
+                  >
+                    {minutes < 60 ? `${minutes} min` : `${minutes / 60} h`}
+                  </Chip>
+                ))}
+              </div>
             </div>
-          </div>
           )}
-          <PrimaryButton
+          <Button
             busy={busy}
             disabled={zone && !name.trim()}
             className="w-full"
@@ -267,8 +257,8 @@ export function EventComposer({
             }
           >
             {surge ? `Lanzar ${count} urgencias` : `Lanzar ${copy.title.toLowerCase()}`}
-            <ArrowRightIcon size={18} strokeWidth={2.2} />
-          </PrimaryButton>
+            <ArrowRightIcon size={16} />
+          </Button>
         </div>
       )}
     </section>
@@ -297,12 +287,10 @@ function Slider({
   return (
     <label className="block">
       <span className="flex items-baseline justify-between">
-        <span className="eyebrow">{label}</span>
-        <span
-          className={`text-[22px] font-semibold leading-none tracking-[-0.03em] tabular-nums ${warn ? "text-warning" : "text-text"}`}
-        >
+        <span className="text-[13px] text-muted">{label}</span>
+        <span className={`figures text-[18px] font-medium leading-none ${warn ? "text-warning" : "text-text"}`}>
           {value.toLocaleString("es-CO", { maximumFractionDigits: 1 })}
-          <span className="ml-1 text-sm font-medium tracking-normal text-muted">{unit}</span>
+          <span className="ml-1 font-sans text-[12px] font-normal text-muted">{unit}</span>
         </span>
       </span>
       <input
@@ -312,7 +300,7 @@ function Slider({
         step={step}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="mt-2 w-full accent-[var(--accent)]"
+        className="mt-2.5 w-full accent-[var(--accent)]"
       />
     </label>
   );
@@ -339,20 +327,15 @@ function Counter({
   return (
     <div>
       <span className="flex items-baseline justify-between">
-        <span className="eyebrow">{label}</span>
-        <span className="text-xs text-muted">
+        <span className="text-[13px] text-muted">{label}</span>
+        <span className="text-[12px] text-faint">
           De {min} a {max}
         </span>
       </span>
-      <div className="mt-2 flex items-center gap-2">
-        <GlassButton
-          label="Una menos"
-          disabled={value <= min}
-          onClick={() => onChange(clamp(value - 1))}
-          className="!size-11 !rounded-[14px]"
-        >
+      <div className="mt-2 flex items-center gap-1.5">
+        <IconButton label="Una menos" disabled={value <= min} onClick={() => onChange(clamp(value - 1))}>
           <MinusIcon size={16} />
-        </GlassButton>
+        </IconButton>
         <input
           type="number"
           inputMode="numeric"
@@ -364,16 +347,11 @@ function Counter({
             const next = Number(event.target.value);
             if (Number.isFinite(next)) onChange(clamp(next));
           }}
-          className="h-11 w-full rounded-2xl border border-white/9 bg-white/4 px-4 text-center text-[22px] font-semibold tabular-nums outline-none transition focus:border-accent focus:ring-[1.6px] focus:ring-accent"
+          className="figures h-10 w-full rounded-lg border border-line bg-ground px-3 text-center text-[18px] font-medium outline-none transition-[border-color] focus:border-accent"
         />
-        <GlassButton
-          label="Una más"
-          disabled={value >= max}
-          onClick={() => onChange(clamp(value + 1))}
-          className="!size-11 !rounded-[14px]"
-        >
+        <IconButton label="Una más" disabled={value >= max} onClick={() => onChange(clamp(value + 1))}>
           <PlusIcon size={16} />
-        </GlassButton>
+        </IconButton>
       </div>
     </div>
   );

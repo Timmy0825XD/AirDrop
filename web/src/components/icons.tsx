@@ -1,6 +1,10 @@
 import type { ReactNode, SVGProps } from "react";
+import { DRONE_BODY, DRONE_ROTOR_R, DRONE_ROTORS, DRONE_WINGS } from "@/lib/drone-shape";
 
-/** Íconos de trazo (24 × 24) en `currentColor`. Un solo lugar para todos. */
+/**
+ * Íconos de la consola, dibujados a mano en una cuadrícula de 24 con un solo
+ * trazo (1,6, puntas redondeadas) en `currentColor`. Un solo lugar para todos.
+ */
 
 type IconProps = SVGProps<SVGSVGElement> & { size?: number };
 
@@ -12,7 +16,7 @@ function Icon({ size = 18, children, ...rest }: IconProps & { children: ReactNod
       height={size}
       fill="none"
       stroke="currentColor"
-      strokeWidth={1.8}
+      strokeWidth={1.6}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden
@@ -23,55 +27,57 @@ function Icon({ size = 18, children, ...rest }: IconProps & { children: ReactNod
   );
 }
 
-/** Dron de frente: hélices, brazos, cuerpo y patas de aterrizaje. */
+/**
+ * Dron de entrega visto desde arriba, apuntando al norte: fuselaje, ala recta
+ * con dos góndolas de rotor (despega en vertical) y cola en V.
+ */
 export const DroneIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M1.5 7.5h6M16.5 7.5h6" />
-    <path d="M4.5 7.5v4h3M19.5 7.5v4h-3" />
-    <path d="M9 10h6a1.8 1.8 0 0 1 1.8 1.8v.7a3.5 3.5 0 0 1-3.5 3.5h-2.6a3.5 3.5 0 0 1-3.5-3.5v-.7A1.8 1.8 0 0 1 9 10z" />
-    <path d="M9.5 16l-1.8 3.5M14.5 16l1.8 3.5M6.5 19.5h2.5M15 19.5h2.5" />
-    <circle cx="12" cy="13" r="1" fill="currentColor" stroke="none" />
+    <path d={DRONE_BODY} />
+    {DRONE_WINGS.map((wing) => (
+      <path key={wing} d={wing} />
+    ))}
+    {DRONE_ROTORS.map(([cx, cy]) => (
+      <circle key={cx} cx={cx} cy={cy} r={DRONE_ROTOR_R} />
+    ))}
   </Icon>
 );
 
 /** Central genérica: edificio con cruz médica. */
 export const HubIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M4 20.5V9l8-5.5L20 9v11.5" />
-    <path d="M2.5 20.5h19" />
-    <path d="M12 10v6M9 13h6" />
+    <path d="M4.5 20.5V9.2L12 4.5l7.5 4.7v11.3" />
+    <path d="M3 20.5h18" />
+    <path d="M12 10.2v5.2M9.4 12.8h5.2" />
   </Icon>
 );
 
 const ClinicIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M5 20.5V5a1.5 1.5 0 0 1 1.5-1.5h11A1.5 1.5 0 0 1 19 5v15.5" />
-    <path d="M3 20.5h18" />
-    <path d="M12 6.5v5M9.5 9h5" />
-    <path d="M10 20.5v-4h4v4" />
+    <rect x="5" y="3.5" width="14" height="17" rx="1.6" />
+    <path d="M3 20.5h18M12 7v4.4M9.8 9.2h4.4M10 20.5v-4h4v4" />
   </Icon>
 );
 
 const PharmacyIcon = (p: IconProps) => (
   <Icon {...p}>
-    <rect x="3" y="8.5" width="18" height="7" rx="3.5" transform="rotate(-45 12 12)" />
-    <path d="M9.5 9.5l5 5" />
+    <rect x="3.2" y="8.8" width="17.6" height="6.4" rx="3.2" transform="rotate(-45 12 12)" />
+    <path d="M9.7 9.7l4.6 4.6" />
   </Icon>
 );
 
 const BloodBankIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M12 3c-3.2 4.2-6.5 7.6-6.5 11a6.5 6.5 0 0 0 13 0c0-3.4-3.3-6.8-6.5-11z" />
-    <path d="M12 11.5v5M9.5 14h5" />
+    <path d="M12 3.2c-3 4-6.2 7.3-6.2 10.6a6.2 6.2 0 0 0 12.4 0c0-3.3-3.2-6.6-6.2-10.6z" />
+    <path d="M12 11.6v4.6M9.7 13.9h4.6" />
   </Icon>
 );
 
 const VaccinationIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M17 3l4 4M19 5l-3.5 3.5" />
-    <path d="M13 6.5l4.5 4.5-8 8-4.5-4.5z" />
-    <path d="M5 19l-2.5 2.5" />
-    <path d="M10 9.5l1.5 1.5M7.8 11.8l1.5 1.5" />
+    <path d="M16.5 3.5l4 4M18.5 5.5l-3 3" />
+    <path d="M13.2 6.8l4 4-7.6 7.6-4-4z" />
+    <path d="M5.6 18.4 3.5 20.5M9.6 10.4l1.4 1.4M7.6 12.4l1.4 1.4" />
   </Icon>
 );
 
@@ -93,66 +99,72 @@ export function HubTypeIcon({ type, ...p }: IconProps & { type: string }) {
 
 export const CloseIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M6 6l12 12M18 6L6 18" />
+    <path d="M6.5 6.5l11 11M17.5 6.5l-11 11" />
   </Icon>
 );
 
 export const ChevronIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M9 6l6 6-6 6" />
+    <path d="M9.5 6.5 15 12l-5.5 5.5" />
   </Icon>
 );
 
 export const BatteryIcon = (p: IconProps) => (
   <Icon {...p}>
-    <rect x="2.5" y="7" width="17" height="10" rx="2.5" />
-    <path d="M22 10.5v3" />
+    <rect x="2.8" y="7.5" width="16" height="9" rx="2" />
+    <path d="M21.2 10.8v2.4" />
   </Icon>
 );
 
+/** Velocímetro. */
 export const SpeedIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M3.5 17.5a9 9 0 1 1 17 0" />
-    <path d="M12 14l4-4.5" />
+    <path d="M4 17.5a8.5 8.5 0 1 1 16 0" />
+    <path d="M12 14.5l3.6-4.2" />
+    <circle cx="12" cy="14.5" r="0.9" fill="currentColor" stroke="none" />
   </Icon>
 );
 
+/** Altitud: una cota sobre el terreno. */
 export const AltitudeIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M2.5 20.5l6-8.5 4 5 3-3.5 6 7z" />
-    <path d="M17 9V3M14.5 5.5L17 3l2.5 2.5" />
+    <path d="M3 20.5h18" />
+    <path d="M3.5 20.5 9 13l3.5 4 2.5-3 5.5 6.5" />
+    <path d="M16.5 9.5V3.5M14.3 5.7l2.2-2.2 2.2 2.2" />
   </Icon>
 );
 
 export const ThermometerIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M10 4.5a2 2 0 1 1 4 0v9.8a4 4 0 1 1-4 0z" />
-    <path d="M12 17.5V10" />
+    <path d="M10.2 4.6a1.8 1.8 0 0 1 3.6 0v9.6a3.8 3.8 0 1 1-3.6 0z" />
+    <path d="M12 17.2V10" />
   </Icon>
 );
 
 export const ClockIcon = (p: IconProps) => (
   <Icon {...p}>
-    <circle cx="12" cy="12" r="9" />
-    <path d="M12 7v5l3.2 2" />
+    <circle cx="12" cy="12" r="8.5" />
+    <path d="M12 7.5V12l3 1.8" />
   </Icon>
 );
 
+/** Fase del vuelo: la curva de ascenso. */
 export const PhaseIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M3 17c3-1 5-4 7-8s4-5.5 11-6" />
-    <circle cx="3" cy="17" r="1.5" />
-    <path d="M3 21h18" />
+    <path d="M3 20.5h18" />
+    <path d="M4 17c2.5-.4 4.2-2.8 6-6.2S14.5 4.6 20 4.5" />
+    <circle cx="4" cy="17" r="1.3" />
   </Icon>
 );
 
 export const SnowflakeIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M12 2.5v19M3.8 7.25l16.4 9.5M20.2 7.25l-16.4 9.5" />
-    <path d="M9.5 4L12 6.5 14.5 4M9.5 20l2.5-2.5 2.5 2.5" />
+    <path d="M12 3v18M4.2 7.5l15.6 9M19.8 7.5l-15.6 9" />
+    <path d="M9.8 4.6 12 6.8l2.2-2.2M9.8 19.4l2.2-2.2 2.2 2.2" />
   </Icon>
 );
 
+/** Espera rescate y toda alerta. */
 export const AlertIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M10.3 4.2L2.6 17.5A2 2 0 0 0 4.3 20.5h15.4a2 2 0 0 0 1.7-3L13.7 4.2a2 2 0 0 0-3.4 0z" />
@@ -160,79 +172,85 @@ export const AlertIcon = (p: IconProps) => (
   </Icon>
 );
 
-/** Zona restringida (geovalla). */
+/** Zona restringida (geovalla): un polígono rayado, como en la carta. */
 export const ShieldIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M12 3l7.5 3v5.5c0 4.6-3.2 8.4-7.5 9.5-4.3-1.1-7.5-4.9-7.5-9.5V6z" />
-    <path d="M9.5 9.5l5 5M14.5 9.5l-5 5" />
+    <path d="M4 7.5 9 4l9.5 2.5L20 15l-6.5 5L4.5 17z" />
+    <path d="M7 13.5l5.5-5.5M9.5 16.5l6.5-6.5" />
   </Icon>
 );
 
 export const LogoutIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M14.5 4H18a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3.5" />
-    <path d="M9.5 16.5L5 12l4.5-4.5M5 12h11" />
+    <path d="M14 4.5h3.5a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H14" />
+    <path d="M9.5 16 5.5 12l4-4M5.5 12h10" />
   </Icon>
 );
 
 export const PhoneIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M5 3.5h3.5l2 5-2.5 1.5a11 11 0 0 0 6 6l1.5-2.5 5 2V19a2 2 0 0 1-2 2A16.5 16.5 0 0 1 3 5.5a2 2 0 0 1 2-2z" />
+    <path d="M5.2 4h3.2l1.8 4.6-2.3 1.4a10.5 10.5 0 0 0 6.1 6.1l1.4-2.3 4.6 1.8v3.2a1.8 1.8 0 0 1-1.8 1.8A15.8 15.8 0 0 1 3.4 5.8 1.8 1.8 0 0 1 5.2 4z" />
   </Icon>
 );
 
 export const MailIcon = (p: IconProps) => (
   <Icon {...p}>
-    <rect x="3" y="5" width="18" height="14" rx="2.5" />
-    <path d="M3.5 7l8.5 6 8.5-6" />
+    <rect x="3" y="5.5" width="18" height="13" rx="2" />
+    <path d="m3.8 7.2 8.2 5.6 8.2-5.6" />
   </Icon>
 );
 
+/** Paquete: la caja de la carga. */
 export const PackageIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M3 7.5L12 3l9 4.5v9L12 21l-9-4.5z" />
-    <path d="M3 7.5l9 4.5 9-4.5M12 12v9M7.5 5.2l9 4.6" />
+    <path d="M3.5 7.5 12 3.5l8.5 4v9L12 20.5l-8.5-4z" />
+    <path d="M3.5 7.5 12 11.5l8.5-4M12 11.5v9M7.8 5.5l8.4 4" />
   </Icon>
 );
 
+/** Ruta: dos puntos unidos por un camino. */
 export const RouteIcon = (p: IconProps) => (
   <Icon {...p}>
-    <circle cx="6" cy="19" r="2" />
-    <circle cx="18" cy="5" r="2" />
-    <path d="M8 19h8.5a3.5 3.5 0 0 0 0-7h-9a3.5 3.5 0 0 1 0-7H16" />
+    <circle cx="5.5" cy="18.5" r="2" />
+    <circle cx="18.5" cy="5.5" r="2" />
+    <path d="M7.5 18.5H16a3.2 3.2 0 0 0 0-6.4H8a3.2 3.2 0 0 1 0-6.4h8.5" />
   </Icon>
 );
 
+/** Línea de tiempo: renglones con su hora. */
 export const ListIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M8.5 6H21M8.5 12H21M8.5 18H21M3.5 6h.01M3.5 12h.01M3.5 18h.01" />
+    <path d="M9 6.5h11M9 12h11M9 17.5h7" />
+    <circle cx="4.5" cy="6.5" r="1" fill="currentColor" stroke="none" />
+    <circle cx="4.5" cy="12" r="1" fill="currentColor" stroke="none" />
+    <circle cx="4.5" cy="17.5" r="1" fill="currentColor" stroke="none" />
   </Icon>
 );
 
 export const CheckIcon = (p: IconProps) => (
   <Icon {...p}>
-    <circle cx="12" cy="12" r="9" />
-    <path d="M8 12.5l2.7 2.7L16 9.8" />
+    <path d="M5 12.5 9.8 17 19 7.5" />
   </Icon>
 );
 
 export const PauseIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M8.5 5v14M15.5 5v14" />
+    <rect x="6.5" y="5" width="3.5" height="14" rx="1" />
+    <rect x="14" y="5" width="3.5" height="14" rx="1" />
   </Icon>
 );
 
 export const PlayIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M7 4.8v14.4a.8.8 0 0 0 1.2.7l11.3-7.2a.8.8 0 0 0 0-1.4L8.2 4.1a.8.8 0 0 0-1.2.7z" />
+    <path d="M7.5 5.6v12.8a.9.9 0 0 0 1.4.8l10-6.4a.9.9 0 0 0 0-1.6l-10-6.4a.9.9 0 0 0-1.4.8z" />
   </Icon>
 );
 
 /** Flecha que vuelve: reiniciar el escenario. */
 export const ResetIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M3.5 12a8.5 8.5 0 1 0 2.5-6" />
-    <path d="M3.5 3.5V8H8" />
+    <path d="M4 12a8 8 0 1 0 2.4-5.7" />
+    <path d="M4 4v4.5h4.5" />
   </Icon>
 );
 
@@ -253,18 +271,20 @@ export const RainIcon = (p: IconProps) => (
   </Icon>
 );
 
+/** Tormenta: la nube de la lluvia con un rayo. */
 export const StormIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M7 14.5a4.5 4.5 0 0 1-.6-9 5.5 5.5 0 0 1 10.6 1.2A3.9 3.9 0 0 1 17 14.5" />
-    <path d="M12.5 11l-2.5 4.5h4l-2.5 4.5" />
+    <path d="M7 15a4.5 4.5 0 0 1-.6-9 5.5 5.5 0 0 1 10.6 1.2A3.9 3.9 0 0 1 17 15h-.5" />
+    <path d="M12.8 11.5 10.5 15.5h3.2L11.5 20" />
   </Icon>
 );
 
-/** Zona temporal: hexágono con borde de trazos. */
+/** Zona temporal: un área de trazos con un reloj. */
 export const ZoneIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z" strokeDasharray="3 2.4" />
-    <path d="M12 9v3.5l2.2 1.4" />
+    <rect x="3.5" y="3.5" width="17" height="17" rx="2.5" strokeDasharray="2.6 2.4" />
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 10v2l1.3.9" />
   </Icon>
 );
 
@@ -276,134 +296,147 @@ export const PowerOffIcon = (p: IconProps) => (
   </Icon>
 );
 
+/** Rayo: con energía. */
 export const PowerIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M13 3L6.5 13H12l-1 8 6.5-10H12z" />
+    <path d="M13 3 6.5 13H12l-1 8 6.5-10H12z" />
   </Icon>
 );
 
 export const PlusIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M12 5v14M5 12h14" />
+    <path d="M12 5.5v13M5.5 12h13" />
   </Icon>
 );
 
 export const MinusIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M5 12h14" />
+    <path d="M5.5 12h13" />
   </Icon>
 );
 
-/** Recentrar: mira con punto. */
+/** Recentrar: las cuatro esquinas de un encuadre. */
 export const RecenterIcon = (p: IconProps) => (
   <Icon {...p}>
-    <circle cx="12" cy="12" r="7" />
-    <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
-    <path d="M12 2.5V5M12 19v2.5M2.5 12H5M19 12h2.5" />
+    <path d="M4 8.5V5.5A1.5 1.5 0 0 1 5.5 4h3M15.5 4h3A1.5 1.5 0 0 1 20 5.5v3M20 15.5v3a1.5 1.5 0 0 1-1.5 1.5h-3M8.5 20h-3A1.5 1.5 0 0 1 4 18.5v-3" />
+    <circle cx="12" cy="12" r="2.2" />
   </Icon>
 );
 
 export const ArrowRightIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M4.5 12h15M13.5 6l6 6-6 6" />
+    <path d="M5 12h14M13.5 6.5 19 12l-5.5 5.5" />
   </Icon>
 );
 
 export const LockIcon = (p: IconProps) => (
   <Icon {...p}>
-    <rect x="4.5" y="10.5" width="15" height="10" rx="2.5" />
-    <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
-    <circle cx="12" cy="15.5" r="1.2" fill="currentColor" stroke="none" />
+    <rect x="5" y="10.5" width="14" height="10" rx="2" />
+    <path d="M8.5 10.5V8a3.5 3.5 0 0 1 7 0v2.5" />
   </Icon>
 );
 
 export const EyeIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z" />
-    <circle cx="12" cy="12" r="3" />
+    <path d="M2.8 12S6.2 6 12 6s9.2 6 9.2 6-3.4 6-9.2 6-9.2-6-9.2-6z" />
+    <circle cx="12" cy="12" r="2.8" />
   </Icon>
 );
 
 export const PinIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z" />
-    <circle cx="12" cy="10" r="2.3" />
+    <path d="M12 20.5s-6-5.2-6-10.3a6 6 0 0 1 12 0c0 5.1-6 10.3-6 10.3z" />
+    <circle cx="12" cy="10.2" r="2.1" />
   </Icon>
 );
 
-/** Batería con la carga cayendo. */
+/** Batería con una sola raya: degradada. */
 export const BatteryLowIcon = (p: IconProps) => (
   <Icon {...p}>
-    <rect x="2.5" y="7" width="17" height="10" rx="2.5" />
-    <path d="M21.5 10.5v3M6 10.5v3" />
+    <rect x="2.8" y="7.5" width="16" height="9" rx="2" />
+    <path d="M21.2 10.8v2.4M6.3 10.5v3" />
   </Icon>
 );
 
-/** Hélice: un motor del dron. */
+/** Rotor: un motor del dron, con dos palas. */
 export const MotorIcon = (p: IconProps) => (
   <Icon {...p}>
-    <circle cx="12" cy="12" r="2" />
-    <path d="M12 10c-1-3.5 0-6.5 2.5-6.5S16 7 12 10zM14 12c3.5-1 6.5 0 6.5 2.5S17 16 14 12zM12 14c1 3.5 0 6.5-2.5 6.5S8 17 12 14zM10 12c-3.5 1-6.5 0-6.5-2.5S7 8 10 12z" />
+    <circle cx="12" cy="12" r="8.5" strokeDasharray="2 2.6" />
+    <circle cx="12" cy="12" r="1.6" />
+    <path d="M10.6 11.2C8 9.8 6.5 7.6 7.2 6.4s3.4-.3 4.6 3.9M13.4 12.8c2.6 1.4 4.1 3.6 3.4 4.8s-3.4.3-4.6-3.9" />
   </Icon>
 );
 
-/** Satélite: posición GPS. */
+/** Posición: una mira con su punto. */
 export const GpsIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M6.5 13.5l4 4M9 11l4 4M4 16l4 4" />
-    <path d="M13.5 6.5l4 4-4.5 4.5-4-4z" />
-    <path d="M16 4a5 5 0 0 1 4 4M16.5 1.5a8 8 0 0 1 6 6" />
+    <circle cx="12" cy="12" r="6.5" />
+    <circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" />
+    <path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3" />
   </Icon>
 );
 
-/** Antena tachada: sin enlace. */
+/** Señal tachada: sin enlace. */
 export const LinkOffIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M5 12.5a9.5 9.5 0 0 1 14 0M8 15.5a5.2 5.2 0 0 1 8 0" />
-    <circle cx="12" cy="19" r="1.2" fill="currentColor" stroke="none" />
-    <path d="M3.5 3.5l17 17" />
+    <circle cx="12" cy="19" r="1.1" fill="currentColor" stroke="none" />
+    <path d="M4 4l16 16" />
   </Icon>
 );
 
-/** Choque: estallido. */
+/** Choque: un impacto con sus esquirlas. */
 export const CollisionIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M12 2.5l1.8 5 4.7-2.3-2 4.9 5 1.4-4.6 2.5 2.6 4.5-5-1.2L12 21.5l-1.5-4.2-5 1.2 2.6-4.5-4.6-2.5 5-1.4-2-4.9 4.7 2.3z" />
+    <path d="m12 6.5 1.6 3.4 3.6-.9-1.6 3.3 3 2.2-3.7.6.3 3.7L12 16.6 8.8 18.8l.3-3.7-3.7-.6 3-2.2-1.6-3.3 3.6.9z" />
+    <path d="M12 2.5v1.5M4.5 5l1 1M19.5 5l-1 1" />
   </Icon>
 );
 
-/** Signo de pregunta en un círculo: dron perdido. */
+/** Dron perdido: el círculo de búsqueda con un signo de pregunta. */
 export const LostIcon = (p: IconProps) => (
   <Icon {...p}>
-    <circle cx="12" cy="12" r="9" strokeDasharray="3 2.6" />
-    <path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6" />
-    <circle cx="12" cy="17" r="1" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="12" r="8.5" strokeDasharray="2.6 2.6" />
+    <path d="M9.8 9.6a2.3 2.3 0 1 1 3.2 2.1c-.6.3-1 .8-1 1.5v.5" />
+    <circle cx="12" cy="16.6" r="0.9" fill="currentColor" stroke="none" />
   </Icon>
 );
 
-/** Rayo: lanzar un evento. */
-export const BoltIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M13 2.5L5 13.5h6l-1 8 8-11h-6z" />
-  </Icon>
-);
-
-/** Actor simulado (RF-37): cabeza de robot con antena. */
+/** Actores simulados (RF-37): dos personas, una de ellas hecha de trazos. */
 export const BotIcon = (p: IconProps) => (
   <Icon {...p}>
-    <rect x="4.5" y="8" width="15" height="11" rx="3.5" />
-    <path d="M12 8V4.5M10.5 4h3M2.5 12.5v3M21.5 12.5v3" />
-    <circle cx="9.3" cy="13.3" r="1.2" fill="currentColor" stroke="none" />
-    <circle cx="14.7" cy="13.3" r="1.2" fill="currentColor" stroke="none" />
-    <path d="M10 16.5h4" />
+    <circle cx="9" cy="8" r="3.2" />
+    <path d="M3 19.5c.5-3.3 2.9-5.3 6-5.3s5.5 2 6 5.3" />
+    <circle cx="16.8" cy="9" r="2.6" strokeDasharray="2 1.6" />
+    <path d="M17.5 14.4c2 .5 3.2 2.1 3.5 4.6" strokeDasharray="2 1.6" />
   </Icon>
 );
 
 /** Pico de urgencias (RF-36): tres puntos de pedido juntos. */
 export const SurgeIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d="M12 20s-4.5-3.9-4.5-7.6a4.5 4.5 0 0 1 9 0c0 3.7-4.5 7.6-4.5 7.6z" />
-    <circle cx="12" cy="12.4" r="1.4" />
-    <path d="M5.2 15.5C3.6 14 2.5 12.3 2.5 10.6a3.4 3.4 0 0 1 4.9-3.1M18.8 15.5c1.6-1.5 2.7-3.2 2.7-4.9a3.4 3.4 0 0 0-4.9-3.1" />
+    <path d="M12 20.5s-4.2-3.6-4.2-7a4.2 4.2 0 0 1 8.4 0c0 3.4-4.2 7-4.2 7z" />
+    <circle cx="12" cy="13.4" r="1.4" />
+    <path d="M5.4 15.4C4 14 3 12.5 3 11a3.2 3.2 0 0 1 4.4-3M18.6 15.4C20 14 21 12.5 21 11a3.2 3.2 0 0 0-4.4-3" />
+  </Icon>
+);
+
+/** Modo caos: un dado con sus puntos. */
+export const ChaosIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="4" y="4" width="16" height="16" rx="3.2" />
+    <circle cx="8.6" cy="8.6" r="1.1" fill="currentColor" stroke="none" />
+    <circle cx="15.4" cy="8.6" r="1.1" fill="currentColor" stroke="none" />
+    <circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none" />
+    <circle cx="8.6" cy="15.4" r="1.1" fill="currentColor" stroke="none" />
+    <circle cx="15.4" cy="15.4" r="1.1" fill="currentColor" stroke="none" />
+  </Icon>
+);
+
+/** Leyenda del mapa: una carta plegada. */
+export const LegendIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M3.5 6.5 9 4l6 2.5L20.5 4v13.5L15 20l-6-2.5L3.5 20z" />
+    <path d="M9 4v13.5M15 6.5V20" />
   </Icon>
 );
