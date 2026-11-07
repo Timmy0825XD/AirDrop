@@ -47,7 +47,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 13 | Auth con el espacio aéreo vivo | `style/auth-espacio-aereo` | Hecha (PR #105) |
 | 14 | El resto de la app al diseño del espacio aéreo | `style/app-espacio-aereo` | Hecha (PR pendiente) |
 | 15 | Bloqueantes de la auditoría 31 (Bloque 1) | `bugfix/hojas-sobre-la-barra`, `bugfix/estado-dron-grounded`, `feature/confirmar-carga-segura` | Hecha (PR #138, #139 y #140) |
-| 16 | La app al ritmo de la consola (Bloque 2 de la auditoría 31) | `feature/reloj-simulado`, `feature/incidentes-app`, `feature/fleet-mantenimiento-app` | En curso: paso 1 hecho |
+| 16 | La app al ritmo de la consola (Bloque 2 de la auditoría 31) | `feature/reloj-simulado`, `feature/incidentes-app`, `feature/fleet-mantenimiento-app` | En curso: pasos 1 y 2 hechos (PR #141) |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -981,9 +981,27 @@ app y se ve en la demo. Una rama por paso desde `develop`.
   "Simulación en pausa" en los encabezados. Pruebas: `sim_clock_test`.
   Sin revisión en pantalla con el reloj real: hace falta el backend con la
   consola encendida.
-- Paso 2 (`feature/incidentes-app`): incidente en vuelo, código renovado,
-  `lost`, cuarentena `incident`, `autoDispatched`, "Volviendo a la central",
-  `linkLost` y `wind_limit`.
+- Paso 2 (`feature/incidentes-app`), hecho el 2026-11-07: lo que la
+  consola provoca en vuelo y la app mostraba vacío o mal.
+  - Un pedido en curso con `statusReason` (incidente en vuelo, central sin
+    energía) muestra el motivo arriba del detalle (`StatusReasonBanner`);
+    un pedido cerrado lo sigue diciendo en el resumen, y con fallback lo
+    dice `FallbackCard`. El recorrido retrocede solo: Nest borra
+    autorización, carga y lote al volver a despacharlo.
+  - Código de entrega: si Nest deja de darlo (el pedido volvió a
+    despacharse), `ReceiveOrderScreen` esconde el código viejo y sigue
+    mirando cada 10 s; al cargar otra vez aparece el nuevo.
+  - `ReturnOutcome.lost` ("Paquete perdido"; Nest solo lo pone en un pedido
+    `returned` cuando el dron volvía con el paquete), `QuarantineReason
+    .incident` ("Volvió tras un incidente", con su ícono),
+    `FlightAlertKind.windLimit` y `Order.autoDispatched` ("Autorizado por:
+    El despachador automático", solo la central de origen).
+  - Vuelos en curso: un pedido `delivered` cuyo dron vuelve vacío dice
+    "Volviendo a la central", no "Entregado".
+  - Seguimiento: con `linkLost` la barra dice "Sin enlace · posición
+    estimada" en ámbar y el dron se dibuja tenue.
+  Prueba: `incidents_test`. Sin revisión con la consola: los datos locales
+  no traen incidentes.
 - Paso 3 (`feature/fleet-mantenimiento-app`): la hoja "Gestionar" con el
   contrato nuevo, historial, batería, ciclos y vencidos.
 

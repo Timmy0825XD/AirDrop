@@ -83,6 +83,10 @@ class _ReceiveOrderScreenState extends ConsumerState<ReceiveOrderScreen>
 
   /// Lee el código. En vuelo vuelve a mirar cada 10 s; en tierra cuenta
   /// cada segundo hasta `expiresAt`.
+  ///
+  /// Tras un incidente en vuelo (RF-35) el pedido vuelve a despacharse y
+  /// Nest deja de dar el código: el viejo se esconde (ya no sirve) y se
+  /// sigue mirando cada 10 s, porque al cargar otra vez sale uno nuevo.
   Future<void> _loadCode() async {
     try {
       final code = await ref
@@ -101,7 +105,14 @@ class _ReceiveOrderScreenState extends ConsumerState<ReceiveOrderScreen>
         _timer = Timer(const Duration(seconds: 10), _loadCode);
       }
     } on ApiException catch (e) {
-      if (mounted) setState(() => _error = e.message);
+      if (!mounted) return;
+      setState(() {
+        _code = null;
+        _remaining = null;
+        _error = e.message;
+      });
+      _timer?.cancel();
+      if (!_closed) _timer = Timer(const Duration(seconds: 10), _loadCode);
     }
   }
 

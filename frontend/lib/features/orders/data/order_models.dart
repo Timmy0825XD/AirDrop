@@ -249,6 +249,7 @@ class Order {
     this.confirmedAt,
     this.reassignedFromHubId,
     this.fallback,
+    this.autoDispatched = false,
   });
 
   factory Order.fromJson(Map<String, dynamic> json) {
@@ -298,6 +299,7 @@ class Order {
       confirmedAt: _dateOrNull(json['confirmedAt']),
       reassignedFromHubId: json['reassignedFromHubId'] as String?,
       fallback: OrderFallback.fromJson(json['fallback']),
+      autoDispatched: json['autoDispatched'] == true,
     );
   }
 
@@ -363,6 +365,7 @@ class Order {
       confirmedAt: confirmedAt ?? this.confirmedAt,
       reassignedFromHubId: reassignedFromHubId ?? this.reassignedFromHubId,
       fallback: clearFallback ? null : (fallback ?? this.fallback),
+      autoDispatched: autoDispatched,
     );
   }
 
@@ -370,6 +373,18 @@ class Order {
   /// reloj de la simulación todavía no arranca.
   bool get awaitsLoad =>
       status == OrderStatus.pendingLoad && loadConfirmedAt == null;
+
+  /// Sigue su curso: falta autorizar, cargar, volar o recibir. Un
+  /// `statusReason` aquí es un aviso (incidente en vuelo, central sin
+  /// energía), no el motivo de un cierre.
+  bool get inProgress => const {
+    OrderStatus.received,
+    OrderStatus.underReview,
+    OrderStatus.assigned,
+    OrderStatus.pendingLoad,
+    OrderStatus.inFlight,
+    OrderStatus.awaitingDelivery,
+  }.contains(status);
 
   /// Quien recibe ya puede ver su código: desde que se confirma la carga
   /// hasta que el dron espera en destino.
@@ -454,6 +469,9 @@ class Order {
 
   /// Qué pasó cuando ningún dron pudo salir; `null` si no aplica.
   final OrderFallback? fallback;
+
+  /// RF-37: lo autorizó y cargó el despachador automático de la consola.
+  final bool autoDispatched;
 
   /// Volvió a la central y nadie ha revisado el paquete.
   bool get awaitsReturnCheck =>

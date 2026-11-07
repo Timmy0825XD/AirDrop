@@ -6,6 +6,7 @@ import '../../../data/order_models.dart';
 import '../../order_format.dart';
 import '../order_kind_chip.dart';
 import '../order_status_chip.dart';
+import 'status_reason_banner.dart';
 
 /// Lo que todo el que ve el pedido necesita saber: en qué estado va, qué
 /// es, a dónde va y por qué (si fue rechazado o reasignado). El nombre del
@@ -101,17 +102,42 @@ class _SummaryLines extends StatelessWidget {
           const DetailLine(label: 'Cadena de frío', value: 'Sí'),
         if (prescription && order.hasPrescription)
           const DetailLine(label: 'Fórmula', value: 'Lleva fórmula'),
-        if (showLot && order.dispatchedLot != null)
+        if (showLot) _HubLines(order: order),
+        if (order.returnOutcome case final outcome?)
+          DetailLine(label: 'Retorno', value: outcome.label),
+        // En curso, el motivo es un aviso y va arriba (`StatusReasonBanner`).
+        if (order.statusReason != null &&
+            StatusReasonBanner.reasonOf(order) == null)
+          DetailLine(label: 'Motivo', value: order.statusReason!),
+      ],
+    );
+  }
+}
+
+/// Lo que solo ve la central de origen: quién lo autorizó si fue el
+/// despachador automático de la consola (RF-37) y el lote que salió.
+class _HubLines extends StatelessWidget {
+  const _HubLines({required this.order});
+
+  final Order order;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (order.autoDispatched)
+          const DetailLine(
+            label: 'Autorizado por',
+            value: 'El despachador automático',
+          ),
+        if (order.dispatchedLot != null)
           DetailLine(
             label: 'Lote despachado',
             value:
                 '${order.dispatchedLot!} · vence '
                 '${order.dispatchedLotExpiresOn ?? '—'}',
           ),
-        if (order.returnOutcome case final outcome?)
-          DetailLine(label: 'Retorno', value: outcome.label),
-        if (order.statusReason != null)
-          DetailLine(label: 'Motivo', value: order.statusReason!),
       ],
     );
   }

@@ -104,7 +104,10 @@ class OrderFallback {
 /// Qué pasó con un paquete devuelto tras revisarlo (HU-34).
 enum ReturnOutcome {
   restocked('restocked', 'Volvió al inventario'),
-  quarantined('quarantined', 'En cuarentena');
+  quarantined('quarantined', 'En cuarentena'),
+
+  /// RF-34: choque grave o dron perdido; el paquete no vuelve.
+  lost('lost', 'Paquete perdido');
 
   const ReturnOutcome(this.apiValue, this.label);
 

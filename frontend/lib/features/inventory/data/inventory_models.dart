@@ -160,6 +160,9 @@ int _asInt(Object? value) {
 enum QuarantineReason {
   coldChain('cold_chain', 'Cadena de frío'),
   packaging('packaging', 'Empaque dañado'),
+
+  /// RF-34: volvió en una misión con incidente; no reingresa sin revisión.
+  incident('incident', 'Volvió tras un incidente'),
   other('other', 'Revisión');
 
   const QuarantineReason(this.apiValue, this.label);

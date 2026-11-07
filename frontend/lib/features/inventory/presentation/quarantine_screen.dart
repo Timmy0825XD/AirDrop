@@ -45,9 +45,11 @@ class QuarantineTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OrderRowCard(
-      icon: record.reason == QuarantineReason.coldChain
-          ? Icons.ac_unit_rounded
-          : Icons.inventory_2_outlined,
+      icon: switch (record.reason) {
+        QuarantineReason.coldChain => Icons.ac_unit_rounded,
+        QuarantineReason.incident => Icons.report_problem_outlined,
+        _ => Icons.inventory_2_outlined,
+      },
       tone: context.palette.warning,
       title: record.medicationName,
       accent: '${record.quantity} und. · Lote ${record.lot}',

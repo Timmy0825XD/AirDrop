@@ -46,6 +46,7 @@ class FlightMap extends StatelessWidget {
     this.drone,
     this.sheetHeight = 0,
     this.returnLeg = false,
+    this.estimated = false,
   });
 
   /// Puntos del corredor, `[longitud, latitud]`.
@@ -59,6 +60,10 @@ class FlightMap extends StatelessWidget {
 
   /// [route] es la ruta de regreso: empieza en el destino.
   final bool returnLeg;
+
+  /// Sin enlace (RF-34): la posición del dron es estimada y se dibuja
+  /// tenue.
+  final bool estimated;
 
   @override
   Widget build(BuildContext context) {
@@ -83,16 +88,41 @@ class FlightMap extends StatelessWidget {
               ? _EndpointsLayer(hub: points.last, target: points.first)
               : _EndpointsLayer(hub: points.first, target: points.last),
         if (drone != null)
-          MarkerLayer(
-            markers: [
-              Marker(
-                point: drone!,
-                width: DroneMarker.size,
-                height: DroneMarker.size,
-                child: DroneMarker(heading: routeHeading(points, split)),
-              ),
-            ],
+          _DroneLayer(
+            at: drone!,
+            heading: routeHeading(points, split),
+            estimated: estimated,
           ),
+      ],
+    );
+  }
+}
+
+/// El dron apuntando a su rumbo; tenue si la posición es estimada.
+class _DroneLayer extends StatelessWidget {
+  const _DroneLayer({
+    required this.at,
+    required this.heading,
+    required this.estimated,
+  });
+
+  final LatLng at;
+  final double heading;
+  final bool estimated;
+
+  @override
+  Widget build(BuildContext context) {
+    return MarkerLayer(
+      markers: [
+        Marker(
+          point: at,
+          width: DroneMarker.size,
+          height: DroneMarker.size,
+          child: Opacity(
+            opacity: estimated ? 0.45 : 1,
+            child: DroneMarker(heading: heading),
+          ),
+        ),
       ],
     );
   }

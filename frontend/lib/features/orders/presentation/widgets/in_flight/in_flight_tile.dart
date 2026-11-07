@@ -10,7 +10,9 @@ import '../../order_format.dart';
 
 /// Tarjeta de un vuelo en curso: el dron, qué lleva, a dónde y qué tan
 /// lejos, el estado y "Ver vuelo". En vuelo va en naranja (lo que se
-/// mueve); esperando la entrega, en verde (ya llegó).
+/// mueve); esperando la entrega, en verde (ya llegó). Un pedido ya
+/// entregado cuyo dron vuelve vacío a la central (Nest lo deja en
+/// `GET /orders/in-flight`) dice "Volviendo a la central", no "Entregado".
 class InFlightTile extends StatelessWidget {
   const InFlightTile({super.key, required this.order, required this.onWatch});
 
@@ -19,14 +21,15 @@ class InFlightTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final landed = order.status == OrderStatus.awaitingDelivery;
+    final (label, tone) = switch (order.status) {
+      OrderStatus.awaitingDelivery => (order.status.label, PillTone.positive),
+      OrderStatus.delivered => ('Volviendo a la central', PillTone.neutral),
+      _ => (order.status.label, PillTone.attention),
+    };
     return StatusCard(
       leading: const _DroneTile(),
       body: _FlightInfo(order: order),
-      status: StatusPill(
-        label: order.status.label,
-        tone: landed ? PillTone.positive : PillTone.attention,
-      ),
+      status: StatusPill(label: label, tone: tone),
       action: RowActionButton(label: 'Ver vuelo', onPressed: onWatch),
     );
   }
