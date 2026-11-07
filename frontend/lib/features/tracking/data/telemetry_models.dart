@@ -75,6 +75,7 @@ class Telemetry {
     this.leg = FlightLeg.outbound,
     this.etaSeconds,
     this.vitals,
+    this.linkLost = false,
   });
 
   factory Telemetry.fromJson(Map<String, dynamic> json) {
@@ -94,6 +95,7 @@ class Telemetry {
       vitals: json.containsKey('batteryPercent')
           ? FlightVitals.fromJson(json)
           : null,
+      linkLost: json['linkLost'] == true,
     );
   }
 
@@ -115,6 +117,10 @@ class Telemetry {
 
   /// Solo para el despachador u operador de origen (vista `full`).
   final FlightVitals? vitals;
+
+  /// RF-34: el dron perdió el enlace y la posición es estimada hasta que
+  /// aterrice en su central.
+  final bool linkLost;
 
   /// Minutos que faltan, redondeados hacia arriba; `null` en destino.
   int? get etaMinutes => etaSeconds == null ? null : (etaSeconds! / 60).ceil();
@@ -165,6 +171,9 @@ enum FlightAlertKind {
   batteryCritical('battery_critical'),
   failure('failure'),
   coldChain('cold_chain'),
+
+  /// El viento pasa del límite del Wingcopter donde va el dron.
+  windLimit('wind_limit'),
   other('other');
 
   const FlightAlertKind(this.apiValue);

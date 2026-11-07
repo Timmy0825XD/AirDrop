@@ -308,6 +308,7 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
   "Ver vuelo". La lista, el contador de la barra y el inicio del operador
   (`operatorDronesProvider`) suman **todas** sus centrales (una consulta por
   central), no solo la elegida en Flota.
+- Con `linkLost` (RF-34) la posición es estimada: `FlightLiveBar` dice "Sin enlace · posición estimada" en ámbar y el dron se dibuja tenue.
 - La telemetría trae `leg`: `outbound` (ida) o `return` (`FlightLeg.back`,
   el regreso a su central: con el paquete si nadie recibió, o vacío tras
   entregar).
@@ -422,6 +423,7 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `RequesterOrderValues` / `RequesterOrderState` | `orders/presentation/widgets/requester_order` | Valores, validación y estado compartidos por la urgencia y la entrega periódica del solicitante. **La ubicación es obligatoria**: Nest no autoriza sin coordenadas. |
 | `ScheduleDraft` / `ScheduleFields` / `SchedulePreviewState` / `SchedulePreviewCard` | `orders/presentation/widgets/plan_schedule` | El calendario de un plan (RU-30): semanal, mensual o fechas sueltas, inicio, fin (fecha **o** número de entregas), hora en punto de 07:00 a 17:00 y, con fórmula, su vigencia. La vista previa llama `POST /orders/plans/preview` medio segundo después del último cambio; con error de Nest el botón se apaga. Lo usan el plan del solicitante, el abastecimiento y "Cambiar calendario". |
 | `FallbackCard` / `AuthorizeOutcome` | `orders/presentation/widgets/order_detail` | HU-24: autorizar sin dron ya no da 409. `AuthorizeOutcome.of` lee `assignment` o `fallback` (otra central, convencional, reintento) o el rechazo por geovalla; `FallbackCard` muestra el motivo de Nest y las centrales alternativas. |
+| `StatusReasonBanner` | `orders/presentation/widgets/order_detail` | El `statusReason` de un pedido que sigue su curso (`Order.inProgress`): incidente en vuelo o central sin energía. Un pedido cerrado dice su motivo en el resumen; con fallback lo dice `FallbackCard`. |
 | `OccurrenceSection` / `OccurrenceRules` / `showRescheduleSheet` | `orders/presentation/widgets/order_detail` | Confirmar, omitir y mover una entrega de plan (sin dron y a 2 horas o más; la verdad es la respuesta de Nest). |
 | `ReturnCheckSection` | `orders/presentation/widgets/order_detail` | Revisión del paquete devuelto (`return-check`) en la central de origen; con alerta de frío avisa que irá a cuarentena. |
 

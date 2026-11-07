@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-11-07 14:36
+Generado: 2026-11-07 14:50
 
 ## analytics
 
@@ -229,7 +229,7 @@ Generado: 2026-11-07 14:36
 
 | Archivo | Lineas |
 | --- | --- |
-| `receive_order_screen.dart` | 220 |
+| `receive_order_screen.dart` | 231 |
 
 ### Widgets
 
@@ -397,7 +397,7 @@ Generado: 2026-11-07 14:36
 | --- | --- |
 | `inventory_form_screen.dart` | 165 |
 | `inventory_screen.dart` | 105 |
-| `quarantine_screen.dart` | 60 |
+| `quarantine_screen.dart` | 62 |
 
 ### Widgets
 
@@ -442,7 +442,7 @@ Generado: 2026-11-07 14:36
 | `hub_plan_form_screen.dart` | 120 |
 | `in_flight_screen.dart` | 36 |
 | `incoming_screen.dart` | 36 |
-| `order_detail_screen.dart` | 353 |
+| `order_detail_screen.dart` | 356 |
 | `order_history_screen.dart` | 41 |
 | `pending_load_screen.dart` | 71 |
 | `plan_detail_screen.dart` | 203 |
@@ -477,7 +477,7 @@ Generado: 2026-11-07 14:36
 | `hub_request_fields.dart` | _OfferPicker | 43 | ok |
 | `hub_request_fields.dart` | HubTransferNote | 14 | ok |
 | `hub_request_values.dart` | HubRequestValues | 60 | ok |
-| `in_flight_tile.dart` | InFlightTile | 21 | ok |
+| `in_flight_tile.dart` | InFlightTile | 22 | ok |
 | `in_flight_tile.dart` | _DroneTile | 13 | ok |
 | `in_flight_tile.dart` | _FlightInfo | 35 | ok |
 | `load_check_sheet.dart` | LoadCheckSheet | 41 | ok |
@@ -505,7 +505,8 @@ Generado: 2026-11-07 14:36
 | `order_row_card.dart` | _ToneEdge | 23 | ok |
 | `order_status_chip.dart` | OrderStatusChip | 24 | ok |
 | `order_summary.dart` | OrderSummary | 53 | ok |
-| `order_summary.dart` | _SummaryLines | 53 | ok |
+| `order_summary.dart` | _SummaryLines | 52 | ok |
+| `order_summary.dart` | _HubLines | 26 | ok |
 | `order_tile.dart` | OrderTile | 49 | ok |
 | `order_tray.dart` | OrderTray | 52 | ok |
 | `order_tray.dart` | _TrayList | 26 | ok |
@@ -545,6 +546,7 @@ Generado: 2026-11-07 14:36
 | `schedule_range_fields.dart` | ScheduleRangeFields | 34 | ok |
 | `schedule_range_fields.dart` | _ScheduleEndFields | 56 | ok |
 | `schedule_values.dart` | ScheduleDraft | 90 | **>60** |
+| `status_reason_banner.dart` | StatusReasonBanner | 37 | ok |
 | `watch_flight_button.dart` | WatchFlightButton | 18 | ok |
 
 ### Otros (presentation/ sin /widgets)
@@ -559,7 +561,7 @@ Generado: 2026-11-07 14:36
 
 | Archivo | Lineas |
 | --- | --- |
-| `tracking_screen.dart` | 178 |
+| `tracking_screen.dart` | 180 |
 
 ### Widgets
 
@@ -572,10 +574,12 @@ Generado: 2026-11-07 14:36
 | `flight_card.dart` | _ProgressBeam | 41 | ok |
 | `flight_card.dart` | _Stat | 54 | ok |
 | `flight_card.dart` | _StatBox | 35 | ok |
-| `flight_hud.dart` | FlightLiveBar | 57 | ok |
+| `flight_hud.dart` | FlightLiveBar | 60 | ok |
+| `flight_hud.dart` | _LiveDot | 21 | ok |
 | `flight_hud.dart` | FlightHud | 43 | ok |
 | `flight_hud.dart` | _Gauge | 25 | ok |
 | `flight_map.dart` | FlightMap | 60 | ok |
+| `flight_map.dart` | _DroneLayer | 30 | ok |
 | `flight_map.dart` | _EndpointsLayer | 29 | ok |
 | `flight_map.dart` | _RouteLayer | 49 | ok |
 | `flight_notice.dart` | FlightNotice | 25 | ok |
@@ -619,7 +623,7 @@ Generado: 2026-11-07 14:36
 ## Resumen
 
 - Pantallas (43 archivos): 43
-- Archivos de widgets: 167 - clases de widget medidas: 388
+- Archivos de widgets: 168 - clases de widget medidas: 392
 - Widgets sobre 60 lineas: 5
 
 Detalle de los que exceden 60 lineas (candidatos a partir):

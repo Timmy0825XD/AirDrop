@@ -31,6 +31,7 @@ import 'widgets/order_detail/order_summary.dart';
 import 'widgets/order_detail/prescription_viewer.dart';
 import 'widgets/order_detail/reject_section.dart';
 import 'widgets/order_detail/return_check_section.dart';
+import 'widgets/order_detail/status_reason_banner.dart';
 import 'widgets/order_detail/reschedule_sheet.dart';
 import 'widgets/pending_load/load_check_sheet.dart';
 import 'widgets/watch_flight_button.dart';
@@ -256,6 +257,8 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
       if (order.coldChainAlert) ColdChainBanner(at: order.coldChainAlertAt),
       if (order.receiptRejectedReason case final reason?)
         ErrorBanner(message: reason),
+      if (StatusReasonBanner.reasonOf(order) case final reason?)
+        StatusReasonBanner(reason: reason),
       OrderJourney(order: order),
       OrderSummary(
         order: order,

@@ -96,6 +96,7 @@ class TrackingScreen extends ConsumerWidget {
               connected: flight.connected,
               identifier: t.identifier,
               latencyMs: t.vitals?.latencyMs,
+              linkLost: t.linkLost,
             ),
       hud: drone == null
           ? null
@@ -108,6 +109,7 @@ class TrackingScreen extends ConsumerWidget {
       map: (sheetHeight) => FlightMap(
         route: line,
         returnLeg: back,
+        estimated: t?.linkLost ?? false,
         drone: drone,
         sheetHeight: sheetHeight,
       ),
