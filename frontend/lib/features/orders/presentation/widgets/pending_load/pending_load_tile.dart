@@ -7,7 +7,7 @@ import '../order_row_card.dart';
 import '../watch_flight_button.dart';
 
 /// Una fila de la bandeja "Pendiente de carga": qué insumo va, en qué dron
-/// y qué tan lejos, con el botón para confirmar la carga debajo.
+/// y qué tan lejos, con el botón para revisar y confirmar la carga debajo.
 class PendingLoadTile extends StatelessWidget {
   const PendingLoadTile({
     super.key,
@@ -49,7 +49,8 @@ class PendingLoadTile extends StatelessWidget {
   }
 }
 
-/// Mientras falta la carga, "Confirmar carga". Ya confirmado, Nest lo deja
+/// Mientras falta la carga, "Revisar y cargar" (abre la revisión con el
+/// deslizador; el vuelo no sale de este toque). Ya confirmado, Nest lo deja
 /// en la bandeja hasta el primer tick del reloj (unos 2 s): ahí el botón
 /// pasa a "Ver vuelo".
 class _ConfirmButton extends StatelessWidget {
@@ -75,8 +76,8 @@ class _ConfirmButton extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
-            icon: const Icon(Icons.check_rounded),
-            label: Text(confirming ? 'Confirmando…' : 'Confirmar carga'),
+            icon: const Icon(Icons.fact_check_outlined),
+            label: Text(confirming ? 'Confirmando…' : 'Revisar y cargar'),
           );
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 280),

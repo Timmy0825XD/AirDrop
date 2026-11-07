@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-11-07 14:08
+Generado: 2026-11-07 14:22
 
 ## analytics
 
@@ -441,9 +441,9 @@ Generado: 2026-11-07 14:08
 | `hub_plan_form_screen.dart` | 120 |
 | `in_flight_screen.dart` | 36 |
 | `incoming_screen.dart` | 36 |
-| `order_detail_screen.dart` | 347 |
+| `order_detail_screen.dart` | 352 |
 | `order_history_screen.dart` | 41 |
-| `pending_load_screen.dart` | 67 |
+| `pending_load_screen.dart` | 71 |
 | `plan_detail_screen.dart` | 203 |
 | `plan_form_screen.dart` | 97 |
 | `plan_schedule_screen.dart` | 158 |
@@ -479,6 +479,9 @@ Generado: 2026-11-07 14:08
 | `in_flight_tile.dart` | InFlightTile | 21 | ok |
 | `in_flight_tile.dart` | _DroneTile | 13 | ok |
 | `in_flight_tile.dart` | _FlightInfo | 35 | ok |
+| `load_check_sheet.dart` | LoadCheckSheet | 41 | ok |
+| `load_check_sheet.dart` | _CheckRow | 20 | ok |
+| `load_check_values.dart` | (sin clases) | 37 | ok |
 | `medication_carousel.dart` | MedicationCarousel | 58 | ok |
 | `medication_carousel.dart` | _OfferCard | 45 | ok |
 | `medication_carousel.dart` | _SearchCard | 44 | ok |
@@ -505,7 +508,7 @@ Generado: 2026-11-07 14:08
 | `order_tile.dart` | OrderTile | 49 | ok |
 | `order_tray.dart` | OrderTray | 52 | ok |
 | `order_tray.dart` | _TrayList | 26 | ok |
-| `pending_load_tile.dart` | PendingLoadTile | 44 | ok |
+| `pending_load_tile.dart` | PendingLoadTile | 45 | ok |
 | `pending_load_tile.dart` | _ConfirmButton | 35 | ok |
 | `plan_sections.dart` | PlanSummary | 35 | ok |
 | `plan_sections.dart` | PlanOccurrences | 30 | ok |
@@ -615,7 +618,7 @@ Generado: 2026-11-07 14:08
 ## Resumen
 
 - Pantallas (43 archivos): 43
-- Archivos de widgets: 165 - clases de widget medidas: 385
+- Archivos de widgets: 167 - clases de widget medidas: 387
 - Widgets sobre 60 lineas: 5
 
 Detalle de los que exceden 60 lineas (candidatos a partir):

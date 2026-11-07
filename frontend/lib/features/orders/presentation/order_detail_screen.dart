@@ -31,6 +31,7 @@ import 'widgets/order_detail/prescription_viewer.dart';
 import 'widgets/order_detail/reject_section.dart';
 import 'widgets/order_detail/return_check_section.dart';
 import 'widgets/order_detail/reschedule_sheet.dart';
+import 'widgets/pending_load/load_check_sheet.dart';
 import 'widgets/watch_flight_button.dart';
 
 /// Lo que se está haciendo sobre el pedido, para mostrar el dron girando
@@ -167,11 +168,15 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     });
   }
 
-  Future<void> _confirmLoad() => _act(_Action.confirmLoad, () async {
-    await _dispatch.confirmLoad(widget.orderId);
-    if (!mounted) return;
-    showAppSnack(context, 'Carga confirmada. El vuelo arranca en segundos.');
-  });
+  /// Primero la revisión y el deslizador: un toque no lanza el vuelo.
+  Future<void> _confirmLoad(Order order) async {
+    if (!await showLoadCheckSheet(context, order) || !mounted) return;
+    await _act(_Action.confirmLoad, () async {
+      await _dispatch.confirmLoad(widget.orderId);
+      if (!mounted) return;
+      showAppSnack(context, 'Carga confirmada. El vuelo arranca en segundos.');
+    });
+  }
 
   Future<void> _reject() async {
     final reason = _reason.text.trim();
@@ -334,7 +339,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         ConfirmLoadSection(
           busy: _busy,
           loading: _running == _Action.confirmLoad,
-          onConfirm: _confirmLoad,
+          onConfirm: () => _confirmLoad(can.order),
         ),
       if (can.canReceive)
         ReceiveOrderButton(
