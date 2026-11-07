@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError } from "./api";
 import type { ReceivedClock } from "./sim-time";
-import type { Connection, RadarSource } from "./source";
+import type { Connection, RadarSource, WorldChange } from "./source";
 import type {
   AlertEvent,
   Geofence,
@@ -34,6 +34,8 @@ export type RadarData = {
 export type ConsoleListener = {
   onTimeline: (entry: TimelineEntry) => void;
   onReset: () => void;
+  /** CU-38: clima, zona, incidente, apagón o ruta cambiaron. */
+  onWorld: (what: WorldChange) => void;
 };
 
 function fromTelemetry(event: TelemetryEvent, previous?: RadarFlight): RadarFlight {
@@ -59,6 +61,7 @@ function fromTelemetry(event: TelemetryEvent, previous?: RadarFlight): RadarFlig
     batteryPercent: event.batteryPercent,
     temperatureC: event.temperatureC,
     etaSeconds: event.etaSeconds,
+    linkLost: event.linkLost ?? false,
   };
 }
 
@@ -102,10 +105,12 @@ export function useRadar(
       for (const flight of snapshot.flights) {
         const live = flights.current.get(flight.orderId);
         // Sin Redis el snapshot no trae posición: se conserva la del socket.
-        next.set(
-          flight.orderId,
-          flight.latitude == null && live ? { ...live, ...flight, latitude: live.latitude, longitude: live.longitude } : flight,
-        );
+        // El snapshot no sabe del enlace: se conserva lo que dijo el socket.
+        const merged =
+          flight.latitude == null && live
+            ? { ...live, ...flight, latitude: live.latitude, longitude: live.longitude }
+            : flight;
+        next.set(flight.orderId, { ...merged, linkLost: live?.linkLost ?? false });
       }
       flights.current = next;
       setData((current) => ({
@@ -177,6 +182,11 @@ export function useRadar(
         setData((current) => ({ ...current, clock: { ...clock, receivedAt: Date.now() } }));
       },
       onTimeline: (entry) => consoleListener.current.onTimeline(entry),
+      onWorld: (what) => {
+        // Zonas, apagones e incidentes cambian el mapa y los contadores.
+        if (what !== "weather") scheduleRefresh();
+        consoleListener.current.onWorld(what);
+      },
       onReset: () => {
         // RF-40: los vuelos de antes ya no existen; se pide la foto nueva.
         flights.current = new Map();

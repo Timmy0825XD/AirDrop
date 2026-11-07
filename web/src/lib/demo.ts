@@ -10,8 +10,14 @@ import type {
   RadarFlight,
   Snapshot,
   TelemetryEvent,
+  TemporaryZone,
   TimelineEntry,
+  WeatherCell,
 } from "./types";
+
+/** Incidentes y apagones mueven pedidos de verdad: en el ensayo no aplican. */
+const DEMO_ONLY_REAL =
+  "En modo demostración no se lanzan incidentes ni apagones: necesitan el backend.";
 
 /**
  * Modo demostración (`?demo=1`): datos inventados que se mueven solos, para
@@ -196,6 +202,9 @@ export function demoSource(): RadarSource {
       }),
     ];
   };
+  /** Lo que se ensaya en este navegador; se pierde al recargar. */
+  const cells: WeatherCell[] = [];
+  const zones: TemporaryZone[] = [];
   return {
     demo: true,
     control: {
@@ -219,6 +228,66 @@ export function demoSource(): RadarSource {
       },
       timeline: async () => story(),
       alerts: async () => [],
+      // Clima y zonas temporales se ensayan solo en este navegador.
+      weather: async () => cells.filter((cell) => Date.parse(cell.endsAt) > Date.now()),
+      createWeather: async (input) => {
+        const now = Date.now();
+        const cell: WeatherCell = {
+          id: `demo-weather-${now}`,
+          kind: input.kind,
+          latitude: input.latitude,
+          longitude: input.longitude,
+          radiusKm: input.radiusKm,
+          windSpeedMs: input.windSpeedMs ?? null,
+          windGustMs: input.windGustMs ?? null,
+          windFromDeg: input.windFromDeg ?? null,
+          startsAt: new Date(now).toISOString(),
+          endsAt: new Date(now + input.durationMin * 60_000).toISOString(),
+        };
+        cells.push(cell);
+        listeners?.onWorld("weather");
+        return cell;
+      },
+      endWeather: async (id) => {
+        const cell = cells.find((row) => row.id === id);
+        if (!cell) throw new Error("Esa celda de clima no existe.");
+        cells.splice(cells.indexOf(cell), 1);
+        listeners?.onWorld("weather");
+        return cell;
+      },
+      zones: async () => zones.filter((zone) => Date.parse(zone.expiresAt) > Date.now()),
+      createZone: async (input) => {
+        const now = Date.now();
+        const zone: TemporaryZone = {
+          id: `demo-zone-${now}`,
+          name: input.name,
+          reason: input.reason,
+          polygon: input.polygon,
+          createdAt: new Date(now).toISOString(),
+          expiresAt: new Date(now + input.durationMin * 60_000).toISOString(),
+        };
+        zones.push(zone);
+        listeners?.onWorld("zone");
+        return zone;
+      },
+      endZone: async (id) => {
+        const zone = zones.find((row) => row.id === id);
+        if (!zone) throw new Error("Esa geovalla temporal no existe o ya venció.");
+        zones.splice(zones.indexOf(zone), 1);
+        listeners?.onWorld("zone");
+        return zone;
+      },
+      incidents: async () => [],
+      launchIncident: async () => {
+        throw new Error(DEMO_ONLY_REAL);
+      },
+      outages: async () => [],
+      startOutage: async () => {
+        throw new Error(DEMO_ONLY_REAL);
+      },
+      endOutage: async () => {
+        throw new Error(DEMO_ONLY_REAL);
+      },
       reset: async () => {
         const fresh = realTime();
         clock = fresh;
@@ -237,6 +306,9 @@ export function demoSource(): RadarSource {
       hubs,
       flights: missions.map((m) => flightOf(m, Date.now())),
       geofences: [
+        ...zones
+          .filter((zone) => Date.parse(zone.expiresAt) > Date.now())
+          .map((zone) => ({ ...zone })),
         {
           id: "demo-geo-1",
           name: "Zona de eventos (demo)",

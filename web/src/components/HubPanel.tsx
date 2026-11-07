@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
+import { formatTime } from "@/lib/sim-time";
 import { daysUntil, label, DRONE_STATUS, HUB_TYPE, PHASE, QUEUE_STATUS, SALE_TYPE } from "@/lib/labels";
 import type { RadarSource } from "@/lib/source";
 import type { HubDetail, HubDrone, InventoryRow, Selection } from "@/lib/types";
@@ -13,9 +14,84 @@ import {
   MailIcon,
   PackageIcon,
   PhoneIcon,
+  PowerIcon,
+  PowerOffIcon,
   SnowflakeIcon,
 } from "./icons";
-import { IconTile, PanelMessage, PanelShell, Pill, Section, Stat, TONE_TEXT } from "./ui";
+import {
+  Chip,
+  IconTile,
+  PanelMessage,
+  PanelShell,
+  Pill,
+  PrimaryButton,
+  Section,
+  Stat,
+  TONE_TEXT,
+} from "./ui";
+
+const OUTAGE_MINUTES = [15, 30, 60, 120];
+
+/**
+ * RF-36 y CU-45: dejar la central sin energía por un tiempo, o devolvérsela.
+ * Sus urgencias pasan a otra central y lo que tenía por cargar sale de su cola.
+ */
+function PowerSection({
+  until,
+  active,
+  busy,
+  blocked,
+  onStart,
+  onEnd,
+}: {
+  until: string | null;
+  active: boolean;
+  busy: boolean;
+  blocked: string | null;
+  onStart: (minutes: number) => void;
+  onEnd: () => void;
+}) {
+  const [minutes, setMinutes] = useState(30);
+  return (
+    <Section title="Energía" icon={until ? <PowerOffIcon size={14} /> : <PowerIcon size={14} />}>
+      {blocked && <p className="mb-3 text-sm text-muted">{blocked}</p>}
+      {until ? (
+        <>
+          <p className="mb-3 rounded-2xl border border-warning/35 bg-warning/10 px-3.5 py-3 text-sm font-medium text-warning">
+            Sin energía hasta las {formatTime(until)}. No autoriza ni carga; sus urgencias pasan a otra
+            central.
+          </p>
+          <PrimaryButton busy={busy} disabled={blocked != null} className="w-full" onClick={onEnd}>
+            Devolver la energía
+          </PrimaryButton>
+        </>
+      ) : !active ? (
+        <p className="text-sm text-muted">Una central suspendida no se apaga: ya no despacha.</p>
+      ) : (
+        <>
+          <span className="eyebrow">Apagón de</span>
+          <div className="mb-3 mt-2 flex flex-wrap gap-1.5">
+            {OUTAGE_MINUTES.map((value) => (
+              <Chip key={value} selected={minutes === value} onClick={() => setMinutes(value)}>
+                {value < 60 ? `${value} min` : `${value / 60} h`}
+              </Chip>
+            ))}
+          </div>
+          <PrimaryButton
+            tone="danger"
+            busy={busy}
+            disabled={blocked != null}
+            className="w-full"
+            onClick={() => onStart(minutes)}
+          >
+            <PowerOffIcon size={17} />
+            Dejar sin energía
+          </PrimaryButton>
+        </>
+      )}
+    </Section>
+  );
+}
 
 const REFRESH_MS = 5_000;
 
@@ -23,6 +99,7 @@ const droneTone = {
   available: "good",
   in_mission: "info",
   maintenance: "warn",
+  grounded: "bad",
   out_of_service: "bad",
 } as const;
 
@@ -162,9 +239,25 @@ type Props = {
   source: RadarSource;
   hubId: string;
   onSelect: (selection: Selection) => void;
+  /** RF-36: sin energía hasta esta hora (del snapshot), o `null`. */
+  outageUntil: string | null;
+  busy: boolean;
+  /** Por qué no se puede lanzar el apagón; `null` si se puede. */
+  eventBlocked: string | null;
+  onStartOutage: (hubId: string, minutes: number) => void;
+  onEndOutage: (hubId: string) => void;
 };
 
-export function HubPanel({ source, hubId, onSelect }: Props) {
+export function HubPanel({
+  source,
+  hubId,
+  onSelect,
+  outageUntil,
+  busy,
+  eventBlocked,
+  onStartOutage,
+  onEndOutage,
+}: Props) {
   const load = useCallback(() => source.hub(hubId), [source, hubId]);
   const { data, error } = usePolled(load, hubId, REFRESH_MS);
   const close = () => onSelect(null);
@@ -197,6 +290,11 @@ export function HubPanel({ source, hubId, onSelect }: Props) {
             {label(HUB_TYPE, data.type)}
           </Pill>
           <Pill tone={active ? "good" : "bad"}>{active ? "Activa" : "Suspendida"}</Pill>
+          {outageUntil && (
+            <Pill tone="warn" icon={<PowerOffIcon size={12} />}>
+              Sin energía
+            </Pill>
+          )}
         </>
       }
     >
@@ -223,6 +321,14 @@ export function HubPanel({ source, hubId, onSelect }: Props) {
           </p>
         )}
       </div>
+      <PowerSection
+        until={outageUntil}
+        active={active}
+        busy={busy}
+        blocked={eventBlocked}
+        onStart={(minutes) => onStartOutage(hubId, minutes)}
+        onEnd={() => onEndOutage(hubId)}
+      />
       <HubBody hub={data} onSelect={onSelect} />
     </PanelShell>
   );

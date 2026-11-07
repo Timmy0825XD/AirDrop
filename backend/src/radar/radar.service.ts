@@ -57,10 +57,11 @@ export class RadarService {
 
   /** Todo lo que el mapa dibuja al abrir: centrales, vuelos y geovallas. */
   async snapshot() {
-    const [hubs, drones, geofences] = await Promise.all([
+    const [hubs, drones, geofences, queues] = await Promise.all([
       this.hubs.find({ order: { name: 'ASC' } }),
       this.drones.find({ relations: { droneModel: true } }),
       this.geofences(),
+      this.queueCounts(),
     ]);
     const flights = await this.flightsOf(drones);
     return {
@@ -77,6 +78,8 @@ export class RadarService {
             ? new Date(hub.powerOutageUntil).toISOString()
             : null,
         fleet: countFleet(drones.filter((drone) => drone.hubId === hub.id)),
+        // B10: lo que espera a que su despachador lo autorice o lo cargue.
+        queue: queues.get(hub.id) ?? 0,
       })),
       flights,
       geofences,
@@ -251,6 +254,32 @@ export class RadarService {
       .groupBy('o.status')
       .getRawMany();
     return Object.fromEntries(rows.map((row) => [row.status, row.count]));
+  }
+
+  /**
+   * Pedidos en la cola de cada central: los suyos sin despegar y las
+   * urgencias a una persona que se le ofrecieron y no declinó (RU-10).
+   */
+  private async queueCounts(): Promise<Map<string, number>> {
+    const rows: Array<{ hubId: string; count: number }> =
+      await this.dataSource.query(
+        `SELECT "hubId", COUNT(*)::int AS count FROM (
+           SELECT "originHubId"::text AS "hubId"
+           FROM orders
+           WHERE "originHubId" IS NOT NULL
+             AND (status = 'received'
+               OR (status = 'pending_load' AND "loadConfirmedAt" IS NULL))
+           UNION ALL
+           SELECT offer->>'hubId'
+           FROM orders, jsonb_array_elements(orders."dispatchOffers") AS offer
+           WHERE orders.status = 'received'
+             AND orders."originHubId" IS NULL
+             AND offer->>'offeredAt' IS NOT NULL
+             AND offer->>'declinedAt' IS NULL
+         ) AS queued
+         GROUP BY "hubId"`,
+      );
+    return new Map(rows.map((row) => [row.hubId, Number(row.count)]));
   }
 
   private async geofences() {

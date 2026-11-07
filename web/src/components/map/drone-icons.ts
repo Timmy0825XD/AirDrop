@@ -4,30 +4,20 @@ import { COLORS } from "@/lib/theme";
 export const ICON_OUTBOUND = "drone-outbound";
 export const ICON_RETURN = "drone-return";
 export const ICON_ALERT = "drone-alert";
+export const ICON_WIND = "wind-arrow";
 
-/** Se dibuja en 48 unidades y al doble de resolución para pantallas nítidas. */
-const UNITS = 48;
+/** Se dibuja en 64 unidades (el disco mide 44) y al doble de resolución. */
+const UNITS = 64;
 const PIXEL_RATIO = 2;
-
-/** Brazos en X: el centro de cada hélice. */
-const ROTORS: Array<[number, number]> = [
-  [-12.5, -12.5],
-  [12.5, -12.5],
-  [-12.5, 12.5],
-  [12.5, 12.5],
-];
-
-/** El mismo color, un 25 % más oscuro: el final del degradado del cuerpo. */
-function shade(hex: string): string {
-  const n = parseInt(hex.slice(1), 16);
-  const c = (v: number) => Math.round(v * 0.75);
-  return `rgb(${c(n >> 16)}, ${c((n >> 8) & 255)}, ${c(n & 255)})`;
-}
+/** El dron de la marca mide 34 dentro del disco, como en la app. */
+const MARK = 34;
 
 /**
- * Un cuadricóptero visto desde arriba: cuerpo del color de la misión, hélices
- * teñidas y una flecha en la nariz. Apunta al norte; el mapa lo gira con
- * `icon-rotate`.
+ * El dron sobre el mapa, como `DroneMarker` de la app: un disco grafito con
+ * el borde y el brillo del color de la misión (turquesa de ida, ámbar de
+ * regreso, rosado con alerta) y, dentro, el dron de la marca visto desde
+ * arriba (`drone_mark.dart`, grilla de 160). Apunta al norte; el mapa lo gira
+ * con `icon-rotate`.
  */
 function draw(color: string): ImageData {
   const canvas = document.createElement("canvas");
@@ -36,79 +26,93 @@ function draw(color: string): ImageData {
   const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
   ctx.scale(PIXEL_RATIO, PIXEL_RATIO);
   ctx.translate(UNITS / 2, UNITS / 2);
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
 
-  // Sombra suave para despegarlo del mapa.
-  ctx.shadowColor = COLORS.shadow;
-  ctx.shadowBlur = 4;
-  ctx.shadowOffsetY = 1.5;
-
-  // Brazos: un trazo oscuro y encima el metal.
-  for (const width of [5, 3]) {
-    ctx.strokeStyle = width === 5 ? COLORS.ink : COLORS.metal;
-    ctx.lineWidth = width;
-    ctx.beginPath();
-    for (const [x, y] of ROTORS) {
-      ctx.moveTo(0, 0);
-      ctx.lineTo(x, y);
-    }
-    ctx.stroke();
-    ctx.shadowColor = "transparent";
-  }
-
-  // Hélices: disco teñido del color, aro y motor al centro.
-  for (const [x, y] of ROTORS) {
-    ctx.beginPath();
-    ctx.arc(x, y, 8.5, 0, Math.PI * 2);
-    ctx.fillStyle = COLORS.rotor;
-    ctx.fill();
-    ctx.globalAlpha = 0.28;
-    ctx.fillStyle = color;
-    ctx.fill();
-    ctx.globalAlpha = 1;
-    ctx.lineWidth = 2;
-    ctx.strokeStyle = color;
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(x, y, 2.6, 0, Math.PI * 2);
-    ctx.fillStyle = COLORS.shell[1];
-    ctx.fill();
-  }
-
-  // Cuerpo: cápsula del color con borde grafito, como el disco del dron
-  // en la app (acento en degradado).
-  const body = ctx.createLinearGradient(-7, -10, 7, 10);
-  body.addColorStop(0, color);
-  body.addColorStop(1, shade(color));
+  // El disco con el brillo del acento.
+  ctx.save();
+  ctx.shadowColor = withAlpha(color, 0.6);
+  ctx.shadowBlur = 16;
   ctx.beginPath();
-  ctx.roundRect(-7.5, -10.5, 15, 21, 6);
-  ctx.fillStyle = body;
+  ctx.arc(0, 0, 22, 0, Math.PI * 2);
+  ctx.fillStyle = COLORS.disc;
   ctx.fill();
-  ctx.lineWidth = 2;
-  ctx.strokeStyle = COLORS.ink;
+  ctx.restore();
+  ctx.lineWidth = 1.5;
+  ctx.strokeStyle = withAlpha(color, 0.8);
   ctx.stroke();
 
-  // Nariz: hacia dónde va.
-  ctx.beginPath();
-  ctx.moveTo(0, -7.5);
-  ctx.lineTo(4.5, -0.5);
-  ctx.lineTo(0, -2.6);
-  ctx.lineTo(-4.5, -0.5);
-  ctx.closePath();
-  ctx.fillStyle = COLORS.ink;
-  ctx.fill();
-
-  // Luz de cola.
-  ctx.beginPath();
-  ctx.arc(0, 5, 1.7, 0, Math.PI * 2);
-  ctx.fillStyle = COLORS.ink;
-  ctx.fill();
+  // El dron de la marca, en la grilla de 160.
+  ctx.save();
+  ctx.scale(MARK / 160, MARK / 160);
+  const box = (x: number, y: number, w: number, h: number, r: number, fill: string) => {
+    ctx.beginPath();
+    ctx.roundRect(x, y, w, h, r);
+    ctx.fillStyle = fill;
+    ctx.fill();
+  };
+  box(-70, -6, 140, 12, 6, COLORS.markWing);
+  box(-8, -40, 16, 80, 8, COLORS.markBody);
+  box(-4, -30, 8, 10, 3, withAlpha(color, 0.85));
+  box(-40, -52, 7, 104, 3.5, COLORS.markBoom);
+  box(33, -52, 7, 104, 3.5, COLORS.markBoom);
+  for (const [x, y] of [
+    [-36.5, -52],
+    [36.5, -52],
+    [-36.5, 52],
+    [36.5, 52],
+  ]) {
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, 17);
+    glow.addColorStop(0, withAlpha(color, 0.35));
+    glow.addColorStop(1, withAlpha(color, 0));
+    ctx.beginPath();
+    ctx.arc(x, y, 17, 0, Math.PI * 2);
+    ctx.fillStyle = glow;
+    ctx.fill();
+    box(x - 15.5, y - 1.5, 31, 3, 1.5, withAlpha(color, 0.85));
+  }
+  // Luces de navegación: roja a la izquierda, verde a la derecha.
+  for (const [x, light] of [
+    [-70, COLORS.port],
+    [70, COLORS.starboard],
+  ] as const) {
+    ctx.beginPath();
+    ctx.arc(x, 0, 6, 0, Math.PI * 2);
+    ctx.fillStyle = light;
+    ctx.fill();
+  }
+  ctx.restore();
 
   return ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 
-/** Registra los tres íconos del dron (ida, regreso y con alerta). */
+/** Flecha hacia el norte: hacia dónde empuja el viento (RF-32). */
+function drawArrow(): ImageData {
+  const size = 40;
+  const canvas = document.createElement("canvas");
+  canvas.width = size * PIXEL_RATIO;
+  canvas.height = size * PIXEL_RATIO;
+  const ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
+  ctx.scale(PIXEL_RATIO, PIXEL_RATIO);
+  ctx.translate(size / 2, size / 2);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  ctx.strokeStyle = COLORS.wind;
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(0, 14);
+  ctx.lineTo(0, -12);
+  ctx.moveTo(-8, -4);
+  ctx.lineTo(0, -13);
+  ctx.lineTo(8, -4);
+  ctx.stroke();
+  return ctx.getImageData(0, 0, canvas.width, canvas.height);
+}
+
+function withAlpha(hex: string, alpha: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${n >> 16}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
+}
+
+/** Registra los tres íconos del dron (ida, regreso y con alerta) y la flecha del viento. */
 export function addDroneIcons(map: MaplibreMap) {
   const icons: Array<[string, string]> = [
     [ICON_OUTBOUND, COLORS.outbound],
@@ -117,5 +121,8 @@ export function addDroneIcons(map: MaplibreMap) {
   ];
   for (const [name, color] of icons) {
     if (!map.hasImage(name)) map.addImage(name, draw(color), { pixelRatio: PIXEL_RATIO });
+  }
+  if (!map.hasImage(ICON_WIND)) {
+    map.addImage(ICON_WIND, drawArrow(), { pixelRatio: PIXEL_RATIO });
   }
 }

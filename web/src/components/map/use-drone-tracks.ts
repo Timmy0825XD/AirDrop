@@ -99,6 +99,7 @@ export function useDroneTracks(
             bearing: track.bearing,
             leg: flight?.leg ?? "outbound",
             alert: Boolean(alerts && (alerts.battery || alerts.failure || alerts.coldChain)),
+            linkLost: flight?.linkLost === true,
           },
         };
       });
