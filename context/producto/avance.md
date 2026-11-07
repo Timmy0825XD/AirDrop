@@ -46,7 +46,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 12 | Contratos de Nest pendientes y avisos de vidrio | `feature/front-pendientes-backend` | Hecha (PR pendiente) |
 | 13 | Auth con el espacio aéreo vivo | `style/auth-espacio-aereo` | Hecha (PR #105) |
 | 14 | El resto de la app al diseño del espacio aéreo | `style/app-espacio-aereo` | Hecha (PR pendiente) |
-| 15 | Bloqueantes de la auditoría 31 (Bloque 1) | `bugfix/hojas-sobre-la-barra`, `bugfix/estado-dron-grounded`, `feature/confirmar-carga-segura` | En curso: paso 1 hecho |
+| 15 | Bloqueantes de la auditoría 31 (Bloque 1) | `bugfix/hojas-sobre-la-barra`, `bugfix/estado-dron-grounded`, `feature/confirmar-carga-segura` | En curso: pasos 1 y 2 hechos |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -928,9 +928,22 @@ TV. Una rama por paso, cada una desde `develop`.
   (`core/widgets/list_padding.dart`): el último elemento ya no queda detrás
   de la barra ni del botón flotante. Prueba nueva: `app_sheet_test`.
   Revisado en web a 360×640 con datos locales (mantenimiento del operador).
-- Paso 2 (`bugfix/estado-dron-grounded`): `grounded` y `unknown` en
-  `DroneStatus`; `unknown` en los demás enums para que un valor nuevo de
-  Nest no deje la pantalla en blanco.
+- Paso 2 (`bugfix/estado-dron-grounded`), hecho el 2026-11-07: Nest ya
+  manda `grounded` (RF-34: el dron aterrizó de emergencia fuera de su
+  central y espera el rescate) y `DroneStatus.fromJson` lanzaba con
+  cualquier valor nuevo: un solo dron en tierra tumbaba la flota, el inicio
+  del operador y "Ver flota" del administrador, y el modo caos de la
+  consola lo provoca en la demo. Ahora `DroneStatus` tiene `grounded`
+  ("En tierra, espera rescate", pastilla roja) y `unknown`. Un dron en
+  tierra no se gestiona (la tarjeta dice "Espera rescate": lo resuelve el
+  sistema) y en el inicio del operador cuenta en "En taller", no en
+  disponibles. Los enums de **estado** (`OrderStatus`, `PlanStatus`,
+  `HubStatus`, `UserStatus`) también caen en `unknown` ("Estado
+  desconocido") con un valor que la app no conoce. Los de **tipo** (rol,
+  misión, destino, venta, prioridad, documento, frecuencia, tipo de
+  central) siguen fallando a propósito: sin conocerlos la app no sabe qué
+  regla aplicar. Pruebas: `fleet_models_test` y `unknown_status_test`.
+  Sin revisión visual: los datos locales no traen un dron en tierra.
 - Paso 3 (`feature/confirmar-carga-segura`): confirmar la carga pide revisar
   el paquete y deslizar para despegar.
 

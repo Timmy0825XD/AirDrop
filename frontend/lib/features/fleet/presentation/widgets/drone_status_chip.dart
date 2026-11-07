@@ -4,9 +4,9 @@ import '../../../../core/widgets/status_pill.dart';
 import '../../data/fleet_models.dart';
 
 /// Estado del dron en la pastilla de siempre: verde disponible, naranja en
-/// misión (lo que vuela), marca en mantenimiento y rojo fuera de servicio.
-/// Antes "Mantenimiento" pintaba el texto del mismo color que su fondo y
-/// no se leía.
+/// misión (lo que vuela), marca en mantenimiento y rojo fuera de servicio o
+/// en tierra esperando el rescate (una alerta). Antes "Mantenimiento"
+/// pintaba el texto del mismo color que su fondo y no se leía.
 class DroneStatusChip extends StatelessWidget {
   const DroneStatusChip({super.key, required this.status});
 
@@ -15,8 +15,8 @@ class DroneStatusChip extends StatelessWidget {
   static PillTone toneOf(DroneStatus status) => switch (status) {
     DroneStatus.available => PillTone.positive,
     DroneStatus.inMission => PillTone.attention,
-    DroneStatus.maintenance => PillTone.neutral,
-    DroneStatus.outOfService => PillTone.negative,
+    DroneStatus.maintenance || DroneStatus.unknown => PillTone.neutral,
+    DroneStatus.outOfService || DroneStatus.grounded => PillTone.negative,
   };
 
   @override

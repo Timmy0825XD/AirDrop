@@ -30,6 +30,7 @@ class HubLabels {
   static String status(HubStatus status) => switch (status) {
     HubStatus.active => 'Activa',
     HubStatus.suspended => 'Suspendida',
+    HubStatus.unknown => 'Estado desconocido',
   };
 
   static PillTone tone(HubStatus status) =>

@@ -457,6 +457,13 @@ Reglas de los datos:
 - Los fixtures van dentro del repositorio local de cada feature.
 - `mine()` es el único método que convierte un 404 en `null`; el resto relanza
   para que la UI muestre el mensaje de Nest.
+- Un enum de **estado** (`DroneStatus`, `OrderStatus`, `PlanStatus`,
+  `HubStatus`, `UserStatus`, `FlightPhase`) cae en `unknown` con un valor
+  que la app no conoce: un estado nuevo de Nest no tumba la lista. Un enum
+  de **tipo** (rol, misión, destino, venta…) sí lanza `FormatException`:
+  sin conocerlo no se sabe qué regla aplicar. `DroneStatus.grounded` lo
+  pone el sistema (RF-34): no está en `operatorStatuses` y el dron no se
+  gestiona (`isOperable` es falso).
 - `ProviderScope` usa `retryOnlyWithoutResponse` (`lib/app/provider_retry.dart`):
   un error con código HTTP de Nest no se reintenta y se muestra de una vez;
   solo se reintenta (3 veces) cuando el servidor no respondió.

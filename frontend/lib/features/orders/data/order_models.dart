@@ -65,7 +65,11 @@ enum OrderStatus {
   reassigned('reassigned', 'Reasignado'),
   cancelled('cancelled', 'Cancelado'),
   skipped('skipped', 'Omitido'),
-  expired('expired', 'Vencido');
+  expired('expired', 'Vencido'),
+
+  /// Un estado que Nest agregó y la app todavía no conoce: el pedido se
+  /// muestra igual, sin tumbar la lista.
+  unknown('unknown', 'Estado desconocido');
 
   const OrderStatus(this.apiValue, this.label);
 
@@ -75,7 +79,7 @@ enum OrderStatus {
   static OrderStatus fromJson(String value) {
     return OrderStatus.values.firstWhere(
       (e) => e.apiValue == value,
-      orElse: () => throw FormatException('Estado desconocido: $value'),
+      orElse: () => OrderStatus.unknown,
     );
   }
 }
@@ -118,7 +122,10 @@ enum PlanFrequency {
 
 enum PlanStatus {
   active('active', 'Activo'),
-  cancelled('cancelled', 'Cancelado');
+  cancelled('cancelled', 'Cancelado'),
+
+  /// Un estado que Nest agregó y la app todavía no conoce.
+  unknown('unknown', 'Estado desconocido');
 
   const PlanStatus(this.apiValue, this.label);
 
@@ -128,7 +135,7 @@ enum PlanStatus {
   static PlanStatus fromJson(String value) {
     return PlanStatus.values.firstWhere(
       (e) => e.apiValue == value,
-      orElse: () => throw FormatException('Estado de plan desconocido: $value'),
+      orElse: () => PlanStatus.unknown,
     );
   }
 }

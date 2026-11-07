@@ -12,8 +12,9 @@ import 'drone_status_chip.dart';
 /// "Gestionar".
 ///
 /// [onActions] es `null` cuando no se puede tocar: en misión (Nest
-/// responde 409) o con la central suspendida (Nest responde 403). Ahí la
-/// tarjeta dice por qué en vez del botón.
+/// responde 409), en tierra esperando el rescate (lo resuelve el sistema)
+/// o con la central suspendida (Nest responde 403). Ahí la tarjeta dice
+/// por qué en vez del botón.
 class DroneTile extends StatelessWidget {
   const DroneTile({
     super.key,
@@ -42,14 +43,19 @@ class DroneTile extends StatelessWidget {
       body: _DroneInfo(drone: drone, modelName: modelName),
       status: DroneStatusChip(status: drone.status),
       action: onActions == null
-          ? Text(
-              busy ? 'En vuelo' : 'Sin cambios',
-              style: theme.textTheme.labelSmall,
-            )
+          ? Text(_lockedLabel(drone.status), style: theme.textTheme.labelSmall)
           : RowActionButton(label: 'Gestionar', onPressed: onActions!),
     );
   }
 }
+
+/// Por qué el dron no se puede gestionar: vuela, espera el rescate (lo
+/// resuelve el sistema) o la central está suspendida.
+String _lockedLabel(DroneStatus status) => switch (status) {
+  DroneStatus.inMission => 'En vuelo',
+  DroneStatus.grounded => 'Espera rescate',
+  _ => 'Sin cambios',
+};
 
 /// Los primeros 8 caracteres de un id, para nombrar un pedido sin
 /// mostrar el uuid entero.

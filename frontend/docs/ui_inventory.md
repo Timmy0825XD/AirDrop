@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-11-07 13:50
+Generado: 2026-11-07 14:08
 
 ## analytics
 
@@ -263,7 +263,7 @@ Generado: 2026-11-07 13:50
 | `drone_status_sheet.dart` | DroneStatusSheet | 56 | ok |
 | `drone_status_sheet.dart` | _SheetHeader | 21 | ok |
 | `drone_status_sheet.dart` | _ActionTile | 42 | ok |
-| `drone_tile.dart` | DroneTile | 41 | ok |
+| `drone_tile.dart` | DroneTile | 46 | ok |
 | `drone_tile.dart` | _DroneInfo | 48 | ok |
 | `fleet_flight_card.dart` | FleetFlightCard | 49 | ok |
 | `fleet_hub_selector.dart` | FleetHubSelector | 34 | ok |
@@ -353,7 +353,7 @@ Generado: 2026-11-07 13:50
 | --- | --- |
 | `admin_home.dart` | 104 |
 | `dispatcher_home.dart` | 87 |
-| `fleet_operator_home.dart` | 130 |
+| `fleet_operator_home.dart` | 126 |
 | `live_mission.dart` | 39 |
 | `requester_home.dart` | 165 |
 | `role_home.dart` | 71 |
@@ -382,7 +382,7 @@ Generado: 2026-11-07 13:50
 | `hub_form_sheet.dart` | _NameAndType | 40 | ok |
 | `hub_form_sheet.dart` | _ContactFields | 43 | ok |
 | `hub_form_values.dart` | HubFormValues | 84 | **>60** |
-| `hub_labels.dart` | HubLabels | 27 | ok |
+| `hub_labels.dart` | HubLabels | 28 | ok |
 | `hub_tile.dart` | HubTile | 31 | ok |
 | `hub_tile.dart` | HubTypeTile | 21 | ok |
 | `hub_tile.dart` | _HubInfo | 37 | ok |
@@ -605,7 +605,7 @@ Generado: 2026-11-07 13:50
 | `user_form_sheet.dart` | _IdentityFields | 31 | ok |
 | `user_form_sheet.dart` | _ContactRow | 43 | ok |
 | `user_form_values.dart` | UserFormValues | 74 | **>60** |
-| `user_labels.dart` | UserLabels | 30 | ok |
+| `user_labels.dart` | UserLabels | 32 | ok |
 | `user_status_filter.dart` | UserStatusFilter | 32 | ok |
 | `user_tile.dart` | UserTile | 35 | ok |
 | `user_tile.dart` | UserAvatar | 28 | ok |

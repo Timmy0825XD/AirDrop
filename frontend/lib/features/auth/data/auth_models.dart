@@ -44,7 +44,11 @@ enum UserStatus {
   unverified('unverified'),
   active('active'),
   locked('locked'),
-  suspended('suspended');
+  suspended('suspended'),
+
+  /// Un estado que Nest agregó y la app todavía no conoce: la cuenta se
+  /// muestra igual, sin tumbar la lista de cuentas.
+  unknown('unknown');
 
   const UserStatus(this.apiValue);
 
@@ -53,8 +57,7 @@ enum UserStatus {
   static UserStatus fromJson(String value) {
     return UserStatus.values.firstWhere(
       (status) => status.apiValue == value,
-      orElse: () =>
-          throw FormatException('Estado de usuario desconocido: $value'),
+      orElse: () => UserStatus.unknown,
     );
   }
 }
