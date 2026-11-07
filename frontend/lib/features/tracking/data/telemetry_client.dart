@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import '../../../core/api_exception.dart';
+import '../../../core/clock/sim_clock.dart';
 import '../../../core/network/api_client.dart';
 import '../../orders/data/order_models.dart' show OrderStatus;
 import 'telemetry_models.dart';
@@ -47,9 +48,9 @@ class ConnectionChanged extends TelemetryEvent {
 /// Habla con la telemetría de Nest: el GET para el primer dibujo y el socket
 /// `/telemetry` para lo que sigue. No conoce Riverpod ni la UI.
 ///
-/// No vive dentro de [ApiClient] porque el cliente HTTP no habla WebSocket,
-/// y no hay un socket global: cada pantalla abre el suyo para un pedido y lo
-/// cierra al salir.
+/// No vive dentro de [ApiClient] porque el cliente HTTP no habla WebSocket.
+/// Cada pantalla abre su socket para un pedido y lo cierra al salir; la
+/// única excepción es [watchClock], que dura la sesión.
 class TelemetryClient {
   TelemetryClient({required this.apiClient, required this.baseUrl});
 
@@ -161,6 +162,29 @@ class TelemetryClient {
       })
       ..connect();
     return events.stream;
+  }
+
+  /// La hora simulada (RF-31): Nest manda `clock` al conectar y cada vez
+  /// que el administrador la cambia en la consola. No se suscribe a nada.
+  /// Es el único socket que dura toda la sesión; cancelar el stream lo
+  /// cierra.
+  Stream<ClockView> watchClock({required String? token}) {
+    final socket = io.io(
+      '$baseUrl/telemetry',
+      io.OptionBuilder()
+          .setTransports(['websocket'])
+          .setAuth({'token': token})
+          .enableReconnection()
+          .disableAutoConnect()
+          .build(),
+    );
+    final clocks = StreamController<ClockView>(onCancel: socket.dispose);
+    socket
+      ..on('clock', (data) {
+        if (!clocks.isClosed) clocks.add(ClockView.fromJson(_map(data)));
+      })
+      ..connect();
+    return clocks.stream;
   }
 
   static Map<String, dynamic> _map(Object? data) =>

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
+import '../../../core/clock/sim_clock.dart';
 import '../../../core/widgets/auto_refresh.dart';
 import '../../../core/widgets/list_padding.dart';
 import '../../../core/widgets/message_view.dart';
@@ -29,7 +30,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
   String _date = todayIso();
 
   Future<void> _pick() async {
-    final today = DateUtils.dateOnly(DateTime.now());
+    final today = DateUtils.dateOnly(simClock.now());
     final picked = await pickIsoDate(
       context,
       current: _date,

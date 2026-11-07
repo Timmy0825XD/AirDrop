@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'auth_field.dart';
+import '../../../../core/clock/sim_clock.dart';
 import '../../../../theme/app_palette.dart';
 
 /// Campo de fecha con la forma de [AuthField]: label en mayúsculas, la
@@ -105,7 +106,7 @@ Future<String?> pickIsoDate(
   // Sin fecha previa abre en hoy (no en la primera permitida, que para
   // un vencimiento era hace cinco años).
   final parsed = current == null ? null : DateTime.tryParse(current);
-  final wanted = parsed ?? DateUtils.dateOnly(DateTime.now());
+  final wanted = parsed ?? DateUtils.dateOnly(simClock.now());
   final initial = wanted.isBefore(first) ? first : wanted;
   final picked = await showDatePicker(
     context: context,
@@ -122,7 +123,7 @@ Future<String?> pickIsoDate(
 /// El calendario de hoy a un año: fechas de inicio y fechas estimadas, que
 /// Nest no acepta en el pasado.
 Future<String?> pickFutureDate(BuildContext context, {String? current}) {
-  final today = DateUtils.dateOnly(DateTime.now());
+  final today = DateUtils.dateOnly(simClock.now());
   return pickIsoDate(
     context,
     current: current,

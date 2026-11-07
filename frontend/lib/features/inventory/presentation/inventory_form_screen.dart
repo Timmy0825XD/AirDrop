@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
+import '../../../core/clock/sim_clock.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../../../core/widgets/message_view.dart';
 import '../../auth/presentation/widgets/auth_date_field.dart';
@@ -52,7 +53,7 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
   }
 
   Future<void> _pickDate() async {
-    final now = DateTime.now();
+    final now = simClock.now();
     final picked = await pickIsoDate(
       context,
       current: _values.expirationDate.text,

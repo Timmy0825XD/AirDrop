@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/clock/sim_clock.dart';
 import '../../../../core/widgets/press_scale.dart';
 import '../../../../core/widgets/row_action_button.dart';
 import '../../../../core/widgets/status_card.dart';
@@ -29,7 +30,7 @@ class InventoryTile extends StatelessWidget {
   /// Vencido, por vencer o vigente, con la fecha de hoy.
   static (String, PillTone) expiryOf(InventoryItem item, {DateTime? today}) {
     final date = DateTime.tryParse(item.expirationDate);
-    final now = DateUtils.dateOnly(today ?? DateTime.now());
+    final now = DateUtils.dateOnly(today ?? simClock.now());
     if (date == null) return ('Vigente', PillTone.positive);
     if (date.isBefore(now)) return ('Vencido', PillTone.negative);
     if (date.difference(now).inDays <= warningDays) {

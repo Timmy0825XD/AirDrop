@@ -27,6 +27,7 @@ import 'package:frontend/features/inventory/data/inventory_repository.dart';
 import 'package:frontend/features/inventory/presentation/inventory_screen.dart';
 import 'package:frontend/features/orders/data/local_order_repository.dart';
 import 'package:frontend/features/orders/data/order_providers.dart';
+import 'package:frontend/features/tracking/data/tracking_providers.dart';
 import 'package:frontend/features/users/data/user_models.dart';
 import 'package:frontend/features/users/data/user_providers.dart';
 import 'package:frontend/features/users/data/user_repository.dart';
@@ -490,6 +491,8 @@ Future<ProviderContainer> _authenticatedContainer({
       // Las bandejas del despachador se cuentan en su inicio.
       orderRepositoryProvider.overrideWithValue(LocalOrderRepository()),
       noticeRepositoryProvider.overrideWithValue(LocalNoticeRepository()),
+      // Sin servidor: la hora simulada no abre su socket.
+      clockSyncProvider.overrideWith((ref) {}),
       if (hubRepository != null)
         hubRepositoryProvider.overrideWithValue(hubRepository),
       if (inventoryRepository != null)

@@ -46,7 +46,8 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 12 | Contratos de Nest pendientes y avisos de vidrio | `feature/front-pendientes-backend` | Hecha (PR pendiente) |
 | 13 | Auth con el espacio aéreo vivo | `style/auth-espacio-aereo` | Hecha (PR #105) |
 | 14 | El resto de la app al diseño del espacio aéreo | `style/app-espacio-aereo` | Hecha (PR pendiente) |
-| 15 | Bloqueantes de la auditoría 31 (Bloque 1) | `bugfix/hojas-sobre-la-barra`, `bugfix/estado-dron-grounded`, `feature/confirmar-carga-segura` | Hecha (PR #138, #139 y PR pendiente) |
+| 15 | Bloqueantes de la auditoría 31 (Bloque 1) | `bugfix/hojas-sobre-la-barra`, `bugfix/estado-dron-grounded`, `feature/confirmar-carga-segura` | Hecha (PR #138, #139 y #140) |
+| 16 | La app al ritmo de la consola (Bloque 2 de la auditoría 31) | `feature/reloj-simulado`, `feature/incidentes-app`, `feature/fleet-mantenimiento-app` | En curso: paso 1 hecho |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -959,6 +960,32 @@ TV. Una rama por paso, cada una desde `develop`.
   360×640 con datos locales: el deslizador cabe sin scroll.
 
 Cierre: `flutter analyze` sin issues y `flutter test` en verde (239).
+
+## Fase 16 — La app al ritmo de la consola (Bloque 2)
+
+Lo que la consola de simulación (`pendientes-backend.md` §17) cambia para la
+app y se ve en la demo. Una rama por paso desde `develop`.
+
+- Paso 1 (`feature/reloj-simulado`), hecho el 2026-11-07: Nest corre con un
+  reloj simulado (pausa a x8) y manda `clock { now, speed, paused }` por el
+  socket `/telemetry`. La app contaba con el reloj del teléfono: a x8, los
+  5 min del código de entrega duraban 37,5 s en la TV y 5 min en la app.
+  Ahora `simClock` (`core/clock/sim_clock.dart`) calcula
+  `now + (real − llegada) × speed` (quieto en pausa) y reemplaza a
+  `DateTime.now()` en todas las pantallas: código de entrega, agenda y
+  "hoy", reglas de las entregas de plan, ventana de despacho, fechas
+  mínimas de los calendarios, vencimientos del inventario, números del
+  solicitante y rango de métricas. `clockSyncProvider` mantiene un socket
+  solo para `clock` mientras haya sesión (es la única excepción a "un
+  socket por pantalla"). `SimClockBadge` muestra "Simulación ×4" o
+  "Simulación en pausa" en los encabezados. Pruebas: `sim_clock_test`.
+  Sin revisión en pantalla con el reloj real: hace falta el backend con la
+  consola encendida.
+- Paso 2 (`feature/incidentes-app`): incidente en vuelo, código renovado,
+  `lost`, cuarentena `incident`, `autoDispatched`, "Volviendo a la central",
+  `linkLost` y `wind_limit`.
+- Paso 3 (`feature/fleet-mantenimiento-app`): la hoja "Gestionar" con el
+  contrato nuevo, historial, batería, ciclos y vencidos.
 
 ## Pendiente del backend
 

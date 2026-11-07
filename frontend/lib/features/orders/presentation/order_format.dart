@@ -1,3 +1,4 @@
+import '../../../core/clock/sim_clock.dart';
 import '../data/order_models.dart';
 
 /// Colombia está en UTC−5 todo el año (sin horario de verano). Las horas de
@@ -122,7 +123,7 @@ String _weeklyLabel(PlanSchedule schedule) {
 }
 
 /// Hoy en `AAAA-MM-DD` para el mínimo del selector de fecha.
-String todayIso() => _isoOf(colombiaTime(DateTime.now()));
+String todayIso() => _isoOf(colombiaTime(simClock.now()));
 
 /// Una fecha en `AAAA-MM-DD`.
 String isoDate(DateTime value) => _isoOf(value);
@@ -141,7 +142,7 @@ String formatKm(double km) =>
 /// verano) todavía no se puede autorizar: Nest respondería 400.
 bool isFutureSchedule(String? scheduledFor) {
   if (scheduledFor == null) return false;
-  final bogota = DateTime.now().toUtc().subtract(const Duration(hours: 5));
+  final bogota = simClock.now().toUtc().subtract(const Duration(hours: 5));
   return scheduledFor.compareTo(_isoOf(bogota)) > 0;
 }
 

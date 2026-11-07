@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/sim_clock_badge.dart';
 import '../../../../core/widgets/status_pill.dart';
 import '../../../../theme/app_palette.dart';
 import '../../../../core/widgets/drone_mark.dart';
@@ -41,7 +42,7 @@ class HomeHeader extends StatelessWidget {
       children: [
         _BrandRow(header: this),
         const SizedBox(height: 22),
-        StatusPill(label: roleLabel, tone: PillTone.neutral),
+        _RoleRow(roleLabel: roleLabel),
         const SizedBox(height: 10),
         Text(
           'Hola, ${homeFirstName(fullName)}',
@@ -60,6 +61,26 @@ class HomeHeader extends StatelessWidget {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
+      ],
+    );
+  }
+}
+
+/// El rol en su pastilla y, si la consola cambió el ritmo del reloj, el
+/// aviso de la simulación al lado.
+class _RoleRow extends StatelessWidget {
+  const _RoleRow({required this.roleLabel});
+
+  final String roleLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 6,
+      children: [
+        StatusPill(label: roleLabel, tone: PillTone.neutral),
+        const SimClockBadge(),
       ],
     );
   }

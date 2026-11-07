@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
 import '../../../core/api_exception.dart';
+import '../../../core/clock/sim_clock.dart';
 import '../../../core/data/data_source.dart';
 import '../../../core/data/data_source_config.dart';
 import '../../../core/network/api_client.dart';
+import '../../auth/presentation/auth_controller.dart';
 import '../../orders/data/order_models.dart' show OrderStatus;
 import 'telemetry_client.dart';
 import 'telemetry_models.dart';
@@ -140,3 +142,28 @@ class TrackingNotifier extends Notifier<TrackingState> {
 
 final trackingProvider = NotifierProvider.autoDispose
     .family<TrackingNotifier, TrackingState, String>(TrackingNotifier.new);
+
+/// RF-31: mientras haya sesión (lo escucha `RoleShell`) mantiene
+/// [simClock] con el `clock` de Nest. Al cerrar la sesión o cambiar de
+/// cuenta se cierra el socket y la app vuelve a la hora real. Con datos
+/// locales no hay servidor: la hora es la real.
+final clockSyncProvider = Provider.autoDispose<void>((ref) {
+  final userId = ref.watch(sessionUserIdProvider);
+  if (appDataSource == DataSource.local || userId == null) return;
+  // Se toman antes de esperar el token: después, el `ref` pudo cerrarse.
+  final client = ref.read(telemetryClientProvider);
+  final tokens = ref.read(tokenStoreProvider);
+  StreamSubscription<ClockView>? subscription;
+  var closed = false;
+  ref.onDispose(() {
+    closed = true;
+    subscription?.cancel();
+    simClock.reset();
+  });
+  unawaited(
+    tokens.read().then((token) {
+      if (closed) return;
+      subscription = client.watchClock(token: token).listen(simClock.apply);
+    }),
+  );
+});

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/widgets/glass_icon_button.dart';
 import '../../../../core/widgets/nav_scope.dart';
+import '../../../../core/widgets/sim_clock_badge.dart';
 import '../../../../theme/app_palette.dart';
 
 /// Encabezado de las pantallas de trabajo: volver en vidrio, el título
@@ -115,6 +116,7 @@ class _Titles extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall,
         ),
+        const SimClockBadge(top: 6),
       ],
     );
   }

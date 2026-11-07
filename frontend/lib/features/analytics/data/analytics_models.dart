@@ -4,6 +4,8 @@
 /// celdas de ~1 km con al menos 3 pedidos.
 library;
 
+import '../../../core/clock/sim_clock.dart';
+
 double? _num(Object? value) => value is num ? value.toDouble() : null;
 
 int _int(Object? value) => value is num ? value.toInt() : 0;
@@ -21,7 +23,7 @@ class AnalyticsQuery {
 
   /// Los últimos [days] días hasta hoy en Colombia.
   factory AnalyticsQuery.lastDays(int days, {String? hubId}) {
-    final today = DateTime.now().toUtc().subtract(const Duration(hours: 5));
+    final today = simClock.now().toUtc().subtract(const Duration(hours: 5));
     final day = DateTime.utc(today.year, today.month, today.day);
     return AnalyticsQuery(
       from: _iso(day.subtract(Duration(days: days - 1))),

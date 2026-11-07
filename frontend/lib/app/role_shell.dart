@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../core/widgets/floating_nav_bar.dart';
 import '../core/widgets/nav_scope.dart';
 import '../features/auth/presentation/auth_controller.dart';
+import '../features/tracking/data/tracking_providers.dart';
 import 'role_tabs.dart';
 
 /// El marco de las pantallas con sesión: la pantalla y, encima, la barra
@@ -47,6 +48,8 @@ class _RoleShellState extends ConsumerState<RoleShell> {
   Widget build(BuildContext context) {
     final role = ref.watch(authControllerProvider).value?.user?.role;
     if (role == null) return widget.child;
+    // La hora simulada de la consola, toda la sesión (RF-31).
+    ref.watch(clockSyncProvider);
     final tabs = RoleTabs.of(role, context, ref);
     final selected = tabs.indexOf(widget.location);
     final onTab = tabs.isTab(widget.location);
