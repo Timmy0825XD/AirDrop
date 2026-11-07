@@ -312,6 +312,11 @@ export class TelemetryGateway
         this.server?.to(RADAR_ROOM).emit('radar-timeline', event.entry);
         return;
       }
+      if (event.type === 'chaos') {
+        // RF-38: el interruptor del caos es de la consola.
+        this.server?.to(RADAR_ROOM).emit('radar-chaos', event.chaos);
+        return;
+      }
       if (event.type === 'actors') {
         // RF-37: los interruptores de los actores son de la consola.
         this.server?.to(RADAR_ROOM).emit('radar-actors', event.actors);

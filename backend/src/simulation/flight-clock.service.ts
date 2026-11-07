@@ -117,6 +117,16 @@ type FlightSession = {
   } | null;
 };
 
+/** RF-38: un dron en el aire, visto desde el modo caos. */
+export type AirborneDrone = {
+  orderId: string;
+  droneId: string;
+  /** Lleva carga fría: aplica la falla de la refrigeración. */
+  coldLoad: boolean;
+  /** Punto medio del corredor que vuela: ahí el clima o una zona le pesan. */
+  midpoint: { latitude: number; longitude: number };
+};
+
 @Injectable()
 export class FlightClockService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(FlightClockService.name);
@@ -253,6 +263,28 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
         await this.handleIncident(session, IncidentKind.BATTERY_SHORT);
       }
     }
+  }
+
+  /**
+   * RF-38: los drones que vuelan sin un protocolo en curso. Solo lectura:
+   * el modo caos elige sobre cuál sortear y lanza con `launchIncident`.
+   */
+  airborne(): AirborneDrone[] {
+    return [...this.active.values()]
+      .filter((session) => !session.progress.contingency)
+      .map((session) => {
+        const path = session.corridor.coordinates;
+        const [longitude, latitude] = path[Math.floor(path.length / 2)] ?? [
+          session.hub.longitude,
+          session.hub.latitude,
+        ];
+        return {
+          orderId: session.orderId,
+          droneId: session.droneId,
+          coldLoad: session.requiresColdChain && !session.keepStatus,
+          midpoint: { latitude, longitude },
+        };
+      });
   }
 
   /**
@@ -1120,7 +1152,10 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     };
     try {
       if (departure.toHub && departure.destinationHubId) {
-        await this.inbox.notifyHubDispatchers(departure.destinationHubId, notice);
+        await this.inbox.notifyHubDispatchers(
+          departure.destinationHubId,
+          notice,
+        );
         return;
       }
       if (departure.requesterId) {

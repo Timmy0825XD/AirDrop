@@ -311,7 +311,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Actores:** Administrador, desde la consola de simulación
 - **Antes:** Lo mismo que CU-37. Arranca apagado.
 - **Pasos:** Lo enciende y elige la intensidad: baja, media o alta.
-- **Después:** El sistema sortea eventos realistas (RF-38) y los resuelve como en CU-38. Apagarlo no deshace los eventos que ya corren.
+- **Después:** El sistema sortea eventos realistas (RF-38) y los resuelve como en CU-38. Cambiar la intensidad reinicia la cuenta del siguiente evento. Apagarlo no deshace los eventos que ya corren.
 - **Por qué:** RF-38.
 
 ### CU-41 — Reiniciar el escenario

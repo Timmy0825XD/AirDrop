@@ -1,6 +1,7 @@
 import type { RadarHandlers, RadarSource } from "./source";
 import type {
   ActorsState,
+  ChaosState,
   ClockView,
   Corridor,
   FleetCounts,
@@ -208,6 +209,8 @@ export function demoSource(): RadarSource {
   const zones: TemporaryZone[] = [];
   // RF-37: los interruptores se ensayan aquí; no hay actores que corran.
   let actors: ActorsState = { autoDispatcher: false, orderFlow: false };
+  // RF-38: el interruptor se ensaya; en el ensayo no se sortea nada.
+  let chaos: ChaosState = { enabled: false, intensity: "medium" };
   return {
     demo: true,
     control: {
@@ -304,6 +307,17 @@ export function demoSource(): RadarSource {
         );
         return { ...actors };
       },
+      chaos: async () => ({ ...chaos }),
+      setChaos: async (change) => {
+        chaos = { ...chaos, ...change };
+        listeners?.onChaos({ ...chaos });
+        listeners?.onTimeline(
+          demoEntry(nowOf(), {
+            title: chaos.enabled ? "Modo caos encendido (demo: no sortea)" : "Modo caos apagado (demo)",
+          }),
+        );
+        return { ...chaos };
+      },
       generateOrder: async () => {
         throw new Error(DEMO_ONLY_REAL);
       },
@@ -315,6 +329,8 @@ export function demoSource(): RadarSource {
         clock = fresh;
         actors = { autoDispatcher: false, orderFlow: false };
         listeners?.onActors({ ...actors });
+        chaos = { enabled: false, intensity: "medium" };
+        listeners?.onChaos({ ...chaos });
         listeners?.onClock(fresh);
         listeners?.onReset();
         listeners?.onTimeline(

@@ -186,7 +186,8 @@ export type TimelineEntry = {
   hubId: string | null;
   latitude: number | null;
   longitude: number | null;
-  source: "system" | "console";
+  /** `chaos`: lo sorteó el modo caos (RF-38). */
+  source: "system" | "console" | "chaos";
 };
 
 /** `GET /control/alerts`: alertas de vuelo abiertas (RF-39). */
@@ -357,4 +358,12 @@ export type SurgeResult = {
   created: GeneratedOrder[];
   /** Por qué no salieron las que faltan, tal como lo dijo Nest. */
   failures: string[];
+};
+
+/** RF-38: el modo caos. Arranca apagado. */
+export type ChaosIntensity = "low" | "medium" | "high";
+
+export type ChaosState = {
+  enabled: boolean;
+  intensity: ChaosIntensity;
 };

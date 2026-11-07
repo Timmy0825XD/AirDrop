@@ -3,6 +3,7 @@ import { API_URL, api } from "./api";
 import type {
   ActorsState,
   AlertEvent,
+  ChaosState,
   ClockSpeed,
   ClockView,
   ConsoleIncidentKind,
@@ -46,6 +47,8 @@ export type RadarHandlers = {
   onWorld: (what: WorldChange) => void;
   /** RF-37: se encendió o se apagó un actor simulado. */
   onActors: (actors: ActorsState) => void;
+  /** RF-38: se encendió, se apagó o cambió de intensidad el modo caos. */
+  onChaos: (chaos: ChaosState) => void;
 };
 
 export type WorldChange = "weather" | "zone" | "incident" | "outage" | "reroute";
@@ -76,6 +79,9 @@ export type ConsoleApi = {
   setActors: (change: Partial<ActorsState>) => Promise<ActorsState>;
   generateOrder: (kind: GeneratedKind) => Promise<GeneratedOrder>;
   surge: (input: NewSurge) => Promise<SurgeResult>;
+  /* RF-38, CU-40: el modo caos. */
+  chaos: () => Promise<ChaosState>;
+  setChaos: (change: Partial<ChaosState>) => Promise<ChaosState>;
 };
 
 /** De dónde sale el radar: Nest (en vivo) o el simulador de demostración. */
@@ -148,6 +154,12 @@ export function liveSource(token: string): RadarSource {
           method: "POST",
           body: JSON.stringify(input),
         }),
+      chaos: () => api<ChaosState>("/control/chaos", token),
+      setChaos: (change) =>
+        api<ChaosState>("/control/chaos", token, {
+          method: "PUT",
+          body: JSON.stringify(change),
+        }),
     },
     connect(handlers) {
       const socket = io(`${API_URL}/telemetry`, {
@@ -175,6 +187,7 @@ export function liveSource(token: string): RadarSource {
       socket.on("radar-hub-outage", () => handlers.onWorld("outage"));
       socket.on("radar-reroute", () => handlers.onWorld("reroute"));
       socket.on("radar-actors", handlers.onActors);
+      socket.on("radar-chaos", handlers.onChaos);
       return () => {
         socket.removeAllListeners();
         socket.disconnect();

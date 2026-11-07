@@ -36,6 +36,8 @@ export class SimulatedReceiverService implements OnModuleInit, OnModuleDestroy {
   private timer: NodeJS.Timeout | null = null;
   private running = false;
   private readonly plans = new Map<string, Plan>();
+  /** RF-36: pedidos en los que nadie va a retirar el paquete. */
+  private readonly noShows = new Set<string>();
   /** Los tests lo cambian por uno fijo. */
   random: Random = Math.random;
 
@@ -69,6 +71,29 @@ export class SimulatedReceiverService implements OnModuleInit, OnModuleDestroy {
   /** RF-40: el reinicio borra los pedidos; sus decisiones también. */
   forget(): void {
     this.plans.clear();
+    this.noShows.clear();
+  }
+
+  /**
+   * RF-36, "nadie retira el paquete": elige un pedido generado que todavía
+   * vuela hacia su destino y deja dicho que el receptor no llegará. Al
+   * aterrizar corren los 5 minutos (RF-30). `null` si no hay ninguno.
+   */
+  async markNoShow(): Promise<string | null> {
+    const flying = await this.orders
+      .createQueryBuilder('o')
+      .innerJoin(User, 'requester', 'requester.id = o.requesterId')
+      .where('o.status = :status', { status: OrderStatus.IN_FLIGHT })
+      .andWhere('requester.simulated = true')
+      .getMany();
+    const open = flying.filter((order) => !this.noShows.has(order.id));
+    if (!open.length) {
+      return null;
+    }
+    const chosen =
+      open[Math.min(open.length - 1, Math.floor(this.random() * open.length))];
+    this.noShows.add(chosen.id);
+    return chosen.id;
   }
 
   async runDue(now = simClock.now()): Promise<void> {
@@ -109,7 +134,9 @@ export class SimulatedReceiverService implements OnModuleInit, OnModuleDestroy {
     const landedAtMs = mission.landedAt.getTime();
     let plan = this.plans.get(order.id);
     if (!plan || plan.landedAtMs !== landedAtMs) {
-      const codeAt = receiverCodeAt(mission.landedAt, this.random);
+      const codeAt = this.noShows.has(order.id)
+        ? null
+        : receiverCodeAt(mission.landedAt, this.random);
       plan = { landedAtMs, codeAtMs: codeAt?.getTime() ?? null };
       this.plans.set(order.id, plan);
     }
@@ -140,6 +167,7 @@ export class SimulatedReceiverService implements OnModuleInit, OnModuleDestroy {
     for (const id of [...this.plans.keys()]) {
       if (!alive.has(id)) {
         this.plans.delete(id);
+        this.noShows.delete(id);
       }
     }
   }
