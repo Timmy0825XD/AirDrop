@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/app_sheet.dart';
 import '../../../../core/widgets/message_view.dart';
 import '../../../../core/widgets/rise_in.dart';
 import '../../../../core/widgets/tone_tile.dart';
@@ -44,10 +45,9 @@ Future<PickerOption<T>?> showSearchPicker<T>(
   required bool Function(T value) isSelected,
   String searchHint = 'Buscar',
 }) {
-  return showModalBottomSheet<PickerOption<T>>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
+  return showAppSheet<PickerOption<T>>(
+    context,
+    showDragHandle: false,
     builder: (_) => DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.72,

@@ -46,6 +46,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 12 | Contratos de Nest pendientes y avisos de vidrio | `feature/front-pendientes-backend` | Hecha (PR pendiente) |
 | 13 | Auth con el espacio aéreo vivo | `style/auth-espacio-aereo` | Hecha (PR #105) |
 | 14 | El resto de la app al diseño del espacio aéreo | `style/app-espacio-aereo` | Hecha (PR pendiente) |
+| 15 | Bloqueantes de la auditoría 31 (Bloque 1) | `bugfix/hojas-sobre-la-barra`, `bugfix/estado-dron-grounded`, `feature/confirmar-carga-segura` | En curso: paso 1 hecho |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -908,6 +909,30 @@ Pendiente:
 
 - Ver el mapa de seguimiento con el backend real (socket de telemetría).
 - Probar en el emulador y en Windows.
+
+## Fase 15 — Bloqueantes de la auditoría 31 (Bloque 1)
+
+Sale de la auditoría de la app del 2026-11-07 (`learning/31-…`, local y
+fuera de git): lo que hoy no deja usar la app o puede romper la demo en la
+TV. Una rama por paso, cada una desde `develop`.
+
+- Paso 1 (`bugfix/hojas-sobre-la-barra`), hecho el 2026-11-07: las hojas
+  inferiores se abrían en el navegador del `ShellRoute`, **debajo** de la
+  barra flotante. El botón Guardar del perfil y Registrar del mantenimiento
+  quedaban tapados, y la barra seguía activa con la hoja abierta. Ahora toda
+  hoja pasa por `showAppSheet` (`core/widgets/app_sheet.dart`), que la abre
+  en el navegador raíz: queda encima de la barra y su velo la bloquea.
+  `FormBottomSheet` y `showConfirmSheet` dejan el área segura del sistema y
+  tienen scroll (en un teléfono bajo con el teclado abierto, el botón se
+  alcanza bajando). Las listas de pestaña usan `listPadding`
+  (`core/widgets/list_padding.dart`): el último elemento ya no queda detrás
+  de la barra ni del botón flotante. Prueba nueva: `app_sheet_test`.
+  Revisado en web a 360×640 con datos locales (mantenimiento del operador).
+- Paso 2 (`bugfix/estado-dron-grounded`): `grounded` y `unknown` en
+  `DroneStatus`; `unknown` en los demás enums para que un valor nuevo de
+  Nest no deje la pantalla en blanco.
+- Paso 3 (`feature/confirmar-carga-segura`): confirmar la carga pide revisar
+  el paquete y deslizar para despegar.
 
 ## Pendiente del backend
 

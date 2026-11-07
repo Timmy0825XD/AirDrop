@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../core/widgets/app_sheet.dart';
 import '../../../../../core/widgets/form_bottom_sheet.dart';
 import '../../../data/auth_models.dart';
 import '../auth_field.dart';
@@ -16,10 +17,8 @@ Future<UpdateProfileRequest?> showProfileEditSheet(
   required String initialValue,
   DocumentType? initialDocumentType,
 }) {
-  return showModalBottomSheet<UpdateProfileRequest>(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
+  return showAppSheet<UpdateProfileRequest>(
+    context,
     // El correo pide además la contraseña actual (RNF-04).
     builder: (_) => type == ProfileFieldType.email
         ? EmailEditSheet(initialValue: initialValue)

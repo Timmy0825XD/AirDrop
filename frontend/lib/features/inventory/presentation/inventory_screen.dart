@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
+import '../../../core/widgets/list_padding.dart';
 import '../../../core/widgets/message_view.dart';
 import '../../../core/widgets/rise_in.dart';
 import '../../../core/widgets/status_pill.dart';
@@ -61,7 +62,7 @@ class _InventoryList extends ConsumerWidget {
         message: 'Aún no hay insumos en el inventario.',
       ),
       AsyncValue(hasValue: true, hasError: false, :final value?) => ListView.separated(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 96),
+        padding: listPadding(context, fab: true),
         itemCount: value.length,
         separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, i) => RiseIn(

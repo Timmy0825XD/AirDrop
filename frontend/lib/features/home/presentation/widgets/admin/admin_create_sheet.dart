@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../../core/widgets/app_sheet.dart';
 import '../../../../../core/widgets/glass_card.dart';
 import '../../../../../core/widgets/rise_in.dart';
 import '../../../../../core/widgets/tone_tile.dart';
@@ -8,8 +9,9 @@ import '../../../../../core/widgets/tone_tile.dart';
 /// La hoja del botón central del administrador: crear una central o una
 /// cuenta institucional. Cada opción entra en cascada.
 Future<void> showAdminCreateSheet(BuildContext context) {
-  return showModalBottomSheet<void>(
-    context: context,
+  return showAppSheet<void>(
+    context,
+    showDragHandle: false,
     builder: (sheet) => SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),

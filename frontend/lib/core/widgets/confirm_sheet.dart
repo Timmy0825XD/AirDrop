@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'app_sheet.dart';
+
 /// Pide confirmar una acción que cambia el estado de algo (suspender o
 /// reactivar). Sube como hoja desde abajo y oscurece el fondo. Devuelve
 /// `true` solo si el usuario confirma.
@@ -16,10 +18,8 @@ Future<bool> showConfirmSheet(
   required IconData icon,
   bool destructive = true,
 }) async {
-  final confirmed = await showModalBottomSheet<bool>(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
+  final confirmed = await showAppSheet<bool>(
+    context,
     builder: (context) => _ConfirmSheet(
       title: title,
       message: message,
@@ -54,8 +54,10 @@ class _ConfirmSheet extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     final tone = destructive ? colors.error : colors.primary;
+    // Con un mensaje largo en un teléfono bajo, los botones se alcanzan
+    // bajando.
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(22, 0, 22, 24),
         child: Column(
           mainAxisSize: MainAxisSize.min,

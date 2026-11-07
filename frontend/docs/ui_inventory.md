@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-10-31 20:01
+Generado: 2026-11-07 13:50
 
 ## analytics
 
@@ -250,7 +250,7 @@ Generado: 2026-10-31 20:01
 | --- | --- |
 | `drone_form_screen.dart` | 133 |
 | `fleet_flights_screen.dart` | 109 |
-| `fleet_screen.dart` | 273 |
+| `fleet_screen.dart` | 274 |
 
 ### Widgets
 
@@ -279,7 +279,7 @@ Generado: 2026-10-31 20:01
 | --- | --- |
 | `geofence_draw_screen.dart` | 76 |
 | `geofence_form_screen.dart` | 147 |
-| `geofences_screen.dart` | 96 |
+| `geofences_screen.dart` | 97 |
 
 ### Widgets
 
@@ -367,7 +367,7 @@ Generado: 2026-10-31 20:01
 | `hub_detail_screen.dart` | 55 |
 | `hub_fleet_screen.dart` | 77 |
 | `hub_form_screen.dart` | 126 |
-| `hubs_screen.dart` | 130 |
+| `hubs_screen.dart` | 131 |
 
 ### Widgets
 
@@ -395,7 +395,7 @@ Generado: 2026-10-31 20:01
 | Archivo | Lineas |
 | --- | --- |
 | `inventory_form_screen.dart` | 164 |
-| `inventory_screen.dart` | 104 |
+| `inventory_screen.dart` | 105 |
 | `quarantine_screen.dart` | 60 |
 
 ### Widgets
@@ -434,7 +434,7 @@ Generado: 2026-10-31 20:01
 
 | Archivo | Lineas |
 | --- | --- |
-| `agenda_screen.dart` | 120 |
+| `agenda_screen.dart` | 121 |
 | `dispatch_history_screen.dart` | 127 |
 | `emergency_screen.dart` | 85 |
 | `hub_emergency_screen.dart` | 89 |
@@ -586,7 +586,7 @@ Generado: 2026-10-31 20:01
 | Archivo | Lineas |
 | --- | --- |
 | `user_form_screen.dart` | 110 |
-| `users_screen.dart` | 141 |
+| `users_screen.dart` | 142 |
 
 ### Widgets
 

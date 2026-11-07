@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/widgets/app_sheet.dart';
 import '../../data/hub_models.dart';
 
 /// Lo que el administrador hace con una central al tocarla: editarla o ver
 /// su flota. Suspender y reactivar siguen en el botón de la tarjeta.
 Future<void> showHubActionsSheet(BuildContext context, Hub hub) {
-  return showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
+  return showAppSheet<void>(
+    context,
     builder: (sheet) => SafeArea(
       child: Column(
         mainAxisSize: MainAxisSize.min,

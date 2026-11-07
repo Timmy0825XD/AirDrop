@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/app_sheet.dart';
 import '../../../../core/widgets/press_scale.dart';
 import '../../data/fleet_models.dart';
 import 'drone_status_chip.dart';
@@ -23,9 +24,8 @@ Future<void> showDroneStatusSheet(
   required VoidCallback onPutInMaintenance,
   required VoidCallback onRegisterMaintenance,
 }) {
-  return showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
+  return showAppSheet<void>(
+    context,
     builder: (_) => DroneStatusSheet(
       drone: drone,
       onSetAvailable: onSetAvailable,

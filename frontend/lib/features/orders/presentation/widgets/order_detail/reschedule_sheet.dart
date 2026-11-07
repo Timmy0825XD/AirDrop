@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../core/widgets/app_sheet.dart';
 import '../../../../../core/widgets/choice_pill.dart';
 import '../../../../../core/widgets/form_bottom_sheet.dart';
 import '../../../data/order_models.dart';
@@ -13,10 +14,8 @@ Future<(String, String)?> showRescheduleSheet(
   required List<String> dates,
   String? initialTime,
 }) {
-  return showModalBottomSheet<(String, String)>(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
+  return showAppSheet<(String, String)>(
+    context,
     builder: (_) => RescheduleSheet(dates: dates, initialTime: initialTime),
   );
 }
