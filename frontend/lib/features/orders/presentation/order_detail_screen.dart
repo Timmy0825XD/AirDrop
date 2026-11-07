@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api_exception.dart';
+import '../../../core/clock/sim_clock.dart';
 import '../../../core/field_limits.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../../../core/widgets/auto_refresh.dart';
@@ -142,7 +143,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
       message: 'No se envía esta vez. Las demás entregas del plan siguen.',
       confirmLabel: 'Omitir',
       icon: Icons.event_busy_outlined,
-      subject: Text(OccurrenceRules(order, DateTime.now()).slotLabel),
+      subject: Text(OccurrenceRules(order, simClock.now()).slotLabel),
     );
     if (!ok || !mounted) return;
     await _act(_Action.occurrence, () async {
@@ -156,7 +157,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   Future<void> _moveOccurrence(Order order) async {
     final choice = await showRescheduleSheet(
       context,
-      dates: OccurrenceRules(order, DateTime.now()).rescheduleDates,
+      dates: OccurrenceRules(order, simClock.now()).rescheduleDates,
       initialTime: order.scheduledAt == null
           ? null
           : formatClock(order.scheduledAt!),
@@ -249,7 +250,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     );
     // Quien recibe: el solicitante o la central de destino del traslado.
     final receives = !isDispatcher || can.onlyDestination;
-    final occurrence = OccurrenceRules(order, DateTime.now());
+    final occurrence = OccurrenceRules(order, simClock.now());
     final blocks = <Widget>[
       if (_error != null) ErrorBanner(message: _error!),
       if (order.coldChainAlert) ColdChainBanner(at: order.coldChainAlertAt),
@@ -313,7 +314,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           onViewPrescription: can.canViewPrescription
               ? _viewPrescription
               : null,
-          blockedNote: dispatchWindowNote(can.order, DateTime.now()),
+          blockedNote: dispatchWindowNote(can.order, simClock.now()),
           busy: _busy,
           loading: _running == _Action.authorize,
           onAuthorize: () => _authorize(can),

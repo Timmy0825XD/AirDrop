@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/clock/sim_clock.dart';
 import '../../../../core/field_limits.dart';
 import '../../../../core/validators.dart';
 import '../../data/inventory_models.dart';
@@ -65,7 +66,7 @@ class InventoryFormValues {
   static bool isAfterToday(String isoDate, {DateTime? now}) {
     final date = DateTime.tryParse(isoDate);
     if (date == null) return false;
-    return date.isAfter(DateUtils.dateOnly(now ?? DateTime.now()));
+    return date.isAfter(DateUtils.dateOnly(now ?? simClock.now()));
   }
 
   /// Rellena el formulario al editar. Solo corre la primera vez: si el

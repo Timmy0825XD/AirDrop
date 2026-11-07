@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../core/clock/sim_clock.dart';
 import '../../../../../core/widgets/bar_spark.dart';
 import '../../../../../core/widgets/glass_card.dart';
 import '../../../../../core/widgets/ring_gauge.dart';
@@ -38,7 +39,7 @@ class RequesterStats extends StatelessWidget {
 
   /// Pedidos creados en cada una de las últimas 4 semanas (la última, hoy).
   static List<int> _lastWeeks(List<Order> orders) {
-    final now = DateTime.now();
+    final now = simClock.now();
     final weeks = List.filled(4, 0);
     for (final order in orders) {
       final at = order.createdAt?.toLocal();

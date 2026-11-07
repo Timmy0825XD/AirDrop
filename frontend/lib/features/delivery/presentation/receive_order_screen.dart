@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api_exception.dart';
+import '../../../core/clock/sim_clock.dart';
 import '../../../core/field_limits.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../../auth/presentation/widgets/auth_morph_button.dart';
@@ -105,7 +106,7 @@ class _ReceiveOrderScreenState extends ConsumerState<ReceiveOrderScreen>
   }
 
   void _tick() {
-    final left = _code!.remaining(DateTime.now());
+    final left = _code!.remaining(simClock.now());
     setState(() => _remaining = left);
     if (left == Duration.zero && !_delivered) {
       _close(ReceiveOrderScreen.expiredMessage);

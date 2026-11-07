@@ -241,7 +241,17 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
 
 - `TelemetryClient` hace el `GET /telemetry/orders/:id` para el primer dibujo
   y abre el socket `/telemetry` (token crudo en `auth.token`). Un socket por
-  pantalla: se cierra al salir; no hay socket global.
+  pantalla: se cierra al salir. La única excepción es la hora simulada.
+- **Hora simulada (RF-31).** `simClock` (`core/clock/sim_clock.dart`) es la
+  hora de la app: toda pantalla usa `simClock.now()`, nunca
+  `DateTime.now()` (cuentas regresivas, "hoy", franjas, fechas mínimas).
+  `clockSyncProvider` (lo escucha `RoleShell`, así que dura la sesión) abre
+  un socket solo para el evento `clock` (`TelemetryClient.watchClock`); al
+  cerrar la sesión el reloj vuelve a la hora real. Con datos locales es la
+  hora real. `SimClockBadge` (en `HomeHeader` y `SectionHeader`) dice
+  "Simulación ×4" o "Simulación en pausa". JWT, OTP y el límite de intentos
+  siguen en hora real. Un test que monte `RoleShell` con sesión anula
+  `clockSyncProvider` (`overrideWith((ref) {})`).
 - Nest contesta `subscribe` con los eventos `subscribed` o `error` (no con
   ack). Con `error` se muestra el mensaje y no se reintenta.
 - El 404 `Todavía no hay vuelo para este pedido.` no es un error: la pantalla

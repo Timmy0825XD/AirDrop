@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/clock/sim_clock.dart';
 import '../../../core/widgets/auto_refresh.dart';
 import '../../../core/widgets/status_pill.dart';
 import '../../auth/data/auth_models.dart';
@@ -96,7 +97,7 @@ class RequesterHome extends ConsumerWidget {
 
   /// La entrega programada más próxima que todavía no pasó.
   static Order? _nextScheduled(List<Order>? orders) {
-    final now = DateTime.now();
+    final now = simClock.now();
     final upcoming =
         orders
             ?.where(

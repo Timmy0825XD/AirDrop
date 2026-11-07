@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-11-07 14:22
+Generado: 2026-11-07 14:36
 
 ## analytics
 
@@ -229,7 +229,7 @@ Generado: 2026-11-07 14:22
 
 | Archivo | Lineas |
 | --- | --- |
-| `receive_order_screen.dart` | 219 |
+| `receive_order_screen.dart` | 220 |
 
 ### Widgets
 
@@ -314,6 +314,7 @@ Generado: 2026-11-07 14:22
 | `home_grid.dart` | HomeGrid | 23 | ok |
 | `home_grid.dart` | HomeLabel | 14 | ok |
 | `home_header.dart` | HomeHeader | 54 | ok |
+| `home_header.dart` | _RoleRow | 20 | ok |
 | `home_header.dart` | _BrandRow | 37 | ok |
 | `home_header.dart` | _Initials | 37 | ok |
 | `home_page.dart` | HomePage | 24 | ok |
@@ -342,7 +343,7 @@ Generado: 2026-11-07 14:22
 | `section_form_page.dart` | SectionStatePage | 18 | ok |
 | `section_header.dart` | SectionHeader | 53 | ok |
 | `section_header.dart` | _TitleRow | 23 | ok |
-| `section_header.dart` | _Titles | 35 | ok |
+| `section_header.dart` | _Titles | 36 | ok |
 | `section_header.dart` | _FlightGrid | 29 | ok |
 | `section_header.dart` | _GridPainter | 32 | ok |
 | `sign_out.dart` | (sin clases) | 20 | ok |
@@ -355,7 +356,7 @@ Generado: 2026-11-07 14:22
 | `dispatcher_home.dart` | 87 |
 | `fleet_operator_home.dart` | 126 |
 | `live_mission.dart` | 39 |
-| `requester_home.dart` | 165 |
+| `requester_home.dart` | 166 |
 | `role_home.dart` | 71 |
 
 ## hubs
@@ -394,7 +395,7 @@ Generado: 2026-11-07 14:22
 
 | Archivo | Lineas |
 | --- | --- |
-| `inventory_form_screen.dart` | 164 |
+| `inventory_form_screen.dart` | 165 |
 | `inventory_screen.dart` | 105 |
 | `quarantine_screen.dart` | 60 |
 
@@ -434,14 +435,14 @@ Generado: 2026-11-07 14:22
 
 | Archivo | Lineas |
 | --- | --- |
-| `agenda_screen.dart` | 121 |
+| `agenda_screen.dart` | 122 |
 | `dispatch_history_screen.dart` | 127 |
 | `emergency_screen.dart` | 85 |
 | `hub_emergency_screen.dart` | 89 |
 | `hub_plan_form_screen.dart` | 120 |
 | `in_flight_screen.dart` | 36 |
 | `incoming_screen.dart` | 36 |
-| `order_detail_screen.dart` | 352 |
+| `order_detail_screen.dart` | 353 |
 | `order_history_screen.dart` | 41 |
 | `pending_load_screen.dart` | 71 |
 | `plan_detail_screen.dart` | 203 |
@@ -550,7 +551,7 @@ Generado: 2026-11-07 14:22
 
 | Archivo | Lineas |
 | --- | --- |
-| `order_format.dart` | 159 |
+| `order_format.dart` | 160 |
 
 ## tracking
 
@@ -618,7 +619,7 @@ Generado: 2026-11-07 14:22
 ## Resumen
 
 - Pantallas (43 archivos): 43
-- Archivos de widgets: 167 - clases de widget medidas: 387
+- Archivos de widgets: 167 - clases de widget medidas: 388
 - Widgets sobre 60 lineas: 5
 
 Detalle de los que exceden 60 lineas (candidatos a partir):
