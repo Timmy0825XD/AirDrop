@@ -164,6 +164,12 @@ function build(hubs: Array<Partial<Hub>>) {
   };
   const dispatcher = { forget: jest.fn() };
   const receiver = { forget: jest.fn() };
+  const chaos = {
+    turnOff: jest.fn(() => {
+      order.push('chaos');
+      return Promise.resolve();
+    }),
+  };
   const service = new ScenarioResetService(
     dataSource as never,
     flights as never,
@@ -176,6 +182,7 @@ function build(hubs: Array<Partial<Hub>>) {
     actors as never,
     dispatcher as never,
     receiver as never,
+    chaos as never,
   );
   return {
     service,
@@ -248,6 +255,7 @@ describe('ScenarioResetService (RF-40, CU-41)', () => {
     // RF-37: los actores se apagan primero, para no crear pedidos a mitad.
     expect(built.order).toEqual([
       'actors',
+      'chaos',
       'clock',
       'forget',
       'clear',

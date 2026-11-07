@@ -6,6 +6,7 @@ import type { ClockChange, RadarSource, WorldChange } from "./source";
 import type { ConsoleListener } from "./use-radar";
 import type {
   ActorsState,
+  ChaosState,
   ConsoleIncidentKind,
   GeneratedKind,
   Incident,
@@ -40,6 +41,8 @@ export type ConsoleState = {
   incidents: Incident[];
   /** RF-37: qué actores simulados están encendidos. */
   actors: ActorsState;
+  /** RF-38: el modo caos. */
+  chaos: ChaosState;
   busy: boolean;
   error: string | null;
   /** Lo que salió bien de la última orden, para avisarlo un momento. */
@@ -48,6 +51,7 @@ export type ConsoleState = {
 };
 
 const ACTORS_OFF: ActorsState = { autoDispatcher: false, orderFlow: false };
+const CHAOS_OFF: ChaosState = { enabled: false, intensity: "medium" };
 
 const messageOf = (error: unknown) =>
   error instanceof Error ? error.message : "No se pudo completar la acción.";
@@ -67,6 +71,7 @@ export function useConsole(source: RadarSource) {
     weather: [],
     incidents: [],
     actors: ACTORS_OFF,
+    chaos: CHAOS_OFF,
     busy: false,
     error: null,
     notice: null,
@@ -103,12 +108,13 @@ export function useConsole(source: RadarSource) {
     (async () => {
       try {
         await source.control.clock();
-        const [timeline, actors] = await Promise.all([
+        const [timeline, actors, chaos] = await Promise.all([
           source.control.timeline(TIMELINE_SIZE),
           source.control.actors(),
+          source.control.chaos(),
         ]);
         if (!cancelled) {
-          setState((current) => ({ ...current, status: "on", timeline, actors }));
+          setState((current) => ({ ...current, status: "on", timeline, actors, chaos }));
         }
       } catch (error) {
         if (cancelled || (error instanceof ApiError && error.status === 401)) return;
@@ -168,9 +174,11 @@ export function useConsole(source: RadarSource) {
           incidents: [],
           // RF-40: el reinicio apaga los actores (el socket lo confirma).
           actors: ACTORS_OFF,
+          chaos: CHAOS_OFF,
         }));
       },
       onActors: (actors) => setState((current) => ({ ...current, actors })),
+      onChaos: (chaos) => setState((current) => ({ ...current, chaos })),
       onWorld: (what: WorldChange) => {
         if (what === "weather" || what === "incident") reloadSoon("world");
         if (what === "incident") reloadSoon("alerts");
@@ -282,6 +290,15 @@ export function useConsole(source: RadarSource) {
     [run, source],
   );
 
+  const setChaos = useCallback(
+    async (change: Partial<ChaosState>) => {
+      const chaos = await run(() => source.control.setChaos(change));
+      if (chaos) setState((current) => ({ ...current, chaos }));
+      return chaos;
+    },
+    [run, source],
+  );
+
   const generateOrder = useCallback(
     (kind: GeneratedKind) =>
       run(
@@ -321,6 +338,7 @@ export function useConsole(source: RadarSource) {
     startOutage,
     endOutage,
     setActors,
+    setChaos,
     generateOrder,
     surge,
     dismissError,

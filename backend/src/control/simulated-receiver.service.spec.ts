@@ -77,4 +77,19 @@ describe('SimulatedReceiverService (RF-37)', () => {
     await service.runDue(new Date(later.getTime() + 5_000));
     expect(delivery.validate).toHaveBeenCalledTimes(1);
   });
+
+  it('RF-36: el pedido marcado como "nadie retira" deja vencer los 5 minutos', async () => {
+    const { service, delivery, builder } = build(() => 0);
+    builder.getMany.mockResolvedValueOnce([
+      {
+        id: 'order-1',
+        status: OrderStatus.IN_FLIGHT,
+        requesterId: REQUESTER.id,
+      },
+    ] as never);
+    await expect(service.markNoShow()).resolves.toBe('order-1');
+    await service.runDue(LANDED);
+    await service.runDue(new Date(LANDED.getTime() + 5 * 60_000));
+    expect(delivery.validate).not.toHaveBeenCalled();
+  });
 });

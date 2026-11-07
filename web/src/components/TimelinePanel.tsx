@@ -131,6 +131,7 @@ function EntryRow({ entry, onPick }: { entry: TimelineEntry; onPick: (entry: Tim
         <span className="mt-1 flex items-center gap-2 text-[12px] font-medium tabular-nums text-muted">
           {formatTime(entry.at)}
           {entry.source === "console" && <span className="text-accent">· Consola</span>}
+          {entry.source === "chaos" && <span className="font-semibold text-danger">· Caos</span>}
         </span>
       </span>
     </>

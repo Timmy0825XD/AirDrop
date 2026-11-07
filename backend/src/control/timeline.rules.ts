@@ -46,8 +46,11 @@ export type TimelineEntry = {
   hubId: string | null;
   latitude: number | null;
   longitude: number | null;
-  /** `console`: lo hizo el administrador desde la consola. */
-  source: 'system' | 'console';
+  /**
+   * `console`: lo hizo el administrador desde la consola. `chaos`: lo
+   * sorteó el modo caos (RF-38).
+   */
+  source: 'system' | 'console' | 'chaos';
 };
 
 export type TimelineDraft = Omit<TimelineEntry, 'id' | 'at'>;

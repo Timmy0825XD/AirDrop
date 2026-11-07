@@ -15,6 +15,7 @@ import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
 import { TelemetryRedis, telemetryKey } from '../telemetry/telemetry.redis';
 import { User } from '../users/user.entity';
 import { AutoDispatcherService } from './auto-dispatcher.service';
+import { ChaosService } from './chaos.service';
 import { ClockControlService } from './clock-control.service';
 import { geofences, hubPlans, operator } from './demo-scenario';
 import {
@@ -53,6 +54,7 @@ export class ScenarioResetService {
     private readonly actors: SimActorsService,
     private readonly dispatcher: AutoDispatcherService,
     private readonly receiver: SimulatedReceiverService,
+    private readonly chaos: ChaosService,
   ) {}
 
   async reset(admin: User): Promise<ResetSummary> {
@@ -65,6 +67,8 @@ export class ScenarioResetService {
     // RF-37: los actores se apagan antes, para que no creen ni autoricen
     // pedidos mientras se borran.
     await this.actors.turnOff();
+    // RF-38: el caos también, para que no sortee sobre lo que se borra.
+    await this.chaos.turnOff();
     this.dispatcher.forget();
     this.receiver.forget();
     // Primero el reloj: los vencimientos y el mantenimiento cuentan desde hoy.

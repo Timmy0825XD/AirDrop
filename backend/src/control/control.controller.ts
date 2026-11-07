@@ -22,7 +22,9 @@ import { FlightIncidentsService } from '../simulation/flight-incidents.service';
 import { ClockControlService } from './clock-control.service';
 import { ControlEnabledGuard } from './control-enabled.guard';
 import { ConsoleEventsService } from './console-events.service';
+import { ChaosService } from './chaos.service';
 import { ChangeActorsDto } from './dto/change-actors.dto';
+import { ChangeChaosDto } from './dto/change-chaos.dto';
 import { ChangeClockDto } from './dto/change-clock.dto';
 import { CreateSurgeDto } from './dto/create-surge.dto';
 import { GenerateOrderDto } from './dto/generate-order.dto';
@@ -53,6 +55,7 @@ export class ControlController {
     private readonly incidents: FlightIncidentsService,
     private readonly actors: SimActorsService,
     private readonly generator: OrderGeneratorService,
+    private readonly chaos: ChaosService,
   ) {}
 
   @Get('clock')
@@ -186,6 +189,18 @@ export class ControlController {
       dto.radiusKm,
       dto.count,
     );
+  }
+
+  /** RF-38: si el modo caos está encendido y con qué intensidad. */
+  @Get('chaos')
+  getChaos() {
+    return this.chaos.view();
+  }
+
+  /** RF-38, CU-40: enciende o apaga el caos, o cambia su intensidad. */
+  @Put('chaos')
+  changeChaos(@CurrentUser() user: User, @Body() dto: ChangeChaosDto) {
+    return this.chaos.change(user.id, dto);
   }
 
   /** RF-40, CU-41: el escenario de la semilla, sin pedidos y en hora real. */

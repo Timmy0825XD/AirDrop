@@ -7,6 +7,7 @@ import type { Connection, RadarSource, WorldChange } from "./source";
 import type {
   ActorsState,
   AlertEvent,
+  ChaosState,
   Geofence,
   HubSummary,
   RadarFlight,
@@ -39,6 +40,8 @@ export type ConsoleListener = {
   onWorld: (what: WorldChange) => void;
   /** RF-37: cambiaron los interruptores de los actores. */
   onActors: (actors: ActorsState) => void;
+  /** RF-38: cambió el modo caos. */
+  onChaos: (chaos: ChaosState) => void;
 };
 
 function fromTelemetry(event: TelemetryEvent, previous?: RadarFlight): RadarFlight {
@@ -186,6 +189,7 @@ export function useRadar(
       },
       onTimeline: (entry) => consoleListener.current.onTimeline(entry),
       onActors: (actors) => consoleListener.current.onActors(actors),
+      onChaos: (chaos) => consoleListener.current.onChaos(chaos),
       onWorld: (what) => {
         // Zonas, apagones e incidentes cambian el mapa y los contadores.
         if (what !== "weather") scheduleRefresh();

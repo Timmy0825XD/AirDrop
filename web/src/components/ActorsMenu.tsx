@@ -1,27 +1,37 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type { ActorsState, GeneratedKind } from "@/lib/types";
-import { BotIcon, CloseIcon, PackageIcon, SurgeIcon } from "./icons";
-import { GlassButton, IconTile } from "./ui";
+import type { ActorsState, ChaosIntensity, ChaosState, GeneratedKind } from "@/lib/types";
+import { BotIcon, CloseIcon, PackageIcon, StormIcon, SurgeIcon } from "./icons";
+import { Chip, GlassButton, IconTile } from "./ui";
+
+const INTENSITIES: Array<{ value: ChaosIntensity; label: string; every: string }> = [
+  { value: "low", label: "Baja", every: "~15 min" },
+  { value: "medium", label: "Media", every: "~8 min" },
+  { value: "high", label: "Alta", every: "~4 min" },
+];
 
 type Props = {
   actors: ActorsState;
+  chaos: ChaosState;
   busy: boolean;
   onChange: (change: Partial<ActorsState>) => void;
+  onChaos: (change: Partial<ChaosState>) => void;
   onGenerate: (kind: GeneratedKind) => void;
 };
 
 /**
- * RF-37, CU-39: los actores simulados. Un botón en la barra abre la tarjeta
- * con los dos interruptores (despachador automático y flujo continuo) y el
- * generador a pedido. El pico de urgencias va en la barra de eventos, porque
- * se elige sobre el mapa.
+ * RF-37, CU-39 y RF-38: los actores simulados y el modo caos. Un botón en
+ * la barra abre la tarjeta con los interruptores (despachador automático,
+ * flujo continuo y caos con su intensidad) y el generador a pedido. El pico
+ * de urgencias va en la barra de eventos, porque se elige sobre el mapa. Con
+ * el caos encendido el botón se pone rojo y lo dice, para verlo en la TV.
  */
-export function ActorsMenu({ actors, busy, onChange, onGenerate }: Props) {
+export function ActorsMenu({ actors, chaos, busy, onChange, onChaos, onGenerate }: Props) {
   const [open, setOpen] = useState(false);
   const box = useRef<HTMLDivElement>(null);
-  const on = Number(actors.autoDispatcher) + Number(actors.orderFlow);
+  const on = Number(actors.autoDispatcher) + Number(actors.orderFlow) + Number(chaos.enabled);
+  const chaosLabel = INTENSITIES.find((item) => item.value === chaos.intensity)?.label ?? "";
 
   useEffect(() => {
     if (!open) return;
@@ -46,17 +56,27 @@ export function ActorsMenu({ actors, busy, onChange, onGenerate }: Props) {
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         aria-haspopup="dialog"
-        title="Actores simulados"
+        title="Actores simulados y modo caos"
         className={`flex h-10 items-center gap-2 rounded-[13px] border px-3 text-sm font-semibold transition active:scale-95 focus-visible:outline-2 focus-visible:outline-accent ${
-          on > 0
-            ? "border-accent/45 bg-accent/12 text-accent"
-            : "border-glass-border bg-glass text-text hover:text-accent"
+          chaos.enabled
+            ? "border-danger/50 bg-danger/15 text-danger"
+            : on > 0
+              ? "border-accent/45 bg-accent/12 text-accent"
+              : "border-glass-border bg-glass text-text hover:text-accent"
         }`}
       >
-        <BotIcon size={17} />
-        <span className="hidden 2xl:inline">Actores</span>
+        {chaos.enabled ? <StormIcon size={17} /> : <BotIcon size={17} />}
+        {chaos.enabled ? (
+          <span>Caos · {chaosLabel.toLowerCase()}</span>
+        ) : (
+          <span className="hidden 2xl:inline">Actores</span>
+        )}
         {on > 0 && (
-          <span className="grid size-5 place-items-center rounded-full bg-accent text-[11px] font-bold text-on-accent tabular-nums">
+          <span
+            className={`grid size-5 place-items-center rounded-full text-[11px] font-bold tabular-nums ${
+              chaos.enabled ? "bg-danger text-on-accent" : "bg-accent text-on-accent"
+            }`}
+          >
             {on}
           </span>
         )}
@@ -116,6 +136,32 @@ export function ActorsMenu({ actors, busy, onChange, onGenerate }: Props) {
             </div>
           </div>
 
+          <div className="mt-4 border-t border-glass-border pt-4">
+            <SwitchRow
+              title="Modo caos"
+              hint="Sortea clima, fallas, choques y eventos del entorno con pesos realistas. Lo grave (dron perdido, choque grave, apagón) solo en alta."
+              checked={chaos.enabled}
+              disabled={busy}
+              danger
+              onChange={(value) => onChaos({ enabled: value })}
+            />
+            <div className="mt-2 grid grid-cols-3 gap-1.5" role="group" aria-label="Intensidad del caos">
+              {INTENSITIES.map((item) => (
+                <Chip
+                  key={item.value}
+                  selected={chaos.intensity === item.value}
+                  disabled={busy}
+                  onClick={() => onChaos({ intensity: item.value })}
+                >
+                  <span className="flex w-full flex-col items-center leading-tight">
+                    <span>{item.label}</span>
+                    <span className="text-[10px] font-medium opacity-75">{item.every}</span>
+                  </span>
+                </Chip>
+              ))}
+            </div>
+          </div>
+
           <p className="mt-4 rounded-2xl border border-glass-border bg-white/4 px-4 py-3 text-[13px] leading-snug text-muted">
             El receptor simulado ingresa el código a tiempo en el 85 % de los pedidos generados; en el
             resto vencen los 5 min y el dron vuelve con el paquete. El pico de urgencias se lanza
@@ -132,12 +178,15 @@ function SwitchRow({
   hint,
   checked,
   disabled,
+  danger = false,
   onChange,
 }: {
   title: string;
   hint: string;
   checked: boolean;
   disabled: boolean;
+  /** El caos se pinta en rojo cuando está encendido. */
+  danger?: boolean;
   onChange: (value: boolean) => void;
 }) {
   return (
@@ -148,7 +197,11 @@ function SwitchRow({
       disabled={disabled}
       onClick={() => onChange(!checked)}
       className={`flex w-full items-center gap-3 rounded-[20px] border px-4 py-3 text-left transition active:scale-[0.99] disabled:opacity-55 focus-visible:outline-2 focus-visible:outline-accent ${
-        checked ? "border-accent/40 bg-accent/10" : "border-glass-border bg-white/4 hover:bg-white/8"
+        checked
+          ? danger
+            ? "border-danger/45 bg-danger/12"
+            : "border-accent/40 bg-accent/10"
+          : "border-glass-border bg-white/4 hover:bg-white/8"
       }`}
     >
       <span className="min-w-0 flex-1">
@@ -157,7 +210,9 @@ function SwitchRow({
       </span>
       <span
         aria-hidden
-        className={`relative h-7 w-12 shrink-0 rounded-full transition ${checked ? "bg-accent-gradient" : "bg-white/15"}`}
+        className={`relative h-7 w-12 shrink-0 rounded-full transition ${
+          checked ? (danger ? "bg-danger" : "bg-accent-gradient") : "bg-white/15"
+        }`}
       >
         <span
           className={`absolute top-1 size-5 rounded-full bg-white shadow transition-all ${checked ? "left-6" : "left-1"}`}

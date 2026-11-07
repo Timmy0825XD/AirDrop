@@ -128,6 +128,31 @@ export class TimelineService implements OnModuleInit {
     });
   }
 
+  /** RF-38: un evento que sorteó el modo caos, con dónde cayó. */
+  async recordChaos(
+    title: string,
+    detail: string | null,
+    at: {
+      position?: Position | null;
+      droneId?: string | null;
+      hubId?: string | null;
+      orderId?: string | null;
+    } = {},
+  ): Promise<void> {
+    await this.record({
+      kind: 'console',
+      severity: 'warning',
+      title,
+      detail,
+      orderId: at.orderId ?? null,
+      droneId: at.droneId ?? null,
+      hubId: at.hubId ?? null,
+      latitude: at.position?.latitude ?? null,
+      longitude: at.position?.longitude ?? null,
+      source: 'chaos',
+    });
+  }
+
   async handle(event: TelemetryEvent): Promise<void> {
     if (event.type === 'clock') {
       await this.record(clockDraft(event.clock));

@@ -14,6 +14,7 @@ import { SimulationModule } from '../simulation/simulation.module';
 import { WeatherModule } from '../weather/weather.module';
 import { TelemetryModule } from '../telemetry/telemetry.module';
 import { AutoDispatcherService } from './auto-dispatcher.service';
+import { ChaosService } from './chaos.service';
 import { ClockControlService } from './clock-control.service';
 import { ConsoleEventsService } from './console-events.service';
 import { ControlEnabledGuard } from './control-enabled.guard';
@@ -27,7 +28,7 @@ import { TimelineService } from './timeline.service';
 
 /**
  * Consola de simulación (RF-31 a RF-40): reloj, línea de tiempo, alertas
- * pendientes, eventos, actores simulados y reinicio del escenario. Los
+ * pendientes, eventos, actores simulados, modo caos y reinicio del escenario. Los
  * actores usan los servicios de Orders, Decision y Delivery, como una persona.
  */
 @Module({
@@ -54,6 +55,7 @@ import { TimelineService } from './timeline.service';
     AutoDispatcherService,
     OrderGeneratorService,
     SimulatedReceiverService,
+    ChaosService,
   ],
 })
 export class ControlModule {}

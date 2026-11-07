@@ -306,8 +306,10 @@ export function Dashboard({ source, userName, onLogout }: Props) {
           consoleOn ? (
             <ActorsMenu
               actors={consola.state.actors}
+              chaos={consola.state.chaos}
               busy={consola.state.busy}
               onChange={(change) => void consola.setActors(change)}
+              onChaos={(change) => void consola.setChaos(change)}
               onGenerate={(kind) => void consola.generateOrder(kind)}
             />
           ) : null

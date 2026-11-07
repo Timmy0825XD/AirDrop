@@ -453,7 +453,14 @@ El reinicio del escenario (RF-40) apaga el despachador automático y el flujo co
 
 ### RF-38 — Modo caos
 
-Interruptor de la consola, **apagado por defecto**. Encendido, sortea eventos del catálogo de RF-32, RF-34 y RF-36 con pesos realistas: tormentas más probables en la tarde simulada, choques raros y fallas según las horas de vuelo. Tiene tres intensidades: baja, media y alta. Cada evento sale en la línea de tiempo marcado como caos.
+Interruptor de la consola, **apagado por defecto**. Encendido, sortea eventos del catálogo de RF-32, RF-34 y RF-36 con pesos realistas y los aplica con los mismos servicios que usa la consola. Cada evento sale en la línea de tiempo marcado como caos. Apagarlo no deshace lo que ya corre, y el reinicio del escenario (RF-40) lo apaga.
+
+- **Intensidad:** baja, un evento cada 15 minutos simulados en promedio; media, cada 8; alta, cada 4. Cada espera dura entre la mitad y vez y media del promedio.
+- **Familias:** clima 40 %, fallas del dron 35 %, entorno 20 % y choques 5 %. Sin drones en el aire no hay fallas ni choques.
+- **Clima:** viento, lluvia o tormenta, de 1,5 a 3,5 km y de 15 a 60 minutos, sobre el corredor de un dron en el aire (o un barrio, si no vuela ninguno). Las tormentas son tres veces más probables de 14:00 a 18:00 simuladas.
+- **Fallas:** le caen al dron en el aire con más vuelos desde su último mantenimiento. La falla del frío, solo si lleva carga fría.
+- **Entorno:** geovalla temporal sobre un corredor, pico de 3 a 5 urgencias en un barrio o un pedido generado en el que nadie retira el paquete.
+- **Graves**, solo en intensidad alta y como el 10 % de su familia: falla de dos motores, dron perdido, choque grave y central sin energía (15 a 45 minutos, nunca la última central con energía).
 
 ### RF-39 — Línea de tiempo y alertas pendientes
 
