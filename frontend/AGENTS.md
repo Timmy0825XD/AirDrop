@@ -231,7 +231,8 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
 | Administrador | Resumen · Centrales · Cuentas · Perfil | Hoja para crear central o cuenta (`showAdminCreateSheet`) |
 
 - En un destino la barra se ve; en un detalle o formulario se desliza hacia abajo y se encoge, igual que al bajar en una lista (`UserScrollNotification`). Al subir vuelve.
-- `RoleShell` suma el alto de la barra a `padding` y `viewPadding` de `MediaQuery`: las listas y los botones flotantes quedan por encima sin cálculos en cada pantalla.
+- `RoleShell` suma el alto de la barra a `padding` y `viewPadding` de `MediaQuery`: los botones flotantes quedan por encima solos. Las listas toman ese `padding` con `listPadding(context, fab: ...)` (`core/widgets/list_padding.dart`); un `EdgeInsets` fijo deja el final detrás de la barra.
+- Toda hoja inferior se abre con `showAppSheet` (`core/widgets/app_sheet.dart`), nunca con `showModalBottomSheet` directo: va al navegador raíz, queda encima de la barra y su velo la bloquea. En el navegador del `ShellRoute` la hoja quedaba debajo de la barra y tapaba su botón. Adentro se cierra con el `context` de la hoja.
 - `NavScope.isTabRootOf(context)` dice si la pantalla es un destino: `SectionHeader` no muestra "volver" ahí.
 - "Agenda" abre `GET /orders/agenda` (franjas del día, "despegar antes de"); los programados, el histórico (`/orders/history`) y la cuarentena (`/inventory/quarantine`) están en "Más".
 - Los cuatro inicios tienen la campana de avisos (`NoticeBell`) con los sin leer; abre `/notifications`.
@@ -383,7 +384,8 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `StatusCard` + `RowActionButton` | `core/widgets` | Tarjeta de lista con estado y acción a la derecha. |
 | `ToneTile` (`ToneTile.icon`) | `core/widgets` | El cuadro teñido con ícono (o el dron) al frente de cada tarjeta. |
 | `SectionFormPage` / `SectionStatePage` | `home/presentation/widgets` | Pantalla de formulario (encabezado, tarjeta sobre la curva y botón) y su versión para carga, error o vacío. La usan todos los formularios. |
-| `FormBottomSheet` | `core/widgets` | Hoja inferior con título, campos y botón de guardar (editar perfil, mantenimiento). |
+| `showAppSheet` | `core/widgets` | La única forma de abrir una hoja inferior (navegador raíz, encima de la barra). |
+| `FormBottomSheet` | `core/widgets` | Hoja inferior con título, campos y botón de guardar (editar perfil, mantenimiento); deja el área segura y tiene scroll. |
 | `ChoicePill` | `core/widgets` | Chip elegible (relleno o teñido, con ícono o check). |
 | `SlidingSegmented` | `core/widgets` | Filtro con pastilla que se desliza (`null` = "Todas"). |
 | `showConfirmSheet` | `core/widgets` | Hoja inferior para confirmar suspender o reactivar. |

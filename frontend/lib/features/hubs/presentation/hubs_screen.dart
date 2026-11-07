@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
+import '../../../core/widgets/list_padding.dart';
 import '../../../core/widgets/message_view.dart';
 import '../../../core/widgets/rise_in.dart';
 import '../../../core/widgets/sliding_segmented.dart';
@@ -82,7 +83,7 @@ class _HubList extends ConsumerWidget {
                   : 'Aún no hay centrales registradas.',
             )
           : ListView.separated(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 96),
+              padding: listPadding(context, fab: true),
               itemCount: rows.length,
               separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, index) => RiseIn(

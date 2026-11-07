@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/auto_refresh.dart';
+import '../../../core/widgets/list_padding.dart';
 import '../../../core/widgets/message_view.dart';
 import '../../../core/widgets/rise_in.dart';
 import '../../auth/presentation/widgets/auth_date_field.dart';
@@ -104,7 +105,7 @@ class _AgendaList extends StatelessWidget {
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 32),
+      padding: listPadding(context, top: 14),
       itemCount: day.slots.length,
       separatorBuilder: (_, _) => const SizedBox(height: 12),
       itemBuilder: (context, i) => RiseIn(

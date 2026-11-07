@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/field_limits.dart';
 import '../../../../core/validators.dart';
+import '../../../../core/widgets/app_sheet.dart';
 import '../../../../core/widgets/form_bottom_sheet.dart';
 import '../../../auth/presentation/widgets/auth_date_field.dart';
 import '../../../auth/presentation/widgets/auth_field.dart';
@@ -23,10 +24,8 @@ Future<MaintenanceInput?> showMaintenanceSheet(
   String initialReason = '',
   String initialDate = '',
 }) {
-  return showModalBottomSheet<MaintenanceInput>(
-    context: context,
-    showDragHandle: true,
-    isScrollControlled: true,
+  return showAppSheet<MaintenanceInput>(
+    context,
     builder: (_) => MaintenanceSheet(
       mandatory: mandatory,
       initialReason: initialReason,

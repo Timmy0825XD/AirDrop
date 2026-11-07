@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/api_exception.dart';
 import '../../../../core/widgets/auto_refresh.dart';
+import '../../../../core/widgets/list_padding.dart';
 import '../../../../core/widgets/message_view.dart';
 import '../../../../core/widgets/rise_in.dart';
 import '../../../home/presentation/widgets/section_form_page.dart';
@@ -79,7 +80,7 @@ class _TrayList<T> extends StatelessWidget {
     return RefreshIndicator(
       onRefresh: () async => tray.onRefresh(),
       child: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
+        padding: listPadding(context),
         itemCount: items.length,
         separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, i) => RiseIn(
