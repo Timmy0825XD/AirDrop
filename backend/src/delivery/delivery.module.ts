@@ -16,5 +16,6 @@ import { DeliveryService } from './delivery.service';
   ],
   controllers: [DeliveryController],
   providers: [DeliveryService],
+  exports: [DeliveryService],
 })
 export class DeliveryModule {}

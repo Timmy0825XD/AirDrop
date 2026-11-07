@@ -352,6 +352,7 @@ export class TimelineService implements OnModuleInit {
       destinationHubName: destination?.name ?? null,
       drone: drone ? { id: drone.id, identifier: drone.identifier } : null,
       decisionTrace: order.decisionTrace,
+      autoDispatched: order.autoDispatched,
     };
   }
 

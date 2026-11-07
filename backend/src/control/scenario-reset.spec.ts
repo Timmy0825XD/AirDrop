@@ -156,6 +156,14 @@ function build(hubs: Array<Partial<Hub>>) {
   const publisher = { publish: jest.fn().mockResolvedValue(undefined) };
   const weather = { clearAll: jest.fn().mockResolvedValue(undefined) };
   const geofences = { clearTemporary: jest.fn().mockResolvedValue(1) };
+  const actors = {
+    turnOff: jest.fn(() => {
+      order.push('actors');
+      return Promise.resolve();
+    }),
+  };
+  const dispatcher = { forget: jest.fn() };
+  const receiver = { forget: jest.fn() };
   const service = new ScenarioResetService(
     dataSource as never,
     flights as never,
@@ -165,9 +173,15 @@ function build(hubs: Array<Partial<Hub>>) {
     publisher as never,
     weather as never,
     geofences as never,
+    actors as never,
+    dispatcher as never,
+    receiver as never,
   );
   return {
     service,
+    actors,
+    dispatcher,
+    receiver,
     weather,
     geofences,
     manager,
@@ -231,7 +245,16 @@ describe('ScenarioResetService (RF-40, CU-41)', () => {
   it('el reloj vuelve a la hora real antes de todo, y la línea de tiempo empieza de nuevo', async () => {
     const built = build([{ id: 'hub-1', name: plan.name }]);
     await built.service.reset(admin);
-    expect(built.order).toEqual(['clock', 'forget', 'clear', 'record']);
+    // RF-37: los actores se apagan primero, para no crear pedidos a mitad.
+    expect(built.order).toEqual([
+      'actors',
+      'clock',
+      'forget',
+      'clear',
+      'record',
+    ]);
+    expect(built.dispatcher.forget).toHaveBeenCalled();
+    expect(built.receiver.forget).toHaveBeenCalled();
     // RF-40: sin clima, las tormentas ya no cuentan para las rutas.
     expect(built.weather.clearAll).toHaveBeenCalled();
     // RF-40: las geovallas temporales se van dentro de la misma transacción.

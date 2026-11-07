@@ -288,6 +288,10 @@ export class Order {
   @Column({ type: 'timestamptz', nullable: true })
   nextEscalationAt: Date | null;
 
+  /** RF-37: lo autorizó el despachador automático de la consola, no una persona. */
+  @Column({ type: 'boolean', default: false })
+  autoDispatched: boolean;
+
   /** El despachador verificó la fórmula; el reintento automático no la repite. */
   @Column({ type: 'timestamptz', nullable: true })
   prescriptionVerifiedAt: Date | null;

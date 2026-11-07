@@ -22,7 +22,12 @@ import { FlightIncidentsService } from '../simulation/flight-incidents.service';
 import { ClockControlService } from './clock-control.service';
 import { ControlEnabledGuard } from './control-enabled.guard';
 import { ConsoleEventsService } from './console-events.service';
+import { ChangeActorsDto } from './dto/change-actors.dto';
 import { ChangeClockDto } from './dto/change-clock.dto';
+import { CreateSurgeDto } from './dto/create-surge.dto';
+import { GenerateOrderDto } from './dto/generate-order.dto';
+import { OrderGeneratorService } from './order-generator.service';
+import { SimActorsService } from './sim-actors.service';
 import { CreateTemporaryGeofenceDto } from './dto/create-temporary-geofence.dto';
 import { CreateWeatherDto } from './dto/create-weather.dto';
 import { LaunchIncidentDto } from './dto/launch-incident.dto';
@@ -46,6 +51,8 @@ export class ControlController {
     private readonly scenario: ScenarioResetService,
     private readonly events: ConsoleEventsService,
     private readonly incidents: FlightIncidentsService,
+    private readonly actors: SimActorsService,
+    private readonly generator: OrderGeneratorService,
   ) {}
 
   @Get('clock')
@@ -151,6 +158,34 @@ export class ControlController {
   @Delete('geofences/:id')
   endGeofence(@Param('id', new ParseUUIDPipe({ version: '4' })) id: string) {
     return this.events.endGeofence(id);
+  }
+
+  /** RF-37: qué actores simulados están encendidos. */
+  @Get('actors')
+  getActors() {
+    return this.actors.view();
+  }
+
+  /** RF-37, CU-39: enciende o apaga el despachador automático y el flujo de pedidos. */
+  @Put('actors')
+  changeActors(@Body() dto: ChangeActorsDto) {
+    return this.actors.change(dto);
+  }
+
+  /** CU-39: el generador crea una urgencia o un programado de un solicitante simulado. */
+  @Post('actors/orders')
+  generateOrder(@Body() dto: GenerateOrderDto) {
+    return this.generator.generate(dto.kind);
+  }
+
+  /** RF-36: pico de urgencias en una zona del mapa. */
+  @Post('actors/surge')
+  createSurge(@Body() dto: CreateSurgeDto) {
+    return this.generator.surge(
+      { latitude: dto.latitude, longitude: dto.longitude },
+      dto.radiusKm,
+      dto.count,
+    );
   }
 
   /** RF-40, CU-41: el escenario de la semilla, sin pedidos y en hora real. */

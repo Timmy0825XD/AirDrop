@@ -24,6 +24,7 @@ export function presentOrder(order: Order) {
     longitude: order.longitude,
     droneId: order.droneId,
     authorizedAt: order.authorizedAt,
+    autoDispatched: order.autoDispatched ?? false,
     loadConfirmedAt: order.loadConfirmedAt,
     dispatchedLot: order.dispatchedLot,
     dispatchedLotExpiresOn: order.dispatchedLotExpiresOn,

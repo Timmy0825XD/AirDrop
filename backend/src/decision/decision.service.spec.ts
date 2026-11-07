@@ -152,6 +152,7 @@ function received(overrides: Partial<Order> = {}): Order {
     droneId: null,
     inventoryItemId: null,
     authorizedAt: null,
+    autoDispatched: false,
     loadConfirmedAt: null,
     dispatchedLot: null,
     dispatchedLotExpiresOn: null,
@@ -312,6 +313,7 @@ function build(state?: {
     inbox,
     saved,
     dataSource,
+    hubsService,
   };
 }
 
@@ -1289,5 +1291,58 @@ describe('DecisionService con la central sin energía (RF-36, CU-45)', () => {
     expect(order.status).toBe(OrderStatus.RECEIVED);
     expect(order.droneId).toBeNull();
     expect(order.decisionTrace?.hubs[0]?.note).toBe(HUB_WITHOUT_POWER_NOTE);
+  });
+});
+
+describe('DecisionService: despachador automático (RF-37)', () => {
+  it('autoriza con las mismas reglas y deja dicho que fue el despachador automático', async () => {
+    const { service, order, hubsService } = build();
+    const result = await service.autoAuthorize(HUB_ID, order.id);
+    expect(hubsService.requireActive).toHaveBeenCalledWith(HUB_ID);
+    expect(result.status).toBe(OrderStatus.PENDING_LOAD);
+    expect(result.droneId).toBe(DRONE_ID);
+    expect(order.autoDispatched).toBe(true);
+  });
+
+  it('con fórmula, da la verificación por cumplida', async () => {
+    const order = received({ saleType: SaleType.PRESCRIPTION });
+    const { service } = build({ order });
+    const result = await service.autoAuthorize(HUB_ID, order.id);
+    expect(result.status).toBe(OrderStatus.PENDING_LOAD);
+    expect(order.prescriptionVerifiedAt).toBeInstanceOf(Date);
+  });
+
+  it('un despachador de verdad no queda marcado como automático', async () => {
+    const order = received({ autoDispatched: true });
+    const { service } = build({ order });
+    await service.authorize(dispatcher(), order.id, {});
+    expect(order.autoDispatched).toBe(false);
+  });
+
+  it('no autoriza en una central sin energía (RF-36)', async () => {
+    const { service, order, hubsService } = build();
+    hubsService.requireActive.mockResolvedValue(
+      hub({ powerOutageUntil: new Date(Date.now() + 60 * 60_000) }),
+    );
+    await expect(service.autoAuthorize(HUB_ID, order.id)).rejects.toThrow(
+      ConflictException,
+    );
+    expect(order.status).toBe(OrderStatus.RECEIVED);
+  });
+
+  it('confirma la carga en su central y arranca el reloj de vuelo', async () => {
+    const order = received({
+      status: OrderStatus.PENDING_LOAD,
+      originHubId: HUB_ID,
+      droneId: DRONE_ID,
+      inventoryItemId: LOT_ID,
+      quantity: 3,
+      loadConfirmedAt: null,
+    });
+    const { service, flights, routes } = build({ order });
+    routes.findOutboundMany.mockResolvedValue(new Map([[order.id, corridor]]));
+    await service.autoConfirmLoad(HUB_ID, order.id);
+    expect(order.loadConfirmedAt).toBeInstanceOf(Date);
+    expect(flights.start).toHaveBeenCalledWith(order.id);
   });
 });

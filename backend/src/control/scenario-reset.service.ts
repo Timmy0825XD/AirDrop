@@ -14,6 +14,7 @@ import { FlightClockService } from '../simulation/flight-clock.service';
 import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
 import { TelemetryRedis, telemetryKey } from '../telemetry/telemetry.redis';
 import { User } from '../users/user.entity';
+import { AutoDispatcherService } from './auto-dispatcher.service';
 import { ClockControlService } from './clock-control.service';
 import { geofences, hubPlans, operator } from './demo-scenario';
 import {
@@ -23,6 +24,8 @@ import {
   resetDetail,
   stockRows,
 } from './scenario-reset.rules';
+import { SimActorsService } from './sim-actors.service';
+import { SimulatedReceiverService } from './simulated-receiver.service';
 import { TimelineService } from './timeline.service';
 import { WeatherService } from '../weather/weather.service';
 import { GeofencesService } from '../geofences/geofences.service';
@@ -47,6 +50,9 @@ export class ScenarioResetService {
     private readonly publisher: TelemetryPublisher,
     private readonly weather: WeatherService,
     private readonly geofenceService: GeofencesService,
+    private readonly actors: SimActorsService,
+    private readonly dispatcher: AutoDispatcherService,
+    private readonly receiver: SimulatedReceiverService,
   ) {}
 
   async reset(admin: User): Promise<ResetSummary> {
@@ -56,6 +62,11 @@ export class ScenarioResetService {
     if (!hubs.length) {
       throw new ConflictException(NO_DEMO_SCENARIO);
     }
+    // RF-37: los actores se apagan antes, para que no creen ni autoricen
+    // pedidos mientras se borran.
+    await this.actors.turnOff();
+    this.dispatcher.forget();
+    this.receiver.forget();
     // Primero el reloj: los vencimientos y el mantenimiento cuentan desde hoy.
     await this.clock.resetToRealTime();
     // Sin clima: las tormentas ya no cuentan para las rutas de la semilla.

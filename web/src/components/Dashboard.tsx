@@ -9,6 +9,7 @@ import { useConsole } from "@/lib/use-console";
 import { usePolled } from "@/lib/use-polled";
 import { useRadar } from "@/lib/use-radar";
 import { AlertsTray } from "./AlertsTray";
+import { ActorsMenu } from "./ActorsMenu";
 import { ClockControl } from "./ClockControl";
 import { EventComposer, EventDock, type EventLaunch, type EventTool } from "./EventDock";
 import { EventPanel } from "./EventPanel";
@@ -149,7 +150,7 @@ export function Dashboard({ source, userName, onLogout }: Props) {
       setDraft((current) => ({
         kind: tool,
         ...point,
-        radiusKm: current?.radiusKm ?? (tool === "zone" ? 1 : 3),
+        radiusKm: current?.radiusKm ?? (tool === "zone" || tool === "surge" ? 1 : 3),
       }));
     },
     [tool],
@@ -157,6 +158,17 @@ export function Dashboard({ source, userName, onLogout }: Props) {
 
   const launch = useCallback(
     async (event: EventLaunch) => {
+      if (event.tool === "surge") {
+        // RF-36: las urgencias llegan al mapa y a la línea de tiempo por el socket.
+        const result = await consola.surge({
+          latitude: event.latitude,
+          longitude: event.longitude,
+          radiusKm: Math.round(event.radiusKm * 10) / 10,
+          count: event.count,
+        });
+        if (result) closeTool();
+        return;
+      }
       if (event.tool === "zone") {
         const zone = await consola.createZone({
           name: event.name,
@@ -289,6 +301,16 @@ export function Dashboard({ source, userName, onLogout }: Props) {
             onChange={(change) => void consola.setClock(change)}
             onReset={() => setConfirmReset(true)}
           />
+        }
+        actors={
+          consoleOn ? (
+            <ActorsMenu
+              actors={consola.state.actors}
+              busy={consola.state.busy}
+              onChange={(change) => void consola.setActors(change)}
+              onGenerate={(kind) => void consola.generateOrder(kind)}
+            />
+          ) : null
         }
       />
 

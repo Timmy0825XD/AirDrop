@@ -5,8 +5,11 @@ import { ApiError } from "./api";
 import type { ClockChange, RadarSource, WorldChange } from "./source";
 import type { ConsoleListener } from "./use-radar";
 import type {
+  ActorsState,
   ConsoleIncidentKind,
+  GeneratedKind,
   Incident,
+  NewSurge,
   NewWeather,
   NewZone,
   PendingAlert,
@@ -35,6 +38,8 @@ export type ConsoleState = {
   weather: WeatherCell[];
   /** RF-34: los últimos incidentes en vuelo. */
   incidents: Incident[];
+  /** RF-37: qué actores simulados están encendidos. */
+  actors: ActorsState;
   busy: boolean;
   error: string | null;
   /** Lo que salió bien de la última orden, para avisarlo un momento. */
@@ -42,12 +47,15 @@ export type ConsoleState = {
   lastReset: ResetSummary | null;
 };
 
+const ACTORS_OFF: ActorsState = { autoDispatcher: false, orderFlow: false };
+
 const messageOf = (error: unknown) =>
   error instanceof Error ? error.message : "No se pudo completar la acción.";
 
 /**
  * La consola de simulación (RU-32): línea de tiempo, alertas pendientes, el
- * clima y los incidentes del mapa, y las órdenes (reloj, eventos y reinicio).
+ * clima y los incidentes del mapa, los actores simulados y las órdenes
+ * (reloj, eventos, actores y reinicio).
  * Escucha el mismo socket del radar.
  */
 export function useConsole(source: RadarSource) {
@@ -58,6 +66,7 @@ export function useConsole(source: RadarSource) {
     alerts: [],
     weather: [],
     incidents: [],
+    actors: ACTORS_OFF,
     busy: false,
     error: null,
     notice: null,
@@ -94,9 +103,12 @@ export function useConsole(source: RadarSource) {
     (async () => {
       try {
         await source.control.clock();
-        const timeline = await source.control.timeline(TIMELINE_SIZE);
+        const [timeline, actors] = await Promise.all([
+          source.control.timeline(TIMELINE_SIZE),
+          source.control.actors(),
+        ]);
         if (!cancelled) {
-          setState((current) => ({ ...current, status: "on", timeline }));
+          setState((current) => ({ ...current, status: "on", timeline, actors }));
         }
       } catch (error) {
         if (cancelled || (error instanceof ApiError && error.status === 401)) return;
@@ -154,8 +166,11 @@ export function useConsole(source: RadarSource) {
           alerts: [],
           weather: [],
           incidents: [],
+          // RF-40: el reinicio apaga los actores (el socket lo confirma).
+          actors: ACTORS_OFF,
         }));
       },
+      onActors: (actors) => setState((current) => ({ ...current, actors })),
       onWorld: (what: WorldChange) => {
         if (what === "weather" || what === "incident") reloadSoon("world");
         if (what === "incident") reloadSoon("alerts");
@@ -258,6 +273,36 @@ export function useConsole(source: RadarSource) {
     [run, source],
   );
 
+  const setActors = useCallback(
+    async (change: Partial<ActorsState>) => {
+      const actors = await run(() => source.control.setActors(change));
+      if (actors) setState((current) => ({ ...current, actors }));
+      return actors;
+    },
+    [run, source],
+  );
+
+  const generateOrder = useCallback(
+    (kind: GeneratedKind) =>
+      run(
+        () => source.control.generateOrder(kind),
+        () => (kind === "emergency" ? "Urgencia simulada creada." : "Programado simulado creado."),
+      ),
+    [run, source],
+  );
+
+  const surge = useCallback(
+    (input: NewSurge) =>
+      run(
+        () => source.control.surge(input),
+        (result) =>
+          result.created.length === result.requested
+            ? `Pico lanzado: ${result.requested} urgencias.`
+            : `Pico lanzado: ${result.created.length} de ${result.requested} urgencias. ${result.failures[0] ?? ""}`.trim(),
+      ),
+    [run, source],
+  );
+
   const dismissError = useCallback(
     () => setState((current) => ({ ...current, error: null, notice: null, lastReset: null })),
     [],
@@ -275,6 +320,9 @@ export function useConsole(source: RadarSource) {
     launchIncident,
     startOutage,
     endOutage,
+    setActors,
+    generateOrder,
+    surge,
     dismissError,
   };
 }

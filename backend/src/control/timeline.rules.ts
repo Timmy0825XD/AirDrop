@@ -63,6 +63,8 @@ export type OrderFacts = {
   destinationHubName: string | null;
   drone: { id: string; identifier: string } | null;
   decisionTrace: DecisionTrace | null;
+  /** RF-37: lo autorizó el despachador automático. */
+  autoDispatched?: boolean;
 };
 
 export type Position = { latitude: number; longitude: number };
@@ -161,7 +163,9 @@ export function statusDraft(
         ...base,
         kind: 'decision',
         severity: 'info',
-        title: `${origin} autorizó: sale ${drone}`,
+        title: order.autoDispatched
+          ? `${origin} autorizó (despachador automático): sale ${drone}`
+          : `${origin} autorizó: sale ${drone}`,
         detail: decisionSummary(order.decisionTrace),
       };
     case OrderStatus.IN_FLIGHT:

@@ -1,5 +1,6 @@
 import type { RadarHandlers, RadarSource } from "./source";
 import type {
+  ActorsState,
   ClockView,
   Corridor,
   FleetCounts,
@@ -15,9 +16,9 @@ import type {
   WeatherCell,
 } from "./types";
 
-/** Incidentes y apagones mueven pedidos de verdad: en el ensayo no aplican. */
+/** Incidentes, apagones y pedidos generados mueven pedidos de verdad: en el ensayo no aplican. */
 const DEMO_ONLY_REAL =
-  "En modo demostración no se lanzan incidentes ni apagones: necesitan el backend.";
+  "En modo demostración no se lanzan incidentes, apagones ni pedidos: necesitan el backend.";
 
 /**
  * Modo demostración (`?demo=1`): datos inventados que se mueven solos, para
@@ -205,6 +206,8 @@ export function demoSource(): RadarSource {
   /** Lo que se ensaya en este navegador; se pierde al recargar. */
   const cells: WeatherCell[] = [];
   const zones: TemporaryZone[] = [];
+  // RF-37: los interruptores se ensayan aquí; no hay actores que corran.
+  let actors: ActorsState = { autoDispatcher: false, orderFlow: false };
   return {
     demo: true,
     control: {
@@ -288,9 +291,30 @@ export function demoSource(): RadarSource {
       endOutage: async () => {
         throw new Error(DEMO_ONLY_REAL);
       },
+      actors: async () => ({ ...actors }),
+      setActors: async (change) => {
+        actors = { ...actors, ...change };
+        listeners?.onActors({ ...actors });
+        listeners?.onTimeline(
+          demoEntry(nowOf(), {
+            title: change.autoDispatcher !== undefined
+              ? `Despachador automático ${actors.autoDispatcher ? "encendido" : "apagado"} (demo)`
+              : `Flujo continuo de pedidos ${actors.orderFlow ? "encendido" : "apagado"} (demo)`,
+          }),
+        );
+        return { ...actors };
+      },
+      generateOrder: async () => {
+        throw new Error(DEMO_ONLY_REAL);
+      },
+      surge: async () => {
+        throw new Error(DEMO_ONLY_REAL);
+      },
       reset: async () => {
         const fresh = realTime();
         clock = fresh;
+        actors = { autoDispatcher: false, orderFlow: false };
+        listeners?.onActors({ ...actors });
         listeners?.onClock(fresh);
         listeners?.onReset();
         listeners?.onTimeline(

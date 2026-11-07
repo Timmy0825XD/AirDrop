@@ -4,16 +4,27 @@ import { useState, type ReactNode } from "react";
 import { COMPASS } from "@/lib/geo";
 import type { WeatherKind } from "@/lib/types";
 import type { EventDraft } from "./map/RadarMap";
-import { ArrowRightIcon, CloseIcon, RainIcon, StormIcon, WindIcon, ZoneIcon } from "./icons";
+import {
+  ArrowRightIcon,
+  CloseIcon,
+  MinusIcon,
+  PlusIcon,
+  RainIcon,
+  StormIcon,
+  SurgeIcon,
+  WindIcon,
+  ZoneIcon,
+} from "./icons";
 import { Chip, GlassButton, IconTile, PrimaryButton } from "./ui";
 
-export type EventTool = WeatherKind | "zone";
+export type EventTool = WeatherKind | "zone" | "surge";
 
 const TOOLS: Array<{ tool: EventTool; label: string; icon: (size: number) => ReactNode }> = [
   { tool: "wind", label: "Viento", icon: (size) => <WindIcon size={size} /> },
   { tool: "rain", label: "Lluvia", icon: (size) => <RainIcon size={size} /> },
   { tool: "storm", label: "Tormenta", icon: (size) => <StormIcon size={size} /> },
   { tool: "zone", label: "Zona temporal", icon: (size) => <ZoneIcon size={size} /> },
+  { tool: "surge", label: "Pico", icon: (size) => <SurgeIcon size={size} /> },
 ];
 
 const COPY: Record<EventTool, { title: string; hint: string }> = {
@@ -30,11 +41,22 @@ const COPY: Record<EventTool, { title: string; hint: string }> = {
     title: "Zona temporal",
     hint: "Una geovalla que vence sola. No puede cubrir una central.",
   },
+  surge: {
+    title: "Pico de urgencias",
+    hint: "Urgencias seguidas de solicitantes simulados dentro del círculo. El motor las reparte entre las centrales.",
+  },
 };
+
+/** RF-36: de 2 a 15 urgencias, como acepta el backend. */
+const SURGE_MIN = 2;
+const SURGE_MAX = 15;
 
 const DURATIONS = [15, 30, 60, 120];
 
-/** Lo que se manda al lanzar: el clima (RF-32) o la geovalla temporal (RF-36). */
+/**
+ * Lo que se manda al lanzar: el clima (RF-32), la geovalla temporal o el
+ * pico de urgencias (RF-36).
+ */
 export type EventLaunch = {
   tool: EventTool;
   latitude: number;
@@ -44,6 +66,8 @@ export type EventLaunch = {
   windSpeedMs: number;
   windFromDeg: number;
   name: string;
+  /** Pico: cuántas urgencias. */
+  count: number;
 };
 
 /**
@@ -113,7 +137,9 @@ export function EventComposer({
   onClose: () => void;
 }) {
   const zone = tool === "zone";
-  const [radiusKm, setRadius] = useState(zone ? 1 : 3);
+  const surge = tool === "surge";
+  const [radiusKm, setRadius] = useState(zone || surge ? 1 : 3);
+  const [count, setCount] = useState(5);
   const [durationMin, setDuration] = useState(30);
   const [windSpeedMs, setSpeed] = useState(18);
   const [windFromDeg, setFrom] = useState(45);
@@ -132,7 +158,7 @@ export function EventComposer({
       className="glass rise-in absolute bottom-[100px] left-1/2 z-30 w-[min(480px,calc(100%-1.5rem))] -translate-x-1/2 rounded-[28px] p-5"
     >
       <header className="flex items-start gap-3.5">
-        <IconTile tone={tool === "storm" ? "bad" : tool === "zone" ? "warn" : "info"}>
+        <IconTile tone={tool === "storm" || surge ? "bad" : zone ? "warn" : "info"}>
           {tile.icon(24)}
         </IconTile>
         <div className="min-w-0 flex-1">
@@ -154,7 +180,7 @@ export function EventComposer({
             label="Radio"
             value={radiusKm}
             min={0.3}
-            max={zone ? 5 : 15}
+            max={zone ? 5 : surge ? 3 : 15}
             step={0.1}
             unit="km"
             onChange={changeRadius}
@@ -198,6 +224,16 @@ export function EventComposer({
               />
             </label>
           )}
+          {surge && (
+            <Counter
+              label="Urgencias"
+              value={count}
+              min={SURGE_MIN}
+              max={SURGE_MAX}
+              onChange={setCount}
+            />
+          )}
+          {!surge && (
           <div>
             <span className="eyebrow">Dura</span>
             <div className="mt-2 flex flex-wrap gap-1.5">
@@ -212,6 +248,7 @@ export function EventComposer({
               ))}
             </div>
           </div>
+          )}
           <PrimaryButton
             busy={busy}
             disabled={zone && !name.trim()}
@@ -225,10 +262,11 @@ export function EventComposer({
                 windSpeedMs,
                 windFromDeg,
                 name: name.trim(),
+                count,
               })
             }
           >
-            Lanzar {copy.title.toLowerCase()}
+            {surge ? `Lanzar ${count} urgencias` : `Lanzar ${copy.title.toLowerCase()}`}
             <ArrowRightIcon size={18} strokeWidth={2.2} />
           </PrimaryButton>
         </div>
@@ -277,5 +315,66 @@ function Slider({
         className="mt-2 w-full accent-[var(--accent)]"
       />
     </label>
+  );
+}
+
+/**
+ * Un número entero con − y +, y también escribible: el administrador elige
+ * cuántas urgencias (máximo 15).
+ */
+function Counter({
+  label,
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  onChange: (value: number) => void;
+}) {
+  const clamp = (next: number) => Math.min(max, Math.max(min, Math.round(next)));
+  return (
+    <div>
+      <span className="flex items-baseline justify-between">
+        <span className="eyebrow">{label}</span>
+        <span className="text-xs text-muted">
+          De {min} a {max}
+        </span>
+      </span>
+      <div className="mt-2 flex items-center gap-2">
+        <GlassButton
+          label="Una menos"
+          disabled={value <= min}
+          onClick={() => onChange(clamp(value - 1))}
+          className="!size-11 !rounded-[14px]"
+        >
+          <MinusIcon size={16} />
+        </GlassButton>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={min}
+          max={max}
+          value={value}
+          aria-label={label}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            if (Number.isFinite(next)) onChange(clamp(next));
+          }}
+          className="h-11 w-full rounded-2xl border border-white/9 bg-white/4 px-4 text-center text-[22px] font-semibold tabular-nums outline-none transition focus:border-accent focus:ring-[1.6px] focus:ring-accent"
+        />
+        <GlassButton
+          label="Una más"
+          disabled={value >= max}
+          onClick={() => onChange(clamp(value + 1))}
+          className="!size-11 !rounded-[14px]"
+        >
+          <PlusIcon size={16} />
+        </GlassButton>
+      </div>
+    </div>
   );
 }

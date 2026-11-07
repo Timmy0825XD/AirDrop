@@ -47,5 +47,6 @@ import { PrescriptionStorage } from './prescription-storage';
     PlanWindowService,
     PlanAgendaService,
   ],
+  exports: [OrdersService],
 })
 export class OrdersModule {}

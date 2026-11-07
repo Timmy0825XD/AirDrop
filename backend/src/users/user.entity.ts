@@ -79,6 +79,13 @@ export class User {
   @Column({ type: 'timestamptz' })
   consentAcceptedAt: Date;
 
+  /**
+   * RF-37: solicitante de los actores simulados de la consola. No es una
+   * persona: no tiene datos reales y nadie inicia sesión con ella.
+   */
+  @Column({ type: 'boolean', default: false })
+  simulated: boolean;
+
   @Column({ type: 'smallint', default: 0 })
   failedLoginCount: number;
 

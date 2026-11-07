@@ -48,7 +48,7 @@ export type MapFocus = { latitude: number; longitude: number; key: number };
 
 /** El evento que se está componiendo: su centro y su radio, para verlo antes de lanzarlo. */
 export type EventDraft = {
-  kind: WeatherKind | "zone";
+  kind: WeatherKind | "zone" | "surge";
   latitude: number;
   longitude: number;
   radiusKm: number;

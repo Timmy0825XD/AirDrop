@@ -312,6 +312,11 @@ export class TelemetryGateway
         this.server?.to(RADAR_ROOM).emit('radar-timeline', event.entry);
         return;
       }
+      if (event.type === 'actors') {
+        // RF-37: los interruptores de los actores son de la consola.
+        this.server?.to(RADAR_ROOM).emit('radar-actors', event.actors);
+        return;
+      }
       if (event.type === 'scenario-reset') {
         this.server?.to(RADAR_ROOM).emit('radar-reset', {});
         return;

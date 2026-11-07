@@ -436,16 +436,18 @@ Los lanza la consola (RU-32) o el modo caos (RF-38), cada uno con una duración 
 
 - **Geovalla temporal:** un polígono con vencimiento (por ejemplo, un evento aéreo), de 5 a 240 minutos simulados. Mientras dure cuenta como geovalla (RF-12, RF-21): no puede cubrir una central y puede cambiar rutas en vuelo (RF-33). Al vencer desaparece sola y la línea de tiempo lo cuenta. La consola puede levantarla antes, pero no toca las geovallas del operador, que no vencen.
 - **Central sin energía:** de 5 a 240 minutos simulados. Mientras dure, no autoriza ni confirma cargas y sus drones no son elegibles. Sus urgencias pasan a la siguiente central como si hubiera declinado (RU-10); lo que ya había autorizado sin cargar suelta el dron y el lote. Sus programados se reintentan dentro de la franja (RF-18); los que nadie ha autorizado esperan en su cola. Los drones en el aire que vuelven a ella aterrizan igual. Sus despachadores reciben un aviso al empezar y otro al volver la energía. No cambia el estado de la central, que es del administrador.
-- **Pico de urgencias:** el generador de RF-37 crea varias urgencias seguidas en una zona.
+- **Pico de urgencias:** el generador de RF-37 crea de 2 a 15 urgencias seguidas (las elige el administrador) dentro de un círculo del mapa.
 - **Nadie retira el paquete:** en un pedido del receptor simulado, el código no se ingresa y corre RF-30.
 
 ### RF-37 — Actores simulados
 
 Para la demostración híbrida (personas reales con la app y el sistema mostrando el flujo solo) hay tres actores. Llaman a **los mismos servicios** que una persona, sin atajos:
 
-- **Despachador automático.** La consola lo enciende o lo apaga. Encendido, en cualquier central activa autoriza y confirma la carga de cualquier pedido, de una persona real o generado, unos segundos simulados después de que le toca. Con fórmula, da la verificación por cumplida. La traza del pedido dice que lo autorizó el despachador automático. Apagado, lo hace un despachador real en la app.
-- **Generador de pedidos.** Crea urgencias y programados de solicitantes simulados (cuentas marcadas como simuladas, sin datos de personas reales), con destinos dentro de las zonas del MVP, fuera de geovallas y con insumos que alguna central tiene en stock.
-- **Receptor simulado.** En los pedidos generados, ingresa el código a tiempo o deja vencer los 5 minutos, con cierta probabilidad.
+- **Despachador automático.** La consola lo enciende o lo apaga; arranca apagado. Encendido, en cualquier central activa autoriza cualquier pedido, de una persona real o generado, 10 segundos simulados después de que le toca, y confirma la carga 20 segundos simulados después de autorizar. Con fórmula, da la verificación por cumplida. El pedido y la línea de tiempo dicen que lo autorizó el despachador automático. Si las reglas no lo dejan (sin energía, sin lote, fuera de franja), espera un minuto simulado y vuelve a intentar. Apagado, lo hace un despachador real en la app.
+- **Generador de pedidos.** Crea urgencias y programados de solicitantes simulados (cuentas marcadas como simuladas, sin datos de personas reales), con destinos en barrios de Valledupar dentro de la zona de las centrales, fuera de geovallas y con insumos de venta libre que alguna central tiene en stock. El programado va a la primera franja que empieza en más de 2 horas. El administrador pide uno a la vez, o enciende el flujo continuo: un pedido cada 3 minutos simulados, 70 % urgencias. Arranca apagado.
+- **Receptor simulado.** En los pedidos generados, ingresa el código a tiempo en el 85 % de los casos, entre 20 segundos y 2 minutos simulados después del aterrizaje. En el resto deja vencer los 5 minutos (RF-30).
+
+El reinicio del escenario (RF-40) apaga el despachador automático y el flujo continuo.
 
 **Por qué.** En la presentación no siempre hay alguien en cada rol. Si los actores usan los mismos servicios, lo que se ve en la TV es el motor real decidiendo, no una animación.
 
