@@ -17,12 +17,16 @@ class OrderTile extends StatelessWidget {
     required this.onTap,
     this.canWatch = true,
     this.canReceive = false,
+    this.forRequester = false,
   });
 
   final Order order;
   final VoidCallback onTap;
   final bool canWatch;
   final bool canReceive;
+
+  /// "Mis pedidos" del solicitante: el estado en sus palabras.
+  final bool forRequester;
 
   @override
   Widget build(BuildContext context) {
@@ -38,10 +42,13 @@ class OrderTile extends StatelessWidget {
           title: order.medicationName,
           accent: '${order.missionType.label} · ${order.quantity} und.',
           detail: [
-            formatBogota(order.createdAt),
+            formatAgo(order.createdAt),
             if (drone != null) 'Dron $drone',
           ].join(' · '),
-          pill: OrderStatusChip(status: order.status),
+          pill: OrderStatusChip(
+            status: order.status,
+            forRequester: forRequester,
+          ),
           onTap: onTap,
         ),
         if (canReceive) ...[

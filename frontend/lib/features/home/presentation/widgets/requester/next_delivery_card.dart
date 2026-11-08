@@ -1,32 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../core/date_format.dart';
 import '../../../../../core/widgets/glass_card.dart';
 import '../../../../../theme/app_palette.dart';
 import '../../../../orders/data/order_models.dart';
-
-const _days = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
-const _months = [
-  'ENE',
-  'FEB',
-  'MAR',
-  'ABR',
-  'MAY',
-  'JUN',
-  'JUL',
-  'AGO',
-  'SEP',
-  'OCT',
-  'NOV',
-  'DIC',
-];
-
-/// "LUN 03 NOV · 08:00".
-String deliveryWhen(DateTime at) {
-  final local = at.toLocal();
-  String two(int n) => n.toString().padLeft(2, '0');
-  return '${_days[local.weekday - 1]} ${two(local.day)} '
-      '${_months[local.month - 1]} · ${two(local.hour)}:${two(local.minute)}';
-}
 
 /// La próxima entrega programada del solicitante (de un plan o una
 /// entrega por confirmar): el medicamento, el día y la hora, y si viene de
@@ -72,7 +49,7 @@ class NextDeliveryCard extends StatelessWidget {
                   ),
                   if (at != null)
                     Text(
-                      deliveryWhen(at),
+                      capitalized(formatDateTime(at)),
                       style: theme.textTheme.labelMedium?.copyWith(
                         letterSpacing: 1,
                         fontFeatures: const [FontFeature.tabularFigures()],

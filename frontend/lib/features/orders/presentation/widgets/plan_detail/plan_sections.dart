@@ -25,12 +25,14 @@ class PlanSummary extends StatelessWidget {
           const SizedBox(height: 14),
           DetailLine(label: 'Calendario', value: scheduleLabel(plan)),
           DetailLine(
-            label: 'Venta',
-            value: '${plan.saleType.label} · ${plan.quantity} und.',
+            label: 'Tipo',
+            value: '${plan.saleType.label} · ${unitsLabel(plan.quantity)}',
           ),
           DetailLine(
             label: 'Ventana',
-            value: '${plan.startDate} al ${plan.windowEndsOn}',
+            value:
+                '${formatDay(plan.startDate, relative: false)} al '
+                '${formatDay(plan.windowEndsOn, relative: false)}',
           ),
           DetailLine(label: 'Destino', value: plan.destinationKind.label),
           DetailLine(label: 'Dirección', value: plan.address),
@@ -104,7 +106,7 @@ class _OccurrenceRow extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      formatLongDate(o.scheduledFor),
+                      capitalized(formatDay(o.scheduledFor)),
                       style: theme.textTheme.bodyLarge,
                     ),
                     if (o.scheduledAt != null)

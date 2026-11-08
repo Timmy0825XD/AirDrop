@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/tone_tile.dart';
 import '../../../../theme/app_palette.dart';
-import '../../../orders/presentation/order_format.dart';
+import '../../../../core/date_format.dart';
 import '../../data/notice_models.dart';
 
 /// El ícono y el color de cada aviso; el texto siempre es el del servidor.
@@ -88,7 +88,7 @@ class _NoticeText extends StatelessWidget {
         const SizedBox(height: 4),
         Text(notice.body, style: theme.textTheme.bodyMedium),
         const SizedBox(height: 6),
-        Text(formatBogota(notice.createdAt), style: theme.textTheme.bodySmall),
+        Text(formatAgo(notice.createdAt), style: theme.textTheme.bodySmall),
         if (onConfirm != null)
           Align(
             alignment: Alignment.centerLeft,

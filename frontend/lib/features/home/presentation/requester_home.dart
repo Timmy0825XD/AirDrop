@@ -67,7 +67,7 @@ class RequesterHome extends ConsumerWidget {
           ),
           const SizedBox(height: 18),
           if (flying != null)
-            LiveMission(order: flying)
+            LiveMission(order: flying, forRequester: true)
           else
             HomeSpotlight(
               value: open?.length,

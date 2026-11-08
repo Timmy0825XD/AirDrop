@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-11-08 15:56
+Generado: 2026-11-08 16:46
 
 ## analytics
 
@@ -67,8 +67,8 @@ Generado: 2026-11-08 15:56
 | `auth_curved_header.dart` | _CurvedBottomClipper | 15 | ok |
 | `auth_curved_header.dart` | _EdgePainter | 32 | ok |
 | `auth_curved_header.dart` | _TopVeil | 28 | ok |
-| `auth_date_field.dart` | AuthDateField | 48 | ok |
-| `auth_date_field.dart` | _DateBox | 50 | ok |
+| `auth_date_field.dart` | AuthDateField | 49 | ok |
+| `auth_date_field.dart` | _DateBox | 52 | ok |
 | `auth_field.dart` | AuthField | 59 | ok |
 | `auth_field.dart` | _FieldLabel | 31 | ok |
 | `auth_field.dart` | _AuthInput | 44 | ok |
@@ -177,7 +177,7 @@ Generado: 2026-11-08 15:56
 | `profile_identity_card.dart` | ProfileIdentityCard | 53 | ok |
 | `profile_identity_card.dart` | _Initials | 34 | ok |
 | `profile_labels.dart` | ProfileLabels | 24 | ok |
-| `profile_sections.dart` | ProfileDataCard | 47 | ok |
+| `profile_sections.dart` | ProfileDataCard | 49 | ok |
 | `profile_sections.dart` | ProfilePendingEmailCard | 44 | ok |
 | `profile_sections.dart` | _EditableLine | 51 | ok |
 | `profile_sections.dart` | ProfileHubsCard | 27 | ok |
@@ -271,7 +271,7 @@ Generado: 2026-11-08 15:56
 | `drone_status_sheet.dart` | _SheetHeader | 21 | ok |
 | `drone_status_sheet.dart` | _ActionTile | 42 | ok |
 | `drone_tile.dart` | DroneTile | 47 | ok |
-| `drone_tile.dart` | _DroneInfo | 53 | ok |
+| `drone_tile.dart` | _DroneInfo | 54 | ok |
 | `fleet_flight_card.dart` | FleetFlightCard | 49 | ok |
 | `fleet_hub_selector.dart` | FleetHubSelector | 34 | ok |
 | `fleet_live_map.dart` | FleetLiveMap | 37 | ok |
@@ -281,7 +281,7 @@ Generado: 2026-11-08 15:56
 | `fleet_map_layers.dart` | FleetDronesLayer | 45 | ok |
 | `fleet_map_layers.dart` | FleetIncidentsLayer | 22 | ok |
 | `fleet_map_sheet.dart` | (sin clases) | 52 | ok |
-| `maintenance_period_tile.dart` | MaintenancePeriodTile | 58 | ok |
+| `maintenance_period_tile.dart` | MaintenancePeriodTile | 59 | ok |
 | `maintenance_sheet.dart` | MaintenanceSheet | 14 | ok |
 | `maintenance_sheet.dart` | _MaintenanceSheetState | 59 | ok |
 | `maintenance_sheet.dart` | _MaintenanceFields | 45 | ok |
@@ -342,10 +342,10 @@ Generado: 2026-11-08 15:56
 | `home_spotlight.dart` | _RadarStage | 24 | ok |
 | `home_spotlight.dart` | _Figure | 39 | ok |
 | `hub_notice.dart` | (sin clases) | 20 | ok |
-| `mission_card.dart` | MissionCard | 43 | ok |
-| `mission_card.dart` | _MissionBody | 40 | ok |
+| `mission_card.dart` | MissionCard | 47 | ok |
+| `mission_card.dart` | _MissionBody | 45 | ok |
 | `mission_card.dart` | _LiveLabel | 31 | ok |
-| `mission_card.dart` | _Headline | 41 | ok |
+| `mission_card.dart` | _Headline | 43 | ok |
 | `mission_card.dart` | _FlightChips | 20 | ok |
 | `mission_card.dart` | _Chip | 46 | ok |
 | `mission_route.dart` | MissionRoute | 10 | ok |
@@ -376,7 +376,7 @@ Generado: 2026-11-08 15:56
 | `admin_home.dart` | 104 |
 | `dispatcher_home.dart` | 102 |
 | `fleet_operator_home.dart` | 123 |
-| `live_mission.dart` | 39 |
+| `live_mission.dart` | 47 |
 | `requester_home.dart` | 166 |
 | `role_home.dart` | 71 |
 
@@ -397,7 +397,7 @@ Generado: 2026-11-08 15:56
 | --- | --- | --- | --- |
 | `hub_actions_sheet.dart` | (sin clases) | 46 | ok |
 | `hub_confirm.dart` | _HubSubject | 37 | ok |
-| `hub_detail_content.dart` | HubDetailContent | 46 | ok |
+| `hub_detail_content.dart` | HubDetailContent | 53 | ok |
 | `hub_detail_content.dart` | _HubIdentity | 48 | ok |
 | `hub_detail_content.dart` | _HubMap | 38 | ok |
 | `hub_form_sheet.dart` | HubFormSheet | 53 | ok |
@@ -419,7 +419,7 @@ Generado: 2026-11-08 15:56
 | --- | --- |
 | `inventory_form_screen.dart` | 165 |
 | `inventory_screen.dart` | 105 |
-| `quarantine_screen.dart` | 62 |
+| `quarantine_screen.dart` | 63 |
 
 ### Widgets
 
@@ -464,8 +464,8 @@ Generado: 2026-11-08 15:56
 | `hub_plan_form_screen.dart` | 120 |
 | `in_flight_screen.dart` | 36 |
 | `incoming_screen.dart` | 36 |
-| `order_detail_screen.dart` | 398 |
-| `order_history_screen.dart` | 41 |
+| `order_detail_screen.dart` | 399 |
+| `order_history_screen.dart` | 42 |
 | `pending_load_screen.dart` | 71 |
 | `plan_detail_screen.dart` | 203 |
 | `plan_form_screen.dart` | 97 |
@@ -535,19 +535,19 @@ Generado: 2026-11-08 15:56
 | `order_row_card.dart` | OrderRowCard | 50 | ok |
 | `order_row_card.dart` | _Lines | 29 | ok |
 | `order_row_card.dart` | _ToneEdge | 23 | ok |
-| `order_status_chip.dart` | OrderStatusChip | 24 | ok |
-| `order_summary.dart` | OrderSummary | 53 | ok |
-| `order_summary.dart` | _SummaryLines | 52 | ok |
+| `order_status_chip.dart` | OrderStatusChip | 49 | ok |
+| `order_summary.dart` | OrderSummary | 58 | ok |
+| `order_summary.dart` | _SummaryLines | 59 | ok |
 | `order_summary.dart` | _HubLines | 26 | ok |
-| `order_tile.dart` | OrderTile | 49 | ok |
+| `order_tile.dart` | OrderTile | 56 | ok |
 | `order_tray.dart` | OrderTray | 52 | ok |
 | `order_tray.dart` | _TrayList | 26 | ok |
 | `pending_load_tile.dart` | PendingLoadTile | 45 | ok |
 | `pending_load_tile.dart` | _ConfirmButton | 35 | ok |
-| `plan_sections.dart` | PlanSummary | 35 | ok |
+| `plan_sections.dart` | PlanSummary | 37 | ok |
 | `plan_sections.dart` | PlanOccurrences | 30 | ok |
 | `plan_sections.dart` | _OccurrenceRow | 54 | ok |
-| `plan_tile.dart` | PlanTile | 33 | ok |
+| `plan_tile.dart` | PlanTile | 34 | ok |
 | `prescription_checklist.dart` | PrescriptionChecklist | 24 | ok |
 | `prescription_picker.dart` | PrescriptionPicker | 52 | ok |
 | `prescription_picker.dart` | _Preview | 34 | ok |
@@ -586,7 +586,7 @@ Generado: 2026-11-08 15:56
 
 | Archivo | Lineas |
 | --- | --- |
-| `order_format.dart` | 160 |
+| `order_format.dart` | 120 |
 
 ## tracking
 
@@ -594,7 +594,7 @@ Generado: 2026-11-08 15:56
 
 | Archivo | Lineas |
 | --- | --- |
-| `tracking_screen.dart` | 180 |
+| `tracking_screen.dart` | 194 |
 
 ### Widgets
 

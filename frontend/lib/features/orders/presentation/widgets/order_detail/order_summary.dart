@@ -18,6 +18,7 @@ class OrderSummary extends StatelessWidget {
     required this.showPrescriptionFlag,
     this.showLot = false,
     this.cameFromOtherHub = false,
+    this.forRequester = false,
   });
 
   final Order order;
@@ -31,6 +32,9 @@ class OrderSummary extends StatelessWidget {
   /// Llegó a esta central porque otra no tenía dron (fallback `hub`).
   final bool cameFromOtherHub;
 
+  /// Lo ve quien pidió: estado en sus palabras y "Tu ubicación".
+  final bool forRequester;
+
   @override
   Widget build(BuildContext context) {
     return DetailSection(
@@ -43,7 +47,7 @@ class OrderSummary extends StatelessWidget {
             spacing: 8,
             runSpacing: 6,
             children: [
-              OrderStatusChip(status: order.status),
+              OrderStatusChip(status: order.status, forRequester: forRequester),
               OrderKindChip(missionType: order.missionType),
               if (cameFromOtherHub)
                 const StatusPill(
@@ -57,6 +61,7 @@ class OrderSummary extends StatelessWidget {
             order: order,
             prescription: showPrescriptionFlag,
             showLot: showLot,
+            forRequester: forRequester,
           ),
         ],
       ),
@@ -69,11 +74,13 @@ class _SummaryLines extends StatelessWidget {
     required this.order,
     required this.prescription,
     required this.showLot,
+    required this.forRequester,
   });
 
   final Order order;
   final bool prescription;
   final bool showLot;
+  final bool forRequester;
 
   @override
   Widget build(BuildContext context) {
@@ -81,11 +88,16 @@ class _SummaryLines extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         DetailLine(
-          label: 'Venta',
-          value: '${order.saleType.label} · ${order.quantity} und.',
+          label: 'Tipo',
+          value: '${order.saleType.label} · ${unitsLabel(order.quantity)}',
         ),
         DetailLine(label: 'Prioridad', value: order.priority.label),
-        DetailLine(label: 'Destino', value: destinationLabel(order)),
+        DetailLine(
+          label: 'Destino',
+          value: forRequester && order.destinationKind == DestinationKind.person
+              ? 'Tu ubicación'
+              : destinationLabel(order),
+        ),
         DetailLine(label: 'Dirección', value: order.address),
         if (order.description != null)
           DetailLine(label: 'Descripción', value: order.description!),
@@ -93,11 +105,11 @@ class _SummaryLines extends StatelessWidget {
           DetailLine(
             label: 'Programada para',
             value: order.scheduledAt == null
-                ? order.scheduledFor!
-                : '${order.scheduledFor!} · '
+                ? formatDay(order.scheduledFor!)
+                : '${formatDay(order.scheduledFor!)} · '
                       '${formatSlot(order.scheduledAt, order.windowEndsAt)}',
           ),
-        DetailLine(label: 'Creado', value: formatBogota(order.createdAt)),
+        DetailLine(label: 'Creado', value: formatDateTime(order.createdAt)),
         if (order.requiresColdChain)
           const DetailLine(label: 'Cadena de frío', value: 'Sí'),
         if (prescription && order.hasPrescription)
@@ -136,7 +148,7 @@ class _HubLines extends StatelessWidget {
             label: 'Lote despachado',
             value:
                 '${order.dispatchedLot!} · vence '
-                '${order.dispatchedLotExpiresOn ?? '—'}',
+                '${order.dispatchedLotExpiresOn == null ? '—' : formatDay(order.dispatchedLotExpiresOn!)}',
           ),
       ],
     );

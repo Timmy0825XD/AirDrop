@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/colombian_phone.dart';
 import '../../../../core/widgets/row_action_button.dart';
 import '../../../../core/widgets/status_card.dart';
 import '../../../../core/widgets/status_pill.dart';
@@ -93,7 +94,7 @@ class _HubInfo extends StatelessWidget {
         ),
         const SizedBox(height: 3),
         Text(
-          '${hub.address} · ${hub.contactPhone}',
+          '${hub.address} · ${formatColombianPhone(hub.contactPhone)}',
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),

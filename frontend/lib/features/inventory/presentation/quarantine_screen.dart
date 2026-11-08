@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/status_pill.dart';
-import '../../orders/presentation/order_format.dart';
+import '../../../core/date_format.dart';
 import '../../orders/presentation/widgets/order_row_card.dart';
 import '../../orders/presentation/widgets/order_tray.dart';
 import '../../../theme/app_palette.dart';
@@ -54,7 +54,8 @@ class QuarantineTile extends StatelessWidget {
       title: record.medicationName,
       accent: '${record.quantity} und. · Lote ${record.lot}',
       detail:
-          'Vence ${record.expirationDate} · ${formatBogota(record.createdAt)}',
+          'Vence ${formatDay(record.expirationDate)} · '
+          'llegó ${formatDateTime(record.createdAt)}',
       pill: StatusPill(label: record.reason.label, tone: PillTone.attention),
       onTap: onTap,
     );

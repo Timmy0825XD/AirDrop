@@ -33,6 +33,7 @@ class OrderHistoryScreen extends ConsumerWidget {
       keyOf: (order) => order.id,
       itemBuilder: (context, order) => OrderTile(
         order: order,
+        forRequester: true,
         canReceive: order.status == OrderStatus.awaitingDelivery,
         onTap: () => context.push('/orders/${order.id}'),
       ),

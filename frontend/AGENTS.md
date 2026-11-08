@@ -252,6 +252,14 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
   "Simulación ×4" o "Simulación en pausa". JWT, OTP y el límite de intentos
   siguen en hora real. Un test que monte `RoleShell` con sesión anula
   `clockSyncProvider` (`overrideWith((ref) {})`).
+- **Fechas y teléfonos en pantalla.** Un solo formato, en
+  `core/date_format.dart`: `formatDay` (`sáb. 7 nov.`, o `hoy`/`mañana`/
+  `ayer`; `relative: false` dentro de frases como "hasta el …"),
+  `formatClock` (`9:50 a. m.`, hora de Colombia), `formatDateTime`
+  (`sáb. 7 nov. · 9:50 a. m.`), `formatAgo` (`hace 6 min`, para listas) y
+  `formatTimeText` (`HH:mm` de un calendario). No armar fechas a mano ni
+  mostrar ISO. Los teléfonos pasan por `formatColombianPhone`
+  (`core/colombian_phone.dart`) y, si se puede llamar, por `PhoneLink`.
 - Nest contesta `subscribe` con los eventos `subscribed` o `error` (no con
   ack). Con `error` se muestra el mensaje y no se reintenta.
 - El 404 `Todavía no hay vuelo para este pedido.` no es un error: la pantalla
@@ -414,8 +422,10 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `HomePage` / `HomeHeader` / `HomeSpotlight` / `HomeGrid` / `HomeLabel` / `QuickTile` | `home/presentation/widgets` | Los inicios: lista en cascada; encabezado (marca con el `DroneMark`, campana, iniciales y salir; debajo el rol, el saludo a 34 y el contexto); la cifra principal en una tarjeta con el dron sobre un `RadarSweep` y el número separado por una línea fina; cuadrículas de dos columnas; accesos con contador (atención con `urgent`) o candado con `onTap: null`. |
 | `DispatcherMoreScreen` / `showAdminCreateSheet` | `home/presentation` | "Más" del despachador en cuadrícula y la hoja del botón central del administrador. |
 | `SectionHeader.backOrHome` | `home/presentation/widgets` | Volver con `pop` si se llegó con `push`; si no, al inicio. Los detalles y el mapa se abren con `push`. |
-| `DetailSection` / `DetailLine` | `core/widgets` | Tarjeta con ícono teñido y rótulo, y filas "etiqueta … valor". |
-| `AuthDateField` + `pickIsoDate` / `AuthChoiceGroup` | `auth/presentation/widgets` | Fecha en calendario (AAAA-MM-DD) y grupo de chips con label y error que tiembla, con la forma de `AuthField`. |
+| `DetailSection` / `DetailLine` | `core/widgets` | Tarjeta con ícono teñido y rótulo, y filas "etiqueta … valor" (`child` reemplaza el texto del valor, p. ej. un `PhoneLink`). |
+| `PhoneLink` / `callPhone` | `core/widgets/phone_link.dart` | Teléfono con formato colombiano que se toca para llamar (`tel:+57…`, `url_launcher`), 48 px de alto; si el dispositivo no llama, avisa el número. |
+| `OrderStatusChip` (`forRequester`) | `orders/presentation/widgets` | El estado del pedido; con `forRequester` en palabras del solicitante ("Preparando el envío", "En camino", "No se entregó"). El despachador y el operador ven el técnico. |
+| `AuthDateField` + `pickIsoDate` / `AuthChoiceGroup` | `auth/presentation/widgets` | Fecha en calendario (guarda AAAA-MM-DD, muestra `sáb. 7 nov.`) y grupo de chips con label y error que tiembla, con la forma de `AuthField`. |
 | `OrderTray` / `OrderRowCard` | `orders/presentation/widgets` | Andamiaje de las bandejas (encabezado con conteo, lista en cascada, recarga, vacío, error y refresco cada 10 s) y su tarjeta, con una franja del color del pedido en el borde izquierdo. |
 | `MissionCard` / `MissionRoute` / `LiveMission` | `home/presentation` | La misión en curso del inicio (solicitante con su pedido, despachador con el primer vuelo de su central): luz verde, minutos para llegar de la telemetría en vivo (o el estado si no hay), qué va en el dron, la ruta con el dron en su punto real (flotando en medio sin telemetría) y altitud, velocidad y fase. `LiveMission` abre el socket solo mientras se ve el inicio. |
 | `RequesterStats` / `NextDeliveryCard` | `home/presentation/widgets/requester` | Los números del solicitante (entregados con su anillo y los pedidos de las últimas 4 semanas en barras) y la próxima entrega programada (día y hora, plan o programada). Todo sale de sus pedidos. |

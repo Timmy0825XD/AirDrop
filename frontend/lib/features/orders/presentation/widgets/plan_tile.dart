@@ -34,7 +34,8 @@ class PlanTile extends StatelessWidget {
       accent: '${scheduleLabel(plan)} · ${plan.quantity} und.',
       detail: plan.renewalDue && plan.canExtend
           ? 'Puedes extenderlo otras 8 semanas.'
-          : '${plan.startDate} al ${plan.windowEndsOn}',
+          : '${formatDay(plan.startDate, relative: false)} al '
+                '${formatDay(plan.windowEndsOn, relative: false)}',
       pill: pillOf(plan),
       onTap: onTap,
     );

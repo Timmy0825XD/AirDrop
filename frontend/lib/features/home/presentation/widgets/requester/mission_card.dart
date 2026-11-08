@@ -4,6 +4,8 @@ import '../../../../../core/widgets/glass_card.dart';
 import '../../../../../core/widgets/radar_sweep.dart';
 import '../../../../../theme/app_palette.dart';
 import '../../../../orders/data/order_models.dart';
+import '../../../../orders/presentation/order_format.dart';
+import '../../../../orders/presentation/widgets/order_status_chip.dart';
 import '../../../../tracking/data/telemetry_models.dart';
 import 'mission_route.dart';
 
@@ -20,9 +22,13 @@ class MissionCard extends StatelessWidget {
     required this.onWatch,
     this.telemetry,
     this.progress,
+    this.forRequester = false,
   });
 
   final Order order;
+
+  /// El solicitante ve el estado en sus palabras ("Preparando el envío").
+  final bool forRequester;
   final VoidCallback onWatch;
   final Telemetry? telemetry;
 
@@ -68,13 +74,18 @@ class _MissionBody extends StatelessWidget {
     final t = card.telemetry;
     final what = order.requiresColdChain
         ? 'cadena de frío'
-        : '${order.quantity} und.';
+        : unitsLabel(order.quantity);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _LiveLabel(text: 'MISIÓN EN CURSO'),
         const SizedBox(height: 8),
-        _Headline(telemetry: t, status: order.status),
+        _Headline(
+          telemetry: t,
+          status: card.forRequester
+              ? OrderStatusChip.requesterLabel(order.status)
+              : order.status.label,
+        ),
         const SizedBox(height: 6),
         Text(
           '${order.medicationName} · $what',
@@ -131,7 +142,9 @@ class _Headline extends StatelessWidget {
   const _Headline({required this.telemetry, required this.status});
 
   final Telemetry? telemetry;
-  final OrderStatus status;
+
+  /// El estado ya en palabras de quien mira.
+  final String status;
 
   @override
   Widget build(BuildContext context) {
@@ -139,7 +152,7 @@ class _Headline extends StatelessWidget {
     final eta = telemetry?.etaMinutes;
     if (telemetry == null) {
       return Text(
-        status.label,
+        status,
         style: theme.textTheme.headlineMedium?.copyWith(letterSpacing: -0.8),
       );
     }

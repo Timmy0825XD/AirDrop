@@ -81,9 +81,9 @@ void main() {
     final offers = OrderDecision.fromJson(_json).offers!;
     expect(
       offerState(offers.first),
-      'declinó a las 10:00: Sin dron disponible',
+      'declinó a las 10:00 a. m.: Sin dron disponible',
     );
-    expect(offerState(offers.last), 'desde las 10:00');
+    expect(offerState(offers.last), 'desde las 10:00 a. m.');
   });
 
   testWidgets('la sección empieza cerrada y abre cada central y dron', (

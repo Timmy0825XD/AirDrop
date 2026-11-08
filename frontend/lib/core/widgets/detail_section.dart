@@ -60,12 +60,19 @@ class DetailSection extends StatelessWidget {
 }
 
 /// Una fila "etiqueta … valor" dentro de una sección: la etiqueta en gris
-/// a la izquierda y el valor a la derecha.
+/// a la izquierda y el valor a la derecha. Con [child] el valor es ese
+/// widget (un teléfono que se toca para llamar).
 class DetailLine extends StatelessWidget {
-  const DetailLine({super.key, required this.label, required this.value});
+  const DetailLine({
+    super.key,
+    required this.label,
+    required this.value,
+    this.child,
+  });
 
   final String label;
   final String value;
+  final Widget? child;
 
   @override
   Widget build(BuildContext context) {
@@ -83,13 +90,15 @@ class DetailLine extends StatelessWidget {
           ),
           const SizedBox(width: 16),
           Expanded(
-            child: Text(
-              value,
-              textAlign: TextAlign.end,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            child:
+                child ??
+                Text(
+                  value,
+                  textAlign: TextAlign.end,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
           ),
         ],
       ),

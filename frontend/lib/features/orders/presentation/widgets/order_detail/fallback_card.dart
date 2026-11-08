@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/widgets/detail_section.dart';
+import '../../../../../core/widgets/phone_link.dart';
 import '../../../../../theme/app_palette.dart';
 import '../../../data/order_models.dart';
 import '../../order_format.dart';
@@ -30,7 +31,7 @@ class FallbackCard extends StatelessWidget {
     FallbackKind.retry =>
       fallback.retryAfter == null
           ? 'Se reintenta solo cada 15 minutos.'
-          : 'Próximo intento a las ${formatClock(fallback.retryAfter!)}.',
+          : 'Próximo intento a las ${formatClock(fallback.retryAfter!)}',
   };
 
   @override
@@ -62,8 +63,8 @@ class FallbackCard extends StatelessWidget {
   }
 }
 
-/// Una central alternativa: nombre, distancia, dirección y contacto (se
-/// puede copiar).
+/// Una central alternativa: nombre, distancia, dirección y contacto (el
+/// teléfono se toca para llamar; el correo se puede copiar).
 class FallbackOptionTile extends StatelessWidget {
   const FallbackOptionTile({super.key, required this.option});
 
@@ -86,13 +87,13 @@ class FallbackOptionTile extends StatelessWidget {
           style: theme.textTheme.titleSmall,
         ),
         if (option.address.isNotEmpty) Text(option.address, style: muted),
-        SelectableText(
-          [
-            if (option.contactPhone.isNotEmpty) option.contactPhone,
-            ?option.contactEmail,
-          ].join(' · '),
-          style: muted,
-        ),
+        if (option.contactPhone.isNotEmpty)
+          PhoneLink(
+            phone: option.contactPhone,
+            style: theme.textTheme.bodySmall,
+          ),
+        if (option.contactEmail case final email?)
+          SelectableText(email, style: muted),
       ],
     );
   }

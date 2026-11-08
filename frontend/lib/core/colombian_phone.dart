@@ -15,3 +15,21 @@ String normalizeColombianPhone(String? value) {
   }
   return digits;
 }
+
+/// El número como se lee en Colombia: celular `300 123 4567`, fijo
+/// `605 570 0000` (los dos tienen 10 dígitos en grupos de 3, 3 y 4). Lo que
+/// no tenga 10 dígitos se deja como llegó.
+String formatColombianPhone(String? value) {
+  final digits = normalizeColombianPhone(value);
+  if (digits.length != 10) return (value ?? '').trim();
+  return '${digits.substring(0, 3)} ${digits.substring(3, 6)} '
+      '${digits.substring(6)}';
+}
+
+/// El enlace para llamar: `tel:+573001234567`. `null` si no es un número
+/// colombiano de 10 dígitos.
+Uri? colombianPhoneUri(String? value) {
+  final digits = normalizeColombianPhone(value);
+  if (digits.length != 10) return null;
+  return Uri(scheme: 'tel', path: '+57$digits');
+}

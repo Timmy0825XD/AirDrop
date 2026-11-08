@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/status_pill.dart';
 import '../../../../core/widgets/tone_tile.dart';
-import '../../../orders/presentation/order_format.dart';
+import '../../../../core/date_format.dart';
 import '../../data/fleet_models.dart';
 
 /// Un periodo del historial de taller: el tipo, el motivo, desde cuándo,
@@ -43,8 +43,9 @@ class MaintenancePeriodTile extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   [
-                    'Desde ${formatBogota(period.startedAt)}',
-                    if (until != null) 'Estimado hasta $until',
+                    'Desde ${formatDateTime(period.startedAt)}',
+                    if (until != null)
+                      'Estimado hasta el ${formatDay(until, relative: false)}',
                     'Llevaba ${period.flightsAtStart} vuelos',
                   ].join(' · '),
                   style: muted,
@@ -56,7 +57,7 @@ class MaintenancePeriodTile extends StatelessWidget {
                         tone: PillTone.attention,
                       )
                     : Text(
-                        'Cerrado el ${formatBogota(period.closedAt)}',
+                        'Cerrado el ${formatDateTime(period.closedAt)}',
                         style: muted,
                       ),
               ],

@@ -4,13 +4,13 @@ import '../../../../../core/widgets/app_snack.dart';
 import '../../../data/order_models.dart';
 import '../../order_format.dart';
 
-/// "5 de noviembre 10:00 (3 entregas, 2 drones)" para el aviso de franjas
+/// "sáb. 7 nov. 10:00 a. m. (3 entregas, 2 drones)" para el aviso de franjas
 /// llenas.
 String busySlotsLabel(List<BusySlot> slots) => slots
     .take(3)
     .map(
       (s) =>
-          '${formatShortDate(s.date)} ${s.time} '
+          '${formatDay(s.date)} ${formatTimeText(s.time)} '
           '(${s.deliveries} entregas, ${s.drones} drones)',
     )
     .join('; ');
