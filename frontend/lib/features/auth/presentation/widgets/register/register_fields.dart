@@ -59,7 +59,7 @@ class RegisterContactFields extends StatelessWidget {
       children: [
         AuthField(
           label: 'Celular',
-          hint: '300 123 4567',
+          hint: 'Ej.: 300 123 4567',
           prefix: const _CountryCode(),
           controller: c.phone,
           errorText: data.errors[RegisterInput.phone],
@@ -71,7 +71,7 @@ class RegisterContactFields extends StatelessWidget {
         const SizedBox(height: 18),
         AuthField(
           label: 'Correo electrónico',
-          hint: 'nombre@correo.com',
+          hint: 'Ej.: nombre@correo.com',
           icon: Icons.mail_outline_rounded,
           trailing: const AuthFieldBadge('Recibe el código'),
           controller: c.email,

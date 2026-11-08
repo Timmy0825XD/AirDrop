@@ -54,22 +54,45 @@ class AuthPickerField<T> extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(label.toUpperCase(), style: theme.textTheme.labelSmall),
+        ExcludeSemantics(
+          child: Text(label.toUpperCase(), style: theme.textTheme.labelSmall),
+        ),
         const SizedBox(height: 8),
         if (options.isEmpty && empty != null)
           Text(empty!, style: theme.textTheme.bodyMedium)
         else
           ShakeOnError(
             trigger: errorText == null ? 0 : shakeCount,
-            child: _PickerBox(
-              chosen: chosen,
-              hint: hint,
-              hasError: errorText != null,
-              onTap: () => _openPicker(context, this),
-            ),
+            child: _LabeledPicker<T>(field: this, chosen: chosen),
           ),
         AuthFieldError(message: errorText),
       ],
+    );
+  }
+}
+
+/// La caja con su nombre para el lector de pantalla: qué campo es y lo
+/// elegido ("Central de origen: Rosario. Cambiar").
+class _LabeledPicker<T> extends StatelessWidget {
+  const _LabeledPicker({required this.field, required this.chosen});
+
+  final AuthPickerField<T> field;
+  final PickerOption<Object?>? chosen;
+
+  @override
+  Widget build(BuildContext context) {
+    final pick = chosen;
+    return Semantics(
+      button: true,
+      label:
+          '${field.label}: ${pick == null ? field.hint : '${pick.title}. Cambiar'}',
+      excludeSemantics: true,
+      child: _PickerBox(
+        chosen: pick,
+        hint: field.hint,
+        hasError: field.errorText != null,
+        onTap: () => _openPicker(context, field),
+      ),
     );
   }
 }
@@ -93,10 +116,7 @@ class _PickerBox extends StatelessWidget {
     final theme = Theme.of(context);
     final palette = context.palette;
     final pick = chosen;
-    return Semantics(
-      button: true,
-      label: pick == null ? hint : 'Cambiar: ${pick.title}',
-      excludeSemantics: true,
+    return ExcludeSemantics(
       child: PressScale(
         child: Material(
           color: palette.glass,

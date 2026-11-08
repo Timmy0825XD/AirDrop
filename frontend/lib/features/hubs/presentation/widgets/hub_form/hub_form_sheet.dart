@@ -40,7 +40,7 @@ class HubFormSheet extends StatelessWidget {
         const SizedBox(height: 16),
         AuthField(
           label: 'Dirección',
-          hint: 'Calle 5 # 3-12, Valencia de Jesús',
+          hint: 'Ej.: Calle 5 # 3-12, Valencia de Jesús',
           controller: values.address,
           maxLength: FieldLimits.address,
           errorText: errors[HubInput.address],
@@ -84,7 +84,7 @@ class _NameAndType extends StatelessWidget {
       children: [
         AuthField(
           label: 'Nombre',
-          hint: 'Hospital de Valencia de Jesús',
+          hint: 'Ej.: Hospital de Valencia de Jesús',
           controller: values.name,
           maxLength: FieldLimits.hubName,
           errorText: errorText,
@@ -123,7 +123,7 @@ class _ContactFields extends StatelessWidget {
         Expanded(
           child: AuthField(
             label: 'Celular',
-            hint: '300 412 7788',
+            hint: 'Ej.: 300 412 7788',
             controller: values.phone,
             keyboardType: TextInputType.phone,
             maxLength: FieldLimits.phoneDigits + 4,

@@ -49,7 +49,8 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 15 | Bloqueantes de la auditoría 31 (Bloque 1) | `bugfix/hojas-sobre-la-barra`, `bugfix/estado-dron-grounded`, `feature/confirmar-carga-segura` | Hecha (PR #138, #139 y #140) |
 | 16 | La app al ritmo de la consola (Bloque 2 de la auditoría 31) | `feature/reloj-simulado`, `feature/incidentes-app`, `feature/fleet-mantenimiento-app` | Hecha (PR #141, #142 y #143) |
 | 17 | El despachador ante la consola (Bloque 3 de la auditoría 31) | `feature/declinar-urgencia`, `feature/central-sin-energia`, `feature/traza-decision` | Hecha (PR #144, #145 y #146) |
-| 18 | Operador y administrador (Bloque 4 de la auditoría 31) | `feature/fleet-mapa-operador`, `feature/fleet-tablero`, `feature/metricas-incidentes` | Hecha (PR #147, #148 y PR pendiente) |
+| 18 | Operador y administrador (Bloque 4 de la auditoría 31) | `feature/fleet-mapa-operador`, `feature/fleet-tablero`, `feature/metricas-incidentes` | Hecha (PR #147, #148 y #149) |
+| 19 | Pulido de UX y accesibilidad (Bloque 5 de la auditoría 31) | `style/formularios-accesibles`, `style/fechas-y-textos`, `style/acciones-y-navegacion`, `style/pantallas-pequenas`, `style/inicios-por-rol` | En curso: paso 1 hecho |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -1158,6 +1159,30 @@ Lo que Nest ya le da al operador y al administrador (§16 y §17 de
   Nest, a 360 px).
 
 Cierre: `flutter analyze` sin issues y `flutter test` en verde (272).
+
+## Fase 19 — Pulido de UX y accesibilidad (Bloque 5)
+
+Lo que la auditoría 31 encontró en formularios, textos, navegación y
+pantallas pequeñas. Ramas `style/`, una por paso desde `develop`; no cambian
+datos ni endpoints.
+
+- Paso 1 (`style/formularios-accesibles`), hecho el 2026-11-08:
+  - Placeholders: los 20 que parecían datos ya escritos (cantidades,
+    nombres, direcciones, lotes, celulares, correos, "D-07") empiezan por
+    "Ej.: ". Los que ya eran instrucciones ("Elige la fecha", "Tu
+    contraseña", "Opcional") quedan igual.
+  - El lector de pantalla lee la etiqueta en el campo: `AuthField` pone la
+    etiqueta en el nodo del `TextField` y la de arriba en mayúsculas no se
+    lee dos veces; la fecha (`AuthDateField`) y el selector
+    (`AuthPickerField`) son botones con su etiqueta ("Central de origen:
+    Elige la central"). Con eso cada campo de "Urgencia a otra central" es
+    un nodo propio (antes se juntaban en uno). El error ya se anunciaba solo.
+  - Al fallar, el formulario baja hasta el primer campo con error
+    (`ShakeOnError`, que comparten los tres tipos de campo); antes el campo
+    temblaba fuera de la pantalla.
+  - "Siguiente" y "listo" en el teclado ya estaban (`textInputAction`).
+  Prueba: `auth_field_semantics_test` (etiqueta en el campo, nodos propios
+  y el scroll al error a 360×640).
 
 ## Pendiente del backend
 

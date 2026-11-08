@@ -103,7 +103,7 @@ class _DroneFormScreenState extends ConsumerState<DroneFormScreen> {
         children: [
           AuthField(
             label: 'Identificador',
-            hint: 'D-07',
+            hint: 'Ej.: D-07',
             controller: _values.identifier,
             maxLength: FieldLimits.droneIdentifier,
             errorText: _identifierError,

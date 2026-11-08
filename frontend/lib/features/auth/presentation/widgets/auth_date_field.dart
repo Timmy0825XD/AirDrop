@@ -31,14 +31,22 @@ class AuthDateField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          label.toUpperCase(),
-          style: Theme.of(context).textTheme.labelSmall,
+        ExcludeSemantics(
+          child: Text(
+            label.toUpperCase(),
+            style: Theme.of(context).textTheme.labelSmall,
+          ),
         ),
         const SizedBox(height: 8),
         ShakeOnError(
           trigger: error ? shakeCount : 0,
-          child: _DateBox(field: this, error: error),
+          // Para el lector de pantalla, un botón con su etiqueta y la fecha.
+          child: Semantics(
+            button: true,
+            label: '$label: ${value ?? hint}',
+            excludeSemantics: true,
+            child: _DateBox(field: this, error: error),
+          ),
         ),
         AuthFieldError(message: errorText),
       ],

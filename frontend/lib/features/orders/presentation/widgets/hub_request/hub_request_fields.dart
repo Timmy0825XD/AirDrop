@@ -84,7 +84,7 @@ class _QuantityField extends StatelessWidget {
     final stock = fields.values.offer?.availableQuantity;
     return AuthField(
       label: 'Cantidad',
-      hint: '1',
+      hint: 'Ej.: 1',
       controller: fields.values.quantity,
       keyboardType: TextInputType.number,
       // Hasta 100000, el máximo del DTO.
