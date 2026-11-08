@@ -44,6 +44,25 @@ class LocalAnalyticsRepository implements AnalyticsRepository {
             value: 2,
             target: KpiTarget(kind: 'max', green: 0, amber: 2),
           ),
+          // §17: los mismos textos, unidades y metas de `analytics.rules.ts`.
+          Kpi(
+            key: 'incidentRate',
+            label: 'Incidentes en vuelo por cada 100 misiones',
+            unit: 'por 100',
+            status: KpiStatus.amber,
+            value: 4.5,
+            previous: 2.6,
+            delta: 1.9,
+            target: KpiTarget(kind: 'max', green: 2, amber: 5),
+          ),
+          Kpi(
+            key: 'groundings',
+            label: 'Aterrizajes de emergencia y drones perdidos',
+            unit: 'drones',
+            status: KpiStatus.amber,
+            value: 1,
+            target: KpiTarget(kind: 'max', green: 0, amber: 1),
+          ),
           Kpi(
             key: 'returnRate',
             label: 'Retornos',
