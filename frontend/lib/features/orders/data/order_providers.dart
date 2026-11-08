@@ -163,6 +163,10 @@ class OrderDispatchNotifier extends AsyncNotifier<Order?> {
   Future<Order> reject(String id, String reason) =>
       _run(id, (repo) => repo.reject(id, reason));
 
+  /// "No puedo atenderla": la urgencia sale de la cola de esta central.
+  Future<Order> decline(String id, {String? reason}) =>
+      _run(id, (repo) => repo.decline(id, reason: reason));
+
   Future<Order> authorize(String id, {bool? prescriptionVerified}) => _run(
     id,
     (repo) => repo.authorize(id, prescriptionVerified: prescriptionVerified),

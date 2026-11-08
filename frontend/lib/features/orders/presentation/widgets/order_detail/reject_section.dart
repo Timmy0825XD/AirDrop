@@ -15,7 +15,12 @@ class RejectSection extends StatefulWidget {
     required this.shakeCount,
     required this.busy,
     required this.onReject,
+    this.note,
   });
+
+  /// Lo que hace rechazar, al abrir la sección (en una urgencia civil, que
+  /// se distinga de "No puedo atenderla").
+  final String? note;
 
   final TextEditingController reason;
   final String? errorText;
@@ -61,6 +66,10 @@ class _RejectSectionState extends State<RejectSection> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  if (widget.note case final note?) ...[
+                    Text(note, style: Theme.of(context).textTheme.bodySmall),
+                    const SizedBox(height: 12),
+                  ],
                   AuthField(
                     label: 'Motivo',
                     hint: 'Lo verá quien hizo el pedido',

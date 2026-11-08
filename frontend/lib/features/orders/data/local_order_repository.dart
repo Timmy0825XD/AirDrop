@@ -317,6 +317,7 @@ class LocalOrderRepository implements OrderRepository {
   Future<List<QueueEntry>> queue() async {
     return _orders
         .where((e) => e.status == OrderStatus.received || e.reassignedToHub)
+        .where((e) => !_declined.contains(e.id))
         .map(
           (e) => QueueEntry(
             order: e,
@@ -362,6 +363,32 @@ class LocalOrderRepository implements OrderRepository {
     return _replace(
       current.copyWith(status: OrderStatus.rejected, statusReason: reason),
     );
+  }
+
+  /// Urgencias que esta central declinó: salen de su cola. En la maqueta
+  /// no hay otra central que las reciba.
+  final Set<String> _declined = {};
+
+  /// Como `EmergencyDispatchService.decline`: solo una urgencia civil en
+  /// recibido que todavía no tiene central, y una sola vez por central.
+  @override
+  Future<Order> decline(String id, {String? reason}) async {
+    final current = await findOne(id);
+    if (current.missionType != MissionType.emergency ||
+        current.destinationKind != DestinationKind.person ||
+        current.status != OrderStatus.received) {
+      throw const ApiException(
+        'Solo se declina una urgencia recibida que todavía no tiene central.',
+        statusCode: 400,
+      );
+    }
+    if (!_declined.add(id)) {
+      throw const ApiException(
+        'Tu central ya declinó esta urgencia.',
+        statusCode: 403,
+      );
+    }
+    return current;
   }
 
   /// Simula al motor de decisión: siempre elige el mismo dron y un

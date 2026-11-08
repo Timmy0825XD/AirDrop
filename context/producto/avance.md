@@ -47,7 +47,8 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 13 | Auth con el espacio aéreo vivo | `style/auth-espacio-aereo` | Hecha (PR #105) |
 | 14 | El resto de la app al diseño del espacio aéreo | `style/app-espacio-aereo` | Hecha (PR pendiente) |
 | 15 | Bloqueantes de la auditoría 31 (Bloque 1) | `bugfix/hojas-sobre-la-barra`, `bugfix/estado-dron-grounded`, `feature/confirmar-carga-segura` | Hecha (PR #138, #139 y #140) |
-| 16 | La app al ritmo de la consola (Bloque 2 de la auditoría 31) | `feature/reloj-simulado`, `feature/incidentes-app`, `feature/fleet-mantenimiento-app` | Hecha (PR #141, #142 y PR pendiente) |
+| 16 | La app al ritmo de la consola (Bloque 2 de la auditoría 31) | `feature/reloj-simulado`, `feature/incidentes-app`, `feature/fleet-mantenimiento-app` | Hecha (PR #141, #142 y #143) |
+| 17 | El despachador ante la consola (Bloque 3 de la auditoría 31) | `feature/declinar-urgencia`, `feature/central-sin-energia`, `feature/traza-decision` | En curso: paso 1 hecho |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -1027,6 +1028,36 @@ app y se ve en la demo. Una rama por paso desde `develop`.
   en web a 360×640 con datos locales (flota, "Gestionar" e historial).
 
 Cierre: `flutter analyze` sin issues y `flutter test` en verde (254).
+
+## Fase 17 — El despachador ante la consola (Bloque 3)
+
+Lo que Nest ya le da al despachador (§13, §14 y §17 de
+`pendientes-backend.md`) y la app no usaba. Una rama por paso desde
+`develop`.
+
+- Paso 1 (`feature/declinar-urgencia`), hecho el 2026-11-07: la urgencia de
+  un civil se ofrece primero a la central más cercana (RU-10), pero el
+  despachador solo tenía "Rechazar", que la cierra para todas.
+  - "No puedo atenderla" en el detalle (solo urgencia civil en recibido y
+    sin central, `canDecline`), entre Autorizar y Rechazar y sin rojo: abre
+    `showDeclineSheet` con "Sin dron disponible", "Sin personal para
+    cargar" u "Otro" (motivo libre de 160, opcional) y llama a
+    `POST /orders/:id/decline`. La pantalla vuelve a la cola, que ya no la
+    muestra; los errores de Nest salen tal cual.
+  - "Rechazar pedido", abierto, aclara que cierra el pedido para todas las
+    centrales y remite a "No puedo atenderla".
+  - La cola dice hace cuánto espera cada urgencia con la hora simulada
+    ("Espera 6 min"): ámbar a los 3 min, rojo a los 5 o si Nest la marcó
+    `unattended`. "Viene de otra central" sigue ganando la pastilla.
+  - `queue-changed` (el socket que avisa que una urgencia llegó a la cola)
+    no se escucha todavía: la cola se refresca cada 10 s.
+  Prueba: `decline_test`. Revisado en web a 360×640 con datos locales
+  (cola, detalle y declinar).
+- Paso 2 (`feature/central-sin-energia`): franja de alerta, Autorizar y
+  Confirmar carga deshabilitados con el motivo, avisos `hub_outage` y
+  `hub_power_restored`.
+- Paso 3 (`feature/traza-decision`): "¿Por qué este dron?"
+  (`GET /orders/:id/decision`) y la escalera de ofertas.
 
 ## Pendiente del backend
 

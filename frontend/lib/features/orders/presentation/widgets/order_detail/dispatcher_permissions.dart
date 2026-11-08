@@ -89,3 +89,11 @@ bool canReturnCheck(DispatcherPermissions can) =>
     can.order.awaitsReturnCheck &&
     can.myHubId != null &&
     can.order.originHubId == can.myHubId;
+
+/// "No puedo atenderla" (RU-10): solo una urgencia civil en recibido que
+/// todavía no tiene central. Pasa a la siguiente central; no se cierra.
+bool canDecline(Order order) =>
+    order.missionType == MissionType.emergency &&
+    order.destinationKind == DestinationKind.person &&
+    order.status == OrderStatus.received &&
+    order.originHubId == null;
