@@ -3,13 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/auto_refresh.dart';
-import '../../../core/widgets/bar_spark.dart';
-import '../../../core/widgets/metric_tile.dart';
 import '../../../core/widgets/status_pill.dart';
+import '../../analytics/data/analytics_models.dart';
 import '../../auth/data/auth_models.dart';
 import '../../fleet/data/fleet_models.dart';
 import '../../fleet/data/fleet_providers.dart';
 import '../../geofences/data/geofence_providers.dart';
+import 'widgets/operator/dashboard_period.dart';
+import 'widgets/operator/operator_dashboard.dart';
 import 'widgets/home_grid.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_page.dart';
@@ -20,20 +21,33 @@ import '../../notifications/data/notice_providers.dart';
 
 /// Inicio del operador de flota: sus centrales, los drones disponibles de
 /// **todas** ellas como cifra principal (el anillo dice qué parte de la
-/// flota está lista), el estado de la flota en barras y los accesos.
-/// Los números se refrescan cada 10 s: sin eso, un dron que despegaba o
-/// aterrizaba seguía en su estado viejo hasta recargar la app.
-class FleetOperatorHome extends ConsumerWidget {
+/// flota está lista), el tablero de la flota (uso, salud e incidentes del
+/// periodo, `GET /fleet/dashboard`) y los accesos. Los drones se refrescan
+/// cada 10 s: sin eso, un dron que despegaba o aterrizaba seguía en su
+/// estado viejo hasta recargar la app.
+class FleetOperatorHome extends ConsumerStatefulWidget {
   const FleetOperatorHome({super.key, required this.user});
 
   final PublicUser user;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FleetOperatorHome> createState() => _FleetOperatorHomeState();
+}
+
+class _FleetOperatorHomeState extends ConsumerState<FleetOperatorHome> {
+  /// El periodo del tablero, como en las métricas del administrador.
+  int _days = 30;
+
+  @override
+  Widget build(BuildContext context) {
+    final user = widget.user;
     final hub = ref.watch(effectiveHubProvider);
     final hubs = ref.watch(assignedHubsProvider).value;
     final drones = ref.watch(operatorDronesProvider).value;
     final geofences = ref.watch(geofencesProvider).value;
+    final dashboard = ref.watch(
+      fleetDashboardProvider(AnalyticsQuery.lastDays(_days)),
+    );
     int? count(bool Function(DroneStatus s) test) =>
         drones?.where((d) => test(d.status)).length;
     final available = count((s) => s == DroneStatus.available);
@@ -66,32 +80,15 @@ class FleetOperatorHome extends ConsumerWidget {
                   : PillTone.attention,
             ),
           ),
-          const HomeLabel('Estado de la flota'),
-          HomeGrid(
-            startIndex: 3,
-            children: [
-              MetricTile(
-                label: 'En misión',
-                value: count((s) => s == DroneStatus.inMission),
-                color: StatusPill.colorOf(context, PillTone.positive),
-                onTap: () => context.go('/fleet/flights'),
-                footer: BarSpark(
-                  height: 40,
-                  highlight: 1,
-                  values: [
-                    for (final s in DroneStatus.values)
-                      if (s != DroneStatus.unknown) count((d) => d == s) ?? 0,
-                  ],
-                ),
-              ),
-              MetricTile(
-                label: 'En taller',
-                value: count((s) => s.isOutOfFleet),
-                caption: 'Mantenimiento, fuera de servicio o en tierra',
-                color: StatusPill.colorOf(context, PillTone.negative),
-                onTap: () => context.go('/fleet'),
-              ),
-            ],
+          const HomeLabel('Tablero de la flota'),
+          DashboardPeriod(
+            days: _days,
+            onDays: (days) => setState(() => _days = days),
+          ),
+          const SizedBox(height: 12),
+          OperatorDashboard(
+            state: dashboard,
+            onOpenFleet: () => context.go('/fleet'),
           ),
           const HomeLabel('Gestionar'),
           HomeGrid(

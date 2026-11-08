@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-11-08 13:23
+Generado: 2026-11-08 15:21
 
 ## analytics
 
@@ -322,8 +322,13 @@ Generado: 2026-11-08 13:23
 | Archivo | Widget/clase | Lineas | Estado |
 | --- | --- | --- | --- |
 | `admin_create_sheet.dart` | _CreateOption | 41 | ok |
+| `dashboard_period.dart` | DashboardPeriod | 24 | ok |
 | `dispatcher_counts.dart` | DispatcherCounts | 38 | ok |
 | `dispatcher_tiles.dart` | DispatcherTiles | 28 | ok |
+| `fleet_health_card.dart` | FleetHealthCard | 51 | ok |
+| `fleet_incidents_card.dart` | FleetIncidentsCard | 38 | ok |
+| `fleet_usage_card.dart` | FleetUsageCard | 45 | ok |
+| `fleet_usage_card.dart` | _StackedBar | 29 | ok |
 | `home_grid.dart` | HomeGrid | 23 | ok |
 | `home_grid.dart` | HomeLabel | 14 | ok |
 | `home_header.dart` | HomeHeader | 54 | ok |
@@ -347,6 +352,7 @@ Generado: 2026-11-08 13:23
 | `mission_route.dart` | _RoutePainter | 50 | ok |
 | `next_delivery_card.dart` | NextDeliveryCard | 59 | ok |
 | `next_delivery_card.dart` | _Tag | 21 | ok |
+| `operator_dashboard.dart` | OperatorDashboard | 34 | ok |
 | `quick_tile.dart` | QuickTile | 48 | ok |
 | `quick_tile.dart` | _TileHead | 35 | ok |
 | `requester_stats.dart` | RequesterStats | 41 | ok |
@@ -367,7 +373,7 @@ Generado: 2026-11-08 13:23
 | --- | --- |
 | `admin_home.dart` | 104 |
 | `dispatcher_home.dart` | 102 |
-| `fleet_operator_home.dart` | 126 |
+| `fleet_operator_home.dart` | 123 |
 | `live_mission.dart` | 39 |
 | `requester_home.dart` | 166 |
 | `role_home.dart` | 71 |
@@ -648,7 +654,7 @@ Generado: 2026-11-08 13:23
 ## Resumen
 
 - Pantallas (44 archivos): 44
-- Archivos de widgets: 182 - clases de widget medidas: 412
+- Archivos de widgets: 187 - clases de widget medidas: 418
 - Widgets sobre 60 lineas: 5
 
 Detalle de los que exceden 60 lineas (candidatos a partir):

@@ -6,6 +6,8 @@ import '../../../core/data/data_source_config.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../hubs/data/hub_models.dart';
 import '../../hubs/data/hub_providers.dart';
+import '../../analytics/data/analytics_models.dart' show AnalyticsQuery;
+import 'fleet_dashboard_models.dart';
 import 'fleet_flight.dart';
 import 'fleet_models.dart';
 import 'fleet_repository.dart';
@@ -184,3 +186,9 @@ final fleetFlightsProvider = FutureProvider<List<FleetFlight>>((ref) async {
   );
   return [for (final list in lists) ...list];
 });
+
+/// El tablero del operador (`GET /fleet/dashboard`) para un periodo.
+final fleetDashboardProvider = FutureProvider.autoDispose
+    .family<FleetDashboard, AnalyticsQuery>((ref, query) {
+      return ref.watch(fleetRepositoryProvider).dashboard(query);
+    });

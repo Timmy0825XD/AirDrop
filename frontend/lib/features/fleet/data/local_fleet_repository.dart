@@ -5,6 +5,8 @@ import '../../auth/data/auth_models.dart';
 import '../../auth/data/local/local_auth_rules.dart';
 import '../../auth/data/local/local_fixtures.dart';
 import '../../hubs/data/hub_repository.dart';
+import '../../analytics/data/analytics_models.dart' show AnalyticsQuery;
+import 'fleet_dashboard_models.dart';
 import 'fleet_flight.dart';
 import 'fleet_map_models.dart';
 import 'fleet_models.dart';
@@ -111,6 +113,29 @@ class LocalFleetRepository implements FleetRepository {
               total: _count(hub.id, (_) => true),
             ),
       ],
+    );
+  }
+
+  /// Sin backend no hay vuelos ni incidentes guardados: el tablero local
+  /// dice cómo está la flota hoy (disponible, en misión, en taller) y
+  /// cuántos drones piden revisión.
+  @override
+  Future<FleetDashboard> dashboard(AnalyticsQuery query) async {
+    final user = await _requireActiveAccount();
+    final mine = _drones.where(
+      (d) =>
+          user.hubIds.contains(d.hubId) &&
+          (query.hubId == null || d.hubId == query.hubId),
+    );
+    final total = mine.isEmpty ? 1 : mine.length;
+    double percent(bool Function(DroneStatus) test) =>
+        mine.where((d) => test(d.status)).length * 100 / total;
+    return FleetDashboard(
+      availablePercent: percent((s) => s == DroneStatus.available),
+      inMissionPercent: percent((s) => s.isInMission),
+      inShopPercent: percent((s) => s.isOutOfFleet),
+      maintenanceDue: mine.where((d) => d.maintenanceDue).length,
+      maintenanceOverdue: mine.where((d) => d.maintenanceOverdue).length,
     );
   }
 
