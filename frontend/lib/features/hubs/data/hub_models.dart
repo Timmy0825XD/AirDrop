@@ -60,6 +60,7 @@ class Hub {
     required this.status,
     this.contactEmail,
     this.createdAt,
+    this.powerOutageUntil,
   });
 
   factory Hub.fromJson(Map<String, dynamic> json) {
@@ -74,6 +75,7 @@ class Hub {
       contactEmail: json['contactEmail'] as String?,
       status: HubStatus.fromJson(json['status'] as String),
       createdAt: DateTime.tryParse('${json['createdAt']}'),
+      powerOutageUntil: DateTime.tryParse('${json['powerOutageUntil']}'),
     );
   }
 
@@ -92,7 +94,17 @@ class Hub {
   final HubStatus status;
   final DateTime? createdAt;
 
+  /// RF-36: hasta cuándo está sin energía (la consola provoca el apagón);
+  /// `null` con energía. Puede venir una fecha que ya pasó: lo que manda
+  /// es [poweredAt].
+  final DateTime? powerOutageUntil;
+
   bool get isActive => status.isActive;
+
+  /// Con energía a la hora [now] (la simulada), igual que `isPowered` en
+  /// Nest. Sin energía no se autoriza ni se confirma carga (409).
+  bool poweredAt(DateTime now) =>
+      powerOutageUntil == null || !powerOutageUntil!.isAfter(now);
 }
 
 /// Body de `POST /hubs`. El teléfono llega ya normalizado a 10 dígitos

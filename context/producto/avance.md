@@ -48,7 +48,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 14 | El resto de la app al diseño del espacio aéreo | `style/app-espacio-aereo` | Hecha (PR pendiente) |
 | 15 | Bloqueantes de la auditoría 31 (Bloque 1) | `bugfix/hojas-sobre-la-barra`, `bugfix/estado-dron-grounded`, `feature/confirmar-carga-segura` | Hecha (PR #138, #139 y #140) |
 | 16 | La app al ritmo de la consola (Bloque 2 de la auditoría 31) | `feature/reloj-simulado`, `feature/incidentes-app`, `feature/fleet-mantenimiento-app` | Hecha (PR #141, #142 y #143) |
-| 17 | El despachador ante la consola (Bloque 3 de la auditoría 31) | `feature/declinar-urgencia`, `feature/central-sin-energia`, `feature/traza-decision` | En curso: paso 1 hecho |
+| 17 | El despachador ante la consola (Bloque 3 de la auditoría 31) | `feature/declinar-urgencia`, `feature/central-sin-energia`, `feature/traza-decision` | En curso: pasos 1 y 2 hechos (PR #144) |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -1053,9 +1053,26 @@ Lo que Nest ya le da al despachador (§13, §14 y §17 de
     no se escucha todavía: la cola se refresca cada 10 s.
   Prueba: `decline_test`. Revisado en web a 360×640 con datos locales
   (cola, detalle y declinar).
-- Paso 2 (`feature/central-sin-energia`): franja de alerta, Autorizar y
-  Confirmar carga deshabilitados con el motivo, avisos `hub_outage` y
-  `hub_power_restored`.
+- Paso 2 (`feature/central-sin-energia`), hecho el 2026-11-07: la consola
+  deja una central sin energía (RF-36) y Nest responde 409 a autorizar y a
+  confirmar carga, pero la app no lo decía antes del toque.
+  - `Hub.powerOutageUntil` y `Hub.poweredAt(now)` (como `isPowered` en
+    Nest, con la hora simulada: una fecha ya pasada no bloquea).
+    `hubOutageNote` arma el texto: «Central sin energía hasta las 15:40.
+    No puedes autorizar ni confirmar cargas.».
+  - El inicio del despachador y "Mi central" muestran la franja
+    (`HubOutageBanner`); la pastilla del inicio dice "Sin energía". El
+    inicio y el detalle vuelven a leer la central cada 10 s.
+  - En el detalle, Autorizar y "Revisar y cargar" quedan apagados con ese
+    motivo (`blockedNote`).
+  - Avisos `hub_outage` y `hub_power_restored` con su ícono; llevan a "Mi
+    central".
+  - `WarningBanner` (`core/widgets`) es la franja ámbar que comparten el
+    apagón y `StatusReasonBanner`.
+  - La bandeja "Pendiente de carga" no se bloquea: Nest suelta esos
+    pedidos al empezar el apagón y la bandeja queda vacía.
+  Prueba: `hub_outage_test`. Sin revisión en pantalla: los datos locales no
+  traen una central sin energía.
 - Paso 3 (`feature/traza-decision`): "¿Por qué este dron?"
   (`GET /orders/:id/decision`) y la escalera de ofertas.
 

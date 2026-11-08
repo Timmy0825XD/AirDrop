@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-11-07 21:29
+Generado: 2026-11-07 21:38
 
 ## analytics
 
@@ -358,7 +358,7 @@ Generado: 2026-11-07 21:29
 | Archivo | Lineas |
 | --- | --- |
 | `admin_home.dart` | 104 |
-| `dispatcher_home.dart` | 87 |
+| `dispatcher_home.dart` | 102 |
 | `fleet_operator_home.dart` | 126 |
 | `live_mission.dart` | 39 |
 | `requester_home.dart` | 166 |
@@ -370,7 +370,7 @@ Generado: 2026-11-07 21:29
 
 | Archivo | Lineas |
 | --- | --- |
-| `hub_detail_screen.dart` | 55 |
+| `hub_detail_screen.dart` | 62 |
 | `hub_fleet_screen.dart` | 77 |
 | `hub_form_screen.dart` | 126 |
 | `hubs_screen.dart` | 131 |
@@ -389,6 +389,7 @@ Generado: 2026-11-07 21:29
 | `hub_form_sheet.dart` | _ContactFields | 43 | ok |
 | `hub_form_values.dart` | HubFormValues | 84 | **>60** |
 | `hub_labels.dart` | HubLabels | 28 | ok |
+| `hub_outage.dart` | HubOutageBanner | 10 | ok |
 | `hub_tile.dart` | HubTile | 31 | ok |
 | `hub_tile.dart` | HubTypeTile | 21 | ok |
 | `hub_tile.dart` | _HubInfo | 37 | ok |
@@ -424,7 +425,7 @@ Generado: 2026-11-07 21:29
 
 | Archivo | Lineas |
 | --- | --- |
-| `notices_screen.dart` | 125 |
+| `notices_screen.dart` | 127 |
 
 ### Widgets
 
@@ -447,7 +448,7 @@ Generado: 2026-11-07 21:29
 | `hub_plan_form_screen.dart` | 120 |
 | `in_flight_screen.dart` | 36 |
 | `incoming_screen.dart` | 36 |
-| `order_detail_screen.dart` | 386 |
+| `order_detail_screen.dart` | 393 |
 | `order_history_screen.dart` | 41 |
 | `pending_load_screen.dart` | 71 |
 | `plan_detail_screen.dart` | 203 |
@@ -469,7 +470,7 @@ Generado: 2026-11-07 21:29
 | `authorize_section.dart` | _PrescriptionCheck | 35 | ok |
 | `busy_slots.dart` | (sin clases) | 31 | ok |
 | `cold_chain_banner.dart` | ColdChainBanner | 13 | ok |
-| `confirm_load_section.dart` | ConfirmLoadSection | 37 | ok |
+| `confirm_load_section.dart` | ConfirmLoadSection | 43 | ok |
 | `decline_button.dart` | DeclineButton | 22 | ok |
 | `decline_sheet.dart` | DeclineSheet | 7 | ok |
 | `decline_sheet.dart` | _DeclineSheetState | 57 | ok |
@@ -556,7 +557,7 @@ Generado: 2026-11-07 21:29
 | `schedule_range_fields.dart` | ScheduleRangeFields | 34 | ok |
 | `schedule_range_fields.dart` | _ScheduleEndFields | 56 | ok |
 | `schedule_values.dart` | ScheduleDraft | 90 | **>60** |
-| `status_reason_banner.dart` | StatusReasonBanner | 37 | ok |
+| `status_reason_banner.dart` | StatusReasonBanner | 13 | ok |
 | `watch_flight_button.dart` | WatchFlightButton | 18 | ok |
 
 ### Otros (presentation/ sin /widgets)
@@ -633,7 +634,7 @@ Generado: 2026-11-07 21:29
 ## Resumen
 
 - Pantallas (44 archivos): 44
-- Archivos de widgets: 173 - clases de widget medidas: 400
+- Archivos de widgets: 174 - clases de widget medidas: 401
 - Widgets sobre 60 lineas: 5
 
 Detalle de los que exceden 60 lineas (candidatos a partir):

@@ -12,6 +12,8 @@ import '../../../core/widgets/message_view.dart';
 import '../../../core/widgets/rise_in.dart';
 import '../../auth/data/auth_models.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../hubs/data/hub_providers.dart';
+import '../../hubs/presentation/widgets/hub_outage.dart';
 import '../../delivery/presentation/widgets/receive_order_button.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../data/order_models.dart';
@@ -249,7 +251,9 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
             // Sin socket en el detalle: se pide de nuevo cada 10 s, así el
             // estado no se queda en "Pendiente de carga" con el dron volando.
             child: AutoRefresh(
-              onTick: () => ref.invalidate(orderDetailProvider(widget.orderId)),
+              onTick: () => ref
+                ..invalidate(orderDetailProvider(widget.orderId))
+                ..invalidate(myHubProvider),
               child: switch (detail) {
                 AsyncValue(hasValue: true, hasError: false, :final value?) =>
                   _content(value),
@@ -332,6 +336,8 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   }
 
   List<Widget> _dispatcherActions(DispatcherPermissions can) {
+    // RF-36: sin energía Nest responde 409 a autorizar y a cargar.
+    final outage = hubOutageNote(ref.watch(myHubProvider).value);
     return [
       if (can.canDecide) ...[
         AuthorizeSection(
@@ -341,7 +347,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           onViewPrescription: can.canViewPrescription
               ? _viewPrescription
               : null,
-          blockedNote: dispatchWindowNote(can.order, simClock.now()),
+          blockedNote: outage ?? dispatchWindowNote(can.order, simClock.now()),
           busy: _busy,
           loading: _running == _Action.authorize,
           onAuthorize: () => _authorize(can),
@@ -374,6 +380,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           busy: _busy,
           loading: _running == _Action.confirmLoad,
           onConfirm: () => _confirmLoad(can.order),
+          blockedNote: outage,
         ),
       if (can.canReceive)
         ReceiveOrderButton(
