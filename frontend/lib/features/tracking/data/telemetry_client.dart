@@ -5,6 +5,9 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 import '../../../core/api_exception.dart';
 import '../../../core/clock/sim_clock.dart';
 import '../../../core/network/api_client.dart';
+import '../../fleet/data/fleet_events.dart';
+import '../../fleet/data/fleet_flight.dart';
+import '../../fleet/data/fleet_map_models.dart';
 import '../../orders/data/order_models.dart' show OrderStatus;
 import 'telemetry_models.dart';
 
@@ -126,10 +129,12 @@ class TelemetryClient {
     return events.stream;
   }
 
-  /// Sala de una central (`subscribe-hub`): el operador recibe las
-  /// alertas de **todos** sus vuelos (batería, falla y frío), una vez por
-  /// socket. Cancelar la suscripción del stream cierra el socket.
-  Stream<TelemetryEvent> watchHub(String hubId, {required String? token}) {
+  /// Sala de una central (`subscribe-hub`, §16 y §17): el operador recibe
+  /// cada tick de **todos** sus vuelos, sus cambios de estado, el fin de
+  /// cada vuelo, los incidentes y las alertas (batería, falla, frío y
+  /// viento). Un socket por central; cancelar el stream lo cierra. Si Nest
+  /// rechaza la suscripción (`error`), el socket se cierra sin reintentar.
+  Stream<FleetEvent> watchFleet(String hubId, {required String? token}) {
     final socket = io.io(
       '$baseUrl/telemetry',
       io.OptionBuilder()
@@ -139,27 +144,31 @@ class TelemetryClient {
           .disableAutoConnect()
           .build(),
     );
-    final events = StreamController<TelemetryEvent>(onCancel: socket.dispose);
-    void add(TelemetryEvent event) {
+    final events = StreamController<FleetEvent>(onCancel: socket.dispose);
+    void add(FleetEvent event) {
       if (!events.isClosed) events.add(event);
     }
 
     socket
       ..onConnect((_) {
-        add(const ConnectionChanged(connected: true));
         if (!events.isClosed) socket.emit('subscribe-hub', {'hubId': hubId});
       })
-      ..onDisconnect((_) => add(const ConnectionChanged(connected: false)))
+      ..on(
+        'hub-telemetry',
+        (data) => add(FleetTickReceived(FleetTick.fromJson(_map(data)))),
+      )
+      ..on('hub-flight-status', (_) => add(const FleetFlightsChanged()))
+      ..on('hub-flight-ended', (_) => add(const FleetFlightsChanged()))
+      ..on(
+        'hub-incident',
+        (data) =>
+            add(FleetIncidentReceived(FleetIncident.fromJson(_map(data)))),
+      )
       ..on(
         'alert',
-        (data) => add(AlertReceived(FlightAlert.fromJson(_map(data)))),
+        (data) => add(FleetAlertReceived(FlightAlert.fromJson(_map(data)))),
       )
-      ..on('error', (data) {
-        final message = data is Map ? data['message'] : null;
-        if (message is! String) return;
-        add(SubscriptionRefused(message));
-        socket.dispose();
-      })
+      ..on('error', (_) => socket.dispose())
       ..connect();
     return events.stream;
   }

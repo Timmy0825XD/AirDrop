@@ -11,9 +11,6 @@ import 'fleet_models.dart';
 import 'fleet_repository.dart';
 import 'local_fleet_repository.dart';
 import 'remote_fleet_repository.dart';
-import '../../tracking/data/tracking_providers.dart';
-import '../../tracking/data/telemetry_models.dart';
-import '../../tracking/data/telemetry_client.dart';
 
 final fleetRepositoryProvider = Provider<FleetRepository>((ref) {
   // Otra cuenta, otro repositorio: lo cargado por la anterior se descarta.
@@ -175,17 +172,6 @@ final hubDronesProvider = FutureProvider.family<List<Drone>, String>((
   return ref.watch(fleetRepositoryProvider).listDrones(hubId);
 });
 
-/// Alertas en vivo de una central del operador (`subscribe-hub`). Un
-/// socket por central mientras la pantalla de vuelos esté abierta; al
-/// salir se cierra.
-final hubAlertsProvider = StreamProvider.autoDispose
-    .family<FlightAlert, String>((ref, hubId) async* {
-      final client = ref.read(telemetryClientProvider);
-      final token = await ref.read(tokenStoreProvider).read();
-      await for (final event in client.watchHub(hubId, token: token)) {
-        if (event is AlertReceived) yield event.alert;
-      }
-    });
 
 /// Vuelos en curso de **todas** las centrales del operador, para que siga
 /// el mapa de cada dron en misión y el contador de la barra no se quede

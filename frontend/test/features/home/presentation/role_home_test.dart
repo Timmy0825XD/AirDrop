@@ -9,6 +9,7 @@ import 'package:frontend/features/auth/data/local/local_auth_repository.dart';
 import 'package:frontend/features/auth/presentation/auth_controller.dart';
 import 'package:frontend/features/fleet/data/fleet_flight.dart';
 import 'package:frontend/features/fleet/data/fleet_models.dart';
+import 'package:frontend/features/fleet/data/fleet_map_models.dart';
 import 'package:frontend/features/fleet/data/fleet_providers.dart';
 import 'package:frontend/features/fleet/data/fleet_repository.dart';
 import 'package:frontend/features/fleet/presentation/fleet_screen.dart';
@@ -222,6 +223,9 @@ class FakeFleetRepository implements FleetRepository {
 
   @override
   Future<List<MaintenancePeriod>> listMaintenance(String id) async => const [];
+
+  @override
+  Future<FleetMap> fleetMap() async => const FleetMap();
 }
 
 const InventoryItem _inventoryItem = InventoryItem(

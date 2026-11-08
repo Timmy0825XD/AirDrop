@@ -105,8 +105,8 @@ class RoleTabs {
       paths: const ['/home', '/fleet', '/geofences', '/profile'],
       centerPath: '/fleet/flights',
       center: NavCenterAction(
-        icon: Icons.near_me_rounded,
-        label: 'Vuelos en curso',
+        icon: Icons.radar_rounded,
+        label: 'Mapa en vivo',
         badge: flying,
         onPressed: () => context.go('/fleet/flights'),
       ),

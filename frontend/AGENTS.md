@@ -227,7 +227,7 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
 | --- | --- | --- |
 | Solicitante | Inicio · Pedidos (`/orders/mine`) · Planes (`/orders/plans`) · Perfil | Pedir urgencia (`push /orders/emergency`) |
 | Despachador | Inicio · Agenda (`/orders/agenda`) · Inventario · Más (`/more`) | Cola de urgencias (`go /orders/queue`, con contador) |
-| Operador de flota | Inicio · Flota · Geovallas · Perfil | Vuelos en curso (`go /fleet/flights`, con contador); "Nuevo dron" queda en Flota |
+| Operador de flota | Inicio · Flota · Geovallas · Perfil | Mapa en vivo (`go /fleet/flights`, con contador de drones en misión); "Nuevo dron" queda en Flota |
 | Administrador | Resumen · Centrales · Cuentas · Perfil | Hoja para crear central o cuenta (`showAdminCreateSheet`) |
 
 - En un destino la barra se ve; en un detalle o formulario se desliza hacia abajo y se encoge, igual que al bajar en una lista (`UserScrollNotification`). Al subir vuelve.
@@ -299,15 +299,18 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
   mapa, con `leg: return` o el pedido entregado, devuelto o de regreso, no
   se pinta el dron ni la telemetría; solo el aviso (`FlightNotice` con
   `showReturn: false`). El despachador y el operador sí lo ven.
-- El operador ve el mapa de sus drones en misión desde "Vuelos en curso"
-  (`FleetFlightsScreen`, `GET /fleet/flights?hubId=`, `fleetFlightsProvider`).
-  Nest no le deja leer `GET /orders/:id`, así que su mapa sigue al dron sin
-  la ruta dibujada (pendiente del backend). Esa pantalla abre un socket con
-  `subscribe-hub` (`TelemetryClient.watchHub`, `hubAlertsProvider`) por
-  cada central: cada alerta de batería, falla o frío sale en un aviso con
-  "Ver vuelo". La lista, el contador de la barra y el inicio del operador
-  (`operatorDronesProvider`) suman **todas** sus centrales (una consulta por
-  central), no solo la elegida en Flota.
+- El operador tiene el **mapa en vivo** (`FleetMapScreen`, en
+  `/fleet/flights`, el botón del centro): `GET /fleet/map` (sus centrales
+  con el conteo de la flota, las geovallas y los vuelos con su ruta) y un
+  socket por central (`TelemetryClient.watchFleet`, `subscribe-hub`) que
+  mueve cada dron (`hub-telemetry`), vuelve a pedir el mapa con
+  `hub-flight-status`, `hub-flight-ended` o un vuelo nuevo, marca dónde bajó
+  un dron (`hub-incident`) y avisa las alertas con "Ver vuelo". Todo vive en
+  `fleetMapProvider` (`fleet_map_providers.dart`); con datos locales no
+  abre socket. Tocar un dron abre su ficha (`showDroneFacts`, sin nada del
+  pedido); tocar una tarjeta de la hoja, su vuelo (`/tracking/:orderId`).
+  El contador del botón y el inicio del operador (`fleetFlightsProvider`,
+  `operatorDronesProvider`) suman **todas** sus centrales.
 - Con `linkLost` (RF-34) la posición es estimada: `FlightLiveBar` dice "Sin enlace · posición estimada" en ámbar y el dron se dibuja tenue.
 - La telemetría trae `leg`: `outbound` (ida) o `return` (`FlightLeg.back`,
   el regreso a su central: con el paquete si nadie recibió, o vacío tras
