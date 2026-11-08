@@ -131,7 +131,7 @@ class _IdentityFields extends StatelessWidget {
       children: [
         AuthField(
           label: 'Nombre completo',
-          hint: 'Camila Gutiérrez',
+          hint: 'Ej.: Camila Gutiérrez',
           controller: values.name,
           maxLength: FieldLimits.fullName,
           errorText: errors[UserInput.name],
@@ -163,7 +163,7 @@ class _ContactRow extends StatelessWidget {
         Expanded(
           child: AuthField(
             label: 'Correo',
-            hint: 'nombre@central.co',
+            hint: 'Ej.: nombre@central.co',
             controller: values.email,
             keyboardType: TextInputType.emailAddress,
             maxLength: FieldLimits.email,

@@ -54,11 +54,12 @@ class AuthField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        _FieldLabel(label: label, trailing: trailing),
+        // El lector de pantalla lee la etiqueta en el campo, no aparte.
+        ExcludeSemantics(child: _FieldLabel(label: label, trailing: trailing)),
         const SizedBox(height: 8),
         ShakeOnError(
           trigger: errorText == null ? 0 : shakeCount,
-          child: _AuthInput(field: this),
+          child: Semantics(label: label, child: _AuthInput(field: this)),
         ),
         AuthFieldError(message: errorText),
       ],
@@ -139,14 +140,48 @@ class _AuthInput extends StatelessWidget {
 
 /// Sacude a su hijo en horizontal cada vez que cambia [trigger] (si no es
 /// 0). La sacudida se amortigua sola: rápida al inicio, quieta al final.
-class ShakeOnError extends StatelessWidget {
+///
+/// Además lleva el formulario hasta el campo: si el error quedó fuera de
+/// la pantalla, se ve. Con varios errores a la vez, va al primero.
+class ShakeOnError extends StatefulWidget {
   const ShakeOnError({super.key, required this.trigger, required this.child});
 
   final int trigger;
   final Widget child;
 
   @override
+  State<ShakeOnError> createState() => _ShakeOnErrorState();
+}
+
+class _ShakeOnErrorState extends State<ShakeOnError> {
+  /// Ya hay un campo con error llevándose el scroll en este cuadro.
+  static bool _scrollTaken = false;
+
+  @override
+  void didUpdateWidget(ShakeOnError old) {
+    super.didUpdateWidget(old);
+    if (widget.trigger == 0 || widget.trigger == old.trigger) return;
+    if (_scrollTaken) return;
+    // Los campos se actualizan de arriba abajo: el primero se lleva el scroll.
+    _scrollTaken = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollTaken = false;
+      if (!mounted) return;
+      Scrollable.ensureVisible(
+        context,
+        alignment: 0.2,
+        duration: MediaQuery.disableAnimationsOf(context)
+            ? Duration.zero
+            : const Duration(milliseconds: 320),
+        curve: Curves.fastOutSlowIn,
+      );
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final trigger = widget.trigger;
+    final child = widget.child;
     if (trigger == 0 || MediaQuery.disableAnimationsOf(context)) return child;
     return TweenAnimationBuilder<double>(
       key: ValueKey(trigger),

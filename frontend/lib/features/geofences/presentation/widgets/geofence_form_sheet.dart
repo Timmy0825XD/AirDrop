@@ -32,7 +32,7 @@ class GeofenceFormSheet extends StatelessWidget {
       children: [
         AuthField(
           label: 'Nombre',
-          hint: 'Aeropuerto Alfonso López',
+          hint: 'Ej.: Aeropuerto Alfonso López',
           controller: values.name,
           maxLength: FieldLimits.geofenceName,
           errorText: errors[GeofenceInput.name],
@@ -41,7 +41,7 @@ class GeofenceFormSheet extends StatelessWidget {
         const SizedBox(height: 16),
         AuthField(
           label: 'Motivo',
-          hint: 'Zona de aproximación de aviones',
+          hint: 'Ej.: Zona de aproximación de aviones',
           controller: values.reason,
           maxLength: FieldLimits.reason,
           errorText: errors[GeofenceInput.reason],

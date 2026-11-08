@@ -142,7 +142,7 @@ class _MaintenanceFields extends StatelessWidget {
       children: [
         AuthField(
           label: 'Motivo',
-          hint: 'Cambio de hélices',
+          hint: 'Ej.: Cambio de hélices',
           controller: reason,
           maxLength: FieldLimits.reason,
           errorText: errors.reason,

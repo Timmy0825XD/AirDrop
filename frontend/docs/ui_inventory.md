@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-11-08 15:28
+Generado: 2026-11-08 15:56
 
 ## analytics
 
@@ -67,12 +67,13 @@ Generado: 2026-11-08 15:28
 | `auth_curved_header.dart` | _CurvedBottomClipper | 15 | ok |
 | `auth_curved_header.dart` | _EdgePainter | 32 | ok |
 | `auth_curved_header.dart` | _TopVeil | 28 | ok |
-| `auth_date_field.dart` | AuthDateField | 40 | ok |
+| `auth_date_field.dart` | AuthDateField | 48 | ok |
 | `auth_date_field.dart` | _DateBox | 50 | ok |
-| `auth_field.dart` | AuthField | 58 | ok |
+| `auth_field.dart` | AuthField | 59 | ok |
 | `auth_field.dart` | _FieldLabel | 31 | ok |
-| `auth_field.dart` | _AuthInput | 41 | ok |
-| `auth_field.dart` | ShakeOnError | 25 | ok |
+| `auth_field.dart` | _AuthInput | 44 | ok |
+| `auth_field.dart` | ShakeOnError | 10 | ok |
+| `auth_field.dart` | _ShakeOnErrorState | 46 | ok |
 | `auth_field.dart` | AuthFieldError | 32 | ok |
 | `auth_field.dart` | _ErrorLine | 35 | ok |
 | `auth_field.dart` | AuthFieldNote | 20 | ok |
@@ -91,8 +92,9 @@ Generado: 2026-11-08 15:28
 | `auth_morph_button.dart` | AuthMorphButton | 60 | ok |
 | `auth_morph_button.dart` | _ButtonFace | 37 | ok |
 | `auth_morph_button.dart` | _DrawnCheck | 18 | ok |
-| `auth_picker_field.dart` | AuthPickerField | 54 | ok |
-| `auth_picker_field.dart` | _PickerBox | 59 | ok |
+| `auth_picker_field.dart` | AuthPickerField | 52 | ok |
+| `auth_picker_field.dart` | _LabeledPicker | 25 | ok |
+| `auth_picker_field.dart` | _PickerBox | 56 | ok |
 | `auth_picker_field.dart` | _PickerText | 28 | ok |
 | `auth_step_scaffold.dart` | AuthStepScaffold | 32 | ok |
 | `auth_step_scaffold.dart` | _AuthStepScaffoldState | 48 | ok |
@@ -654,7 +656,7 @@ Generado: 2026-11-08 15:28
 ## Resumen
 
 - Pantallas (44 archivos): 44
-- Archivos de widgets: 187 - clases de widget medidas: 418
+- Archivos de widgets: 187 - clases de widget medidas: 420
 - Widgets sobre 60 lineas: 5
 
 Detalle de los que exceden 60 lineas (candidatos a partir):

@@ -109,7 +109,7 @@ class DestinationFields extends StatelessWidget {
       children: [
         AuthField(
           label: 'Dirección',
-          hint: 'Calle 16 # 9-40, barrio Loperena',
+          hint: 'Ej.: Calle 16 # 9-40, barrio Loperena',
           controller: values.address,
           maxLength: FieldLimits.address,
           errorText: form.errors[RequesterInput.address],
@@ -148,7 +148,7 @@ class PlanScheduleFields extends StatelessWidget {
       children: [
         AuthField(
           label: 'Cantidad por entrega',
-          hint: '1',
+          hint: 'Ej.: 1',
           controller: form.values.quantity,
           keyboardType: TextInputType.number,
           maxLength: 6,

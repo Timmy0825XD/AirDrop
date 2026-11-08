@@ -34,7 +34,7 @@ class ForgotPasswordForm extends StatelessWidget {
           ignoring: !enabled,
           child: AuthField(
             label: 'Correo electrónico',
-            hint: 'nombre@correo.com',
+            hint: 'Ej.: nombre@correo.com',
             icon: Icons.mail_outline_rounded,
             controller: email,
             errorText: errorText,

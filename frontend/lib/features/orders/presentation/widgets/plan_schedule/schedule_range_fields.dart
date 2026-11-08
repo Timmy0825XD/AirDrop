@@ -86,7 +86,7 @@ class _ScheduleEndFields extends StatelessWidget {
         else
           AuthField(
             label: 'Número de entregas',
-            hint: '4',
+            hint: 'Ej.: 4',
             controller: draft.count,
             keyboardType: TextInputType.number,
             maxLength: 3,

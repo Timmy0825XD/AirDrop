@@ -37,7 +37,7 @@ class InventoryFormSheet extends StatelessWidget {
       children: [
         AuthField(
           label: 'Nombre del medicamento',
-          hint: 'Acetaminofén 500 mg',
+          hint: 'Ej.: Acetaminofén 500 mg',
           controller: values.name,
           maxLength: FieldLimits.medicationName,
           errorText: errors[InventoryInput.name],
@@ -76,7 +76,7 @@ class _LotAndQuantity extends StatelessWidget {
         Expanded(
           child: AuthField(
             label: 'Lote',
-            hint: 'ACT-500-26',
+            hint: 'Ej.: ACT-500-26',
             controller: s.values.lot,
             maxLength: FieldLimits.lotCode,
             errorText: s.errors[InventoryInput.lot],
@@ -87,7 +87,7 @@ class _LotAndQuantity extends StatelessWidget {
         Expanded(
           child: AuthField(
             label: 'Cantidad',
-            hint: '240',
+            hint: 'Ej.: 240',
             controller: s.values.quantity,
             keyboardType: TextInputType.number,
             errorText: s.errors[InventoryInput.quantity],
