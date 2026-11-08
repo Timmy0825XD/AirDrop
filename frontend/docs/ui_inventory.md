@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-11-07 22:03
+Generado: 2026-11-08 13:23
 
 ## analytics
 
@@ -250,13 +250,14 @@ Generado: 2026-11-07 22:03
 | --- | --- |
 | `drone_form_screen.dart` | 133 |
 | `drone_maintenance_screen.dart` | 67 |
-| `fleet_flights_screen.dart` | 109 |
+| `fleet_map_screen.dart` | 76 |
 | `fleet_screen.dart` | 263 |
 
 ### Widgets
 
 | Archivo | Widget/clase | Lineas | Estado |
 | --- | --- | --- | --- |
+| `drone_facts_sheet.dart` | (sin clases) | 66 | ok |
 | `drone_form_values.dart` | DroneFormValues | 28 | ok |
 | `drone_health.dart` | DroneHealth | 40 | ok |
 | `drone_health.dart` | _Battery | 25 | ok |
@@ -271,6 +272,13 @@ Generado: 2026-11-07 22:03
 | `drone_tile.dart` | _DroneInfo | 53 | ok |
 | `fleet_flight_card.dart` | FleetFlightCard | 49 | ok |
 | `fleet_hub_selector.dart` | FleetHubSelector | 34 | ok |
+| `fleet_live_map.dart` | FleetLiveMap | 37 | ok |
+| `fleet_map_layers.dart` | FleetGeofenceLayer | 25 | ok |
+| `fleet_map_layers.dart` | FleetRoutesLayer | 24 | ok |
+| `fleet_map_layers.dart` | FleetHubsLayer | 23 | ok |
+| `fleet_map_layers.dart` | FleetDronesLayer | 45 | ok |
+| `fleet_map_layers.dart` | FleetIncidentsLayer | 22 | ok |
+| `fleet_map_sheet.dart` | (sin clases) | 52 | ok |
 | `maintenance_period_tile.dart` | MaintenancePeriodTile | 58 | ok |
 | `maintenance_sheet.dart` | MaintenanceSheet | 14 | ok |
 | `maintenance_sheet.dart` | _MaintenanceSheetState | 59 | ok |
@@ -640,7 +648,7 @@ Generado: 2026-11-07 22:03
 ## Resumen
 
 - Pantallas (44 archivos): 44
-- Archivos de widgets: 178 - clases de widget medidas: 406
+- Archivos de widgets: 182 - clases de widget medidas: 412
 - Widgets sobre 60 lineas: 5
 
 Detalle de los que exceden 60 lineas (candidatos a partir):

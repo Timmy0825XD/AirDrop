@@ -6,6 +6,7 @@ import '../../auth/data/local/local_auth_rules.dart';
 import '../../auth/data/local/local_fixtures.dart';
 import '../../hubs/data/hub_repository.dart';
 import 'fleet_flight.dart';
+import 'fleet_map_models.dart';
 import 'fleet_models.dart';
 import 'fleet_repository.dart';
 
@@ -87,6 +88,34 @@ class LocalFleetRepository implements FleetRepository {
   Future<List<DroneModel>> listModels() async {
     return List<DroneModel>.unmodifiable(_models);
   }
+
+  /// Sus centrales con el conteo de la flota local; sin backend no hay
+  /// vuelos ni geovallas que pintar.
+  @override
+  Future<FleetMap> fleetMap() async {
+    final user = await _requireActiveAccount();
+    final hubs = await hubRepository.list();
+    return FleetMap(
+      hubs: [
+        for (final hub in hubs)
+          if (user.hubIds.contains(hub.id))
+            FleetMapHub(
+              id: hub.id,
+              name: hub.name,
+              latitude: hub.latitude,
+              longitude: hub.longitude,
+              active: hub.isActive,
+              available: _count(hub.id, (s) => s == DroneStatus.available),
+              inMission: _count(hub.id, (s) => s.isInMission),
+              inShop: _count(hub.id, (s) => s.isOutOfFleet),
+              total: _count(hub.id, (_) => true),
+            ),
+      ],
+    );
+  }
+
+  int _count(String hubId, bool Function(DroneStatus) test) =>
+      _drones.where((d) => d.hubId == hubId && test(d.status)).length;
 
   /// Sin backend no hay simulación de vuelo: la lista local va vacía.
   @override

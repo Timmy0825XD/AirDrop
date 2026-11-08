@@ -14,7 +14,7 @@ import '../features/auth/presentation/verify_otp_screen.dart';
 import '../features/delivery/presentation/receive_order_screen.dart';
 import '../features/fleet/presentation/drone_form_screen.dart';
 import '../features/fleet/presentation/drone_maintenance_screen.dart';
-import '../features/fleet/presentation/fleet_flights_screen.dart';
+import '../features/fleet/presentation/fleet_map_screen.dart';
 import '../features/fleet/presentation/fleet_screen.dart';
 import '../features/geofences/presentation/geofence_form_screen.dart';
 import '../features/geofences/presentation/geofences_screen.dart';
@@ -298,7 +298,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/fleet/flights',
-            builder: (_, _) => const FleetFlightsScreen(),
+            builder: (_, _) => const FleetMapScreen(),
           ),
           GoRoute(
             path: '/fleet/:id/maintenance',

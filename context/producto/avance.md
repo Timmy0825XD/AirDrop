@@ -48,7 +48,8 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 14 | El resto de la app al diseño del espacio aéreo | `style/app-espacio-aereo` | Hecha (PR pendiente) |
 | 15 | Bloqueantes de la auditoría 31 (Bloque 1) | `bugfix/hojas-sobre-la-barra`, `bugfix/estado-dron-grounded`, `feature/confirmar-carga-segura` | Hecha (PR #138, #139 y #140) |
 | 16 | La app al ritmo de la consola (Bloque 2 de la auditoría 31) | `feature/reloj-simulado`, `feature/incidentes-app`, `feature/fleet-mantenimiento-app` | Hecha (PR #141, #142 y #143) |
-| 17 | El despachador ante la consola (Bloque 3 de la auditoría 31) | `feature/declinar-urgencia`, `feature/central-sin-energia`, `feature/traza-decision` | Hecha (PR #144, #145 y PR pendiente) |
+| 17 | El despachador ante la consola (Bloque 3 de la auditoría 31) | `feature/declinar-urgencia`, `feature/central-sin-energia`, `feature/traza-decision` | Hecha (PR #144, #145 y #146) |
+| 18 | Operador y administrador (Bloque 4 de la auditoría 31) | `feature/fleet-mapa-operador`, `feature/fleet-tablero`, `feature/metricas-incidentes` | En curso: paso 1 hecho |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -1093,6 +1094,44 @@ Lo que Nest ya le da al despachador (§13, §14 y §17 de
   web con datos locales (despachador, pedido pendiente de carga).
 
 Cierre: `flutter analyze` sin issues y `flutter test` en verde (263).
+
+## Fase 18 — Operador y administrador (Bloque 4)
+
+Lo que Nest ya le da al operador y al administrador (§16 y §17 de
+`pendientes-backend.md`). Una rama por paso desde `develop`.
+
+- Paso 1 (`feature/fleet-mapa-operador`), hecho el 2026-11-08: el botón del
+  centro del operador abría "Vuelos en curso", una lista casi siempre vacía
+  y sin mapa. Ahora abre el **mapa en vivo** (`FleetMapScreen`, misma ruta
+  `/fleet/flights`, botón "Mapa en vivo" con el radar).
+  - `GET /fleet/map` (`FleetMap`: centrales con su flota, geovallas y
+    vuelos). `FleetFlight` lee además posición, altitud, velocidad, carga,
+    latencia, `linkLost` y el corredor de ida y de regreso.
+  - Un socket por central (`TelemetryClient.watchFleet`, reemplaza a
+    `watchHub` y a `hubAlertsProvider`): `hub-telemetry` mueve el dron sin
+    volver a pedir el mapa; `hub-flight-status`, `hub-flight-ended` o un
+    vuelo que el mapa no tenía lo vuelven a pedir; `hub-incident` marca
+    dónde bajó el dron y sale arriba de la hoja con el protocolo y la hora
+    límite del rescate; `alert` sale en un aviso con "Ver vuelo". Todo en
+    `fleetMapProvider`. Con datos locales no hay socket (antes intentaba
+    conectarse igual).
+  - El mapa: las centrales, las geovallas en rojo, el corredor que vuela
+    cada dron (la ida en el acento, el regreso en el color de información)
+    y cada dron apuntando a su rumbo, tenue sin enlace. Tocar un dron abre
+    su ficha: fase, tramo, llegada, batería, altitud, velocidad, carga, frío
+    y latencia, **sin** destinatario, dirección ni medicamento. La hoja: los
+    incidentes abiertos, cada central con "3 drones · 1 en misión · 1 en
+    taller" y las tarjetas de los vuelos (tocar una abre su vuelo).
+  - No se hizo aquí: el borde punteado de las geovallas temporales (el mapa
+    de Nest no manda `expiresAt`; va con la lista de geovallas en el
+    Bloque 5) ni el selector de central (el mapa trae todas a la vez).
+  Prueba: `fleet_map_test`. Revisado en web a 360×640 con datos locales
+  (sin vuelos: la central y la hoja; sin errores en la consola). Falta
+  verlo con vuelos reales y la consola.
+- Paso 2 (`feature/fleet-tablero`): el inicio del operador como tablero
+  (`GET /fleet/dashboard`).
+- Paso 3 (`feature/metricas-incidentes`): `incidentRate` y `groundings` en
+  las métricas del administrador.
 
 ## Pendiente del backend
 
