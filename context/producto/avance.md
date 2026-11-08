@@ -49,7 +49,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 15 | Bloqueantes de la auditoría 31 (Bloque 1) | `bugfix/hojas-sobre-la-barra`, `bugfix/estado-dron-grounded`, `feature/confirmar-carga-segura` | Hecha (PR #138, #139 y #140) |
 | 16 | La app al ritmo de la consola (Bloque 2 de la auditoría 31) | `feature/reloj-simulado`, `feature/incidentes-app`, `feature/fleet-mantenimiento-app` | Hecha (PR #141, #142 y #143) |
 | 17 | El despachador ante la consola (Bloque 3 de la auditoría 31) | `feature/declinar-urgencia`, `feature/central-sin-energia`, `feature/traza-decision` | Hecha (PR #144, #145 y #146) |
-| 18 | Operador y administrador (Bloque 4 de la auditoría 31) | `feature/fleet-mapa-operador`, `feature/fleet-tablero`, `feature/metricas-incidentes` | En curso: pasos 1 y 2 hechos (PR #147) |
+| 18 | Operador y administrador (Bloque 4 de la auditoría 31) | `feature/fleet-mapa-operador`, `feature/fleet-tablero`, `feature/metricas-incidentes` | Hecha (PR #147, #148 y PR pendiente) |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -1146,8 +1146,18 @@ Lo que Nest ya le da al operador y al administrador (§16 y §17 de
   Prueba: `operator_dashboard_test` (con el JSON de §16, a 360 px); las
   pruebas del inicio bajan un poco más para tocar las tarjetas de abajo.
   Revisado en web a 360×640 con datos locales.
-- Paso 3 (`feature/metricas-incidentes`): `incidentRate` y `groundings` en
-  las métricas del administrador.
+- Paso 3 (`feature/metricas-incidentes`), hecho el 2026-11-08: `incidentRate`
+  ("Incidentes en vuelo por cada 100 misiones", meta 2 o menos, ámbar hasta
+  5) y `groundings` ("Aterrizajes de emergencia y drones perdidos", meta 0,
+  ámbar 1) en la tarjeta "Fallas" de `/analytics`. Con Nest ya salían
+  solos: la app pinta los grupos de KPI que manda el backend, con su
+  etiqueta, unidad, meta y semáforo. Faltaban en el repositorio local (por
+  eso la auditoría, hecha con datos locales, no los vio): se agregaron con
+  los mismos textos de `analytics.rules.ts`. Sin misiones en el periodo la
+  tasa dice "Sin datos". Prueba: `incident_kpis_test` (con el grupo de
+  Nest, a 360 px).
+
+Cierre: `flutter analyze` sin issues y `flutter test` en verde (272).
 
 ## Pendiente del backend
 
