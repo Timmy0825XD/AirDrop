@@ -13,6 +13,7 @@ import '../features/auth/presentation/reset_password_screen.dart';
 import '../features/auth/presentation/verify_otp_screen.dart';
 import '../features/delivery/presentation/receive_order_screen.dart';
 import '../features/fleet/presentation/drone_form_screen.dart';
+import '../features/fleet/presentation/drone_maintenance_screen.dart';
 import '../features/fleet/presentation/fleet_flights_screen.dart';
 import '../features/fleet/presentation/fleet_screen.dart';
 import '../features/geofences/presentation/geofence_form_screen.dart';
@@ -69,6 +70,8 @@ const _roleRoutes = <String, Set<UserRole>>{
   '/fleet': {UserRole.fleetOperator},
   '/fleet/new': {UserRole.fleetOperator},
   '/fleet/flights': {UserRole.fleetOperator},
+  // CU-17: el historial de taller de un dron de sus centrales.
+  '/fleet/:id/maintenance': {UserRole.fleetOperator},
   '/geofences': {UserRole.fleetOperator},
   '/geofences/new': {UserRole.fleetOperator},
   '/geofences/:id': {UserRole.fleetOperator},
@@ -117,6 +120,11 @@ const _fixedOrderRoutes = {
 /// `/orders/plans/<id>`.
 Set<UserRole>? _parameterizedRole(String location) {
   final segments = location.split('/');
+  if (segments.length == 4 &&
+      segments[1] == 'fleet' &&
+      segments[3] == 'maintenance') {
+    return _roleRoutes['/fleet/:id/maintenance'];
+  }
   if (segments.length == 4 && segments[1] == 'hubs') {
     return _roleRoutes['/hubs/:id/${segments[3]}'];
   }
@@ -291,6 +299,13 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/fleet/flights',
             builder: (_, _) => const FleetFlightsScreen(),
+          ),
+          GoRoute(
+            path: '/fleet/:id/maintenance',
+            builder: (_, state) => DroneMaintenanceScreen(
+              droneId: state.pathParameters['id'] ?? '',
+              identifier: state.uri.queryParameters['name'],
+            ),
           ),
           GoRoute(
             path: '/geofences',

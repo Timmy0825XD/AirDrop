@@ -127,6 +127,7 @@ class UpdateDroneStatusNotifier extends AsyncNotifier<Drone?> {
         .read(fleetRepositoryProvider)
         .updateStatus(id, request);
     ref.invalidate(dronesProvider);
+    ref.invalidate(maintenanceHistoryProvider(id));
     state = AsyncData(drone);
     return drone;
   }
@@ -137,8 +138,8 @@ final updateDroneStatusProvider =
       UpdateDroneStatusNotifier.new,
     );
 
-/// Registro de mantenimiento (`POST .../maintenance`): motivo y fecha
-/// obligatorios, el dron queda `out_of_service`.
+/// Enviar a mantenimiento (`POST .../maintenance`): motivo y fecha
+/// obligatorios, el dron queda `maintenance`.
 class RegisterMaintenanceNotifier extends AsyncNotifier<Drone?> {
   @override
   Future<Drone?> build() async => null;
@@ -148,6 +149,7 @@ class RegisterMaintenanceNotifier extends AsyncNotifier<Drone?> {
         .read(fleetRepositoryProvider)
         .registerMaintenance(id, request);
     ref.invalidate(dronesProvider);
+    ref.invalidate(maintenanceHistoryProvider(id));
     state = AsyncData(drone);
     return drone;
   }
@@ -157,6 +159,12 @@ final registerMaintenanceProvider =
     AsyncNotifierProvider<RegisterMaintenanceNotifier, Drone?>(
       RegisterMaintenanceNotifier.new,
     );
+
+/// El historial de taller de un dron (`GET /fleet/drones/:id/maintenance`).
+final maintenanceHistoryProvider = FutureProvider.autoDispose
+    .family<List<MaintenancePeriod>, String>((ref, droneId) {
+      return ref.watch(fleetRepositoryProvider).listMaintenance(droneId);
+    });
 
 /// La flota de una central cualquiera, para el administrador (solo
 /// lectura; `GET /fleet/drones?hubId=`).

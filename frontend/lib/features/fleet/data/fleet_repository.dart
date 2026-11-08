@@ -25,12 +25,16 @@ abstract class FleetRepository {
   /// `in_mission` y falla con `409` si el dron ya está en misión.
   Future<Drone> updateStatus(String id, UpdateDroneStatusRequest request);
 
-  /// `POST /fleet/drones/:id/maintenance` — registrar mantenimiento con
-  /// motivo y fecha obligatorios; el dron queda `out_of_service`.
+  /// `POST /fleet/drones/:id/maintenance` — enviar a mantenimiento con
+  /// motivo y fecha obligatorios; el dron queda `maintenance`.
   Future<Drone> registerMaintenance(
     String id,
     RegisterMaintenanceRequest request,
   );
+
+  /// `GET /fleet/drones/:id/maintenance` — el historial de taller del dron,
+  /// del periodo más reciente al más viejo.
+  Future<List<MaintenancePeriod>> listMaintenance(String id);
 
   /// `GET /fleet/flights?hubId=` — drones en misión de la central con su
   /// pedido y la última telemetría. De aquí sale el pedido para abrir el

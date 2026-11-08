@@ -18,6 +18,11 @@ import '../../data/notice_models.dart';
     NoticeKind.deliverySkipped => (Icons.event_busy_outlined, palette.danger),
     NoticeKind.departed => (Icons.flight_takeoff_rounded, palette.success),
     NoticeKind.deliveryMissed => (Icons.timer_off_outlined, palette.danger),
+    NoticeKind.maintenanceDue => (Icons.build_outlined, palette.warning),
+    NoticeKind.maintenanceOverdue => (
+      Icons.build_circle_outlined,
+      palette.danger,
+    ),
     NoticeKind.other => (Icons.notifications_none_rounded, primary),
   };
 }

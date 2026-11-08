@@ -42,16 +42,27 @@ void main() {
     expect(DroneStatusChip.toneOf(DroneStatus.outOfService), PillTone.negative);
   });
 
-  testWidgets('registrar mantenimiento sin fecha pide elegirla', (
-    tester,
-  ) async {
-    await _pump(tester, const MaintenanceSheet(mandatory: true));
+  testWidgets('enviar a mantenimiento sin fecha pide elegirla', (tester) async {
+    await _pump(tester, const MaintenanceSheet(withDate: true));
 
     await tester.enterText(find.byType(TextField), 'Cambio de hélices');
-    await tester.tap(find.text('Registrar'));
+    await tester.tap(find.text('Enviar'));
     await tester.pumpAndSettle();
 
     expect(find.text('Elige la fecha estimada.'), findsOneWidget);
     expect(find.text('AAAA-MM-DD'), findsNothing);
+  });
+
+  testWidgets('fuera de servicio pide solo el motivo, sin fecha', (
+    tester,
+  ) async {
+    await _pump(tester, const MaintenanceSheet(withDate: false));
+
+    expect(find.text('Dejar fuera de servicio'), findsOneWidget);
+    expect(find.text('FECHA ESTIMADA'), findsNothing);
+    await tester.tap(find.text('Dejar fuera'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Elige la fecha estimada.'), findsNothing);
   });
 }

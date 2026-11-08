@@ -5,6 +5,7 @@ import '../../../../core/widgets/status_card.dart';
 import '../../../../core/widgets/tone_tile.dart';
 import '../../../auth/presentation/widgets/drone_glyph.dart';
 import '../../data/fleet_models.dart';
+import 'drone_health.dart';
 import 'drone_status_chip.dart';
 
 /// Tarjeta de un dron: el dron dibujado, identificador, modelo y, si los
@@ -42,6 +43,7 @@ class DroneTile extends StatelessWidget {
       ),
       body: _DroneInfo(drone: drone, modelName: modelName),
       status: DroneStatusChip(status: drone.status),
+      footer: DroneHealth(drone: drone),
       action: onActions == null
           ? Text(_lockedLabel(drone.status), style: theme.textTheme.labelSmall)
           : RowActionButton(label: 'Gestionar', onPressed: onActions!),
@@ -103,7 +105,12 @@ class _DroneInfo extends StatelessWidget {
         ),
         if (note.isNotEmpty) ...[
           const SizedBox(height: 3),
-          Text(note, style: muted),
+          Text(
+            note,
+            style: muted,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
         ],
       ],
     );

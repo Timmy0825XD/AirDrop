@@ -102,8 +102,10 @@ class DroneModel {
 
 /// Dron. `FleetService.toPublicDrone`: `id`, `identifier`,
 /// `droneModelId`, `hubId`, `status`, `maintenanceReason`,
-/// `maintenanceUntil` y `createdAt`. El modelo viene **suelo**, sin el
-/// nombre: la UI lo resuelve contra [DroneModel].
+/// `maintenanceUntil` y `createdAt`; desde la rotación (§15) y el
+/// mantenimiento (§16), la batería, el último vuelo y el contador de
+/// revisión. El modelo viene **suelo**, sin el nombre: la UI lo resuelve
+/// contra [DroneModel].
 class Drone {
   const Drone({
     required this.id,
@@ -116,6 +118,12 @@ class Drone {
     this.createdAt,
     this.activeOrderId,
     this.phase,
+    this.batteryPercent,
+    this.lastFlightEndedAt,
+    this.flightsSinceMaintenance = 0,
+    this.maintenanceCycles,
+    this.maintenanceDue = false,
+    this.maintenanceOverdue = false,
   });
 
   factory Drone.fromJson(Map<String, dynamic> json) {
@@ -132,6 +140,13 @@ class Drone {
       phase: json['phase'] is String
           ? FlightPhase.fromJson(json['phase'] as String)
           : null,
+      batteryPercent: _asDoubleOrNull(json['batteryPercent']),
+      lastFlightEndedAt: DateTime.tryParse('${json['lastFlightEndedAt']}'),
+      flightsSinceMaintenance:
+          (json['flightsSinceMaintenance'] as num?)?.toInt() ?? 0,
+      maintenanceCycles: (json['maintenanceCycles'] as num?)?.toInt(),
+      maintenanceDue: json['maintenanceDue'] == true,
+      maintenanceOverdue: json['maintenanceOverdue'] == true,
     );
   }
 
@@ -140,6 +155,24 @@ class Drone {
   final String droneModelId;
   final String hubId;
   final DroneStatus status;
+
+  /// Batería ahora, con lo que recargó en tierra (§15); `null` si Nest no
+  /// la manda (la vista del administrador o una versión vieja).
+  final double? batteryPercent;
+
+  /// Cuándo volvió de su último vuelo; `null` si nunca ha volado.
+  final DateTime? lastFlightEndedAt;
+
+  /// Vuelos desde la última revisión y cada cuántos toca (CU-17).
+  final int flightsSinceMaintenance;
+  final int? maintenanceCycles;
+
+  /// Ya le toca revisión: sigue volando, pero hay que programarla.
+  final bool maintenanceDue;
+
+  /// Sigue en mantenimiento y la fecha estimada ya pasó (no se libera
+  /// solo: lo libera el operador o mueve la fecha).
+  final bool maintenanceOverdue;
 
   /// `null` cuando el dron nunca entró en mantenimiento.
   final String? maintenanceReason;
@@ -221,7 +254,7 @@ class UpdateDroneStatusRequest {
 }
 
 /// Body de `POST /fleet/drones/:id/maintenance`. Aquí el motivo y la fecha
-/// son **obligatorios** y el dron queda `out_of_service`.
+/// son **obligatorios** y el dron queda `maintenance` (temporal).
 class RegisterMaintenanceRequest {
   const RegisterMaintenanceRequest({
     required this.reason,
@@ -243,4 +276,66 @@ double _asDouble(Object? value) {
     throw FormatException('Valor numérico no válido: $value');
   }
   return parsed;
+}
+
+double? _asDoubleOrNull(Object? value) =>
+    value == null ? null : double.tryParse('$value');
+
+/// Los dos periodos de taller de `GET /fleet/drones/:id/maintenance`.
+enum MaintenanceKind {
+  maintenance('maintenance', 'Mantenimiento'),
+  outOfService('out_of_service', 'Fuera de servicio');
+
+  const MaintenanceKind(this.apiValue, this.label);
+
+  final String apiValue;
+  final String label;
+
+  /// Uno que la app no conozca se muestra como mantenimiento: la fila no
+  /// debe tumbar el historial.
+  static MaintenanceKind fromJson(Object? value) => MaintenanceKind.values
+      .firstWhere((e) => e.apiValue == value, orElse: () => maintenance);
+}
+
+/// Un periodo del historial de taller (CU-17). Cada salida de la flota
+/// abre uno y volver a disponible lo cierra; viene del más reciente al
+/// más viejo.
+class MaintenancePeriod {
+  const MaintenancePeriod({
+    required this.id,
+    required this.kind,
+    required this.reason,
+    required this.flightsAtStart,
+    required this.startedAt,
+    this.estimatedEndDate,
+    this.closedAt,
+  });
+
+  factory MaintenancePeriod.fromJson(Map<String, dynamic> json) {
+    return MaintenancePeriod(
+      id: json['id'] as String,
+      kind: MaintenanceKind.fromJson(json['kind']),
+      reason: json['reason'] as String? ?? '',
+      flightsAtStart: (json['flightsAtStart'] as num?)?.toInt() ?? 0,
+      startedAt: DateTime.parse(json['startedAt'] as String),
+      estimatedEndDate: json['estimatedEndDate'] as String?,
+      closedAt: DateTime.tryParse('${json['closedAt']}'),
+    );
+  }
+
+  final String id;
+  final MaintenanceKind kind;
+  final String reason;
+
+  /// Cuántos vuelos llevaba desde la revisión anterior al entrar.
+  final int flightsAtStart;
+  final DateTime startedAt;
+
+  /// `AAAA-MM-DD`; solo en mantenimiento.
+  final String? estimatedEndDate;
+
+  /// `null` mientras siga abierto.
+  final DateTime? closedAt;
+
+  bool get isOpen => closedAt == null;
 }

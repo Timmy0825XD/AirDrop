@@ -219,6 +219,9 @@ class FakeFleetRepository implements FleetRepository {
     String id,
     RegisterMaintenanceRequest request,
   ) async => throw UnimplementedError();
+
+  @override
+  Future<List<MaintenancePeriod>> listMaintenance(String id) async => const [];
 }
 
 const InventoryItem _inventoryItem = InventoryItem(
