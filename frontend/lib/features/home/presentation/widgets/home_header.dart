@@ -11,7 +11,7 @@ String homeFirstName(String fullName) =>
     fullName.trim().split(RegExp(r'\s+')).first;
 
 /// El encabezado de un inicio, como la cabina de la app: arriba la marca
-/// (el dron y "AirDrop") con la campana, las iniciales y cerrar sesión;
+/// (el dron y "AirDrop") con la campana y las iniciales, que abren el perfil;
 /// debajo el rol en una pastilla, el saludo grande y una línea de contexto
 /// (la central, la ciudad).
 class HomeHeader extends StatelessWidget {
@@ -20,7 +20,7 @@ class HomeHeader extends StatelessWidget {
     required this.roleLabel,
     required this.fullName,
     required this.tagline,
-    required this.onSignOut,
+    required this.onProfile,
     this.onNotices,
     this.unreadNotices,
   });
@@ -28,7 +28,9 @@ class HomeHeader extends StatelessWidget {
   final String roleLabel;
   final String fullName;
   final String tagline;
-  final VoidCallback onSignOut;
+
+  /// Abre el perfil (tocar las iniciales). Cerrar sesión vive allá.
+  final VoidCallback onProfile;
 
   /// Abre la bandeja de avisos; sin él no hay campana.
   final VoidCallback? onNotices;
@@ -87,7 +89,7 @@ class _RoleRow extends StatelessWidget {
 }
 
 /// La marca a la izquierda y, a la derecha, la campana (si hay), las
-/// iniciales y cerrar sesión.
+/// iniciales, que abren el perfil.
 class _BrandRow extends StatelessWidget {
   const _BrandRow({required this.header});
 
@@ -112,51 +114,68 @@ class _BrandRow extends StatelessWidget {
           NoticeBell(unread: header.unreadNotices, onTap: open),
           const SizedBox(width: 6),
         ],
-        _Initials(name: header.fullName),
-        const SizedBox(width: 6),
-        IconButton.filledTonal(
-          tooltip: 'Cerrar sesión',
-          onPressed: header.onSignOut,
-          icon: const Icon(Icons.logout_rounded, size: 20),
-        ),
+        _Initials(name: header.fullName, onTap: header.onProfile),
       ],
     );
   }
 }
 
-/// Las iniciales del nombre sobre el acento en degradado.
+/// Las iniciales del nombre sobre el acento en degradado. Son un botón de
+/// 48 px que abre el perfil.
 class _Initials extends StatelessWidget {
-  const _Initials({required this.name});
+  const _Initials({required this.name, required this.onTap});
 
   final String name;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final parts = name.trim().split(RegExp(r'\s+'));
+    final initials = parts.take(2).map((p) => p.isEmpty ? '' : p[0]).join();
+    return Semantics(
+      button: true,
+      label: 'Mi perfil',
+      excludeSemantics: true,
+      child: InkResponse(
+        onTap: onTap,
+        radius: 28,
+        child: SizedBox.square(
+          dimension: 48,
+          child: Center(child: _InitialsBadge(initials: initials)),
+        ),
+      ),
+    );
+  }
+}
+
+class _InitialsBadge extends StatelessWidget {
+  const _InitialsBadge({required this.initials});
+
+  final String initials;
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    final parts = name.trim().split(RegExp(r'\s+'));
-    final initials = parts.take(2).map((p) => p.isEmpty ? '' : p[0]).join();
-    return ExcludeSemantics(
-      child: Container(
-        width: 40,
-        height: 40,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          gradient: palette.accent,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: palette.accentGradient.first.withValues(alpha: 0.3),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Text(
-          initials.toUpperCase(),
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-            color: palette.onAccent,
-            fontWeight: FontWeight.w700,
+    return Container(
+      width: 40,
+      height: 40,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        gradient: palette.accent,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: palette.accentGradient.first.withValues(alpha: 0.3),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
+        ],
+      ),
+      child: Text(
+        initials.toUpperCase(),
+        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+          color: palette.onAccent,
+          fontWeight: FontWeight.w700,
         ),
       ),
     );

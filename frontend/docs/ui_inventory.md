@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-11-08 16:46
+Generado: 2026-11-08 18:12
 
 ## analytics
 
@@ -309,7 +309,8 @@ Generado: 2026-11-08 16:46
 | `geofence_form_sheet.dart` | GeofenceFormSheet | 51 | ok |
 | `geofence_form_values.dart` | GeofenceFormValues | 60 | ok |
 | `geofence_polygon_preview.dart` | GeofencePolygonPreview | 50 | ok |
-| `geofence_tile.dart` | GeofenceTile | 59 | ok |
+| `geofence_tile.dart` | GeofenceTile | 46 | ok |
+| `geofence_tile.dart` | _GeofenceInfo | 43 | ok |
 
 ## home
 
@@ -317,7 +318,7 @@ Generado: 2026-11-08 16:46
 
 | Archivo | Lineas |
 | --- | --- |
-| `dispatcher_more_screen.dart` | 125 |
+| `dispatcher_more_screen.dart` | 140 |
 
 ### Widgets
 
@@ -331,12 +332,14 @@ Generado: 2026-11-08 16:46
 | `fleet_incidents_card.dart` | FleetIncidentsCard | 38 | ok |
 | `fleet_usage_card.dart` | FleetUsageCard | 45 | ok |
 | `fleet_usage_card.dart` | _StackedBar | 29 | ok |
+| `header_add_button.dart` | HeaderAddButton | 21 | ok |
 | `home_grid.dart` | HomeGrid | 23 | ok |
 | `home_grid.dart` | HomeLabel | 14 | ok |
-| `home_header.dart` | HomeHeader | 54 | ok |
+| `home_header.dart` | HomeHeader | 56 | ok |
 | `home_header.dart` | _RoleRow | 20 | ok |
-| `home_header.dart` | _BrandRow | 37 | ok |
-| `home_header.dart` | _Initials | 37 | ok |
+| `home_header.dart` | _BrandRow | 32 | ok |
+| `home_header.dart` | _Initials | 26 | ok |
+| `home_header.dart` | _InitialsBadge | 33 | ok |
 | `home_page.dart` | HomePage | 24 | ok |
 | `home_spotlight.dart` | HomeSpotlight | 42 | ok |
 | `home_spotlight.dart` | _RadarStage | 24 | ok |
@@ -367,17 +370,17 @@ Generado: 2026-11-08 16:46
 | `section_header.dart` | _Titles | 36 | ok |
 | `section_header.dart` | _FlightGrid | 29 | ok |
 | `section_header.dart` | _GridPainter | 32 | ok |
-| `sign_out.dart` | (sin clases) | 20 | ok |
+| `sign_out.dart` | (sin clases) | 33 | ok |
 
 ### Otros (presentation/ sin /widgets)
 
 | Archivo | Lineas |
 | --- | --- |
-| `admin_home.dart` | 104 |
-| `dispatcher_home.dart` | 102 |
-| `fleet_operator_home.dart` | 123 |
+| `admin_home.dart` | 103 |
+| `dispatcher_home.dart` | 101 |
+| `fleet_operator_home.dart` | 122 |
 | `live_mission.dart` | 47 |
-| `requester_home.dart` | 166 |
+| `requester_home.dart` | 165 |
 | `role_home.dart` | 71 |
 
 ## hubs
@@ -389,7 +392,7 @@ Generado: 2026-11-08 16:46
 | `hub_detail_screen.dart` | 62 |
 | `hub_fleet_screen.dart` | 77 |
 | `hub_form_screen.dart` | 126 |
-| `hubs_screen.dart` | 131 |
+| `hubs_screen.dart` | 127 |
 
 ### Widgets
 
@@ -406,7 +409,7 @@ Generado: 2026-11-08 16:46
 | `hub_form_values.dart` | HubFormValues | 84 | **>60** |
 | `hub_labels.dart` | HubLabels | 28 | ok |
 | `hub_outage.dart` | HubOutageBanner | 10 | ok |
-| `hub_tile.dart` | HubTile | 31 | ok |
+| `hub_tile.dart` | HubTile | 38 | ok |
 | `hub_tile.dart` | HubTypeTile | 21 | ok |
 | `hub_tile.dart` | _HubInfo | 37 | ok |
 | `hub_type_chips.dart` | HubTypeChips | 34 | ok |
@@ -431,7 +434,7 @@ Generado: 2026-11-08 16:46
 | `inventory_form_values.dart` | InventoryFormValues | 99 | **>60** |
 | `inventory_kind_fields.dart` | InventoryKindFields | 45 | ok |
 | `inventory_kind_fields.dart` | _ColdChainToggle | 40 | ok |
-| `inventory_tile.dart` | InventoryTile | 50 | ok |
+| `inventory_tile.dart` | InventoryTile | 55 | ok |
 | `inventory_tile.dart` | _ItemIcon | 21 | ok |
 | `inventory_tile.dart` | _ItemInfo | 42 | ok |
 
@@ -470,7 +473,7 @@ Generado: 2026-11-08 16:46
 | `plan_detail_screen.dart` | 203 |
 | `plan_form_screen.dart` | 97 |
 | `plan_schedule_screen.dart` | 158 |
-| `plans_screen.dart` | 32 |
+| `plans_screen.dart` | 39 |
 | `queue_screen.dart` | 74 |
 | `scheduled_screen.dart` | 83 |
 
@@ -627,7 +630,7 @@ Generado: 2026-11-08 16:46
 | Archivo | Lineas |
 | --- | --- |
 | `user_form_screen.dart` | 110 |
-| `users_screen.dart` | 142 |
+| `users_screen.dart` | 138 |
 
 ### Widgets
 
@@ -656,7 +659,7 @@ Generado: 2026-11-08 16:46
 ## Resumen
 
 - Pantallas (44 archivos): 44
-- Archivos de widgets: 187 - clases de widget medidas: 420
+- Archivos de widgets: 188 - clases de widget medidas: 423
 - Widgets sobre 60 lineas: 5
 
 Detalle de los que exceden 60 lineas (candidatos a partir):

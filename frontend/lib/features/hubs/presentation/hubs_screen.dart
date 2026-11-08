@@ -53,11 +53,7 @@ class HubsScreen extends ConsumerWidget {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/hubs/new'),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Nueva central'),
-      ),
+      // Crear una central es el "+" del centro de la barra.
     );
   }
 }
@@ -83,7 +79,7 @@ class _HubList extends ConsumerWidget {
                   : 'Aún no hay centrales registradas.',
             )
           : ListView.separated(
-              padding: listPadding(context, fab: true),
+              padding: listPadding(context),
               itemCount: rows.length,
               separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, index) => RiseIn(

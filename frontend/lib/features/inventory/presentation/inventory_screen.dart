@@ -8,6 +8,7 @@ import '../../../core/widgets/list_padding.dart';
 import '../../../core/widgets/message_view.dart';
 import '../../../core/widgets/rise_in.dart';
 import '../../../core/widgets/status_pill.dart';
+import '../../home/presentation/widgets/header_add_button.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../data/inventory_models.dart';
 import '../data/inventory_providers.dart';
@@ -30,14 +31,13 @@ class InventoryScreen extends ConsumerWidget {
             title: 'Inventario',
             subtitle: rows == null ? 'Insumos de tu central' : _summary(rows),
             onBack: () => context.go('/home'),
+            trailing: HeaderAddButton(
+              label: 'Nuevo ítem',
+              onPressed: () => context.go('/inventory/new'),
+            ),
           ),
           const Expanded(child: _InventoryList()),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/inventory/new'),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Nuevo ítem'),
       ),
     );
   }
@@ -62,7 +62,7 @@ class _InventoryList extends ConsumerWidget {
         message: 'Aún no hay insumos en el inventario.',
       ),
       AsyncValue(hasValue: true, hasError: false, :final value?) => ListView.separated(
-        padding: listPadding(context, fab: true),
+        padding: listPadding(context),
         itemCount: value.length,
         separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, i) => RiseIn(

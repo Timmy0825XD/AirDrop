@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/colombian_phone.dart';
-import '../../../../core/widgets/row_action_button.dart';
+import '../../../../core/widgets/row_menu_button.dart';
 import '../../../../core/widgets/status_card.dart';
 import '../../../../core/widgets/status_pill.dart';
 import '../../../../core/widgets/tone_tile.dart';
@@ -9,7 +9,8 @@ import '../../data/hub_models.dart';
 import 'hub_labels.dart';
 
 /// Tarjeta del listado de centrales: ícono del tipo, nombre, tipo,
-/// dirección y celular, el estado y la acción de suspender o reactivar.
+/// dirección y teléfono, el estado y, en el menú `⋮`, suspender o
+/// reactivar (fuera de la fila, para no tocarlo sin querer).
 ///
 /// El botón nunca ofrece la acción que ya está aplicada: Nest responde 409
 /// si se repite (`Esta central ya está suspendida.`). Suspendida, la
@@ -33,10 +34,17 @@ class HubTile extends StatelessWidget {
           label: HubLabels.status(hub.status),
           tone: HubLabels.tone(hub.status),
         ),
-        action: RowActionButton(
-          label: hub.isActive ? 'Suspender' : 'Reactivar',
-          destructive: hub.isActive,
-          onPressed: onToggle,
+        action: RowMenuButton(
+          actions: [
+            RowMenuAction(
+              label: hub.isActive ? 'Suspender' : 'Reactivar',
+              icon: hub.isActive
+                  ? Icons.pause_circle_outline_rounded
+                  : Icons.play_circle_outline_rounded,
+              destructive: hub.isActive,
+              onSelected: onToggle,
+            ),
+          ],
         ),
       ),
     );

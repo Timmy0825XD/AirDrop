@@ -227,11 +227,11 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
 | --- | --- | --- |
 | Solicitante | Inicio · Pedidos (`/orders/mine`) · Planes (`/orders/plans`) · Perfil | Pedir urgencia (`push /orders/emergency`) |
 | Despachador | Inicio · Agenda (`/orders/agenda`) · Inventario · Más (`/more`) | Cola de urgencias (`go /orders/queue`, con contador) |
-| Operador de flota | Inicio · Flota · Geovallas · Perfil | Mapa en vivo (`go /fleet/flights`, con contador de drones en misión); "Nuevo dron" queda en Flota |
+| Operador de flota | Inicio · Flota · Geovallas · Perfil | Mapa en vivo (`go /fleet/flights`, con contador de drones en misión); "Nuevo dron" es el "+" del encabezado de Flota |
 | Administrador | Resumen · Centrales · Cuentas · Perfil | Hoja para crear central o cuenta (`showAdminCreateSheet`) |
 
 - En un destino la barra se ve; en un detalle o formulario se desliza hacia abajo y se encoge, igual que al bajar en una lista (`UserScrollNotification`). Al subir vuelve.
-- `RoleShell` suma el alto de la barra a `padding` y `viewPadding` de `MediaQuery`: los botones flotantes quedan por encima solos. Las listas toman ese `padding` con `listPadding(context, fab: ...)` (`core/widgets/list_padding.dart`); un `EdgeInsets` fijo deja el final detrás de la barra.
+- `RoleShell` suma el alto de la barra a `padding` y `viewPadding` de `MediaQuery`: los botones flotantes quedan por encima solos. Las listas toman ese `padding` con `listPadding(context)` (ya no hay botones flotantes: crear va en el encabezado o en el "+" del centro) (`core/widgets/list_padding.dart`); un `EdgeInsets` fijo deja el final detrás de la barra.
 - Toda hoja inferior se abre con `showAppSheet` (`core/widgets/app_sheet.dart`), nunca con `showModalBottomSheet` directo: va al navegador raíz, queda encima de la barra y su velo la bloquea. En el navegador del `ShellRoute` la hoja quedaba debajo de la barra y tapaba su botón. Adentro se cierra con el `context` de la hoja.
 - `NavScope.isTabRootOf(context)` dice si la pantalla es un destino: `SectionHeader` no muestra "volver" ahí.
 - "Agenda" abre `GET /orders/agenda` (franjas del día, "despegar antes de"); los programados, el histórico (`/orders/history`) y la cuarentena (`/inventory/quarantine`) están en "Más".
@@ -390,7 +390,9 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | Widget | Dónde | Para qué |
 | --- | --- | --- |
 | `SectionHeader` | `home/presentation/widgets` | Encabezado de trabajo: volver en vidrio (no en un destino de la barra), título grande (26, tracking cerrado), línea de contexto en dos líneas, `trailing` opcional y `bottom` debajo. Detrás, una trama de plano de vuelo con una luz del acento que se apaga hacia abajo (se pinta una vez). |
-| `signOut` | `home/presentation/widgets` | Cerrar sesión y volver al login, para todos los inicios. |
+| `signOut` | `home/presentation/widgets` | Pide confirmar (`showConfirmSheet`) y cierra la sesión. Solo lo llama el perfil: los inicios ya no tienen botón de salir. |
+| `HeaderAddButton` | `home/presentation/widgets` | El "+" de 48 px en el `trailing` del `SectionHeader` para crear (inventario, flota, geovallas). No hay botones flotantes; el administrador crea con el "+" del centro de la barra. |
+| `RowMenuButton` / `RowMenuAction` | `core/widgets` | El menú `⋮` de 48 px de una fila para lo que no se debe tocar sin querer (eliminar un insumo o una geovalla, suspender o reactivar una central); cada opción abre su confirmación. |
 | `StatusPill` / `PillTone` | `core/widgets` | Estado en pastilla con punto (positivo, atención, negativo, marca) y rebote al cambiar. `StatusPill.colorOf` da el color de cada tono. |
 | `GlassCard` | `core/widgets` | La pieza base: vidrio translúcido con borde fino (en oscuro, con luz arriba que se apaga hacia abajo); con `onTap` se hunde; `blur` solo sobre mapa o imagen; `strong` para paneles. |
 | `GlassIconButton` (`.back`) | `core/widgets` | Botón cuadrado de vidrio (volver, controles del mapa); `active` lo pinta con el acento. |
@@ -404,7 +406,7 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `SlideToLaunch` | `core/widgets` | Deslizar para confirmar (pedir urgencia y despegar al confirmar la carga): sigue el dedo, resiste en el borde, vuelve con resorte si no llega al 75 % y espera a `onLaunch`; si la pantalla sigue abierta, vuelve al inicio. Para el lector de pantalla es un botón. |
 | `showLoadCheckSheet` | `orders/presentation/widgets/pending_load` | Revisión antes de confirmar la carga (medicamento, nevera, fórmula, dron y destino) y "Desliza para despegar". La usan la bandeja "Pendiente de carga" y el detalle: un toque nunca lanza el vuelo. |
 | `DroneMarker` / `HubMarker` / `TargetMarker` / `PlacePin` | `core/widgets` | El dron de la marca apuntando a su rumbo (`heading`) con un halo que late; la central como cuadro con la cruz médica; el destino como un blanco; y el pin genérico (elegir un punto). |
-| `StatusCard` + `RowActionButton` | `core/widgets` | Tarjeta de lista con estado y acción a la derecha; `footer` opcional a todo el ancho debajo (la salud del dron). |
+| `StatusCard` + `RowActionButton` | `core/widgets` | Tarjeta de lista con estado y acción a la derecha (un botón o el `RowMenuButton`); `footer` opcional a todo el ancho debajo (la salud del dron). |
 | `DroneHealth` / `DroneMaintenanceScreen` | `fleet/presentation` | La salud del dron en su fila (batería, último vuelo, "42 / 50 vuelos", "Le toca revisión", "Mantenimiento vencido") y su historial de taller (`/fleet/:id/maintenance`). "Gestionar" ofrece disponible, mantenimiento (`POST`, con fecha), fuera de servicio (`PATCH`, sin fecha) e historial. |
 | `OperatorDashboard` (`FleetUsageCard`, `FleetHealthCard`, `FleetIncidentsCard`, `DashboardPeriod`) | `home/presentation/widgets/operator` | El tablero del inicio del operador (`GET /fleet/dashboard`, `fleetDashboardProvider`): uso (barra apilada, vuelos y km), salud (batería al volver, revisión y vencidos; lleva a la flota) e incidentes por tipo, día y dron, con 7, 30 o 90 días. |
 | `ToneTile` (`ToneTile.icon`) | `core/widgets` | El cuadro teñido con ícono (o el dron) al frente de cada tarjeta. |
@@ -413,14 +415,14 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `FormBottomSheet` | `core/widgets` | Hoja inferior con título, campos y botón de guardar (editar perfil, mantenimiento); deja el área segura y tiene scroll. |
 | `ChoicePill` | `core/widgets` | Chip elegible (relleno o teñido, con ícono o check). |
 | `SlidingSegmented` | `core/widgets` | Filtro con pastilla que se desliza (`null` = "Todas"). |
-| `showConfirmSheet` | `core/widgets` | Hoja inferior para confirmar suspender o reactivar. |
+| `showConfirmSheet` | `core/widgets` | Hoja inferior para confirmar suspender, reactivar, eliminar o cerrar sesión. |
 | `showAppSnack` / `showErrorSnack` / `GlassSnack` | `core/widgets/app_snack.dart` | El aviso de cualquier acción: pastilla de vidrio (desenfoque, tinte del tono y borde fino) con ícono, texto de Nest, acción opcional y una línea que se acorta mientras se ve. `SnackTone`: `success`, `error`, `info`, `warning`. Los errores de Nest van con `showErrorSnack`. |
 | `YesNoQuestion` | `core/widgets` | Pregunta de sí o no con dos chips (recibir un traslado, revisar un retorno). |
 | `FormSheetCard` | `core/widgets` | Tarjeta del formulario con la superficie de `AppSurfaces.sheet` y los campos de `AppSurfaces.fields`: la misma hoja del auth. |
 | `MessageView` | `core/widgets` | Lista vacía o error de Nest, centrado. |
 | `RiseIn` (`RiseIn.stagger`) / `PressScale` / `CountUpText` | `core/widgets` | Entrada en cascada, hundirse al tocar y números que cuentan. Respetan "reducir movimiento". |
-| `HomePage` / `HomeHeader` / `HomeSpotlight` / `HomeGrid` / `HomeLabel` / `QuickTile` | `home/presentation/widgets` | Los inicios: lista en cascada; encabezado (marca con el `DroneMark`, campana, iniciales y salir; debajo el rol, el saludo a 34 y el contexto); la cifra principal en una tarjeta con el dron sobre un `RadarSweep` y el número separado por una línea fina; cuadrículas de dos columnas; accesos con contador (atención con `urgent`) o candado con `onTap: null`. |
-| `DispatcherMoreScreen` / `showAdminCreateSheet` | `home/presentation` | "Más" del despachador en cuadrícula y la hoja del botón central del administrador. |
+| `HomePage` / `HomeHeader` / `HomeSpotlight` / `HomeGrid` / `HomeLabel` / `QuickTile` | `home/presentation/widgets` | Los inicios: lista en cascada; encabezado (marca con el `DroneMark`, campana e iniciales, que abren el perfil; debajo el rol, el saludo a 34 y el contexto); la cifra principal en una tarjeta con el dron sobre un `RadarSweep` y el número separado por una línea fina; cuadrículas de dos columnas; accesos con contador (atención con `urgent`) o candado con `onTap: null`. |
+| `DispatcherMoreScreen` / `showAdminCreateSheet` | `home/presentation` | "Más" del despachador en tres grupos (Pedidos · Pedir a otra central · Mi central) y la hoja del botón central del administrador. |
 | `SectionHeader.backOrHome` | `home/presentation/widgets` | Volver con `pop` si se llegó con `push`; si no, al inicio. Los detalles y el mapa se abren con `push`. |
 | `DetailSection` / `DetailLine` | `core/widgets` | Tarjeta con ícono teñido y rótulo, y filas "etiqueta … valor" (`child` reemplaza el texto del valor, p. ej. un `PhoneLink`). |
 | `PhoneLink` / `callPhone` | `core/widgets/phone_link.dart` | Teléfono con formato colombiano que se toca para llamar (`tel:+57…`, `url_launcher`), 48 px de alto; si el dispositivo no llama, avisa el número. |

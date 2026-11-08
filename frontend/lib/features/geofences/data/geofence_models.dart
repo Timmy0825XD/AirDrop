@@ -82,6 +82,7 @@ class Geofence {
     required this.polygon,
     this.createdByUserId,
     this.createdAt,
+    this.expiresAt,
   });
 
   factory Geofence.fromJson(Map<String, dynamic> json) {
@@ -92,6 +93,7 @@ class Geofence {
       polygon: GeoJsonPolygon.fromJson(_asMap(json['polygon'])),
       createdByUserId: json['createdByUserId'] as String?,
       createdAt: DateTime.tryParse('${json['createdAt']}'),
+      expiresAt: DateTime.tryParse('${json['expiresAt']}'),
     );
   }
 
@@ -101,6 +103,12 @@ class Geofence {
   final GeoJsonPolygon polygon;
   final String? createdByUserId;
   final DateTime? createdAt;
+
+  /// RF-36: con hora, es temporal (la levantó la consola y vence sola);
+  /// `null`, la dibujó un operador.
+  final DateTime? expiresAt;
+
+  bool get isTemporary => expiresAt != null;
 }
 
 /// Body de `POST /geofences`.

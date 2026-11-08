@@ -7,21 +7,12 @@ import 'widgets/dispatcher/dispatcher_counts.dart';
 import 'widgets/home_grid.dart';
 import 'widgets/quick_tile.dart';
 import 'widgets/section_header.dart';
-import 'widgets/sign_out.dart';
 
-/// Los accesos de "Más". [open] da `null` (candado) a lo que la central
-/// no permite.
-List<Widget> _moreTiles(
-  BuildContext context,
-  VoidCallback? Function(String path, {bool always}) open,
-  DispatcherCounts? counts,
-  VoidCallback onSignOut,
-) => [
-  QuickTile(
-    title: 'Mi central',
-    icon: Icons.home_work_outlined,
-    onTap: open('/hubs/me', always: true),
-  ),
+/// Abre una ruta, o `null` (candado) si la central no lo permite.
+typedef MoreOpen = VoidCallback? Function(String path, {bool always});
+
+/// Pedidos de la central: lo que llega, lo que sale y lo que pasó.
+List<Widget> _orderTiles(MoreOpen open, DispatcherCounts? counts) => [
   QuickTile(
     title: 'Traslados entrantes',
     icon: Icons.move_to_inbox_outlined,
@@ -52,40 +43,50 @@ List<Widget> _moreTiles(
     icon: Icons.history_rounded,
     onTap: open('/orders/history'),
   ),
-  QuickTile(
-    title: 'Cuarentena',
-    icon: Icons.health_and_safety_outlined,
-    onTap: open('/inventory/quarantine'),
-  ),
+];
+
+/// Lo que esta central le pide a otra: una urgencia o un abastecimiento.
+List<Widget> _requestTiles(BuildContext context, MoreOpen open) => [
   QuickTile(
     title: 'Urgencia a otra central',
     icon: Icons.swap_horiz_rounded,
     onTap: open('/orders/hub-emergency'),
   ),
   QuickTile(
-    title: 'Abastecimiento',
+    title: 'Nuevo abastecimiento',
     icon: Icons.calendar_month_outlined,
     onTap: open('/orders/hub-plans/new'),
   ),
   QuickTile(
-    title: 'Mis planes',
+    title: 'Mis abastecimientos',
     icon: Icons.event_repeat_outlined,
     onTap: () => context.push('/orders/plans'),
+  ),
+];
+
+/// La central y la cuenta. Cerrar sesión está dentro del perfil.
+List<Widget> _hubTiles(BuildContext context, MoreOpen open) => [
+  QuickTile(
+    title: 'Mi central',
+    icon: Icons.home_work_outlined,
+    onTap: open('/hubs/me', always: true),
+  ),
+  QuickTile(
+    title: 'Cuarentena',
+    icon: Icons.health_and_safety_outlined,
+    onTap: open('/inventory/quarantine'),
   ),
   QuickTile(
     title: 'Perfil',
     icon: Icons.person_outline_rounded,
     onTap: () => context.push('/profile'),
   ),
-  QuickTile(
-    title: 'Cerrar sesión',
-    icon: Icons.logout_rounded,
-    onTap: onSignOut,
-  ),
 ];
 
-/// "Más" del despachador: lo que no cabe en la barra, en cuadrícula. Mi
-/// central y Mis planes siempre; lo demás, solo con la central activa.
+/// "Más" del despachador: lo que no cabe en la barra, en tres grupos
+/// (Pedidos · Pedir a otra central · Mi central). Mi central, Mis
+/// abastecimientos y el perfil siempre; lo demás, solo con la central
+/// activa.
 class DispatcherMoreScreen extends ConsumerWidget {
   const DispatcherMoreScreen({super.key});
 
@@ -107,17 +108,31 @@ class DispatcherMoreScreen extends ConsumerWidget {
             subtitle: hub?.name ?? 'Tu central',
             onBack: () => SectionHeader.backOrHome(context),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-            child: HomeGrid(
-              children: _moreTiles(
-                context,
-                open,
-                counts,
-                () => signOut(context, ref),
-              ),
-            ),
-          ),
+          _MoreGroup('Pedidos', _orderTiles(open, counts)),
+          _MoreGroup('Pedir a otra central', _requestTiles(context, open)),
+          _MoreGroup('Mi central', _hubTiles(context, open)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Un grupo de "Más": su rótulo y la cuadrícula.
+class _MoreGroup extends StatelessWidget {
+  const _MoreGroup(this.label, this.tiles);
+
+  final String label;
+  final List<Widget> tiles;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          HomeLabel(label),
+          HomeGrid(children: tiles),
         ],
       ),
     );

@@ -16,7 +16,6 @@ import 'widgets/home_header.dart';
 import 'widgets/home_page.dart';
 import 'widgets/home_spotlight.dart';
 import 'widgets/quick_tile.dart';
-import 'widgets/sign_out.dart';
 import '../../notifications/data/notice_providers.dart';
 
 /// Inicio del operador de flota: sus centrales, los drones disponibles de
@@ -64,7 +63,7 @@ class _FleetOperatorHomeState extends ConsumerState<FleetOperatorHome> {
             roleLabel: 'Operador de flota',
             fullName: user.fullName,
             tagline: _tagline(hub?.name, hubs?.length),
-            onSignOut: () => signOut(context, ref),
+            onProfile: () => context.go('/profile'),
             onNotices: () => context.push('/notifications'),
             unreadNotices: ref.watch(unreadCountProvider).value,
           ),

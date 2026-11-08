@@ -12,7 +12,6 @@ import 'widgets/home_header.dart';
 import 'widgets/home_page.dart';
 import 'widgets/home_spotlight.dart';
 import 'widgets/quick_tile.dart';
-import 'widgets/sign_out.dart';
 import '../../notifications/data/notice_providers.dart';
 
 /// Resumen del administrador: las centrales activas como cifra principal
@@ -40,7 +39,7 @@ class AdminHome extends ConsumerWidget {
           roleLabel: 'Administrador',
           fullName: user.fullName,
           tagline: 'Así va la operación en Valledupar',
-          onSignOut: () => signOut(context, ref),
+          onProfile: () => context.go('/profile'),
           onNotices: () => context.push('/notifications'),
           unreadNotices: ref.watch(unreadCountProvider).value,
         ),

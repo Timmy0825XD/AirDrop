@@ -18,7 +18,6 @@ import 'widgets/dispatcher/hub_notice.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_page.dart';
 import 'widgets/home_spotlight.dart';
-import 'widgets/sign_out.dart';
 import '../../notifications/data/notice_providers.dart';
 
 /// Inicio del despachador: su central, las urgencias en cola como cifra
@@ -55,7 +54,7 @@ class DispatcherHome extends ConsumerWidget {
             roleLabel: 'Despachador',
             fullName: user.fullName,
             tagline: _tagline(hubState),
-            onSignOut: () => signOut(context, ref),
+            onProfile: () => context.push('/profile'),
             onNotices: () => context.push('/notifications'),
             unreadNotices: ref.watch(unreadCountProvider).value,
           ),

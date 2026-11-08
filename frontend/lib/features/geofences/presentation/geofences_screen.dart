@@ -7,6 +7,7 @@ import '../../../core/widgets/app_snack.dart';
 import '../../../core/widgets/list_padding.dart';
 import '../../../core/widgets/message_view.dart';
 import '../../../core/widgets/rise_in.dart';
+import '../../home/presentation/widgets/header_add_button.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../data/geofence_models.dart';
 import '../data/geofence_providers.dart';
@@ -32,14 +33,13 @@ class GeofencesScreen extends ConsumerWidget {
                 ? '1 zona restringida'
                 : '$count zonas restringidas',
             onBack: () => context.go('/home'),
+            trailing: HeaderAddButton(
+              label: 'Nueva geovalla',
+              onPressed: () => context.push('/geofences/new'),
+            ),
           ),
           const Expanded(child: _GeofenceList()),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/geofences/new'),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Nueva geovalla'),
       ),
     );
   }
@@ -56,7 +56,7 @@ class _GeofenceList extends ConsumerWidget {
         message: 'Aún no hay geovallas registradas.',
       ),
       AsyncValue(hasValue: true, hasError: false, :final value?) => ListView.separated(
-        padding: listPadding(context, fab: true),
+        padding: listPadding(context),
         itemCount: value.length,
         separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, i) => RiseIn(

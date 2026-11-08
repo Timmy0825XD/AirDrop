@@ -8,6 +8,7 @@ import '../../../core/widgets/error_banner.dart';
 import '../../../core/widgets/list_padding.dart';
 import '../../../core/widgets/message_view.dart';
 import '../../../core/widgets/rise_in.dart';
+import '../../home/presentation/widgets/header_add_button.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../../hubs/data/hub_models.dart';
 import '../data/fleet_models.dart';
@@ -36,11 +37,11 @@ class FleetScreen extends ConsumerWidget {
                 ? 'Drones de tus centrales'
                 : '${hub.name}${count == null ? '' : ' · ${count == 1 ? '1 dron' : '$count drones'}'}',
             onBack: () => context.go('/home'),
+            trailing: const _NewDroneButton(),
           ),
           const Expanded(child: _FleetBody()),
         ],
       ),
-      floatingActionButton: const _NewDroneButton(),
     );
   }
 }
@@ -119,7 +120,7 @@ class _DroneList extends ConsumerWidget {
         message: 'Aún no hay drones en esta central.',
       ),
       AsyncValue(hasValue: true, hasError: false, :final value?) => ListView.separated(
-        padding: listPadding(context, fab: true),
+        padding: listPadding(context),
         itemCount: value.length,
         separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, i) {
@@ -155,10 +156,9 @@ class _NewDroneButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final hub = ref.watch(effectiveHubProvider);
     if (!(hub?.isActive ?? false)) return const SizedBox.shrink();
-    return FloatingActionButton.extended(
+    return HeaderAddButton(
+      label: 'Nuevo dron',
       onPressed: () => context.push('/fleet/new'),
-      icon: const Icon(Icons.add_rounded),
-      label: const Text('Nuevo dron'),
     );
   }
 }
