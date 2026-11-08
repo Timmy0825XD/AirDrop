@@ -8,6 +8,7 @@ import '../../home/presentation/widgets/section_header.dart';
 import '../data/hub_providers.dart';
 import 'widgets/hub_detail_content.dart';
 import 'widgets/hub_labels.dart';
+import 'widgets/hub_outage.dart';
 
 /// `GET /hubs/me`: la central del despachador, en solo lectura.
 ///
@@ -35,7 +36,13 @@ class HubDetailScreen extends ConsumerWidget {
             child: switch (state) {
               AsyncValue(hasValue: true, hasError: false, value: final hub?) => ListView(
                 padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
-                children: [HubDetailContent(hub: hub)],
+                children: [
+                  if (hubOutageNote(hub) case final note?) ...[
+                    HubOutageBanner(note: note),
+                    const SizedBox(height: 12),
+                  ],
+                  HubDetailContent(hub: hub),
+                ],
               ),
               AsyncValue(hasValue: true, hasError: false) => const MessageView(
                 icon: Icons.domain_disabled_outlined,

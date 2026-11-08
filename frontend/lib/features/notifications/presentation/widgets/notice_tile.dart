@@ -23,6 +23,8 @@ import '../../data/notice_models.dart';
       Icons.build_circle_outlined,
       palette.danger,
     ),
+    NoticeKind.hubOutage => (Icons.power_off_outlined, palette.warning),
+    NoticeKind.hubPowerRestored => (Icons.power_outlined, palette.success),
     NoticeKind.other => (Icons.notifications_none_rounded, primary),
   };
 }

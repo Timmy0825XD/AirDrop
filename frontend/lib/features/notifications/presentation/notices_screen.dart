@@ -28,6 +28,8 @@ class NoticesScreen extends ConsumerWidget {
       if (!context.mounted) return;
       if (n.kind.isFleet) {
         context.go('/fleet');
+      } else if (n.kind.isHubPower) {
+        context.push('/hubs/me');
       } else if (n.orderId != null) {
         context.push('/orders/${n.orderId}');
       }

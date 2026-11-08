@@ -17,10 +17,17 @@ enum NoticeKind {
   /// pasó la fecha estimada.
   maintenanceDue('maintenance_due'),
   maintenanceOverdue('maintenance_overdue'),
+
+  /// RF-36, al despachador: su central se quedó sin energía o volvió.
+  hubOutage('hub_outage'),
+  hubPowerRestored('hub_power_restored'),
   other('other');
 
   /// Avisos del taller: llevan a la flota, no a un pedido.
   bool get isFleet => this == maintenanceDue || this == maintenanceOverdue;
+
+  /// Avisos de la energía de la central: llevan a "Mi central".
+  bool get isHubPower => this == hubOutage || this == hubPowerRestored;
 
   const NoticeKind(this.apiValue);
 

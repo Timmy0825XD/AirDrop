@@ -9,6 +9,7 @@ import '../../../core/widgets/status_pill.dart';
 import '../../auth/data/auth_models.dart';
 import '../../hubs/data/hub_models.dart';
 import '../../hubs/data/hub_providers.dart';
+import '../../hubs/presentation/widgets/hub_outage.dart';
 import '../../orders/data/order_providers.dart';
 import 'live_mission.dart';
 import 'widgets/dispatcher/dispatcher_counts.dart';
@@ -35,6 +36,7 @@ class DispatcherHome extends ConsumerWidget {
     final hubState = ref.watch(myHubProvider);
     final hub = hubState.value;
     final active = hub?.isActive ?? false;
+    final outage = hubOutageNote(hub);
     final counts = active ? DispatcherCounts.watch(ref) : null;
     // El primer vuelo de su central, como misión en curso.
     final flying = active
@@ -43,6 +45,8 @@ class DispatcherHome extends ConsumerWidget {
     return AutoRefresh(
       onTick: () {
         ref.invalidate(unreadCountProvider);
+        // El apagón lo provoca la consola: la central se vuelve a leer.
+        ref.invalidate(myHubProvider);
         if (active) DispatcherCounts.refresh(ref);
       },
       child: HomePage(
@@ -60,13 +64,24 @@ class DispatcherHome extends ConsumerWidget {
               padding: const EdgeInsets.only(top: 16),
               child: ErrorBanner(message: text),
             ),
+          if (outage != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 16),
+              child: HubOutageBanner(note: outage),
+            ),
           const SizedBox(height: 8),
           HomeSpotlight(
             value: counts?.queue,
             label: 'Urgencias\nen cola',
             status: StatusPill(
-              label: active ? 'Central activa' : 'Sin operar',
-              tone: active ? PillTone.positive : PillTone.attention,
+              label: !active
+                  ? 'Sin operar'
+                  : outage != null
+                  ? 'Sin energía'
+                  : 'Central activa',
+              tone: active && outage == null
+                  ? PillTone.positive
+                  : PillTone.attention,
             ),
           ),
           const SizedBox(height: 12),

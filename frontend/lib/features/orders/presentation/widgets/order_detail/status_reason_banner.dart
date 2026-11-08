@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../theme/app_palette.dart';
-import '../../../../../theme/app_theme.dart';
+import '../../../../../core/widgets/warning_banner.dart';
 import '../../../data/order_models.dart';
 
 /// El aviso de un pedido que sigue su curso pero algo lo hizo volver atrás
@@ -19,29 +18,5 @@ class StatusReasonBanner extends StatelessWidget {
   final String reason;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = context.palette.warning;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppTheme.radius),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.report_problem_outlined, color: color, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              reason,
-              style: theme.textTheme.bodyMedium?.copyWith(color: color),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => WarningBanner(message: reason);
 }
