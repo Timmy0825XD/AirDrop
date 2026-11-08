@@ -49,7 +49,7 @@ class AgendaDayBar extends StatelessWidget {
                       style: theme.textTheme.labelSmall,
                     ),
                     Text(
-                      formatLongDate(date),
+                      formatDay(date, relative: false),
                       style: theme.textTheme.titleMedium,
                     ),
                   ],

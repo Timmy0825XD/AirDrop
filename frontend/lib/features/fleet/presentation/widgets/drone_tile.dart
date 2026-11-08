@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/date_format.dart';
 import '../../../../core/widgets/row_action_button.dart';
 import '../../../../core/widgets/status_card.dart';
 import '../../../../core/widgets/tone_tile.dart';
@@ -83,7 +84,8 @@ class _DroneInfo extends StatelessWidget {
       if (drone.phase case final phase?) phase.label,
       if (order != null) 'Pedido ${shortId(order)}',
       if (reason != null && reason.isNotEmpty) 'Motivo: $reason',
-      if (until != null && until.isNotEmpty) 'Hasta $until',
+      if (until != null && until.isNotEmpty)
+        'Hasta el ${formatDay(until, relative: false)}',
     ].join(' · ');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

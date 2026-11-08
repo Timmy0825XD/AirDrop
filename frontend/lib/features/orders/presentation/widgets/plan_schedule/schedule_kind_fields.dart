@@ -141,7 +141,7 @@ class _DatesFields extends StatelessWidget {
       children: [
         for (final date in dates)
           ChoicePill(
-            label: formatShortDate(date),
+            label: formatDay(date),
             icon: Icons.close_rounded,
             selected: true,
             filled: false,

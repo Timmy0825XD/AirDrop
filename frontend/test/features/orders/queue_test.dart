@@ -26,7 +26,7 @@ void main() {
 
     expect(find.text('Acetaminofén 500 mg'), findsOneWidget);
     expect(find.textContaining('Espera '), findsWidgets);
-    expect(find.textContaining('Disponible: 8'), findsNWidgets(2));
+    expect(find.textContaining('8 en stock'), findsNWidgets(2));
   });
 
   testWidgets('un pedido que pasó de otra central se marca en la cola', (

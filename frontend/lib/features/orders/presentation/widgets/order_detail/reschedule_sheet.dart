@@ -52,7 +52,7 @@ class _RescheduleSheetState extends State<RescheduleSheet> {
           children: [
             for (final date in widget.dates)
               ChoicePill(
-                label: formatLongDate(date),
+                label: formatDay(date),
                 selected: _date == date,
                 onTap: () => setState(() => _date = date),
               ),

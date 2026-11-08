@@ -24,7 +24,7 @@ AuthorizeOutcome _fallbackOutcome(Order order) {
       message: fallback?.retryAfter == null
           ? 'Sin dron por ahora. Se reintenta solo.'
           : 'Sin dron por ahora. Se reintenta solo a las '
-                '${formatClock(fallback!.retryAfter!)}.',
+                '${formatClock(fallback!.retryAfter!)}',
       tone: SnackTone.info,
       leavesHub: false,
     ),

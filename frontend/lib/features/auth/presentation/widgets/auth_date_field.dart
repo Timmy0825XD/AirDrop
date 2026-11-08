@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'auth_field.dart';
 import '../../../../core/clock/sim_clock.dart';
+import '../../../../core/date_format.dart';
 import '../../../../theme/app_palette.dart';
 
 /// Campo de fecha con la forma de [AuthField]: label en mayúsculas, la
 /// caja de 56 px con el calendario y el error que tiembla. Al tocarlo,
-/// [onTap] abre el selector (ver [pickIsoDate]). [value] va en AAAA-MM-DD.
+/// [onTap] abre el selector (ver [pickIsoDate]). [value] va en AAAA-MM-DD
+/// y se muestra como `sáb. 7 nov.`.
 class AuthDateField extends StatelessWidget {
   const AuthDateField({
     super.key,
@@ -43,7 +45,8 @@ class AuthDateField extends StatelessWidget {
           // Para el lector de pantalla, un botón con su etiqueta y la fecha.
           child: Semantics(
             button: true,
-            label: '$label: ${value ?? hint}',
+            label:
+                '$label: ${value == null ? hint : formatDay(value!, relative: false)}',
             excludeSemantics: true,
             child: _DateBox(field: this, error: error),
           ),
@@ -87,7 +90,9 @@ class _DateBox extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  value ?? field.hint,
+                  value == null
+                      ? field.hint
+                      : formatDay(value, relative: false),
                   style: theme.textTheme.bodyLarge?.copyWith(
                     color: value == null ? colors.onSurfaceVariant : null,
                   ),

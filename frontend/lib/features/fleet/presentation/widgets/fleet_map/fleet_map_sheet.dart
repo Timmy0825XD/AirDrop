@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/widgets/message_view.dart';
 import '../../../../../core/widgets/warning_banner.dart';
-import '../../../../orders/presentation/order_format.dart';
+import '../../../../../core/date_format.dart';
 import '../../../data/fleet_flight.dart';
 import '../../../data/fleet_map_models.dart';
 import '../fleet_flight_card.dart';

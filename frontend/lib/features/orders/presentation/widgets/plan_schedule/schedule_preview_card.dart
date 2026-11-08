@@ -61,7 +61,7 @@ class _PreviewList extends StatelessWidget {
     final count = p.occurrences.length;
     final last = p.lastDate == null
         ? ''
-        : ', hasta el ${formatShortDate(p.lastDate!)}';
+        : ', hasta el ${formatDay(p.lastDate!, relative: false)}';
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -72,7 +72,7 @@ class _PreviewList extends StatelessWidget {
         const SizedBox(height: 8),
         for (final o in p.occurrences.take(_shown))
           Text(
-            '${formatLongDate(o.date)} · '
+            '${capitalized(formatDay(o.date))} · '
             '${formatSlot(o.scheduledAt, o.windowEndsAt)}',
             style: theme.textTheme.bodyMedium,
           ),
@@ -83,7 +83,7 @@ class _PreviewList extends StatelessWidget {
           ErrorBanner(
             message:
                 'Estas fechas empiezan en menos de 2 horas y no se agendan: '
-                '${p.tooSoon.map(formatShortDate).join(', ')}.',
+                '${p.tooSoon.map(formatDay).join(', ')}.',
           ),
         ],
       ],

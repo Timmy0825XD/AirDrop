@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/clock/sim_clock.dart';
+import '../../../../core/date_format.dart';
 import '../../../../core/widgets/press_scale.dart';
 import '../../../../core/widgets/row_action_button.dart';
 import '../../../../core/widgets/status_card.dart';
@@ -117,7 +118,7 @@ class _ItemInfo extends StatelessWidget {
           [
             item.saleType.label,
             if (item.requiresColdChain) 'Cadena de frío',
-            'Vence ${item.expirationDate}',
+            'Vence ${formatDay(item.expirationDate)}',
           ].join(' · '),
           style: muted,
         ),

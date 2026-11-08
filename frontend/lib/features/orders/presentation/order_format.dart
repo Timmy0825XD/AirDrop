@@ -1,29 +1,10 @@
 import '../../../core/clock/sim_clock.dart';
+import '../../../core/date_format.dart';
 import '../data/order_models.dart';
 
-/// Colombia está en UTC−5 todo el año (sin horario de verano). Las horas de
-/// Nest llegan en UTC y se muestran así, sin importar la zona del teléfono.
-DateTime colombiaTime(DateTime value) =>
-    value.toUtc().subtract(const Duration(hours: 5));
+export '../../../core/date_format.dart';
 
-/// `timestamptz` en hora de Colombia: `05/11/2026 10:00`.
-String formatBogota(DateTime? value) {
-  if (value == null) return 'Sin fecha';
-  final local = colombiaTime(value);
-  final d = local.day.toString().padLeft(2, '0');
-  final m = local.month.toString().padLeft(2, '0');
-  return '$d/$m/${local.year} ${formatClock(value)}';
-}
-
-/// Solo la hora en Colombia: `10:00`.
-String formatClock(DateTime value) {
-  final local = colombiaTime(value);
-  final h = local.hour.toString().padLeft(2, '0');
-  final min = local.minute.toString().padLeft(2, '0');
-  return '$h:$min';
-}
-
-/// La franja de una entrega: `10:00 – 11:00`. Sin hora (planes viejos),
+/// La franja de una entrega: `10:00 a. m. – 11:00 a. m.`. Sin hora (planes viejos),
 /// todo el horario operativo.
 String formatSlot(DateTime? start, DateTime? end) {
   if (start == null) return 'Durante el día';
@@ -41,41 +22,11 @@ const _weekdays = [
   'domingo',
 ];
 
-const _months = [
-  'enero',
-  'febrero',
-  'marzo',
-  'abril',
-  'mayo',
-  'junio',
-  'julio',
-  'agosto',
-  'septiembre',
-  'octubre',
-  'noviembre',
-  'diciembre',
-];
-
-/// `jueves 5 de noviembre` a partir de `AAAA-MM-DD`.
-String formatLongDate(String iso) {
-  final date = DateTime.tryParse(iso);
-  if (date == null) return iso;
-  return '${_weekdays[date.weekday - 1]} ${date.day} de '
-      '${_months[date.month - 1]}';
-}
-
-/// `5 de noviembre` a partir de `AAAA-MM-DD`.
-String formatShortDate(String iso) {
-  final date = DateTime.tryParse(iso);
-  if (date == null) return iso;
-  return '${date.day} de ${_months[date.month - 1]}';
-}
-
 /// Nombre del día de la semana (1 = lunes … 7 = domingo).
 String weekdayName(int day) => _weekdays[(day - 1) % 7];
 
-/// El calendario en palabras: "Martes y jueves a las 10:00, hasta el 30 de
-/// noviembre". En los planes viejos, la frecuencia.
+/// El calendario en palabras: "Martes y jueves a las 10:00 a. m., hasta el
+/// lun. 30 nov.". En los planes viejos, la frecuencia.
 String scheduleLabel(DeliveryPlan plan) {
   final schedule = plan.schedule;
   if (plan.frequency != null && (schedule == null || schedule.time == null)) {
@@ -86,7 +37,9 @@ String scheduleLabel(DeliveryPlan plan) {
 }
 
 String describeSchedule(PlanSchedule schedule) {
-  final at = schedule.time == null ? '' : ' a las ${schedule.time}';
+  final at = schedule.time == null
+      ? ''
+      : ' a las ${formatTimeText(schedule.time!)}';
   final base = switch (schedule.kind) {
     ScheduleKind.weekly => _weeklyLabel(schedule),
     ScheduleKind.monthly =>
@@ -95,11 +48,11 @@ String describeSchedule(PlanSchedule schedule) {
           : 'El día ${schedule.dayOfMonth} de cada mes',
     ScheduleKind.dates =>
       schedule.dates.length == 1
-          ? 'El ${formatShortDate(schedule.dates.first)}'
+          ? 'El ${formatDay(schedule.dates.first, relative: false)}'
           : '${schedule.dates.length} fechas',
   };
   final until = schedule.endDate != null
-      ? ', hasta el ${formatShortDate(schedule.endDate!)}'
+      ? ', hasta el ${formatDay(schedule.endDate!, relative: false)}'
       : schedule.count != null
       ? ', ${schedule.count} entregas'
       : '';
@@ -142,13 +95,15 @@ String formatKm(double km) =>
 /// verano) todavía no se puede autorizar: Nest respondería 400.
 bool isFutureSchedule(String? scheduledFor) {
   if (scheduledFor == null) return false;
-  final bogota = simClock.now().toUtc().subtract(const Duration(hours: 5));
+  final bogota = colombiaTime(simClock.now());
   return scheduledFor.compareTo(_isoOf(bogota)) > 0;
 }
 
-/// Etiqueta de destino de la cola: persona o central.
+/// Etiqueta de destino de la cola: a domicilio o central.
 String destinationLabel(Order order) {
-  return order.destinationKind == DestinationKind.hub ? 'Central' : 'Persona';
+  return order.destinationKind == DestinationKind.hub
+      ? 'Central'
+      : 'A domicilio';
 }
 
 /// "Dron D-01 · 4,2 km · 100 m": el dron y el corredor que reservó el
@@ -158,3 +113,8 @@ String routeLine(OrderAssignment? a) {
   return 'Dron ${a.identifier} · ${formatKm(a.distanceKm)} · '
       '${a.altitudeM.round()} m';
 }
+
+/// La cantidad en palabras para los textos largos: `1 unidad`,
+/// `3 unidades`. En las filas de las listas basta `3 und.`.
+String unitsLabel(int quantity) =>
+    quantity == 1 ? '1 unidad' : '$quantity unidades';

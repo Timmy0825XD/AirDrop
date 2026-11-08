@@ -12,7 +12,7 @@ class ColdChainBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final when = at == null ? '' : ' (${formatBogota(at)})';
+    final when = at == null ? '' : ' (${formatDateTime(at)})';
     return ErrorBanner(
       message: 'Alerta de frío: la carga salió del rango de 2 a 8 °C$when.',
     );

@@ -57,8 +57,8 @@ class QueueTile extends StatelessWidget {
       title: order.medicationName,
       accent: '${order.quantity} und. · ${destinationLabel(order)}',
       detail:
-          'Disponible: ${entry.availableQuantity} · '
-          '${formatBogota(order.createdAt)}',
+          '${entry.availableQuantity} en stock · '
+          '${formatAgo(order.createdAt)}',
       pill: order.reassignedToHub
           ? const StatusPill(
               label: 'Viene de otra central',

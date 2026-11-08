@@ -34,7 +34,7 @@ enum MissionType {
 }
 
 enum DestinationKind {
-  person('person', 'Persona'),
+  person('person', 'A domicilio'),
   hub('hub', 'Central');
 
   const DestinationKind(this.apiValue, this.label);

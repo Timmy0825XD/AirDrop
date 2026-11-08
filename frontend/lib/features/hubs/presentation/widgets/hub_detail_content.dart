@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
+import '../../../../core/colombian_phone.dart';
 import '../../../../core/widgets/app_map.dart';
 import '../../../../core/widgets/detail_section.dart';
+import '../../../../core/widgets/phone_link.dart';
 import '../../../../core/widgets/rise_in.dart';
 import '../../../../core/widgets/status_pill.dart';
 import '../../data/hub_models.dart';
@@ -31,7 +33,14 @@ class HubDetailContent extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             DetailLine(label: 'Dirección', value: hub.address),
-            DetailLine(label: 'Celular', value: hub.contactPhone),
+            DetailLine(
+              label: 'Teléfono',
+              value: formatColombianPhone(hub.contactPhone),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: PhoneLink(phone: hub.contactPhone),
+              ),
+            ),
             DetailLine(
               label: 'Correo',
               value: hub.contactEmail ?? 'Sin correo registrado',

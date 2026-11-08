@@ -50,7 +50,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 16 | La app al ritmo de la consola (Bloque 2 de la auditoría 31) | `feature/reloj-simulado`, `feature/incidentes-app`, `feature/fleet-mantenimiento-app` | Hecha (PR #141, #142 y #143) |
 | 17 | El despachador ante la consola (Bloque 3 de la auditoría 31) | `feature/declinar-urgencia`, `feature/central-sin-energia`, `feature/traza-decision` | Hecha (PR #144, #145 y #146) |
 | 18 | Operador y administrador (Bloque 4 de la auditoría 31) | `feature/fleet-mapa-operador`, `feature/fleet-tablero`, `feature/metricas-incidentes` | Hecha (PR #147, #148 y #149) |
-| 19 | Pulido de UX y accesibilidad (Bloque 5 de la auditoría 31) | `style/formularios-accesibles`, `style/fechas-y-textos`, `style/acciones-y-navegacion`, `style/pantallas-pequenas`, `style/inicios-por-rol` | En curso: paso 1 hecho |
+| 19 | Pulido de UX y accesibilidad (Bloque 5 de la auditoría 31) | `style/formularios-accesibles`, `style/fechas-y-textos`, `style/acciones-y-navegacion`, `style/pantallas-pequenas`, `style/inicios-por-rol` | En curso: pasos 1 y 2 hechos |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -1183,6 +1183,33 @@ datos ni endpoints.
   - "Siguiente" y "listo" en el teclado ya estaban (`textInputAction`).
   Prueba: `auth_field_semantics_test` (etiqueta en el campo, nodos propios
   y el scroll al error a 360×640).
+- Paso 2 (`style/fechas-y-textos`), hecho el 2026-11-08:
+  - Un solo formato de fecha en pantalla, en `core/date_format.dart`
+    (`order_format.dart` lo re-exporta): día `sáb. 7 nov.` (el año solo si
+    no es el actual), hora `9:50 a. m.`, día y hora `sáb. 7 nov. · 9:50
+    a. m.`, y relativo cuando ayuda: `hoy`, `mañana`, `ayer` y `hace 6 min`
+    (cola, avisos y "Mis pedidos"). "Hoy" sale de `simClock` en hora de
+    Colombia. Nest sigue recibiendo ISO. Se fueron `formatBogota`,
+    `formatLongDate` y `formatShortDate`; los campos de fecha muestran el
+    día en ese formato; la línea de tiempo del vuelo ya no muestra la hora
+    en UTC.
+  - Teléfonos: `formatColombianPhone` (`300 123 4567`, fijo
+    `605 570 0000`) y `PhoneLink` (`core/widgets`), que se toca para llamar
+    (`tel:+57…`, paquete `url_launcher`) en "Mi central" y en las centrales
+    alternativas del fallback. En el perfil y en la fila de la central solo
+    se formatea.
+  - Estados para el solicitante (`OrderStatusChip(forRequester: true)`):
+    recibido o en revisión → "Esperando central"; asignado o pendiente de
+    carga → "Preparando el envío"; en vuelo → "En camino"; de regreso o
+    devuelto → "No se entregó"; reasignado → "Lo atiende otra central". Lo
+    usan "Mis pedidos", el detalle, el mapa y la misión del inicio. El
+    despachador y el operador ven el estado técnico.
+  - Sin jerga: destino "Persona" → "A domicilio" ("Tu ubicación" para el
+    solicitante); "Venta" → "Tipo"; "Disponible: 8" → "8 en stock";
+    "und." → "1 unidad / 3 unidades" (`unitsLabel`) en el detalle, el plan
+    y la misión; las filas de las listas conservan "und.".
+  Pruebas: `date_format_test`, `colombian_phone_test` y
+  `requester_status_test`, y siete pruebas ajustadas a los textos nuevos.
 
 ## Pendiente del backend
 

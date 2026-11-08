@@ -101,7 +101,7 @@ void main() {
       expect(order.awaitsReturnCheck, isTrue);
       expect(
         formatSlot(order.scheduledAt, order.windowEndsAt),
-        '10:00 – 11:00',
+        '10:00 a. m. – 11:00 a. m.',
       );
     });
 
@@ -199,7 +199,10 @@ void main() {
       expect(plan.frequency, isNull);
       expect(plan.canExtend, isFalse);
       expect(plan.paused, isTrue);
-      expect(scheduleLabel(plan), 'Martes y jueves a las 10:00, 6 entregas');
+      expect(
+        scheduleLabel(plan),
+        'Martes y jueves a las 10:00 a. m., 6 entregas',
+      );
     });
 
     test('toJson manda solo lo de su tipo', () {

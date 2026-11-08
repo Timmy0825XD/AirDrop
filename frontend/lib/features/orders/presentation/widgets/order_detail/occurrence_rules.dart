@@ -39,7 +39,7 @@ class OccurrenceRules {
   String get slotLabel {
     final date = order.scheduledFor;
     final slot = formatSlot(order.scheduledAt, order.windowEndsAt);
-    return date == null ? slot : '${formatLongDate(date)}, $slot';
+    return date == null ? slot : '${formatDay(date)}, $slot';
   }
 
   /// Se mueve al mismo día o al siguiente de la fecha original.

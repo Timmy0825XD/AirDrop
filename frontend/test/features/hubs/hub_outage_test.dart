@@ -33,7 +33,7 @@ void main() {
     expect(dark.poweredAt(simClock.now()), isFalse);
     expect(
       hubOutageNote(dark),
-      'Central sin energía hasta las 15:40. '
+      'Central sin energía hasta las 3:40 p. m. '
       'No puedes autorizar ni confirmar cargas.',
     );
 

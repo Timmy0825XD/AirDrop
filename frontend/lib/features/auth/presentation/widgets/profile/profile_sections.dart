@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../core/colombian_phone.dart';
 import '../../../../../core/widgets/detail_section.dart';
 import '../../../../../core/widgets/press_scale.dart';
 import '../../../data/auth_models.dart';
@@ -35,7 +36,9 @@ class ProfileDataCard extends StatelessWidget {
           ),
           _EditableLine(
             label: 'Celular',
-            value: user.phone ?? 'Sin registrar',
+            value: user.phone == null
+                ? 'Sin registrar'
+                : formatColombianPhone(user.phone),
             onTap: () => onEdit(ProfileFieldType.phone),
           ),
           if (type != null)

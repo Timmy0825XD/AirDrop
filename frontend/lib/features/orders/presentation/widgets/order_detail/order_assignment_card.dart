@@ -37,7 +37,7 @@ class OrderAssignmentCard extends StatelessWidget {
             label: 'Carga',
             value: loadConfirmedAt == null
                 ? 'Falta confirmarla'
-                : 'Confirmada ${formatBogota(loadConfirmedAt)}',
+                : 'Confirmada ${formatDateTime(loadConfirmedAt)}',
           ),
         ],
       ),

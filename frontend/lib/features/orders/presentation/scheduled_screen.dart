@@ -74,8 +74,8 @@ class ScheduledTile extends StatelessWidget {
       title: order.medicationName,
       accent:
           '${order.quantity} und. · ${destinationLabel(order)}'
-          '${date == null ? '' : ' · $date'}$slot',
-      detail: 'Disponible: ${entry.availableQuantity}',
+          '${date == null ? '' : ' · ${formatDay(date)}'}$slot',
+      detail: '${entry.availableQuantity} en stock',
       pill: pillOf(order),
       onTap: onTap,
     );

@@ -44,7 +44,7 @@ void main() {
       ProfileDataCard(user: _operator, onEdit: (type) => edited = type),
     );
 
-    await tester.tap(find.text('3009876543'));
+    await tester.tap(find.text('300 987 6543'));
     expect(edited, ProfileFieldType.phone);
   });
 }

@@ -6,7 +6,7 @@ import '../../../../core/widgets/app_map.dart';
 import '../../../../core/widgets/bar_spark.dart';
 import '../../../../core/widgets/detail_section.dart';
 import '../../../../theme/app_palette.dart';
-import '../../../orders/presentation/order_format.dart';
+import '../../../../core/date_format.dart';
 import '../../data/analytics_models.dart';
 
 /// Lo más pedido en el periodo, con las unidades y lo que no se atendió.
@@ -67,8 +67,8 @@ class DemandByDayCard extends StatelessWidget {
                 BarSpark(values: [for (final d in days) d.total], height: 64),
                 const SizedBox(height: 6),
                 Text(
-                  '${formatShortDate(days.first.date)} – '
-                  '${formatShortDate(days.last.date)}',
+                  '${formatDay(days.first.date, relative: false)} – '
+                  '${formatDay(days.last.date, relative: false)}',
                   style: theme.textTheme.bodySmall,
                 ),
               ],

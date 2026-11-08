@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/clock/sim_clock.dart';
 import '../../../../core/widgets/warning_banner.dart';
-import '../../../orders/presentation/order_format.dart';
+import '../../../../core/date_format.dart';
 import '../../data/hub_models.dart';
 
 /// RF-36: por qué la central del despachador no puede autorizar ni cargar
@@ -13,7 +13,8 @@ String? hubOutageNote(Hub? hub) {
   if (hub == null || until == null || hub.poweredAt(simClock.now())) {
     return null;
   }
-  return 'Central sin energía hasta las ${formatClock(until)}. '
+  // "p. m." ya cierra la frase con su punto.
+  return 'Central sin energía hasta las ${formatClock(until)} '
       'No puedes autorizar ni confirmar cargas.';
 }
 

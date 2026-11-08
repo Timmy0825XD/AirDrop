@@ -294,6 +294,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         showPrescriptionFlag: !isDispatcher,
         showLot: isDispatcher && !can.onlyDestination,
         cameFromOtherHub: isDispatcher && cameFromOtherHub(can),
+        forRequester: user?.role == UserRole.requester,
       ),
       // La central que lo recibió ya ve "Viene de otra central".
       if (order.fallback case final fallback?

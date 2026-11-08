@@ -14,9 +14,16 @@ import 'widgets/requester/mission_card.dart';
 /// La usan el solicitante (su pedido) y el despachador (el primer vuelo de
 /// su central). El regreso no se pinta como misión.
 class LiveMission extends ConsumerWidget {
-  const LiveMission({super.key, required this.order});
+  const LiveMission({
+    super.key,
+    required this.order,
+    this.forRequester = false,
+  });
 
   final Order order;
+
+  /// El inicio del solicitante: el estado en sus palabras.
+  final bool forRequester;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -33,6 +40,7 @@ class LiveMission extends ConsumerWidget {
       progress: routed
           ? closestRouteIndex(points, drone) / (points.length - 1)
           : null,
+      forRequester: forRequester,
       onWatch: () => context.push('/tracking/${order.id}'),
     );
   }

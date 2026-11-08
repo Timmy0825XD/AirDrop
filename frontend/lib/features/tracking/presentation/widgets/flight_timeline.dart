@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/date_format.dart';
 import '../../../../theme/app_palette.dart';
 import '../../../orders/data/order_models.dart';
 import '../../data/telemetry_models.dart';
@@ -119,7 +120,7 @@ class _StepRow extends StatelessWidget {
           ),
           if (at != null)
             Text(
-              '${at.hour.toString().padLeft(2, '0')}:${at.minute.toString().padLeft(2, '0')}',
+              formatClock(at),
               style: theme.textTheme.labelMedium?.copyWith(
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),

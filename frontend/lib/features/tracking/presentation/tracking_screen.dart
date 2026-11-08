@@ -89,7 +89,12 @@ class TrackingScreen extends ConsumerWidget {
       // Se abre con `push` desde las listas; si se llegó directo, volver
       // lleva al inicio en vez de dejar la pantalla sin salida.
       onBack: () => SectionHeader.backOrHome(context),
-      trailing: status == null ? null : OrderStatusChip(status: status),
+      trailing: status == null
+          ? null
+          : OrderStatusChip(
+              status: status,
+              forRequester: role == UserRole.requester,
+            ),
       titleBar: t == null
           ? null
           : FlightLiveBar(
@@ -122,7 +127,11 @@ class TrackingScreen extends ConsumerWidget {
             ]
           : [
               if (order != null && status != null)
-                _SheetTitle(name: order.medicationName, status: status),
+                _SheetTitle(
+                  name: order.medicationName,
+                  status: status,
+                  forRequester: role == UserRole.requester,
+                ),
               FlightNotice(state: flight, showReturn: !hideReturn),
               if (coldAlert && role != UserRole.requester)
                 Padding(
@@ -153,10 +162,15 @@ class TrackingScreen extends ConsumerWidget {
 
 /// El medicamento y su estado, arriba de la hoja.
 class _SheetTitle extends StatelessWidget {
-  const _SheetTitle({required this.name, required this.status});
+  const _SheetTitle({
+    required this.name,
+    required this.status,
+    required this.forRequester,
+  });
 
   final String name;
   final OrderStatus status;
+  final bool forRequester;
 
   @override
   Widget build(BuildContext context) {
@@ -172,7 +186,7 @@ class _SheetTitle extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
           ),
-          OrderStatusChip(status: status),
+          OrderStatusChip(status: status, forRequester: forRequester),
         ],
       ),
     );
