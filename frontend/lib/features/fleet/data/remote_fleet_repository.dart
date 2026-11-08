@@ -1,4 +1,6 @@
 import '../../../core/network/api_client.dart';
+import '../../analytics/data/analytics_models.dart' show AnalyticsQuery;
+import 'fleet_dashboard_models.dart';
 import 'fleet_flight.dart';
 import 'fleet_map_models.dart';
 import 'fleet_models.dart';
@@ -70,6 +72,15 @@ class RemoteFleetRepository implements FleetRepository {
     return _asJsonList(data)
         .map((row) => MaintenancePeriod.fromJson(_asJsonMap(row)))
         .toList(growable: false);
+  }
+
+  @override
+  Future<FleetDashboard> dashboard(AnalyticsQuery query) async {
+    final data = await apiClient.getJson(
+      '/fleet/dashboard',
+      query: query.toQuery(),
+    );
+    return FleetDashboard.fromJson(_asJsonMap(data));
   }
 
   @override

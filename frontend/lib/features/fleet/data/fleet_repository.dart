@@ -1,3 +1,5 @@
+import '../../analytics/data/analytics_models.dart' show AnalyticsQuery;
+import 'fleet_dashboard_models.dart';
 import 'fleet_flight.dart';
 import 'fleet_map_models.dart';
 import 'fleet_models.dart';
@@ -45,4 +47,8 @@ abstract class FleetRepository {
   /// `GET /fleet/map` — sin `hubId`: las centrales del operador con el
   /// conteo de su flota, las geovallas y los vuelos con su ruta.
   Future<FleetMap> fleetMap();
+
+  /// `GET /fleet/dashboard?from&to&hubId` — uso, salud e incidentes de la
+  /// flota en el periodo; sin `hubId`, todas sus centrales.
+  Future<FleetDashboard> dashboard(AnalyticsQuery query);
 }

@@ -10,6 +10,8 @@ import 'package:frontend/features/auth/presentation/auth_controller.dart';
 import 'package:frontend/features/fleet/data/fleet_flight.dart';
 import 'package:frontend/features/fleet/data/fleet_models.dart';
 import 'package:frontend/features/fleet/data/fleet_map_models.dart';
+import 'package:frontend/features/fleet/data/fleet_dashboard_models.dart';
+import 'package:frontend/features/analytics/data/analytics_models.dart';
 import 'package:frontend/features/fleet/data/fleet_providers.dart';
 import 'package:frontend/features/fleet/data/fleet_repository.dart';
 import 'package:frontend/features/fleet/presentation/fleet_screen.dart';
@@ -226,6 +228,10 @@ class FakeFleetRepository implements FleetRepository {
 
   @override
   Future<FleetMap> fleetMap() async => const FleetMap();
+
+  @override
+  Future<FleetDashboard> dashboard(AnalyticsQuery query) async =>
+      const FleetDashboard();
 }
 
 const InventoryItem _inventoryItem = InventoryItem(
@@ -406,6 +412,9 @@ void main() {
     // La tarjeta del inicio, no el destino de la barra con el mismo nombre.
     final tile = find.widgetWithText(QuickTile, 'Flota');
     await tester.scrollUntilVisible(tile, 200);
+    // Un poco más: que la tarjeta no quede detrás de la barra flotante.
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -200));
+    await _pumpFrames(tester);
     await tester.tap(tile);
     await _pumpFrames(tester);
 
@@ -414,6 +423,8 @@ void main() {
     expect(find.textContaining('Central de prueba'), findsOneWidget);
     expect(find.text('Wingcopter 198'), findsWidgets);
     expect(find.text('Disponible'), findsOneWidget);
+    // Las entradas de la flota terminan antes de cerrar la prueba.
+    await tester.pump(const Duration(seconds: 4));
   });
 
   testWidgets('la tarjeta de inventario navega al listado', (tester) async {
@@ -437,6 +448,9 @@ void main() {
 
     final tile = find.widgetWithText(QuickTile, 'Inventario');
     await tester.scrollUntilVisible(tile, 200);
+    // Un poco más: que la tarjeta no quede detrás de la barra flotante.
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -200));
+    await _pumpFrames(tester);
     await tester.pump();
     await tester.tap(tile);
     await _pumpFrames(tester);
@@ -468,6 +482,9 @@ void main() {
 
     final tile = find.widgetWithText(QuickTile, 'Geovallas');
     await tester.scrollUntilVisible(tile, 200);
+    // Un poco más: que la tarjeta no quede detrás de la barra flotante.
+    await tester.drag(find.byType(Scrollable).first, const Offset(0, -200));
+    await _pumpFrames(tester);
     await tester.tap(tile);
     await _pumpFrames(tester);
 

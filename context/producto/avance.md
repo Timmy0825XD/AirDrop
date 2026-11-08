@@ -49,7 +49,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 15 | Bloqueantes de la auditoría 31 (Bloque 1) | `bugfix/hojas-sobre-la-barra`, `bugfix/estado-dron-grounded`, `feature/confirmar-carga-segura` | Hecha (PR #138, #139 y #140) |
 | 16 | La app al ritmo de la consola (Bloque 2 de la auditoría 31) | `feature/reloj-simulado`, `feature/incidentes-app`, `feature/fleet-mantenimiento-app` | Hecha (PR #141, #142 y #143) |
 | 17 | El despachador ante la consola (Bloque 3 de la auditoría 31) | `feature/declinar-urgencia`, `feature/central-sin-energia`, `feature/traza-decision` | Hecha (PR #144, #145 y #146) |
-| 18 | Operador y administrador (Bloque 4 de la auditoría 31) | `feature/fleet-mapa-operador`, `feature/fleet-tablero`, `feature/metricas-incidentes` | En curso: paso 1 hecho |
+| 18 | Operador y administrador (Bloque 4 de la auditoría 31) | `feature/fleet-mapa-operador`, `feature/fleet-tablero`, `feature/metricas-incidentes` | En curso: pasos 1 y 2 hechos (PR #147) |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -1128,8 +1128,24 @@ Lo que Nest ya le da al operador y al administrador (§16 y §17 de
   Prueba: `fleet_map_test`. Revisado en web a 360×640 con datos locales
   (sin vuelos: la central y la hoja; sin errores en la consola). Falta
   verlo con vuelos reales y la consola.
-- Paso 2 (`feature/fleet-tablero`): el inicio del operador como tablero
-  (`GET /fleet/dashboard`).
+- Paso 2 (`feature/fleet-tablero`), hecho el 2026-11-08: el inicio del
+  operador repetía la flota en dos cifras y dos accesos que ya estaban en la
+  barra. Ahora trae el **tablero de la flota** (`GET /fleet/dashboard`,
+  `FleetDashboard`) con los chips de 7, 30 y 90 días de las métricas:
+  - Uso: vuelos y km del periodo y una barra apilada con el tiempo
+    disponible, en misión y en taller.
+  - Salud: con cuánta batería vuelven (promedio y mínimo; sin muestras lo
+    dice, no inventa un promedio) y cuántos piden revisión o están vencidos;
+    tocarla lleva a la flota.
+  - Incidentes: por tipo, por día en barras y los tres drones con más.
+  - Se quedan la cifra de disponibles y los accesos de Flota y Geovallas.
+    No se hizo el mapa de zonas del tablero (`zones`): el operador ya tiene
+    el mapa en vivo; queda para después si se pide.
+  - El repositorio local arma el tablero con la flota de hoy (sin vuelos
+    ni incidentes).
+  Prueba: `operator_dashboard_test` (con el JSON de §16, a 360 px); las
+  pruebas del inicio bajan un poco más para tocar las tarjetas de abajo.
+  Revisado en web a 360×640 con datos locales.
 - Paso 3 (`feature/metricas-incidentes`): `incidentRate` y `groundings` en
   las métricas del administrador.
 
