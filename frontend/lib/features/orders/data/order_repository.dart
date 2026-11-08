@@ -55,6 +55,10 @@ abstract class OrderRepository {
   /// todas las centrales (la fórmula no cumple).
   Future<Order> reject(String id, String reason);
 
+  /// `GET /orders/:id/decision` — despachador: por qué el motor eligió (o
+  /// descartó) cada dron y, en una urgencia civil, a quién se le ofreció.
+  Future<OrderDecision> decision(String id);
+
   /// `POST /orders/:id/decline` — despachador (RU-10): "no puedo
   /// atenderla". La urgencia civil sale de la cola de su central y pasa a
   /// la siguiente; no se cierra. [reason] es opcional (hasta 160).

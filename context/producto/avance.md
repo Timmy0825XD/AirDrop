@@ -48,7 +48,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 14 | El resto de la app al diseño del espacio aéreo | `style/app-espacio-aereo` | Hecha (PR pendiente) |
 | 15 | Bloqueantes de la auditoría 31 (Bloque 1) | `bugfix/hojas-sobre-la-barra`, `bugfix/estado-dron-grounded`, `feature/confirmar-carga-segura` | Hecha (PR #138, #139 y #140) |
 | 16 | La app al ritmo de la consola (Bloque 2 de la auditoría 31) | `feature/reloj-simulado`, `feature/incidentes-app`, `feature/fleet-mantenimiento-app` | Hecha (PR #141, #142 y #143) |
-| 17 | El despachador ante la consola (Bloque 3 de la auditoría 31) | `feature/declinar-urgencia`, `feature/central-sin-energia`, `feature/traza-decision` | En curso: pasos 1 y 2 hechos (PR #144) |
+| 17 | El despachador ante la consola (Bloque 3 de la auditoría 31) | `feature/declinar-urgencia`, `feature/central-sin-energia`, `feature/traza-decision` | Hecha (PR #144, #145 y PR pendiente) |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -1073,8 +1073,26 @@ Lo que Nest ya le da al despachador (§13, §14 y §17 de
     pedidos al empezar el apagón y la bandeja queda vacía.
   Prueba: `hub_outage_test`. Sin revisión en pantalla: los datos locales no
   traen una central sin energía.
-- Paso 3 (`feature/traza-decision`): "¿Por qué este dron?"
-  (`GET /orders/:id/decision`) y la escalera de ofertas.
+- Paso 3 (`feature/traza-decision`), hecho el 2026-11-07: el motor guarda
+  por qué eligió o descartó cada dron (§14), pero un pedido reasignado no
+  explicaba nada.
+  - `GET /orders/:id/decision` (`OrderDecision`, `DecisionTrace`,
+    `HubTrace`, `DroneVerdict`, `DispatchOffer` en `decision_models.dart`).
+  - En el detalle del despachador, "¿Por qué este dron?" (`DecisionSection`)
+    dice en una línea qué decidió el motor («Se asignó WC-02 de Hospital
+    Rosario.», o el resultado y su motivo) y, al abrirla, cada central que
+    miró (corredor, minutos, batería que pide el vuelo, nota de Nest) con el
+    veredicto de cada dron: Elegido, Servía o Descartado con el motivo de
+    Nest y su batería. En una urgencia civil, la escalera: a qué central se
+    ofreció, desde qué hora y quién la declinó con su motivo.
+  - Sin traza lo dice («El motor todavía no decidió este pedido, o se
+    decidió antes de que guardáramos la traza.»). Si Nest responde 404
+    (otra central), la sección no sale. Autorizar o declinar la vuelven a
+    pedir.
+  Prueba: `decision_trace_test` (con el JSON de §14, a 360 px). Revisado en
+  web con datos locales (despachador, pedido pendiente de carga).
+
+Cierre: `flutter analyze` sin issues y `flutter test` en verde (263).
 
 ## Pendiente del backend
 
