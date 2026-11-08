@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/clock/sim_clock.dart';
 import '../../../../core/date_format.dart';
 import '../../../../core/widgets/press_scale.dart';
-import '../../../../core/widgets/row_action_button.dart';
+import '../../../../core/widgets/row_menu_button.dart';
 import '../../../../core/widgets/status_card.dart';
 import '../../../../core/widgets/status_pill.dart';
 import '../../../../core/widgets/tone_tile.dart';
@@ -11,8 +11,8 @@ import '../../data/inventory_models.dart';
 
 /// Fila del inventario: nombre, lote, cantidad, tipo de venta y
 /// vencimiento, con la cadena de frío marcada en el ícono. A la derecha,
-/// si el lote está vencido o por vencer, y "Eliminar". Tocarla abre la
-/// edición.
+/// si el lote está vencido o por vencer, y "Eliminar" en el menú `⋮`.
+/// Tocarla abre la edición.
 class InventoryTile extends StatelessWidget {
   const InventoryTile({
     super.key,
@@ -51,10 +51,15 @@ class InventoryTile extends StatelessWidget {
           leading: _ItemIcon(coldChain: item.requiresColdChain),
           body: _ItemInfo(item: item),
           status: StatusPill(label: label, tone: tone),
-          action: RowActionButton(
-            label: 'Eliminar',
-            destructive: true,
-            onPressed: onDelete,
+          action: RowMenuButton(
+            actions: [
+              RowMenuAction(
+                label: 'Eliminar',
+                icon: Icons.delete_outline_rounded,
+                destructive: true,
+                onSelected: onDelete,
+              ),
+            ],
           ),
         ),
       ),

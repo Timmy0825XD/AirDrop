@@ -50,7 +50,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 16 | La app al ritmo de la consola (Bloque 2 de la auditoría 31) | `feature/reloj-simulado`, `feature/incidentes-app`, `feature/fleet-mantenimiento-app` | Hecha (PR #141, #142 y #143) |
 | 17 | El despachador ante la consola (Bloque 3 de la auditoría 31) | `feature/declinar-urgencia`, `feature/central-sin-energia`, `feature/traza-decision` | Hecha (PR #144, #145 y #146) |
 | 18 | Operador y administrador (Bloque 4 de la auditoría 31) | `feature/fleet-mapa-operador`, `feature/fleet-tablero`, `feature/metricas-incidentes` | Hecha (PR #147, #148 y #149) |
-| 19 | Pulido de UX y accesibilidad (Bloque 5 de la auditoría 31) | `style/formularios-accesibles`, `style/fechas-y-textos`, `style/acciones-y-navegacion`, `style/pantallas-pequenas`, `style/inicios-por-rol` | En curso: pasos 1 y 2 hechos |
+| 19 | Pulido de UX y accesibilidad (Bloque 5 de la auditoría 31) | `style/formularios-accesibles`, `style/fechas-y-textos`, `style/acciones-y-navegacion`, `style/pantallas-pequenas`, `style/inicios-por-rol` | En curso: pasos 1, 2 y 3 hechos |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -1210,6 +1210,31 @@ datos ni endpoints.
     y la misión; las filas de las listas conservan "und.".
   Pruebas: `date_format_test`, `colombian_phone_test` y
   `requester_status_test`, y siete pruebas ajustadas a los textos nuevos.
+- Paso 3 (`style/acciones-y-navegacion`), hecho el 2026-11-08:
+  - "Cerrar sesión" solo en el perfil y con confirmación (`signOut` abre
+    `showConfirmSheet`). Salió del encabezado de los cuatro inicios y de
+    "Más".
+  - Las iniciales del encabezado (`HomeHeader.onProfile`) abren el perfil:
+    botón de 48 px que el lector de pantalla lee "Mi perfil". El
+    despachador lo abre con `push` (no es un destino de su barra); los
+    demás con `go`.
+  - "Eliminar" (inventario, geovallas) y "Suspender"/"Reactivar"
+    (centrales) salieron de la fila a un menú `⋮` de 48 px
+    (`RowMenuButton`); cada opción sigue pidiendo confirmación.
+  - Crear: sin botones flotantes. El administrador crea centrales y
+    cuentas con el "+" del centro de la barra; inventario, flota y
+    geovallas tienen el "+" en el encabezado (`HeaderAddButton`). Las
+    listas ya no reservan el espacio del botón flotante.
+  - "Más" del despachador en tres grupos: Pedidos (traslados entrantes,
+    pendiente de carga, vuelos en curso, programados, histórico), Pedir a
+    otra central (urgencia, "Nuevo abastecimiento", "Mis
+    abastecimientos") y Mi central (la central, cuarentena, perfil). La
+    lista de planes del despachador se titula "Mis abastecimientos".
+  - Geovallas temporales de la consola (RF-36): `Geofence.expiresAt` (Nest
+    ya lo mandaba) y en la fila "Temporal · vence 3:30 p. m." sin menú
+    para eliminar.
+  Pruebas: `actions_navigation_test` (iniciales → perfil, geovalla
+  temporal) y las de geovallas y centrales ajustadas al menú `⋮` y al "+".
 
 ## Pendiente del backend
 

@@ -17,7 +17,6 @@ import 'widgets/home_spotlight.dart';
 import 'widgets/quick_tile.dart';
 import 'widgets/requester/next_delivery_card.dart';
 import 'widgets/requester/requester_stats.dart';
-import 'widgets/sign_out.dart';
 
 /// Inicio del solicitante. Con un pedido en el aire, arriba va la misión en
 /// curso con la telemetría en vivo de ese vuelo (el mismo socket del mapa,
@@ -61,7 +60,7 @@ class RequesterHome extends ConsumerWidget {
                 ? 'Medicamentos por dron en Valledupar'
                 : 'Tu ${flying.medicationName.split(' ').first.toLowerCase()} '
                       'va en el aire.',
-            onSignOut: () => signOut(context, ref),
+            onProfile: () => context.go('/profile'),
             onNotices: () => context.push('/notifications'),
             unreadNotices: ref.watch(unreadCountProvider).value,
           ),

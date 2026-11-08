@@ -64,11 +64,19 @@ void main() {
 
     await pump(HubStatus.active);
     expect(find.text('Activa'), findsOneWidget);
+    // La acción vive en el menú ⋮, no en la fila.
+    expect(find.text('Suspender'), findsNothing);
+    await tester.tap(find.byTooltip('Más acciones'));
+    await tester.pumpAndSettle();
     expect(find.text('Suspender'), findsOneWidget);
+    await tester.tapAt(Offset.zero);
+    await tester.pumpAndSettle();
 
     await pump(HubStatus.suspended);
     await tester.pumpAndSettle();
     expect(find.text('Suspendida'), findsOneWidget);
+    await tester.tap(find.byTooltip('Más acciones'));
+    await tester.pumpAndSettle();
     expect(find.text('Reactivar'), findsOneWidget);
   });
 }

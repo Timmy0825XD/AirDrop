@@ -56,11 +56,7 @@ class UsersScreen extends ConsumerWidget {
           const Expanded(child: _UserList()),
         ],
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.go('/users/new'),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Nueva cuenta'),
-      ),
+      // Crear una cuenta es el "+" del centro de la barra.
     );
   }
 }
@@ -83,7 +79,7 @@ class _UserList extends ConsumerWidget {
               message: 'No hay cuentas con esos filtros.',
             )
           : ListView.separated(
-              padding: listPadding(context, top: 14, fab: true),
+              padding: listPadding(context, top: 14),
               itemCount: rows.length,
               separatorBuilder: (_, _) => const SizedBox(height: 10),
               itemBuilder: (context, index) => RiseIn(

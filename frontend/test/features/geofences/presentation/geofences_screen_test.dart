@@ -99,7 +99,10 @@ void main() {
   testWidgets('borrar pide confirmación y quita la fila', (tester) async {
     await _pumpScreen(tester, _FakeGeofenceRepository([_geofence()]));
 
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Eliminar'));
+    // "Eliminar" vive en el menú ⋮ de la fila.
+    await tester.tap(find.byTooltip('Más acciones'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Eliminar'));
     await tester.pumpAndSettle();
     expect(find.text('Eliminar geovalla'), findsOneWidget);
 
@@ -108,7 +111,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Corredor Aéreo Ambulancia'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(OutlinedButton, 'Eliminar'));
+    // "Eliminar" vive en el menú ⋮ de la fila.
+    await tester.tap(find.byTooltip('Más acciones'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Eliminar'));
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(FilledButton, 'Eliminar'));
     await tester.pumpAndSettle();
@@ -122,7 +128,9 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('el FAB abre el alta y la fila abre la edición', (tester) async {
+  testWidgets('el + del encabezado abre el alta y la fila abre la edición', (
+    tester,
+  ) async {
     final container = ProviderContainer(
       overrides: [
         geofenceRepositoryProvider.overrideWithValue(
@@ -155,7 +163,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Nueva geovalla'));
+    await tester.tap(find.byTooltip('Nueva geovalla'));
     await tester.pumpAndSettle();
     expect(find.text('alta'), findsOneWidget);
 
