@@ -12,6 +12,7 @@ import '../../auth/data/auth_models.dart' show DocumentType;
 import 'fallback_models.dart';
 import 'plan_schedule_models.dart';
 
+export 'decision_models.dart';
 export 'fallback_models.dart';
 export 'plan_schedule_models.dart';
 

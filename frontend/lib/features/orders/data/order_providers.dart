@@ -58,6 +58,12 @@ final orderDetailProvider = FutureProvider.family<Order, String>((ref, id) {
   return ref.watch(orderRepositoryProvider).findOne(id);
 });
 
+/// "¿Por qué este dron?" (`GET /orders/:id/decision`), solo el despachador.
+final orderDecisionProvider = FutureProvider.autoDispose
+    .family<OrderDecision, String>((ref, id) {
+      return ref.watch(orderRepositoryProvider).decision(id);
+    });
+
 final planDetailProvider = FutureProvider.family<PlanDetail, String>((ref, id) {
   return ref.watch(orderRepositoryProvider).planDetail(id);
 });
@@ -190,7 +196,9 @@ class OrderDispatchNotifier extends AsyncNotifier<Order?> {
       ..invalidate(scheduledProvider)
       ..invalidate(pendingLoadProvider)
       ..invalidate(inFlightProvider)
-      ..invalidate(orderDetailProvider(id));
+      ..invalidate(orderDetailProvider(id))
+      // Autorizar o declinar cambia la traza y la escalera.
+      ..invalidate(orderDecisionProvider(id));
     state = AsyncData(order);
     return order;
   }

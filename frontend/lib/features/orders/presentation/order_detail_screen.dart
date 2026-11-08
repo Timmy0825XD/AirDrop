@@ -24,6 +24,7 @@ import 'widgets/order_detail/authorize_outcome.dart';
 import 'widgets/order_detail/authorize_section.dart';
 import 'widgets/order_detail/cold_chain_banner.dart';
 import 'widgets/order_detail/confirm_load_section.dart';
+import 'widgets/order_detail/decision/decision_section.dart';
 import 'widgets/order_detail/decline_button.dart';
 import 'widgets/order_detail/decline_sheet.dart';
 import 'widgets/order_detail/dispatcher_permissions.dart';
@@ -311,6 +312,10 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           assignment: order.assignment!,
           loadConfirmedAt: order.loadConfirmedAt,
         ),
+      // Si la traza no carga (otra central: 404), la sección no sale.
+      if (isDispatcher)
+        if (ref.watch(orderDecisionProvider(order.id)).value case final d?)
+          DecisionSection(decision: d),
       if (isDispatcher)
         ..._dispatcherActions(can)
       // El solicitante solo abre sus pedidos: el vuelo y la entrega son suyos.

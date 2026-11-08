@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-11-07 21:38
+Generado: 2026-11-07 22:03
 
 ## analytics
 
@@ -448,7 +448,7 @@ Generado: 2026-11-07 21:38
 | `hub_plan_form_screen.dart` | 120 |
 | `in_flight_screen.dart` | 36 |
 | `incoming_screen.dart` | 36 |
-| `order_detail_screen.dart` | 393 |
+| `order_detail_screen.dart` | 398 |
 | `order_history_screen.dart` | 41 |
 | `pending_load_screen.dart` | 71 |
 | `plan_detail_screen.dart` | 203 |
@@ -471,6 +471,9 @@ Generado: 2026-11-07 21:38
 | `busy_slots.dart` | (sin clases) | 31 | ok |
 | `cold_chain_banner.dart` | ColdChainBanner | 13 | ok |
 | `confirm_load_section.dart` | ConfirmLoadSection | 43 | ok |
+| `decision_section.dart` | DecisionSection | 9 | ok |
+| `decision_section.dart` | _DecisionSectionState | 42 | ok |
+| `decision_summary.dart` | (sin clases) | 34 | ok |
 | `decline_button.dart` | DeclineButton | 22 | ok |
 | `decline_sheet.dart` | DeclineSheet | 7 | ok |
 | `decline_sheet.dart` | _DeclineSheetState | 57 | ok |
@@ -487,6 +490,8 @@ Generado: 2026-11-07 21:38
 | `hub_request_fields.dart` | _OfferPicker | 43 | ok |
 | `hub_request_fields.dart` | HubTransferNote | 14 | ok |
 | `hub_request_values.dart` | HubRequestValues | 60 | ok |
+| `hub_trace_tile.dart` | HubTraceTile | 29 | ok |
+| `hub_trace_tile.dart` | _DroneRow | 37 | ok |
 | `in_flight_tile.dart` | InFlightTile | 22 | ok |
 | `in_flight_tile.dart` | _DroneTile | 13 | ok |
 | `in_flight_tile.dart` | _FlightInfo | 35 | ok |
@@ -501,6 +506,7 @@ Generado: 2026-11-07 21:38
 | `occurrence_rules.dart` | OccurrenceRules | 45 | ok |
 | `occurrence_section.dart` | OccurrenceSection | 51 | ok |
 | `occurrence_section.dart` | _OccurrenceActions | 31 | ok |
+| `offer_ladder.dart` | OfferLadder | 40 | ok |
 | `offer_option.dart` | (sin clases) | 23 | ok |
 | `order_assignment_card.dart` | OrderAssignmentCard | 38 | ok |
 | `order_form_scaffold.dart` | OrderFormScaffold | 54 | ok |
@@ -634,7 +640,7 @@ Generado: 2026-11-07 21:38
 ## Resumen
 
 - Pantallas (44 archivos): 44
-- Archivos de widgets: 174 - clases de widget medidas: 401
+- Archivos de widgets: 178 - clases de widget medidas: 406
 - Widgets sobre 60 lineas: 5
 
 Detalle de los que exceden 60 lineas (candidatos a partir):

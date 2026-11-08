@@ -369,6 +369,60 @@ class LocalOrderRepository implements OrderRepository {
   /// no hay otra central que las reciba.
   final Set<String> _declined = {};
 
+  /// La maqueta tiene una sola central y un solo dron: con dron asignado
+  /// la traza dice que salió D-01; sin decidir, no hay traza. En una
+  /// urgencia civil, la escalera trae esa central.
+  @override
+  Future<OrderDecision> decision(String id) async {
+    final order = await findOne(id);
+    final civil =
+        order.missionType == MissionType.emergency &&
+        order.destinationKind == DestinationKind.person;
+    final offers = civil
+        ? [
+            DispatchOffer(
+              hubId: _localHubId,
+              name: 'Central Demo',
+              etaMin: 4.5,
+              offeredAt: order.createdAt,
+              declinedAt: _declined.contains(id) ? order.createdAt : null,
+            ),
+          ]
+        : null;
+    if (order.assignment == null) return OrderDecision(offers: offers);
+    return OrderDecision(
+      offers: offers,
+      trace: DecisionTrace(
+        at: order.authorizedAt ?? order.createdAt ?? DateTime.utc(2026),
+        outcome: DecisionOutcome.assigned,
+        hubs: [
+          HubTrace(
+            hubId: _localHubId,
+            name: 'Central Demo',
+            lot: true,
+            inRange: true,
+            corridorKm: _localAssignment.distanceKm,
+            etaMin: 4.5,
+            batteryNeededPercent: 31,
+            drones: const [
+              DroneVerdict(
+                identifier: 'D-01',
+                status: DroneVerdictStatus.chosen,
+                batteryPercent: 86,
+              ),
+              DroneVerdict(
+                identifier: 'D-02',
+                status: DroneVerdictStatus.discarded,
+                reason: 'El dron está en mantenimiento.',
+                batteryPercent: 100,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   /// Como `EmergencyDispatchService.decline`: solo una urgencia civil en
   /// recibido que todavía no tiene central, y una sola vez por central.
   @override
