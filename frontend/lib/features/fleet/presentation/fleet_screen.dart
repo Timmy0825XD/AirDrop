@@ -174,37 +174,37 @@ String? _modelName(List<DroneModel>? models, String droneModelId) {
 }
 
 /// Hoja de acciones. Cada botón dispara un endpoint distinto, nunca los
-/// dos: "Registrar mantenimiento" usa POST .../maintenance; los cambios de
-/// estado usan PATCH .../status.
+/// dos: "Enviar a mantenimiento" usa POST .../maintenance; disponible y
+/// fuera de servicio usan PATCH .../status.
 void _openDroneActions(BuildContext context, WidgetRef ref, Drone drone) {
   showDroneStatusSheet(
     context,
     drone: drone,
-    onSetAvailable: () => _patchStatus(
-      context,
-      ref,
-      drone.id,
-      const UpdateDroneStatusRequest(status: DroneStatus.available),
-      'Dron disponible.',
+    actions: (
+      setAvailable: () => _patchStatus(
+        context,
+        ref,
+        drone.id,
+        const UpdateDroneStatusRequest(status: DroneStatus.available),
+        'Dron disponible.',
+      ),
+      sendToMaintenance: () => _sendToMaintenance(context, ref, drone),
+      putOutOfService: () => _putOutOfService(context, ref, drone),
+      viewHistory: () => context.push(
+        '/fleet/${drone.id}/maintenance?name=${drone.identifier}',
+      ),
     ),
-    onPutInMaintenance: () => _askMaintenance(context, ref, drone),
-    onRegisterMaintenance: () => _registerMaintenance(context, ref, drone),
   );
 }
 
-/// `PATCH .../status` con `maintenance`: motivo y fecha opcionales, así
-/// que el diálogo puede arrancar con lo que el dron ya traía.
-Future<void> _askMaintenance(
+/// `PATCH .../status` con `out_of_service`: indefinido, solo el motivo
+/// (Nest no guarda fecha).
+Future<void> _putOutOfService(
   BuildContext context,
   WidgetRef ref,
   Drone drone,
 ) async {
-  final input = await showMaintenanceSheet(
-    context,
-    mandatory: false,
-    initialReason: drone.maintenanceReason ?? '',
-    initialDate: drone.maintenanceUntil ?? '',
-  );
+  final input = await showMaintenanceSheet(context, withDate: false);
   if (input == null || !context.mounted) return;
 
   await _patchStatus(
@@ -212,27 +212,21 @@ Future<void> _askMaintenance(
     ref,
     drone.id,
     UpdateDroneStatusRequest(
-      status: DroneStatus.maintenance,
+      status: DroneStatus.outOfService,
       reason: input.reason,
-      estimatedEndDate: input.estimatedEndDate,
     ),
-    'Dron en mantenimiento.',
+    'Dron fuera de servicio.',
   );
 }
 
-/// `POST .../maintenance`: motivo y fecha obligatorios y el dron queda
-/// `out_of_service`.
-Future<void> _registerMaintenance(
+/// `POST .../maintenance`: motivo y fecha obligatorios y el dron queda en
+/// mantenimiento (temporal).
+Future<void> _sendToMaintenance(
   BuildContext context,
   WidgetRef ref,
   Drone drone,
 ) async {
-  final input = await showMaintenanceSheet(
-    context,
-    mandatory: true,
-    initialReason: drone.maintenanceReason ?? '',
-    initialDate: drone.maintenanceUntil ?? '',
-  );
+  final input = await showMaintenanceSheet(context, withDate: true);
   if (input == null || !context.mounted) return;
 
   try {
@@ -245,18 +239,13 @@ Future<void> _registerMaintenance(
             estimatedEndDate: input.estimatedEndDate,
           ),
         );
-    if (context.mounted) {
-      showAppSnack(
-        context,
-        'Mantenimiento registrado: dron fuera de servicio.',
-      );
-    }
+    if (context.mounted) showAppSnack(context, 'Dron en mantenimiento.');
   } on ApiException catch (error) {
     if (context.mounted) showErrorSnack(context, error.message);
   }
 }
 
-/// Un solo `PATCH` para las vías de disponible y de mantenimiento. Los
+/// Un solo `PATCH` para las vías de disponible y de fuera de servicio. Los
 /// errores de Nest (409 en misión, 404 del dron) viajan tal cual.
 Future<void> _patchStatus(
   BuildContext context,

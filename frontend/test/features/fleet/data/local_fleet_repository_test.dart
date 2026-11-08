@@ -251,7 +251,7 @@ void main() {
     expect(updated.maintenanceUntil, isNull);
   });
 
-  test('mantenimiento sin motivo conserva el que ya tenía el dron', () async {
+  test('fuera de servicio conserva el motivo y no guarda fecha', () async {
     final repo = _repo(
       drones: [
         _drone(
@@ -276,10 +276,14 @@ void main() {
       'Cambio de hélices',
       reason: 'Nest conserva el motivo si no llega uno nuevo',
     );
-    expect(updated.maintenanceUntil, '2026-12-01');
+    expect(
+      updated.maintenanceUntil,
+      isNull,
+      reason: 'fuera de servicio es indefinido: Nest ignora la fecha',
+    );
   });
 
-  test('registrar mantenimiento deja el dron fuera de servicio', () async {
+  test('enviar a mantenimiento deja el dron en mantenimiento', () async {
     final repo = _repo();
 
     final updated = await repo.registerMaintenance(
@@ -290,31 +294,42 @@ void main() {
       ),
     );
 
-    expect(updated.status, DroneStatus.outOfService);
+    expect(updated.status, DroneStatus.maintenance);
     expect(updated.maintenanceReason, 'Cambio de baterías');
     expect(updated.maintenanceUntil, '2026-11-30');
+
+    // Abre un periodo en el historial; volver a disponible lo cierra.
+    final history = await repo.listMaintenance(updated.id);
+    expect(history.single.kind, MaintenanceKind.maintenance);
+    expect(history.single.isOpen, isTrue);
+    await repo.updateStatus(
+      updated.id,
+      const UpdateDroneStatusRequest(status: DroneStatus.available),
+    );
+    expect((await repo.listMaintenance(updated.id)).single.isOpen, isFalse);
   });
 
   test(
-    'un motivo en blanco no da 400: Nest solo exige que sea string',
+    'un motivo en blanco responde 400 «El motivo es obligatorio.»',
     () async {
       final repo = _repo();
 
-      final updated = await repo.registerMaintenance(
-        'd1111111-1111-4111-8111-111111111111',
-        const RegisterMaintenanceRequest(
-          reason: '   ',
-          estimatedEndDate: '2026-11-30',
+      await expectLater(
+        repo.registerMaintenance(
+          'd1111111-1111-4111-8111-111111111111',
+          const RegisterMaintenanceRequest(
+            reason: '   ',
+            estimatedEndDate: '2026-11-30',
+          ),
+        ),
+        throwsA(
+          isA<ApiException>().having(
+            (e) => e.message,
+            'message',
+            'El motivo es obligatorio.',
+          ),
         ),
       );
-
-      expect(updated.status, DroneStatus.outOfService);
-      expect(
-        updated.maintenanceReason,
-        '',
-        reason: 'FleetService.registerMaintenance guarda reason.trim()',
-      );
-      expect(updated.maintenanceUntil, '2026-11-30');
     },
   );
 

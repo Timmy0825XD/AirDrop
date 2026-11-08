@@ -12,7 +12,15 @@ enum NoticeKind {
   deliverySkipped('delivery_skipped'),
   departed('departed'),
   deliveryMissed('delivery_missed'),
+
+  /// CU-17, al operador: a un dron le toca revisión o su mantenimiento
+  /// pasó la fecha estimada.
+  maintenanceDue('maintenance_due'),
+  maintenanceOverdue('maintenance_overdue'),
   other('other');
+
+  /// Avisos del taller: llevan a la flota, no a un pedido.
+  bool get isFleet => this == maintenanceDue || this == maintenanceOverdue;
 
   const NoticeKind(this.apiValue);
 

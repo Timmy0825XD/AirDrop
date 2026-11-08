@@ -25,7 +25,10 @@ class NoticesScreen extends ConsumerWidget {
   Future<void> _open(BuildContext context, WidgetRef ref, AppNotice n) async {
     try {
       if (n.unread) await _actions(ref).markRead(n.id);
-      if (n.orderId != null && context.mounted) {
+      if (!context.mounted) return;
+      if (n.kind.isFleet) {
+        context.go('/fleet');
+      } else if (n.orderId != null) {
         context.push('/orders/${n.orderId}');
       }
     } on ApiException catch (e) {

@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-11-07 14:50
+Generado: 2026-11-07 21:02
 
 ## analytics
 
@@ -249,27 +249,32 @@ Generado: 2026-11-07 14:50
 | Archivo | Lineas |
 | --- | --- |
 | `drone_form_screen.dart` | 133 |
+| `drone_maintenance_screen.dart` | 67 |
 | `fleet_flights_screen.dart` | 109 |
-| `fleet_screen.dart` | 274 |
+| `fleet_screen.dart` | 263 |
 
 ### Widgets
 
 | Archivo | Widget/clase | Lineas | Estado |
 | --- | --- | --- | --- |
 | `drone_form_values.dart` | DroneFormValues | 28 | ok |
+| `drone_health.dart` | DroneHealth | 40 | ok |
+| `drone_health.dart` | _Battery | 25 | ok |
 | `drone_model_field.dart` | DroneModelField | 48 | ok |
 | `drone_model_field.dart` | _ModelSpecs | 28 | ok |
 | `drone_status_chip.dart` | DroneStatusChip | 17 | ok |
-| `drone_status_sheet.dart` | DroneStatusSheet | 56 | ok |
+| `drone_status_sheet.dart` | DroneStatusSheet | 31 | ok |
+| `drone_status_sheet.dart` | _ActionList | 51 | ok |
 | `drone_status_sheet.dart` | _SheetHeader | 21 | ok |
 | `drone_status_sheet.dart` | _ActionTile | 42 | ok |
-| `drone_tile.dart` | DroneTile | 46 | ok |
-| `drone_tile.dart` | _DroneInfo | 48 | ok |
+| `drone_tile.dart` | DroneTile | 47 | ok |
+| `drone_tile.dart` | _DroneInfo | 53 | ok |
 | `fleet_flight_card.dart` | FleetFlightCard | 49 | ok |
 | `fleet_hub_selector.dart` | FleetHubSelector | 34 | ok |
-| `maintenance_sheet.dart` | MaintenanceSheet | 16 | ok |
+| `maintenance_period_tile.dart` | MaintenancePeriodTile | 58 | ok |
+| `maintenance_sheet.dart` | MaintenanceSheet | 14 | ok |
 | `maintenance_sheet.dart` | _MaintenanceSheetState | 59 | ok |
-| `maintenance_sheet.dart` | _MaintenanceFields | 43 | ok |
+| `maintenance_sheet.dart` | _MaintenanceFields | 45 | ok |
 
 ## geofences
 
@@ -419,7 +424,7 @@ Generado: 2026-11-07 14:50
 
 | Archivo | Lineas |
 | --- | --- |
-| `notices_screen.dart` | 122 |
+| `notices_screen.dart` | 125 |
 
 ### Widgets
 
@@ -622,8 +627,8 @@ Generado: 2026-11-07 14:50
 
 ## Resumen
 
-- Pantallas (43 archivos): 43
-- Archivos de widgets: 168 - clases de widget medidas: 392
+- Pantallas (44 archivos): 44
+- Archivos de widgets: 170 - clases de widget medidas: 396
 - Widgets sobre 60 lineas: 5
 
 Detalle de los que exceden 60 lineas (candidatos a partir):

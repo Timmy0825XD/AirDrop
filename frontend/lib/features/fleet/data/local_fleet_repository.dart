@@ -38,6 +38,20 @@ class LocalFleetRepository implements FleetRepository {
   /// la maqueta. Las [Drone] son inmutables.
   final List<Drone> _drones;
 
+  /// Historial de taller por dron, del más reciente al más viejo.
+  final Map<String, List<MaintenancePeriod>> _history = {
+    'd2222222-2222-4222-8222-222222222222': [
+      MaintenancePeriod(
+        id: 'local-1',
+        kind: MaintenanceKind.maintenance,
+        reason: 'Cambio de hélices programado',
+        flightsAtStart: 50,
+        startedAt: DateTime.utc(2026, 10, 10, 14),
+        estimatedEndDate: '2026-10-15',
+      ),
+    ],
+  };
+
   /// Drones de partida de la maqueta, en la central de demostración.
   static final List<Drone> _fixtures = [
     Drone(
@@ -47,6 +61,10 @@ class LocalFleetRepository implements FleetRepository {
       hubId: localFixtureHubId,
       status: DroneStatus.available,
       createdAt: DateTime.utc(2026, 9, 1, 12),
+      batteryPercent: 86,
+      lastFlightEndedAt: DateTime.utc(2026, 11, 7, 13, 40),
+      flightsSinceMaintenance: 42,
+      maintenanceCycles: 50,
     ),
     Drone(
       id: 'd2222222-2222-4222-8222-222222222222',
@@ -57,6 +75,11 @@ class LocalFleetRepository implements FleetRepository {
       maintenanceReason: 'Cambio de hélices programado',
       maintenanceUntil: '2026-10-15',
       createdAt: DateTime.utc(2026, 9, 1, 12),
+      batteryPercent: 100,
+      flightsSinceMaintenance: 50,
+      maintenanceCycles: 50,
+      maintenanceDue: true,
+      maintenanceOverdue: true,
     ),
   ];
 
@@ -130,26 +153,92 @@ class LocalFleetRepository implements FleetRepository {
     final endDate = request.estimatedEndDate;
 
     // Igual que `FleetService.updateStatus`: `available` limpia motivo y
-    // fecha; cualquier otro estado conserva los que ya tenía si no llegan.
-    _drones[index] = Drone(
-      id: current.id,
-      identifier: current.identifier,
-      droneModelId: current.droneModelId,
-      hubId: current.hubId,
-      status: request.status,
-      maintenanceReason: request.status == DroneStatus.available
+    // fecha; cualquier otro estado conserva el motivo si no llega. Fuera de
+    // servicio es indefinido: Nest no guarda fecha.
+    final status = request.status;
+    _drones[index] = _withStatus(
+      current,
+      status: status,
+      reason: status == DroneStatus.available
           ? null
           : (reason == null || reason.isEmpty
                 ? current.maintenanceReason
                 : reason),
-      maintenanceUntil: request.status == DroneStatus.available
+      until: status != DroneStatus.maintenance
           ? null
           : ((endDate == null || endDate.isEmpty)
                 ? current.maintenanceUntil
                 : endDate),
-      createdAt: current.createdAt,
     );
     return _drones[index];
+  }
+
+  /// `GET /fleet/drones/:id/maintenance`: del más reciente al más viejo.
+  @override
+  Future<List<MaintenancePeriod>> listMaintenance(String id) async {
+    final index = await _ownDroneIndex(id);
+    return List.unmodifiable(_history[_drones[index].id] ?? const []);
+  }
+
+  /// El dron con su nuevo estado, conservando batería y contadores. Cerrar
+  /// un mantenimiento (volver a disponible) cierra su periodo en el
+  /// historial y salir de la flota abre otro, como `FleetService`.
+  Drone _withStatus(
+    Drone current, {
+    required DroneStatus status,
+    required String? reason,
+    required String? until,
+  }) {
+    final periods = _history.putIfAbsent(current.id, () => []);
+    // Cerrar un mantenimiento deja al dron revisado: los vuelos vuelven a 0
+    // (`closingResetsCycles`); volver de fuera de servicio no.
+    final reviewed = current.status == DroneStatus.maintenance;
+    final flights = reviewed ? 0 : current.flightsSinceMaintenance;
+    if (periods.isNotEmpty && periods.first.isOpen) {
+      final open = periods.first;
+      periods[0] = MaintenancePeriod(
+        id: open.id,
+        kind: open.kind,
+        reason: open.reason,
+        flightsAtStart: open.flightsAtStart,
+        startedAt: open.startedAt,
+        estimatedEndDate: open.estimatedEndDate,
+        closedAt: DateTime.now().toUtc(),
+      );
+    }
+    final kind = switch (status) {
+      DroneStatus.maintenance => MaintenanceKind.maintenance,
+      DroneStatus.outOfService => MaintenanceKind.outOfService,
+      _ => null,
+    };
+    if (kind != null) {
+      periods.insert(
+        0,
+        MaintenancePeriod(
+          id: 'local-${periods.length + 1}',
+          kind: kind,
+          reason: reason ?? '',
+          flightsAtStart: flights,
+          startedAt: DateTime.now().toUtc(),
+          estimatedEndDate: until,
+        ),
+      );
+    }
+    return Drone(
+      id: current.id,
+      identifier: current.identifier,
+      droneModelId: current.droneModelId,
+      hubId: current.hubId,
+      status: status,
+      maintenanceReason: reason,
+      maintenanceUntil: until,
+      createdAt: current.createdAt,
+      batteryPercent: current.batteryPercent,
+      lastFlightEndedAt: current.lastFlightEndedAt,
+      flightsSinceMaintenance: flights,
+      maintenanceCycles: current.maintenanceCycles,
+      maintenanceDue: !reviewed && current.maintenanceDue,
+    );
   }
 
   @override
@@ -157,23 +246,21 @@ class LocalFleetRepository implements FleetRepository {
     String id,
     RegisterMaintenanceRequest request,
   ) async {
-    // Igual que `FleetService.registerMaintenance`: Nest solo exige que el
-    // motivo sea string (`@IsString`) y lo guarda con `trim()`, así que un
-    // motivo en blanco no produce 400 sino un dron con motivo vacío. La app
-    // no puede llegar acá: el formulario lo valida como obligatorio.
+    // Igual que `RegisterMaintenanceDto` desde `bugfix/validaciones-flota`:
+    // el motivo se guarda con `trim()` y en blanco responde 400.
     final reason = request.reason.trim();
+    if (reason.isEmpty) {
+      throw const ApiException('El motivo es obligatorio.', statusCode: 400);
+    }
     _requireDto(request.reason, request.estimatedEndDate);
     final index = await _ownDroneIndex(id);
-    final current = _drones[index];
-    _drones[index] = Drone(
-      id: current.id,
-      identifier: current.identifier,
-      droneModelId: current.droneModelId,
-      hubId: current.hubId,
-      status: DroneStatus.outOfService,
-      maintenanceReason: reason,
-      maintenanceUntil: request.estimatedEndDate,
-      createdAt: current.createdAt,
+    // Desde `feature/fleet-mantenimiento` el dron queda en mantenimiento
+    // (temporal, con fecha), ya no fuera de servicio.
+    _drones[index] = _withStatus(
+      _drones[index],
+      status: DroneStatus.maintenance,
+      reason: reason,
+      until: request.estimatedEndDate,
     );
     return _drones[index];
   }

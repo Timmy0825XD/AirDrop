@@ -5,33 +5,33 @@ import '../../../../core/widgets/press_scale.dart';
 import '../../data/fleet_models.dart';
 import 'drone_status_chip.dart';
 
-/// Abre la hoja de acciones del dron. Cada opción dispara **un** solo
-/// endpoint ("una sola vía por botón, nunca las dos"):
+/// Lo que se puede hacer con un dron desde "Gestionar". Cada una dispara
+/// **un** solo endpoint ("una sola vía por botón, nunca las dos"):
 ///
-/// - Marcar disponible → `PATCH .../status` con `available` (Nest limpia
-///   motivo y fecha).
-/// - Poner en mantenimiento → `PATCH .../status` con `maintenance` y los
-///   campos opcionales.
-/// - Registrar mantenimiento → `POST .../maintenance` con motivo y fecha
-///   obligatorios; el dron queda `out_of_service`.
-///
-/// La hoja se cierra antes de invocar el callback, que es quien pide los
-/// datos y llama al repositorio.
+/// - [setAvailable] → `PATCH .../status` con `available` (cierra el periodo
+///   de taller; Nest limpia motivo y fecha).
+/// - [sendToMaintenance] → `POST .../maintenance`: temporal, con motivo y
+///   fecha estimada obligatorios.
+/// - [putOutOfService] → `PATCH .../status` con `out_of_service` y el
+///   motivo: indefinido, sin fecha.
+/// - [viewHistory] → el historial de taller.
+typedef DroneActions = ({
+  VoidCallback setAvailable,
+  VoidCallback sendToMaintenance,
+  VoidCallback putOutOfService,
+  VoidCallback viewHistory,
+});
+
+/// Abre la hoja de acciones del dron. La hoja se cierra antes de invocar
+/// la acción, que es quien pide los datos y llama al repositorio.
 Future<void> showDroneStatusSheet(
   BuildContext context, {
   required Drone drone,
-  required VoidCallback onSetAvailable,
-  required VoidCallback onPutInMaintenance,
-  required VoidCallback onRegisterMaintenance,
+  required DroneActions actions,
 }) {
   return showAppSheet<void>(
     context,
-    builder: (_) => DroneStatusSheet(
-      drone: drone,
-      onSetAvailable: onSetAvailable,
-      onPutInMaintenance: onPutInMaintenance,
-      onRegisterMaintenance: onRegisterMaintenance,
-    ),
+    builder: (_) => DroneStatusSheet(drone: drone, actions: actions),
   );
 }
 
@@ -39,19 +39,14 @@ class DroneStatusSheet extends StatelessWidget {
   const DroneStatusSheet({
     super.key,
     required this.drone,
-    required this.onSetAvailable,
-    required this.onPutInMaintenance,
-    required this.onRegisterMaintenance,
+    required this.actions,
   });
 
   final Drone drone;
-  final VoidCallback onSetAvailable;
-  final VoidCallback onPutInMaintenance;
-  final VoidCallback onRegisterMaintenance;
+  final DroneActions actions;
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -61,31 +56,62 @@ class DroneStatusSheet extends StatelessWidget {
           children: [
             _SheetHeader(drone: drone),
             const SizedBox(height: 16),
-            if (drone.status != DroneStatus.available)
-              _ActionTile(
-                icon: Icons.check_circle_outline_rounded,
-                tone: colors.tertiary,
-                title: 'Marcar disponible',
-                subtitle: 'Deja el dron listo y borra el mantenimiento.',
-                onPressed: onSetAvailable,
-              ),
-            _ActionTile(
-              icon: Icons.build_outlined,
-              tone: colors.primary,
-              title: 'Poner en mantenimiento',
-              subtitle: 'Motivo y fecha estimada opcionales.',
-              onPressed: onPutInMaintenance,
-            ),
-            _ActionTile(
-              icon: Icons.handyman_outlined,
-              tone: colors.error,
-              title: 'Registrar mantenimiento',
-              subtitle: 'Motivo y fecha obligatorios: queda fuera de servicio.',
-              onPressed: onRegisterMaintenance,
-            ),
+            _ActionList(status: drone.status, actions: actions),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Las acciones que aplican al estado: no se ofrece mandar a mantenimiento
+/// un dron que ya está ahí, ni marcar disponible uno que ya lo está.
+class _ActionList extends StatelessWidget {
+  const _ActionList({required this.status, required this.actions});
+
+  final DroneStatus status;
+  final DroneActions actions;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (status.isOutOfFleet && status != DroneStatus.grounded)
+          _ActionTile(
+            icon: Icons.check_circle_outline_rounded,
+            tone: colors.tertiary,
+            title: 'Marcar disponible',
+            subtitle: 'Vuelve a la flota y cierra el periodo de taller.',
+            onPressed: actions.setAvailable,
+          ),
+        if (status != DroneStatus.maintenance)
+          _ActionTile(
+            icon: Icons.build_outlined,
+            tone: colors.primary,
+            title: 'Enviar a mantenimiento',
+            subtitle:
+                'Vuelve a la flota cuando lo marques disponible. '
+                'Lleva fecha estimada.',
+            onPressed: actions.sendToMaintenance,
+          ),
+        if (status != DroneStatus.outOfService)
+          _ActionTile(
+            icon: Icons.block_rounded,
+            tone: colors.error,
+            title: 'Dejar fuera de servicio',
+            subtitle: 'Sin fecha de regreso.',
+            onPressed: actions.putOutOfService,
+          ),
+        _ActionTile(
+          icon: Icons.history_rounded,
+          tone: colors.onSurfaceVariant,
+          title: 'Ver historial de taller',
+          subtitle: 'Mantenimientos y salidas de la flota.',
+          onPressed: actions.viewHistory,
+        ),
+      ],
     );
   }
 }

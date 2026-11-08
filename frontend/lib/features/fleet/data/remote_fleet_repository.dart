@@ -64,6 +64,14 @@ class RemoteFleetRepository implements FleetRepository {
   }
 
   @override
+  Future<List<MaintenancePeriod>> listMaintenance(String id) async {
+    final data = await apiClient.getJson('/fleet/drones/$id/maintenance');
+    return _asJsonList(data)
+        .map((row) => MaintenancePeriod.fromJson(_asJsonMap(row)))
+        .toList(growable: false);
+  }
+
+  @override
   Future<List<FleetFlight>> listFlights(String hubId) async {
     final data = await apiClient.getJson(
       '/fleet/flights',

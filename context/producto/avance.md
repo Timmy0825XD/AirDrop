@@ -47,7 +47,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 13 | Auth con el espacio aéreo vivo | `style/auth-espacio-aereo` | Hecha (PR #105) |
 | 14 | El resto de la app al diseño del espacio aéreo | `style/app-espacio-aereo` | Hecha (PR pendiente) |
 | 15 | Bloqueantes de la auditoría 31 (Bloque 1) | `bugfix/hojas-sobre-la-barra`, `bugfix/estado-dron-grounded`, `feature/confirmar-carga-segura` | Hecha (PR #138, #139 y #140) |
-| 16 | La app al ritmo de la consola (Bloque 2 de la auditoría 31) | `feature/reloj-simulado`, `feature/incidentes-app`, `feature/fleet-mantenimiento-app` | En curso: pasos 1 y 2 hechos (PR #141) |
+| 16 | La app al ritmo de la consola (Bloque 2 de la auditoría 31) | `feature/reloj-simulado`, `feature/incidentes-app`, `feature/fleet-mantenimiento-app` | Hecha (PR #141, #142 y PR pendiente) |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -1002,8 +1002,31 @@ app y se ve en la demo. Una rama por paso desde `develop`.
     estimada" en ámbar y el dron se dibuja tenue.
   Prueba: `incidents_test`. Sin revisión con la consola: los datos locales
   no traen incidentes.
-- Paso 3 (`feature/fleet-mantenimiento-app`): la hoja "Gestionar" con el
-  contrato nuevo, historial, batería, ciclos y vencidos.
+- Paso 3 (`feature/fleet-mantenimiento-app`), hecho el 2026-11-07: la flota
+  del operador con el contrato de `feature/fleet-mantenimiento` (§16) y la
+  batería de §15. Antes la hoja decía «Registrar mantenimiento: queda fuera
+  de servicio» (ya no es cierto) y ninguna opción ponía el dron fuera de
+  servicio.
+  - "Gestionar" ofrece una vía por botón, según el estado: Marcar
+    disponible (`PATCH` `available`), Enviar a mantenimiento (`POST
+    .../maintenance`, motivo y fecha obligatorios), Dejar fuera de servicio
+    (`PATCH` `out_of_service`, solo el motivo: es indefinido) y Ver
+    historial de taller.
+  - Cada fila de la flota: batería en un anillo, "Volvió hace 12 min" (o
+    "Nunca ha volado"), "42 / 50 vuelos" y las marcas "Le toca revisión"
+    (ámbar) o "Mantenimiento vencido" (rojo), a todo el ancho de la tarjeta
+    (`StatusCard.footer`).
+  - Historial: `/fleet/:id/maintenance` (`DroneMaintenanceScreen`), con
+    cada periodo, su motivo, la fecha estimada, los vuelos al empezar y si
+    sigue abierto.
+  - Avisos `maintenance_due` y `maintenance_overdue` con su ícono; tocarlos
+    lleva a la flota.
+  - El repositorio local sigue el contrato nuevo (mantenimiento, no fuera
+    de servicio; motivo en blanco da 400; historial en memoria).
+  Pruebas: `fleet_maintenance_test` y las de flota actualizadas. Revisado
+  en web a 360×640 con datos locales (flota, "Gestionar" e historial).
+
+Cierre: `flutter analyze` sin issues y `flutter test` en verde (254).
 
 ## Pendiente del backend
 
