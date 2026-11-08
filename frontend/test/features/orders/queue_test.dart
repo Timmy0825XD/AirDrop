@@ -6,7 +6,7 @@ import 'package:frontend/features/orders/data/order_providers.dart';
 import 'package:frontend/features/orders/presentation/queue_screen.dart';
 
 void main() {
-  testWidgets('la cola pinta Sin atender cuando unattended es true', (
+  testWidgets('la cola dice hace cuánto espera cada urgencia', (
     tester,
   ) async {
     final container = ProviderContainer(
@@ -25,7 +25,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Acetaminofén 500 mg'), findsOneWidget);
-    expect(find.text('Sin atender'), findsOneWidget);
+    expect(find.textContaining('Espera '), findsWidgets);
     expect(find.textContaining('Disponible: 8'), findsNWidgets(2));
   });
 

@@ -22,6 +22,8 @@ import 'widgets/order_detail/authorize_outcome.dart';
 import 'widgets/order_detail/authorize_section.dart';
 import 'widgets/order_detail/cold_chain_banner.dart';
 import 'widgets/order_detail/confirm_load_section.dart';
+import 'widgets/order_detail/decline_button.dart';
+import 'widgets/order_detail/decline_sheet.dart';
 import 'widgets/order_detail/dispatcher_permissions.dart';
 import 'widgets/order_detail/fallback_card.dart';
 import 'widgets/order_detail/occurrence_rules.dart';
@@ -40,6 +42,7 @@ import 'widgets/watch_flight_button.dart';
 /// solo en ese botón.
 enum _Action {
   authorize,
+  decline,
   reject,
   confirmLoad,
   prescription,
@@ -113,6 +116,27 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         showAppSnack(context, outcome.message, tone: outcome.tone);
         if (outcome.leavesHub) SectionHeader.backOrHome(context);
       });
+
+  /// "No puedo atenderla" (RU-10): la urgencia pasa a la siguiente central
+  /// y sale de la cola de esta; la pantalla vuelve atrás (esta central ya
+  /// no la puede abrir).
+  Future<void> _decline() async {
+    final reason = await showDeclineSheet(context);
+    if (reason == null || !mounted) return;
+    await _act(_Action.decline, () async {
+      await _dispatch.decline(
+        widget.orderId,
+        reason: reason.isEmpty ? null : reason,
+      );
+      if (!mounted) return;
+      showAppSnack(
+        context,
+        'La urgencia pasó a la siguiente central.',
+        tone: SnackTone.info,
+      );
+      SectionHeader.backOrHome(context);
+    });
+  }
 
   Future<void> _returnCheck() => _act(_Action.returnCheck, () async {
     final order = await _dispatch.returnCheck(
@@ -322,7 +346,13 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           loading: _running == _Action.authorize,
           onAuthorize: () => _authorize(can),
         ),
+        if (canDecline(can.order))
+          DeclineButton(busy: _busy, onTap: _decline),
         RejectSection(
+          note: canDecline(can.order)
+              ? 'Cierra el pedido para todas las centrales. Si solo tu '
+                    'central no puede, usa «No puedo atenderla».'
+              : null,
           reason: _reason,
           errorText: _reasonError,
           shakeCount: _shakeCount,

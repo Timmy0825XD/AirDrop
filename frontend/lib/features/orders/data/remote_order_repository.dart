@@ -135,6 +135,15 @@ class RemoteOrderRepository implements OrderRepository {
   }
 
   @override
+  Future<Order> decline(String id, {String? reason}) async {
+    final data = await apiClient.postJson(
+      '/orders/$id/decline',
+      body: {'reason': ?reason},
+    );
+    return Order.fromJson(_asMap(data));
+  }
+
+  @override
   Future<Order> authorize(String id, {bool? prescriptionVerified}) async {
     final data = await apiClient.postJson(
       '/orders/$id/authorize',

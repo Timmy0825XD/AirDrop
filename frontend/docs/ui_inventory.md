@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-11-07 21:02
+Generado: 2026-11-07 21:29
 
 ## analytics
 
@@ -447,14 +447,14 @@ Generado: 2026-11-07 21:02
 | `hub_plan_form_screen.dart` | 120 |
 | `in_flight_screen.dart` | 36 |
 | `incoming_screen.dart` | 36 |
-| `order_detail_screen.dart` | 356 |
+| `order_detail_screen.dart` | 386 |
 | `order_history_screen.dart` | 41 |
 | `pending_load_screen.dart` | 71 |
 | `plan_detail_screen.dart` | 203 |
 | `plan_form_screen.dart` | 97 |
 | `plan_schedule_screen.dart` | 158 |
 | `plans_screen.dart` | 32 |
-| `queue_screen.dart` | 69 |
+| `queue_screen.dart` | 74 |
 | `scheduled_screen.dart` | 83 |
 
 ### Widgets
@@ -470,6 +470,10 @@ Generado: 2026-11-07 21:02
 | `busy_slots.dart` | (sin clases) | 31 | ok |
 | `cold_chain_banner.dart` | ColdChainBanner | 13 | ok |
 | `confirm_load_section.dart` | ConfirmLoadSection | 37 | ok |
+| `decline_button.dart` | DeclineButton | 22 | ok |
+| `decline_sheet.dart` | DeclineSheet | 7 | ok |
+| `decline_sheet.dart` | _DeclineSheetState | 57 | ok |
+| `decline_sheet.dart` | _ReasonPills | 29 | ok |
 | `dispatcher_permissions.dart` | DispatcherPermissions | 56 | ok |
 | `emergency_banner.dart` | EmergencyBanner | 33 | ok |
 | `emergency_banner.dart` | _Scope | 29 | ok |
@@ -525,8 +529,9 @@ Generado: 2026-11-07 21:02
 | `prescription_picker.dart` | PrescriptionPicker | 52 | ok |
 | `prescription_picker.dart` | _Preview | 34 | ok |
 | `prescription_viewer.dart` | (sin clases) | 45 | ok |
-| `reject_section.dart` | RejectSection | 20 | ok |
-| `reject_section.dart` | _RejectSectionState | 50 | ok |
+| `queue_wait.dart` | (sin clases) | 21 | ok |
+| `reject_section.dart` | RejectSection | 25 | ok |
+| `reject_section.dart` | _RejectSectionState | 54 | ok |
 | `requester_order_fields.dart` | RequesterOrderForm | 21 | ok |
 | `requester_order_fields.dart` | CatalogChoices | 34 | ok |
 | `requester_order_fields.dart` | PrescriptionSlot | 28 | ok |
@@ -628,7 +633,7 @@ Generado: 2026-11-07 21:02
 ## Resumen
 
 - Pantallas (44 archivos): 44
-- Archivos de widgets: 170 - clases de widget medidas: 396
+- Archivos de widgets: 173 - clases de widget medidas: 400
 - Widgets sobre 60 lineas: 5
 
 Detalle de los que exceden 60 lineas (candidatos a partir):

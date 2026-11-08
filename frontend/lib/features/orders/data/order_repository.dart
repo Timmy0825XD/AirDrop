@@ -51,8 +51,14 @@ abstract class OrderRepository {
   /// `GET /orders/:id/prescription` — bytes, solo despachador en cola.
   Future<PrescriptionFile> prescription(String orderId);
 
-  /// `POST /orders/:id/reject` — despachador, 201.
+  /// `POST /orders/:id/reject` — despachador, 201. Cierra el pedido para
+  /// todas las centrales (la fórmula no cumple).
   Future<Order> reject(String id, String reason);
+
+  /// `POST /orders/:id/decline` — despachador (RU-10): "no puedo
+  /// atenderla". La urgencia civil sale de la cola de su central y pasa a
+  /// la siguiente; no se cierra. [reason] es opcional (hasta 160).
+  Future<Order> decline(String id, {String? reason});
 
   /// `POST /orders/:id/authorize` — despachador, 201. El motor de decisión
   /// reserva dron y corredor; el pedido pasa a `pending_load` y **no**
