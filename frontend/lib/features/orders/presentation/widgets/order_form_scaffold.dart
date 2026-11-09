@@ -12,7 +12,8 @@ import '../../../home/presentation/widgets/section_header.dart';
 /// formulario sobre la curva y el botón. Los campos dependen de una lista
 /// que llega de Nest ([source]: el catálogo o las centrales de origen);
 /// mientras carga, si falla o si viene vacía, lo dice en vez del
-/// formulario. Lo usan las urgencias y los planes de los dos roles.
+/// formulario. Lo usan las urgencias y los planes de los dos roles; la
+/// entrega periódica pasa además [steps] y [onBack] para ir por pasos.
 class OrderFormScaffold<T> extends StatelessWidget {
   const OrderFormScaffold({
     super.key,
@@ -23,6 +24,8 @@ class OrderFormScaffold<T> extends StatelessWidget {
     required this.emptyText,
     required this.fields,
     required this.button,
+    this.steps,
+    this.onBack,
   });
 
   final String title;
@@ -34,6 +37,9 @@ class OrderFormScaffold<T> extends StatelessWidget {
   /// Los campos de la tarjeta, ya con la lista cargada.
   final List<Widget> Function(List<T> rows) fields;
   final Widget button;
+  /// Por pasos: el avance (`FormSteps`) y volver al paso anterior.
+  final Widget? steps;
+  final VoidCallback? onBack;
 
   /// Lo que va en vez del formulario mientras la lista no sirve; `null`
   /// cuando ya llegó con algo.
@@ -55,7 +61,8 @@ class OrderFormScaffold<T> extends StatelessWidget {
     final header = SectionHeader(
       title: title,
       subtitle: subtitle,
-      onBack: () => context.go('/home'),
+      onBack: onBack ?? () => context.go('/home'),
+      bottom: steps,
     );
     if (_stateView() case final body?) {
       return SectionStatePage(header: header, body: body);

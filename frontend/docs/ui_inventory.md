@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-11-08 20:54
+Generado: 2026-11-08 21:03
 
 ## analytics
 
@@ -466,7 +466,7 @@ Generado: 2026-11-08 20:54
 | `agenda_screen.dart` | 122 |
 | `dispatch_history_screen.dart` | 127 |
 | `emergency_screen.dart` | 85 |
-| `hub_emergency_screen.dart` | 89 |
+| `hub_emergency_screen.dart` | 94 |
 | `hub_plan_form_screen.dart` | 120 |
 | `in_flight_screen.dart` | 36 |
 | `incoming_screen.dart` | 36 |
@@ -474,7 +474,7 @@ Generado: 2026-11-08 20:54
 | `order_history_screen.dart` | 81 |
 | `pending_load_screen.dart` | 71 |
 | `plan_detail_screen.dart` | 203 |
-| `plan_form_screen.dart` | 97 |
+| `plan_form_screen.dart` | 163 |
 | `plan_schedule_screen.dart` | 158 |
 | `plans_screen.dart` | 39 |
 | `queue_screen.dart` | 74 |
@@ -507,11 +507,17 @@ Generado: 2026-11-08 20:54
 | `emergency_facts.dart` | EmergencyFacts | 51 | ok |
 | `fallback_card.dart` | FallbackCard | 55 | ok |
 | `fallback_card.dart` | FallbackOptionTile | 33 | ok |
-| `hub_request_fields.dart` | HubRequestFields | 60 | ok |
-| `hub_request_fields.dart` | _QuantityField | 25 | ok |
+| `form_steps.dart` | FormSteps | 41 | ok |
+| `form_steps.dart` | _StepBar | 20 | ok |
+| `hub_emergency_fields.dart` | HubEmergencyForm | 26 | ok |
+| `hub_emergency_fields.dart` | HubEmergencyFields | 51 | ok |
+| `hub_emergency_fields.dart` | _SourcePicker | 45 | ok |
+| `hub_request_fields.dart` | HubRequestFields | 44 | ok |
+| `hub_request_fields.dart` | _OriginPicker | 34 | ok |
+| `hub_request_fields.dart` | HubQuantityField | 32 | ok |
 | `hub_request_fields.dart` | _OfferPicker | 43 | ok |
 | `hub_request_fields.dart` | HubTransferNote | 14 | ok |
-| `hub_request_values.dart` | HubRequestValues | 60 | ok |
+| `hub_request_values.dart` | HubRequestValues | 87 | **>60** |
 | `hub_trace_tile.dart` | HubTraceTile | 29 | ok |
 | `hub_trace_tile.dart` | _DroneRow | 37 | ok |
 | `in_flight_tile.dart` | InFlightTile | 22 | ok |
@@ -531,7 +537,7 @@ Generado: 2026-11-08 20:54
 | `offer_ladder.dart` | OfferLadder | 40 | ok |
 | `offer_option.dart` | (sin clases) | 23 | ok |
 | `order_assignment_card.dart` | OrderAssignmentCard | 38 | ok |
-| `order_form_scaffold.dart` | OrderFormScaffold | 54 | ok |
+| `order_form_scaffold.dart` | OrderFormScaffold | 60 | ok |
 | `order_journey.dart` | OrderJourney | 31 | ok |
 | `order_journey.dart` | _Track | 40 | ok |
 | `order_journey.dart` | _Stop | 49 | ok |
@@ -564,8 +570,8 @@ Generado: 2026-11-08 20:54
 | `requester_order_fields.dart` | RequesterOrderForm | 21 | ok |
 | `requester_order_fields.dart` | CatalogChoices | 34 | ok |
 | `requester_order_fields.dart` | PrescriptionSlot | 28 | ok |
-| `requester_order_fields.dart` | DestinationFields | 35 | ok |
-| `requester_order_fields.dart` | PlanScheduleFields | 30 | ok |
+| `requester_order_fields.dart` | DestinationFields | 36 | ok |
+| `requester_order_fields.dart` | PlanQuantityField | 18 | ok |
 | `requester_order_state.dart` | (sin clases) | 77 | ok |
 | `requester_order_values.dart` | RequesterOrderValues | 87 | **>60** |
 | `reschedule_sheet.dart` | RescheduleSheet | 10 | ok |
@@ -662,13 +668,14 @@ Generado: 2026-11-08 20:54
 ## Resumen
 
 - Pantallas (44 archivos): 44
-- Archivos de widgets: 190 - clases de widget medidas: 426
-- Widgets sobre 60 lineas: 5
+- Archivos de widgets: 192 - clases de widget medidas: 432
+- Widgets sobre 60 lineas: 6
 
 Detalle de los que exceden 60 lineas (candidatos a partir):
 
 - hubs/hub_form_values.dart :: HubFormValues = 84
 - inventory/inventory_form_values.dart :: InventoryFormValues = 99
+- orders/hub_request_values.dart :: HubRequestValues = 87
 - orders/requester_order_values.dart :: RequesterOrderValues = 87
 - orders/schedule_values.dart :: ScheduleDraft = 90
 - users/user_form_values.dart :: UserFormValues = 74

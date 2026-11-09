@@ -54,6 +54,34 @@ final originHubsProvider = FutureProvider<List<OriginHub>>((ref) {
   return ref.watch(orderRepositoryProvider).originHubs();
 });
 
+/// Una central que tiene el insumo que se busca, con su stock.
+typedef OfferSource = ({OriginHub hub, CatalogOffer offer});
+
+/// Para la urgencia a otra central con el medicamento primero: las otras
+/// centrales activas que lo tienen con stock, la que más tiene primero. No
+/// hay un endpoint que lo diga junto: se lee el catálogo de cada central de
+/// origen (son pocas) y se cruza por nombre y tipo de venta.
+final offerSourcesProvider =
+    FutureProvider.family<List<OfferSource>, CatalogOffer>((ref, wanted) async {
+      final hubs = await ref.watch(originHubsProvider.future);
+      final catalogs = await Future.wait([
+        for (final hub in hubs) ref.watch(hubCatalogProvider(hub.id).future),
+      ]);
+      final sources = <OfferSource>[
+        for (var i = 0; i < hubs.length; i++)
+          for (final offer in catalogs[i])
+            if (offer.name == wanted.name &&
+                offer.saleType == wanted.saleType &&
+                (offer.availableQuantity ?? 0) > 0)
+              (hub: hubs[i], offer: offer),
+      ];
+      return sources..sort(
+        (a, b) => (b.offer.availableQuantity ?? 0).compareTo(
+          a.offer.availableQuantity ?? 0,
+        ),
+      );
+    });
+
 final orderDetailProvider = FutureProvider.family<Order, String>((ref, id) {
   return ref.watch(orderRepositoryProvider).findOne(id);
 });

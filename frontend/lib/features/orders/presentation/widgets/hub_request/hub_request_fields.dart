@@ -37,27 +37,7 @@ class HubRequestFields extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AuthPickerField<String>(
-          label: 'Central de origen',
-          hint: 'Elige la central',
-          sheetTitle: '¿A qué central le pides?',
-          searchHint: 'Busca la central',
-          errorText: errors[HubRequestInput.origin],
-          shakeCount: shakeCount,
-          options: [
-            for (final hub in origins)
-              PickerOption(
-                value: hub.id,
-                title: hub.name,
-                icon: Icons.home_work_outlined,
-              ),
-          ],
-          isSelected: (id) => id == values.originHubId,
-          onSelected: (id) {
-            values.selectOrigin(id);
-            onChanged();
-          },
-        ),
+        _OriginPicker(fields: this),
         AnimatedSize(
           duration: const Duration(milliseconds: 320),
           curve: Curves.fastOutSlowIn,
@@ -67,33 +47,78 @@ class HubRequestFields extends StatelessWidget {
               : _OfferPicker(fields: this),
         ),
         const SizedBox(height: 16),
-        _QuantityField(fields: this),
+        HubQuantityField(
+          values: values,
+          errors: errors,
+          shakeCount: shakeCount,
+        ),
       ],
     );
   }
 }
 
-/// La cantidad, con el stock de la central de origen como máximo.
-class _QuantityField extends StatelessWidget {
-  const _QuantityField({required this.fields});
+/// La central a la que se le pide (el abastecimiento la elige primero).
+class _OriginPicker extends StatelessWidget {
+  const _OriginPicker({required this.fields});
 
   final HubRequestFields fields;
 
   @override
   Widget build(BuildContext context) {
-    final stock = fields.values.offer?.availableQuantity;
+    final f = fields;
+    return AuthPickerField<String>(
+      label: 'Central de origen',
+      hint: 'Elige la central',
+      sheetTitle: '¿A qué central le pides?',
+      searchHint: 'Busca la central',
+      errorText: f.errors[HubRequestInput.origin],
+      shakeCount: f.shakeCount,
+      options: [
+        for (final hub in f.origins)
+          PickerOption(
+            value: hub.id,
+            title: hub.name,
+            icon: Icons.home_work_outlined,
+          ),
+      ],
+      isSelected: (id) => id == f.values.originHubId,
+      onSelected: (id) {
+        f.values.selectOrigin(id);
+        f.onChanged();
+      },
+    );
+  }
+}
+
+/// La cantidad, con el stock de la central de origen como máximo. La usan
+/// el abastecimiento y la urgencia.
+class HubQuantityField extends StatelessWidget {
+  const HubQuantityField({
+    super.key,
+    required this.values,
+    required this.errors,
+    required this.shakeCount,
+  });
+
+  final HubRequestValues values;
+  final Map<HubRequestInput, String> errors;
+  final int shakeCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final stock = values.offer?.availableQuantity;
     return AuthField(
       label: 'Cantidad',
       hint: 'Ej.: 1',
-      controller: fields.values.quantity,
+      controller: values.quantity,
       keyboardType: TextInputType.number,
       // Hasta 100000, el máximo del DTO.
       maxLength: 6,
       trailing: stock == null
           ? null
           : Text('Máx. $stock', style: Theme.of(context).textTheme.labelSmall),
-      errorText: fields.errors[HubRequestInput.quantity],
-      shakeCount: fields.shakeCount,
+      errorText: errors[HubRequestInput.quantity],
+      shakeCount: shakeCount,
     );
   }
 }

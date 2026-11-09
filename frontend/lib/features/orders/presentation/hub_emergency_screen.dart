@@ -7,12 +7,15 @@ import '../../../core/widgets/app_snack.dart';
 import '../../auth/presentation/widgets/auth_morph_button.dart';
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
+import 'widgets/hub_request/hub_emergency_fields.dart';
 import 'widgets/hub_request/hub_request_fields.dart';
 import 'widgets/order_form_scaffold.dart';
 import 'widgets/hub_request/hub_request_values.dart';
 
 /// Urgencia a otra central (`POST /orders/hub-emergencies`): tu central
-/// necesita ya un insumo que otra tiene. Al crearla se abre su detalle.
+/// necesita ya un insumo que otra tiene. Primero el medicamento y después
+/// la central, entre las que lo tienen con stock. Al crearla se abre su
+/// detalle.
 class HubEmergencyScreen extends ConsumerStatefulWidget {
   const HubEmergencyScreen({super.key});
 
@@ -33,7 +36,7 @@ class _HubEmergencyScreenState extends ConsumerState<HubEmergencyScreen> {
   }
 
   Future<void> _submit() async {
-    final errors = _values.validate(plan: false);
+    final errors = _values.validate(plan: false, medicationFirst: true);
     setState(() {
       _errors = errors;
       if (errors.isNotEmpty) _shakeCount++;
@@ -57,23 +60,25 @@ class _HubEmergencyScreenState extends ConsumerState<HubEmergencyScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final origin = _values.originHubId;
-    return OrderFormScaffold<OriginHub>(
+    final wanted = _values.wanted;
+    return OrderFormScaffold<CatalogOffer>(
       title: 'Urgencia a otra central',
       subtitle: 'Llega a tu central en el próximo vuelo',
-      source: ref.watch(originHubsProvider),
-      emptyIcon: Icons.domain_disabled_outlined,
-      emptyText: 'No hay otra central activa para pedirle.',
-      fields: (origins) => [
-        HubRequestFields(
-          origins: origins,
-          catalog: origin == null
-              ? null
-              : ref.watch(hubCatalogProvider(origin)),
-          values: _values,
-          errors: _errors,
-          shakeCount: _shakeCount,
-          onChanged: () => setState(() {}),
+      source: ref.watch(catalogProvider),
+      emptyIcon: Icons.medication_outlined,
+      emptyText: 'No hay medicamentos en el catálogo.',
+      fields: (catalog) => [
+        HubEmergencyFields(
+          form: HubEmergencyForm(
+            catalog: catalog,
+            sources: wanted == null
+                ? null
+                : ref.watch(offerSourcesProvider(wanted)),
+            values: _values,
+            errors: _errors,
+            shakeCount: _shakeCount,
+            onChanged: () => setState(() {}),
+          ),
         ),
         const SizedBox(height: 14),
         const HubTransferNote(),
