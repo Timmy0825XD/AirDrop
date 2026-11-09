@@ -692,24 +692,35 @@ class CatalogOffer {
   final int? availableQuantity;
 }
 
+/// Una central a la que el despachador le puede pedir
+/// (`GET /orders/origin-hubs`). Las coordenadas dibujan el traslado en el
+/// formulario; si no llegan, el formulario no muestra el mapa.
 class OriginHub {
   const OriginHub({
     required this.id,
     required this.name,
     required this.address,
+    this.latitude,
+    this.longitude,
   });
 
   factory OriginHub.fromJson(Map<String, dynamic> json) {
+    final lat = json['latitude'];
+    final lng = json['longitude'];
     return OriginHub(
       id: json['id'] as String,
       name: json['name'] as String,
       address: json['address'] as String,
+      latitude: lat is num ? lat.toDouble() : double.tryParse('$lat'),
+      longitude: lng is num ? lng.toDouble() : double.tryParse('$lng'),
     );
   }
 
   final String id;
   final String name;
   final String address;
+  final double? latitude;
+  final double? longitude;
 }
 
 /// Fila de `GET /orders/queue`: pedido más stock y marca de 5 minutos.

@@ -7,8 +7,10 @@ import '../../../core/widgets/app_snack.dart';
 import '../../auth/presentation/widgets/auth_morph_button.dart';
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
+import '../../hubs/data/hub_providers.dart';
 import 'widgets/hub_request/hub_request_fields.dart';
 import 'widgets/hub_request/hub_request_values.dart';
+import 'widgets/hub_request/transfer_map.dart';
 import 'widgets/order_form_scaffold.dart';
 import 'widgets/plan_schedule/busy_slots.dart';
 import 'widgets/plan_schedule/schedule_values.dart';
@@ -90,6 +92,11 @@ class _HubPlanFormScreenState extends ConsumerState<HubPlanFormScreen>
           errors: _errors,
           shakeCount: _shakeCount,
           onChanged: changed,
+        ),
+        ?transferMapOf(
+          origins: origins,
+          originHubId: _values.originHubId,
+          mine: ref.watch(myHubProvider).value,
         ),
         const SizedBox(height: 16),
         ScheduleFields(

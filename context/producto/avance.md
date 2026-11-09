@@ -51,7 +51,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 17 | El despachador ante la consola (Bloque 3 de la auditoría 31) | `feature/declinar-urgencia`, `feature/central-sin-energia`, `feature/traza-decision` | Hecha (PR #144, #145 y #146) |
 | 18 | Operador y administrador (Bloque 4 de la auditoría 31) | `feature/fleet-mapa-operador`, `feature/fleet-tablero`, `feature/metricas-incidentes` | Hecha (PR #147, #148 y #149) |
 | 19 | Pulido de UX y accesibilidad (Bloque 5 de la auditoría 31) | `style/formularios-accesibles`, `style/fechas-y-textos`, `style/acciones-y-navegacion`, `style/pantallas-pequenas`, `style/inicios-por-rol` | Hecha (pasos 1 a 5) |
-| 20 | Si da el tiempo (Bloque 6 de la auditoría 31) | `feature/formularios-por-pasos`, `refactor/campos-compartidos` | En curso: formularios por pasos hechos |
+| 20 | Si da el tiempo (Bloque 6 de la auditoría 31) | `feature/formularios-por-pasos`, `feature/mapa-traslado`, `refactor/campos-compartidos` | En curso: formularios por pasos y mapa del traslado hechos |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -1300,9 +1300,24 @@ Lo opcional de la auditoría 31. Una rama por paso desde `develop`.
   - Mapa estático: los formularios que piden un punto (urgencia y entrega
     del solicitante, nueva central) ya muestran el mapa quieto
     (`AuthLocationField`) desde antes. Los de pedir a otra central no
-    tienen mapa porque `GET /orders/origin-hubs` no manda coordenadas.
+    tenían mapa porque `GET /orders/origin-hubs` no mandaba coordenadas
+    (ver paso 2).
   Pruebas: `forms_by_steps_test` (urgencia con el medicamento primero, el
   avance y que el paso 1 no deja seguir sin medicamento).
+- Paso 2 (`feature/mapa-traslado`), hecho el 2026-11-08 (lo que quedó
+  abierto del paso 1):
+  - Backend: `GET /orders/origin-hubs` suma `latitude` y `longitude` de
+    cada central (lo mismo que ya muestra el radar). Prueba en
+    `orders.service.spec.ts` ("centrales de origen").
+  - Frontend: `OriginHub` lee las coordenadas (opcionales: un Nest viejo
+    sin ellas no rompe nada). En la urgencia a otra central y en el
+    abastecimiento, al elegir la central de origen aparece
+    `TransferMap`: mapa quieto con la central que lo manda (`HubMarker`),
+    la tuya (`TargetMarker`), una línea punteada y "De X a tu central ·
+    4,2 km en línea recta". La ruta real la calcula Nest al autorizar; la
+    línea solo orienta. `transferMapOf` decide si se muestra.
+  Pruebas: `transfer_map_test` (coordenadas, cuándo sale el mapa y su
+  texto).
 
 ## Pendiente del backend
 

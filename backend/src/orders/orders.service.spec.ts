@@ -201,7 +201,7 @@ function build(options?: {
     routes,
     { statusChanged: jest.fn().mockResolvedValue(undefined) } as never,
   );
-  return { service, orders, images, storage, stockForHub, plans, saved };
+  return { service, orders, images, storage, stockForHub, plans, saved, hubs };
 }
 
 describe('OrdersService history', () => {
@@ -398,6 +398,26 @@ describe('OrdersService emergencies', () => {
     await expect(
       service.createEmergency(requester(), emergencyDto()),
     ).rejects.toThrow(new BadRequestException(NO_STOCK_MESSAGE));
+  });
+});
+
+describe('OrdersService centrales de origen', () => {
+  it('lista las otras centrales activas con sus coordenadas', async () => {
+    const { service, hubs } = build();
+    hubs.find.mockResolvedValue([
+      { ...destination, name: 'Mi central' },
+      { ...origin, name: 'Hospital Rosario Pumarejo' },
+    ]);
+
+    await expect(service.listOriginHubs(dispatcher())).resolves.toEqual([
+      {
+        id: origin.id,
+        name: 'Hospital Rosario Pumarejo',
+        address: origin.address,
+        latitude: origin.latitude,
+        longitude: origin.longitude,
+      },
+    ]);
   });
 });
 
