@@ -7,10 +7,12 @@ import '../../../core/widgets/app_snack.dart';
 import '../../auth/presentation/widgets/auth_morph_button.dart';
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
+import '../../hubs/data/hub_providers.dart';
 import 'widgets/hub_request/hub_emergency_fields.dart';
 import 'widgets/hub_request/hub_request_fields.dart';
 import 'widgets/order_form_scaffold.dart';
 import 'widgets/hub_request/hub_request_values.dart';
+import 'widgets/hub_request/transfer_map.dart';
 
 /// Urgencia a otra central (`POST /orders/hub-emergencies`): tu central
 /// necesita ya un insumo que otra tiene. Primero el medicamento y después
@@ -79,6 +81,11 @@ class _HubEmergencyScreenState extends ConsumerState<HubEmergencyScreen> {
             shakeCount: _shakeCount,
             onChanged: () => setState(() {}),
           ),
+        ),
+        ?transferMapOf(
+          origins: ref.watch(originHubsProvider).value,
+          originHubId: _values.originHubId,
+          mine: ref.watch(myHubProvider).value,
         ),
         const SizedBox(height: 14),
         const HubTransferNote(),

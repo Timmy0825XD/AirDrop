@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-11-08 21:03
+Generado: 2026-11-08 21:20
 
 ## analytics
 
@@ -466,8 +466,8 @@ Generado: 2026-11-08 21:03
 | `agenda_screen.dart` | 122 |
 | `dispatch_history_screen.dart` | 127 |
 | `emergency_screen.dart` | 85 |
-| `hub_emergency_screen.dart` | 94 |
-| `hub_plan_form_screen.dart` | 120 |
+| `hub_emergency_screen.dart` | 101 |
+| `hub_plan_form_screen.dart` | 127 |
 | `in_flight_screen.dart` | 36 |
 | `incoming_screen.dart` | 36 |
 | `order_detail_screen.dart` | 399 |
@@ -592,6 +592,8 @@ Generado: 2026-11-08 21:03
 | `schedule_range_fields.dart` | _ScheduleEndFields | 56 | ok |
 | `schedule_values.dart` | ScheduleDraft | 90 | **>60** |
 | `status_reason_banner.dart` | StatusReasonBanner | 13 | ok |
+| `transfer_map.dart` | TransferMap | 47 | ok |
+| `transfer_map.dart` | _TransferLayer | 41 | ok |
 | `watch_flight_button.dart` | WatchFlightButton | 18 | ok |
 
 ### Otros (presentation/ sin /widgets)
@@ -668,7 +670,7 @@ Generado: 2026-11-08 21:03
 ## Resumen
 
 - Pantallas (44 archivos): 44
-- Archivos de widgets: 192 - clases de widget medidas: 432
+- Archivos de widgets: 193 - clases de widget medidas: 434
 - Widgets sobre 60 lineas: 6
 
 Detalle de los que exceden 60 lineas (candidatos a partir):

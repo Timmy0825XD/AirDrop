@@ -157,9 +157,17 @@ export class OrdersService {
       where: { status: HubStatus.ACTIVE },
       order: { name: 'ASC' },
     });
+    // Las coordenadas dejan dibujar el traslado en el formulario (de dónde
+    // sale y a qué central llega); no revelan nada que el radar no muestre.
     return rows
       .filter((hub) => hub.id !== mine.id)
-      .map((hub) => ({ id: hub.id, name: hub.name, address: hub.address }));
+      .map((hub) => ({
+        id: hub.id,
+        name: hub.name,
+        address: hub.address,
+        latitude: hub.latitude,
+        longitude: hub.longitude,
+      }));
   }
 
   async createEmergency(user: User, dto: CreateEmergencyDto) {

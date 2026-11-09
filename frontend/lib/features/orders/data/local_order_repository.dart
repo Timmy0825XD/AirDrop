@@ -156,6 +156,8 @@ class LocalOrderRepository implements OrderRepository {
         id: 'c1111111-1111-4111-8111-111111111111',
         name: 'Hospital Rosario Pumarejo',
         address: 'Calle 16',
+        latitude: 10.4742,
+        longitude: -73.2436,
       ),
     ];
   }
