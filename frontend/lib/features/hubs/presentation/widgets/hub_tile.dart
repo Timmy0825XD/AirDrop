@@ -87,6 +87,8 @@ class _HubInfo extends StatelessWidget {
       children: [
         Text(
           hub.name,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.titleMedium?.copyWith(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -103,6 +105,8 @@ class _HubInfo extends StatelessWidget {
         const SizedBox(height: 3),
         Text(
           '${hub.address} · ${formatColombianPhone(hub.contactPhone)}',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),

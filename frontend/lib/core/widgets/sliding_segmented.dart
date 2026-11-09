@@ -27,8 +27,54 @@ class SlidingSegmented<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final track = _SegmentTrack<T>(filter: this);
+    // Si las opciones no caben a lo ancho (pantalla de 320 px, texto
+    // grande), el filtro se desliza de lado en vez de cortar las palabras.
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final segment = segmentWidthOf(context, [
+          for (final option in options) option.label,
+        ]);
+        final needed = segment * options.length + 8;
+        if (needed <= constraints.maxWidth) return track;
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(width: needed, child: track),
+        );
+      },
+    );
+  }
+}
+
+/// Lo que ocupa la opción más larga, con su aire a los lados. Todas las
+/// opciones miden lo mismo para que la pastilla se deslice parejo.
+double segmentWidthOf(BuildContext context, List<String> labels) {
+  final style = Theme.of(context).textTheme.labelLarge!.copyWith(fontSize: 13);
+  var widest = 0.0;
+  for (final label in labels) {
+    final painter = TextPainter(
+      text: TextSpan(text: label, style: style),
+      textDirection: TextDirection.ltr,
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    if (painter.width > widest) widest = painter.width;
+    painter.dispose();
+  }
+  return widest + 32;
+}
+
+/// El riel con la pastilla y las opciones, todas del mismo ancho.
+class _SegmentTrack<T> extends StatelessWidget {
+  const _SegmentTrack({required this.filter});
+
+  final SlidingSegmented<T> filter;
+
+  @override
+  Widget build(BuildContext context) {
+    final options = filter.options;
     final palette = context.palette;
-    final index = options.indexWhere((option) => option.value == selected);
+    final index = options.indexWhere((o) => o.value == filter.selected);
     final x = options.length < 2 ? 0.0 : -1 + 2 * index / (options.length - 1);
     return Container(
       padding: const EdgeInsets.all(4),
@@ -48,8 +94,8 @@ class SlidingSegmented<T> extends StatelessWidget {
                 Expanded(
                   child: _Segment(
                     label: option.label,
-                    selected: option.value == selected,
-                    onTap: () => onChanged(option.value),
+                    selected: option.value == filter.selected,
+                    onTap: () => filter.onChanged(option.value),
                   ),
                 ),
             ],

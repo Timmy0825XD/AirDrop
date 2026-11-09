@@ -90,6 +90,8 @@ class _UserInfo extends StatelessWidget {
       children: [
         Text(
           user.fullName,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.titleMedium?.copyWith(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -98,6 +100,8 @@ class _UserInfo extends StatelessWidget {
         const SizedBox(height: 3),
         Text(
           user.email ?? 'Sin correo registrado',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
             color: colors.onSurfaceVariant,
           ),

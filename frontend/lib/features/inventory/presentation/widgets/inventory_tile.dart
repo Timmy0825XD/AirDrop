@@ -105,6 +105,8 @@ class _ItemInfo extends StatelessWidget {
       children: [
         Text(
           item.name,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.titleMedium?.copyWith(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -113,6 +115,8 @@ class _ItemInfo extends StatelessWidget {
         const SizedBox(height: 3),
         Text(
           'Lote ${item.lot} · ${item.quantity} und.',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.primary,
             fontWeight: FontWeight.w700,
@@ -125,6 +129,8 @@ class _ItemInfo extends StatelessWidget {
             if (item.requiresColdChain) 'Cadena de frío',
             'Vence ${formatDay(item.expirationDate)}',
           ].join(' · '),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: muted,
         ),
       ],

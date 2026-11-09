@@ -68,17 +68,29 @@ class _Lines extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(card.title, style: theme.textTheme.titleMedium),
+        Text(
+          card.title,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.titleMedium,
+        ),
         const SizedBox(height: 4),
         Text(
           card.accent,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
             color: card.tone,
             fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 2),
-        Text(card.detail, style: theme.textTheme.bodySmall),
+        Text(
+          card.detail,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodySmall,
+        ),
         if (card.pill case final pill?) ...[const SizedBox(height: 10), pill],
       ],
     );

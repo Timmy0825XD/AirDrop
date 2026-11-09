@@ -5,7 +5,7 @@
 > borre UI. Para que sirve: este listado es el mapa de lo que habra que
 > tocar cuando cambie el diseno (pestanas, cajitas, widgets).
 
-Generado: 2026-11-08 18:12
+Generado: 2026-11-08 18:27
 
 ## analytics
 
@@ -13,7 +13,7 @@ Generado: 2026-11-08 18:12
 
 | Archivo | Lineas |
 | --- | --- |
-| `analytics_screen.dart` | 195 |
+| `analytics_screen.dart` | 221 |
 
 ### Widgets
 
@@ -271,7 +271,7 @@ Generado: 2026-11-08 18:12
 | `drone_status_sheet.dart` | _SheetHeader | 21 | ok |
 | `drone_status_sheet.dart` | _ActionTile | 42 | ok |
 | `drone_tile.dart` | DroneTile | 47 | ok |
-| `drone_tile.dart` | _DroneInfo | 54 | ok |
+| `drone_tile.dart` | _DroneInfo | 58 | ok |
 | `fleet_flight_card.dart` | FleetFlightCard | 49 | ok |
 | `fleet_hub_selector.dart` | FleetHubSelector | 34 | ok |
 | `fleet_live_map.dart` | FleetLiveMap | 37 | ok |
@@ -310,7 +310,7 @@ Generado: 2026-11-08 18:12
 | `geofence_form_values.dart` | GeofenceFormValues | 60 | ok |
 | `geofence_polygon_preview.dart` | GeofencePolygonPreview | 50 | ok |
 | `geofence_tile.dart` | GeofenceTile | 46 | ok |
-| `geofence_tile.dart` | _GeofenceInfo | 43 | ok |
+| `geofence_tile.dart` | _GeofenceInfo | 47 | ok |
 
 ## home
 
@@ -411,7 +411,7 @@ Generado: 2026-11-08 18:12
 | `hub_outage.dart` | HubOutageBanner | 10 | ok |
 | `hub_tile.dart` | HubTile | 38 | ok |
 | `hub_tile.dart` | HubTypeTile | 21 | ok |
-| `hub_tile.dart` | _HubInfo | 37 | ok |
+| `hub_tile.dart` | _HubInfo | 41 | ok |
 | `hub_type_chips.dart` | HubTypeChips | 34 | ok |
 
 ## inventory
@@ -436,7 +436,7 @@ Generado: 2026-11-08 18:12
 | `inventory_kind_fields.dart` | _ColdChainToggle | 40 | ok |
 | `inventory_tile.dart` | InventoryTile | 55 | ok |
 | `inventory_tile.dart` | _ItemIcon | 21 | ok |
-| `inventory_tile.dart` | _ItemInfo | 42 | ok |
+| `inventory_tile.dart` | _ItemInfo | 48 | ok |
 
 ## notifications
 
@@ -536,7 +536,7 @@ Generado: 2026-11-08 18:12
 | `order_journey.dart` | _Dot | 38 | ok |
 | `order_kind_chip.dart` | OrderKindChip | 15 | ok |
 | `order_row_card.dart` | OrderRowCard | 50 | ok |
-| `order_row_card.dart` | _Lines | 29 | ok |
+| `order_row_card.dart` | _Lines | 41 | ok |
 | `order_row_card.dart` | _ToneEdge | 23 | ok |
 | `order_status_chip.dart` | OrderStatusChip | 49 | ok |
 | `order_summary.dart` | OrderSummary | 58 | ok |
@@ -653,7 +653,7 @@ Generado: 2026-11-08 18:12
 | `user_status_filter.dart` | UserStatusFilter | 32 | ok |
 | `user_tile.dart` | UserTile | 35 | ok |
 | `user_tile.dart` | UserAvatar | 28 | ok |
-| `user_tile.dart` | _UserInfo | 52 | ok |
+| `user_tile.dart` | _UserInfo | 56 | ok |
 | `user_tile.dart` | _HubChip | 24 | ok |
 
 ## Resumen

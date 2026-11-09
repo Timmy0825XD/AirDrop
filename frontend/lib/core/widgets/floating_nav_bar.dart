@@ -55,13 +55,20 @@ class FloatingNavBar extends StatelessWidget {
 
   static const double height = 92;
 
+  /// Ancho bajo el que la barra muestra solo íconos.
+  static const double compactWidth = 360;
+
   @override
   Widget build(BuildContext context) {
     final half = destinations.length ~/ 2;
+    // Bajo 360 px las cinco piezas no caben con texto: solo el destino
+    // abierto lleva su etiqueta.
+    final compact = MediaQuery.sizeOf(context).width < compactWidth;
     Widget item(int i) => Expanded(
       child: _NavItem(
         destination: destinations[i],
         active: i == selected,
+        showLabel: !compact || i == selected,
         onTap: () => onSelect(i),
       ),
     );
@@ -129,11 +136,13 @@ class _NavItem extends StatelessWidget {
   const _NavItem({
     required this.destination,
     required this.active,
+    required this.showLabel,
     required this.onTap,
   });
 
   final NavDestination destination;
   final bool active;
+  final bool showLabel;
   final VoidCallback onTap;
 
   @override
@@ -157,15 +166,19 @@ class _NavItem extends StatelessWidget {
               curve: AppMotion.bounceCurve,
               child: Icon(destination.icon, size: 22, color: color),
             ),
-            const SizedBox(height: 4),
-            Text(
-              destination.label,
-              maxLines: 1,
-              overflow: TextOverflow.fade,
-              style: Theme.of(
-                context,
-              ).textTheme.labelMedium?.copyWith(fontSize: 11, color: color),
-            ),
+            // Sin etiqueta el lector de pantalla igual lee el destino.
+            if (showLabel) ...[
+              const SizedBox(height: 4),
+              Text(
+                destination.label,
+                maxLines: 1,
+                overflow: TextOverflow.fade,
+                softWrap: false,
+                style: Theme.of(
+                  context,
+                ).textTheme.labelMedium?.copyWith(fontSize: 11, color: color),
+              ),
+            ],
             _ActiveDot(active: active),
           ],
         ),

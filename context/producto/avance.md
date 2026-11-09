@@ -50,7 +50,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 16 | La app al ritmo de la consola (Bloque 2 de la auditoría 31) | `feature/reloj-simulado`, `feature/incidentes-app`, `feature/fleet-mantenimiento-app` | Hecha (PR #141, #142 y #143) |
 | 17 | El despachador ante la consola (Bloque 3 de la auditoría 31) | `feature/declinar-urgencia`, `feature/central-sin-energia`, `feature/traza-decision` | Hecha (PR #144, #145 y #146) |
 | 18 | Operador y administrador (Bloque 4 de la auditoría 31) | `feature/fleet-mapa-operador`, `feature/fleet-tablero`, `feature/metricas-incidentes` | Hecha (PR #147, #148 y #149) |
-| 19 | Pulido de UX y accesibilidad (Bloque 5 de la auditoría 31) | `style/formularios-accesibles`, `style/fechas-y-textos`, `style/acciones-y-navegacion`, `style/pantallas-pequenas`, `style/inicios-por-rol` | En curso: pasos 1, 2 y 3 hechos |
+| 19 | Pulido de UX y accesibilidad (Bloque 5 de la auditoría 31) | `style/formularios-accesibles`, `style/fechas-y-textos`, `style/acciones-y-navegacion`, `style/pantallas-pequenas`, `style/inicios-por-rol` | En curso: pasos 1 a 4 hechos |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -1235,6 +1235,24 @@ datos ni endpoints.
     para eliminar.
   Pruebas: `actions_navigation_test` (iniciales → perfil, geovalla
   temporal) y las de geovallas y centrales ajustadas al menú `⋮` y al "+".
+- Paso 4 (`style/pantallas-pequenas`), hecho el 2026-11-08:
+  - Bajo 360 px de ancho la barra muestra solo íconos y la etiqueta del
+    destino abierto (`FloatingNavBar.compactWidth`); el lector de pantalla
+    sigue leyendo cada destino.
+  - `SlidingSegmented` mide la opción más larga (`segmentWidthOf`) y, si
+    no caben todas, se desliza de lado en vez de cortar las palabras
+    (Histórico, Cuentas, Centrales, Métricas). Todas las opciones miden lo
+    mismo, así la pastilla se desliza pareja.
+  - Métricas: los días en una fila y las centrales en otra que se
+    desliza; "Todas las centrales" ya no queda cortada contra el borde.
+  - Filas de las listas (pedidos, inventario, centrales, cuentas, drones y
+    geovallas): títulos y detalles a dos líneas como máximo con "…"; el
+    correo de una cuenta, en una sola.
+  - Tableta y web: `AppMaxWidth` (en `RoleShell`) deja pantalla y barra en
+    una columna de 600 px centrada, y el `MediaQuery` de adentro dice ese
+    ancho. Las hojas inferiores (navegador raíz) y el auth no pasan por ahí.
+  Pruebas: `small_screens_test` (barra a 320 y 400 px, segmentado con y sin
+  scroll, columna de 600 px).
 
 ## Pendiente del backend
 
