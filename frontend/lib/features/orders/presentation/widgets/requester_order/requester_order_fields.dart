@@ -8,7 +8,6 @@ import '../../../../auth/presentation/widgets/auth_picker_field.dart';
 import '../offer_option.dart';
 import '../../../../inventory/data/inventory_models.dart' show SaleType;
 import '../../../data/order_models.dart';
-import '../plan_schedule/schedule_fields.dart';
 import 'prescription_picker.dart';
 import 'requester_order_values.dart';
 
@@ -130,34 +129,23 @@ class DestinationFields extends StatelessWidget {
   }
 }
 
-/// La entrega periódica: cuánto por entrega y el calendario.
-class PlanScheduleFields extends StatelessWidget {
-  const PlanScheduleFields({
-    super.key,
-    required this.form,
-    required this.schedule,
-  });
+/// La entrega periódica: cuánto llega en cada entrega. El calendario va en
+/// su propio paso (`ScheduleFields`).
+class PlanQuantityField extends StatelessWidget {
+  const PlanQuantityField({super.key, required this.form});
 
   final RequesterOrderForm form;
-  final ScheduleForm schedule;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        AuthField(
-          label: 'Cantidad por entrega',
-          hint: 'Ej.: 1',
-          controller: form.values.quantity,
-          keyboardType: TextInputType.number,
-          maxLength: 6,
-          errorText: form.errors[RequesterInput.quantity],
-          shakeCount: form.shakeCount,
-        ),
-        const SizedBox(height: 16),
-        ScheduleFields(form: schedule),
-      ],
+    return AuthField(
+      label: 'Cantidad por entrega',
+      hint: 'Ej.: 1',
+      controller: form.values.quantity,
+      keyboardType: TextInputType.number,
+      maxLength: 6,
+      errorText: form.errors[RequesterInput.quantity],
+      shakeCount: form.shakeCount,
     );
   }
 }

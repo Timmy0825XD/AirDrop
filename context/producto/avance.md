@@ -51,6 +51,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 17 | El despachador ante la consola (Bloque 3 de la auditoría 31) | `feature/declinar-urgencia`, `feature/central-sin-energia`, `feature/traza-decision` | Hecha (PR #144, #145 y #146) |
 | 18 | Operador y administrador (Bloque 4 de la auditoría 31) | `feature/fleet-mapa-operador`, `feature/fleet-tablero`, `feature/metricas-incidentes` | Hecha (PR #147, #148 y #149) |
 | 19 | Pulido de UX y accesibilidad (Bloque 5 de la auditoría 31) | `style/formularios-accesibles`, `style/fechas-y-textos`, `style/acciones-y-navegacion`, `style/pantallas-pequenas`, `style/inicios-por-rol` | Hecha (pasos 1 a 5) |
+| 20 | Si da el tiempo (Bloque 6 de la auditoría 31) | `feature/formularios-por-pasos`, `refactor/campos-compartidos` | En curso: formularios por pasos hechos |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -1273,6 +1274,35 @@ datos ni endpoints.
     entregas, "Entregados" dice una frase en vez del anillo vacío.
   Pruebas: `next_up_test` (orden de las tareas, lista vacía y "en curso")
   y `role_home_test` ajustado a los inicios sin accesos repetidos.
+
+## Fase 20 — Si da el tiempo (Bloque 6)
+
+Lo opcional de la auditoría 31. Una rama por paso desde `develop`.
+
+- Paso 1 (`feature/formularios-por-pasos`), hecho el 2026-11-08:
+  - Entrega periódica del solicitante en tres pasos (`FormSteps` bajo el
+    título): **Qué** (medicamento, fórmula si la pide, cantidad),
+    **Cuándo** (calendario con su vista previa) y **Dónde** (dirección y
+    punto). "Siguiente" valida solo el paso abierto; volver (encabezado o
+    atrás del teléfono, `PopScope`) regresa al anterior sin perder lo
+    escrito. Al llegar a "Cuándo" se pide la vista previa; si Nest todavía
+    no respondió, "Siguiente" lo avisa. El body y el endpoint no cambian.
+    `OrderFormScaffold` suma `steps` y `onBack`; `PlanScheduleFields` pasó
+    a `PlanQuantityField` (el calendario va en su paso).
+  - Urgencia a otra central con el medicamento primero
+    (`HubEmergencyFields`): se elige del catálogo general y después la
+    central, entre las que lo tienen con stock (`offerSourcesProvider`:
+    lee el catálogo de cada central de origen y los cruza; no hizo falta
+    endpoint nuevo). Cada central dice "8 en stock · dirección". Cambiar
+    de medicamento suelta la central. `HubRequestValues` suma `wanted`,
+    `pickMedication`, `pickSource` y `validate(medicationFirst:)`. El
+    abastecimiento sigue con la central primero (`HubRequestFields`).
+  - Mapa estático: los formularios que piden un punto (urgencia y entrega
+    del solicitante, nueva central) ya muestran el mapa quieto
+    (`AuthLocationField`) desde antes. Los de pedir a otra central no
+    tienen mapa porque `GET /orders/origin-hubs` no manda coordenadas.
+  Pruebas: `forms_by_steps_test` (urgencia con el medicamento primero, el
+  avance y que el paso 1 no deja seguir sin medicamento).
 
 ## Pendiente del backend
 
