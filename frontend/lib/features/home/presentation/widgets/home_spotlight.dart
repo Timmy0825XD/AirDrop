@@ -10,7 +10,8 @@ import '../../../../theme/app_palette.dart';
 /// La cifra principal de un inicio, como la pantalla de un centro de
 /// control: en una tarjeta, el dron flotando sobre un radar que barre, su
 /// estado en una pastilla y, separado por una línea fina, el número grande
-/// con su etiqueta en dos líneas.
+/// con su etiqueta en dos líneas. Con [onTap] se toca para abrir lo que
+/// cuenta.
 class HomeSpotlight extends StatelessWidget {
   const HomeSpotlight({
     super.key,
@@ -18,6 +19,7 @@ class HomeSpotlight extends StatelessWidget {
     required this.label,
     this.status,
     this.progress,
+    this.onTap,
   });
 
   /// `null` pinta un guion mientras carga.
@@ -30,13 +32,18 @@ class HomeSpotlight extends StatelessWidget {
   /// Llena el anillo de al lado (0 a 1); sin él, no hay anillo.
   final double? progress;
 
+  /// Abre la lista que cuenta la cifra ("Pedidos en curso" → Mis pedidos).
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
     final spoken = label.replaceAll('\n', ' ');
     return Semantics(
       label: '$spoken: ${value ?? 'sin dato'}',
       container: true,
+      button: onTap != null,
       child: GlassCard(
+        onTap: onTap,
         radius: 28,
         padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
         child: Column(

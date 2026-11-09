@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
+import '../../../core/clock/sim_clock.dart';
 import '../../../core/widgets/auto_refresh.dart';
 import '../../../core/widgets/error_banner.dart';
 import '../../../core/widgets/status_pill.dart';
@@ -15,6 +16,8 @@ import 'live_mission.dart';
 import 'widgets/dispatcher/dispatcher_counts.dart';
 import 'widgets/dispatcher/dispatcher_tiles.dart';
 import 'widgets/dispatcher/hub_notice.dart';
+import 'widgets/dispatcher/next_up.dart';
+import 'widgets/dispatcher/next_up_card.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_page.dart';
 import 'widgets/home_spotlight.dart';
@@ -22,7 +25,9 @@ import '../../notifications/data/notice_providers.dart';
 
 /// Inicio del despachador: su central, las urgencias en cola como cifra
 /// principal, el primer vuelo de su central como misión en curso (con su
-/// telemetría), las bandejas en cuadrícula y los accesos de su central. Con
+/// telemetría), "Lo que te toca ahora" (la urgencia más vieja, el dron que
+/// espera la carga y el próximo programado), las bandejas en cuadrícula y
+/// los accesos de su central que no están en la barra. Con
 /// la central suspendida (o sin central) solo quedan Mi central y Mis
 /// planes: Nest rechaza lo demás. Los números se refrescan cada 10 s.
 class DispatcherHome extends ConsumerWidget {
@@ -85,6 +90,16 @@ class DispatcherHome extends ConsumerWidget {
           ),
           const SizedBox(height: 12),
           if (flying != null) LiveMission(order: flying),
+          if (active)
+            NextUpCard(
+              items: dispatcherNextUp(
+                queue: ref.watch(queueProvider).value,
+                pendingLoad: ref.watch(pendingLoadProvider).value,
+                scheduled: ref.watch(scheduledProvider).value,
+                now: simClock.now(),
+              ),
+              onOpen: (id) => context.push('/orders/$id'),
+            ),
           DispatcherTiles(hub: hub, counts: counts),
         ],
       ),

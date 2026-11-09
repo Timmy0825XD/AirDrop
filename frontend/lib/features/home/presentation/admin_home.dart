@@ -72,23 +72,11 @@ class AdminHome extends ConsumerWidget {
             ),
           ],
         ),
-        const HomeLabel('Gestionar'),
+        // Centrales y Cuentas ya están en la barra: aquí solo lo que no.
+        const HomeLabel('Análisis'),
         HomeGrid(
           startIndex: 5,
           children: [
-            QuickTile(
-              title: 'Centrales',
-              subtitle: 'Crea, ubica y suspende.',
-              icon: Icons.home_work_outlined,
-              count: hubs?.length,
-              onTap: () => context.go('/hubs'),
-            ),
-            QuickTile(
-              title: 'Cuentas institucionales',
-              icon: Icons.badge_outlined,
-              count: users?.length,
-              onTap: () => context.go('/users'),
-            ),
             QuickTile(
               title: 'Métricas',
               subtitle: 'Indicadores, demanda y centrales',

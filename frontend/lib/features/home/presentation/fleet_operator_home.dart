@@ -8,20 +8,19 @@ import '../../analytics/data/analytics_models.dart';
 import '../../auth/data/auth_models.dart';
 import '../../fleet/data/fleet_models.dart';
 import '../../fleet/data/fleet_providers.dart';
-import '../../geofences/data/geofence_providers.dart';
 import 'widgets/operator/dashboard_period.dart';
 import 'widgets/operator/operator_dashboard.dart';
 import 'widgets/home_grid.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_page.dart';
 import 'widgets/home_spotlight.dart';
-import 'widgets/quick_tile.dart';
 import '../../notifications/data/notice_providers.dart';
 
 /// Inicio del operador de flota: sus centrales, los drones disponibles de
 /// **todas** ellas como cifra principal (el anillo dice qué parte de la
 /// flota está lista), el tablero de la flota (uso, salud e incidentes del
-/// periodo, `GET /fleet/dashboard`) y los accesos. Los drones se refrescan
+/// periodo, `GET /fleet/dashboard`). Flota y Geovallas no se repiten: están
+/// en la barra. Los drones se refrescan
 /// cada 10 s: sin eso, un dron que despegaba o aterrizaba seguía en su
 /// estado viejo hasta recargar la app.
 class FleetOperatorHome extends ConsumerStatefulWidget {
@@ -43,7 +42,6 @@ class _FleetOperatorHomeState extends ConsumerState<FleetOperatorHome> {
     final hub = ref.watch(effectiveHubProvider);
     final hubs = ref.watch(assignedHubsProvider).value;
     final drones = ref.watch(operatorDronesProvider).value;
-    final geofences = ref.watch(geofencesProvider).value;
     final dashboard = ref.watch(
       fleetDashboardProvider(AnalyticsQuery.lastDays(_days)),
     );
@@ -85,29 +83,10 @@ class _FleetOperatorHomeState extends ConsumerState<FleetOperatorHome> {
             onDays: (days) => setState(() => _days = days),
           ),
           const SizedBox(height: 12),
+          // Flota y Geovallas ya están en la barra: el inicio no las repite.
           OperatorDashboard(
             state: dashboard,
             onOpenFleet: () => context.go('/fleet'),
-          ),
-          const HomeLabel('Gestionar'),
-          HomeGrid(
-            startIndex: 5,
-            children: [
-              QuickTile(
-                title: 'Flota',
-                subtitle: 'Drones, estados y mantenimiento.',
-                icon: Icons.flight_rounded,
-                count: drones?.length,
-                onTap: () => context.go('/fleet'),
-              ),
-              QuickTile(
-                title: 'Geovallas',
-                subtitle: 'Zonas donde el dron no pasa.',
-                icon: Icons.hexagon_outlined,
-                count: geofences?.length,
-                onTap: () => context.go('/geofences'),
-              ),
-            ],
           ),
         ],
       ),

@@ -26,6 +26,7 @@ class OrderTray<T> extends StatelessWidget {
     required this.emptyText,
     required this.keyOf,
     required this.itemBuilder,
+    this.bottom,
   });
 
   final String title;
@@ -40,6 +41,9 @@ class OrderTray<T> extends StatelessWidget {
   final String Function(T row) keyOf;
   final Widget Function(BuildContext context, T row) itemBuilder;
 
+  /// Un filtro bajo el encabezado (p. ej. "En curso / Todos").
+  final Widget? bottom;
+
   @override
   Widget build(BuildContext context) {
     final count = rows.value?.length;
@@ -48,6 +52,7 @@ class OrderTray<T> extends StatelessWidget {
         title: title,
         subtitle: count == null ? idleSubtitle : countLabel(count),
         onBack: () => context.go('/home'),
+        bottom: bottom,
       ),
       body: AutoRefresh(
         onTick: onRefresh,

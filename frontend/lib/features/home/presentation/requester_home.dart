@@ -9,6 +9,7 @@ import '../../auth/data/auth_models.dart';
 import '../../notifications/data/notice_providers.dart';
 import '../../orders/data/order_models.dart';
 import '../../orders/data/order_providers.dart';
+import '../../orders/presentation/order_history_screen.dart';
 import 'widgets/home_grid.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_page.dart';
@@ -22,25 +23,18 @@ import 'widgets/requester/requester_stats.dart';
 /// curso con la telemetría en vivo de ese vuelo (el mismo socket del mapa,
 /// abierto solo mientras se ve el inicio); si no, el dron sobre el radar
 /// con cuántos pedidos van en curso. Debajo, sus números, la próxima
-/// entrega programada y los accesos para pedir y seguir. Los pedidos salen
-/// de `mineProvider` y `plansProvider` y se refrescan cada 10 s.
+/// entrega programada y "Entrega periódica" (pedir urgencia, Mis pedidos y
+/// Mis planes ya están en la barra). La cifra abre Mis pedidos en curso.
+/// Los pedidos salen de `mineProvider` y se refrescan cada 10 s.
 class RequesterHome extends ConsumerWidget {
   const RequesterHome({super.key, required this.user});
 
   final PublicUser user;
 
-  /// Estados en los que el pedido ya terminó.
-  static const _closed = {
-    OrderStatus.delivered,
-    OrderStatus.returned,
-    OrderStatus.rejected,
-    OrderStatus.cancelled,
-  };
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final orders = ref.watch(mineProvider).value;
-    final open = orders?.where((o) => !_closed.contains(o.status)).toList();
+    final open = orders?.where(isRequesterOrderOpen).toList();
     // El regreso del dron no se le muestra al solicitante.
     final flying = orders
         ?.where((o) => o.hasFlight && o.status != OrderStatus.returning)
@@ -49,7 +43,6 @@ class RequesterHome extends ConsumerWidget {
     return AutoRefresh(
       onTick: () => ref
         ..invalidate(mineProvider)
-        ..invalidate(plansProvider)
         ..invalidate(unreadCountProvider),
       child: HomePage(
         children: [
@@ -71,6 +64,7 @@ class RequesterHome extends ConsumerWidget {
             HomeSpotlight(
               value: open?.length,
               label: 'Pedidos\nen curso',
+              onTap: () => context.go(OrderHistoryScreen.openPath),
               status: const StatusPill(
                 label: 'Ningún dron volando',
                 tone: PillTone.neutral,
@@ -84,11 +78,7 @@ class RequesterHome extends ConsumerWidget {
               order: next,
               onTap: () => context.push('/orders/${next.id}'),
             ),
-          _RequesterGrid(
-            orders: orders,
-            plans: ref.watch(plansProvider).value,
-            flying: flying != null,
-          ),
+          const _RequesterGrid(),
         ],
       ),
     );
@@ -113,49 +103,25 @@ class RequesterHome extends ConsumerWidget {
   }
 }
 
-class _RequesterGrid extends StatelessWidget {
-  const _RequesterGrid({
-    required this.orders,
-    required this.plans,
-    required this.flying,
-  });
 
-  final List<Order>? orders;
-  final List<DeliveryPlan>? plans;
-  final bool flying;
+/// Lo único que la barra no tiene: pedir una entrega periódica. Pedir
+/// urgencia es el botón del centro; Mis pedidos y Mis planes, destinos.
+class _RequesterGrid extends StatelessWidget {
+  const _RequesterGrid();
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const HomeLabel('Pedir y seguir'),
+        const HomeLabel('Pedir'),
         HomeGrid(
           children: [
-            QuickTile(
-              title: 'Pedir urgencia',
-              subtitle: 'Un medicamento, a donde estés.',
-              icon: Icons.bolt_rounded,
-              onTap: () => context.push('/orders/emergency'),
-            ),
             QuickTile(
               title: 'Entrega periódica',
               subtitle: 'Tu tratamiento, cada semana o mes.',
               icon: Icons.calendar_month_outlined,
               onTap: () => context.push('/orders/plans/new'),
-            ),
-            QuickTile(
-              title: 'Mis pedidos',
-              icon: Icons.receipt_long_outlined,
-              count: orders?.length,
-              urgent: flying,
-              onTap: () => context.go('/orders/mine'),
-            ),
-            QuickTile(
-              title: 'Mis planes',
-              icon: Icons.event_repeat_outlined,
-              count: plans?.length,
-              onTap: () => context.go('/orders/plans'),
             ),
           ],
         ),
