@@ -246,7 +246,7 @@ const InventoryItem _inventoryItem = InventoryItem(
 );
 
 void main() {
-  testWidgets('muestra el home del solicitante con las cuatro tarjetas', (
+  testWidgets('el inicio del solicitante no repite lo que está en la barra', (
     tester,
   ) async {
     final container = await _authenticatedContainer(
@@ -260,16 +260,19 @@ void main() {
     expect(find.text('Hola, Ana'), findsOneWidget);
     expect(find.text('Solicitante'), findsOneWidget);
     // Los accesos van debajo de la misión y los números: se baja hasta ellos.
-    await tester.scrollUntilVisible(find.text('Mis pedidos'), 200);
-    expect(find.text('Pedir urgencia'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Entrega periódica'), 200);
     expect(find.text('Entrega periódica'), findsOneWidget);
-    expect(find.text('Mis planes'), findsOneWidget);
-    expect(find.text('Mis pedidos'), findsOneWidget);
+    // Pedir urgencia (centro), Mis pedidos y Mis planes ya están en la barra.
+    expect(find.widgetWithText(QuickTile, 'Pedir urgencia'), findsNothing);
+    expect(find.widgetWithText(QuickTile, 'Mis pedidos'), findsNothing);
+    expect(find.widgetWithText(QuickTile, 'Mis planes'), findsNothing);
     expect(find.text('Pedidos aún no disponibles'), findsNothing);
     expect(find.text('Crear pedido'), findsNothing);
   });
 
-  testWidgets('muestra los accesos de operador de flota', (tester) async {
+  testWidgets('el inicio del operador no repite Flota ni Geovallas', (
+    tester,
+  ) async {
     final container = await _authenticatedContainer(
       email: 'operador@airdrop.local',
       password: 'Operador123',
@@ -282,9 +285,8 @@ void main() {
     await _pumpHome(tester, container, settles: false);
 
     expect(find.text('Operador de flota'), findsOneWidget);
-    await tester.scrollUntilVisible(find.text('Geovallas'), 200);
-    expect(find.text('Flota'), findsOneWidget);
-    expect(find.text('Geovallas'), findsOneWidget);
+    expect(find.widgetWithText(QuickTile, 'Flota'), findsNothing);
+    expect(find.widgetWithText(QuickTile, 'Geovallas'), findsNothing);
   });
 
   testWidgets('muestra los accesos de administrador', (tester) async {
@@ -316,35 +318,40 @@ void main() {
       reason: '1 central y 1 cuenta',
     );
     await tester.scrollUntilVisible(find.text('Métricas'), 200);
-    expect(find.text('Centrales'), findsOneWidget);
-    expect(find.text('Cuentas institucionales'), findsOneWidget);
+    // Centrales y Cuentas son destinos de la barra: el inicio no los repite.
+    expect(find.widgetWithText(QuickTile, 'Centrales'), findsNothing);
     expect(
-      _onTapOf(tester, 'Métricas'),
-      isNotNull,
-      reason: 'abre /analytics',
+      find.widgetWithText(QuickTile, 'Cuentas institucionales'),
+      findsNothing,
     );
+    expect(_onTapOf(tester, 'Métricas'), isNotNull, reason: 'abre /analytics');
     semantics.dispose();
   });
 
-  testWidgets('con la central suspendida solo deja Mi central y Mis planes', (
-    tester,
-  ) async {
-    final container = await _authenticatedContainer(
-      email: 'despacho@airdrop.local',
-      password: 'Despacho123',
-      hubRepository: FakeHubRepository(_hub(status: HubStatus.suspended)),
-    );
-    addTearDown(container.dispose);
+  testWidgets(
+    'con la central suspendida solo deja Mi central y Mis abastecimientos',
+    (tester) async {
+      final container = await _authenticatedContainer(
+        email: 'despacho@airdrop.local',
+        password: 'Despacho123',
+        hubRepository: FakeHubRepository(_hub(status: HubStatus.suspended)),
+      );
+      addTearDown(container.dispose);
 
-    await _pumpHome(tester, container, settles: false);
+      await _pumpHome(tester, container, settles: false);
 
-    expect(find.text('Central de prueba · Suspendida'), findsOneWidget);
-    expect(find.textContaining('Tu central está suspendida.'), findsOneWidget);
-    expect(_onTapOf(tester, 'Cola de urgencias'), isNull);
-    expect(await _scrolledOnTap(tester, 'Inventario'), isNull);
-    expect(_onTapOf(tester, 'Mi central'), isNotNull);
-    expect(await _scrolledOnTap(tester, 'Mis planes'), isNotNull);
-  });
+      expect(find.text('Central de prueba · Suspendida'), findsOneWidget);
+      expect(
+        find.textContaining('Tu central está suspendida.'),
+        findsOneWidget,
+      );
+      expect(await _scrolledOnTap(tester, 'Mi central'), isNotNull);
+      expect(await _scrolledOnTap(tester, 'Urgencia a otra central'), isNull);
+      expect(await _scrolledOnTap(tester, 'Mis abastecimientos'), isNotNull);
+      // Sin central activa no hay tareas que mostrar.
+      expect(find.text('LO QUE TE TOCA AHORA'), findsNothing);
+    },
+  );
 
   testWidgets('con la central activa abre todo y cuenta las bandejas', (
     tester,
@@ -361,10 +368,18 @@ void main() {
 
     expect(find.text('Hola, Diego'), findsOneWidget);
     expect(find.text('Central de prueba · Activa'), findsOneWidget);
-    expect(find.bySemanticsLabel(RegExp('Por cargar: 1')), findsOneWidget);
+    // "Lo que te toca ahora" va antes que las cifras.
+    await tester.scrollUntilVisible(find.text('LO QUE TE TOCA AHORA'), 200);
+    expect(find.textContaining('Cargar '), findsWidgets);
+    await tester.scrollUntilVisible(
+      find.bySemanticsLabel(RegExp('Por cargar: 1')),
+      200,
+    );
     expect(find.bySemanticsLabel(RegExp('En vuelo: 0')), findsOneWidget);
-    expect(_onTapOf(tester, 'Cola de urgencias'), isNotNull);
-    expect(await _scrolledOnTap(tester, 'Inventario'), isNotNull);
+    expect(await _scrolledOnTap(tester, 'Nuevo abastecimiento'), isNotNull);
+    // La cola y el inventario están en la barra.
+    expect(find.widgetWithText(QuickTile, 'Cola de urgencias'), findsNothing);
+    expect(find.widgetWithText(QuickTile, 'Inventario'), findsNothing);
     semantics.dispose();
   });
 
@@ -385,11 +400,11 @@ void main() {
       find.textContaining('No tienes una central asignada.'),
       findsOneWidget,
     );
-    expect(_onTapOf(tester, 'Mi central'), isNull);
-    expect(_onTapOf(tester, 'Cola de urgencias'), isNull);
+    expect(await _scrolledOnTap(tester, 'Mi central'), isNull);
+    expect(await _scrolledOnTap(tester, 'Urgencia a otra central'), isNull);
   });
 
-  testWidgets('la tarjeta de flota navega al listado de drones', (
+  testWidgets('el destino Flota de la barra abre el listado de drones', (
     tester,
   ) async {
     final container = await _authenticatedContainer(
@@ -409,13 +424,8 @@ void main() {
     await _pumpFrames(tester);
     expect(find.byType(FleetScreen), findsNothing);
 
-    // La tarjeta del inicio, no el destino de la barra con el mismo nombre.
-    final tile = find.widgetWithText(QuickTile, 'Flota');
-    await tester.scrollUntilVisible(tile, 200);
-    // Un poco más: que la tarjeta no quede detrás de la barra flotante.
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -200));
-    await _pumpFrames(tester);
-    await tester.tap(tile);
+    // El inicio ya no repite el acceso: se llega por la barra.
+    await tester.tap(find.text('Flota').last);
     await _pumpFrames(tester);
 
     expect(find.byType(FleetScreen), findsOneWidget);
@@ -427,7 +437,9 @@ void main() {
     await tester.pump(const Duration(seconds: 4));
   });
 
-  testWidgets('la tarjeta de inventario navega al listado', (tester) async {
+  testWidgets('el destino Inventario de la barra abre el listado', (
+    tester,
+  ) async {
     final container = await _authenticatedContainer(
       email: 'despacho@airdrop.local',
       password: 'Despacho123',
@@ -446,13 +458,8 @@ void main() {
     await _pumpFrames(tester);
     expect(find.byType(InventoryScreen), findsNothing);
 
-    final tile = find.widgetWithText(QuickTile, 'Inventario');
-    await tester.scrollUntilVisible(tile, 200);
-    // Un poco más: que la tarjeta no quede detrás de la barra flotante.
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -200));
-    await _pumpFrames(tester);
-    await tester.pump();
-    await tester.tap(tile);
+    // El inicio ya no repite el acceso: se llega por la barra.
+    await tester.tap(find.text('Inventario').last);
     await _pumpFrames(tester);
 
     expect(find.byType(InventoryScreen), findsOneWidget);
@@ -461,7 +468,9 @@ void main() {
     expect(find.textContaining('Cadena de frío'), findsOneWidget);
   });
 
-  testWidgets('la tarjeta de geovallas navega al listado', (tester) async {
+  testWidgets('el destino Geovallas de la barra abre el listado', (
+    tester,
+  ) async {
     final container = await _authenticatedContainer(
       email: 'operador@airdrop.local',
       password: 'Operador123',
@@ -480,12 +489,8 @@ void main() {
     await _pumpFrames(tester);
     expect(find.byType(GeofencesScreen), findsNothing);
 
-    final tile = find.widgetWithText(QuickTile, 'Geovallas');
-    await tester.scrollUntilVisible(tile, 200);
-    // Un poco más: que la tarjeta no quede detrás de la barra flotante.
-    await tester.drag(find.byType(Scrollable).first, const Offset(0, -200));
-    await _pumpFrames(tester);
-    await tester.tap(tile);
+    // El inicio ya no repite el acceso: se llega por la barra.
+    await tester.tap(find.text('Geovallas').last);
     await _pumpFrames(tester);
 
     expect(find.byType(GeofencesScreen), findsOneWidget);

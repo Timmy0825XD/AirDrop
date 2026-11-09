@@ -50,7 +50,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 16 | La app al ritmo de la consola (Bloque 2 de la auditoría 31) | `feature/reloj-simulado`, `feature/incidentes-app`, `feature/fleet-mantenimiento-app` | Hecha (PR #141, #142 y #143) |
 | 17 | El despachador ante la consola (Bloque 3 de la auditoría 31) | `feature/declinar-urgencia`, `feature/central-sin-energia`, `feature/traza-decision` | Hecha (PR #144, #145 y #146) |
 | 18 | Operador y administrador (Bloque 4 de la auditoría 31) | `feature/fleet-mapa-operador`, `feature/fleet-tablero`, `feature/metricas-incidentes` | Hecha (PR #147, #148 y #149) |
-| 19 | Pulido de UX y accesibilidad (Bloque 5 de la auditoría 31) | `style/formularios-accesibles`, `style/fechas-y-textos`, `style/acciones-y-navegacion`, `style/pantallas-pequenas`, `style/inicios-por-rol` | En curso: pasos 1 a 4 hechos |
+| 19 | Pulido de UX y accesibilidad (Bloque 5 de la auditoría 31) | `style/formularios-accesibles`, `style/fechas-y-textos`, `style/acciones-y-navegacion`, `style/pantallas-pequenas`, `style/inicios-por-rol` | Hecha (pasos 1 a 5) |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -1253,6 +1253,26 @@ datos ni endpoints.
     ancho. Las hojas inferiores (navegador raíz) y el auth no pasan por ahí.
   Pruebas: `small_screens_test` (barra a 320 y 400 px, segmentado con y sin
   scroll, columna de 600 px).
+- Paso 5 (`style/inicios-por-rol`), hecho el 2026-11-08. Con él se cierra el
+  Bloque 5:
+  - Ningún inicio repite lo que ya está en la barra. Solicitante: solo
+    "Entrega periódica" (pedir urgencia es el botón del centro; Mis pedidos
+    y Mis planes, destinos). Despachador: sin "Cola de urgencias" ni
+    "Inventario"; sus accesos son Mi central, Urgencia a otra central,
+    "Nuevo abastecimiento" y "Mis abastecimientos". Operador: sin la
+    sección de Flota y Geovallas. Administrador: solo Métricas.
+  - Despachador: "Lo que te toca ahora" (`NextUpCard`,
+    `dispatcherNextUp`) con la urgencia que más lleva en la cola, el pedido
+    más viejo que espera la carga y el próximo programado; tocar una abre
+    su pedido. Sin nada pendiente lo dice. Solo con la central activa.
+  - Las cifras de "Operación" del despachador van en gris cuando son 0.
+  - Solicitante: la cifra "Pedidos en curso" (`HomeSpotlight.onTap`) abre
+    Mis pedidos filtrado (`/orders/mine?filtro=en-curso`), que tiene "Todos
+    / En curso" arriba. Lo que cuenta como "en curso" vive en
+    `isRequesterOrderOpen`, el mismo para la cifra y el filtro. Con 0
+    entregas, "Entregados" dice una frase en vez del anillo vacío.
+  Pruebas: `next_up_test` (orden de las tareas, lista vacía y "en curso")
+  y `role_home_test` ajustado a los inicios sin accesos repetidos.
 
 ## Pendiente del backend
 

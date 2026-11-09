@@ -68,23 +68,30 @@ class _DeliveredCard extends StatelessWidget {
         children: [
           Text('ENTREGADOS', style: theme.textTheme.labelSmall),
           const SizedBox(height: 8),
-          Row(
-            children: [
-              RingGauge(
-                progress: total == 0 ? 0 : delivered / total,
-                size: 46,
-                stroke: 5,
-                child: Text('$delivered', style: theme.textTheme.titleSmall),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'de $total\npedidos',
-                  style: theme.textTheme.bodySmall?.copyWith(height: 1.3),
+          // Sin entregas, un anillo vacío no dice nada: va una frase.
+          if (delivered == 0)
+            Text(
+              'Aún no te han entregado pedidos.',
+              style: theme.textTheme.bodySmall?.copyWith(height: 1.3),
+            )
+          else
+            Row(
+              children: [
+                RingGauge(
+                  progress: total == 0 ? 0 : delivered / total,
+                  size: 46,
+                  stroke: 5,
+                  child: Text('$delivered', style: theme.textTheme.titleSmall),
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'de $total\npedidos',
+                    style: theme.textTheme.bodySmall?.copyWith(height: 1.3),
+                  ),
+                ),
+              ],
+            ),
         ],
       ),
     );
