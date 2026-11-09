@@ -3,6 +3,7 @@ import 'package:flutter/rendering.dart' show ScrollDirection;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/widgets/app_max_width.dart';
 import '../core/widgets/floating_nav_bar.dart';
 import '../core/widgets/nav_scope.dart';
 import '../features/auth/presentation/auth_controller.dart';
@@ -57,37 +58,45 @@ class _RoleShellState extends ConsumerState<RoleShell> {
     final inset = onTab ? FloatingNavBar.height : 0.0;
     return NavScope(
       isTabRoot: onTab,
-      child: Stack(
-        children: [
-          NotificationListener<UserScrollNotification>(
-            onNotification: _onScroll,
-            // La pantalla deja libre el alto de la barra al final.
-            child: MediaQuery(
-              // El scaffold ubica los botones flotantes con viewPadding.
-              data: media.copyWith(
-                padding: media.padding.copyWith(
-                  bottom: media.padding.bottom + inset,
+      child: AppMaxWidth(
+        child: Stack(
+          children: [
+            NotificationListener<UserScrollNotification>(
+              onNotification: _onScroll,
+              // La pantalla deja libre el alto de la barra al final.
+              child: MediaQuery(
+                // El scaffold ubica los botones flotantes con viewPadding. El
+                // ancho es el de la columna (`AppMaxWidth`), no el de la
+                // ventana.
+                data: media.copyWith(
+                  size: Size(
+                    media.size.width.clamp(0, AppMaxWidth.defaultMaxWidth),
+                    media.size.height,
+                  ),
+                  padding: media.padding.copyWith(
+                    bottom: media.padding.bottom + inset,
+                  ),
+                  viewPadding: media.viewPadding.copyWith(
+                    bottom: media.viewPadding.bottom + inset,
+                  ),
                 ),
-                viewPadding: media.viewPadding.copyWith(
-                  bottom: media.viewPadding.bottom + inset,
-                ),
+                child: widget.child,
               ),
-              child: widget.child,
             ),
-          ),
-          Positioned(
-            left: 16,
-            right: 16,
-            bottom: media.padding.bottom + 12,
-            child: FloatingNavBar(
-              destinations: tabs.destinations,
-              selected: selected,
-              onSelect: (i) => context.go(tabs.paths[i]),
-              center: tabs.center,
-              collapsed: !onTab || _scrolledAway,
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: media.padding.bottom + 12,
+              child: FloatingNavBar(
+                destinations: tabs.destinations,
+                selected: selected,
+                onSelect: (i) => context.go(tabs.paths[i]),
+                center: tabs.center,
+                collapsed: !onTab || _scrolledAway,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

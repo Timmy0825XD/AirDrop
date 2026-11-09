@@ -113,35 +113,61 @@ class _Filters extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final hubs = ref.watch(allHubsProvider).value ?? const [];
+    // Los días en una fila y las centrales en otra que se desliza: juntas,
+    // "Todas las centrales" quedaba cortada contra el borde.
+    return Padding(
+      padding: const EdgeInsets.only(top: 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _ChipRow([
+            for (final d in const [7, 30, 90])
+              ChoicePill(
+                label: '$d días',
+                selected: days == d,
+                onTap: () => onDays(d),
+              ),
+          ]),
+          if (showHub) ...[
+            const SizedBox(height: 8),
+            _ChipRow([
+              ChoicePill(
+                label: 'Todas las centrales',
+                selected: hubId == null,
+                filled: false,
+                onTap: () => onHub(null),
+              ),
+              for (final hub in hubs)
+                ChoicePill(
+                  label: hub.name,
+                  selected: hubId == hub.id,
+                  filled: false,
+                  onTap: () => onHub(hub.id),
+                ),
+            ]),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Una fila de chips que se desliza de lado si no cabe.
+class _ChipRow extends StatelessWidget {
+  const _ChipRow(this.chips);
+
+  final List<Widget> chips;
+
+  @override
+  Widget build(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 20),
       child: Row(
         children: [
-          for (final d in const [7, 30, 90]) ...[
-            ChoicePill(
-              label: '$d días',
-              selected: days == d,
-              onTap: () => onDays(d),
-            ),
-            const SizedBox(width: 8),
-          ],
-          if (showHub) ...[
-            ChoicePill(
-              label: 'Todas las centrales',
-              selected: hubId == null,
-              filled: false,
-              onTap: () => onHub(null),
-            ),
-            for (final hub in hubs) ...[
-              const SizedBox(width: 8),
-              ChoicePill(
-                label: hub.name,
-                selected: hubId == hub.id,
-                filled: false,
-                onTap: () => onHub(hub.id),
-              ),
-            ],
+          for (final (i, chip) in chips.indexed) ...[
+            if (i > 0) const SizedBox(width: 8),
+            chip,
           ],
         ],
       ),

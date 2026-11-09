@@ -233,6 +233,7 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
 - En un destino la barra se ve; en un detalle o formulario se desliza hacia abajo y se encoge, igual que al bajar en una lista (`UserScrollNotification`). Al subir vuelve.
 - `RoleShell` suma el alto de la barra a `padding` y `viewPadding` de `MediaQuery`: los botones flotantes quedan por encima solos. Las listas toman ese `padding` con `listPadding(context)` (ya no hay botones flotantes: crear va en el encabezado o en el "+" del centro) (`core/widgets/list_padding.dart`); un `EdgeInsets` fijo deja el final detrás de la barra.
 - Toda hoja inferior se abre con `showAppSheet` (`core/widgets/app_sheet.dart`), nunca con `showModalBottomSheet` directo: va al navegador raíz, queda encima de la barra y su velo la bloquea. En el navegador del `ShellRoute` la hoja quedaba debajo de la barra y tapaba su botón. Adentro se cierra con el `context` de la hoja.
+- Las filas de las listas cortan títulos y detalles a dos líneas (`maxLines: 2` con "…") y el correo a una: un nombre largo no estira la tarjeta.
 - `NavScope.isTabRootOf(context)` dice si la pantalla es un destino: `SectionHeader` no muestra "volver" ahí.
 - "Agenda" abre `GET /orders/agenda` (franjas del día, "despegar antes de"); los programados, el histórico (`/orders/history`) y la cuarentena (`/inventory/quarantine`) están en "Más".
 - Los cuatro inicios tienen la campana de avisos (`NoticeBell`) con los sin leer; abre `/notifications`.
@@ -396,7 +397,8 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `StatusPill` / `PillTone` | `core/widgets` | Estado en pastilla con punto (positivo, atención, negativo, marca) y rebote al cambiar. `StatusPill.colorOf` da el color de cada tono. |
 | `GlassCard` | `core/widgets` | La pieza base: vidrio translúcido con borde fino (en oscuro, con luz arriba que se apaga hacia abajo); con `onTap` se hunde; `blur` solo sobre mapa o imagen; `strong` para paneles. |
 | `GlassIconButton` (`.back`) | `core/widgets` | Botón cuadrado de vidrio (volver, controles del mapa); `active` lo pinta con el acento. |
-| `FloatingNavBar` / `NavDestination` / `NavCenterAction` / `NavScope` | `core/widgets` | La barra flotante con su botón central, contador con rebote y punto activo; `NavScope` dice si la pantalla es un destino. |
+| `FloatingNavBar` / `NavDestination` / `NavCenterAction` / `NavScope` | `core/widgets` | La barra flotante con su botón central, contador con rebote y punto activo; bajo 360 px (`compactWidth`) solo íconos y la etiqueta del destino abierto. `NavScope` dice si la pantalla es un destino. |
+| `AppMaxWidth` | `core/widgets` | En tableta y web, pantalla y barra en una columna de 600 px centrada (lo pone `RoleShell`); el `MediaQuery` de adentro dice ese ancho. |
 | `BalancedGrid` | `core/widgets` | Cuadrícula sin huecos: filas parejas (5 datos = 3 + 2) y, en dos columnas, la última impar a todo el ancho. La usan `HomeGrid` y la telemetría. |
 | `RadarSweep` | `core/widgets` | Radar de adorno (anillos, cruz y barrido que gira); `reach` agranda los anillos y los recorta. No marca datos. Lo usan `HomeSpotlight` y `EmergencyBanner`. Quieto con "reducir movimiento". |
 | `MetricTile` / `BarSpark` / `RingGauge` | `core/widgets` | Cifra grande en vidrio, mini gráfico de barras que crece y anillo de progreso. |
@@ -414,7 +416,7 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `showAppSheet` | `core/widgets` | La única forma de abrir una hoja inferior (navegador raíz, encima de la barra). |
 | `FormBottomSheet` | `core/widgets` | Hoja inferior con título, campos y botón de guardar (editar perfil, mantenimiento); deja el área segura y tiene scroll. |
 | `ChoicePill` | `core/widgets` | Chip elegible (relleno o teñido, con ícono o check). |
-| `SlidingSegmented` | `core/widgets` | Filtro con pastilla que se desliza (`null` = "Todas"). |
+| `SlidingSegmented` | `core/widgets` | Filtro con pastilla que se desliza (`null` = "Todas"); si las opciones no caben, el filtro entero se desliza de lado (`segmentWidthOf`) en vez de cortar el texto. |
 | `showConfirmSheet` | `core/widgets` | Hoja inferior para confirmar suspender, reactivar, eliminar o cerrar sesión. |
 | `showAppSnack` / `showErrorSnack` / `GlassSnack` | `core/widgets/app_snack.dart` | El aviso de cualquier acción: pastilla de vidrio (desenfoque, tinte del tono y borde fino) con ícono, texto de Nest, acción opcional y una línea que se acorta mientras se ve. `SnackTone`: `success`, `error`, `info`, `warning`. Los errores de Nest van con `showErrorSnack`. |
 | `YesNoQuestion` | `core/widgets` | Pregunta de sí o no con dos chips (recibir un traslado, revisar un retorno). |

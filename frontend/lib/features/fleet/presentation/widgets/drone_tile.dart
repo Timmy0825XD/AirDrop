@@ -92,6 +92,8 @@ class _DroneInfo extends StatelessWidget {
       children: [
         Text(
           drone.identifier,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.titleMedium?.copyWith(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -100,6 +102,8 @@ class _DroneInfo extends StatelessWidget {
         const SizedBox(height: 3),
         Text(
           modelName ?? 'Modelo no disponible',
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.primary,
             fontWeight: FontWeight.w700,

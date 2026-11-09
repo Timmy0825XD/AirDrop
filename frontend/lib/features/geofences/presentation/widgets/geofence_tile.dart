@@ -70,6 +70,8 @@ class _GeofenceInfo extends StatelessWidget {
       children: [
         Text(
           geofence.name,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.titleMedium?.copyWith(
             fontSize: 15,
             fontWeight: FontWeight.w800,
@@ -78,6 +80,8 @@ class _GeofenceInfo extends StatelessWidget {
         const SizedBox(height: 3),
         Text(
           geofence.reason,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
           ),
