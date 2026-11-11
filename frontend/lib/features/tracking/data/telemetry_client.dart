@@ -173,6 +173,38 @@ class TelemetryClient {
     return events.stream;
   }
 
+  /// Cola del despachador: la sala de su central (`subscribe-hub`, §2).
+  /// Avisa cada `queue-changed` (le llegó o se le fue una urgencia) y cada
+  /// conexión, porque mientras estuvo caído pudo perderse alguno. Cancelar
+  /// el stream cierra el socket; si Nest rechaza la sala, se cierra sin
+  /// reintentar.
+  Stream<void> watchQueue(String hubId, {required String? token}) {
+    final socket = io.io(
+      '$baseUrl/telemetry',
+      io.OptionBuilder()
+          .setTransports(['websocket'])
+          .setAuth({'token': token})
+          .enableReconnection()
+          .disableAutoConnect()
+          .build(),
+    );
+    final changes = StreamController<void>(onCancel: socket.dispose);
+    void add() {
+      if (!changes.isClosed) changes.add(null);
+    }
+
+    socket
+      ..onConnect((_) {
+        if (changes.isClosed) return;
+        socket.emit('subscribe-hub', {'hubId': hubId});
+        add();
+      })
+      ..on('queue-changed', (_) => add())
+      ..on('error', (_) => socket.dispose())
+      ..connect();
+    return changes.stream;
+  }
+
   /// La hora simulada (RF-31): Nest manda `clock` al conectar y cada vez
   /// que el administrador la cambia en la consola. No se suscribe a nada.
   /// Es el único socket que dura toda la sesión; cancelar el stream lo

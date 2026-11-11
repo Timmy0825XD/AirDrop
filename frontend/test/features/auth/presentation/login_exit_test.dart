@@ -9,6 +9,7 @@ import 'package:frontend/features/auth/presentation/login_screen.dart';
 import 'package:frontend/features/auth/presentation/widgets/airspace/airspace_reveal.dart';
 import 'package:frontend/features/orders/data/local_order_repository.dart';
 import 'package:frontend/features/orders/data/order_providers.dart';
+import 'package:frontend/features/orders/data/queue_live.dart';
 import 'package:frontend/features/tracking/data/tracking_providers.dart';
 
 import 'auth_controller_test.dart' show FakeTokenStore;
@@ -32,6 +33,8 @@ void main() {
         noticeRepositoryProvider.overrideWithValue(LocalNoticeRepository()),
         // Sin servidor: la hora simulada no abre su socket.
         clockSyncProvider.overrideWith((ref) {}),
+        // Ni la cola del despachador (`queue-changed`).
+        queueLiveProvider.overrideWith((ref) {}),
       ],
     );
     addTearDown(container.dispose);
