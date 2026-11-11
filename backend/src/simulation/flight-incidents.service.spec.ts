@@ -268,3 +268,53 @@ describe('Choque grave y dron perdido: el paquete se pierde (RF-34)', () => {
     expect(presentIncident(incident())).toMatchObject({ packageLost: false });
   });
 });
+
+describe('Incidentes abiertos para el mapa del operador', () => {
+  it('pide solo los sin resolver de esas centrales, el más reciente primero', async () => {
+    const { service, repo } = build({
+      row: incident({ outcome: IncidentOutcome.GROUNDED, resolvedAt: null }),
+    });
+    await service.openForHubs(['hub-1', 'hub-2']);
+    const [query] = repo.find.mock.calls[0] as [
+      {
+        where: {
+          hubId: { value: string[] };
+          resolvedAt: { type: string };
+        };
+        order: Record<string, string>;
+      },
+    ];
+    expect(query.where.hubId.value).toEqual(['hub-1', 'hub-2']);
+    expect(query.where.resolvedAt.type).toBe('isNull');
+    expect(query.order).toEqual({ occurredAt: 'DESC' });
+  });
+
+  it('un resuelto no sale (la base lo filtra por resolvedAt)', async () => {
+    const { service, repo } = build();
+    repo.find.mockResolvedValueOnce([]);
+    await expect(service.openForHubs(['hub-1'])).resolves.toEqual([]);
+  });
+
+  it('sin centrales no consulta la base', async () => {
+    const { service, repo } = build();
+    await expect(service.openForHubs([])).resolves.toEqual([]);
+    expect(repo.find).not.toHaveBeenCalled();
+  });
+
+  it('no manda el medicamento, el lote ni la cantidad (RNF-05)', async () => {
+    const { service } = build({ row: incident({ resolvedAt: null }) });
+    const [open] = await service.openForHubs(['hub-1']);
+    expect(open).toMatchObject({
+      hubId: 'hub-1',
+      kind: IncidentKind.BATTERY_CRITICAL,
+      packageOnBoard: true,
+      packageLost: false,
+    });
+    for (const key of ['packageMedication', 'packageLot', 'packageQuantity']) {
+      expect(open).not.toHaveProperty(key);
+    }
+    const json = JSON.stringify(open);
+    expect(json).not.toContain('Insulina');
+    expect(json).not.toContain('L-0001');
+  });
+});

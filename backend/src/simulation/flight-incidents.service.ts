@@ -469,6 +469,21 @@ export class FlightIncidentsService implements OnModuleInit, OnModuleDestroy {
     return rows.map(presentIncident);
   }
 
+  /**
+   * Los que siguen abiertos en estas centrales, primero el más reciente:
+   * el mapa del operador los pinta al abrirse y el socket los actualiza.
+   */
+  async openForHubs(hubIds: string[]): Promise<IncidentJson[]> {
+    if (!hubIds.length) {
+      return [];
+    }
+    const rows = await this.dataSource.getRepository(FlightIncident).find({
+      where: { hubId: In(hubIds), resolvedAt: IsNull() },
+      order: { occurredAt: 'DESC' },
+    });
+    return rows.map(presentIncident);
+  }
+
   /** Aterrizajes de emergencia sin rescatar, por dron (alertas pendientes). */
   async openLandings(droneIds: string[]): Promise<Map<string, FlightIncident>> {
     const open = new Map<string, FlightIncident>();

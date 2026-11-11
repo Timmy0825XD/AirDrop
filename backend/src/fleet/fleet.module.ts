@@ -8,6 +8,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
 import { Order } from '../orders/order.entity';
 import { RoutingModule } from '../routing/routing.module';
 import { Mission } from '../simulation/mission.entity';
+import { SimulationModule } from '../simulation/simulation.module';
 import { TelemetryModule } from '../telemetry/telemetry.module';
 import { Drone } from './drone.entity';
 import { DroneMaintenance } from './drone-maintenance.entity';
@@ -35,6 +36,7 @@ import { MaintenanceSweepService } from './maintenance-sweep.service';
     HubsModule,
     NotificationsModule,
     RoutingModule,
+    SimulationModule,
     TelemetryModule,
   ],
   controllers: [FleetController],
