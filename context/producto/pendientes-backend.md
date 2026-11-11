@@ -754,8 +754,8 @@ abajo está en el código de `backend/src`; los mensajes son los de Nest.
   fecha es temporal (la puso la consola y vence sola); `null`, del operador.
   Mostrarlas distinto y con la hora de vencimiento.
 - **Ruta cambiada en el aire (RF-33).** `GET /fleet/flights` y
-  `GET /fleet/map` traen la ruta nueva; la app no recibe un aviso propio
-  (ver pendientes).
+  `GET /fleet/map` traen la ruta nueva; el aviso llega por `hub-reroute`
+  (§18.2).
 
 ### Administrador
 
@@ -766,12 +766,6 @@ abajo está en el código de `backend/src`; los mensajes son los de Nest.
 - **Solicitantes simulados.** Los pedidos que genera la consola salen de
   cuentas `simulated` («Solicitante simulado 1» … 4, correo `.invalid`, sin
   documento ni celular). Nadie inicia sesión con ellas.
-
-### Pendiente
-
-- **Aviso de reruteo al operador.** El cambio de ruta en el aire solo se ve en
-  la consola web y en la ruta de `/fleet/flights`. Falta un evento propio en
-  la sala de la central si la app lo quiere avisar.
 
 **La app lo usará** para que las cuentas regresivas coincidan con la TV
 durante la demostración, para no mostrar un código viejo después de un
@@ -804,3 +798,26 @@ el mapa después, no los veía. Ahora el mapa los trae al abrirse.
 
 **La app lo usará** para pintar el incidente al abrir el mapa (F2) y dejar
 que `hub-incident` solo lo actualice.
+
+### 18.2 Aviso de reruteo al operador: `hub-reroute` — Hecho (rama `feature/aviso-reruteo-operador`)
+
+Antes el cambio de ruta en el aire (RF-33) solo llegaba a la consola web
+(`radar-reroute`). Ahora también va a la sala de la central del vuelo, por
+socket y sin aviso guardado en la bandeja (decisión D1).
+
+- **Evento `hub-reroute`** para quien está en la sala con `subscribe-hub` y
+  recibe vuelos (el operador de flota, como `hub-telemetry`). El
+  despachador no lo recibe.
+- **Cuerpo:** `{ hubId, orderId, droneId, outcome, addedKm, crossesGeofence,
+  batteryShort }`.
+  - `outcome: 'rerouted'`: hay ruta nueva; `addedKm` dice cuánto se alarga.
+    Recargar el vuelo con `GET /fleet/flights` para dibujarla.
+  - `outcome: 'blocked'`: no hay camino seguro (`addedKm: null`,
+    `crossesGeofence: true`). Sigue el protocolo de RF-34 y llega su
+    `hub-incident` (`route_blocked`).
+  - `batteryShort: true`: la ruta nueva no alcanza con la reserva; llega
+    también un `hub-incident` (`battery_short`).
+- La central es la de origen del pedido, la misma de `hub-telemetry`.
+
+**La app lo usará** para mostrar "Ruta cambiada (+X km)" en el mapa del
+operador, en ámbar con `blocked` o `batteryShort` (F3).
