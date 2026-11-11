@@ -4,6 +4,7 @@ import { HubStatus } from '../common/enums/hub-status.enum';
 import { HubType } from '../common/enums/hub-type.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { GeofencesService } from '../geofences/geofences.service';
+import { FlightIncidentsService } from '../simulation/flight-incidents.service';
 import { User } from '../users/user.entity';
 import { FleetFlightsService } from './fleet-flights.service';
 import { FleetMapService } from './fleet-map.service';
@@ -53,6 +54,21 @@ const geofence = {
 
 const flight = { droneId: 'd2', orderId: 'o1', hubId: HUB_A };
 
+/** Como lo deja `presentIncident`: sin el medicamento (RNF-05). */
+const openIncident = {
+  id: 'i1',
+  orderId: 'o1',
+  droneId: 'd2',
+  hubId: HUB_A,
+  kind: 'motor_failure',
+  severity: 'major',
+  leg: 'outbound',
+  outcome: 'grounded',
+  packageOnBoard: true,
+  packageLost: false,
+  resolvedAt: null,
+};
+
 function operator(hubIds = [HUB_A, HUB_B]): User {
   return {
     id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
@@ -66,13 +82,17 @@ function build() {
   const droneRepo = { find: jest.fn().mockResolvedValue(drones) };
   const geofences = { list: jest.fn().mockResolvedValue([geofence]) };
   const flights = { listFlights: jest.fn().mockResolvedValue([flight]) };
+  const incidents = {
+    openForHubs: jest.fn().mockResolvedValue([openIncident]),
+  };
   const service = new FleetMapService(
     hubs as never,
     droneRepo as never,
     geofences as unknown as GeofencesService,
     flights as unknown as FleetFlightsService,
+    incidents as unknown as FlightIncidentsService,
   );
-  return { service, hubs, flights };
+  return { service, hubs, flights, incidents };
 }
 
 describe('GET /fleet/map', () => {
@@ -122,6 +142,19 @@ describe('GET /fleet/map', () => {
       },
     ]);
     expect(map.flights).toEqual([flight]);
+    expect(map.incidents).toEqual([openIncident]);
+  });
+
+  it('los incidentes abiertos salen solo de sus centrales', async () => {
+    const { service, incidents } = build();
+    await service.map(operator());
+    expect(incidents.openForHubs).toHaveBeenCalledWith([HUB_A, HUB_B]);
+  });
+
+  it('con una central, solo los incidentes de esa', async () => {
+    const { service, incidents } = build();
+    await service.map(operator(), HUB_A);
+    expect(incidents.openForHubs).toHaveBeenCalledWith([HUB_A]);
   });
 
   it('de una central no manda dirección, contactos ni quién la creó', async () => {
@@ -159,5 +192,13 @@ describe('GET /fleet/map', () => {
       ForbiddenException,
     );
     expect(hubs.find).not.toHaveBeenCalled();
+  });
+
+  it('una central que no es suya no consulta sus incidentes', async () => {
+    const { service, incidents } = build();
+    await expect(service.map(operator(), HUB_C)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(incidents.openForHubs).not.toHaveBeenCalled();
   });
 });

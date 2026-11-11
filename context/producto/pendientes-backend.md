@@ -777,3 +777,30 @@ abajo está en el código de `backend/src`; los mensajes son los de Nest.
 durante la demostración, para no mostrar un código viejo después de un
 incidente y para que el operador y el despachador vean incidentes, apagones
 y drones en tierra con sus estados reales.
+
+## 18. Huecos entre backend, web y app (`learning/32`)
+
+Lo que cambia el contrato al cerrar los huecos del 2026-11-10. Cada punto
+sale en su propia rama.
+
+### 18.1 Incidentes abiertos en `GET /fleet/map` — Hecho (rama `feature/fleet-incidentes-en-mapa`)
+
+Antes los incidentes solo llegaban por `hub-incident`: si el operador abría
+el mapa después, no los veía. Ahora el mapa los trae al abrirse.
+
+- **Campo nuevo `incidents`** junto a `hubs`, `geofences` y `flights`: los
+  incidentes **sin resolver** (`resolvedAt` nulo) de las centrales del
+  operador, o solo de `hubId` si viene en la consulta. Primero el más
+  reciente.
+- **Misma forma que `hub-incident`** (§17): `{ id, orderId, droneId, hubId,
+  kind, severity, leg, protocol, outcome, latitude, longitude,
+  batteryPercent, landingLatitude, landingLongitude, rescueDueAt,
+  packageOnBoard, packageLost, occurredAt, resolvedAt }`. No trae el
+  medicamento, el lote ni la cantidad (RNF-05).
+- **Abiertos** son los que siguen en `returning`, `landing` o `grounded`.
+  Los `continued` y `lost` nacen resueltos y no salen; un `returned` o
+  `rescued` deja de salir al cerrarse.
+- Un `hubId` que no es suyo sigue respondiendo **403**.
+
+**La app lo usará** para pintar el incidente al abrir el mapa (F2) y dejar
+que `hub-incident` solo lo actualice.

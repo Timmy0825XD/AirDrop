@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { GeofencesService } from '../geofences/geofences.service';
 import { Hub } from '../hubs/hub.entity';
+import { FlightIncidentsService } from '../simulation/flight-incidents.service';
 import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
 import { Drone } from './drone.entity';
@@ -11,9 +12,9 @@ import { presentMapHub } from './fleet-map.rules';
 
 /**
  * El mapa del operador al abrirlo: sus centrales con la flota, las geovallas
- * y los vuelos en curso. Lo que se mueve después llega por la sala de la
- * central en el socket (`hub-telemetry`, `hub-flight-status`,
- * `hub-flight-ended`).
+ * los vuelos en curso y los incidentes que siguen abiertos. Lo que se mueve
+ * después llega por la sala de la central en el socket (`hub-telemetry`,
+ * `hub-flight-status`, `hub-flight-ended`, `hub-incident`).
  */
 @Injectable()
 export class FleetMapService {
@@ -24,6 +25,7 @@ export class FleetMapService {
     private readonly drones: Repository<Drone>,
     private readonly geofences: GeofencesService,
     private readonly flights: FleetFlightsService,
+    private readonly incidents: FlightIncidentsService,
   ) {}
 
   async map(user: User, hubId?: string) {
@@ -32,7 +34,7 @@ export class FleetMapService {
       throw new ForbiddenException('Esa central no está asignada a tu cuenta.');
     }
     const hubIds = hubId ? [hubId] : assigned;
-    const [hubs, drones, geofences, flights] = await Promise.all([
+    const [hubs, drones, geofences, flights, incidents] = await Promise.all([
       this.hubs.find({ where: { id: In(hubIds) }, order: { name: 'ASC' } }),
       this.drones.find({
         where: { hubId: In(hubIds) },
@@ -40,6 +42,7 @@ export class FleetMapService {
       }),
       this.geofences.list(),
       this.flights.listFlights(user, hubId),
+      this.incidents.openForHubs(hubIds),
     ]);
     return {
       hubs: hubs.map((hub) => presentMapHub(hub, drones)),
@@ -50,6 +53,7 @@ export class FleetMapService {
         polygon: fence.polygon,
       })),
       flights,
+      incidents,
     };
   }
 }
