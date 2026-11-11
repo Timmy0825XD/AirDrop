@@ -45,8 +45,17 @@ List<Widget> fleetMapSheet({
   ];
 }
 
-/// "Aterrizaje de emergencia · rescate antes de las 15:40".
-String incidentLine(FleetIncident i) => [
-  i.protocolLabel,
-  if (i.rescueDueAt case final due?) 'rescate antes de las ${formatClock(due)}',
-].join(' · ');
+/// "Falla de 2 motores en la ida · Aterrizaje de emergencia." y, debajo,
+/// "En tierra, espera el rescate · rescate antes de las 15:40 · Con el
+/// paquete a bordo · batería 62 %".
+String incidentLine(FleetIncident i) {
+  final what = [i.kindLabel, ?i.legLabel].join(' ');
+  final status = [
+    i.outcomeLabel,
+    if (i.rescueDueAt case final due?)
+      'rescate antes de las ${formatClock(due)}',
+    i.packageLabel,
+    if (i.batteryPercent case final battery?) 'batería ${battery.round()} %',
+  ].join(' · ');
+  return '$what · ${i.protocolLabel}.\n$status';
+}

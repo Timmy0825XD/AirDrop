@@ -24,7 +24,8 @@ class FleetMapState {
   /// `null` mientras carga la primera vez.
   final FleetMap? map;
 
-  /// Los incidentes abiertos (`hub-incident`), el más reciente primero.
+  /// Los incidentes abiertos, el más reciente primero: los de `/fleet/map`
+  /// al cargar y los que actualiza `hub-incident`.
   final List<FleetIncident> incidents;
 
   /// La última alerta, para el aviso de la pantalla.
@@ -82,7 +83,11 @@ class FleetMapNotifier extends Notifier<FleetMapState> {
   Future<FleetMap?> _load() async {
     try {
       final map = await ref.read(fleetRepositoryProvider).fleetMap();
-      if (ref.mounted) state = state.copyWith(map: map);
+      // Los abiertos de Nest mandan: trae los que pasaron con el mapa
+      // cerrado y suelta los que ya se resolvieron (§18.1).
+      if (ref.mounted) {
+        state = state.copyWith(map: map, incidents: map.incidents);
+      }
       return map;
     } on ApiException catch (e) {
       if (ref.mounted) state = state.copyWith(problem: e.message);
@@ -115,6 +120,7 @@ class FleetMapNotifier extends Notifier<FleetMapState> {
           map: FleetMap(
             hubs: map!.hubs,
             geofences: map.geofences,
+            incidents: map.incidents,
             flights: [
               for (final f in flights)
                 f.orderId == tick.orderId ? f.withTick(tick) : f,
