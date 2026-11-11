@@ -53,6 +53,19 @@ La API queda en `http://localhost:3000`. El primer arranque crea tablas (`synchr
 
 El OTP viaja por correo (Brevo). Si Brevo no está configurado y el ambiente no es producción, el código se imprime en el log.
 
+## Esquema de la base
+
+El MVP no usa migraciones de TypeORM (decisión del 2026-11-10). El esquema sale de dos piezas:
+
+- **`synchronize`** ([`typeorm.config.ts`](src/database/typeorm.config.ts)): con `NODE_ENV` distinto de `production`, TypeORM crea y ajusta las tablas y columnas según las entidades. En `production` está apagado.
+- **[`align-sprint-schema.ts`](src/database/align-sprint-schema.ts)**: corre en cada arranque, antes de conectar, y solo si ya existe `users`. Arregla lo que `synchronize` no puede: valores nuevos de enums, enums que ya tienen datos, columnas e índices viejos. No crea tablas ni todas las columnas nuevas.
+
+**Base nueva de producción.** Arranca la API **una vez** con `NODE_ENV=development` contra la base vacía y sin tráfico. Espera a que suba (crea las tablas, PostGIS, el bucket, el `DroneModel` y el admin), apágala y desde ahí arráncala con `NODE_ENV=production`. Esa única vez la API acepta `localhost` en CORS e imprime el OTP en el log si Brevo no está configurado. Por eso va sin usuarios conectados.
+
+**Base de producción que ya existe.** Si una rama agrega tablas o columnas, `production` no las crea, y `align-sprint-schema.ts` tampoco cubre `flight_incidents`, `weather_cells`, `users.simulated` ni `orders.autoDispatched`. Saca una copia de seguridad y repite el arranque único en `development`. `synchronize` también **borra** las columnas que ya no están en las entidades: revisa el diff de las entidades antes.
+
+Si algún día hay despliegue continuo, toca pasar a migraciones de TypeORM.
+
 ## Autenticación y roles
 
 JWT con expiración de 8 horas (fija en `auth.module.ts`; `JWT_EXPIRES_IN` de `.env.example` hoy no se lee). Cada ruta declara su rol con `@Roles`. Login: 5 intentos y bloqueo de 15 minutos (RNF-04).
