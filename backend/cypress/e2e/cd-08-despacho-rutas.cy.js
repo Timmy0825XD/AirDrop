@@ -1,8 +1,10 @@
 // CD-08 — F – J: el Despacho con Rutas y geovallas reales calcula el corredor
-// y lo bloquea cuando hay una geovalla. Simulación sin arrancar (no se confirma
+// y no acepta un destino dentro de una geovalla. Simulación sin arrancar (no se confirma
 // carga). Sale de la central B (ver `activarCentralB`) y, como preparación, se
 // le registra un segundo dron (WG-198-003): así, en el paso 3, hay un dron
 // libre y el rechazo solo puede venir de la geovalla.
+// El destino prohibido se rechaza al crear la urgencia (400), antes de
+// llegar al despacho: ninguna central podría entregarlo.
 import { CUENTAS, urgenciaLibre } from '../support/datos';
 
 const GEOVALLA = {
@@ -80,25 +82,17 @@ describe('CD-08 — F – J (Despacho – Rutas y geovallas)', () => {
     });
   });
 
-  it('CD-08 paso 3: autorizar el segundo pedido se rechaza (409)', () => {
+  it('CD-08 paso 3: la urgencia con destino dentro de la geovalla se rechaza (400)', () => {
     cy.api(
       solicitante,
       'POST',
       '/orders/emergencies',
       urgenciaLibre({ latitude: 10.49, longitude: -73.24 }),
     ).then((pedido) => {
-      expect(pedido.status).to.eq(201);
-      cy.api(
-        despachador,
-        'POST',
-        `/orders/${pedido.body.id}/authorize`,
-        {},
-      ).then((respuesta) => {
-        expect(respuesta.status).to.eq(409);
-        expect(respuesta.body.message).to.eq(
-          'Ningún dron de la central puede cumplir esta salida.',
-        );
-      });
+      expect(pedido.status).to.eq(400);
+      expect(pedido.body.message).to.eq(
+        'El destino está dentro de una zona prohibida para drones. Elige otro punto de entrega.',
+      );
     });
   });
 });

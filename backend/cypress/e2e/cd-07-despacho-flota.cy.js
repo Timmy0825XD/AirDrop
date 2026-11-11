@@ -1,12 +1,14 @@
-// CD-07 — F – I: el Despacho con la Flota real elige un dron elegible y
-// rechaza el pedido si no hay ninguno. Rutas y simulación corren reales con
-// los datos de `seed:test`. El despacho sale de la central B, cuyo único dron
+// CD-07 — F – I: el Despacho con la Flota real elige un dron elegible y, si
+// la central no tiene ninguno, la urgencia va a otra que sí (RU-10: se
+// ofrece primero a las centrales con dron elegible). Rutas y simulación
+// corren reales con los datos de `seed:test`. El despacho sale de la central B, cuyo único dron
 // es WG-198-002 (ver `activarCentralB`); la guía dice WG-198-001 (central A).
 import { CUENTAS, urgenciaLibre } from '../support/datos';
 
 describe('CD-07 — F – I (Despacho – Flota)', () => {
   let solicitante;
   let despachador;
+  let despachadorA;
   let operador;
   let dronAsignado;
   let segundoPedido;
@@ -15,6 +17,7 @@ describe('CD-07 — F – I (Despacho – Flota)', () => {
     cy.seedTest();
     cy.login(CUENTAS.solicitante).then((token) => (solicitante = token));
     cy.login(CUENTAS.despachadorB).then((token) => (despachador = token));
+    cy.login(CUENTAS.despachadorA).then((token) => (despachadorA = token));
     cy.login(CUENTAS.operador).then((token) => (operador = token));
     cy.then(() => cy.activarCentralB(operador, despachador));
   });
@@ -37,7 +40,7 @@ describe('CD-07 — F – I (Despacho – Flota)', () => {
     );
   });
 
-  it('CD-07 paso 2: con el dron en mantenimiento, otro pedido se rechaza (409)', () => {
+  it('CD-07 paso 2: con el dron en mantenimiento, la urgencia no llega a la central B', () => {
     cy.api(operador, 'PATCH', `/fleet/drones/${dronAsignado}/status`, {
       status: 'maintenance',
       reason: 'Revisión de hélices',
@@ -57,19 +60,23 @@ describe('CD-07 — F – I (Despacho – Flota)', () => {
           `/orders/${segundoPedido}/authorize`,
           {},
         ).then((respuesta) => {
-          expect(respuesta.status).to.eq(409);
+          // Antes respondía 409. Con RU-10 la urgencia sale hacia la central
+          // que tiene dron (A) y B ni la ve en su cola.
+          expect(respuesta.status).to.eq(403);
           expect(respuesta.body.message).to.eq(
-            'Ningún dron de la central puede cumplir esta salida.',
+            'Esta urgencia todavía no está en la cola de tu central.',
           );
         });
       },
     );
   });
 
-  it('CD-07 paso 3: el segundo pedido sigue recibido', () => {
-    cy.api(solicitante, 'GET', `/orders/${segundoPedido}`).then((respuesta) => {
-      expect(respuesta.status).to.eq(200);
-      expect(respuesta.body.status).to.eq('received');
-    });
+  it('CD-07 paso 3: la central A la autoriza con su dron disponible', () => {
+    cy.api(despachadorA, 'POST', `/orders/${segundoPedido}/authorize`, {}).then(
+      (respuesta) => {
+        expect(respuesta.status).to.eq(201);
+        expect(respuesta.body.assignment.identifier).to.eq('WG-198-001');
+      },
+    );
   });
 });
