@@ -248,6 +248,33 @@ export class TelemetryGateway
     });
   }
 
+  /**
+   * RF-33: el operador de la central del vuelo se entera del cambio de ruta
+   * (o de que no hay camino seguro). Va a la misma sala que `hub-telemetry`.
+   */
+  private async emitHubRerouteSafely(
+    event: Extract<TelemetryEvent, { type: 'rerouted' }>,
+  ): Promise<void> {
+    try {
+      const hubId = await this.fleetHub(event.orderId);
+      if (!hubId) {
+        return;
+      }
+      await this.emitToFleet(hubId, 'hub-reroute', {
+        hubId,
+        orderId: event.orderId,
+        droneId: event.droneId,
+        outcome: event.outcome,
+        addedKm: event.addedKm,
+        crossesGeofence: event.crossesGeofence,
+        batteryShort: event.batteryShort,
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'flota';
+      this.logger.warn(`No se pudo avisar el reruteo a la flota: ${message}`);
+    }
+  }
+
   private async fleetHub(orderId: string): Promise<string | null> {
     const known = this.fleetHubOf.get(orderId);
     if (known) {
@@ -367,6 +394,7 @@ export class TelemetryGateway
           droneId: event.droneId,
           outcome: event.outcome,
         });
+        await this.emitHubRerouteSafely(event);
         return;
       }
       this.emitRadar(event);

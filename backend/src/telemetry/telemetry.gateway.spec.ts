@@ -527,6 +527,90 @@ describe('TelemetryGateway mapa de la flota del operador', () => {
     expect(warn).toHaveBeenCalled();
     warn.mockRestore();
   });
+
+  const reroute = (overrides: object = {}) => ({
+    type: 'rerouted',
+    orderId: ORDER_ID,
+    droneId: DRONE_ID,
+    outcome: 'rerouted',
+    addedKm: 1.8,
+    crossesGeofence: false,
+    batteryShort: false,
+    ...overrides,
+  });
+
+  it('el cambio de ruta llega al operador de la central; el despachador no (RF-33)', async () => {
+    const { operator, dispatcher, send } = await room();
+
+    await send(reroute());
+
+    expect(emitOf(operator)).toHaveBeenCalledWith('hub-reroute', {
+      hubId: HUB_ID,
+      orderId: ORDER_ID,
+      droneId: DRONE_ID,
+      outcome: 'rerouted',
+      addedKm: 1.8,
+      crossesGeofence: false,
+      batteryShort: false,
+    });
+    expect(emitOf(dispatcher)).not.toHaveBeenCalled();
+  });
+
+  it('el operador de otra central no recibe el cambio de ruta', async () => {
+    const { operator, access, send } = await room();
+    access.originHubOf.mockResolvedValue(
+      'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+    );
+
+    await send(reroute());
+
+    expect(emitOf(operator)).not.toHaveBeenCalled();
+  });
+
+  it('sin camino seguro y sin batería, el aviso lo dice', async () => {
+    const { operator, send } = await room();
+
+    await send(
+      reroute({ outcome: 'blocked', addedKm: null, crossesGeofence: true }),
+    );
+    await send(reroute({ batteryShort: true }));
+
+    expect(emitOf(operator)).toHaveBeenNthCalledWith(
+      1,
+      'hub-reroute',
+      expect.objectContaining({
+        outcome: 'blocked',
+        addedKm: null,
+        crossesGeofence: true,
+      }),
+    );
+    expect(emitOf(operator)).toHaveBeenNthCalledWith(
+      2,
+      'hub-reroute',
+      expect.objectContaining({ outcome: 'rerouted', batteryShort: true }),
+    );
+  });
+
+  it('si no se sabe la central, el radar igual recibe el cambio de ruta', async () => {
+    const { gateway, access, operator, send } = await room();
+    const warn = jest.spyOn(Logger.prototype, 'warn').mockImplementation();
+    access.originHubOf.mockRejectedValue(new Error('base caída'));
+    const radar = jest.fn();
+    gateway.server = {
+      to: () => ({ emit: radar }),
+      in: () => ({ fetchSockets: () => Promise.resolve([operator]) }),
+    } as never;
+
+    await expect(send(reroute())).resolves.toBeUndefined();
+
+    expect(radar).toHaveBeenCalledWith(
+      'radar-reroute',
+      expect.objectContaining({ outcome: 'rerouted' }),
+    );
+    expect(emitOf(operator)).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
 });
 
 function emitOf(client: Socket) {
