@@ -8,6 +8,7 @@ import '../features/home/presentation/widgets/admin/admin_create_sheet.dart';
 import '../features/fleet/data/fleet_providers.dart';
 import '../features/hubs/data/hub_providers.dart';
 import '../features/orders/data/order_providers.dart';
+import '../features/orders/data/queue_live.dart';
 
 /// Los destinos de la barra de cada rol y su acción del centro.
 ///
@@ -74,6 +75,8 @@ class RoleTabs {
 
   static RoleTabs _dispatcher(BuildContext context, WidgetRef ref) {
     final active = ref.watch(myHubProvider).value?.isActive ?? false;
+    // La cola llega por socket (`queue-changed`) mientras la central opera.
+    if (active) ref.watch(queueLiveProvider);
     final queue = active ? ref.watch(queueProvider).value?.length : null;
     return RoleTabs(
       destinations: const [
