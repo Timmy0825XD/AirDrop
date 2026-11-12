@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/core/widgets/app_max_width.dart';
-import 'package:frontend/core/widgets/floating_nav_bar.dart';
+import 'package:frontend/core/widgets/app_tab_bar.dart';
 import 'package:frontend/core/widgets/sliding_segmented.dart';
 
 Future<void> _pumpAt(WidgetTester tester, double width, Widget child) async {
@@ -14,7 +14,7 @@ Future<void> _pumpAt(WidgetTester tester, double width, Widget child) async {
 
 final _bar = Align(
   alignment: Alignment.bottomCenter,
-  child: FloatingNavBar(
+  child: AppTabBar(
     destinations: const [
       NavDestination(icon: Icons.home_outlined, label: 'Inicio'),
       NavDestination(icon: Icons.receipt_long_outlined, label: 'Pedidos'),
@@ -26,6 +26,7 @@ final _bar = Align(
     center: NavCenterAction(
       icon: Icons.bolt,
       label: 'Pedir urgencia',
+      tabLabel: 'Urgencia',
       onPressed: () {},
     ),
   ),

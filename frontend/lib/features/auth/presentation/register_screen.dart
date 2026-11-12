@@ -17,8 +17,8 @@ import 'widgets/login/login_form_alert.dart';
 import 'widgets/register/register_consent_row.dart';
 import 'widgets/register/register_document_section.dart';
 import 'widgets/register/register_fields.dart';
-import 'widgets/register/register_flight_plan.dart';
 import 'widgets/register/register_header.dart';
+import 'widgets/register/register_progress.dart';
 
 /// Alta pública del solicitante. No hay campo de rol: el despachador y el
 /// operador los crea el administrador.
@@ -207,7 +207,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           ListenableBuilder(
             listenable: Listenable.merge(_controllers.all),
             builder: (context, _) =>
-                RegisterFlightPlan(completed: _completedGroups()),
+                RegisterProgress(completed: _completedGroups()),
           ),
           const SizedBox(height: 22),
           AuthFormAlert(

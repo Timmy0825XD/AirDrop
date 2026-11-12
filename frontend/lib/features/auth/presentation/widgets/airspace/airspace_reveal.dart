@@ -6,12 +6,11 @@ import '../../../../../theme/app_backdrop.dart';
 import 'airspace_map.dart';
 
 /// La salida de auth hacia el inicio. Desde el botón (ya un círculo verde)
-/// se abre un círculo que deja ver el espacio aéreo, la cámara se lanza en
-/// picada hacia el mapa y todo se funde en el fondo de la app, que es
-/// donde empieza el inicio del rol.
+/// se abre un círculo que deja ver el mapa, la cámara se acerca y todo se
+/// funde en el fondo de la app, que es donde empieza el inicio del rol.
 ///
-/// Con [dive] en `false` el círculo solo deja ver el mapa inclinado, sin
-/// picada ni fundido: la usa la nueva contraseña, que sigue con su propio
+/// Con [dive] en `false` el círculo solo deja ver el mapa, sin acercarse
+/// ni fundirse: la usa la nueva contraseña, que sigue con su propio
 /// encabezado sobre el mismo mapa.
 ///
 /// [progress] va de 0 a 1 en [duration]; en 0 no dibuja nada.
@@ -20,7 +19,7 @@ class AirspaceReveal extends StatefulWidget {
     super.key,
     required this.progress,
     required this.center,
-    this.startRadius = 29,
+    this.startRadius = 27,
     this.dive = true,
   });
 

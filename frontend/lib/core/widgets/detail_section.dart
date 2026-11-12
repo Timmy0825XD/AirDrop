@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'glass_card.dart';
 
 /// Tarjeta con título para cada bloque del detalle (datos, dron, acciones):
-/// el ícono en su cuadro teñido, el rótulo en mayúsculas y el contenido.
+/// el ícono en su cuadro teñido, el título y el contenido.
 class DetailSection extends StatelessWidget {
   const DetailSection({
     super.key,
@@ -43,12 +43,7 @@ class DetailSection extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
               ],
-              Expanded(
-                child: Text(
-                  title.toUpperCase(),
-                  style: theme.textTheme.labelSmall,
-                ),
-              ),
+              Expanded(child: Text(title, style: theme.textTheme.titleMedium)),
             ],
           ),
           const SizedBox(height: 14),

@@ -101,7 +101,7 @@ class KpiRow extends StatelessWidget {
           [
             ?target,
             if (delta != null)
-              '${delta >= 0 ? '▲' : '▼'} ${formatKpiValue(delta.abs(), kpi.unit)} '
+              '${delta >= 0 ? '+' : '-'}${formatKpiValue(delta.abs(), kpi.unit)} '
                   'frente al periodo anterior',
           ].join(' · '),
           style: muted,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/widgets/menu_list.dart';
 import '../../../core/widgets/metric_tile.dart';
 import '../../../core/widgets/status_pill.dart';
 import '../../auth/data/auth_models.dart';
@@ -11,7 +12,6 @@ import 'widgets/home_grid.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_page.dart';
 import 'widgets/home_spotlight.dart';
-import 'widgets/quick_tile.dart';
 import '../../notifications/data/notice_providers.dart';
 
 /// Resumen del administrador: las centrales activas como cifra principal
@@ -68,16 +68,18 @@ class AdminHome extends ConsumerWidget {
                   ? null
                   : suspendedHubs + suspendedUsers,
               caption: 'Centrales y cuentas',
-              color: StatusPill.colorOf(context, PillTone.negative),
+              // En 0 la cifra va en el color del texto: nada pide atención.
+              color: (suspendedHubs ?? 0) + (suspendedUsers ?? 0) > 0
+                  ? StatusPill.colorOf(context, PillTone.negative)
+                  : null,
             ),
           ],
         ),
         // Centrales y Cuentas ya están en la barra: aquí solo lo que no.
         const HomeLabel('Análisis'),
-        HomeGrid(
-          startIndex: 5,
-          children: [
-            QuickTile(
+        MenuList(
+          items: [
+            MenuItem(
               title: 'Métricas',
               subtitle: 'Indicadores, demanda y centrales',
               icon: Icons.insights_rounded,

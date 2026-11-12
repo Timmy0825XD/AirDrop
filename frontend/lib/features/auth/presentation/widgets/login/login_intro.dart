@@ -2,14 +2,13 @@ import 'dart:ui' show ImageFilter, lerpDouble;
 
 import 'package:flutter/material.dart';
 
-import '../../../../../core/widgets/drone_mark.dart';
 import '../auth_brand.dart';
 import '../auth_curved_header.dart';
 import 'login_timeline.dart';
 
-/// La capa de marca del login: el espacio aéreo, el dron, el nombre, el
-/// eslogan y la pastilla de la ciudad. Empieza como entrada a pantalla
-/// completa y termina como encabezado con el mapa inclinado.
+/// La capa de marca del login: el mapa de la ciudad, el logo, el nombre y
+/// el eslogan. Empieza como entrada a pantalla completa y termina como
+/// encabezado: el mapa se recorta y el logo viaja a la esquina.
 ///
 /// Si se vuelve del registro llega [returning]: no hay entrada, el
 /// encabezado compacto crece hasta el alto del login.
@@ -39,7 +38,6 @@ class LoginIntro extends StatelessWidget {
             _Wordmark(timeline: timeline, layout: layout),
             _Tagline(timeline: timeline, layout: layout),
             _SkipHint(timeline: timeline, layout: layout),
-            _CityPill(morph: timeline.morph, top: inset + 23),
           ],
         );
       },
@@ -80,19 +78,18 @@ class _IntroHeader extends StatelessWidget {
         curve: lerpDouble(fromCurve, AuthHeaderMetrics.tallCurve, morph.value)!,
         network: timeline.network,
         traffic: timeline.traffic,
-        tilt: timeline.morph,
       ),
     );
   }
 }
 
-/// El dron. En la entrada llega desde abajo y queda grande al centro con
-/// su anillo; con el morph viaja a la esquina y se vuelve el logo.
+/// El logo. En la entrada llega desde abajo y queda grande al centro; con
+/// el morph viaja a la esquina y se encoge a su tamaño.
 class _BrandMark extends StatelessWidget {
   const _BrandMark({required this.timeline, required this.layout});
 
-  /// En la entrada el dron se ve a 3× el tamaño del logo.
-  static const double _splashScale = 3;
+  /// En la entrada el logo se ve a 1,7× su tamaño de encabezado.
+  static const double _splashScale = 1.7;
 
   final LoginTimeline timeline;
   final LoginLayout layout;
@@ -117,7 +114,7 @@ class _BrandMark extends StatelessWidget {
                   lerpDouble(_splashScale, 1, m)! * lerpDouble(0.25, 1, pop)!,
               child: Opacity(
                 opacity: pop.clamp(0, 1),
-                child: DroneMark(size: AuthLogoTile.size, halo: 1 - m),
+                child: const AuthLogoTile(),
               ),
             ),
           );
@@ -147,8 +144,8 @@ class _Wordmark extends StatelessWidget {
       text: TextSpan(text: _name, style: style),
       textDirection: TextDirection.ltr,
     )..layout();
-    final left = layout.logoCorner.dx + AuthLogoTile.size + 10;
-    final top = layout.logoCorner.dy + 8;
+    final left = layout.logoCorner.dx + AuthLogoTile.size + 12;
+    final top = layout.logoCorner.dy + 7;
     final splash = Offset(
       layout.size.width / 2 - painter.width * _splashScale / 2,
       layout.logoSplashCenter.dy + 84,
@@ -220,7 +217,7 @@ class _Materialize extends StatelessWidget {
   }
 }
 
-/// "LOGÍSTICA AEROMÉDICA · VALLEDUPAR" bajo el nombre; se va con el morph.
+/// El eslogan bajo el nombre, en texto normal; se va con el morph.
 class _Tagline extends StatelessWidget {
   const _Tagline({required this.timeline, required this.layout});
 
@@ -231,19 +228,18 @@ class _Tagline extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Positioned(
-      left: 0,
-      right: 0,
-      top: layout.logoSplashCenter.dy + 150,
+      left: 24,
+      right: 24,
+      top: layout.logoSplashCenter.dy + 144,
       child: _InThenOut(
         enter: timeline.tagline,
         exit: timeline.morph,
         child: Text(
-          'LOGÍSTICA AEROMÉDICA · VALLEDUPAR',
+          'Logística aeromédica en Valledupar',
           textAlign: TextAlign.center,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 2,
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontSize: 17,
+            color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
       ),
@@ -308,26 +304,6 @@ class _InThenOut extends StatelessWidget {
         );
       },
       child: child,
-    );
-  }
-}
-
-/// La pastilla de vidrio con la ciudad; aparece con el encabezado.
-class _CityPill extends StatelessWidget {
-  const _CityPill({required this.morph, required this.top});
-
-  final Animation<double> morph;
-  final double top;
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      right: 24,
-      top: top,
-      child: FadeTransition(
-        opacity: morph,
-        child: const AuthPill(text: 'Valledupar', icon: Icons.place_outlined),
-      ),
     );
   }
 }

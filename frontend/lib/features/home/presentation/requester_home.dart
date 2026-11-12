@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/clock/sim_clock.dart';
 import '../../../core/widgets/auto_refresh.dart';
+import '../../../core/widgets/menu_list.dart';
 import '../../../core/widgets/status_pill.dart';
 import '../../auth/data/auth_models.dart';
 import '../../notifications/data/notice_providers.dart';
@@ -15,7 +16,6 @@ import 'widgets/home_header.dart';
 import 'widgets/home_page.dart';
 import 'live_mission.dart';
 import 'widgets/home_spotlight.dart';
-import 'widgets/quick_tile.dart';
 import 'widgets/requester/next_delivery_card.dart';
 import 'widgets/requester/requester_stats.dart';
 
@@ -103,9 +103,8 @@ class RequesterHome extends ConsumerWidget {
   }
 }
 
-
 /// Lo único que la barra no tiene: pedir una entrega periódica. Pedir
-/// urgencia es el botón del centro; Mis pedidos y Mis planes, destinos.
+/// urgencia es la pestaña del centro; Mis pedidos y Mis planes, destinos.
 class _RequesterGrid extends StatelessWidget {
   const _RequesterGrid();
 
@@ -115,11 +114,11 @@ class _RequesterGrid extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const HomeLabel('Pedir'),
-        HomeGrid(
-          children: [
-            QuickTile(
+        MenuList(
+          items: [
+            MenuItem(
               title: 'Entrega periódica',
-              subtitle: 'Tu tratamiento, cada semana o mes.',
+              subtitle: 'Tu tratamiento, cada semana o mes',
               icon: Icons.calendar_month_outlined,
               onTap: () => context.push('/orders/plans/new'),
             ),

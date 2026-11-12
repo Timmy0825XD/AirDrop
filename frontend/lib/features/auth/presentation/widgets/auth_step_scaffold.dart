@@ -3,8 +3,6 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
-import '../../../../theme/app_palette.dart';
-import '../../../../core/widgets/drone_mark.dart';
 import 'auth_brand.dart';
 import 'auth_curved_header.dart';
 import 'auth_glass.dart';
@@ -22,13 +20,13 @@ CurvedAnimation _span(
 );
 
 /// Andamiaje de las pantallas de paso (verificar código, recuperar y nueva
-/// contraseña): el mapa arriba con volver y la pastilla, el dron de la
-/// marca que baja trayendo el ícono del paso y, en la hoja de abajo, el
+/// contraseña): el mapa arriba con volver y la pastilla, el ícono del paso
+/// en un círculo claro montado sobre el borde de la hoja y, en la hoja, el
 /// contenido y la acción principal al fondo.
 ///
 /// Al entrar, el encabezado cambia desde la forma de la pantalla anterior
 /// ([fromTall]: el login; [fromStep]: otra pantalla de paso; si no, el
-/// registro), el dron baja con el ícono y la hoja sube.
+/// registro), la hoja sube y el círculo baja hasta su sitio.
 class AuthStepScaffold extends StatefulWidget {
   const AuthStepScaffold({
     super.key,
@@ -108,7 +106,7 @@ class _AuthStepScaffoldState extends State<AuthStepScaffold>
   }
 }
 
-/// El mapa, el dron con el ícono, la hoja, volver y la capa de encima.
+/// El mapa, la hoja, el ícono, volver y la capa de encima.
 class _StepLayers extends StatelessWidget {
   const _StepLayers({
     required this.step,
@@ -135,10 +133,10 @@ class _StepLayers extends StatelessWidget {
               fromStep: w.fromStep,
             ),
           ),
-          _StepHero(entry: hero, icon: w.icon, turnIcon: w.turnIcon),
           Positioned.fill(
             child: _StepSheet(entry: sheet, body: w.body, action: w.action),
           ),
+          _StepHero(entry: hero, icon: w.icon, turnIcon: w.turnIcon),
           _StepTopBar(onBack: w.onBack, pill: w.pill),
           if (w.overlay != null) Positioned.fill(child: w.overlay!),
         ],
@@ -202,8 +200,8 @@ class _StepTopBar extends StatelessWidget {
   }
 }
 
-/// El dron de la marca baja desde arriba con el ícono colgado y queda
-/// flotando en el centro del mapa, justo encima de la hoja.
+/// El ícono del paso en un círculo claro: baja desde arriba y queda montado
+/// sobre el borde de la hoja, mitad sobre el mapa y mitad sobre la hoja.
 class _StepHero extends StatelessWidget {
   const _StepHero({
     required this.entry,
@@ -211,7 +209,7 @@ class _StepHero extends StatelessWidget {
     required this.turnIcon,
   });
 
-  static const double height = 152;
+  static const double size = 80;
 
   final Animation<double> entry;
   final IconData icon;
@@ -219,27 +217,28 @@ class _StepHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bottom =
-        AuthHeaderMetrics.stepOf(context) - AuthHeaderMetrics.overlap - 14;
+    final edge = AuthHeaderMetrics.stepOf(context) - AuthHeaderMetrics.overlap;
     return Positioned(
       left: 0,
       right: 0,
-      top: bottom - height,
-      child: AnimatedBuilder(
-        animation: entry,
-        builder: (context, child) => Opacity(
-          opacity: entry.value.clamp(0, 1),
-          child: Transform.translate(
-            offset: Offset(0, -48 * (1 - entry.value)),
-            child: child,
+      top: edge - size / 2,
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: entry,
+          builder: (context, child) => Opacity(
+            opacity: entry.value.clamp(0, 1),
+            child: Transform.translate(
+              offset: Offset(0, -40 * (1 - entry.value)),
+              child: child,
+            ),
           ),
-        ),
-        child: _Hover(
-          child: _CarriedBadge(
-            icon: icon,
-            turns: turnIcon
-                ? Tween(begin: -40 / 360, end: 0.0).animate(entry)
-                : null,
+          child: Center(
+            child: _StepBadge(
+              icon: icon,
+              turns: turnIcon
+                  ? Tween(begin: -40 / 360, end: 0.0).animate(entry)
+                  : null,
+            ),
           ),
         ),
       ),
@@ -247,85 +246,40 @@ class _StepHero extends StatelessWidget {
   }
 }
 
-/// El dron, el cable y el ícono del paso en una insignia del acento.
-class _CarriedBadge extends StatelessWidget {
-  const _CarriedBadge({required this.icon, this.turns});
+/// El círculo con el ícono: blanco con el ícono del acento en claro, claro
+/// con el ícono oscuro en oscuro. Con [turns] el ícono se endereza.
+class _StepBadge extends StatelessWidget {
+  const _StepBadge({required this.icon, this.turns});
 
   final IconData icon;
   final Animation<double>? turns;
 
   @override
   Widget build(BuildContext context) {
-    final palette = context.palette;
-    final cable = Theme.of(context).colorScheme.primary.withValues(alpha: 0.7);
-    final glyph = Icon(icon, size: 30, color: palette.onAccent);
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        const DroneMark(size: 60),
-        Container(width: 1.5, height: 20, color: cable),
-        Container(
-          width: 68,
-          height: 68,
-          decoration: BoxDecoration(
-            gradient: palette.accent,
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white.withValues(alpha: 0.35)),
-            boxShadow: [
-              BoxShadow(
-                color: palette.accentGradient.first.withValues(alpha: 0.45),
-                blurRadius: 28,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: turns == null
-              ? glyph
-              : RotationTransition(turns: turns!, child: glyph),
-        ),
-      ],
+    final colors = Theme.of(context).colorScheme;
+    final dark = colors.brightness == Brightness.dark;
+    final glyph = Icon(
+      icon,
+      size: 34,
+      color: dark ? colors.surface : colors.primary,
     );
-  }
-}
-
-/// Flota arriba y abajo despacio. Con "reducir movimiento" queda quieto.
-class _Hover extends StatefulWidget {
-  const _Hover({required this.child});
-
-  final Widget child;
-
-  @override
-  State<_Hover> createState() => _HoverState();
-}
-
-class _HoverState extends State<_Hover> with SingleTickerProviderStateMixin {
-  late final _hover = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2600),
-  );
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final still = MediaQuery.disableAnimationsOf(context);
-    still ? _hover.stop() : _hover.repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _hover.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _hover,
-      builder: (context, child) => Transform.translate(
-        offset: Offset(0, -6 * Curves.easeInOut.transform(_hover.value)),
-        child: child,
+    return Container(
+      width: _StepHero.size,
+      height: _StepHero.size,
+      decoration: BoxDecoration(
+        color: dark ? colors.onSurface : colors.surface,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: dark ? 0.45 : 0.18),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
-      child: widget.child,
+      child: turns == null
+          ? glyph
+          : RotationTransition(turns: turns!, child: glyph),
     );
   }
 }
@@ -374,7 +328,13 @@ class _StepSheet extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [body, const SizedBox(height: 24), action],
+                  children: [
+                    // Espacio para la mitad del círculo que monta la hoja.
+                    const SizedBox(height: _StepHero.size / 2 - 8),
+                    body,
+                    const SizedBox(height: 24),
+                    action,
+                  ],
                 ),
               ),
             ),

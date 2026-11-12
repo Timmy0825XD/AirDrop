@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_motion.dart';
-import '../../theme/app_palette.dart';
 
 /// Una opción del filtro: el valor que representa y su texto.
 class SegmentOption<T> {
@@ -73,15 +72,13 @@ class _SegmentTrack<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final options = filter.options;
-    final palette = context.palette;
     final index = options.indexWhere((o) => o.value == filter.selected);
     final x = options.length < 2 ? 0.0 : -1 + 2 * index / (options.length - 1);
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: palette.bar,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: palette.glassBorder),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Stack(
         children: [
@@ -106,7 +103,7 @@ class _SegmentTrack<T> extends StatelessWidget {
   }
 }
 
-/// La pastilla de marca que se desliza bajo la opción elegida.
+/// La pastilla clara que se desliza bajo la opción elegida.
 class _SlidingPill extends StatelessWidget {
   const _SlidingPill({required this.x, required this.count});
 
@@ -125,8 +122,15 @@ class _SlidingPill extends StatelessWidget {
         heightFactor: 1,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            gradient: context.palette.accent,
-            borderRadius: BorderRadius.circular(999),
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: BorderRadius.circular(9),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.12),
+                blurRadius: 3,
+                offset: const Offset(0, 1),
+              ),
+            ],
           ),
         ),
       ),
@@ -153,16 +157,17 @@ class _Segment extends StatelessWidget {
       selected: selected,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(9),
         child: SizedBox(
-          height: 42,
+          height: 40,
           child: Center(
             child: AnimatedDefaultTextStyle(
               duration: AppMotion.quick,
               style: theme.textTheme.labelLarge!.copyWith(
                 fontSize: 13,
+                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 color: selected
-                    ? context.palette.onAccent
+                    ? theme.colorScheme.onSurface
                     : theme.colorScheme.onSurfaceVariant,
               ),
               child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),

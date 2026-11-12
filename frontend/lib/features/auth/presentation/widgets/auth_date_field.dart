@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'auth_field.dart';
 import '../../../../core/clock/sim_clock.dart';
 import '../../../../core/date_format.dart';
-import '../../../../theme/app_palette.dart';
 
-/// Campo de fecha con la forma de [AuthField]: label en mayúsculas, la
-/// caja de 56 px con el calendario y el error que tiembla. Al tocarlo,
+/// Campo de fecha con la forma de [AuthField]: el label, la caja con el
+/// calendario y el error que tiembla. Al tocarlo,
 /// [onTap] abre el selector (ver [pickIsoDate]). [value] va en AAAA-MM-DD
 /// y se muestra como `sáb. 7 nov.`.
 class AuthDateField extends StatelessWidget {
@@ -34,12 +33,9 @@ class AuthDateField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         ExcludeSemantics(
-          child: Text(
-            label.toUpperCase(),
-            style: Theme.of(context).textTheme.labelSmall,
-          ),
+          child: Text(label, style: authLabelStyle(Theme.of(context))),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         ShakeOnError(
           trigger: error ? shakeCount : 0,
           // Para el lector de pantalla, un botón con su etiqueta y la fecha.
@@ -70,19 +66,16 @@ class _DateBox extends StatelessWidget {
     final colors = theme.colorScheme;
     final value = field.value;
     return Material(
-      color: context.palette.glass,
+      color: theme.inputDecorationTheme.fillColor ?? colors.surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: BorderSide(
-          color: error ? colors.error : colors.outline,
-          width: 1.5,
-        ),
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(color: error ? colors.error : colors.outline),
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: field.onTap,
         child: SizedBox(
-          height: 56,
+          height: 54,
           child: Row(
             children: [
               const SizedBox(width: 14),

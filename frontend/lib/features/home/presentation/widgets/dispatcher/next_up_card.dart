@@ -6,7 +6,7 @@ import '../../../../../core/widgets/tone_tile.dart';
 import '../home_grid.dart';
 import 'next_up.dart';
 
-/// "Lo que te toca ahora": hasta tres tareas (la urgencia más vieja, el
+/// "Para atender ahora": hasta tres tareas (la urgencia más vieja, el
 /// dron que espera la carga, el próximo programado). Tocar una abre su
 /// pedido. Sin nada pendiente, lo dice en una línea.
 class NextUpCard extends StatelessWidget {
@@ -21,7 +21,7 @@ class NextUpCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const HomeLabel('Lo que te toca ahora'),
+        const HomeLabel('Para atender ahora'),
         GlassCard(
           padding: const EdgeInsets.symmetric(vertical: 6),
           child: items.isEmpty

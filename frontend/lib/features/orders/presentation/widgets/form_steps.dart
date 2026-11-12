@@ -35,7 +35,7 @@ class FormSteps extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            text.toUpperCase(),
+            text,
             style: theme.textTheme.labelSmall?.copyWith(
               color: theme.colorScheme.primary,
             ),

@@ -67,7 +67,7 @@ void main() {
         ),
       ),
     );
-    expect(find.text('PASO 2 DE 3 · CUÁNDO'), findsOneWidget);
+    expect(find.text('Paso 2 de 3 · Cuándo'), findsOneWidget);
   });
 
   testWidgets('la entrega periódica no pasa del paso 1 sin medicamento', (
@@ -84,15 +84,15 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
 
-    expect(find.text('PASO 1 DE 3 · QUÉ'), findsOneWidget);
+    expect(find.text('Paso 1 de 3 · Qué'), findsOneWidget);
     // Los campos de "Dónde" todavía no están.
-    expect(find.text('DIRECCIÓN'), findsNothing);
+    expect(find.text('Dirección'), findsNothing);
 
     await tester.ensureVisible(find.text('Siguiente'));
     await tester.tap(find.text('Siguiente'));
     await tester.pump(const Duration(milliseconds: 600));
 
-    expect(find.text('PASO 1 DE 3 · QUÉ'), findsOneWidget);
+    expect(find.text('Paso 1 de 3 · Qué'), findsOneWidget);
     expect(find.text('Elige un medicamento del catálogo.'), findsOneWidget);
   });
 }

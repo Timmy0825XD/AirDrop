@@ -4,10 +4,9 @@ import '../../theme/app_motion.dart';
 import '../../theme/app_palette.dart';
 import 'drone_mark.dart';
 
-/// El dron sobre el mapa: el dron de la marca visto desde arriba, con
-/// las hélices girando, apuntando hacia donde va ([heading], en radianes
-/// desde el norte) y un halo que late debajo. Con "reducir movimiento" el
-/// halo queda quieto.
+/// El dron sobre el mapa: la ficha del dron de la marca apuntando hacia
+/// donde va ([heading], en radianes desde el norte) y un anillo suave que
+/// late debajo. Con "reducir movimiento" el anillo queda quieto.
 class DroneMarker extends StatefulWidget {
   const DroneMarker({super.key, this.heading = 0});
 
@@ -23,7 +22,7 @@ class _DroneMarkerState extends State<DroneMarker>
     with SingleTickerProviderStateMixin {
   late final AnimationController _pulse = AnimationController(
     vsync: this,
-    duration: const Duration(milliseconds: 1800),
+    duration: const Duration(milliseconds: 2200),
   );
 
   @override
@@ -40,7 +39,7 @@ class _DroneMarkerState extends State<DroneMarker>
 
   @override
   Widget build(BuildContext context) {
-    final glow = context.palette.accentGradient.first;
+    final accent = Theme.of(context).colorScheme.primary;
     return Semantics(
       label: 'Dron',
       child: Stack(
@@ -51,60 +50,27 @@ class _DroneMarkerState extends State<DroneMarker>
             builder: (context, _) {
               final t = AppMotion.enterCurve.transform(_pulse.value);
               return Container(
-                width: 30 + 42 * t,
-                height: 30 + 42 * t,
+                width: 40 + 32 * t,
+                height: 40 + 32 * t,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(
-                    color: glow.withValues(alpha: 0.7 * (1 - t)),
-                    width: 1.5,
-                  ),
-                  color: glow.withValues(alpha: 0.12 * (1 - t)),
+                  color: accent.withValues(alpha: 0.22 * (1 - t)),
                 ),
               );
             },
           ),
-          _DroneBody(heading: widget.heading, glow: glow),
+          Transform.rotate(
+            angle: widget.heading,
+            child: const DroneMark(size: 42),
+          ),
         ],
       ),
     );
   }
 }
 
-/// El disco oscuro con brillo del acento y el dron girado hacia su rumbo.
-class _DroneBody extends StatelessWidget {
-  const _DroneBody({required this.heading, required this.glow});
-
-  final double heading;
-  final Color glow;
-
-  @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-    return Container(
-      width: 44,
-      height: 44,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: palette.backdrop.last.withValues(alpha: 0.85),
-        border: Border.all(color: glow.withValues(alpha: 0.8), width: 1.5),
-        boxShadow: [
-          BoxShadow(color: glow.withValues(alpha: 0.6), blurRadius: 16),
-        ],
-      ),
-      child: Transform.rotate(
-        angle: heading,
-        child: const Padding(
-          padding: EdgeInsets.all(4),
-          child: DroneMark(size: 34),
-        ),
-      ),
-    );
-  }
-}
-
-/// La central de origen sobre el mapa: un cuadro de vidrio con la cruz
-/// médica y el borde del acento, como en el plano del login.
+/// La central de origen sobre el mapa: un cuadro del acento con la cruz
+/// médica, como en el mapa del login.
 class HubMarker extends StatelessWidget {
   const HubMarker({super.key});
 
@@ -112,20 +78,23 @@ class HubMarker extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = context.palette;
-    final accent = Theme.of(context).colorScheme.primary;
+    final colors = Theme.of(context).colorScheme;
     return Semantics(
       label: 'Central de origen',
       child: Container(
         decoration: BoxDecoration(
-          color: palette.bar,
+          color: colors.primary,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: accent, width: 1.5),
+          border: Border.all(color: colors.surface, width: 2),
           boxShadow: [
-            BoxShadow(color: accent.withValues(alpha: 0.35), blurRadius: 12),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.2),
+              blurRadius: 6,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
-        child: Icon(Icons.add_rounded, size: 20, color: accent),
+        child: Icon(Icons.add_rounded, size: 22, color: colors.onPrimary),
       ),
     );
   }

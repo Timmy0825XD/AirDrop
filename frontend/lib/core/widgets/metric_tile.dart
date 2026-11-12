@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import 'count_up_text.dart';
 import 'glass_card.dart';
 
-/// Una cifra en una tarjeta de vidrio: la etiqueta en mayúsculas, el
-/// número grande que cuenta al aparecer y una línea de contexto. Con
-/// [onTap] lleva a la lista de donde sale el número.
+/// Una cifra en una tarjeta: el número grande que cuenta al aparecer, la
+/// etiqueta debajo y, si hay, una línea de contexto. Con [onTap] lleva a
+/// la lista de donde sale el número.
 class MetricTile extends StatelessWidget {
   const MetricTile({
     super.key,
@@ -45,13 +45,11 @@ class MetricTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label.toUpperCase(), style: theme.textTheme.labelSmall),
-            const SizedBox(height: 8),
             _Figure(value: value, unit: unit, color: color),
-            if (caption != null) ...[
-              const SizedBox(height: 4),
+            const SizedBox(height: 4),
+            Text(label, style: theme.textTheme.titleSmall, maxLines: 2),
+            if (caption != null)
               Text(caption!, style: theme.textTheme.bodySmall, maxLines: 2),
-            ],
             if (footer != null) ...[const SizedBox(height: 10), footer!],
           ],
         ),
@@ -76,7 +74,11 @@ class _Figure extends StatelessWidget {
       children: [
         CountUpText(
           value: value,
-          style: theme.textTheme.displaySmall?.copyWith(color: color),
+          style: theme.textTheme.headlineLarge?.copyWith(
+            fontSize: 30,
+            color: color,
+            height: 1.1,
+          ),
         ),
         if (unit != null) ...[
           const SizedBox(width: 4),

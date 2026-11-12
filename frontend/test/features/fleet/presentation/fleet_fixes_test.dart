@@ -59,7 +59,7 @@ void main() {
     await _pump(tester, const MaintenanceSheet(withDate: false));
 
     expect(find.text('Dejar fuera de servicio'), findsOneWidget);
-    expect(find.text('FECHA ESTIMADA'), findsNothing);
+    expect(find.text('Fecha estimada'), findsNothing);
     await tester.tap(find.text('Dejar fuera'));
     await tester.pumpAndSettle();
 

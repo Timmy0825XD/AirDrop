@@ -33,7 +33,7 @@ class FleetIncidentsCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('INCIDENTES', style: theme.textTheme.labelSmall),
+          Text('Incidentes', style: theme.textTheme.titleMedium),
           const SizedBox(height: 10),
           Text(
             incidentBreakdown(dashboard.incidents),

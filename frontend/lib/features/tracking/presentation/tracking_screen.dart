@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
@@ -24,8 +22,7 @@ import 'widgets/flight_notice.dart';
 import 'widgets/flight_timeline.dart';
 
 /// El vuelo de un pedido en vivo (`/tracking/:orderId`): el mapa a
-/// pantalla completa con la barra "En vivo" y el panel de altitud y rumbo
-/// arriba; en la hoja de abajo, el medicamento con su estado, el aviso,
+/// pantalla completa con la barra "En vivo" arriba; en la hoja de abajo, el medicamento con su estado, el aviso,
 /// "Recibir pedido" si aplica, la telemetría con el avance por la ruta y
 /// la línea de tiempo del vuelo.
 ///
@@ -102,14 +99,6 @@ class TrackingScreen extends ConsumerWidget {
               identifier: t.identifier,
               latencyMs: t.vitals?.latencyMs,
               linkLost: t.linkLost,
-            ),
-      hud: drone == null
-          ? null
-          : FlightHud(
-              altitudeM: t!.altitudeM,
-              headingDeg: routed
-                  ? routeHeading(points, split) * 180 / math.pi
-                  : null,
             ),
       map: (sheetHeight) => FlightMap(
         route: line,

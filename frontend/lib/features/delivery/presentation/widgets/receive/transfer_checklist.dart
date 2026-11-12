@@ -30,7 +30,7 @@ class TransferChecklist extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('REVISIÓN DEL TRASLADO', style: theme.textTheme.labelSmall),
+        Text('Revisión del traslado', style: theme.textTheme.labelSmall),
         const SizedBox(height: 10),
         YesNoQuestion(
           question:

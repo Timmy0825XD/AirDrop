@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../../core/widgets/menu_list.dart';
 import '../../../../../core/widgets/metric_tile.dart';
+import '../../../../../core/widgets/rise_in.dart';
 import '../../../../../core/widgets/status_pill.dart';
 import '../../../../hubs/data/hub_models.dart';
 import '../home_grid.dart';
-import '../quick_tile.dart';
 import 'dispatcher_counts.dart';
 
 /// Abre una ruta, o `null` (candado) si el acceso no está disponible.
@@ -62,27 +63,26 @@ List<Widget> dispatcherOperationTiles(
 
 /// La central y lo que se pide a otra central. La cola y el inventario no
 /// van: ya están en la barra.
-List<Widget> dispatcherHubTiles(
-  BuildContext context,
-  AccessOpener open,
-  DispatcherCounts? c,
-) => [
-  QuickTile(
+List<MenuItem> dispatcherHubItems(BuildContext context, AccessOpener open) => [
+  MenuItem(
     title: 'Mi central',
+    subtitle: 'Datos, horario y estado',
     icon: Icons.home_work_outlined,
     onTap: open('/hubs/me', always: true, push: true),
   ),
-  QuickTile(
+  MenuItem(
     title: 'Urgencia a otra central',
+    subtitle: 'Pide un insumo que no tienes',
     icon: Icons.swap_horiz_rounded,
     onTap: open('/orders/hub-emergency', push: true),
   ),
-  QuickTile(
+  MenuItem(
     title: 'Nuevo abastecimiento',
+    subtitle: 'Entregas periódicas a tu central',
     icon: Icons.calendar_month_outlined,
     onTap: open('/orders/hub-plans/new', push: true),
   ),
-  QuickTile(
+  MenuItem(
     title: 'Mis abastecimientos',
     icon: Icons.event_repeat_outlined,
     onTap: () => context.push('/orders/plans'),
@@ -109,12 +109,12 @@ class DispatcherTiles extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const HomeLabel('Operación'),
+        const HomeLabel('Hoy en la central'),
         HomeGrid(children: dispatcherOperationTiles(context, open, counts)),
         const HomeLabel('Tu central y pedidos'),
-        HomeGrid(
-          startIndex: 4,
-          children: dispatcherHubTiles(context, open, counts),
+        RiseIn(
+          delay: RiseIn.stagger(4),
+          child: MenuList(items: dispatcherHubItems(context, open)),
         ),
       ],
     );

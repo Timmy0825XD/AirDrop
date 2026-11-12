@@ -66,7 +66,7 @@ class _DeliveredCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('ENTREGADOS', style: theme.textTheme.labelSmall),
+          Text('Entregados', style: theme.textTheme.labelSmall),
           const SizedBox(height: 8),
           // Sin entregas, un anillo vacío no dice nada: va una frase.
           if (delivered == 0)
@@ -113,7 +113,7 @@ class _WeeksCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('ESTE MES', style: theme.textTheme.labelSmall),
+          Text('Este mes', style: theme.textTheme.labelSmall),
           const SizedBox(height: 8),
           BarSpark(values: weeks, highlight: weeks.length - 1, height: 30),
           const SizedBox(height: 8),

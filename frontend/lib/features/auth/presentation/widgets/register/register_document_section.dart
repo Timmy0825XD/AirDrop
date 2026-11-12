@@ -41,11 +41,8 @@ class RegisterIdentityFields extends StatelessWidget {
           onChanged: data.onChanged,
         ),
         const SizedBox(height: 18),
-        Text(
-          'TIPO DE DOCUMENTO',
-          style: Theme.of(context).textTheme.labelSmall,
-        ),
-        const SizedBox(height: 8),
+        Text('Tipo de documento', style: authLabelStyle(Theme.of(context))),
+        const SizedBox(height: 6),
         DocumentTypeTabs(
           selected: documentType,
           onChanged: onDocumentTypeChanged,

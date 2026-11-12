@@ -25,7 +25,7 @@ import '../../notifications/data/notice_providers.dart';
 
 /// Inicio del despachador: su central, las urgencias en cola como cifra
 /// principal, el primer vuelo de su central como misión en curso (con su
-/// telemetría), "Lo que te toca ahora" (la urgencia más vieja, el dron que
+/// telemetría), "Para atender ahora" (la urgencia más vieja, el dron que
 /// espera la carga y el próximo programado), las bandejas en cuadrícula y
 /// los accesos de su central que no están en la barra. Con
 /// la central suspendida (o sin central) solo quedan Mi central y Mis

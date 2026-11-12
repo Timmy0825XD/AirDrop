@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../theme/app_palette.dart';
 import 'press_scale.dart';
 
-/// Botón cuadrado de vidrio con un ícono: volver, controles del mapa,
-/// acciones del encabezado. Se hunde al tocarlo. Con [active] se pinta con
-/// el acento (seguir al dron encendido, por ejemplo).
+/// Botón redondo con un ícono: volver, controles del mapa, acciones del
+/// encabezado. Es la superficie del tema con una sombra corta y se hunde
+/// al tocarlo. Con [active] se pinta con el acento (seguir al dron
+/// encendido, por ejemplo).
 class GlassIconButton extends StatelessWidget {
   const GlassIconButton({
     super.key,
@@ -13,14 +13,14 @@ class GlassIconButton extends StatelessWidget {
     required this.tooltip,
     required this.onPressed,
     this.active = false,
-    this.size = 46,
+    this.size = 44,
   });
 
   const GlassIconButton.back({
     super.key,
     required this.onPressed,
-    this.size = 46,
-  }) : icon = Icons.arrow_back_rounded,
+    this.size = 44,
+  }) : icon = Icons.arrow_back_ios_new_rounded,
        tooltip = 'Volver',
        active = false;
 
@@ -32,25 +32,21 @@ class GlassIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = context.palette;
-    final ink = active
-        ? palette.onAccent
-        : Theme.of(context).colorScheme.onSurface;
+    final colors = Theme.of(context).colorScheme;
+    final dark = colors.brightness == Brightness.dark;
     return PressScale(
       scale: 0.92,
       child: Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
-          color: active ? null : palette.bar,
-          gradient: active ? palette.accent : null,
-          borderRadius: BorderRadius.circular(size * 0.32),
-          border: Border.all(color: palette.glassBorder),
+          color: active ? colors.primary : colors.surface,
+          shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: palette.shadow,
-              blurRadius: 18,
-              offset: const Offset(0, 8),
+              color: Colors.black.withValues(alpha: dark ? 0.4 : 0.14),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
             ),
           ],
         ),
@@ -59,7 +55,7 @@ class GlassIconButton extends StatelessWidget {
           child: IconButton(
             tooltip: tooltip,
             onPressed: onPressed,
-            color: ink,
+            color: active ? colors.onPrimary : colors.onSurface,
             icon: Icon(icon, size: size * 0.42),
           ),
         ),

@@ -16,9 +16,12 @@ void main() {
     expect(find.bySemanticsLabel(RegExp('AirDrop')), findsOneWidget);
     semantics.dispose();
     expect(find.text('Inicia sesión'), findsOneWidget);
-    expect(find.text('CORREO ELECTRÓNICO'), findsOneWidget);
+    expect(find.text('Correo electrónico'), findsOneWidget);
     expect(find.text('¿No tienes cuenta?'), findsOneWidget);
-    expect(find.widgetWithText(ElevatedButton, 'Iniciar sesión'), findsOneWidget);
+    expect(
+      find.widgetWithText(ElevatedButton, 'Iniciar sesión'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('El login salta el splash con reducir movimiento y valida '

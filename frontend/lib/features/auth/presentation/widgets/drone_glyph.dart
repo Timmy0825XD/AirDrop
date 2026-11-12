@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-/// El dron de AirDrop dibujado a mano: cuatro rotores, brazos en X y el
-/// núcleo naranja de señal. Se usa en la ruta del splash y en el botón
-/// mientras carga.
+/// El dron de AirDrop dibujado con líneas: cuatro rotores, brazos en X y el
+/// núcleo del acento. Es el logo del auth y el indicador del botón mientras
+/// carga.
 class DroneGlyph extends StatelessWidget {
   const DroneGlyph({super.key, required this.color, this.size = 34});
 
-  /// Color de brazos y rotores. El núcleo siempre es `colorScheme.secondary`.
+  /// Color de brazos y rotores. El núcleo es `colorScheme.primary`.
   final Color color;
   final double size;
 
@@ -16,7 +16,7 @@ class DroneGlyph extends StatelessWidget {
       size: Size.square(size),
       painter: _DronePainter(
         frame: color,
-        core: Theme.of(context).colorScheme.secondary,
+        core: Theme.of(context).colorScheme.primary,
       ),
     );
   }

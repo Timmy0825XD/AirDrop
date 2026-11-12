@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../core/widgets/floating_nav_bar.dart';
+import '../core/widgets/app_tab_bar.dart';
 import '../features/auth/data/auth_models.dart';
 import '../features/home/presentation/widgets/admin/admin_create_sheet.dart';
 import '../features/fleet/data/fleet_providers.dart';
@@ -38,6 +38,9 @@ class RoleTabs {
     return i < 0 ? null : i;
   }
 
+  /// La pantalla abierta es la de la pestaña del centro.
+  bool isCenter(String location) => location == centerPath;
+
   bool isTab(String location) =>
       paths.contains(location) || location == centerPath;
 
@@ -69,6 +72,7 @@ class RoleTabs {
     center: NavCenterAction(
       icon: Icons.bolt_rounded,
       label: 'Pedir urgencia',
+      tabLabel: 'Urgencia',
       onPressed: () => context.push('/orders/emergency'),
     ),
   );
@@ -88,8 +92,9 @@ class RoleTabs {
       paths: const ['/home', '/orders/agenda', '/inventory', '/more'],
       centerPath: '/orders/queue',
       center: NavCenterAction(
-        icon: Icons.format_list_numbered_rounded,
+        icon: Icons.bolt_rounded,
         label: 'Cola de urgencias',
+        tabLabel: 'Urgencias',
         badge: queue,
         onPressed: () => context.go('/orders/queue'),
       ),
@@ -110,6 +115,7 @@ class RoleTabs {
       center: NavCenterAction(
         icon: Icons.radar_rounded,
         label: 'Mapa en vivo',
+        tabLabel: 'Mapa',
         badge: flying,
         onPressed: () => context.go('/fleet/flights'),
       ),
@@ -127,6 +133,7 @@ class RoleTabs {
     center: NavCenterAction(
       icon: Icons.add_rounded,
       label: 'Crear central o cuenta',
+      tabLabel: 'Crear',
       onPressed: () => showAdminCreateSheet(context),
     ),
   );

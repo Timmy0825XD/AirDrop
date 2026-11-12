@@ -264,7 +264,7 @@ class _DashedRing extends CustomPainter {
   bool shouldRepaint(_DashedRing old) => old.color != color;
 }
 
-/// Eyebrow, título, mensaje y el botón al login; suben al final.
+/// Título, mensaje y el botón al login; suben al final.
 class _SuccessText extends StatelessWidget {
   const _SuccessText({
     required this.rise,
@@ -331,15 +331,6 @@ class _SuccessCopy extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'RECUPERAR ACCESO',
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.8,
-          ),
-        ),
-        const SizedBox(height: 8),
         Text('Contraseña actualizada', style: authTitleStyle(theme)),
         const SizedBox(height: 10),
         Text(

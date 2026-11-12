@@ -33,10 +33,10 @@ class ResetCodeSection extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                'CÓDIGO DE VERIFICACIÓN',
+                'Código de verificación',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelSmall,
+                style: authLabelStyle(Theme.of(context)),
               ),
             ),
             TextButton(

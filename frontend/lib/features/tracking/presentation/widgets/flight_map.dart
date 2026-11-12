@@ -5,7 +5,6 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/widgets/app_map.dart';
-import '../../../../core/widgets/map_hud_overlay.dart';
 import '../../../../core/widgets/map_markers.dart';
 import '../../../../theme/app_palette.dart';
 
@@ -79,7 +78,6 @@ class FlightMap extends StatelessWidget {
       fitPadding: EdgeInsets.fromLTRB(56, 150, 56, sheetHeight + 40),
       controlsPadding: EdgeInsets.only(right: 16, bottom: sheetHeight),
       layers: [
-        const MapHudOverlay(),
         // flutter_map no acepta una línea sin puntos: sin ruta, no hay capa.
         if (points.length >= 2)
           _RouteLayer(points: points, split: split, returnLeg: returnLeg),

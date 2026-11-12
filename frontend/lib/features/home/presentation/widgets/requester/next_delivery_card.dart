@@ -45,13 +45,12 @@ class NextDeliveryCard extends StatelessWidget {
                     order.medicationName,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleSmall,
+                    style: theme.textTheme.titleMedium,
                   ),
                   if (at != null)
                     Text(
                       capitalized(formatDateTime(at)),
-                      style: theme.textTheme.labelMedium?.copyWith(
-                        letterSpacing: 1,
+                      style: theme.textTheme.bodySmall?.copyWith(
                         fontFeatures: const [FontFeature.tabularFigures()],
                       ),
                     ),
@@ -79,7 +78,7 @@ class _Tag extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: amber.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(99),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         text,

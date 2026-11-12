@@ -45,7 +45,7 @@ class _RescheduleSheetState extends State<RescheduleSheet> {
         if (_date != null) Navigator.of(context).pop((_date!, _time));
       },
       children: [
-        Text('DÍA', style: label),
+        Text('Día', style: label),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
@@ -59,7 +59,7 @@ class _RescheduleSheetState extends State<RescheduleSheet> {
           ],
         ),
         const SizedBox(height: 16),
-        Text('HORA', style: label),
+        Text('Hora', style: label),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,

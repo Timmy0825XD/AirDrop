@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_motion.dart';
-import '../../theme/app_palette.dart';
 import '../../theme/app_surfaces.dart';
 import 'glass_icon_button.dart';
 
@@ -10,9 +9,8 @@ import 'glass_icon_button.dart';
 /// vidrio, y abajo una hoja que se arrastra con lo demás. [map] recibe el
 /// alto que tapa la hoja para dejar libre la cámara y los botones.
 ///
-/// Con [titleBar] la barra de vidrio lleva ese contenido en vez del título
-/// (el vuelo pone ahí "En vivo"); con [hud], un panel va a la izquierda,
-/// debajo de la barra.
+/// Con [titleBar] la barra de arriba lleva ese contenido en vez del título
+/// (el vuelo pone ahí "En vivo").
 class MapSheetScaffold extends StatelessWidget {
   const MapSheetScaffold({
     super.key,
@@ -22,7 +20,6 @@ class MapSheetScaffold extends StatelessWidget {
     required this.sheet,
     this.trailing,
     this.titleBar,
-    this.hud,
     this.sheetFraction = 0.38,
   });
 
@@ -32,7 +29,6 @@ class MapSheetScaffold extends StatelessWidget {
   final List<Widget> sheet;
   final Widget? trailing;
   final Widget? titleBar;
-  final Widget? hud;
 
   /// Qué parte de la pantalla ocupa la hoja al abrir.
   final double sheetFraction;
@@ -51,7 +47,6 @@ class MapSheetScaffold extends StatelessWidget {
               top: top + 12,
               child: _TopBar(scaffold: this),
             ),
-            if (hud != null) Positioned(left: 16, top: top + 70, child: hud!),
             DraggableScrollableSheet(
               initialChildSize: sheetFraction,
               minChildSize: 0.18,
@@ -74,19 +69,26 @@ class _TopBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = context.palette;
+    final colors = Theme.of(context).colorScheme;
+    final dark = colors.brightness == Brightness.dark;
     return Row(
       children: [
         GlassIconButton.back(onPressed: scaffold.onBack),
         const SizedBox(width: 10),
         Expanded(
           child: Container(
-            height: 46,
+            height: 44,
             padding: const EdgeInsets.symmetric(horizontal: 14),
             decoration: BoxDecoration(
-              color: palette.bar,
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(color: palette.glassBorder),
+              color: colors.surface,
+              borderRadius: BorderRadius.circular(22),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: dark ? 0.4 : 0.14),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child:
                 scaffold.titleBar ??
@@ -110,7 +112,7 @@ class _TopBar extends StatelessWidget {
   }
 }
 
-/// La hoja de vidrio: asa arriba y su contenido, que entra subiendo.
+/// La hoja sólida: asa arriba y su contenido, que entra subiendo.
 class _SheetBody extends StatelessWidget {
   const _SheetBody({required this.controller, required this.children});
 
@@ -129,7 +131,7 @@ class _SheetBody extends StatelessWidget {
       child: DecoratedBox(
         decoration: AppSurfaces.sheet(
           context,
-          radius: const BorderRadius.vertical(top: Radius.circular(32)),
+          radius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
         child: ListView(
           controller: controller,

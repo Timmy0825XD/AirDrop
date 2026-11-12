@@ -21,7 +21,7 @@ class HubTypeChips extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('TIPO DE CENTRAL', style: Theme.of(context).textTheme.labelSmall),
+        Text('Tipo de central', style: Theme.of(context).textTheme.labelSmall),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,

@@ -29,7 +29,7 @@ class FleetHealthCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('SALUD DE LA FLOTA', style: theme.textTheme.labelSmall),
+          Text('Salud de la flota', style: theme.textTheme.titleMedium),
           const SizedBox(height: 10),
           Text(
             average == null

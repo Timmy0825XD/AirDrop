@@ -105,7 +105,7 @@ void main() {
     expect(find.text('1 pide revisión'), findsOneWidget);
     expect(find.textContaining('WG-198-001'), findsOneWidget);
 
-    await tester.tap(find.text('SALUD DE LA FLOTA'));
+    await tester.tap(find.text('Salud de la flota'));
     expect(opened, isTrue);
   });
 }

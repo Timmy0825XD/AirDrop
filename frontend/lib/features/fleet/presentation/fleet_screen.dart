@@ -16,6 +16,7 @@ import '../data/fleet_providers.dart';
 import 'widgets/drone_status_sheet.dart';
 import 'widgets/drone_tile.dart';
 import 'widgets/fleet_hub_selector.dart';
+import 'widgets/fleet_summary.dart';
 import 'widgets/maintenance_sheet.dart';
 
 /// Flota del operador: elige una de sus centrales (chips bajo el
@@ -54,11 +55,15 @@ class _FleetBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return switch (ref.watch(assignedHubsProvider)) {
-      AsyncValue(hasValue: true, hasError: false, :final value?) when value.isEmpty => const MessageView(
-        icon: Icons.domain_disabled_outlined,
-        message: 'No tienes centrales asignadas.',
+      AsyncValue(hasValue: true, hasError: false, :final value?)
+          when value.isEmpty =>
+        const MessageView(
+          icon: Icons.domain_disabled_outlined,
+          message: 'No tienes centrales asignadas.',
+        ),
+      AsyncValue(hasValue: true, hasError: false, :final value?) => _FleetPane(
+        hubs: value,
       ),
-      AsyncValue(hasValue: true, hasError: false, :final value?) => _FleetPane(hubs: value),
       AsyncError(:final error) => MessageView(
         icon: Icons.cloud_off_rounded,
         message: ApiException.messageOf(error),
@@ -115,29 +120,35 @@ class _DroneList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final models = ref.watch(fleetModelsProvider).value;
     return switch (ref.watch(dronesProvider)) {
-      AsyncValue(hasValue: true, hasError: false, :final value?) when value.isEmpty => const MessageView(
-        icon: Icons.flight_land_rounded,
-        message: 'Aún no hay drones en esta central.',
-      ),
-      AsyncValue(hasValue: true, hasError: false, :final value?) => ListView.separated(
-        padding: listPadding(context),
-        itemCount: value.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 10),
-        itemBuilder: (context, i) {
-          final drone = value[i];
-          return RiseIn(
-            key: ValueKey(drone.id),
-            delay: RiseIn.stagger(i),
-            child: DroneTile(
-              drone: drone,
-              modelName: _modelName(models, drone.droneModelId),
-              onActions: !drone.status.isOperable || !hubActive
-                  ? null
-                  : () => _openDroneActions(context, ref, drone),
-            ),
-          );
-        },
-      ),
+      AsyncValue(hasValue: true, hasError: false, :final value?)
+          when value.isEmpty =>
+        const MessageView(
+          icon: Icons.flight_land_rounded,
+          message: 'Aún no hay drones en esta central.',
+        ),
+      AsyncValue(hasValue: true, hasError: false, :final value?) =>
+        ListView.separated(
+          padding: listPadding(context),
+          // El primer renglón es el resumen; después, un dron por renglón.
+          itemCount: value.length + 1,
+          separatorBuilder: (_, i) => SizedBox(height: i == 0 ? 16 : 10),
+          itemBuilder: (context, index) {
+            if (index == 0) return FleetSummary(drones: value);
+            final i = index - 1;
+            final drone = value[i];
+            return RiseIn(
+              key: ValueKey(drone.id),
+              delay: RiseIn.stagger(i),
+              child: DroneTile(
+                drone: drone,
+                modelName: _modelName(models, drone.droneModelId),
+                onActions: !drone.status.isOperable || !hubActive
+                    ? null
+                    : () => _openDroneActions(context, ref, drone),
+              ),
+            );
+          },
+        ),
       AsyncError(:final error) => MessageView(
         icon: Icons.cloud_off_rounded,
         message: ApiException.messageOf(error),

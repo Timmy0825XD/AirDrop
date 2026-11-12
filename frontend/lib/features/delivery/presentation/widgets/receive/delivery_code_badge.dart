@@ -25,29 +25,32 @@ class DeliveryCodeBadge extends StatelessWidget {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+      padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
       decoration: BoxDecoration(
-        color: colors.primary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(20),
+        color: colors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Column(
         children: [
-          Text('TU CÓDIGO DE ENTREGA', style: theme.textTheme.labelSmall),
-          const SizedBox(height: 6),
-          Text(
-            code.split('').join(' '),
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: colors.primary,
-              letterSpacing: 2,
+          Text('Tu código de entrega', style: theme.textTheme.labelSmall),
+          const SizedBox(height: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              code.split('').join(' '),
+              style: theme.textTheme.displaySmall?.copyWith(
+                fontSize: 38,
+                letterSpacing: 2,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
             ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 8),
           Text(
             caption,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
               color: hurry ? colors.error : colors.onSurfaceVariant,
             ),
           ),

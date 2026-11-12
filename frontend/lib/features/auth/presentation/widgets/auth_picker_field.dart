@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/widgets/press_scale.dart';
-import '../../../../theme/app_palette.dart';
 import 'auth_field.dart';
 import 'search_picker_sheet.dart';
 
@@ -54,10 +53,8 @@ class AuthPickerField<T> extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        ExcludeSemantics(
-          child: Text(label.toUpperCase(), style: theme.textTheme.labelSmall),
-        ),
-        const SizedBox(height: 8),
+        ExcludeSemantics(child: Text(label, style: authLabelStyle(theme))),
+        const SizedBox(height: 6),
         if (options.isEmpty && empty != null)
           Text(empty!, style: theme.textTheme.bodyMedium)
         else
@@ -114,23 +111,23 @@ class _PickerBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final palette = context.palette;
+    final colors = theme.colorScheme;
     final pick = chosen;
+    // El mismo fondo, borde y radio que los campos de texto de la hoja.
+    final fill = theme.inputDecorationTheme.fillColor ?? colors.surface;
     return ExcludeSemantics(
       child: PressScale(
         child: Material(
-          color: palette.glass,
+          color: fill,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(
-              color: hasError ? theme.colorScheme.error : palette.glassBorder,
-            ),
+            borderRadius: BorderRadius.circular(14),
+            side: BorderSide(color: hasError ? colors.error : colors.outline),
           ),
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(14),
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 12, 12),
+              padding: const EdgeInsets.fromLTRB(16, 15, 12, 15),
               child: Row(
                 children: [
                   if (pick?.icon case final icon?) ...[

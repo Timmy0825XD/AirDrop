@@ -4,15 +4,16 @@ import 'package:google_fonts/google_fonts.dart';
 import 'app_backdrop.dart';
 import 'app_palette.dart';
 
-/// Paleta y tipografía de AirDrop, "Grafito y turquesa". Es la única fuente
-/// de colores de la app: las pantallas leen `Theme.of(context)` y
-/// `context.palette`, y nunca escriben hex.
+/// Paleta y tipografía de AirDrop, rediseño "natural": fondo cálido y liso,
+/// superficies sólidas, un solo acento verde azulado y la fuente Figtree.
+/// Es la única fuente de colores de la app: las pantallas leen
+/// `Theme.of(context)` y `context.palette`, y nunca escriben hex.
 class AppTheme {
   AppTheme._();
 
-  /// Turquesa de marca. En claro baja a petróleo para leerse sobre el cielo.
-  static const Color primary = Color(0xFF0B6470);
-  static const Color primaryOnDark = Color(0xFF4FC3C9);
+  /// Verde azulado de marca; en oscuro sube de luz para leerse sobre gris.
+  static const Color primary = Color(0xFF0F6E6A);
+  static const Color primaryOnDark = Color(0xFF5DBFB4);
   static const double radius = 16;
 
   static ThemeData get light => _build(
@@ -21,10 +22,10 @@ class AppTheme {
       primary: primary,
       onPrimary: Color(0xFFFFFFFF),
       surface: Color(0xFFFFFFFF),
-      sunk: Color(0xFFEAF1F6),
-      line: Color(0xFFC9D6DE),
-      ink: Color(0xFF12171A),
-      muted: Color(0xFF4D5B63),
+      sunk: Color(0xFFF3F1EC),
+      line: Color(0xFFCFCBC3),
+      ink: Color(0xFF1B1D1F),
+      muted: Color(0xFF62676D),
       extra: AppPalette.light,
     ),
   );
@@ -33,19 +34,19 @@ class AppTheme {
     const _Palette(
       brightness: Brightness.dark,
       primary: primaryOnDark,
-      onPrimary: Color(0xFF071214),
-      surface: Color(0xFF1A2126),
-      sunk: Color(0xFF12171A),
-      line: Color(0xFF2C363C),
-      ink: Color(0xFFEEF3F5),
-      muted: Color(0xFFA6B4BA),
+      onPrimary: Color(0xFF10201F),
+      surface: Color(0xFF222528),
+      sunk: Color(0xFF2B2F33),
+      line: Color(0xFF3D4247),
+      ink: Color(0xFFF1F0EC),
+      muted: Color(0xFFA6ABB0),
       extra: AppPalette.dark,
     ),
   );
 
   static ThemeData _build(_Palette p) {
     final base = ThemeData(brightness: p.brightness, useMaterial3: true);
-    final font = GoogleFonts.spaceGrotesk(color: p.ink);
+    final font = GoogleFonts.figtree(color: p.ink);
     final x = p.extra;
     final colors =
         ColorScheme.fromSeed(
@@ -168,7 +169,7 @@ class AppTheme {
     const tabular = [FontFeature.tabularFigures()];
     TextStyle title(double size, {double spacing = -0.02}) => font.copyWith(
       fontSize: size,
-      fontWeight: FontWeight.w600,
+      fontWeight: FontWeight.w700,
       letterSpacing: spacing * size,
       height: 1.08,
       fontFeatures: tabular,
@@ -191,11 +192,8 @@ class AppTheme {
       bodySmall: text(13, FontWeight.w400).copyWith(color: muted),
       labelLarge: text(14, FontWeight.w600),
       labelMedium: text(12, FontWeight.w600).copyWith(color: muted),
-      // Etiquetas: mayúsculas pequeñas con aire.
-      labelSmall: text(
-        11,
-        FontWeight.w600,
-      ).copyWith(color: muted, letterSpacing: 1.6),
+      // Rótulos de sección dentro de una tarjeta: escritos normal, en gris.
+      labelSmall: text(13, FontWeight.w600).copyWith(color: muted),
     );
   }
 

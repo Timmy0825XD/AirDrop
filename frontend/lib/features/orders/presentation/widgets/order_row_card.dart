@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/tone_tile.dart';
 
-/// Tarjeta de una bandeja de pedidos o planes: ícono teñido, título con
-/// la pastilla de estado debajo, una línea de color y una gris, y la
-/// flecha. A la izquierda, una franja del color del pedido que se apaga
-/// hacia abajo, como la luz de estado de un tablero. Toda la tarjeta abre el detalle y se hunde al tocarla.
+/// Tarjeta de una bandeja de pedidos o planes: ícono teñido del color del
+/// pedido, título, una línea de color y una gris, la pastilla de estado y
+/// la flecha. Toda la tarjeta abre el detalle y se hunde al tocarla.
 class OrderRowCard extends StatelessWidget {
   const OrderRowCard({
     super.key,
@@ -34,24 +33,19 @@ class OrderRowCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GlassCard(
-      radius: 22,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 10, 14),
       onTap: onTap,
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _ToneEdge(tone: tone),
-            const SizedBox(width: 10),
-            ToneTile.icon(icon: icon, tone: tone),
-            const SizedBox(width: 12),
-            Expanded(child: _Lines(card: this)),
-            Icon(
-              Icons.chevron_right_rounded,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ],
-        ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ToneTile.icon(icon: icon, tone: tone, size: 42),
+          const SizedBox(width: 12),
+          Expanded(child: _Lines(card: this)),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ],
       ),
     );
   }
@@ -74,50 +68,24 @@ class _Lines extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.titleMedium,
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 2),
         Text(
           card.accent,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.bodySmall?.copyWith(
+          style: theme.textTheme.bodyMedium?.copyWith(
             color: card.tone,
             fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 2),
         Text(
           card.detail,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall,
         ),
-        if (card.pill case final pill?) ...[const SizedBox(height: 10), pill],
+        if (card.pill case final pill?) ...[const SizedBox(height: 8), pill],
       ],
-    );
-  }
-}
-
-/// La franja de color del borde izquierdo, con un brillo suave.
-class _ToneEdge extends StatelessWidget {
-  const _ToneEdge({required this.tone});
-
-  final Color tone;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 3,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(2),
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [tone, tone.withValues(alpha: 0.05)],
-        ),
-        boxShadow: [
-          BoxShadow(color: tone.withValues(alpha: 0.4), blurRadius: 6),
-        ],
-      ),
     );
   }
 }

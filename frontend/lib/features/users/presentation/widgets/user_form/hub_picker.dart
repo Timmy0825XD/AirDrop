@@ -66,7 +66,7 @@ class _PickerHeader extends StatelessWidget {
     final theme = Theme.of(context);
     return Row(
       children: [
-        Expanded(child: Text('CENTRALES', style: theme.textTheme.labelSmall)),
+        Expanded(child: Text('Centrales', style: theme.textTheme.labelSmall)),
         Text(
           role == UserRole.dispatcher ? 'Elige una' : 'Elige una o varias',
           style: theme.textTheme.labelMedium?.copyWith(

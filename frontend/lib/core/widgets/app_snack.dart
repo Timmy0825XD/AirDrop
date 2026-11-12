@@ -1,5 +1,3 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/material.dart';
 
 import '../../theme/app_motion.dart';
@@ -55,8 +53,8 @@ void showAppSnack(
 void showErrorSnack(BuildContext context, String message) =>
     showAppSnack(context, message, tone: SnackTone.error);
 
-/// La pastilla: desenfoca lo de atrás, se tiñe con el color del tono y
-/// lleva su ícono, el texto y, si hay, la acción.
+/// El aviso: una tarjeta sólida con el ícono del tono, el texto y, si hay,
+/// la acción. La línea de abajo se acorta mientras se ve.
 class GlassSnack extends StatelessWidget {
   const GlassSnack({
     super.key,
@@ -74,28 +72,25 @@ class GlassSnack extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = snackColor(context, tone);
-    final shape = BorderRadius.circular(22);
+    final shape = BorderRadius.circular(16);
     return Semantics(
       liveRegion: true,
-      child: ClipRRect(
-        borderRadius: shape,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-          child: DecoratedBox(
-            decoration: _glassDecoration(context, color, shape),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                _SnackRow(
-                  message: message,
-                  tone: tone,
-                  color: color,
-                  actionLabel: actionLabel,
-                  onAction: onAction,
-                ),
-                _SnackLifeBar(color: color),
-              ],
-            ),
+      child: DecoratedBox(
+        decoration: _snackDecoration(context, shape),
+        child: ClipRRect(
+          borderRadius: shape,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _SnackRow(
+                message: message,
+                tone: tone,
+                color: color,
+                actionLabel: actionLabel,
+                onAction: onAction,
+              ),
+              _SnackLifeBar(color: color),
+            ],
           ),
         ),
       ),
@@ -149,33 +144,18 @@ class _SnackRow extends StatelessWidget {
   }
 }
 
-/// Vidrio: la superficie translúcida con un velo del tono arriba a la
-/// izquierda, borde del mismo color y una sombra suave.
-BoxDecoration _glassDecoration(
-  BuildContext context,
-  Color color,
-  BorderRadius shape,
-) {
-  final surface = Theme.of(context).colorScheme.surface;
+/// La superficie sólida del tema con un filo fino y una sombra suave; el
+/// color del tono va en el ícono y en la línea de abajo.
+BoxDecoration _snackDecoration(BuildContext context, BorderRadius shape) {
   return BoxDecoration(
+    color: Theme.of(context).colorScheme.surface,
     borderRadius: shape,
-    gradient: LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [
-        Color.alphaBlend(
-          color.withValues(alpha: 0.16),
-          surface,
-        ).withValues(alpha: 0.78),
-        surface.withValues(alpha: 0.62),
-      ],
-    ),
-    border: Border.all(color: color.withValues(alpha: 0.35)),
+    border: Border.all(color: context.palette.glassBorder),
     boxShadow: [
       BoxShadow(
-        color: context.palette.shadow,
-        blurRadius: 28,
-        offset: const Offset(0, 10),
+        color: Colors.black.withValues(alpha: 0.16),
+        blurRadius: 20,
+        offset: const Offset(0, 6),
       ),
     ],
   );
@@ -215,17 +195,7 @@ class _SnackLifeBar extends StatelessWidget {
         alignment: Alignment.centerLeft,
         child: FractionallySizedBox(
           widthFactor: AppMotion.reduced(context) ? 1 : value,
-          child: Container(
-            height: 3,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  color.withValues(alpha: 0.9),
-                  color.withValues(alpha: 0.3),
-                ],
-              ),
-            ),
-          ),
+          child: Container(height: 3, color: color),
         ),
       ),
     );

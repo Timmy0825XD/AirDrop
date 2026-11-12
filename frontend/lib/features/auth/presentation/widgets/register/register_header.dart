@@ -38,7 +38,7 @@ class RegisterHeaderLayer extends StatelessWidget {
           left: 24,
           right: 24,
           top: AuthHeaderMetrics.brandTop(inset),
-          child: const AuthBrandBar(pill: 'Paso 1 de 2'),
+          child: const AuthBrandBar(),
         ),
       ],
     );
@@ -59,12 +59,11 @@ class RegisterHeading extends StatelessWidget {
           header: true,
           child: Text('Crear cuenta', style: authTitleStyle(theme)),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         Text(
           'Tu documento identifica a quien recibe el medicamento.',
-          style: theme.textTheme.bodyLarge?.copyWith(
+          style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
-            height: 1.5,
           ),
         ),
       ],

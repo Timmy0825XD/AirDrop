@@ -20,7 +20,7 @@ import 'package:frontend/features/geofences/data/geofence_providers.dart';
 import 'package:frontend/features/geofences/data/geofence_repository.dart';
 import 'package:frontend/features/geofences/presentation/geofences_screen.dart';
 import 'package:frontend/features/home/presentation/role_home.dart';
-import 'package:frontend/features/home/presentation/widgets/quick_tile.dart';
+import 'package:frontend/core/widgets/menu_list.dart';
 import 'package:frontend/features/hubs/data/hub_models.dart';
 import 'package:frontend/features/hubs/data/hub_providers.dart';
 import 'package:frontend/features/hubs/data/hub_repository.dart';
@@ -264,9 +264,9 @@ void main() {
     await tester.scrollUntilVisible(find.text('Entrega periódica'), 200);
     expect(find.text('Entrega periódica'), findsOneWidget);
     // Pedir urgencia (centro), Mis pedidos y Mis planes ya están en la barra.
-    expect(find.widgetWithText(QuickTile, 'Pedir urgencia'), findsNothing);
-    expect(find.widgetWithText(QuickTile, 'Mis pedidos'), findsNothing);
-    expect(find.widgetWithText(QuickTile, 'Mis planes'), findsNothing);
+    expect(find.widgetWithText(MenuList, 'Pedir urgencia'), findsNothing);
+    expect(find.widgetWithText(MenuList, 'Mis pedidos'), findsNothing);
+    expect(find.widgetWithText(MenuList, 'Mis planes'), findsNothing);
     expect(find.text('Pedidos aún no disponibles'), findsNothing);
     expect(find.text('Crear pedido'), findsNothing);
   });
@@ -286,8 +286,8 @@ void main() {
     await _pumpHome(tester, container, settles: false);
 
     expect(find.text('Operador de flota'), findsOneWidget);
-    expect(find.widgetWithText(QuickTile, 'Flota'), findsNothing);
-    expect(find.widgetWithText(QuickTile, 'Geovallas'), findsNothing);
+    expect(find.widgetWithText(MenuList, 'Flota'), findsNothing);
+    expect(find.widgetWithText(MenuList, 'Geovallas'), findsNothing);
   });
 
   testWidgets('muestra los accesos de administrador', (tester) async {
@@ -320,9 +320,9 @@ void main() {
     );
     await tester.scrollUntilVisible(find.text('Métricas'), 200);
     // Centrales y Cuentas son destinos de la barra: el inicio no los repite.
-    expect(find.widgetWithText(QuickTile, 'Centrales'), findsNothing);
+    expect(find.widgetWithText(MenuList, 'Centrales'), findsNothing);
     expect(
-      find.widgetWithText(QuickTile, 'Cuentas institucionales'),
+      find.widgetWithText(MenuList, 'Cuentas institucionales'),
       findsNothing,
     );
     expect(_onTapOf(tester, 'Métricas'), isNotNull, reason: 'abre /analytics');
@@ -350,7 +350,7 @@ void main() {
       expect(await _scrolledOnTap(tester, 'Urgencia a otra central'), isNull);
       expect(await _scrolledOnTap(tester, 'Mis abastecimientos'), isNotNull);
       // Sin central activa no hay tareas que mostrar.
-      expect(find.text('LO QUE TE TOCA AHORA'), findsNothing);
+      expect(find.text('Para atender ahora'), findsNothing);
     },
   );
 
@@ -370,7 +370,7 @@ void main() {
     expect(find.text('Hola, Diego'), findsOneWidget);
     expect(find.text('Central de prueba · Activa'), findsOneWidget);
     // "Lo que te toca ahora" va antes que las cifras.
-    await tester.scrollUntilVisible(find.text('LO QUE TE TOCA AHORA'), 200);
+    await tester.scrollUntilVisible(find.text('Para atender ahora'), 200);
     expect(find.textContaining('Cargar '), findsWidgets);
     await tester.scrollUntilVisible(
       find.bySemanticsLabel(RegExp('Por cargar: 1')),
@@ -379,8 +379,8 @@ void main() {
     expect(find.bySemanticsLabel(RegExp('En vuelo: 0')), findsOneWidget);
     expect(await _scrolledOnTap(tester, 'Nuevo abastecimiento'), isNotNull);
     // La cola y el inventario están en la barra.
-    expect(find.widgetWithText(QuickTile, 'Cola de urgencias'), findsNothing);
-    expect(find.widgetWithText(QuickTile, 'Inventario'), findsNothing);
+    expect(find.widgetWithText(MenuList, 'Cola de urgencias'), findsNothing);
+    expect(find.widgetWithText(MenuList, 'Inventario'), findsNothing);
     semantics.dispose();
   });
 

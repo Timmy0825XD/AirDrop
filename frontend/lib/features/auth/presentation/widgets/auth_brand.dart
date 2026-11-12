@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/widgets/drone_mark.dart';
 import 'auth_glass.dart';
+import 'drone_glyph.dart';
 
 /// Alturas del encabezado de auth. El login lo usa alto, las pantallas de
 /// paso medio y el registro compacto; al pasar de una a otra el encabezado
@@ -28,9 +28,10 @@ class AuthHeaderMetrics {
     return inset + (size.height * share).clamp(min, max);
   }
 
-  static const double tallCurve = 48;
-  static const double compactCurve = 36;
-  static const double stepCurve = 40;
+  // El recorte usa el 75 %: las esquinas de abajo quedan en unos 28 px.
+  static const double tallCurve = 38;
+  static const double compactCurve = 38;
+  static const double stepCurve = 38;
 
   /// La hoja del formulario monta este tanto sobre el encabezado.
   static const double overlap = 28;
@@ -39,25 +40,49 @@ class AuthHeaderMetrics {
   static double brandTop(double topInset) => topInset + 20;
 }
 
-/// El logo: el dron de la marca visto desde arriba, con las hélices
-/// girando. El logo final aún no está definido; este es el provisional.
+/// El logo: el dron de líneas dentro de un círculo claro con sombra, como
+/// una ficha sobre el mapa. El logo final aún no está definido; este es el
+/// provisional.
 class AuthLogoTile extends StatelessWidget {
   const AuthLogoTile({super.key});
 
-  static const double size = 40;
+  static const double size = 42;
 
   @override
-  Widget build(BuildContext context) =>
-      const DroneMark(size: AuthLogoTile.size);
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    final dark = colors.brightness == Brightness.dark;
+    return Semantics(
+      label: 'Logo de AirDrop',
+      image: true,
+      child: Container(
+        width: size,
+        height: size,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: dark ? colors.onSurface : colors.surface,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: dark ? 0.45 : 0.16),
+              blurRadius: 10,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: DroneGlyph(
+          color: dark ? colors.surface : colors.onSurface,
+          size: size * 0.62,
+        ),
+      ),
+    );
+  }
 }
 
-/// Logo, nombre y pastilla de vidrio en la esquina del encabezado. Es la
-/// versión quieta; el login anima las mismas piezas durante la entrada.
+/// Logo y nombre en la esquina del encabezado. Es la versión quieta; el
+/// login anima las mismas piezas durante la entrada.
 class AuthBrandBar extends StatelessWidget {
-  const AuthBrandBar({super.key, required this.pill});
-
-  /// Texto de la pastilla de la derecha ("Valledupar", "Paso 1 de 2"…).
-  final String pill;
+  const AuthBrandBar({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -65,29 +90,27 @@ class AuthBrandBar extends StatelessWidget {
     return Row(
       children: [
         const AuthLogoTile(),
-        const SizedBox(width: 10),
+        const SizedBox(width: 12),
         Text('AirDrop', style: authWordmarkStyle(theme)),
-        const Spacer(),
-        AuthPill(text: pill),
       ],
     );
   }
 }
 
-/// El título de cada pantalla de auth: 32 con el tracking cerrado, como los
-/// títulos grandes de iOS.
-TextStyle? authTitleStyle(ThemeData theme) =>
-    theme.textTheme.headlineLarge?.copyWith(letterSpacing: -1, height: 1.1);
+/// El título de cada pantalla de auth: 28, negrita y tracking un poco
+/// cerrado.
+TextStyle? authTitleStyle(ThemeData theme) => theme.textTheme.headlineLarge
+    ?.copyWith(fontSize: 28, letterSpacing: -0.5, height: 1.15);
 
 TextStyle? authWordmarkStyle(ThemeData theme) =>
     theme.textTheme.titleLarge?.copyWith(
       color: theme.colorScheme.onSurface,
-      fontSize: 19,
+      fontSize: 22,
       fontWeight: FontWeight.w700,
-      letterSpacing: -0.5,
+      letterSpacing: -0.3,
     );
 
-/// Pastilla de vidrio sobre el mapa, con un punto de ubicación.
+/// Pastilla sobre el mapa, con un ícono opcional.
 class AuthPill extends StatelessWidget {
   const AuthPill({super.key, required this.text, this.icon});
 
@@ -119,8 +142,8 @@ class AuthPill extends StatelessWidget {
   }
 }
 
-/// Botón de volver de vidrio, para las pantallas de paso (código,
-/// recuperación).
+/// Botón de volver redondo sobre el mapa, para las pantallas de paso
+/// (código, recuperación).
 class AuthBackButton extends StatelessWidget {
   const AuthBackButton({super.key, required this.onPressed});
 

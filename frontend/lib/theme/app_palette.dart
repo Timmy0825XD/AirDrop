@@ -71,38 +71,41 @@ class AppPalette extends ThemeExtension<AppPalette> {
     colors: accentGradient,
   );
 
+  // Rediseño natural: fondo liso (las tres paradas son el mismo color, sin
+  // velos), tarjetas sólidas y el acento sin degradado. Se conservan los
+  // campos para que las piezas que aún los leen sigan funcionando.
   static const dark = AppPalette(
-    backdrop: [Color(0xFF1F2A30), Color(0xFF14191D), Color(0xFF0B0E10)],
-    accentGlow: Color(0x334FC3C9),
-    skyGlow: Color(0x1FBFD2E2),
-    accentGradient: [Color(0xFF6ED6D9), Color(0xFF3FA9C0)],
-    onAccent: Color(0xFF071214),
-    glass: Color(0x12FFFFFF),
-    glassBorder: Color(0x1AFFFFFF),
-    bar: Color(0xE6161C20),
+    backdrop: [Color(0xFF17191B), Color(0xFF17191B), Color(0xFF17191B)],
+    accentGlow: Color(0x00000000),
+    skyGlow: Color(0x00000000),
+    accentGradient: [Color(0xFF5DBFB4), Color(0xFF5DBFB4)],
+    onAccent: Color(0xFF10201F),
+    glass: Color(0xFF222528),
+    glassBorder: Color(0xFF363A3F),
+    bar: Color(0xFF222528),
     shadow: Color(0x66000000),
-    success: Color(0xFF4ADE80),
-    warning: Color(0xFFFBBF6A),
-    danger: Color(0xFFFF8FA3),
-    info: Color(0xFFA9C8E6),
-    mapTint: Color(0xFF14191D),
+    success: Color(0xFF6FCF97),
+    warning: Color(0xFFE8B45A),
+    danger: Color(0xFFF0958E),
+    info: Color(0xFF8FB4D6),
+    mapTint: Color(0xFF17191B),
   );
 
   static const light = AppPalette(
-    backdrop: [Color(0xFFF7FAFC), Color(0xFFE3EDF4), Color(0xFFCFDFEB)],
-    accentGlow: Color(0x4D4FC3C9),
-    skyGlow: Color(0x52BFD2E2),
-    accentGradient: [Color(0xFF137C8A), Color(0xFF0B6470)],
+    backdrop: [Color(0xFFF5F4F1), Color(0xFFF5F4F1), Color(0xFFF5F4F1)],
+    accentGlow: Color(0x00000000),
+    skyGlow: Color(0x00000000),
+    accentGradient: [Color(0xFF0F6E6A), Color(0xFF0F6E6A)],
     onAccent: Color(0xFFFFFFFF),
-    glass: Color(0x9EFFFFFF),
-    glassBorder: Color(0xF2FFFFFF),
-    bar: Color(0xE0FFFFFF),
-    shadow: Color(0x1A142832),
-    success: Color(0xFF116632),
-    warning: Color(0xFF9A4A06),
-    danger: Color(0xFFA82D24),
+    glass: Color(0xFFFFFFFF),
+    glassBorder: Color(0xFFE6E3DD),
+    bar: Color(0xFFFFFFFF),
+    shadow: Color(0x141B1D1F),
+    success: Color(0xFF177A45),
+    warning: Color(0xFF8F5200),
+    danger: Color(0xFFB3261E),
     info: Color(0xFF2F5F8A),
-    mapTint: Color(0xFFE3EDF4),
+    mapTint: Color(0xFFEFECE5),
   );
 
   @override

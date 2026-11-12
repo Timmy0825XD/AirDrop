@@ -1,52 +1,10 @@
-import 'dart:ui' show ImageFilter;
-
 import 'package:flutter/material.dart';
 
 import '../../../../theme/app_surfaces.dart';
 
-/// Vidrio esmerilado: desenfoca lo que hay detrás y le pone un tinte
-/// translúcido con un borde fino. Se usa con medida para no saturar.
-class AuthGlass extends StatelessWidget {
-  const AuthGlass({
-    super.key,
-    required this.child,
-    required this.tint,
-    required this.border,
-    this.radius = 28,
-    this.blur = 18,
-    this.padding = EdgeInsets.zero,
-  });
-
-  final Widget child;
-  final Color tint;
-  final Color border;
-  final double radius;
-  final double blur;
-  final EdgeInsetsGeometry padding;
-
-  @override
-  Widget build(BuildContext context) {
-    final shape = BorderRadius.circular(radius);
-    return ClipRRect(
-      borderRadius: shape,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: tint,
-            borderRadius: shape,
-            border: Border.all(color: border, width: 0.5),
-          ),
-          child: Padding(padding: padding, child: child),
-        ),
-      ),
-    );
-  }
-}
-
-/// El vidrio de las piezas que flotan sobre el mapa del encabezado (la
-/// pastilla, volver): la superficie del tema casi opaca, para que el texto
-/// se lea aunque pasen drones por detrás.
+/// Las piezas que flotan sobre el mapa del encabezado (la pastilla,
+/// volver): la superficie sólida del tema con una sombra corta, como un
+/// botón sobre un mapa de verdad.
 class AuthChrome extends StatelessWidget {
   const AuthChrome({
     super.key,
@@ -63,22 +21,26 @@ class AuthChrome extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final dark = colors.brightness == Brightness.dark;
-    return AuthGlass(
-      tint: colors.surface.withValues(alpha: dark ? 0.62 : 0.78),
-      border: dark
-          ? Colors.white.withValues(alpha: 0.12)
-          : colors.outline.withValues(alpha: 0.7),
-      radius: radius,
-      blur: 16,
-      padding: padding,
-      child: child,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(radius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: dark ? 0.4 : 0.16),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(padding: padding, child: child),
     );
   }
 }
 
 /// La hoja del formulario: sube desde abajo pegada a los bordes, con las
-/// esquinas de arriba redondeadas y una sombra suave hacia el mapa. En
-/// oscuro baja de grafito a casi negro; en claro es blanca.
+/// esquinas de arriba redondeadas y una sombra suave hacia el mapa. Es la
+/// superficie sólida del tema (blanca en claro, gris en oscuro).
 class AuthSheetPanel extends StatelessWidget {
   const AuthSheetPanel({super.key, required this.child, this.bottomInset = 0});
 
@@ -88,7 +50,7 @@ class AuthSheetPanel extends StatelessWidget {
   /// no quede debajo.
   final double bottomInset;
 
-  static const double radius = 32;
+  static const double radius = 28;
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +63,7 @@ class AuthSheetPanel extends StatelessWidget {
       child: Theme(
         data: theme.copyWith(inputDecorationTheme: AppSurfaces.fields(theme)),
         child: Padding(
-          padding: EdgeInsets.fromLTRB(22, 26, 22, 24 + bottomInset),
+          padding: EdgeInsets.fromLTRB(24, 28, 24, 24 + bottomInset),
           child: child,
         ),
       ),
