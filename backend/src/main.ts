@@ -6,6 +6,7 @@ import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { corsOrigins } from './common/cors.rules';
+import { swaggerEnabled } from './common/swagger.rules';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
@@ -24,16 +25,18 @@ async function bootstrap() {
       transformOptions: { enableImplicitConversion: true },
     }),
   );
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('AirDrop API')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  SwaggerModule.setup(
-    'api',
-    app,
-    SwaggerModule.createDocument(app, swaggerConfig),
-  );
+  if (swaggerEnabled(process.env.NODE_ENV)) {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('AirDrop API')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    SwaggerModule.setup(
+      'api',
+      app,
+      SwaggerModule.createDocument(app, swaggerConfig),
+    );
+  }
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 }

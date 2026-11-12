@@ -41,6 +41,10 @@ export class OneTimeCode {
   @Column({ type: 'timestamptz', nullable: true })
   consumedAt: Date | null;
 
+  /** Códigos equivocados. Con `OTP_MAX_ATTEMPTS` el código queda anulado. */
+  @Column({ type: 'smallint', default: 0 })
+  attempts: number;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 }

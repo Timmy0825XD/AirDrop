@@ -23,7 +23,15 @@ export class AdminSeedService implements OnModuleInit {
       'ADMIN_EMAIL',
       'administrador.plataforma@gmail.com',
     );
-    const password = this.config.get<string>('ADMIN_PASSWORD', 'Admin1234');
+    // Sin valor por defecto (H-03): una contraseña escrita aquí es pública en
+    // el repositorio. Sin ADMIN_PASSWORD no se crea la cuenta.
+    const password = this.config.get<string>('ADMIN_PASSWORD')?.trim();
+    if (!password) {
+      this.logger.warn(
+        'ADMIN_PASSWORD no está definida: no se crea la cuenta admin inicial.',
+      );
+      return;
+    }
     const fullName = this.config.get<string>(
       'ADMIN_FULL_NAME',
       'Administrador AirDrop',

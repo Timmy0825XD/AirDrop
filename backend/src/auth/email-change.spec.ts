@@ -61,6 +61,9 @@ function build(state: { takenBy?: User | null; code?: string } = {}) {
     findOne: jest.fn().mockResolvedValue(codeRow),
     create: jest.fn((value: object) => value),
     save: jest.fn((value: unknown) => Promise.resolve(value)),
+    // H-08: un código equivocado suma un intento.
+    increment: jest.fn().mockResolvedValue(undefined),
+    update: jest.fn().mockResolvedValue(undefined),
   };
   const otpDelivery = {
     deliver: jest.fn().mockResolvedValue(undefined),

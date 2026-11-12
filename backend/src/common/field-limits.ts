@@ -39,6 +39,8 @@ export const OTP_SIGNUP_TTL_MS = 10 * 60 * 1000;
 export const OTP_RESET_TTL_MS = 15 * 60 * 1000;
 export const LOGIN_MAX_ATTEMPTS = 5;
 export const LOGIN_LOCK_MS = 15 * 60 * 1000;
+/** Errores permitidos con un mismo código OTP antes de anularlo (H-08). */
+export const OTP_MAX_ATTEMPTS = 5;
 
 /** Numeración colombiana: exactamente 10 dígitos, sin +57 ni espacios. */
 export const COLOMBIA_PHONE_REGEX = /^\d{10}$/;

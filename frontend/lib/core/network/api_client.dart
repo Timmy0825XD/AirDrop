@@ -5,23 +5,30 @@ import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import '../api_exception.dart';
 import '../auth/token_store.dart';
+import 'api_base_url.dart';
 
-/// En el emulador de Android, `localhost` es el propio emulador.
-/// `10.0.2.2` es el alias que el emulador usa para llegar al PC.
+const String _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
+
+/// La dirección del backend; la regla está en [resolveApiBaseUrl].
 ///
 /// En web `Platform` no existe y lanza `Unsupported operation:
 /// Platform._operatingSystem`, así que `kIsWeb` se decide antes de tocarlo.
-String get defaultBaseUrl => kIsWeb
-    ? 'http://localhost:3000'
-    : (Platform.isAndroid ? 'http://10.0.2.2:3000' : 'http://localhost:3000');
+String get defaultBaseUrl => resolveApiBaseUrl(
+  configured: _configuredBaseUrl,
+  release: kReleaseMode,
+  web: kIsWeb,
+  android: !kIsWeb && Platform.isAndroid,
+);
 
 class ApiClient {
   ApiClient({required this.tokenStore, String? baseUrl})
-      : _dio = Dio(BaseOptions(
+    : _dio = Dio(
+        BaseOptions(
           baseUrl: baseUrl ?? defaultBaseUrl,
           connectTimeout: const Duration(seconds: 10),
           receiveTimeout: const Duration(seconds: 10),
-        )) {
+        ),
+      ) {
     _addSessionInterceptor();
   }
 
@@ -59,34 +66,40 @@ class ApiClient {
         options: Options(responseType: ResponseType.bytes),
       );
       final rawTypes = response.headers['content-type'];
-      final mime = _mimeOf(rawTypes == null || rawTypes.isEmpty
-          ? null
-          : rawTypes.first);
-      return ApiBytes(bytes: Uint8List.fromList(response.data ?? []), mime: mime);
+      final mime = _mimeOf(
+        rawTypes == null || rawTypes.isEmpty ? null : rawTypes.first,
+      );
+      return ApiBytes(
+        bytes: Uint8List.fromList(response.data ?? []),
+        mime: mime,
+      );
     } on DioException catch (e) {
       throw _bytesToApiException(e);
     }
   }
 
   void _addSessionInterceptor() {
-    _dio.interceptors.add(InterceptorsWrapper(
-      onRequest: (options, handler) async {
-        final token = await tokenStore.read();
-        if (token != null) {
-          options.headers['Authorization'] = 'Bearer $token';
-        }
-        handler.next(options);
-      },
-      onError: (error, handler) async {
-        final sentAuth =
-            error.requestOptions.headers.containsKey('Authorization');
-        if (error.response?.statusCode == 401 && sentAuth) {
-          await tokenStore.delete();
-          onUnauthorized?.call();
-        }
-        handler.next(error);
-      },
-    ));
+    _dio.interceptors.add(
+      InterceptorsWrapper(
+        onRequest: (options, handler) async {
+          final token = await tokenStore.read();
+          if (token != null) {
+            options.headers['Authorization'] = 'Bearer $token';
+          }
+          handler.next(options);
+        },
+        onError: (error, handler) async {
+          final sentAuth = error.requestOptions.headers.containsKey(
+            'Authorization',
+          );
+          if (error.response?.statusCode == 401 && sentAuth) {
+            await tokenStore.delete();
+            onUnauthorized?.call();
+          }
+          handler.next(error);
+        },
+      ),
+    );
   }
 
   Future<dynamic> _send(Future<Response<dynamic>> Function() run) async {
@@ -108,7 +121,10 @@ class ApiClient {
   ApiException _toApiException(DioException error) {
     final response = error.response;
     if (response == null) return ApiException.connection();
-    return ApiException.fromNest(response.data, statusCode: response.statusCode);
+    return ApiException.fromNest(
+      response.data,
+      statusCode: response.statusCode,
+    );
   }
 
   /// El cuerpo de error del GET de bytes llega como `List<int>`, no como
@@ -121,10 +137,7 @@ class ApiClient {
     if (data is List<int>) {
       try {
         final decoded = jsonDecode(utf8.decode(data));
-        return ApiException.fromNest(
-          decoded,
-          statusCode: response.statusCode,
-        );
+        return ApiException.fromNest(decoded, statusCode: response.statusCode);
       } on FormatException {
         return ApiException.fromNest(null, statusCode: response.statusCode);
       }
