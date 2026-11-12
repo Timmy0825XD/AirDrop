@@ -18,8 +18,9 @@ void main() {
     expect(PasswordScore.of('Abcdefg1!'), 4);
   });
 
-  testWidgets('Nueva contraseña valida código, clave y confirmación',
-      (WidgetTester tester) async {
+  testWidgets('Nueva contraseña valida código, clave y confirmación', (
+    WidgetTester tester,
+  ) async {
     tester.platformDispatcher.accessibilityFeaturesTestValue =
         const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
@@ -36,8 +37,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Nueva contraseña'), findsOneWidget);
-    expect(find.text('CÓDIGO DE VERIFICACIÓN'), findsOneWidget);
+    // El título y el label del campo dicen lo mismo.
+    expect(find.text('Nueva contraseña'), findsWidgets);
+    expect(find.text('Código de verificación'), findsOneWidget);
 
     final update = find.widgetWithText(ElevatedButton, 'Actualizar contraseña');
     await tester.ensureVisible(update);

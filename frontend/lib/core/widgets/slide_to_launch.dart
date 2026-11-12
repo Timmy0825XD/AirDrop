@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 
-import '../../theme/app_palette.dart';
-
 /// Deslizar para confirmar una acción seria (pedir una urgencia): el botón
 /// redondo sigue al dedo 1:1, resiste al pasarse del borde y, si se suelta
 /// antes del 75 % (o sin impulso), vuelve con un resorte. Al llegar al final
@@ -127,16 +125,16 @@ class _Track extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final danger = context.palette.danger;
+    final colors = Theme.of(context).colorScheme;
     const h = SlideToLaunch.height;
     final shown = offset.clamp(-12.0, max + 12);
     final fade = max <= 0 ? 0.0 : (1 - (shown / (max * 0.6))).clamp(0.0, 1.0);
     return Container(
       height: h,
       decoration: BoxDecoration(
-        color: danger.withValues(alpha: 0.1),
+        color: colors.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(h / 2),
-        border: Border.all(color: danger.withValues(alpha: 0.45)),
+        border: Border.all(color: colors.outline.withValues(alpha: 0.6)),
       ),
       child: Stack(
         children: [
@@ -144,12 +142,7 @@ class _Track extends StatelessWidget {
             width: h + shown.clamp(0, max),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(h / 2),
-              gradient: LinearGradient(
-                colors: [
-                  danger.withValues(alpha: 0.38),
-                  danger.withValues(alpha: 0.12),
-                ],
-              ),
+              color: colors.primary.withValues(alpha: 0.16),
             ),
           ),
           Positioned.fill(
@@ -157,7 +150,12 @@ class _Track extends StatelessWidget {
             child: Center(
               child: Opacity(
                 opacity: busy ? 1 : fade,
-                child: _ShimmerLabel(text: label),
+                child: Text(
+                  label,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: colors.onSurfaceVariant,
+                  ),
+                ),
               ),
             ),
           ),
@@ -176,7 +174,7 @@ class _Track extends StatelessWidget {
   }
 }
 
-/// El botón rojo con el dron, o girando mientras se envía.
+/// El botón del acento con el avión, o girando mientras se envía.
 class _Knob extends StatelessWidget {
   const _Knob({required this.busy});
 
@@ -184,85 +182,23 @@ class _Knob extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final danger = context.palette.danger;
+    final colors = Theme.of(context).colorScheme;
     const size = SlideToLaunch.height - 10;
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color.lerp(danger, Colors.white, 0.25)!, danger],
-        ),
-        boxShadow: [
-          BoxShadow(color: danger.withValues(alpha: 0.5), blurRadius: 18),
-        ],
-      ),
+      decoration: BoxDecoration(shape: BoxShape.circle, color: colors.primary),
       child: Center(
         child: busy
-            ? const SizedBox.square(
+            ? SizedBox.square(
                 dimension: 22,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.5,
-                  color: Colors.white,
+                  color: colors.onPrimary,
                 ),
               )
-            : const Icon(Icons.flight_takeoff_rounded, color: Colors.white),
+            : Icon(Icons.flight_takeoff_rounded, color: colors.onPrimary),
       ),
-    );
-  }
-}
-
-/// El texto con un brillo que lo recorre, invitando a deslizar.
-class _ShimmerLabel extends StatefulWidget {
-  const _ShimmerLabel({required this.text});
-
-  final String text;
-
-  @override
-  State<_ShimmerLabel> createState() => _ShimmerLabelState();
-}
-
-class _ShimmerLabelState extends State<_ShimmerLabel>
-    with SingleTickerProviderStateMixin {
-  late final _shine = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2200),
-  );
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    final still = MediaQuery.disableAnimationsOf(context);
-    still ? _shine.stop() : _shine.repeat();
-  }
-
-  @override
-  void dispose() {
-    _shine.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final base = theme.colorScheme.onSurfaceVariant;
-    final bright = theme.colorScheme.onSurface;
-    return AnimatedBuilder(
-      animation: _shine,
-      builder: (context, child) => ShaderMask(
-        blendMode: BlendMode.srcIn,
-        shaderCallback: (rect) => LinearGradient(
-          colors: [base, bright, base],
-          stops: const [0.3, 0.5, 0.7],
-          begin: Alignment(-2 + 4 * _shine.value, 0),
-          end: Alignment(-1 + 4 * _shine.value, 0),
-        ).createShader(rect),
-        child: child,
-      ),
-      child: Text(widget.text, style: theme.textTheme.titleSmall),
     );
   }
 }

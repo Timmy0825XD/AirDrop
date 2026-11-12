@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/widgets/count_up_text.dart';
-import '../../../../core/widgets/drone_art.dart';
 import '../../../../core/widgets/glass_card.dart';
-import '../../../../core/widgets/radar_sweep.dart';
 import '../../../../core/widgets/ring_gauge.dart';
-import '../../../../theme/app_palette.dart';
 
-/// La cifra principal de un inicio, como la pantalla de un centro de
-/// control: en una tarjeta, el dron flotando sobre un radar que barre, su
-/// estado en una pastilla y, separado por una línea fina, el número grande
-/// con su etiqueta en dos líneas. Con [onTap] se toca para abrir lo que
-/// cuenta.
+/// La cifra principal de un inicio en una tarjeta: el estado en una
+/// pastilla, el número grande que cuenta al aparecer y su etiqueta al lado.
+/// Con [progress] lleva un anillo a la derecha. Con [onTap] se toca para
+/// abrir lo que cuenta.
 class HomeSpotlight extends StatelessWidget {
   const HomeSpotlight({
     super.key,
@@ -25,7 +21,7 @@ class HomeSpotlight extends StatelessWidget {
   /// `null` pinta un guion mientras carga.
   final int? value;
 
-  /// Dos líneas ("Pedidos\nen curso"); se pinta en mayúsculas.
+  /// La etiqueta ("Urgencias en cola"); un salto de línea se respeta.
   final String label;
   final Widget? status;
 
@@ -44,46 +40,23 @@ class HomeSpotlight extends StatelessWidget {
       button: onTap != null,
       child: GlassCard(
         onTap: onTap,
-        radius: 28,
-        padding: const EdgeInsets.fromLTRB(18, 8, 18, 16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _RadarStage(status: status),
-            const SizedBox(height: 14),
-            _Figure(value: value, label: label, progress: progress),
-          ],
+        padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+        child: ExcludeSemantics(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ?status,
+              if (status != null) const SizedBox(height: 12),
+              _Figure(value: value, label: label, progress: progress),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// El radar al fondo, el dron encima y la pastilla del estado abajo.
-class _RadarStage extends StatelessWidget {
-  const _RadarStage({this.status});
-
-  final Widget? status;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 200,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          const Positioned.fill(bottom: 18, child: RadarSweep(reach: 0.42)),
-          const Padding(
-            padding: EdgeInsets.only(bottom: 24),
-            child: DroneArt(width: 230),
-          ),
-          if (status != null) Positioned(bottom: 0, child: status!),
-        ],
-      ),
-    );
-  }
-}
-
+/// El número grande, la etiqueta en gris y, si hay, el anillo.
 class _Figure extends StatelessWidget {
   const _Figure({required this.value, required this.label, this.progress});
 
@@ -94,32 +67,29 @@ class _Figure extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return ExcludeSemantics(
-      child: Container(
-        padding: const EdgeInsets.only(top: 14),
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: context.palette.glassBorder)),
+    return Row(
+      children: [
+        CountUpText(
+          value: value,
+          style: theme.textTheme.displayMedium?.copyWith(
+            fontSize: 44,
+            letterSpacing: -1,
+            height: 1,
+          ),
         ),
-        child: Row(
-          children: [
-            CountUpText(
-              value: value,
-              style: theme.textTheme.displayMedium?.copyWith(
-                letterSpacing: -2,
-                height: 1,
-              ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            label,
+            maxLines: 2,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              height: 1.25,
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                label.toUpperCase(),
-                style: theme.textTheme.labelSmall?.copyWith(height: 1.4),
-              ),
-            ),
-            if (progress != null) RingGauge(progress: progress!, size: 46),
-          ],
+          ),
         ),
-      ),
+        if (progress != null) RingGauge(progress: progress!, size: 44),
+      ],
     );
   }
 }

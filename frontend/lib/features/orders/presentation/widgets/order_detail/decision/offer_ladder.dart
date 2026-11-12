@@ -17,7 +17,7 @@ class OfferLadder extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 14),
-        Text('SE OFRECIÓ A', style: theme.textTheme.labelSmall),
+        Text('Se ofreció a', style: theme.textTheme.labelSmall),
         for (final (i, offer) in offers.indexed)
           Padding(
             padding: const EdgeInsets.only(top: 6),

@@ -6,7 +6,7 @@ import '../auth_field.dart';
 import '../auth_morph_button.dart';
 import '../auth_text_link.dart';
 
-/// Eyebrow, título y subtítulo del formulario.
+/// Título y subtítulo del formulario.
 class LoginHeading extends StatelessWidget {
   const LoginHeading({super.key});
 
@@ -16,25 +16,15 @@ class LoginHeading extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'BIENVENIDO DE VUELTA',
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.w800,
-            letterSpacing: 1.8,
-          ),
-        ),
-        const SizedBox(height: 8),
         Semantics(
           header: true,
           child: Text('Inicia sesión', style: authTitleStyle(theme)),
         ),
-        const SizedBox(height: 6),
+        const SizedBox(height: 4),
         Text(
           'Entra con tu correo y tu contraseña.',
-          style: theme.textTheme.bodyLarge?.copyWith(
+          style: theme.textTheme.bodyMedium?.copyWith(
             color: theme.colorScheme.onSurfaceVariant,
-            height: 1.5,
           ),
         ),
       ],

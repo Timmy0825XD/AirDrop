@@ -40,9 +40,8 @@ class StatusPill extends StatelessWidget {
         key: ValueKey(label),
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          border: Border.all(color: color.withValues(alpha: 0.35)),
-          borderRadius: BorderRadius.circular(999),
+          color: color.withValues(alpha: 0.14),
+          borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -55,7 +54,10 @@ class StatusPill extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: theme.textTheme.labelMedium?.copyWith(color: color),
+              style: theme.textTheme.labelLarge?.copyWith(
+                color: color,
+                fontSize: 13,
+              ),
             ),
           ],
         ),

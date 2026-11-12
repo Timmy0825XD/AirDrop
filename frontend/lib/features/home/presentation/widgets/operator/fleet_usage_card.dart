@@ -25,7 +25,7 @@ class FleetUsageCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('USO DE LA FLOTA', style: theme.textTheme.labelSmall),
+          Text('Uso de la flota', style: theme.textTheme.titleMedium),
           const SizedBox(height: 10),
           Text(
             '${dashboard.flights} vuelos · ${decimal(dashboard.km)} km',

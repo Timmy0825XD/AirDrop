@@ -79,7 +79,6 @@ class _MapPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final palette = context.palette;
     final point = this.point;
     return Semantics(
       button: true,
@@ -91,10 +90,9 @@ class _MapPreview extends StatelessWidget {
             height: 168,
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: hasError ? colors.error : palette.glassBorder,
-                width: 1.4,
+                color: hasError ? colors.error : colors.outline,
               ),
             ),
             child: Stack(
@@ -148,7 +146,7 @@ class _LocationHeader extends StatelessWidget {
     final at = point;
     return Row(
       children: [
-        Expanded(child: Text('UBICACIÓN', style: theme.textTheme.labelSmall)),
+        Expanded(child: Text('Ubicación', style: authLabelStyle(theme))),
         Text(
           at == null
               ? 'Sin ubicar'

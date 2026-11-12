@@ -5,8 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/app/airdrop_app.dart';
 
 void main() {
-  testWidgets('El registro pide el consentimiento y valida antes de enviar',
-      (WidgetTester tester) async {
+  testWidgets('El registro pide el consentimiento y valida antes de enviar', (
+    WidgetTester tester,
+  ) async {
     tester.platformDispatcher.accessibilityFeaturesTestValue =
         const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
@@ -20,7 +21,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Crear cuenta'), findsWidgets);
-    expect(find.text('NÚMERO DE DOCUMENTO'), findsOneWidget);
+    expect(find.text('Número de documento'), findsOneWidget);
     expect(find.text('6 a 10 dígitos'), findsOneWidget);
 
     // Sin consentimiento el botón está apagado.

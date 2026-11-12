@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/field_limits.dart';
 import '../auth_field.dart';
-import 'password_altimeter.dart';
+import '../reset/reset_password_strength.dart';
 
 /// Los campos del registro, para nombrar sus errores sin strings sueltos.
 enum RegisterInput { name, document, phone, email, password }
@@ -96,8 +96,7 @@ class RegisterContactFields extends StatelessWidget {
           autofillHints: const [AutofillHints.newPassword],
           onChanged: data.onChanged,
         ),
-        const SizedBox(height: 12),
-        PasswordAltimeter(controller: c.password),
+        ResetPasswordStrength(controller: c.password),
       ],
     );
   }

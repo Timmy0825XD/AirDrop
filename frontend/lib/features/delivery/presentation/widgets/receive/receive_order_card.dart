@@ -106,7 +106,7 @@ class _DroneKeypad extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text('TECLADO DEL DRON', style: theme.textTheme.labelSmall),
+        Text('Teclado del dron', style: theme.textTheme.labelSmall),
         const SizedBox(height: 4),
         Text(
           'Escribe el código en el dron para recibir el paquete.',

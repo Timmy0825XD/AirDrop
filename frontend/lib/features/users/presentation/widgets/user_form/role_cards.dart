@@ -58,23 +58,14 @@ class _RoleCard extends StatelessWidget {
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 260),
             curve: Curves.easeOutBack,
-            transform: Matrix4.translationValues(0, selected ? -3 : 0, 0),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: selected ? tone.withValues(alpha: 0.10) : colors.surface,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: selected ? tone : colors.outline,
-                width: 1.5,
+                width: selected ? 2 : 1,
               ),
-              boxShadow: [
-                if (selected)
-                  BoxShadow(
-                    color: colors.onSurface.withValues(alpha: 0.10),
-                    blurRadius: 22,
-                    offset: const Offset(0, 10),
-                  ),
-              ],
             ),
             child: _RoleFace(role: role, selected: selected, tone: tone),
           ),

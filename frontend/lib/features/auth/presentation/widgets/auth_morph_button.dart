@@ -17,8 +17,7 @@ ButtonStyle _clearStyle(BuildContext context) => ElevatedButton.styleFrom(
   disabledForegroundColor: Theme.of(context).colorScheme.onSurfaceVariant,
 );
 
-/// El fondo del botón: el acento en degradado con su halo, verde al
-/// terminar bien, o apagado.
+/// El fondo del botón: el acento liso, verde al terminar bien, o apagado.
 BoxDecoration _morphDecoration(
   BuildContext context,
   bool on,
@@ -26,32 +25,14 @@ BoxDecoration _morphDecoration(
   bool done = false,
 }) {
   final palette = context.palette;
-  final glow = done ? palette.success : palette.accentGradient.first;
+  final colors = Theme.of(context).colorScheme;
   return BoxDecoration(
-    gradient: done
-        ? LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color.lerp(palette.success, Colors.white, 0.25)!,
-              palette.success,
-            ],
-          )
+    color: done
+        ? palette.success
         : on
-        ? palette.accent
-        : null,
-    color: on || done
-        ? null
-        : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.08),
+        ? colors.primary
+        : colors.onSurface.withValues(alpha: 0.1),
     borderRadius: BorderRadius.circular(radius),
-    boxShadow: [
-      if (on || done)
-        BoxShadow(
-          color: glow.withValues(alpha: 0.35),
-          blurRadius: 22,
-          offset: const Offset(0, 8),
-        ),
-    ],
   );
 }
 
@@ -67,10 +48,10 @@ class AuthMorphButton extends StatelessWidget {
     required this.onPressed,
     this.isLoading = false,
     this.isDone = false,
-    this.pill = true,
+    this.pill = false,
   });
 
-  static const double height = 58;
+  static const double height = 54;
 
   final String label;
   final String loadingLabel;
@@ -78,7 +59,7 @@ class AuthMorphButton extends StatelessWidget {
   final bool isLoading;
   final bool isDone;
 
-  /// Bordes del todo redondos, como en toda la app; en `false`, radio 16.
+  /// Bordes del todo redondos; por defecto, radio 16 como en las maquetas.
   final bool pill;
 
   @override
@@ -142,13 +123,12 @@ class _ButtonFace extends StatelessWidget {
           : FittedBox(
               key: ValueKey(button.label),
               fit: BoxFit.scaleDown,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(button.label),
-                  const SizedBox(width: 10),
-                  const Icon(Icons.arrow_forward_rounded, size: 18),
-                ],
+              child: Text(
+                button.label,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
     );

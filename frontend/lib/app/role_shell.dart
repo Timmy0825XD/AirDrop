@@ -4,14 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/widgets/app_max_width.dart';
-import '../core/widgets/floating_nav_bar.dart';
+import '../core/widgets/app_tab_bar.dart';
 import '../core/widgets/nav_scope.dart';
 import '../features/auth/presentation/auth_controller.dart';
 import '../features/tracking/data/tracking_providers.dart';
 import 'role_tabs.dart';
 
-/// El marco de las pantallas con sesión: la pantalla y, encima, la barra
-/// flotante del rol. En los destinos de la barra se ve; en un detalle o un
+/// El marco de las pantallas con sesión: la pantalla y, abajo, la barra de
+/// pestañas del rol. En los destinos de la barra se ve; en un detalle o un
 /// formulario se esconde deslizándose, igual que al bajar en una lista.
 class RoleShell extends ConsumerStatefulWidget {
   const RoleShell({super.key, required this.location, required this.child});
@@ -55,7 +55,7 @@ class _RoleShellState extends ConsumerState<RoleShell> {
     final selected = tabs.indexOf(widget.location);
     final onTab = tabs.isTab(widget.location);
     final media = MediaQuery.of(context);
-    final inset = onTab ? FloatingNavBar.height : 0.0;
+    final inset = onTab ? AppTabBar.height : 0.0;
     return NavScope(
       isTabRoot: onTab,
       child: AppMaxWidth(
@@ -84,14 +84,15 @@ class _RoleShellState extends ConsumerState<RoleShell> {
               ),
             ),
             Positioned(
-              left: 16,
-              right: 16,
-              bottom: media.padding.bottom + 12,
-              child: FloatingNavBar(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: AppTabBar(
                 destinations: tabs.destinations,
                 selected: selected,
                 onSelect: (i) => context.go(tabs.paths[i]),
                 center: tabs.center,
+                centerActive: tabs.isCenter(widget.location),
                 collapsed: !onTab || _scrolledAway,
               ),
             ),

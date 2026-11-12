@@ -6,6 +6,7 @@ import '../../../core/widgets/choice_pill.dart';
 import '../../../core/widgets/message_view.dart';
 import '../../../core/widgets/rise_in.dart';
 import '../../../core/widgets/sliding_segmented.dart';
+import '../../home/presentation/widgets/operator/dashboard_period.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../../hubs/data/hub_providers.dart';
 import '../data/analytics_models.dart';
@@ -120,14 +121,11 @@ class _Filters extends ConsumerWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          _ChipRow([
-            for (final d in const [7, 30, 90])
-              ChoicePill(
-                label: '$d días',
-                selected: days == d,
-                onTap: () => onDays(d),
-              ),
-          ]),
+          // El mismo selector de periodo del tablero del operador.
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: DashboardPeriod(days: days, onDays: onDays),
+          ),
           if (showHub) ...[
             const SizedBox(height: 8),
             _ChipRow([

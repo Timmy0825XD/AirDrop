@@ -61,7 +61,7 @@ class OrderJourney extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('RECORRIDO', style: Theme.of(context).textTheme.labelSmall),
+          Text('Recorrido', style: Theme.of(context).textTheme.labelSmall),
           const SizedBox(height: 6),
           Semantics(
             label: 'Recorrido: ${order.status.label}',
@@ -152,9 +152,8 @@ class _Stop extends StatelessWidget {
           label,
           maxLines: 1,
           overflow: TextOverflow.fade,
-          style: theme.textTheme.labelSmall?.copyWith(
-            fontSize: 9.5,
-            letterSpacing: 0.6,
+          style: theme.textTheme.labelMedium?.copyWith(
+            fontSize: 11,
             color: state == _StopState.next ? null : color,
           ),
         ),

@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/widgets/choice_pill.dart';
+import '../../../../../core/widgets/sliding_segmented.dart';
 
-/// Los periodos del tablero, los mismos de las métricas del administrador.
+/// Los periodos del tablero, los mismos de las métricas del administrador,
+/// en el filtro segmentado de la app.
 class DashboardPeriod extends StatelessWidget {
   const DashboardPeriod({super.key, required this.days, required this.onDays});
 
@@ -11,16 +12,14 @@ class DashboardPeriod extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      children: [
-        for (final d in const [7, 30, 90])
-          ChoicePill(
-            label: '$d días',
-            selected: days == d,
-            onTap: () => onDays(d),
-          ),
+    return SlidingSegmented<int>(
+      options: const [
+        SegmentOption(7, '7 días'),
+        SegmentOption(30, '30 días'),
+        SegmentOption(90, '90 días'),
       ],
+      selected: days,
+      onChanged: onDays,
     );
   }
 }

@@ -30,11 +30,8 @@ class ProfileDocumentEditor extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          'TIPO DE DOCUMENTO',
-          style: Theme.of(context).textTheme.labelSmall,
-        ),
-        const SizedBox(height: 8),
+        Text('Tipo de documento', style: authLabelStyle(Theme.of(context))),
+        const SizedBox(height: 6),
         DocumentTypeTabs(selected: type, onChanged: onTypeChanged),
         const SizedBox(height: 16),
         AuthField(

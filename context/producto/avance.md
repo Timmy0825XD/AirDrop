@@ -52,6 +52,7 @@ Lo que le falta a Nest, con el documento que lo pide, está en [`pendientes-back
 | 18 | Operador y administrador (Bloque 4 de la auditoría 31) | `feature/fleet-mapa-operador`, `feature/fleet-tablero`, `feature/metricas-incidentes` | Hecha (PR #147, #148 y #149) |
 | 19 | Pulido de UX y accesibilidad (Bloque 5 de la auditoría 31) | `style/formularios-accesibles`, `style/fechas-y-textos`, `style/acciones-y-navegacion`, `style/pantallas-pequenas`, `style/inicios-por-rol` | Hecha (pasos 1 a 5) |
 | 20 | Si da el tiempo (Bloque 6 de la auditoría 31) | `feature/formularios-por-pasos`, `feature/mapa-traslado`, `refactor/campos-compartidos` | En curso: formularios por pasos y mapa del traslado hechos |
+| 21 | Rediseño natural, rol por rol | `style/rediseno-frontend` | Hecha (PR pendiente): tema, auth y los cuatro roles |
 
 ## Fase 0 — Preparación y documento de avance
 
@@ -1318,6 +1319,158 @@ Lo opcional de la auditoría 31. Una rama por paso desde `develop`.
     línea solo orienta. `transferMapOf` decide si se muestra.
   Pruebas: `transfer_map_test` (coordenadas, cuándo sale el mapa y su
   texto).
+
+## Fase 21 — Rediseño natural
+
+Rama `style/rediseno-frontend` desde `develop`. Oscar vio la propuesta
+oscura "Torre de control" (neón, brillos, grilla HUD) como "muy IA" y
+pidió algo natural: un producto real, sobrio, con movimiento solo donde
+dice algo. Maquetas aprobadas en el lienzo
+<https://claude.ai/artifact/VPqqU3ZLb4nhFTppKxJv14> (filas "Versión
+natural"). Solo apariencia: no cambian `data/`, controllers, rutas,
+endpoints, validaciones ni textos de Nest.
+
+### Paso 1 — Tema y auth (hecho, 2026-11-11)
+
+- **Tema** (`lib/theme/`): fuente Figtree (antes Space Grotesk), fondo
+  cálido liso (`#F5F4F1` / `#17191B`), superficies sólidas (blanco /
+  `#222528`), un solo acento verde azulado (`#0F6E6A` / `#5DBFB4`) sin
+  degradado ni velos, semáforo nuevo. `AppPalette` conserva sus campos
+  (el vidrio pasa a sólido) para que el resto de la app siga funcionando
+  y ya tome los colores nuevos. `AppSurfaces`: hoja sólida y campos con
+  borde visible, radio 14. `AppMapLook` (en `app_map_style.dart`): los
+  colores del mapa dibujado.
+- **Mapa del auth** (`AirspaceMap`, `AirspacePainter`): ahora parece un
+  mapa de ciudad (tierra, parques, río, avenidas y calles). Rutas sólidas
+  entre centrales, centrales como cuadro del acento con la cruz y drones
+  como fichas claras. Sin grilla, sin pulsos, sin estela, **sin
+  inclinación 3D ni ladeo** (se quitaron `tilt` y `_Lean`). La salida al
+  inicio acerca la cámara en vez de lanzarse en picada.
+- **Entrada del login**: la misma coreografía y los mismos tiempos
+  (`LoginTimeline`); cambian las piezas: el logo es `AuthLogoTile` (el
+  dron de líneas en un círculo claro con sombra), el eslogan va en texto
+  normal y se quitó la pastilla "Valledupar".
+- **Formulario**: labels en texto normal (`authLabelStyle`, ya no en
+  mayúsculas) en `AuthField`, `AuthDateField`, `AuthPickerField`,
+  `AuthChoiceGroup` y los rótulos sueltos del auth; botón principal liso
+  con radio 16 y sin flecha (`AuthMorphButton`, 54 px); hoja sólida con
+  radio 28; volver y pastillas sólidas (`AuthChrome`). Se borró
+  `AuthGlass`.
+- **Registro**: `RegisterProgress` (tres barras con "2 de 3 listos")
+  reemplaza a `RegisterFlightPlan`; la fuerza de la contraseña usa
+  `ResetPasswordStrength` (cuatro barras) y se borró `PasswordAltimeter`.
+- **Pantallas de paso**: el ícono va en un círculo claro montado sobre el
+  borde de la hoja (`_StepBadge`); ya no hay dron con cable ni flotación.
+- Tests ajustados a los labels nuevos. `flutter analyze` sin issues y
+  `flutter test` en verde (326). Revisado en web (375 × 812) en claro y
+  oscuro: entrada, login, registro y recuperar contraseña.
+
+### Paso 2 — Piezas compartidas y despachador (hecho, 2026-11-11)
+
+Oscar pidió seguir rol por rol, empezando por el despachador. Lo
+compartido cambia para los cuatro roles a la vez; lo propio del
+despachador, solo para él.
+
+- **Barra de pestañas** (`AppTabBar`, reemplaza a `FloatingNavBar`):
+  pegada abajo, cinco pestañas iguales; la del centro es la acción del rol
+  con texto corto (`NavCenterAction.tabLabel`: Urgencias, Urgencia, Mapa,
+  Crear) y su contador rojo. Ya no hay botón levantado ni barra flotante.
+- **Piezas base**: `GlassCard` sólida (sombra suave en claro, filo en
+  oscuro), `GlassIconButton` redondo, `StatusPill` sin borde,
+  `SectionHeader` sin la trama de plano de vuelo, `HomeHeader` ("Rol ·
+  contexto" en gris y "Hola, Nombre"), `HomeSpotlight` sin radar ni dron
+  (pastilla, número y etiqueta), `MetricTile`, `HomeLabel` (título de
+  grupo, 18 negrita), `DetailSection` (título normal), `OrderRowCard` sin
+  la franja que brillaba, `StatusCard` con la pastilla bajo el texto,
+  `SlidingSegmented` (pastilla blanca sobre gris), `SlideToLaunch` (pista
+  gris y perilla del acento; antes era rojo con brillo), avisos
+  (`GlassSnack`) sólidos.
+- **Nada en mayúsculas**: `labelSmall` del tema pasa a 13 seminegrita sin
+  tracking y se reescribieron los rótulos que estaban en mayúsculas
+  (entrega, agenda, recorrido, decisión, vuelo, operador y solicitante).
+- **Dron y mapa**: `DroneMark` es ahora la ficha del logo (círculo claro
+  con el dron de líneas), `DroneMarker` la usa con un anillo suave, la
+  central es un cuadro del acento con la cruz, se borró `MapHudOverlay`
+  (velo y grilla sobre los tiles) y el mapa oscuro es gris neutro.
+- **Nuevo `MenuList`** (`core/widgets/menu_list.dart`): opciones en una
+  sola tarjeta con líneas finas, como los ajustes del teléfono. Lo usan
+  "Más" del despachador y "Tu central y pedidos" del inicio.
+- **Despachador**: inicio con "Para atender ahora" y "Hoy en la central";
+  "Más" en tres listas con detalle de cada opción.
+- Tests ajustados a los textos nuevos (rótulos, "Para atender ahora",
+  scroll hasta "Confirmar entrega"). `flutter analyze` sin issues y
+  `flutter test` en verde (326). Revisado en web con datos locales en
+  claro y oscuro: inicio, urgencias, agenda, inventario, más, detalle de
+  una urgencia, pendiente de carga con su hoja, mi central y urgencia a
+  otra central.
+
+### Paso 3 — Solicitante (hecho, 2026-11-12)
+
+- **Inicio**: `MissionCard` como en la maqueta (estado con punto verde,
+  medicamento y lo que va, "6 min" con "llega …" si hay telemetría, la
+  ruta como barra con la ficha del dron y "Ver mapa"); sin radar ni
+  casillas ALT/VEL. "Entrega periódica" pasa a `MenuList`. La próxima
+  entrega sin tracking en el texto.
+- **Pedir urgencia**: sin el radar (`EmergencyBanner`) ni el carrusel
+  (`MedicationCarousel`), que se borraron; el medicamento se elige con
+  `CatalogChoices` (buscador), como en la entrega periódica. Sobre el
+  deslizador va una nota gris (`EmergencyFacts`) y el deslizador dice
+  "Desliza para pedir".
+- **Seguimiento**: `FlightCard` dice "Llega en 6 min", la hora estimada y
+  la fase, la barra de avance y los datos en filas; se borró el panel
+  `FlightHud` de altitud y rumbo (y el parámetro `hud` de
+  `MapSheetScaffold`); la barra de arriba del mapa es sólida y redonda.
+- **Código de entrega**: el código en grande sobre gris.
+- **Campos**: `AuthPickerField`, `AuthDateField` y la vista previa de
+  `AuthLocationField` toman el mismo fondo, borde (14) y alto que los
+  campos de texto; antes el selector se veía gris.
+- Se borraron `RadarSweep` y `DroneArt`, que quedaron sin uso.
+- `flutter analyze` sin issues y `flutter test` en verde (326). Revisado
+  en web con datos locales (con un pedido puesto en vuelo solo para
+  compilar, ya revertido): inicio, seguimiento, pedir urgencia, Mis
+  pedidos, Mis planes, recibir pedido y perfil. La hoja con telemetría
+  (`FlightCard`) no se pudo ver: con datos locales no hay telemetría.
+
+### Paso 4 — Operador de flota (hecho, 2026-11-12)
+
+Casi todo el operador ya había pasado al diseño natural con las piezas
+compartidas de los pasos 2 y 3 (tarjetas, `StatusCard`, mapa sin capa,
+`DroneMarker`, hojas, campos). Lo propio:
+
+- **Flota**: `FleetSummary` (`fleet/presentation/widgets/fleet_summary.dart`)
+  arriba de la lista, como en la maqueta: disponibles, en vuelo y en taller
+  en una tarjeta partida en tres. Sale de la misma lista de drones.
+- **Tablero del inicio**: el periodo (7, 30 o 90 días) pasa de chips a
+  `SlidingSegmented`; los títulos de las tarjetas de uso, salud e
+  incidentes van como título (no como rótulo gris).
+- `flutter analyze` sin issues y `flutter test` en verde (326). Revisado
+  en web con datos locales, en claro y oscuro: inicio, flota con
+  "Gestionar", mapa en vivo, geovallas, nueva geovalla y dibujarla. La hoja
+  del mapa con drones en misión no se pudo ver: con datos locales no hay
+  vuelos.
+
+### Paso 5 — Administrador (hecho, 2026-11-12)
+
+- **Resumen**: "Métricas" pasa a `MenuList`; "Suspendidas" va en rojo solo
+  si hay alguna (en 0, en el color del texto).
+- **Métricas**: el periodo usa el mismo `DashboardPeriod` segmentado del
+  operador. La variación frente al periodo anterior se escribe con "+" o
+  "-": Figtree no trae los triángulos "▲▼" y se veían como cuadros.
+- **Nueva cuenta**: las tarjetas de rol ya no se levantan ni brillan al
+  elegirlas; la elegida lleva borde de 2 px y el tinte del rol.
+- Se borró `QuickTile`, que quedó sin uso (los accesos de los inicios son
+  `MenuList`); los tests de los inicios ahora revisan `MenuList`.
+- `flutter analyze` sin issues y `flutter test` en verde (326). Revisado
+  en web con datos locales: resumen, centrales, cuentas, la hoja de
+  crear, métricas y nueva cuenta.
+
+Con este paso los cuatro roles y el auth quedan en el diseño natural.
+
+Pendiente:
+
+- Regenerar `docs/ui_inventory.md` y probar en el emulador y con el
+  backend (las pantallas con telemetría no se pudieron ver con datos
+  locales).
 
 ## Pendiente del backend
 

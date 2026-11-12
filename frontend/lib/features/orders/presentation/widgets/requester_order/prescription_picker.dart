@@ -62,7 +62,7 @@ class PrescriptionPicker extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('FÓRMULA MÉDICA', style: theme.textTheme.labelSmall),
+          Text('Fórmula médica', style: theme.textTheme.labelSmall),
           const SizedBox(height: 6),
           Text(
             type == null

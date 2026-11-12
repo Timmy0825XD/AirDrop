@@ -31,7 +31,7 @@ void main() {
       ),
     );
 
-    expect(find.text('TUS CENTRALES'), findsOneWidget);
+    expect(find.text('Tus centrales'), findsOneWidget);
     expect(find.text('Hospital Rosario Pumarejo'), findsOneWidget);
     expect(find.text('Clínica del Cesar'), findsOneWidget);
     expect(find.text('Central operativa vinculada'), findsNothing);

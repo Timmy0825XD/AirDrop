@@ -74,7 +74,7 @@ class FlightTimeline extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('VUELO', style: Theme.of(context).textTheme.labelSmall),
+        Text('Vuelo', style: Theme.of(context).textTheme.labelSmall),
         const SizedBox(height: 10),
         for (final (i, step) in steps.indexed)
           _StepRow(step: step, last: i == steps.length - 1),

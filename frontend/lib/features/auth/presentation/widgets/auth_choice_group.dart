@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'auth_field.dart';
 
-/// Un grupo de chips con su label en mayúsculas y el error que tiembla.
+/// Un grupo de chips con su label y el error que tiembla.
 /// Sin chips muestra [empty].
 class AuthChoiceGroup extends StatelessWidget {
   const AuthChoiceGroup({
@@ -26,8 +26,8 @@ class AuthChoiceGroup extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label.toUpperCase(), style: theme.textTheme.labelSmall),
-        const SizedBox(height: 8),
+        Text(label, style: authLabelStyle(theme)),
+        const SizedBox(height: 6),
         if (children.isEmpty && empty != null)
           Text(empty!, style: theme.textTheme.bodyMedium)
         else

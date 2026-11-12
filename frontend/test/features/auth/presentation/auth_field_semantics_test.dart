@@ -30,8 +30,11 @@ void main() {
     final field = tester.getSemantics(find.byType(TextField));
     expect(field.label, contains('Correo electrónico'));
     expect(field.flagsCollection.isTextField, isTrue);
-    // La etiqueta visible en mayúsculas no se lee dos veces.
-    expect(find.bySemanticsLabel('CORREO ELECTRÓNICO'), findsNothing);
+    // La etiqueta visible no se lee dos veces: solo el campo la lleva.
+    expect(
+      find.bySemanticsLabel(RegExp('^Correo electrónico')),
+      findsOneWidget,
+    );
     // El error se anuncia solo (región viva).
     expect(
       tester

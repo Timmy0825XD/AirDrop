@@ -95,38 +95,37 @@ controller de la feature.
 Las pantallas de auth tienen identidad propia y **comparten andamiaje**. Antes de
 armar una pantalla nueva, reusar lo que ya existe.
 
-El rediseño de la Fase 13 (ver `../context/producto/avance.md`) cambió el
-bloque de marca por **el espacio aéreo vivo**: un plano de la ciudad con las
-centrales conectadas y drones de adorno, que se inclina en 3D. Es solo
-decoración: no muestra datos ni contadores (nada de "drones en vuelo" ni
+El rediseño natural de la Fase 21 (ver `../context/producto/avance.md`)
+dejó el bloque de marca como **un mapa de ciudad común**: tierra, parques,
+río y calles, con las centrales unidas por rutas y drones de adorno. Es
+plano (sin inclinación 3D) y sin brillos. Es solo decoración: no muestra datos ni contadores (nada de "drones en vuelo" ni
 "entregas hoy" inventados). Sirve igual en claro y en oscuro; todos los
 colores salen del tema. Piezas (en `widgets/` y `widgets/airspace/`):
 
 | Widget | Para qué |
 | --- | --- |
-| `AirspaceMap` | El plano vivo (grilla, río, calles, centrales con la cruz médica, vuelos con estela y anillo al llegar). Lo mueven `network` (enciende la red), `traffic` (suelta los drones), `tilt` (lo inclina) y `dive` (la cámara se lanza adentro). Ya inclinado, se ladea un poco hacia el puntero. Con "reducir movimiento" queda quieto y sin drones. El dibujo vive en `AirspacePainter` y los vuelos en `AirspaceTraffic`. |
-| `DroneMark` (`core/widgets`) | El dron de la marca visto desde arriba (lo usan también los inicios, el mapa y los pedidos): ala, largueros, cuatro hélices girando y luces de navegación (roja y verde) que destellan. Grafito en claro, claro en oscuro. `halo` dibuja su anillo en la entrada. |
+| `AirspaceMap` | El mapa de la ciudad (tierra, parques, río, avenidas y calles; centrales como cuadro del acento con la cruz, rutas sólidas y drones como fichas claras). Lo mueven `network` (dibuja rutas y centrales), `traffic` (suelta los drones) y `dive` (la cámara se acerca en la salida). No se inclina. Con "reducir movimiento" queda quieto y sin drones. El dibujo vive en `AirspacePainter` (colores en `AppMapLook`, `theme/app_map_style.dart`) y los vuelos en `AirspaceTraffic`. |
+| `DroneMark` (`core/widgets`) | El dron de la marca como ficha: círculo claro con sombra y el dron de líneas con el núcleo del acento (el mismo del logo). Lo usan el mapa (`DroneMarker`), el recorrido del pedido y los inicios. `halo` dibuja un anillo fino del acento. |
 | `AuthCurvedHeader` | El `AirspaceMap` recortado con las esquinas de abajo redondeadas y un velo arriba para leer el logo. Altura y curva se animan desde afuera (entrada → encabezado); el mapa no se deforma, solo cambia el recorte. |
 | `AuthHeaderMetrics` | Alturas del encabezado: alto (login, `tallOf`), de paso (`stepOf`) y compacto (registro). El alto y el de paso crecen con la pantalla para que en un teléfono largo la hoja no quede vacía. Con ellas una pantalla arranca con la forma de la anterior. |
-| `AuthBrandBar` / `AuthLogoTile` / `AuthPill` | Logo (`DroneMark`), nombre y pastilla de vidrio (con ícono opcional) en la esquina del encabezado. El logo es provisional. |
+| `AuthBrandBar` / `AuthLogoTile` / `AuthPill` | Logo (`DroneGlyph` en un círculo claro con sombra, 42 px) y nombre en la esquina del encabezado; pastilla sólida con ícono opcional. El logo es provisional. |
 | `AuthFormSheet` | La hoja del formulario: sube desde abajo pegada a los bordes, con las esquinas de arriba redondeadas, scroll propio y su animación de entrada (desde abajo o de lado). |
-| `AuthField` | Label en mayúsculas (con nota o `AuthFieldBadge` opcional a la derecha), caja de 56 px, temblor y mensaje deslizante cuando la pantalla pasa `errorText`. El lector de pantalla lee la etiqueta en el campo (el label de arriba va en `ExcludeSemantics`); al fallar, `ShakeOnError` baja el formulario hasta el primer campo con error. Los placeholders de ejemplo empiezan por "Ej.:". Dentro de la hoja los campos toman borde visible e ícono que se enciende al enfocar (tema local de `AuthSheetPanel`); fuera de auth no cambian. |
-| `AuthMorphButton` | `ElevatedButton` que se encoge a círculo con el dron girando mientras carga; con `isDone` se pone verde y dibuja el check; los bordes son del todo redondos en toda la app (`pill: false` vuelve al radio 16); con `onPressed` en `null` queda apagado. |
-| `AuthGlass` / `AuthChrome` / `AuthSheetPanel` | Vidrio esmerilado; el vidrio de las piezas sobre el mapa (pastilla, volver); la hoja del formulario, que en oscuro baja de grafito a casi negro y en claro de blanco a un cielo suave. Los títulos usan `authTitleStyle` (32, tracking cerrado). |
-| `AirspaceReveal` | La salida al inicio: desde el botón se abre un círculo con el espacio aéreo, la cámara se lanza en picada y todo se funde en el fondo de la app. Con `dive: false` solo abre el mapa (lo usa la nueva contraseña). |
+| `AuthField` | Label en texto normal (`authLabelStyle`, 14 seminegrita; con nota o `AuthFieldBadge` opcional a la derecha), caja de 54 px, temblor y mensaje deslizante cuando la pantalla pasa `errorText`. El lector de pantalla lee la etiqueta en el campo (el label de arriba va en `ExcludeSemantics`); al fallar, `ShakeOnError` baja el formulario hasta el primer campo con error. Los placeholders de ejemplo empiezan por "Ej.:". Dentro de la hoja los campos toman borde visible e ícono que se enciende al enfocar (tema local de `AuthSheetPanel`); fuera de auth no cambian. |
+| `AuthMorphButton` | `ElevatedButton` del acento liso (54 px, radio 16, sin flecha) que se encoge a círculo con el dron girando mientras carga; con `isDone` se pone verde y dibuja el check; `pill: true` lo vuelve píldora; con `onPressed` en `null` queda apagado. |
+| `AuthChrome` / `AuthSheetPanel` | Las piezas sólidas sobre el mapa (pastilla, volver) con sombra corta; la hoja del formulario, sólida, radio 28. Los títulos usan `authTitleStyle` (28, negrita). |
+| `AirspaceReveal` | La salida al inicio: desde el botón se abre un círculo con el mapa, la cámara se acerca y todo se funde en el fondo de la app. Con `dive: false` solo abre el mapa (lo usa la nueva contraseña). |
 | `DroneGlyph` / `SpinningDrone` | El dron de líneas; quieto o girando como indicador de carga. |
-| `AuthStepScaffold` | Pantallas de paso (código, recuperación, nueva contraseña): el mapa arriba con `AuthBackButton` y pastilla opcional, el `DroneMark` que baja trayendo el ícono del paso en una insignia del acento (flota; `turnIcon` lo endereza, como la llave) y la hoja con el contenido y la acción al fondo. `fromTall` cuando se llega desde el login y `fromStep` desde otra pantalla de paso. |
-| `RegisterFlightPlan` | El avance del registro como plan de vuelo: tres puntos (identidad, contacto, acceso) que se encienden cuando cada grupo queda bien, y el dron avanza. Solo pinta; la validación al enviar no cambió. |
-| `PasswordAltimeter` | La fuerza de la contraseña del registro como altímetro (barras, metros y "Crucero · Segura"), con `PasswordScore`. |
+| `AuthStepScaffold` | Pantallas de paso (código, recuperación, nueva contraseña): el mapa arriba con `AuthBackButton` y pastilla opcional, el ícono del paso en un círculo claro de 80 px montado sobre el borde de la hoja (baja al entrar; `turnIcon` lo endereza, como la llave) y la hoja con el contenido y la acción al fondo. `fromTall` cuando se llega desde el login y `fromStep` desde otra pantalla de paso. |
+| `RegisterProgress` | El avance del registro: tres barras (identidad, contacto, acceso) que se llenan cuando cada grupo queda bien y "2 de 3 listos". Solo pinta; la validación al enviar no cambió. La fuerza de la contraseña usa `ResetPasswordStrength`. |
 | `AuthTextLink` | "Pregunta + acción" centrados (¿No tienes cuenta? Regístrate). |
 | `OtpCodeField` | Un campo invisible (acepta el autocompletado del código) y seis cajas que lo muestran; al verificar, las cajas se juntan en el check (`OtpSuccessCheck`). |
 | `CheckMarkPainter` | Check que se dibuja de punta a punta; lo usan el consentimiento, el botón y el código. |
 
 El login arma su coreografía con un solo `AnimationController` y tramos
-`Interval` (`widgets/login/login_timeline.dart`): se enciende la red, llega
-el dron, el nombre entra letra por letra de borroso a nítido y, en el morph,
-el mapa se encoge e inclina, el dron viaja a la esquina como logo y sube la
-hoja. Tocar salta al morph. Las curvas propias son `authSettle` (sin
+`Interval` (`widgets/login/login_timeline.dart`): se dibujan las rutas y
+las centrales, llega el logo, el nombre entra letra por letra de borroso a
+nítido, sale el eslogan y, en el morph, el mapa se recorta a encabezado,
+el logo viaja a la esquina y sube la hoja. Tocar salta al morph. Las curvas propias son `authSettle` (sin
 rebote) y `authEmphasized`. Con "reducir movimiento" del sistema
 (`MediaQuery.disableAnimationsOf`) se salta la entrada, no vuelan drones y
 no hay salida animada.
@@ -169,8 +168,9 @@ translúcido. Nunca hex dentro de una feature.
 
 Convenciones que ya están en el código:
 
-- Los labels de campo van en mayúsculas con `letterSpacing`. Los assert de los
-  tests buscan el texto en mayúsculas.
+- Los labels de campo van en texto normal con `authLabelStyle` (desde la
+  Fase 21; antes iban en mayúsculas). Los assert de los tests buscan el
+  texto tal cual ("Correo electrónico").
 - El registro y el login no piden rol. El registro es solo del solicitante y
   usa `DocumentTypeTabs` para el tipo de documento. El login pide correo y
   contraseña.
@@ -182,56 +182,55 @@ Convenciones que ya están en el código:
 
 ## Paleta y tokens visuales
 
-Rediseño "Grafito y turquesa" (rama `style/rediseno-total-temporal`; propuesta en el lienzo <https://claude.ai/artifact/Ay5RAswEtqiuxruk6Lzioi>). Colores medidos de la referencia (póster de dron): turquesa `#50B9C6`–`#5FC3CF`, grafito casi negro y cielo `#BFD2E2`.
+Rediseño **natural** (Fase 21, rama `style/rediseno-frontend`; maquetas en el lienzo <https://claude.ai/artifact/VPqqU3ZLb4nhFTppKxJv14>, filas "Versión natural"). Reemplaza a "Grafito y turquesa": fondo cálido liso, superficies sólidas, un solo acento verde azulado, sin degradados, vidrio, velos ni brillos. Que se vea como un producto real; el movimiento solo donde dice algo.
 
-La fuente de verdad ejecutable está en `lib/theme/`: [`app_theme.dart`](lib/theme/app_theme.dart) (`ThemeData`), [`app_palette.dart`](lib/theme/app_palette.dart) (`AppPalette`, la extensión con lo que `ColorScheme` no trae; se lee con `context.palette`), [`app_backdrop.dart`](lib/theme/app_backdrop.dart) (el fondo y la transición entre pantallas), [`app_motion.dart`](lib/theme/app_motion.dart) (tiempos y curvas) y [`app_map_style.dart`](lib/theme/app_map_style.dart) (el tinte de los tiles). No crear una segunda paleta ni escribir colores hardcodeados en las pantallas.
+La fuente de verdad ejecutable está en `lib/theme/`: [`app_theme.dart`](lib/theme/app_theme.dart) (`ThemeData`), [`app_palette.dart`](lib/theme/app_palette.dart) (`AppPalette`, la extensión con lo que `ColorScheme` no trae; se lee con `context.palette`), [`app_backdrop.dart`](lib/theme/app_backdrop.dart) (el fondo y la transición entre pantallas), [`app_motion.dart`](lib/theme/app_motion.dart) (tiempos y curvas) y [`app_map_style.dart`](lib/theme/app_map_style.dart) (el tinte de los tiles y `AppMapLook`, los colores del mapa dibujado del auth). No crear una segunda paleta ni escribir colores hardcodeados en las pantallas.
 
 ### `ColorScheme`
 
 | Token | Oscuro | Claro | Uso |
 | --- | --- | --- | --- |
-| `primary` / `onPrimary` | `#4FC3C9` / `#071214` | `#0B6470` / `#FFFFFF` | Marca, enlaces, foco, destino activo de la barra |
-| `secondary` | `#FBBF6A` | `#9A4A06` | Atención (por cargar, pendientes) |
-| `tertiary` | `#4ADE80` | `#116632` | Éxito (en vuelo, entregado) |
-| `error` | `#FF8FA3` | `#A82D24` | Errores, rechazo, geovallas |
-| `surface` | `#1A2126` | `#FFFFFF` | Hojas inferiores y diálogos (opacos) |
-| `onSurface` / `onSurfaceVariant` | `#EEF3F5` / `#A6B4BA` | `#12171A` / `#4D5B63` | Texto principal y secundario |
-| `outline` | `#2C363C` | `#C9D6DE` | Líneas |
+| `primary` / `onPrimary` | `#5DBFB4` / `#10201F` | `#0F6E6A` / `#FFFFFF` | Marca, enlaces, foco, botón principal |
+| `secondary` | `#E8B45A` | `#8F5200` | Atención (por cargar, pendientes) |
+| `tertiary` | `#6FCF97` | `#177A45` | Éxito (en vuelo, entregado) |
+| `error` | `#F0958E` | `#B3261E` | Errores, rechazo, geovallas |
+| `surface` | `#222528` | `#FFFFFF` | Tarjetas, hojas y diálogos (sólidos) |
+| `surfaceContainerHighest` | `#2B2F33` | `#F3F1EC` | Superficie hundida; campos en oscuro |
+| `onSurface` / `onSurfaceVariant` | `#F1F0EC` / `#A6ABB0` | `#1B1D1F` / `#62676D` | Texto principal y secundario |
+| `outline` | `#3D4247` | `#CFCBC3` | Bordes de campos y líneas |
 
 ### `AppPalette` (`context.palette`)
 
 | Token | Oscuro | Claro | Uso |
 | --- | --- | --- | --- |
-| `backdrop` | `#1F2A30` → `#14191D` → `#0B0E10` | `#F7FAFC` → `#E3EDF4` → `#CFDFEB` | Degradado de fondo de toda la app |
-| `accentGlow` / `skyGlow` | turquesa 20 % / cielo 12 % | turquesa 30 % / cielo 32 % | Velos del fondo |
-| `accentGradient` / `onAccent` | `#6ED6D9` → `#3FA9C0` / `#071214` | `#137C8A` → `#0B6470` / `#FFFFFF` | Botón central, botón principal, chips activos |
-| `glass` / `glassBorder` | blanco 7 % / 10 % | blanco 62 % / 95 % | Tarjetas de vidrio |
-| `bar` | `#161C20` al 90 % | blanco 88 % | Barra flotante y paneles sobre el mapa |
-| `success` · `warning` · `danger` · `info` | `#4ADE80` · `#FBBF6A` · `#FF8FA3` · `#A9C8E6` | `#116632` · `#9A4A06` · `#A82D24` · `#2F5F8A` | Semáforo (`StatusPill.colorOf`) |
-| `droneShell` / `droneMetal` | grafito | grafito | El dron dibujado (`DroneArt`) |
+| `backdrop` | `#17191B` (liso) | `#F5F4F1` (liso) | Fondo de toda la app; las tres paradas son el mismo color |
+| `accentGlow` / `skyGlow` | transparente | transparente | Sin velos (se conservan para no romper a quien los lee) |
+| `accentGradient` / `onAccent` | `#5DBFB4` liso / `#10201F` | `#0F6E6A` liso / `#FFFFFF` | Acento sin degradado |
+| `glass` / `glassBorder` | `#222528` / `#363A3F` | `#FFFFFF` / `#E6E3DD` | Tarjetas, ya sólidas |
+| `bar` | `#222528` | `#FFFFFF` | Barra y paneles sobre el mapa |
+| `success` · `warning` · `danger` · `info` | `#6FCF97` · `#E8B45A` · `#F0958E` · `#8FB4D6` | `#177A45` · `#8F5200` · `#B3261E` · `#2F5F8A` | Semáforo (`StatusPill.colorOf`) |
+| `droneShell` / `droneMetal` | grafito | grafito | Sin uso desde la Fase 21 (eran del dron en tres cuartos, `DroneArt`, que se borró) |
 
-Contraste medido (AA): sobre el fondo medio el texto da 15,8:1 y el suave 8,3:1; sobre vidrio el peor caso (error) da 5,3:1; el texto sobre el degradado del acento, 11,1:1 a 6,9:1. En claro el verde de éxito baja a `#116632` (6,0:1).
-
-- Tipografía única: **Space Grotesk** (`google_fonts`). Cifras con `FontFeature.tabularFigures()` para que los contadores no bailen. Escala: `displayLarge` 64, `displayMedium` 48 (cifras de los inicios), `headlineLarge` 32, `headlineMedium` 24, `titleLarge` 20, cuerpo 15–16; `labelSmall` 11 px w600 con `letterSpacing` 1,6 para las etiquetas en mayúsculas.
-- Radios: campos 16; botones, chips y barra en píldora; tarjetas 22–28; hojas 32.
-- Superficies de formulario en [`app_surfaces.dart`](lib/theme/app_surfaces.dart): `AppSurfaces.sheet` (grafito que baja a casi negro en oscuro, blanco a cielo en claro) y `AppSurfaces.fields` (campos con borde visible e ícono que se enciende al enfocar). Las usan la hoja del auth y `FormSheetCard`.
-- El scaffold es transparente: el degradado lo pinta `AppBackdrop` (en `MaterialApp.builder` y en cada ruta con `AppPageTransitionsBuilder`).
+- Tipografía única: **Figtree** (`google_fonts`). Títulos en negrita (w700). Cifras con `FontFeature.tabularFigures()` para que los contadores no bailen. Escala: `displayLarge` 64, `displayMedium` 48, `headlineLarge` 32 (auth a 28 con `authTitleStyle`), `headlineMedium` 24, `titleLarge` 20, cuerpo 15–16. `labelSmall` (13, seminegrita, gris) es el rótulo de una sección dentro de una tarjeta. **Nada va en mayúsculas**: rótulos, etiquetas y títulos se escriben normal ("Revisión del traslado", no "REVISIÓN DEL TRASLADO"); los labels de campo usan `authLabelStyle` y los títulos de grupo, `HomeLabel`.
+- Radios: campos 14; botones 16; tarjetas 20; hojas 28.
+- Superficies de formulario en [`app_surfaces.dart`](lib/theme/app_surfaces.dart): `AppSurfaces.sheet` (la superficie sólida con sombra suave) y `AppSurfaces.fields` (blancos con borde gris cálido en claro, gris hundido en oscuro; el ícono se enciende al enfocar). Las usan la hoja del auth y `FormSheetCard`.
+- El scaffold es transparente: el fondo lo pinta `AppBackdrop` (en `MaterialApp.builder` y en cada ruta con `AppPageTransitionsBuilder`).
 - `themeMode`: `ThemeMode.system`; el modo oscuro es el principal.
 - Curvas: nunca `Curves.linear` ni `Curves.ease`. `AppMotion.enterCurve` (`fastOutSlowIn`), `AppMotion.bounceCurve` (`easeOutBack`) y `AppMotion.pageCurve` (`easeInOutCubic`). Se anima con `Transform`, `Opacity`, escalas y recortes. `AppMotion.of(context, d)` devuelve cero con "reducir movimiento"; un rebote que encoge no anima anchos (pasa de 0): se anima la escala.
 
 ## Navegación por rol (`lib/app/role_shell.dart`)
 
-Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la pantalla y, encima, `FloatingNavBar` (cuatro destinos y el botón central levantado). Los destinos y la acción de cada rol están en [`role_tabs.dart`](lib/app/role_tabs.dart):
+Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la pantalla y, abajo, `AppTabBar` (`core/widgets/app_tab_bar.dart`), la barra de pestañas pegada abajo como en cualquier app: cinco pestañas del mismo tamaño, la del centro es la acción del rol (con su texto corto `tabLabel` y, si hay, el contador rojo). Desde la Fase 21 reemplaza a la barra flotante con botón central levantado. Los destinos y la acción de cada rol están en [`role_tabs.dart`](lib/app/role_tabs.dart):
 
-| Rol | Destinos | Botón central |
+| Rol | Destinos | Pestaña del centro |
 | --- | --- | --- |
-| Solicitante | Inicio · Pedidos (`/orders/mine`) · Planes (`/orders/plans`) · Perfil | Pedir urgencia (`push /orders/emergency`) |
-| Despachador | Inicio · Agenda (`/orders/agenda`) · Inventario · Más (`/more`) | Cola de urgencias (`go /orders/queue`, con contador) |
-| Operador de flota | Inicio · Flota · Geovallas · Perfil | Mapa en vivo (`go /fleet/flights`, con contador de drones en misión); "Nuevo dron" es el "+" del encabezado de Flota |
-| Administrador | Resumen · Centrales · Cuentas · Perfil | Hoja para crear central o cuenta (`showAdminCreateSheet`) |
+| Solicitante | Inicio · Pedidos (`/orders/mine`) · Planes (`/orders/plans`) · Perfil | Urgencia: pedir urgencia (`push /orders/emergency`) |
+| Despachador | Inicio · Agenda (`/orders/agenda`) · Inventario · Más (`/more`) | Urgencias: la cola (`go /orders/queue`, con contador) |
+| Operador de flota | Inicio · Flota · Geovallas · Perfil | Mapa: mapa en vivo (`go /fleet/flights`, con contador de drones en misión); "Nuevo dron" es el "+" del encabezado de Flota |
+| Administrador | Resumen · Centrales · Cuentas · Perfil | Crear: hoja para crear central o cuenta (`showAdminCreateSheet`) |
 
-- En un destino la barra se ve; en un detalle o formulario se desliza hacia abajo y se encoge, igual que al bajar en una lista (`UserScrollNotification`). Al subir vuelve.
-- `RoleShell` suma el alto de la barra a `padding` y `viewPadding` de `MediaQuery`: los botones flotantes quedan por encima solos. Las listas toman ese `padding` con `listPadding(context)` (ya no hay botones flotantes: crear va en el encabezado o en el "+" del centro) (`core/widgets/list_padding.dart`); un `EdgeInsets` fijo deja el final detrás de la barra.
+- En un destino la barra se ve; en un detalle o formulario se desliza hacia abajo, igual que al bajar en una lista (`UserScrollNotification`). Al subir vuelve.
+- `RoleShell` suma el alto de la barra (`AppTabBar.height`, 64; la barra pinta además el área segura de abajo) a `padding` y `viewPadding` de `MediaQuery`: los botones flotantes quedan por encima solos. Las listas toman ese `padding` con `listPadding(context)` (ya no hay botones flotantes: crear va en el encabezado o en el "+" del centro) (`core/widgets/list_padding.dart`); un `EdgeInsets` fijo deja el final detrás de la barra.
 - Toda hoja inferior se abre con `showAppSheet` (`core/widgets/app_sheet.dart`), nunca con `showModalBottomSheet` directo: va al navegador raíz, queda encima de la barra y su velo la bloquea. En el navegador del `ShellRoute` la hoja quedaba debajo de la barra y tapaba su botón. Adentro se cierra con el `context` de la hoja.
 - Las filas de las listas cortan títulos y detalles a dos líneas (`maxLines: 2` con "…") y el correo a una: un nombre largo no estira la tarjeta.
 - `NavScope.isTabRootOf(context)` dice si la pantalla es un destino: `SectionHeader` no muestra "volver" ahí.
@@ -269,7 +268,7 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
 - El mapa base es **uno**: `AppMap` en `lib/core/widgets/app_map.dart`.
   Tiles de OpenStreetMap (con `userAgentPackageName`) teñidos con
   `AppMapStyle` con **un solo** `ColorFiltered` sobre toda la capa (filtrar
-  cada tile creaba una capa por tile y cerraba la app en el navegador): grafito con velo turquesa en oscuro, desaturados y fríos
+  cada tile creaba una capa por tile y cerraba la app en el navegador): gris neutro invertido en oscuro, un poco desaturados
   en claro, sin clave de API (CARTO ya exige clave, por eso no se usa).
   Con `--dart-define=MAPBOX_TOKEN=pk...` (y opcional `MAPBOX_STYLE`) usa
   un estilo de Mapbox; el token no se sube al repositorio. Trae controles
@@ -287,13 +286,16 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
   título en vidrio arriba y una hoja que se arrastra abajo.
 - `FlightMap` pinta la ruta en dos tramos (lo recorrido sólido en el
   degradado, lo que falta punteado), `PlacePin` en la central y el
-  destino, y `DroneMarker` (halo que late), que la cámara sigue.
-  Sobre los tiles va `MapHudOverlay`; la ruta lleva un corredor tenue y
-  brillo en lo recorrido; el dron (`DroneMarker`) apunta al rumbo del tramo
+  destino, y `DroneMarker` (la ficha del dron con un anillo suave que
+  late), que la cámara sigue. Sobre los tiles no va ninguna capa (la
+  `MapHudOverlay` con velo y grilla se borró en la Fase 21); la ruta lleva
+  un corredor tenue; el dron (`DroneMarker`) apunta al rumbo del tramo
   (`routeHeading`). Arriba, `FlightLiveBar` ("En vivo", el dron y, para la
-  central de origen, la latencia) y `FlightHud` (altitud y rumbo). En la
-  hoja, `FlightCard` (fase, minutos en grande, anillo de batería si llega,
-  barra de avance por la ruta y datos) y `FlightTimeline` (autorizado,
+  central de origen, la latencia); el panel `FlightHud` de altitud y rumbo
+  se borró en la Fase 21. En la hoja, `FlightCard` ("Llega en 6 min", la
+  hora estimada y la fase, la barra de avance por la ruta y los datos en
+  filas "etiqueta … valor": altitud, velocidad y, para la central de
+  origen, batería, nevera y carga) y `FlightTimeline` (autorizado,
   carga, vuelo y entrega con las horas del pedido). Con datos locales
   (`DataSource.local`) `trackingProvider` no le pide nada al servidor: el
   vuelo queda "por empezar".
@@ -391,27 +393,26 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 
 | Widget | Dónde | Para qué |
 | --- | --- | --- |
-| `SectionHeader` | `home/presentation/widgets` | Encabezado de trabajo: volver en vidrio (no en un destino de la barra), título grande (26, tracking cerrado), línea de contexto en dos líneas, `trailing` opcional y `bottom` debajo. Detrás, una trama de plano de vuelo con una luz del acento que se apaga hacia abajo (se pinta una vez). |
+| `SectionHeader` | `home/presentation/widgets` | Encabezado de trabajo sobre el fondo liso: volver redondo (no en un destino de la barra), título grande (26), línea de contexto en dos líneas, `trailing` opcional y `bottom` debajo. Desde la Fase 21 ya no lleva la trama de plano de vuelo. |
 | `signOut` | `home/presentation/widgets` | Pide confirmar (`showConfirmSheet`) y cierra la sesión. Solo lo llama el perfil: los inicios ya no tienen botón de salir. |
 | `HeaderAddButton` | `home/presentation/widgets` | El "+" de 48 px en el `trailing` del `SectionHeader` para crear (inventario, flota, geovallas). No hay botones flotantes; el administrador crea con el "+" del centro de la barra. |
 | `RowMenuButton` / `RowMenuAction` | `core/widgets` | El menú `⋮` de 48 px de una fila para lo que no se debe tocar sin querer (eliminar un insumo o una geovalla, suspender o reactivar una central); cada opción abre su confirmación. |
 | `StatusPill` / `PillTone` | `core/widgets` | Estado en pastilla con punto (positivo, atención, negativo, marca) y rebote al cambiar. `StatusPill.colorOf` da el color de cada tono. |
-| `GlassCard` | `core/widgets` | La pieza base: vidrio translúcido con borde fino (en oscuro, con luz arriba que se apaga hacia abajo); con `onTap` se hunde; `blur` solo sobre mapa o imagen; `strong` para paneles. |
-| `GlassIconButton` (`.back`) | `core/widgets` | Botón cuadrado de vidrio (volver, controles del mapa); `active` lo pinta con el acento. |
-| `FloatingNavBar` / `NavDestination` / `NavCenterAction` / `NavScope` | `core/widgets` | La barra flotante con su botón central, contador con rebote y punto activo; bajo 360 px (`compactWidth`) solo íconos y la etiqueta del destino abierto. `NavScope` dice si la pantalla es un destino. |
+| `GlassCard` | `core/widgets` | La tarjeta base (el nombre es del diseño anterior): la superficie sólida del tema, radio 20, sombra suave en claro y filo fino en oscuro; con `onTap` se hunde; `blur` solo sobre mapa; `strong` para paneles sobre el mapa. |
+| `GlassIconButton` (`.back`) | `core/widgets` | Botón redondo de 44 px en la superficie con sombra corta (volver, controles del mapa); `active` lo pinta con el acento. |
+| `AppTabBar` / `NavDestination` / `NavCenterAction` / `NavScope` | `core/widgets` | La barra de pestañas pegada abajo: cinco pestañas iguales, la del centro es la acción del rol (`tabLabel` corto, `label` para el lector) con contador rojo; bajo 360 px (`compactWidth`) solo rotula la pestaña abierta. `NavScope` dice si la pantalla es un destino. |
 | `AppMaxWidth` | `core/widgets` | En tableta y web, pantalla y barra en una columna de 600 px centrada (lo pone `RoleShell`); el `MediaQuery` de adentro dice ese ancho. |
 | `BalancedGrid` | `core/widgets` | Cuadrícula sin huecos: filas parejas (5 datos = 3 + 2) y, en dos columnas, la última impar a todo el ancho. La usan `HomeGrid` y la telemetría. |
-| `RadarSweep` | `core/widgets` | Radar de adorno (anillos, cruz y barrido que gira); `reach` agranda los anillos y los recorta. No marca datos. Lo usan `HomeSpotlight` y `EmergencyBanner`. Quieto con "reducir movimiento". |
-| `MetricTile` / `BarSpark` / `RingGauge` | `core/widgets` | Cifra grande en vidrio, mini gráfico de barras que crece y anillo de progreso. |
-| `DroneArt` / `DronePainter` | `core/widgets` | El dron en tres cuartos (grafito con filos turquesa), hélices girando y vaivén; provisional hasta el render. |
-| `MapSheetScaffold` | `core/widgets` | Mapa a pantalla completa con barra arriba y hoja que se arrastra (con la superficie de `AppSurfaces.sheet`); `titleBar` reemplaza el título de la barra y `hud` pone un panel a la izquierda. |
-| `MapHudOverlay` | `core/widgets` | La capa de pantalla de vuelo sobre los tiles: un velo que los apaga, la grilla fina del acento, una luz arriba y los bordes fundidos con el fondo. Va entre los tiles y las rutas. |
-| `SlideToLaunch` | `core/widgets` | Deslizar para confirmar (pedir urgencia y despegar al confirmar la carga): sigue el dedo, resiste en el borde, vuelve con resorte si no llega al 75 % y espera a `onLaunch`; si la pantalla sigue abierta, vuelve al inicio. Para el lector de pantalla es un botón. |
+| `MetricTile` / `BarSpark` / `RingGauge` | `core/widgets` | Cifra grande en una tarjeta con su etiqueta debajo (escrita normal) y contexto en gris; mini gráfico de barras que crece y anillo de progreso. |
+| `MapSheetScaffold` | `core/widgets` | Mapa a pantalla completa con volver y una barra sólida arriba, y una hoja que se arrastra (con la superficie de `AppSurfaces.sheet`); `titleBar` reemplaza el título de la barra ("En vivo" en el vuelo). |
+| `MenuList` / `MenuItem` | `core/widgets` | Una lista de opciones en una sola tarjeta, separadas por líneas finas, como los ajustes de un teléfono: ícono teñido, título, detalle opcional, contador (ámbar con `urgent`) y flecha, o candado con `onTap: null`. La usan "Más" y los accesos de los inicios (despachador, solicitante y administrador). |
+| `SlideToLaunch` | `core/widgets` | Deslizar para confirmar (pedir urgencia y despegar al confirmar la carga): pista gris, perilla del acento con el avión; sigue el dedo, resiste en el borde, vuelve con resorte si no llega al 75 % y espera a `onLaunch`; si la pantalla sigue abierta, vuelve al inicio. Para el lector de pantalla es un botón. |
 | `showLoadCheckSheet` | `orders/presentation/widgets/pending_load` | Revisión antes de confirmar la carga (medicamento, nevera, fórmula, dron y destino) y "Desliza para despegar". La usan la bandeja "Pendiente de carga" y el detalle: un toque nunca lanza el vuelo. |
-| `DroneMarker` / `HubMarker` / `TargetMarker` / `PlacePin` | `core/widgets` | El dron de la marca apuntando a su rumbo (`heading`) con un halo que late; la central como cuadro con la cruz médica; el destino como un blanco; y el pin genérico (elegir un punto). |
-| `StatusCard` + `RowActionButton` | `core/widgets` | Tarjeta de lista con estado y acción a la derecha (un botón o el `RowMenuButton`); `footer` opcional a todo el ancho debajo (la salud del dron). |
+| `DroneMarker` / `HubMarker` / `TargetMarker` / `PlacePin` | `core/widgets` | La ficha del dron (`DroneMark`) apuntando a su rumbo (`heading`) con un anillo suave que late; la central como cuadro del acento con la cruz médica; el destino como un blanco; y el pin genérico (elegir un punto). |
+| `StatusCard` + `RowActionButton` | `core/widgets` | Tarjeta de lista: ícono, texto con la pastilla de estado debajo y la acción a la derecha (un botón o el `RowMenuButton`); `footer` opcional a todo el ancho debajo (la salud del dron). |
 | `DroneHealth` / `DroneMaintenanceScreen` | `fleet/presentation` | La salud del dron en su fila (batería, último vuelo, "42 / 50 vuelos", "Le toca revisión", "Mantenimiento vencido") y su historial de taller (`/fleet/:id/maintenance`). "Gestionar" ofrece disponible, mantenimiento (`POST`, con fecha), fuera de servicio (`PATCH`, sin fecha) e historial. |
-| `OperatorDashboard` (`FleetUsageCard`, `FleetHealthCard`, `FleetIncidentsCard`, `DashboardPeriod`) | `home/presentation/widgets/operator` | El tablero del inicio del operador (`GET /fleet/dashboard`, `fleetDashboardProvider`): uso (barra apilada, vuelos y km), salud (batería al volver, revisión y vencidos; lleva a la flota) e incidentes por tipo, día y dron, con 7, 30 o 90 días. |
+| `OperatorDashboard` (`FleetUsageCard`, `FleetHealthCard`, `FleetIncidentsCard`, `DashboardPeriod`) | `home/presentation/widgets/operator` | El tablero del inicio del operador (`GET /fleet/dashboard`, `fleetDashboardProvider`): uso (barra apilada, vuelos y km), salud (batería al volver, revisión y vencidos; lleva a la flota) e incidentes por tipo, día y dron, con 7, 30 o 90 días en `SlidingSegmented` (`DashboardPeriod`). |
+| `FleetSummary` | `fleet/presentation/widgets` | Arriba de la lista de la flota: disponibles, en vuelo y en taller en una tarjeta partida en tres; sale de la misma lista de drones. |
 | `ToneTile` (`ToneTile.icon`) | `core/widgets` | El cuadro teñido con ícono (o el dron) al frente de cada tarjeta. |
 | `SectionFormPage` / `SectionStatePage` | `home/presentation/widgets` | Pantalla de formulario (encabezado, tarjeta sobre la curva y botón) y su versión para carga, error o vacío. La usan todos los formularios. |
 | `showAppSheet` | `core/widgets` | La única forma de abrir una hoja inferior (navegador raíz, encima de la barra). |
@@ -419,24 +420,24 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `ChoicePill` | `core/widgets` | Chip elegible (relleno o teñido, con ícono o check). |
 | `SlidingSegmented` | `core/widgets` | Filtro con pastilla que se desliza (`null` = "Todas"); si las opciones no caben, el filtro entero se desliza de lado (`segmentWidthOf`) en vez de cortar el texto. |
 | `showConfirmSheet` | `core/widgets` | Hoja inferior para confirmar suspender, reactivar, eliminar o cerrar sesión. |
-| `showAppSnack` / `showErrorSnack` / `GlassSnack` | `core/widgets/app_snack.dart` | El aviso de cualquier acción: pastilla de vidrio (desenfoque, tinte del tono y borde fino) con ícono, texto de Nest, acción opcional y una línea que se acorta mientras se ve. `SnackTone`: `success`, `error`, `info`, `warning`. Los errores de Nest van con `showErrorSnack`. |
+| `showAppSnack` / `showErrorSnack` / `GlassSnack` | `core/widgets/app_snack.dart` | El aviso de cualquier acción: tarjeta sólida con el ícono del tono, texto de Nest, acción opcional y una línea del tono que se acorta mientras se ve. `SnackTone`: `success`, `error`, `info`, `warning`. Los errores de Nest van con `showErrorSnack`. |
 | `YesNoQuestion` | `core/widgets` | Pregunta de sí o no con dos chips (recibir un traslado, revisar un retorno). |
 | `FormSheetCard` | `core/widgets` | Tarjeta del formulario con la superficie de `AppSurfaces.sheet` y los campos de `AppSurfaces.fields`: la misma hoja del auth. |
 | `MessageView` | `core/widgets` | Lista vacía o error de Nest, centrado. |
 | `RiseIn` (`RiseIn.stagger`) / `PressScale` / `CountUpText` | `core/widgets` | Entrada en cascada, hundirse al tocar y números que cuentan. Respetan "reducir movimiento". |
-| `HomePage` / `HomeHeader` / `HomeSpotlight` / `HomeGrid` / `HomeLabel` / `QuickTile` | `home/presentation/widgets` | Los inicios: lista en cascada; encabezado (marca con el `DroneMark`, campana e iniciales, que abren el perfil; debajo el rol, el saludo a 34 y el contexto); la cifra principal en una tarjeta con el dron sobre un `RadarSweep` y el número separado por una línea fina; cuadrículas de dos columnas; accesos con contador (atención con `urgent`) o candado con `onTap: null`. |
-| `DispatcherMoreScreen` / `showAdminCreateSheet` | `home/presentation` | "Más" del despachador en tres grupos (Pedidos · Pedir a otra central · Mi central) y la hoja del botón central del administrador. |
+| `HomePage` / `HomeHeader` / `HomeSpotlight` / `HomeGrid` / `HomeLabel` | `home/presentation/widgets` | Los inicios: lista en cascada; encabezado (en gris el rol y el contexto, debajo "Hola, Nombre" a 28; a la derecha la campana y las iniciales, que abren el perfil; el aviso de la simulación debajo); la cifra principal en una tarjeta con su estado en pastilla, el número grande y la etiqueta al lado; títulos de grupo (`HomeLabel`, 18 negrita); cuadrículas de dos columnas. Los accesos van en `MenuList` (`QuickTile` se borró en la Fase 21). |
+| `DispatcherMoreScreen` / `showAdminCreateSheet` | `home/presentation` | "Más" del despachador en tres listas (`MenuList`: Pedidos · Pedir a otra central · Mi central) y la hoja de la pestaña central del administrador. |
 | `SectionHeader.backOrHome` | `home/presentation/widgets` | Volver con `pop` si se llegó con `push`; si no, al inicio. Los detalles y el mapa se abren con `push`. |
-| `DetailSection` / `DetailLine` | `core/widgets` | Tarjeta con ícono teñido y rótulo, y filas "etiqueta … valor" (`child` reemplaza el texto del valor, p. ej. un `PhoneLink`). |
+| `DetailSection` / `DetailLine` | `core/widgets` | Tarjeta con ícono teñido y título (escrito normal), y filas "etiqueta … valor" (`child` reemplaza el texto del valor, p. ej. un `PhoneLink`). |
 | `PhoneLink` / `callPhone` | `core/widgets/phone_link.dart` | Teléfono con formato colombiano que se toca para llamar (`tel:+57…`, `url_launcher`), 48 px de alto; si el dispositivo no llama, avisa el número. |
 | `OrderStatusChip` (`forRequester`) | `orders/presentation/widgets` | El estado del pedido; con `forRequester` en palabras del solicitante ("Preparando el envío", "En camino", "No se entregó"). El despachador y el operador ven el técnico. |
 | `AuthDateField` + `pickIsoDate` / `AuthChoiceGroup` | `auth/presentation/widgets` | Fecha en calendario (guarda AAAA-MM-DD, muestra `sáb. 7 nov.`) y grupo de chips con label y error que tiembla, con la forma de `AuthField`. |
-| `OrderTray` / `OrderRowCard` | `orders/presentation/widgets` | Andamiaje de las bandejas (encabezado con conteo, lista en cascada, recarga, vacío, error y refresco cada 10 s) y su tarjeta, con una franja del color del pedido en el borde izquierdo. |
-| `MissionCard` / `MissionRoute` / `LiveMission` | `home/presentation` | La misión en curso del inicio (solicitante con su pedido, despachador con el primer vuelo de su central): luz verde, minutos para llegar de la telemetría en vivo (o el estado si no hay), qué va en el dron, la ruta con el dron en su punto real (flotando en medio sin telemetría) y altitud, velocidad y fase. `LiveMission` abre el socket solo mientras se ve el inicio. |
+| `OrderTray` / `OrderRowCard` | `orders/presentation/widgets` | Andamiaje de las bandejas (encabezado con conteo, lista en cascada, recarga, vacío, error y refresco cada 10 s) y su tarjeta: ícono teñido del color del pedido, título, línea de color, línea gris y pastilla. |
+| `MissionCard` / `MissionRoute` / `LiveMission` | `home/presentation` | La misión en curso del inicio (solicitante con su pedido, despachador con el primer vuelo de su central): el estado con su punto verde, el medicamento y lo que va, "6 min" con "llega 9:52 a. m." (hora simulada) si hay telemetría, la ruta como barra con la ficha del dron en su punto real (en medio, subiendo y bajando, sin telemetría) y "Ver mapa". `LiveMission` abre el socket solo mientras se ve el inicio. |
 | `RequesterStats` / `NextDeliveryCard` | `home/presentation/widgets/requester` | Los números del solicitante (entregados con su anillo, o una frase si son 0, y los pedidos de las últimas 4 semanas en barras) y la próxima entrega programada (día y hora, plan o programada). Todo sale de sus pedidos. |
-| `NextUpCard` / `dispatcherNextUp` | `home/presentation/widgets/dispatcher` | "Lo que te toca ahora" del despachador: la urgencia más vieja de la cola, el pedido que espera la carga y el próximo programado; cada una abre su pedido. |
-| `OrderJourney` | `orders/presentation/widgets/order_detail` | Arriba del detalle: el recorrido del pedido en cinco puntos (pedido, autorizado, carga, vuelo, entrega) con el dron sobre el actual y una equis si terminó mal. |
-| `EmergencyBanner` / `MedicationCarousel` / `EmergencyFacts` | `orders/presentation/widgets/requester_order` | Pedir urgencia: el radar con la búsqueda (la central la elige el despachador al autorizar; sale un Wingcopter 198), el medicamento en tarjetas que se deslizan (la primera abre el buscador) y, sobre el deslizador, prioridad y ruta. No promete central ni tiempos antes de autorizar. |
+| `NextUpCard` / `dispatcherNextUp` | `home/presentation/widgets/dispatcher` | "Para atender ahora" del despachador: la urgencia más vieja de la cola, el pedido que espera la carga y el próximo programado; cada una abre su pedido. |
+| `OrderJourney` | `orders/presentation/widgets/order_detail` | Arriba del detalle: el recorrido del pedido en cinco puntos (pedido, autorizado, carga, vuelo, entrega) con la ficha del dron sobre el actual y una equis si terminó mal. |
+| `EmergencyFacts` | `orders/presentation/widgets/requester_order` | Pedir urgencia: la nota gris sobre el deslizador (va primero en la cola, el despachador elige la central, sale un Wingcopter 198 por una ruta que evita las geovallas). No promete central ni tiempos antes de autorizar. El medicamento se elige con `CatalogChoices` (buscador); el radar y el carrusel se borraron en la Fase 21. |
 | `AuthPickerField` / `showSearchPicker` / `PickerOption` | `auth/presentation/widgets` | Elegir de una lista que puede ser larga (medicamento, central de origen): un campo con la forma de `AuthField` que abre una hoja con buscador (sin mayúsculas ni tildes) y una lista perezosa. `offerOption` (`orders/presentation/widgets`) arma la opción de un insumo. No usar chips para listas que crecen con los datos. |
 | `AuthLocationField` / `pickLocation` | `auth/presentation/widgets` | Vista previa quieta del punto; al tocarla abre el mapa a pantalla completa con el pin fijo al centro (se levanta al arrastrar y cae con rebote) y "Usar esta ubicación" (nueva central, urgencia y entrega periódica). |
 | `OrderFormScaffold` | `orders/presentation/widgets` | Formularios de pedido sobre `SectionFormPage`; mientras su lista (catálogo o centrales) carga, falla o viene vacía, lo dice. Por pasos, `steps` (el avance) y `onBack` (volver al paso anterior). |

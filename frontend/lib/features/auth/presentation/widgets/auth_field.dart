@@ -2,7 +2,13 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-/// Campo de auth: label en mayúsculas, caja de 56 px y error animado.
+/// El estilo de los labels de campo: 14, seminegrita y en el color del
+/// texto, escritos normal (sin mayúsculas). Lo comparten todos los campos
+/// con la forma de [AuthField].
+TextStyle? authLabelStyle(ThemeData theme) => theme.textTheme.titleSmall
+    ?.copyWith(color: theme.colorScheme.onSurface, fontWeight: FontWeight.w600);
+
+/// Campo de auth: label arriba, caja de 54 px y error animado.
 ///
 /// La pantalla valida y pasa [errorText]. Cada vez que sube [shakeCount] y
 /// hay error, el campo tiembla, el borde se pone rojo y el mensaje baja
@@ -55,11 +61,16 @@ class AuthField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // El lector de pantalla lee la etiqueta en el campo, no aparte.
-        ExcludeSemantics(child: _FieldLabel(label: label, trailing: trailing)),
-        const SizedBox(height: 8),
+        ExcludeSemantics(
+          child: _FieldLabel(label: label, trailing: trailing),
+        ),
+        const SizedBox(height: 6),
         ShakeOnError(
           trigger: errorText == null ? 0 : shakeCount,
-          child: Semantics(label: label, child: _AuthInput(field: this)),
+          child: Semantics(
+            label: label,
+            child: _AuthInput(field: this),
+          ),
         ),
         AuthFieldError(message: errorText),
       ],
@@ -67,7 +78,7 @@ class AuthField extends StatelessWidget {
   }
 }
 
-/// Label en mayúsculas y, a la derecha, una nota o un badge opcional.
+/// El label y, a la derecha, una nota o un badge opcional.
 class _FieldLabel extends StatelessWidget {
   const _FieldLabel({required this.label, this.trailing});
 
@@ -83,10 +94,10 @@ class _FieldLabel extends StatelessWidget {
       children: [
         Flexible(
           child: Text(
-            label.toUpperCase(),
+            label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelSmall,
+            style: authLabelStyle(Theme.of(context)),
           ),
         ),
         if (trailing != null) ...[
@@ -285,7 +296,7 @@ class AuthFieldNote extends StatelessWidget {
   }
 }
 
-/// Badge de marca a la derecha del label ("RECIBE EL CÓDIGO").
+/// Badge de marca a la derecha del label ("Recibe el código").
 class AuthFieldBadge extends StatelessWidget {
   const AuthFieldBadge(this.text, {super.key});
 
@@ -296,21 +307,16 @@ class AuthFieldBadge extends StatelessWidget {
     final theme = Theme.of(context);
     final primary = theme.colorScheme.primary;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: primary.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        text.toUpperCase(),
+        text,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: primary,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 1,
-        ),
+        style: theme.textTheme.labelMedium?.copyWith(color: primary),
       ),
     );
   }

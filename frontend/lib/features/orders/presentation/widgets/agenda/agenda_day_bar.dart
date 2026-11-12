@@ -45,7 +45,7 @@ class AgendaDayBar extends StatelessWidget {
                 child: Column(
                   children: [
                     Text(
-                      today ? 'HOY' : 'AGENDA',
+                      today ? 'Hoy' : 'Agenda',
                       style: theme.textTheme.labelSmall,
                     ),
                     Text(

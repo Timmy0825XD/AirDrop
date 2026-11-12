@@ -247,8 +247,13 @@ void main() {
     );
     await _openReceive(tester, fake, order: _order());
 
-    expect(find.text('REVISIÓN DEL TRASLADO'), findsOneWidget);
+    expect(find.text('Revisión del traslado'), findsOneWidget);
     await tester.enterText(find.byType(TextField), '135790');
+    await tester.scrollUntilVisible(
+      find.text('Confirmar entrega'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.text('Confirmar entrega'));
     await tester.pump();
     expect(fake.validated, isEmpty, reason: 'sin responder no se envía');
@@ -258,6 +263,11 @@ void main() {
     await tester.ensureVisible(find.text('No').last);
     await tester.tap(find.text('No').last);
     await tester.pump();
+    await tester.scrollUntilVisible(
+      find.text('Confirmar entrega'),
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.text('Confirmar entrega'));
     await tester.pump();
     await tester.pump();
@@ -277,7 +287,7 @@ void main() {
       expiresAt: DateTime.now().add(const Duration(minutes: 4)),
     );
     await _openReceive(tester, fake);
-    expect(find.text('REVISIÓN DEL TRASLADO'), findsNothing);
+    expect(find.text('Revisión del traslado'), findsNothing);
     await _type(tester, '135790');
     expect(fake.checks, [(null, null)]);
   });

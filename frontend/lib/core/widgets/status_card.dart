@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'glass_card.dart';
 
 /// Tarjeta de una lista de gestión: a la izquierda [leading] (ícono o
-/// avatar), en el medio [body] y a la derecha el estado ([status]) con su
-/// acción debajo ([action]). La usan centrales y cuentas. [footer], si
-/// viene, va debajo a todo el ancho (la salud de un dron, por ejemplo), para
-/// no apretarlo en la columna del medio.
+/// avatar), en el medio [body] con el estado ([status]) debajo, y a la
+/// derecha su acción ([action]). La usan centrales, cuentas, inventario y
+/// flota. [footer], si viene, va debajo a todo el ancho (la salud de un
+/// dron, por ejemplo), para no apretarlo en la columna del medio.
 class StatusCard extends StatelessWidget {
   const StatusCard({
     super.key,
@@ -30,22 +30,30 @@ class StatusCard extends StatelessWidget {
       children: [
         leading,
         const SizedBox(width: 12),
-        Expanded(child: body),
-        const SizedBox(width: 8),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [status, const SizedBox(height: 8), action],
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [body, const SizedBox(height: 8), status],
+          ),
         ),
+        const SizedBox(width: 4),
+        action,
       ],
     );
     return GlassCard(
-      radius: 22,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 6, 14),
       child: footer == null
           ? row
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [row, const SizedBox(height: 12), footer!],
+              children: [
+                row,
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: footer,
+                ),
+              ],
             ),
     );
   }

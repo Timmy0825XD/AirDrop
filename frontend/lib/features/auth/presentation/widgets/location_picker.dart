@@ -155,8 +155,8 @@ class _Coordinates extends StatelessWidget {
     );
     return Row(
       children: [
-        value('LATITUD', point.latitude),
-        value('LONGITUD', point.longitude),
+        value('Latitud', point.latitude),
+        value('Longitud', point.longitude),
       ],
     );
   }

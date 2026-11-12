@@ -27,7 +27,8 @@ class HomeGrid extends StatelessWidget {
   }
 }
 
-/// El rótulo de un grupo del inicio ("Operación", "Mi central").
+/// El título de un grupo del inicio ("Para atender ahora", "Hoy en la
+/// central"): 18, negrita, escrito normal.
 class HomeLabel extends StatelessWidget {
   const HomeLabel(this.text, {super.key});
 
@@ -35,10 +36,16 @@ class HomeLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(4, 12, 4, 12),
-    child: Text(
-      text.toUpperCase(),
-      style: Theme.of(context).textTheme.labelSmall,
+    padding: const EdgeInsets.fromLTRB(2, 18, 2, 10),
+    child: Semantics(
+      header: true,
+      child: Text(
+        text,
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     ),
   );
 }

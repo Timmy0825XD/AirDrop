@@ -90,7 +90,7 @@ int _byCreated(Order a, Order b) {
   return x.compareTo(y);
 }
 
-/// Una tarea de "Lo que te toca ahora": qué es, el detalle, su tono y el
+/// Una tarea de "Para atender ahora": qué es, el detalle, su tono y el
 /// pedido que abre.
 @immutable
 class NextUpItem {

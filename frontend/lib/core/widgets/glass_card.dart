@@ -5,15 +5,16 @@ import 'package:flutter/material.dart';
 import '../../theme/app_palette.dart';
 import 'press_scale.dart';
 
-/// La pieza base del diseño: vidrio translúcido con borde fino. Con
-/// [onTap] se hunde al tocar; con [blur] desenfoca lo de atrás (solo sobre
-/// el mapa o una imagen: sobre el fondo plano no se nota y cuesta GPU).
+/// La tarjeta base de la app: la superficie sólida del tema con una sombra
+/// suave en claro y un filo fino en oscuro (en oscuro la sombra no se ve).
+/// Con [onTap] se hunde al tocar; con [blur] desenfoca lo de atrás (solo
+/// sobre el mapa). El nombre viene del diseño anterior, que era de vidrio.
 class GlassCard extends StatelessWidget {
   const GlassCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(18),
-    this.radius = 24,
+    this.padding = const EdgeInsets.all(16),
+    this.radius = 20,
     this.onTap,
     this.blur = false,
     this.strong = false,
@@ -25,41 +26,32 @@ class GlassCard extends StatelessWidget {
   final VoidCallback? onTap;
   final bool blur;
 
-  /// Vidrio casi opaco (barra flotante, paneles sobre el mapa).
+  /// Panel sobre el mapa: lleva la sombra también en oscuro.
   final bool strong;
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
     final shape = BorderRadius.circular(radius);
-    // En oscuro la sombra se vería a través del vidrio y lo ensuciaría:
-    // solo la llevan el vidrio fuerte y el modo claro.
     final light = Theme.of(context).brightness == Brightness.light;
-    // En oscuro el vidrio lleva luz arriba y se apaga hacia abajo, como un
-    // panel iluminado desde el techo; en claro y el fuerte, color parejo.
-    final lit = !strong && !light;
     Widget card = DecoratedBox(
       decoration: BoxDecoration(
-        color: lit ? null : (strong ? palette.bar : palette.glass),
-        gradient: lit
-            ? LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  palette.glass,
-                  palette.glass.withValues(alpha: palette.glass.a * 0.4),
-                ],
-              )
-            : null,
+        color: strong ? palette.bar : palette.glass,
         borderRadius: shape,
-        border: Border.all(color: palette.glassBorder),
+        border: light ? null : Border.all(color: palette.glassBorder),
         boxShadow: [
-          if (strong || light)
+          if (light || strong) ...[
             BoxShadow(
               color: palette.shadow,
-              blurRadius: 30,
-              offset: const Offset(0, 12),
+              blurRadius: 2,
+              offset: const Offset(0, 1),
             ),
+            BoxShadow(
+              color: palette.shadow,
+              blurRadius: 20,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ],
       ),
       child: Material(

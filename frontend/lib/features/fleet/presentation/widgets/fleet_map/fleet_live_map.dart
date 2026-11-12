@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../../core/widgets/app_map.dart';
-import '../../../../../core/widgets/map_hud_overlay.dart';
 import '../../../data/fleet_flight.dart';
 import '../../../data/fleet_map_models.dart';
 import 'fleet_map_layers.dart';
@@ -37,7 +36,6 @@ class FleetLiveMap extends StatelessWidget {
       fitPadding: EdgeInsets.fromLTRB(56, 150, 56, sheetHeight + 40),
       controlsPadding: EdgeInsets.only(right: 16, bottom: sheetHeight),
       layers: [
-        const MapHudOverlay(),
         FleetGeofenceLayer(geofences: map.geofences),
         FleetRoutesLayer(flights: map.flights),
         FleetHubsLayer(hubs: map.hubs),
