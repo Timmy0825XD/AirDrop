@@ -213,11 +213,15 @@ export async function createStaff(
 }
 
 export async function loginAdmin(app: INestApplication<App>): Promise<string> {
+  const password = process.env.ADMIN_PASSWORD;
+  if (!password) {
+    throw new Error('Los tests e2e necesitan ADMIN_PASSWORD en el .env.');
+  }
   const login = await request(app.getHttpServer())
     .post('/auth/login')
     .send({
       email: process.env.ADMIN_EMAIL ?? 'administrador.plataforma@gmail.com',
-      password: process.env.ADMIN_PASSWORD ?? 'Admin1234',
+      password,
     })
     .expect(200);
   return (login.body as { accessToken: string }).accessToken;
