@@ -23,8 +23,10 @@ import {
   isLockActive,
   isOtpConsumed,
   isOtpExpired,
+  isOtpLocked,
   nextFailedLoginState,
   normalizeDocumentNumber,
+  OTP_LOCKED,
   passwordsMatch,
 } from './auth.rules';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -472,7 +474,17 @@ export class AuthService {
     if (!row || isOtpConsumed(row.consumedAt) || isOtpExpired(row.expiresAt)) {
       throw invalid();
     }
+    if (isOtpLocked(row.attempts)) {
+      throw new BadRequestException(OTP_LOCKED);
+    }
     if (row.codeHash !== hashOtp(code)) {
+      // H-08: el error se suma en la base (atómico); al quinto, el código
+      // se anula y hay que pedir uno nuevo.
+      await this.codes.increment({ id: row.id }, 'attempts', 1);
+      if (isOtpLocked(row.attempts + 1)) {
+        await this.codes.update({ id: row.id }, { consumedAt: new Date() });
+        throw new BadRequestException(OTP_LOCKED);
+      }
       throw invalid();
     }
     row.consumedAt = new Date();

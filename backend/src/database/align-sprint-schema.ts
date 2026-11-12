@@ -291,6 +291,13 @@ export async function alignSprintSchema(
         `ALTER TABLE hubs ADD COLUMN IF NOT EXISTS "powerOutageUntil" timestamptz`,
       );
     }
+    // H-08: intentos fallidos de cada código OTP. En producción
+    // `synchronize` está apagado y sin esta columna fallaría el login por OTP.
+    if (await tableExists(boot, 'one_time_codes')) {
+      await boot.query(
+        `ALTER TABLE one_time_codes ADD COLUMN IF NOT EXISTS "attempts" smallint NOT NULL DEFAULT 0`,
+      );
+    }
   } finally {
     if (boot.isInitialized) {
       await boot.destroy();

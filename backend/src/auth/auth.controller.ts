@@ -29,16 +29,22 @@ import { JwtAuthGuard } from './jwt-auth.guard';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @UseGuards(LoginRateLimitGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('register')
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
+  @UseGuards(LoginRateLimitGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('verify-otp')
   verifyOtp(@Body() dto: VerifyOtpDto) {
     return this.authService.verifySignup(dto);
   }
 
+  @UseGuards(LoginRateLimitGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('resend-otp')
   resendOtp(@Body() dto: ResendOtpDto) {
     return this.authService.resendSignupOtp(dto);
@@ -60,12 +66,16 @@ export class AuthController {
     this.authService.logout();
   }
 
+  @UseGuards(LoginRateLimitGuard)
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @HttpCode(200)
   @Post('forgot-password')
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
   }
 
+  @UseGuards(LoginRateLimitGuard)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(200)
   @Post('reset-password')
   resetPassword(@Body() dto: ResetPasswordDto) {
@@ -87,7 +97,7 @@ export class AuthController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, LoginRateLimitGuard)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('me/email/confirm')
   @HttpCode(200)
@@ -96,7 +106,7 @@ export class AuthController {
   }
 
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, LoginRateLimitGuard)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @Post('me/email/resend')
   @HttpCode(200)

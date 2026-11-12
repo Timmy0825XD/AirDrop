@@ -7,6 +7,7 @@ import {
   FIELD_LIMITS,
   LOGIN_LOCK_MS,
   LOGIN_MAX_ATTEMPTS,
+  OTP_MAX_ATTEMPTS,
 } from '../common/field-limits';
 
 /** Sin `JWT_EXPIRES_IN`, la sesión dura 8 horas: una jornada de turno. */
@@ -119,4 +120,15 @@ export function isOtpExpired(expiresAt: Date, now = new Date()): boolean {
 
 export function isOtpConsumed(consumedAt: Date | null): boolean {
   return consumedAt != null;
+}
+
+export const OTP_LOCKED =
+  'Demasiados intentos con este código. Pide uno nuevo.';
+
+/**
+ * H-08: un código de 6 dígitos se adivina probando; como el código de
+ * entrega, al quinto error queda anulado.
+ */
+export function isOtpLocked(attempts: number): boolean {
+  return attempts >= OTP_MAX_ATTEMPTS;
 }
