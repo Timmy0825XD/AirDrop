@@ -11,6 +11,7 @@ import '../../inventory/data/inventory_models.dart' show SaleType;
 import '../../auth/data/auth_models.dart' show DocumentType;
 import 'fallback_models.dart';
 import 'plan_schedule_models.dart';
+import 'prescription_attachment.dart';
 
 export 'decision_models.dart';
 export 'fallback_models.dart';
@@ -778,8 +779,7 @@ class CreateEmergencyRequest {
     this.longitude,
     this.patientDocumentType,
     this.patientDocumentNumber,
-    this.prescriptionMime,
-    this.prescriptionImageBase64,
+    this.prescriptions = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -795,8 +795,8 @@ class CreateEmergencyRequest {
       if (saleType == SaleType.prescription) ...{
         'patientDocumentType': patientDocumentType!.apiValue,
         'patientDocumentNumber': patientDocumentNumber,
-        'prescriptionMime': prescriptionMime,
-        'prescriptionImageBase64': prescriptionImageBase64,
+        // RU-25: un PDF o hasta 3 fotos (§19.2).
+        'prescriptions': [for (final file in prescriptions) file.toJson()],
       },
     };
   }
@@ -811,8 +811,9 @@ class CreateEmergencyRequest {
   final double? longitude;
   final DocumentType? patientDocumentType;
   final String? patientDocumentNumber;
-  final String? prescriptionMime;
-  final String? prescriptionImageBase64;
+
+  /// La fórmula: un PDF o de 1 a 3 fotos. Solo va bajo fórmula.
+  final List<PrescriptionAttachment> prescriptions;
 }
 
 /// Body de `POST /orders/plans`: como la urgencia más cantidad y el
@@ -833,8 +834,7 @@ class CreatePlanRequest {
     this.longitude,
     this.patientDocumentType,
     this.patientDocumentNumber,
-    this.prescriptionMime,
-    this.prescriptionImageBase64,
+    this.prescriptions = const [],
   });
 
   Map<String, dynamic> toJson() {
@@ -852,8 +852,8 @@ class CreatePlanRequest {
       if (saleType == SaleType.prescription) ...{
         'patientDocumentType': patientDocumentType!.apiValue,
         'patientDocumentNumber': patientDocumentNumber,
-        'prescriptionMime': prescriptionMime,
-        'prescriptionImageBase64': prescriptionImageBase64,
+        // RU-25: un PDF o hasta 3 fotos (§19.2).
+        'prescriptions': [for (final file in prescriptions) file.toJson()],
       },
     };
   }
@@ -874,8 +874,9 @@ class CreatePlanRequest {
   final double? longitude;
   final DocumentType? patientDocumentType;
   final String? patientDocumentNumber;
-  final String? prescriptionMime;
-  final String? prescriptionImageBase64;
+
+  /// La fórmula: un PDF o de 1 a 3 fotos. Solo va bajo fórmula.
+  final List<PrescriptionAttachment> prescriptions;
 }
 
 /// Body de `POST /orders/hub-emergencies`: sin dirección ni fórmula.

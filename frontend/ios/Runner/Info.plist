@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSCameraUsageDescription</key>
+	<string>AirDrop usa la cámara para tomar la foto de tu fórmula médica.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>AirDrop abre tus fotos para adjuntar la fórmula médica.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>AirDrop usa tu ubicación para poner el punto donde debe llegar el dron.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>

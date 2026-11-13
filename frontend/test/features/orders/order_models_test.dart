@@ -1,7 +1,10 @@
+import 'dart:typed_data';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/features/auth/data/auth_models.dart';
 import 'package:frontend/features/inventory/data/inventory_models.dart';
 import 'package:frontend/features/orders/data/order_models.dart';
+import 'package:frontend/features/orders/data/prescription_attachment.dart';
 
 void main() {
   test('Order.fromJson deja fechas String, droneId null y lee cola', () {
@@ -56,27 +59,37 @@ void main() {
     expect(json.containsKey('quantity'), isFalse);
     expect(json.containsKey('latitude'), isFalse);
     expect(json['saleType'], 'over_the_counter');
-    expect(json.containsKey('prescriptionImageBase64'), isFalse);
+    expect(json.containsKey('prescriptions'), isFalse);
   });
 
-  test('CreateEmergencyRequest.toJson con fórmula manda las cuatro claves', () {
-    final request = CreateEmergencyRequest(
-      medicationName: 'Amoxicilina',
-      saleType: SaleType.prescription,
-      description: 'Infección',
-      address: 'Calle 16',
-      latitude: 10.46314,
-      longitude: -73.25322,
-      patientDocumentType: DocumentType.citizenshipId,
-      patientDocumentNumber: '12345678',
-      prescriptionMime: 'image/jpeg',
-      prescriptionImageBase64: 'abc',
-    );
-    final json = request.toJson();
-    expect(json['latitude'], 10.46314);
-    expect(json['patientDocumentType'], 'citizenship_id');
-    expect(json['prescriptionMime'], 'image/jpeg');
-  });
+  test(
+    'CreateEmergencyRequest.toJson con fórmula manda el documento y los archivos',
+    () {
+      final request = CreateEmergencyRequest(
+        medicationName: 'Amoxicilina',
+        saleType: SaleType.prescription,
+        description: 'Infección',
+        address: 'Calle 16',
+        latitude: 10.46314,
+        longitude: -73.25322,
+        patientDocumentType: DocumentType.citizenshipId,
+        patientDocumentNumber: '12345678',
+        prescriptions: [
+          PrescriptionAttachment(
+            bytes: Uint8List.fromList([0x25, 0x50, 0x44, 0x46]),
+            mime: 'application/pdf',
+            name: 'formula.pdf',
+          ),
+        ],
+      );
+      final json = request.toJson();
+      expect(json['latitude'], 10.46314);
+      expect(json['patientDocumentType'], 'citizenship_id');
+      expect(json['prescriptions'], [
+        {'mime': 'application/pdf', 'base64': 'JVBERg=='},
+      ]);
+    },
+  );
 }
 
 Map<String, dynamic> _orderJson() {

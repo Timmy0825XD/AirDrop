@@ -6,6 +6,7 @@ import '../../../../../core/location/device_location.dart';
 import '../../../../../core/widgets/app_snack.dart';
 import '../../../../auth/data/auth_models.dart';
 import '../../../../auth/presentation/auth_controller.dart';
+import '../../../data/prescription_attachment.dart';
 import 'prescription_picker.dart';
 import 'requester_order_fields.dart';
 import 'requester_order_values.dart';
@@ -36,7 +37,11 @@ mixin RequesterOrderState<T extends ConsumerStatefulWidget>
     shakeCount: shakeCount,
     user: user,
     onChanged: () => setState(() {}),
-    onPickPrescription: _pickPrescription,
+    onTakePrescriptionPhoto: () => _addPrescription(takePrescriptionPhoto),
+    onPickPrescriptionFiles: () => _addPrescription(pickPrescriptionFiles),
+    onRemovePrescription: (index) => setState(() {
+      values.prescriptions = [...values.prescriptions]..removeAt(index);
+    }),
     onUseMyLocation: _useMyLocation,
     locating: locating,
   );
@@ -70,14 +75,20 @@ mixin RequesterOrderState<T extends ConsumerStatefulWidget>
     }
   }
 
-  Future<void> _pickPrescription() async {
+  /// RU-25: suma lo que se tomó o eligió a la fórmula. Un PDF reemplaza las
+  /// fotos y una foto reemplaza el PDF; el límite lo dice el aviso.
+  Future<void> _addPrescription(
+    Future<List<PrescriptionAttachment>> Function() pick,
+  ) async {
     try {
-      final picked = await pickPrescriptionImage();
-      if (picked == null || !mounted) return;
+      final picked = await pick();
+      if (picked.isEmpty || !mounted) return;
       setState(() {
-        values
-          ..prescription = picked.bytes
-          ..prescriptionMime = picked.mime;
+        values.prescriptions = addPrescriptionFiles(
+          values.prescriptions,
+          picked,
+        );
+        errors = {...errors}..remove(RequesterInput.prescription);
       });
     } on FormatException catch (e) {
       if (mounted) showErrorSnack(context, e.message);

@@ -907,6 +907,8 @@ paciente a cargo en F4 (urgencia en 3 pasos y tarjeta del despachador).
   (`{uuid}-2.jpg`, `{uuid}.pdf`). Lo hace `ensure-prescription-bucket.ts`
   al arrancar, también en producción, y el bucket acepta PDF hasta 5 MB.
 
-**La app lo usará** en F2 (cámara, PDF y hasta 3 fotos) y F3 (visor por
-hojas y "Abrir con…", también desde el histórico).
+**La app ya manda** `prescriptions` (F2, rama `feature/formula-pdf-camara`):
+"Tomar foto" con la cámara y "Subir archivo" para un PDF o fotos, con la
+miniatura y la X de cada uno. **Usará** la lectura por hojas en F3 (visor y
+"Abrir con…", también desde el histórico).
 
