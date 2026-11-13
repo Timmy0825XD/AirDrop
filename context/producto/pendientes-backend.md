@@ -819,5 +819,8 @@ socket y sin aviso guardado en la bandeja (decisión D1).
     también un `hub-incident` (`battery_short`).
 - La central es la de origen del pedido, la misma de `hub-telemetry`.
 
-**La app lo usará** para mostrar "Ruta cambiada (+X km)" en el mapa del
-operador, en ámbar con `blocked` o `batteryShort` (F3).
+**La app lo usa** (rama `feature/aviso-reruteo-app`): el mapa del operador
+muestra "Ruta cambiada (+X km)" con "Ver vuelo" y vuelve a pedir
+`/fleet/map` para dibujar la ruta nueva; en ámbar con `blocked` o
+`batteryShort`. Con un desvío de menos de 50 m (`addedKm` 0) dice solo
+"Ruta cambiada".

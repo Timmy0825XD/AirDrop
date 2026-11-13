@@ -26,6 +26,12 @@ class FleetIncidentReceived extends FleetEvent {
   final FleetIncident incident;
 }
 
+/// `hub-reroute`: un vuelo cambió de ruta o se quedó sin camino (RF-33).
+class FleetRerouteReceived extends FleetEvent {
+  const FleetRerouteReceived(this.reroute);
+  final FleetReroute reroute;
+}
+
 /// `alert`: batería, falla, frío o viento.
 class FleetAlertReceived extends FleetEvent {
   const FleetAlertReceived(this.alert);

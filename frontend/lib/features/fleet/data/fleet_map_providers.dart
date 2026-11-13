@@ -18,6 +18,7 @@ class FleetMapState {
     this.map,
     this.incidents = const [],
     this.alert,
+    this.reroute,
     this.problem,
   });
 
@@ -31,6 +32,9 @@ class FleetMapState {
   /// La última alerta, para el aviso de la pantalla.
   final FlightAlert? alert;
 
+  /// El último cambio de ruta (`hub-reroute`), para el aviso de la pantalla.
+  final FleetReroute? reroute;
+
   /// El mensaje de Nest si `/fleet/map` falló.
   final String? problem;
 
@@ -38,11 +42,13 @@ class FleetMapState {
     FleetMap? map,
     List<FleetIncident>? incidents,
     FlightAlert? alert,
+    FleetReroute? reroute,
     String? problem,
   }) => FleetMapState(
     map: map ?? this.map,
     incidents: incidents ?? this.incidents,
     alert: alert ?? this.alert,
+    reroute: reroute ?? this.reroute,
     problem: problem,
   );
 }
@@ -136,6 +142,10 @@ class FleetMapNotifier extends Notifier<FleetMapState> {
             ...state.incidents.where((i) => i.id != incident.id),
           ],
         );
+      case FleetRerouteReceived(:final reroute):
+        // La ruta nueva viene en `/fleet/map` (§18.2).
+        state = state.copyWith(reroute: reroute);
+        unawaited(_reload());
       case FleetAlertReceived(:final alert):
         state = state.copyWith(alert: alert);
     }

@@ -236,3 +236,38 @@ class FleetIncident {
       ? 'Con el paquete a bordo'
       : 'Sin paquete';
 }
+
+/// `hub-reroute` (§18.2, RF-33): un vuelo de la central cambió de ruta en el
+/// aire o se quedó sin camino seguro. Solo llega por socket (decisión D1).
+class FleetReroute {
+  const FleetReroute({
+    required this.orderId,
+    required this.droneId,
+    this.blocked = false,
+    this.addedKm,
+    this.batteryShort = false,
+  });
+
+  factory FleetReroute.fromJson(Map<String, dynamic> json) => FleetReroute(
+    orderId: '${json['orderId']}',
+    droneId: '${json['droneId']}',
+    blocked: json['outcome'] == 'blocked',
+    addedKm: (json['addedKm'] as num?)?.toDouble(),
+    batteryShort: json['batteryShort'] == true,
+  );
+
+  final String orderId;
+  final String droneId;
+
+  /// `outcome: blocked`: no hay camino seguro; sigue el protocolo de RF-34.
+  final bool blocked;
+
+  /// Cuánto se alarga la ruta nueva; `null` si quedó bloqueada.
+  final double? addedKm;
+
+  /// La ruta nueva no alcanza con la reserva de batería.
+  final bool batteryShort;
+
+  /// Pide atención (ámbar): sin camino o sin batería suficiente.
+  bool get needsAttention => blocked || batteryShort;
+}
