@@ -74,6 +74,7 @@ class PublicUser {
     this.documentType,
     this.documentNumber,
     this.pendingEmail,
+    this.allergies,
   });
 
   factory PublicUser.fromJson(Map<String, dynamic> json) {
@@ -88,6 +89,7 @@ class PublicUser {
       status: UserStatus.fromJson(json['status'] as String),
       hubIds: _hubIdsFrom(json['hubIds']),
       pendingEmail: json['pendingEmail'] as String?,
+      allergies: json['allergies'] as String?,
     );
   }
 
@@ -113,6 +115,10 @@ class PublicUser {
   /// la recuperación siguen con [email].
   final String? pendingEmail;
 
+  /// RF-41: las alergias a medicamentos que dio en su última urgencia, para
+  /// llenar la siguiente. `null` es ninguna o todavía no se preguntó.
+  final String? allergies;
+
   bool get isRequester => role == UserRole.requester;
 
   Map<String, dynamic> toJson() {
@@ -127,6 +133,7 @@ class PublicUser {
       'status': status.apiValue,
       'hubIds': hubIds,
       'pendingEmail': pendingEmail,
+      'allergies': allergies,
     };
   }
 

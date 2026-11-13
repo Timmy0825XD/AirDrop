@@ -14,10 +14,12 @@ import 'widgets/plan_schedule/schedule_preview_state.dart';
 import 'widgets/plan_schedule/schedule_values.dart';
 import 'widgets/requester_order/requester_order_fields.dart';
 import 'widgets/requester_order/requester_order_state.dart';
+import 'widgets/requester_order/patient_fields.dart';
 import 'widgets/requester_order/requester_order_values.dart';
+import 'widgets/requester_order/triage_values.dart';
 
 /// Entrega periódica del solicitante (`POST /orders/plans`) en tres pasos:
-/// **Qué** (el medicamento, la fórmula si la pide y cuánto), **Cuándo**
+/// **Qué** (para quién, el medicamento, la fórmula si la pide y cuánto), **Cuándo**
 /// (el calendario, RU-30, con su vista previa) y **Dónde** (dirección y
 /// punto en el mapa). "Siguiente" valida solo el paso abierto; volver (el
 /// botón del encabezado o el atrás del teléfono) regresa al anterior sin
@@ -70,9 +72,14 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen>
     final schedule = _step == 1
         ? _draft.validate(needsPrescription: values.needsPrescription)
         : const <ScheduleInput, String>{};
-    final ok = found.isEmpty && schedule.isEmpty;
+    // RF-42: en "Qué", quién es el paciente si no es el titular.
+    final patient = _step == 0
+        ? values.triage.validateSituation(patientOnly: true)
+        : const <TriageInput, String>{};
+    final ok = found.isEmpty && schedule.isEmpty && patient.isEmpty;
     setState(() {
       errors = found;
+      triageErrors = patient;
       _scheduleErrors = schedule;
       if (!ok) shakeCount++;
     });
@@ -136,6 +143,8 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen>
 
   List<Widget> _fields(List<CatalogOffer> offers) => switch (_step) {
     0 => [
+      ForWhomField(form: triageForm),
+      const SizedBox(height: 20),
       CatalogChoices(offers: offers, form: form),
       PrescriptionSlot(form: form),
       const SizedBox(height: 16),

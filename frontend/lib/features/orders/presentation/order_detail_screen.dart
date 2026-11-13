@@ -35,6 +35,7 @@ import 'widgets/order_detail/order_assignment_card.dart';
 import 'widgets/order_detail/order_summary.dart';
 import 'prescription_viewer_screen.dart';
 import 'widgets/order_detail/prescription_record_card.dart';
+import 'widgets/order_detail/triage_card.dart';
 import 'widgets/order_detail/reject_section.dart';
 import 'widgets/order_detail/return_check_section.dart';
 import 'widgets/order_detail/status_reason_banner.dart';
@@ -284,6 +285,8 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
       if (StatusReasonBanner.reasonOf(order) case final reason?)
         StatusReasonBanner(reason: reason),
       OrderJourney(order: order),
+      // RF-41: lo primero que necesita el despachador para decidir.
+      if (TriageCard.appliesTo(order)) TriageCard(order: order),
       OrderSummary(
         order: order,
         showPrescriptionFlag: !isDispatcher,

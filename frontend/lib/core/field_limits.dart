@@ -17,6 +17,12 @@ class FieldLimits {
   static const int address = 160;
   static const int reason = 160;
   static const int orderDescription = 500;
+
+  /// RF-42: nombre completo del paciente a cargo (como en Nest).
+  static const int patientFullName = 80;
+
+  /// RF-41: alergias a medicamentos, en pocas palabras.
+  static const int allergies = 200;
   static const int droneIdentifier = 32;
 
   /// Código de lote del empaque.

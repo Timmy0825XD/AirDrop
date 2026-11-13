@@ -28,6 +28,17 @@ const _rx = CatalogOffer(
   requiresColdChain: false,
 );
 
+/// Un tamizaje completo (RF-41): sin alarma, adulto, fiebre de hoy.
+void _fillTriage(RequesterOrderValues values) {
+  values.triage
+    ..noRedFlags()
+    ..pickGroup(PatientGroup.olderAdult)
+    ..symptoms.add(Symptom.fever)
+    ..onset = SymptomOnset.today
+    ..severity = SymptomSeverity.mild
+    ..hasAllergies = false;
+}
+
 void main() {
   test('sin el punto en el mapa no deja enviar: Nest no lo autorizaría', () {
     final values = RequesterOrderValues()
@@ -60,6 +71,7 @@ void main() {
       ..location = const LatLng(10.46, -73.25);
     addTearDown(values.dispose);
     values.description.text = 'Fiebre';
+    _fillTriage(values);
 
     expect(values.validate(plan: false), isEmpty);
     expect(values.emergency(_ana).toJson().containsKey('address'), isFalse);
@@ -101,6 +113,7 @@ void main() {
     values
       ..description.text = ' Infección '
       ..address.text = 'Calle 16 # 9-40';
+    _fillTriage(values);
 
     final body = values.emergency(_ana);
 
