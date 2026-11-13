@@ -11,7 +11,7 @@ import '../../../core/widgets/app_snack.dart';
 import '../data/auth_models.dart';
 import 'auth_controller.dart';
 import 'login_screen.dart';
-import 'widgets/auth_morph_button.dart';
+import '../../../core/widgets/auth_morph_button.dart';
 import 'widgets/auth_step_scaffold.dart';
 import 'widgets/airspace/airspace_reveal.dart';
 import 'widgets/reset/reset_code_section.dart';

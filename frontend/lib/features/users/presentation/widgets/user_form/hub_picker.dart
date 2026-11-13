@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/widgets/choice_pill.dart';
 import '../../../../auth/data/auth_models.dart';
-import '../../../../auth/presentation/widgets/auth_field.dart';
+import '../../../../../core/widgets/auth_field.dart';
 import '../../../../hubs/data/hub_models.dart';
 
 /// Las centrales activas como chips: el despachador elige una, el

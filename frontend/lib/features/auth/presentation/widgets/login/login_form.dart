@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/field_limits.dart';
 import '../auth_brand.dart';
-import '../auth_field.dart';
-import '../auth_morph_button.dart';
+import '../../../../../core/widgets/auth_field.dart';
+import '../../../../../core/widgets/auth_morph_button.dart';
 import '../auth_text_link.dart';
 
 /// Título y subtítulo del formulario.

@@ -5,7 +5,7 @@ import '../../../../core/validators.dart';
 import '../../../../core/widgets/app_sheet.dart';
 import '../../../../core/widgets/form_bottom_sheet.dart';
 import '../../../auth/presentation/widgets/auth_date_field.dart';
-import '../../../auth/presentation/widgets/auth_field.dart';
+import '../../../../core/widgets/auth_field.dart';
 
 /// Motivo y, si aplica, fecha estimada de un periodo de taller.
 typedef MaintenanceInput = ({String reason, String estimatedEndDate});

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/widgets/detail_section.dart';
 import '../../../../../core/widgets/error_banner.dart';
 import '../../../../../core/widgets/yes_no_question.dart';
-import '../../../../auth/presentation/widgets/auth_morph_button.dart';
+import '../../../../../core/widgets/auth_morph_button.dart';
 
 /// HU-34: el paquete volvió a la central de origen y alguien tiene que
 /// revisarlo una vez. Con empaque íntegro y sin alerta de frío vuelve al

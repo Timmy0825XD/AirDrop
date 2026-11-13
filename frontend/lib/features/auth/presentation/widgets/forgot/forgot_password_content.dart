@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../auth_brand.dart';
 import '../../../../../core/field_limits.dart';
-import '../auth_field.dart';
+import '../../../../../core/widgets/auth_field.dart';
 
 /// Título, explicación, el correo y cuánto dura el código.
 class ForgotPasswordForm extends StatelessWidget {

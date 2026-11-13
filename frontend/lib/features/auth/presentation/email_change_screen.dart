@@ -10,7 +10,7 @@ import '../../../core/widgets/message_view.dart';
 import '../../home/presentation/widgets/section_form_page.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import 'auth_controller.dart';
-import 'widgets/auth_morph_button.dart';
+import '../../../core/widgets/auth_morph_button.dart';
 import 'widgets/profile/email_change_card.dart';
 
 /// Confirmar el correo nuevo (`/profile/email`, RNF-04). El correo no

@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/field_limits.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../../../core/widgets/slide_to_launch.dart';
-import '../../auth/presentation/widgets/auth_field.dart';
+import '../../../core/widgets/auth_field.dart';
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
 import 'widgets/requester_order/emergency_facts.dart';

@@ -100,7 +100,9 @@ dejó el bloque de marca como **un mapa de ciudad común**: tierra, parques,
 río y calles, con las centrales unidas por rutas y drones de adorno. Es
 plano (sin inclinación 3D) y sin brillos. Es solo decoración: no muestra datos ni contadores (nada de "drones en vuelo" ni
 "entregas hoy" inventados). Sirve igual en claro y en oscuro; todos los
-colores salen del tema. Piezas (en `widgets/` y `widgets/airspace/`):
+colores salen del tema. Piezas (en `widgets/` y `widgets/airspace/`;
+`AuthField`, `AuthPickerField`, `AuthMorphButton`, la hoja de búsqueda,
+`DroneGlyph` y `CheckMarkPainter` están en `core/widgets` porque las usa toda la app):
 
 | Widget | Para qué |
 | --- | --- |

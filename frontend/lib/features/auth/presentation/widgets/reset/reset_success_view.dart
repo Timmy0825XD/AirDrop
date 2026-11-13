@@ -6,8 +6,8 @@ import 'package:flutter/material.dart';
 import '../auth_brand.dart';
 import '../../../../../core/widgets/drone_mark.dart';
 import '../auth_curved_header.dart';
-import '../auth_morph_button.dart';
-import '../check_mark.dart';
+import '../../../../../core/widgets/auth_morph_button.dart';
+import '../../../../../core/widgets/check_mark.dart';
 
 /// "Contraseña actualizada". Llega cuando el espacio aéreo ya cubrió la
 /// pantalla: el mapa se encoge hasta el encabezado, el sello con el check

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/field_limits.dart';
 import '../../../data/auth_models.dart';
-import '../auth_field.dart';
+import '../../../../../core/widgets/auth_field.dart';
 import '../document_type_labels.dart';
 import '../document_type_tabs.dart';
 import 'register_fields.dart';

@@ -10,7 +10,7 @@ import 'auth_controller.dart';
 import 'login_screen.dart';
 import 'widgets/auth_brand.dart';
 import 'widgets/auth_form_sheet.dart';
-import 'widgets/auth_morph_button.dart';
+import '../../../core/widgets/auth_morph_button.dart';
 import 'widgets/auth_text_link.dart';
 import 'widgets/document_type_labels.dart';
 import 'widgets/login/login_form_alert.dart';

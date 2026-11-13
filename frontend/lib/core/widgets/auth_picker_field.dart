@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/widgets/press_scale.dart';
+import 'press_scale.dart';
 import 'auth_field.dart';
 import 'search_picker_sheet.dart';
 

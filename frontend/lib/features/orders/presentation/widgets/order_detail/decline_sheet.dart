@@ -5,7 +5,7 @@ import '../../../../../core/validators.dart';
 import '../../../../../core/widgets/app_sheet.dart';
 import '../../../../../core/widgets/choice_pill.dart';
 import '../../../../../core/widgets/form_bottom_sheet.dart';
-import '../../../../auth/presentation/widgets/auth_field.dart';
+import '../../../../../core/widgets/auth_field.dart';
 
 /// Los motivos de un toque; "Otro" deja escribirlo.
 const declineReasons = ['Sin dron disponible', 'Sin personal para cargar'];

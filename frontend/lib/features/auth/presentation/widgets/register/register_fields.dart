@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/field_limits.dart';
-import '../auth_field.dart';
+import '../../../../../core/widgets/auth_field.dart';
 import '../reset/reset_password_strength.dart';
 
 /// Los campos del registro, para nombrar sus errores sin strings sueltos.

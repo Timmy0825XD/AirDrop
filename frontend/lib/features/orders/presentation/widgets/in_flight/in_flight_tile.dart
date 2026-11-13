@@ -4,7 +4,7 @@ import '../../../../../core/widgets/row_action_button.dart';
 import '../../../../../core/widgets/status_card.dart';
 import '../../../../../core/widgets/status_pill.dart';
 import '../../../../../core/widgets/tone_tile.dart';
-import '../../../../auth/presentation/widgets/drone_glyph.dart';
+import '../../../../../core/widgets/drone_glyph.dart';
 import '../../../data/order_models.dart';
 import '../../order_format.dart';
 

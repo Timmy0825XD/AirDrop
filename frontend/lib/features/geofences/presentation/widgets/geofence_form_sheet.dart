@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/field_limits.dart';
 import '../../../../core/widgets/form_sheet_card.dart';
-import '../../../auth/presentation/widgets/auth_field.dart';
+import '../../../../core/widgets/auth_field.dart';
 import 'geofence_form_values.dart';
 import 'geofence_polygon_preview.dart';
 

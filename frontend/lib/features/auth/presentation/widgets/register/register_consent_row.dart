@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../check_mark.dart';
+import '../../../../../core/widgets/check_mark.dart';
 import '../../../../../theme/app_palette.dart';
 
 /// Consentimiento de datos (RNF-05) en su propia tarjeta. Sin marcarlo, el

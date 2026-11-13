@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../auth_brand.dart';
 import '../../../../../core/field_limits.dart';
-import '../auth_field.dart';
+import '../../../../../core/widgets/auth_field.dart';
 import 'reset_match_icon.dart';
 import 'reset_password_strength.dart';
 

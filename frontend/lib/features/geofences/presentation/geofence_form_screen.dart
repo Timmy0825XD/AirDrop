@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../../../core/widgets/message_view.dart';
-import '../../auth/presentation/widgets/auth_morph_button.dart';
+import '../../../core/widgets/auth_morph_button.dart';
 import '../../home/presentation/widgets/section_form_page.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../data/geofence_models.dart';

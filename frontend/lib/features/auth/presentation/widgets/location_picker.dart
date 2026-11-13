@@ -5,7 +5,7 @@ import '../../../../core/widgets/app_map.dart';
 import '../../../../core/widgets/map_sheet.dart';
 import '../../../../theme/app_motion.dart';
 import '../../../../theme/app_palette.dart';
-import 'auth_morph_button.dart';
+import '../../../../core/widgets/auth_morph_button.dart';
 
 /// Abre el mapa a pantalla completa para elegir un punto, como al pedir un
 /// carro: se arrastra el mapa bajo el pin fijo del centro y abajo se
