@@ -7,10 +7,14 @@ import {
   IsString,
   MaxLength,
   MinLength,
+  ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 import { DocumentType } from '../../common/enums/document-type.enum';
 import { SaleType } from '../../common/enums/sale-type.enum';
 import { FIELD_LIMITS } from '../../common/field-limits';
+import { PatientDto } from './patient.dto';
+import { TriageDto } from './triage.dto';
 
 export class CreateEmergencyDto {
   @Transform(({ value }: { value: unknown }) =>
@@ -29,6 +33,16 @@ export class CreateEmergencyDto {
   })
   saleType: SaleType;
 
+  /** RF-41: el tamizaje. Sin él (la app anterior), la nota es obligatoria. */
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TriageDto)
+  triage?: TriageDto;
+
+  /** La nota corta de la urgencia; obligatoria solo sin `triage`. */
+  @ValidateIf(
+    (dto: CreateEmergencyDto) => !dto.triage || dto.description != null,
+  )
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
@@ -37,27 +51,51 @@ export class CreateEmergencyDto {
   @MaxLength(FIELD_LIMITS.orderDescription, {
     message: `La descripción no puede superar ${FIELD_LIMITS.orderDescription} caracteres.`,
   })
-  description: string;
+  description?: string;
 
+  /**
+   * RF-41: alergias a medicamentos. Vacío es "ninguna"; sin el campo, no se
+   * preguntó (la app anterior).
+   */
+  @IsOptional()
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
-  @IsString({ message: 'La dirección es obligatoria.' })
-  @MinLength(1, { message: 'La dirección es obligatoria.' })
-  @MaxLength(FIELD_LIMITS.address, {
-    message: `La dirección no puede superar ${FIELD_LIMITS.address} caracteres.`,
+  @IsString({ message: 'Las alergias deben ser texto.' })
+  @MaxLength(FIELD_LIMITS.allergies, {
+    message: `Las alergias no pueden superar ${FIELD_LIMITS.allergies} caracteres.`,
   })
-  address: string;
+  allergies?: string;
 
+  /**
+   * RU-02: una referencia corta para encontrar el punto ("reja verde, patio
+   * de atrás"). El destino es el punto; sin referencia queda
+   * `DEFAULT_REFERENCE`.
+   */
   @IsOptional()
-  @Type(() => Number)
-  @IsLatitude({ message: 'La latitud no es válida.' })
-  latitude?: number;
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  @IsString({ message: 'La referencia debe ser texto.' })
+  @MaxLength(FIELD_LIMITS.address, {
+    message: `La referencia no puede superar ${FIELD_LIMITS.address} caracteres.`,
+  })
+  address?: string;
 
-  @IsOptional()
+  /** RU-02: el punto donde baja el dron. */
   @Type(() => Number)
-  @IsLongitude({ message: 'La longitud no es válida.' })
-  longitude?: number;
+  @IsLatitude({ message: 'Marca en el mapa dónde debe llegar el dron.' })
+  latitude: number;
+
+  @Type(() => Number)
+  @IsLongitude({ message: 'Marca en el mapa dónde debe llegar el dron.' })
+  longitude: number;
+
+  /** RF-42: sin este objeto, el paciente es el titular de la cuenta. */
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PatientDto)
+  patient?: PatientDto;
 
   @IsOptional()
   @IsEnum(DocumentType, { message: 'El tipo de documento no es válido.' })

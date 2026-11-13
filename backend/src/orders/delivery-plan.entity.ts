@@ -13,6 +13,10 @@ import { PlanStatus } from '../common/enums/plan-status.enum';
 import { ScheduleKind } from '../common/enums/schedule-kind.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 import { NUMERIC_TRANSFORMER } from '../common/numeric.transformer';
+import {
+  PatientDocumentType,
+  PatientRelation,
+} from '../common/enums/patient.enum';
 
 @Entity({ name: 'delivery_plans' })
 export class DeliveryPlan {
@@ -135,6 +139,39 @@ export class DeliveryPlan {
     nullable: true,
   })
   longitude: number | null;
+
+  // RF-42: el paciente a cargo; cada entrega del plan lo copia. Nulo si el
+  // paciente es el titular.
+
+  @Column({
+    type: 'varchar',
+    length: FIELD_LIMITS.patientFullName,
+    nullable: true,
+  })
+  patientFullName: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: PatientDocumentType,
+    enumName: 'patient_document_type',
+    nullable: true,
+  })
+  patientDocumentType: PatientDocumentType | null;
+
+  @Column({
+    type: 'varchar',
+    length: FIELD_LIMITS.documentNumber,
+    nullable: true,
+  })
+  patientDocumentNumber: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: PatientRelation,
+    enumName: 'patient_relation',
+    nullable: true,
+  })
+  patientRelation: PatientRelation | null;
 
   @Index()
   @CreateDateColumn({ type: 'timestamptz' })

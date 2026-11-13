@@ -1,6 +1,14 @@
 import { FallbackKind } from '../common/enums/fallback-kind.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
+import {
+  PatientGroup,
+  RedFlag,
+  Symptom,
+  SymptomOnset,
+  SymptomSeverity,
+} from '../common/enums/triage.enum';
+import { TriageDto } from '../orders/dto/triage.dto';
 import { DispatchOffer } from '../orders/order.entity';
 import { addCalendarDays, todayInColombia } from '../orders/orders.rules';
 import { dispatchWindow } from '../orders/plan-dispatch.rules';
@@ -278,6 +286,56 @@ export function flowKind(random: Random): GeneratedKind {
 
 export function pickOne<T>(items: readonly T[], random: Random): T {
   return items[Math.min(items.length - 1, Math.floor(random() * items.length))];
+}
+
+/**
+ * RF-41: el tamizaje de una urgencia generada. Venta libre y casos comunes;
+ * 1 de cada 10 trae un signo de alarma, para que la cola lo muestre.
+ */
+const SIMULATED_TRIAGES: readonly Omit<TriageDto, 'redFlags'>[] = [
+  {
+    patientGroup: PatientGroup.ADULT,
+    symptoms: [Symptom.FEVER, Symptom.PAIN],
+    onset: SymptomOnset.TODAY,
+    severity: SymptomSeverity.MODERATE,
+  },
+  {
+    patientGroup: PatientGroup.CHILD,
+    symptoms: [Symptom.FEVER],
+    onset: SymptomOnset.HOURS,
+    severity: SymptomSeverity.MODERATE,
+  },
+  {
+    patientGroup: PatientGroup.OLDER_ADULT,
+    symptoms: [Symptom.PAIN],
+    onset: SymptomOnset.DAYS,
+    severity: SymptomSeverity.MILD,
+  },
+  {
+    patientGroup: PatientGroup.ADULT,
+    symptoms: [Symptom.ALLERGY],
+    onset: SymptomOnset.HOURS,
+    severity: SymptomSeverity.MILD,
+  },
+  {
+    patientGroup: PatientGroup.ADULT,
+    symptoms: [Symptom.STOMACH],
+    onset: SymptomOnset.TODAY,
+    severity: SymptomSeverity.MODERATE,
+  },
+];
+
+const SIMULATED_RED_FLAG_SHARE = 0.1;
+
+export function simulatedTriage(random: Random): TriageDto {
+  const base = pickOne(SIMULATED_TRIAGES, random);
+  const alarmed = random() < SIMULATED_RED_FLAG_SHARE;
+  return {
+    ...base,
+    symptoms: [...base.symptoms],
+    redFlags: alarmed ? [RedFlag.BREATHING_DIFFICULTY] : [],
+    severity: alarmed ? SymptomSeverity.SEVERE : base.severity,
+  };
 }
 
 export function randomQuantity(random: Random): number {

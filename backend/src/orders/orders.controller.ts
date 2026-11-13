@@ -32,6 +32,8 @@ import { PreviewPlanDto, UpdatePlanScheduleDto } from './dto/plan-schedule.dto';
 import { DeclineOrderDto } from './dto/decline-order.dto';
 import { RejectOrderDto } from './dto/reject-order.dto';
 import { presentOrder } from './order.presenter';
+import { allergiesToRemember } from './triage.rules';
+import { UsersService } from '../users/users.service';
 import { OrdersService } from './orders.service';
 import { PlanAgendaService } from './plan-agenda.service';
 
@@ -45,6 +47,7 @@ export class OrdersController {
     private readonly decisionService: DecisionService,
     private readonly dispatch: EmergencyDispatchService,
     private readonly agenda: PlanAgendaService,
+    private readonly users: UsersService,
   ) {}
 
   @Get('catalog')
@@ -205,6 +208,10 @@ export class OrdersController {
     @Body() dto: CreateEmergencyDto,
   ) {
     const created = await this.ordersService.createEmergency(user, dto);
+    const allergies = allergiesToRemember(dto);
+    if (allergies !== undefined) {
+      await this.users.rememberAllergies(user, allergies);
+    }
     // RU-10: entra solo a la cola de la central que llega primero.
     return presentOrder(await this.dispatch.start(created.id));
   }

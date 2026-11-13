@@ -100,7 +100,16 @@ export class UsersService {
       role: user.role,
       status: user.status,
       hubIds: assignedHubIds(user),
+      allergies: user.allergies ?? null,
     };
+  }
+
+  /** RF-41: las alergias del titular para la siguiente urgencia. */
+  async rememberAllergies(user: User, allergies: string | null): Promise<void> {
+    if ((user.allergies ?? null) === allergies) {
+      return;
+    }
+    await this.users.update({ id: user.id }, { allergies });
   }
 
   async createInstitutional(dto: CreateInstitutionalUserDto): Promise<User> {

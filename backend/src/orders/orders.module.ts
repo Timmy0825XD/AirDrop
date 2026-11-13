@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from '../auth/auth.module';
+import { UsersModule } from '../users/users.module';
 import { DecisionModule } from '../decision/decision.module';
 import { Hub } from '../hubs/hub.entity';
 import { HubsModule } from '../hubs/hubs.module';
@@ -32,6 +33,7 @@ import { PrescriptionStorage } from './prescription-storage';
       Drone,
     ]),
     AuthModule,
+    UsersModule,
     HubsModule,
     DecisionModule,
     NotificationsModule,

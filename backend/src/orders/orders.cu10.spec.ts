@@ -53,6 +53,8 @@ function planDto(overrides: Partial<CreatePlanDto> = {}): CreatePlanDto {
     frequency: PlanFrequency.WEEKLY,
     startDate: '2026-10-22',
     address: 'Calle 16 No. 19-35, Valledupar',
+    latitude: 10.4631,
+    longitude: -73.2532,
     ...overrides,
   };
 }

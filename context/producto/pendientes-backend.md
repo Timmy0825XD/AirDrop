@@ -824,3 +824,56 @@ muestra "Ruta cambiada (+X km)" con "Ver vuelo" y vuelve a pedir
 `/fleet/map` para dibujar la ruta nueva; en ámbar con `blocked` o
 `batteryShort`. Con un desvío de menos de 50 m (`addedKm` 0) dice solo
 "Ruta cambiada".
+
+## 19. Solicitud de urgencia (`learning/33`)
+
+Lo que cambia el contrato al rehacer la urgencia (RU-02, RF-41, RF-42).
+
+### 19.1 Tamizaje, paciente a cargo y alergias — Hecho (rama `feature/urgencia-triage`)
+
+`POST /orders/emergencies` acepta campos nuevos. Todo es compatible con la
+app anterior: sin `triage`, la `description` sigue siendo obligatoria.
+
+- **`triage`** (RF-41): `{ redFlags: RedFlag[], patientGroup, pregnant?,
+  symptoms: Symptom[] (al menos 1), onset, severity }`.
+  - `redFlags`: `breathing_difficulty`, `chest_pain`, `seizure`,
+    `uncontrolled_bleeding`, `fainting`, `severe_allergy`. Vacío es
+    "Ninguno".
+  - `patientGroup`: `baby`, `child`, `adult`, `older_adult`. Un bebé no
+    puede ir con `pregnant: true` (400).
+  - `symptoms`: `fever`, `pain`, `breathing`, `allergy`, `blood_sugar`,
+    `blood_pressure`, `infection`, `stomach`, `other`.
+  - `onset`: `hours`, `today`, `days`. `severity`: `mild`, `moderate`,
+    `severe`.
+- **`description`**: la nota corta; opcional con `triage`.
+- **`allergies`** (texto, hasta 200): vacío es "ninguna"; sin el campo, no
+  se preguntó. Si el paciente es el titular, se guarda en la cuenta y
+  `GET /auth/me` la devuelve en `allergies` para llenar la siguiente urgencia.
+- **`patient`** (RF-42), opcional: `{ fullName (3–80), documentType,
+  documentNumber, relation }`.
+  - `documentType`: `civil_registry`, `identity_card`, `citizenship_id`,
+    `foreigner_id`, `ppt`. `relation`: `child`, `parent`, `partner`,
+    `relative`, `dependent`.
+  - Bajo fórmula con `patient`, la fórmula es de esa persona: no se mandan
+    `patientDocumentType` ni `patientDocumentNumber` (400 si vienen). Sin
+    `patient`, siguen siendo el documento de la cuenta, como antes.
+  - El titular no puede ponerse a sí mismo como persona a cargo (400).
+- **`address`** pasa a ser la referencia opcional (hasta 160); sin ella
+  queda "Punto marcado en el mapa". **`latitude` y `longitude`** son
+  obligatorias.
+
+`POST /orders/plans` también acepta `patient` y la referencia opcional, y
+exige el punto. Cada entrega del plan copia al paciente.
+
+El pedido (`GET /orders/:id`, la cola y las listas) trae `triage` (o
+`null`), `allergies` y `patient` (o `null` si es el titular).
+`GET /orders/queue` ordena primero lo reasignado, después las urgencias con
+un signo de alarma y luego por llegada. El tamizaje y las alergias no van
+a logs, métricas ni radar.
+
+Las urgencias del generador de la consola traen un tamizaje de venta libre;
+1 de cada 10 con un signo de alarma.
+
+**La app lo usará** en F4 (urgencia en 3 pasos y tarjeta de tamizaje del
+despachador) y F1 (referencia en vez de dirección).
+

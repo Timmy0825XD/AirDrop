@@ -62,6 +62,14 @@ import {
 } from './orders.rules';
 import { presentOrder } from './order.presenter';
 import {
+  compareEmergencyQueue,
+  DEFAULT_REFERENCE,
+  orderAllergies,
+  PatientColumns,
+  patientColumns,
+  triageColumns,
+} from './triage.rules';
+import {
   NOT_YET_AUTHORIZED,
   initialOccurrenceState,
 } from './plan-occurrence.rules';
@@ -172,6 +180,8 @@ export class OrdersService {
 
   async createEmergency(user: User, dto: CreateEmergencyDto) {
     this.requireRequester(user);
+    const patient = patientColumns(user, dto.patient);
+    const triage = triageColumns(dto.triage);
     const image = patientFormula(user, dto.saleType, dto);
     const coords = assertCoordinates(dto.latitude, dto.longitude);
     await this.assertDestinationAllowed(coords);
@@ -186,12 +196,15 @@ export class OrdersService {
         saleType: dto.saleType,
         requiresColdChain: offer.requiresColdChain,
         quantity: CIVIL_EMERGENCY_QUANTITY,
-        description: dto.description,
+        description: dto.description || null,
+        ...triage,
+        allergies: orderAllergies(dto.allergies),
+        ...patient,
         requesterId: user.id,
         createdByUserId: user.id,
         destinationHubId: null,
         originHubId: null,
-        address: dto.address,
+        address: dto.address || DEFAULT_REFERENCE,
         latitude: coords.latitude,
         longitude: coords.longitude,
         droneId: null,
@@ -254,6 +267,7 @@ export class OrdersService {
 
   async createPlan(user: User, dto: CreatePlanDto) {
     this.requireRequester(user);
+    const patient = patientColumns(user, dto.patient);
     const image = patientFormula(user, dto.saleType, dto);
     const coords = assertCoordinates(dto.latitude, dto.longitude);
     await this.assertDestinationAllowed(coords);
@@ -275,9 +289,10 @@ export class OrdersService {
         destinationKind: DestinationKind.PERSON,
         destinationHubId: null,
         originHubId: null,
-        address: dto.address,
+        address: dto.address || DEFAULT_REFERENCE,
         latitude: coords.latitude,
         longitude: coords.longitude,
+        ...patient,
       },
       timing,
       image,
@@ -506,17 +521,12 @@ export class OrdersService {
       },
       order: { createdAt: 'ASC' },
     });
-    // Lo reasignado desde otra central ya esperó una vez: va primero.
     return pending
       .filter(
         (order) =>
           isAwaitingHub(order) && this.isDirectedToHub(order, hub.id, stock),
       )
-      .sort(
-        (left, right) =>
-          Number(right.status === OrderStatus.REASSIGNED) -
-          Number(left.status === OrderStatus.REASSIGNED),
-      )
+      .sort(compareEmergencyQueue)
       .map((order) => ({
         ...this.toPublicOrder(order),
         availableQuantity: this.availableAt(order, stock),
@@ -869,7 +879,7 @@ export class OrdersService {
       address: string;
       latitude: number | null;
       longitude: number | null;
-    },
+    } & Partial<PatientColumns>,
     timing: PlanTiming,
     image: Buffer | null,
     mime: string | null,
@@ -918,6 +928,10 @@ export class OrdersService {
         address: plan.address,
         latitude: plan.latitude,
         longitude: plan.longitude,
+        patientFullName: plan.patientFullName ?? null,
+        patientDocumentType: plan.patientDocumentType ?? null,
+        patientDocumentNumber: plan.patientDocumentNumber ?? null,
+        patientRelation: plan.patientRelation ?? null,
         droneId: null,
         statusReason: null,
         planId: plan.id,

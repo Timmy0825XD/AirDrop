@@ -22,6 +22,10 @@ export const FIELD_LIMITS = {
   /** Descripción breve de una urgencia civil. */
   orderDescription: 500,
   prescriptionMime: 32,
+  /** RF-42: nombre completo del paciente a cargo. */
+  patientFullName: 80,
+  /** RF-41: alergias a medicamentos, en pocas palabras. */
+  allergies: 200,
   /** `{uuid}.jpg` o `{uuid}.png` dentro del bucket. */
   prescriptionObjectKey: 40,
 } as const;

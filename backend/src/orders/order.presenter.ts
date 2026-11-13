@@ -38,9 +38,43 @@ export function presentOrder(order: Order) {
     windowEndsAt: order.windowEndsAt ?? null,
     confirmedAt: order.confirmedAt ?? null,
     hasPrescription: order.saleType === SaleType.PRESCRIPTION,
+    triage: presentTriage(order),
+    allergies: order.allergies ?? null,
+    patient: presentPatient(order),
     reassignedFromHubId: order.reassignedFromHubId,
     fallback: presentFallback(order),
     createdAt: order.createdAt,
+  };
+}
+
+/**
+ * RF-41: el tamizaje, para el despachador que decide y para quien pidió.
+ * `null` en un pedido sin tamizaje.
+ */
+function presentTriage(order: Order) {
+  if (!order.patientGroup) {
+    return null;
+  }
+  return {
+    redFlags: order.redFlags ?? [],
+    patientGroup: order.patientGroup,
+    pregnant: order.pregnant ?? null,
+    symptoms: order.symptoms ?? [],
+    onset: order.symptomOnset,
+    severity: order.symptomSeverity,
+  };
+}
+
+/** RF-42: el paciente a cargo; `null` si el paciente es el titular. */
+function presentPatient(order: Order) {
+  if (!order.patientFullName) {
+    return null;
+  }
+  return {
+    fullName: order.patientFullName,
+    documentType: order.patientDocumentType,
+    documentNumber: order.patientDocumentNumber,
+    relation: order.patientRelation,
   };
 }
 

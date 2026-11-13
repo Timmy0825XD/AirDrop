@@ -31,6 +31,7 @@ import {
   nextScheduledSlot,
   pickOne,
   randomQuantity,
+  simulatedTriage,
   scatterAround,
 } from './sim-actors.rules';
 import { SimActorsService } from './sim-actors.service';
@@ -190,6 +191,8 @@ export class OrderGeneratorService implements OnModuleInit, OnModuleDestroy {
       medicationName,
       saleType: SaleType.OVER_THE_COUNTER,
       description: DESCRIPTION,
+      triage: simulatedTriage(this.random),
+      allergies: '',
       ...point,
     });
     // RU-10: igual que el controlador, entra a la cola de la que llega primero.

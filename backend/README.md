@@ -62,7 +62,7 @@ El MVP no usa migraciones de TypeORM (decisión del 2026-11-10). El esquema sale
 
 **Base nueva de producción.** Arranca la API **una vez** con `NODE_ENV=development` contra la base vacía y sin tráfico. Espera a que suba (crea las tablas, PostGIS, el bucket, el `DroneModel` y el admin), apágala y desde ahí arráncala con `NODE_ENV=production`. Esa única vez la API acepta `localhost` en CORS e imprime el OTP en el log si Brevo no está configurado. Por eso va sin usuarios conectados.
 
-**Base de producción que ya existe.** Si una rama agrega tablas o columnas, `production` no las crea, y `align-sprint-schema.ts` tampoco cubre `flight_incidents`, `weather_cells`, `users.simulated` ni `orders.autoDispatched`. Saca una copia de seguridad y repite el arranque único en `development`. `synchronize` también **borra** las columnas que ya no están en las entidades: revisa el diff de las entidades antes.
+**Base de producción que ya existe.** Si una rama agrega tablas o columnas, `production` no las crea, y `align-sprint-schema.ts` tampoco cubre `flight_incidents`, `weather_cells`, `users.simulated`, `orders.autoDispatched`, el tamizaje y el paciente a cargo (`orders.redFlags`, `patientGroup`, `pregnant`, `symptoms`, `symptomOnset`, `symptomSeverity`, `allergies`, `patient*`; `delivery_plans.patient*`; `users.allergies`). Saca una copia de seguridad y repite el arranque único en `development`. `synchronize` también **borra** las columnas que ya no están en las entidades: revisa el diff de las entidades antes.
 
 Si algún día hay despliegue continuo, toca pasar a migraciones de TypeORM.
 
