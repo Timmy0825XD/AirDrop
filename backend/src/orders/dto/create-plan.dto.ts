@@ -13,11 +13,17 @@ import {
   ValidateIf,
   ValidateNested,
   MinLength,
+  ArrayMaxSize,
+  IsArray,
 } from 'class-validator';
 import { DocumentType } from '../../common/enums/document-type.enum';
 import { PlanFrequency } from '../../common/enums/plan-frequency.enum';
 import { SaleType } from '../../common/enums/sale-type.enum';
-import { FIELD_LIMITS } from '../../common/field-limits';
+import {
+  FIELD_LIMITS,
+  PRESCRIPTION_MAX_IMAGES,
+} from '../../common/field-limits';
+import { PrescriptionFileDto } from './prescription-file.dto';
 import { PatientDto } from './patient.dto';
 import { PlanScheduleDto } from './plan-schedule.dto';
 
@@ -117,4 +123,18 @@ export class CreatePlanDto {
   @IsOptional()
   @IsString()
   prescriptionImageBase64?: string;
+
+  /**
+   * RU-25: la fórmula en un PDF o en 1 a 3 fotos. Reemplaza a
+   * `prescriptionMime` y `prescriptionImageBase64`, que siguen sirviendo para
+   * un solo archivo (la app anterior).
+   */
+  @IsOptional()
+  @IsArray({ message: 'Los archivos de la fórmula van en una lista.' })
+  @ArrayMaxSize(PRESCRIPTION_MAX_IMAGES, {
+    message: 'La fórmula va en un solo PDF o en 1 a 3 fotos, sin mezclarlos.',
+  })
+  @ValidateNested({ each: true })
+  @Type(() => PrescriptionFileDto)
+  prescriptions?: PrescriptionFileDto[];
 }

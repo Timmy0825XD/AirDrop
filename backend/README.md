@@ -32,7 +32,7 @@ Otras variables de `.env.example`:
 | Variable | Para qué |
 | --- | --- |
 | `ADMIN_EMAIL`, `ADMIN_PASSWORD`, `ADMIN_FULL_NAME` | Cuenta de administrador que se siembra al arrancar |
-| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Bucket privado `prescriptions` (foto de la fórmula). La clave `service_role` solo vive aquí |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` | Bucket privado `prescriptions` (la fórmula: un PDF o hasta 3 fotos). La clave `service_role` solo vive aquí |
 | `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `BREVO_SENDER_NAME` | Envío del OTP por correo |
 | `REDIS_URL` | Snapshot de telemetría y pub/sub hacia el socket |
 | `DELIVERY_WAIT_MS` | Espera del código de entrega en milisegundos (por defecto 300000 = 5 min). Solo para acortarla en pruebas |
@@ -160,7 +160,9 @@ Todas del operador de flota.
 | POST | `/orders/plans/:id/extend` | solicitante o despachador |
 | POST | `/orders/plans/:id/cancel` | solicitante o despachador |
 | GET | `/orders/:id` | solicitante o despachador |
-| GET | `/orders/:id/prescription` | despachador |
+| GET | `/orders/:id/prescription` | despachador (la primera hoja) |
+| GET | `/orders/:id/prescription/files` | despachador |
+| GET | `/orders/:id/prescription/:index` | despachador |
 | POST | `/orders/:id/authorize` | despachador (motor de decisión: reserva dron y ruta, no despega) |
 | POST | `/orders/:id/confirm-load` | despachador (arranca la simulación) |
 | POST | `/orders/:id/reject` | despachador |

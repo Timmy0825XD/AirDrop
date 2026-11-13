@@ -26,15 +26,18 @@ export const FIELD_LIMITS = {
   patientFullName: 80,
   /** RF-41: alergias a medicamentos, en pocas palabras. */
   allergies: 200,
-  /** `{uuid}.jpg` o `{uuid}.png` dentro del bucket. */
-  prescriptionObjectKey: 40,
+  /** `{uuid}.jpg`, `{uuid}-2.png` o `{uuid}.pdf` dentro del bucket. */
+  prescriptionObjectKey: 48,
 } as const;
 
 /** Bucket privado de Supabase Storage. Sin políticas públicas. */
 export const PRESCRIPTION_BUCKET = 'prescriptions';
 
-/** Imagen de fórmula: jpeg o png, hasta 2 MiB. */
-export const PRESCRIPTION_MAX_BYTES = 2 * 1024 * 1024;
+/** Cada archivo de la fórmula (PDF, JPEG o PNG): hasta 5 MiB (RU-25). */
+export const PRESCRIPTION_MAX_BYTES = 5 * 1024 * 1024;
+
+/** Una fórmula de papel puede tener varias hojas: hasta 3 fotos (RU-25). */
+export const PRESCRIPTION_MAX_IMAGES = 3;
 
 /** RU-02 no pide cantidad: la urgencia civil sale con una unidad. */
 export const CIVIL_EMERGENCY_QUANTITY = 1;

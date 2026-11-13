@@ -12,8 +12,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
   app.useWebSocketAdapter(new IoAdapter(app));
   app.use(helmet());
-  app.use(json({ limit: '3mb' }));
-  app.use(urlencoded({ extended: true, limit: '3mb' }));
+  // RU-25: la fórmula viaja en base64, hasta 3 archivos de 5 MB (~21 MB).
+  app.use(json({ limit: '22mb' }));
+  app.use(urlencoded({ extended: true, limit: '22mb' }));
   app.enableCors({
     origin: corsOrigins(process.env.CORS_ORIGINS, process.env.NODE_ENV),
   });

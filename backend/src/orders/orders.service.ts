@@ -61,6 +61,7 @@ import {
   windowEnd,
 } from './orders.rules';
 import { presentOrder } from './order.presenter';
+import { PrescriptionFile, prescriptionFilename } from './prescription.rules';
 import {
   compareEmergencyQueue,
   DEFAULT_REFERENCE,
@@ -182,7 +183,7 @@ export class OrdersService {
     this.requireRequester(user);
     const patient = patientColumns(user, dto.patient);
     const triage = triageColumns(dto.triage);
-    const image = patientFormula(user, dto.saleType, dto);
+    const formula = patientFormula(user, dto.saleType, dto);
     const coords = assertCoordinates(dto.latitude, dto.longitude);
     await this.assertDestinationAllowed(coords);
     const offer = await this.requireOffer(dto.medicationName, dto.saleType);
@@ -213,12 +214,8 @@ export class OrdersService {
         scheduledFor: null,
       }),
     );
-    if (image) {
-      await this.attachFormula(
-        saved.id,
-        image,
-        dto.prescriptionMime ?? 'image/jpeg',
-      );
+    if (formula) {
+      await this.attachFormula(saved.id, formula);
     }
     await this.announce(saved.id, OrderStatus.RECEIVED);
     return this.toPublicOrder(saved);
@@ -268,7 +265,7 @@ export class OrdersService {
   async createPlan(user: User, dto: CreatePlanDto) {
     this.requireRequester(user);
     const patient = patientColumns(user, dto.patient);
-    const image = patientFormula(user, dto.saleType, dto);
+    const formula = patientFormula(user, dto.saleType, dto);
     const coords = assertCoordinates(dto.latitude, dto.longitude);
     await this.assertDestinationAllowed(coords);
     const offer = await this.requireOffer(
@@ -295,8 +292,7 @@ export class OrdersService {
         ...patient,
       },
       timing,
-      image,
-      dto.prescriptionMime ?? null,
+      formula,
     );
   }
 
@@ -331,7 +327,6 @@ export class OrdersService {
         longitude: destination.longitude,
       },
       timing,
-      null,
       null,
     );
   }
@@ -381,7 +376,7 @@ export class OrdersService {
         )
         .map((order) => order.scheduledFor as string),
     );
-    const image = await this.formulaForPlan(plan);
+    const formula = await this.formulaForPlan(plan);
     Object.assign(plan, scheduleColumns(result.schedule), {
       frequency: null,
       startDate: result.schedule.startDate,
@@ -402,7 +397,7 @@ export class OrdersService {
     }
     for (const occurrence of result.occurrences) {
       if (!keptDates.has(occurrence.date)) {
-        await this.saveOccurrence(plan, occurrence, image);
+        await this.saveOccurrence(plan, occurrence, formula);
       }
     }
     return this.findPlan(user, plan.id);
@@ -447,12 +442,12 @@ export class OrdersService {
     );
     plan.windowEndsOn = extension.windowEndsOn;
     await this.plans.save(plan);
-    const image = await this.formulaForPlan(plan);
+    const formula = await this.formulaForPlan(plan);
     for (const scheduledFor of extension.dates) {
       await this.saveOccurrence(
         plan,
         slotFor(scheduledFor, plan.deliveryTime),
-        image,
+        formula,
       );
     }
     return this.toPublicPlan(plan);
@@ -552,29 +547,68 @@ export class OrdersService {
     return ids;
   }
 
-  async readPrescription(user: User, id: string) {
+  /** RF-27: qué archivos tiene la fórmula, sin bajarlos. */
+  async listPrescription(user: User, id: string) {
+    const { order, files } = await this.requirePrescription(user, id);
+    return {
+      files: files.map((file) => ({
+        index: file.position,
+        mime: file.mime,
+        filename: prescriptionFilename(order.id, file.position, file.mime),
+      })),
+    };
+  }
+
+  /**
+   * RF-27: un archivo de la fórmula. Sin `index`, el primero (la app
+   * anterior leía una sola imagen).
+   */
+  async readPrescription(user: User, id: string, index = 0) {
+    const { order, files } = await this.requirePrescription(user, id);
+    const file = files.find((candidate) => candidate.position === index);
+    if (!file) {
+      throw new NotFoundException('La fórmula no tiene ese archivo.');
+    }
+    return {
+      content: await this.storage.download(file.objectKey),
+      mime: file.mime,
+      filename: prescriptionFilename(order.id, file.position, file.mime),
+    };
+  }
+
+  /**
+   * RF-27: la fórmula la ve la central que tiene el pedido en su cola o su
+   * agenda mientras decide, y después la central que lo autorizó, desde su
+   * histórico (CU-13), para una auditoría o un reclamo. A los demás les
+   * responde como si el pedido no existiera.
+   */
+  private async requirePrescription(user: User, id: string) {
     const hub = await this.requireDispatcherHub(user);
     const order = await this.orders.findOne({ where: { id } });
-    const stock = order ? await this.stockByKey(hub.id) : null;
     if (
       !order ||
-      !stock ||
-      order.missionType !== MissionType.EMERGENCY ||
-      !isAwaitingHub(order) ||
       order.destinationKind !== DestinationKind.PERSON ||
       order.saleType !== SaleType.PRESCRIPTION ||
-      !this.isDirectedToHub(order, hub.id, stock)
+      !(await this.seesPrescription(order, hub.id))
     ) {
       throw new NotFoundException('El pedido no existe.');
     }
-    const image = await this.images.findOne({ where: { orderId: order.id } });
-    if (!image) {
+    const files = await this.images.find({
+      where: { orderId: order.id },
+      order: { position: 'ASC' },
+    });
+    if (!files.length) {
       throw new NotFoundException('El pedido no existe.');
     }
-    return {
-      content: await this.storage.download(image.objectKey),
-      mime: image.mime,
-    };
+    return { order, files };
+  }
+
+  private async seesPrescription(order: Order, hubId: string) {
+    if (order.originHubId === hubId) {
+      return true;
+    }
+    const stock = await this.stockByKey(hubId);
+    return isAwaitingHub(order) && this.isDirectedToHub(order, hubId, stock);
   }
 
   async listMine(user: User) {
@@ -881,8 +915,7 @@ export class OrdersService {
       longitude: number | null;
     } & Partial<PatientColumns>,
     timing: PlanTiming,
-    image: Buffer | null,
-    mime: string | null,
+    formula: PrescriptionFile[] | null,
   ) {
     const plan = await this.plans.save(
       this.plans.create({
@@ -896,11 +929,7 @@ export class OrdersService {
       }),
     );
     for (const occurrence of timing.occurrences) {
-      await this.saveOccurrence(
-        plan,
-        occurrence,
-        image ? { content: image, mime: mime ?? 'image/jpeg' } : null,
-      );
+      await this.saveOccurrence(plan, occurrence, formula);
     }
     return this.toPublicPlan(plan);
   }
@@ -908,7 +937,7 @@ export class OrdersService {
   private async saveOccurrence(
     plan: DeliveryPlan,
     occurrence: Occurrence,
-    image: { content: Buffer; mime: string } | null,
+    formula: PrescriptionFile[] | null,
   ) {
     const saved = await this.orders.save(
       this.orders.create({
@@ -940,34 +969,41 @@ export class OrdersService {
         windowEndsAt: occurrence.windowEndsAt,
       }),
     );
-    if (image) {
-      await this.attachFormula(saved.id, image.content, image.mime);
+    if (formula) {
+      await this.attachFormula(saved.id, formula);
     }
     return saved;
   }
 
   /**
-   * El nombre del objeto lleva el id del pedido, así que el pedido se guarda
-   * antes. Si la fórmula no queda guardada, el pedido se descarta para no dejar
-   * una urgencia bajo fórmula sin imagen.
+   * El nombre de cada objeto lleva el id del pedido, así que el pedido se
+   * guarda antes. Si un archivo no queda guardado, el pedido se descarta para
+   * no dejar un pedido bajo fórmula sin su fórmula completa.
    */
-  private async attachFormula(orderId: string, content: Buffer, mime: string) {
+  private async attachFormula(orderId: string, files: PrescriptionFile[]) {
     try {
-      const objectKey = await this.storage.upload(orderId, content, mime);
-      await this.images.save(
-        this.images.create({
+      for (const [position, file] of files.entries()) {
+        const objectKey = await this.storage.upload(
           orderId,
-          objectKey,
-          mime,
-        }),
-      );
+          file.content,
+          file.mime,
+          position,
+        );
+        await this.images.save(
+          this.images.create({ orderId, position, objectKey, mime: file.mime }),
+        );
+      }
     } catch (error) {
+      await this.images.delete({ orderId });
       await this.orders.delete({ id: orderId });
       throw error;
     }
   }
 
-  private async formulaForPlan(plan: DeliveryPlan) {
+  /** Los archivos de la fórmula del plan, para copiarlos a entregas nuevas. */
+  private async formulaForPlan(
+    plan: DeliveryPlan,
+  ): Promise<PrescriptionFile[] | null> {
     if (plan.saleType !== SaleType.PRESCRIPTION) {
       return null;
     }
@@ -975,16 +1011,21 @@ export class OrdersService {
     if (!existing) {
       return null;
     }
-    const image = await this.images.findOne({
+    const stored = await this.images.find({
       where: { orderId: existing.id },
+      order: { position: 'ASC' },
     });
-    if (!image) {
+    if (!stored.length) {
       return null;
     }
-    return {
-      content: await this.storage.download(image.objectKey),
-      mime: image.mime,
-    };
+    const files: PrescriptionFile[] = [];
+    for (const file of stored) {
+      files.push({
+        content: await this.storage.download(file.objectKey),
+        mime: file.mime,
+      });
+    }
+    return files;
   }
 
   /** Solo los planes con la frecuencia anterior se extienden 8 semanas. */
