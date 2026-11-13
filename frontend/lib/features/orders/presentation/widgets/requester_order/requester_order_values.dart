@@ -1,12 +1,10 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../auth/data/auth_models.dart';
 import '../../../../inventory/data/inventory_models.dart' show SaleType;
 import '../../../data/order_models.dart';
+import '../../../data/prescription_attachment.dart';
 import '../plan_schedule/schedule_values.dart';
 
 /// Los campos de un pedido del solicitante que pueden tener error.
@@ -30,8 +28,9 @@ class RequesterOrderValues {
   /// El error del GPS si el punto salió de "Usar mi ubicación"; `null` si se
   /// marcó a mano.
   double? locationAccuracyM;
-  Uint8List? prescription;
-  String? prescriptionMime;
+
+  /// La fórmula: un PDF o de 1 a 3 fotos (RU-25).
+  List<PrescriptionAttachment> prescriptions = const [];
   final schedule = ScheduleDraft();
 
   void dispose() {
@@ -60,8 +59,8 @@ class RequesterOrderValues {
       RequesterInput.location: location == null
           ? 'Usa tu ubicación o toca el mapa donde debe llegar el dron.'
           : null,
-      RequesterInput.prescription: needsPrescription && prescription == null
-          ? 'La venta bajo fórmula exige la imagen de la fórmula.'
+      RequesterInput.prescription: needsPrescription && prescriptions.isEmpty
+          ? 'La venta bajo fórmula exige la fórmula: un PDF o de 1 a 3 fotos.'
           : null,
     };
     return {
@@ -90,8 +89,7 @@ class RequesterOrderValues {
       longitude: _round(location!.longitude),
       patientDocumentType: rx ? user.documentType : null,
       patientDocumentNumber: rx ? user.documentNumber : null,
-      prescriptionMime: rx ? prescriptionMime : null,
-      prescriptionImageBase64: rx ? base64Encode(prescription!) : null,
+      prescriptions: rx ? prescriptions : const [],
     );
   }
 
@@ -108,8 +106,7 @@ class RequesterOrderValues {
       longitude: _round(location!.longitude),
       patientDocumentType: rx ? user.documentType : null,
       patientDocumentNumber: rx ? user.documentNumber : null,
-      prescriptionMime: rx ? prescriptionMime : null,
-      prescriptionImageBase64: rx ? base64Encode(prescription!) : null,
+      prescriptions: rx ? prescriptions : const [],
     );
   }
 }

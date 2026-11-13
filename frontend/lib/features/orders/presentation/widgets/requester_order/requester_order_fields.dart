@@ -20,7 +20,9 @@ class RequesterOrderForm {
     required this.shakeCount,
     required this.user,
     required this.onChanged,
-    required this.onPickPrescription,
+    required this.onTakePrescriptionPhoto,
+    required this.onPickPrescriptionFiles,
+    required this.onRemovePrescription,
     required this.onUseMyLocation,
     this.locating = false,
   });
@@ -30,7 +32,9 @@ class RequesterOrderForm {
   final int shakeCount;
   final PublicUser? user;
   final VoidCallback onChanged;
-  final VoidCallback onPickPrescription;
+  final VoidCallback onTakePrescriptionPhoto;
+  final VoidCallback onPickPrescriptionFiles;
+  final ValueChanged<int> onRemovePrescription;
 
   /// "Usar mi ubicación" (RU-02).
   final VoidCallback onUseMyLocation;
@@ -93,8 +97,10 @@ class PrescriptionSlot extends StatelessWidget {
               padding: const EdgeInsets.only(top: 16),
               child: PrescriptionPicker(
                 user: form.user,
-                image: form.values.prescription,
-                onPick: form.onPickPrescription,
+                files: form.values.prescriptions,
+                onTakePhoto: form.onTakePrescriptionPhoto,
+                onPickFiles: form.onPickPrescriptionFiles,
+                onRemove: form.onRemovePrescription,
                 errorText: form.errors[RequesterInput.prescription],
               ),
             ),

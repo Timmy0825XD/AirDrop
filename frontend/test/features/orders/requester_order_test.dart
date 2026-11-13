@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/features/auth/data/auth_models.dart';
 import 'package:frontend/features/inventory/data/inventory_models.dart';
 import 'package:frontend/features/orders/data/order_models.dart';
+import 'package:frontend/features/orders/data/prescription_attachment.dart';
 import 'package:frontend/features/orders/presentation/widgets/requester_order/prescription_picker.dart';
 import 'package:frontend/features/orders/presentation/widgets/requester_order/requester_order_values.dart';
 import 'package:latlong2/latlong.dart';
@@ -31,8 +32,13 @@ void main() {
   test('sin el punto en el mapa no deja enviar: Nest no lo autorizaría', () {
     final values = RequesterOrderValues()
       ..offer = _rx
-      ..prescription = Uint8List(4)
-      ..prescriptionMime = 'image/png';
+      ..prescriptions = [
+        PrescriptionAttachment(
+          bytes: Uint8List.fromList([1, 2, 3]),
+          mime: 'image/png',
+          name: 'formula.png',
+        ),
+      ];
     addTearDown(values.dispose);
     values
       ..description.text = 'Infección'
@@ -76,7 +82,7 @@ void main() {
 
     expect(
       values.validate(plan: false)[RequesterInput.prescription],
-      'La venta bajo fórmula exige la imagen de la fórmula.',
+      'La venta bajo fórmula exige la fórmula: un PDF o de 1 a 3 fotos.',
     );
   });
 
@@ -84,8 +90,13 @@ void main() {
     final values = RequesterOrderValues()
       ..offer = _rx
       ..location = const LatLng(10.4631234567, -73.2532987654)
-      ..prescription = Uint8List.fromList([1, 2, 3])
-      ..prescriptionMime = 'image/png';
+      ..prescriptions = [
+        PrescriptionAttachment(
+          bytes: Uint8List.fromList([1, 2, 3]),
+          mime: 'image/png',
+          name: 'formula.png',
+        ),
+      ];
     addTearDown(values.dispose);
     values
       ..description.text = ' Infección '
@@ -98,6 +109,10 @@ void main() {
     expect(body.description, 'Infección');
     expect(body.patientDocumentType, DocumentType.citizenshipId);
     expect(body.patientDocumentNumber, '1065123456');
+    expect(body.toJson()['prescriptions'], [
+      {'mime': 'image/png', 'base64': 'AQID'},
+    ]);
+    expect(body.toJson().containsKey('prescriptionImageBase64'), isFalse);
   });
 
   test('la entrega periódica valida la cantidad y manda el calendario', () {
@@ -136,7 +151,7 @@ void main() {
     // Nunca los dos modos en el mismo body.
     expect(body.containsKey('frequency'), isFalse);
     expect(body.containsKey('startDate'), isFalse);
-    expect(values.plan(_ana).prescriptionImageBase64, isNull);
+    expect(values.plan(_ana).prescriptions, isEmpty);
   });
 
   testWidgets('la fórmula muestra el documento con su nombre, no crudo', (
@@ -145,7 +160,13 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          body: PrescriptionPicker(user: _ana, image: null, onPick: () {}),
+          body: PrescriptionPicker(
+            user: _ana,
+            files: const [],
+            onTakePhoto: () {},
+            onPickFiles: () {},
+            onRemove: (_) {},
+          ),
         ),
       ),
     );
