@@ -92,6 +92,13 @@ final orderDecisionProvider = FutureProvider.autoDispose
       return ref.watch(orderRepositoryProvider).decision(id);
     });
 
+/// La fórmula del pedido, todas sus hojas (RF-27). Vive solo mientras el
+/// visor está abierto: la fórmula no queda en memoria después.
+final orderPrescriptionProvider = FutureProvider.autoDispose
+    .family<List<PrescriptionFile>, String>((ref, id) {
+      return ref.watch(orderRepositoryProvider).prescriptionFiles(id);
+    });
+
 final planDetailProvider = FutureProvider.family<PlanDetail, String>((ref, id) {
   return ref.watch(orderRepositoryProvider).planDetail(id);
 });

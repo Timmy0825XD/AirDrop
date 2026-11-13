@@ -52,9 +52,16 @@ class DispatcherPermissions {
       order.destinationKind == DestinationKind.person &&
       order.saleType == SaleType.prescription;
 
-  /// La imagen solo se puede bajar en una urgencia civil (no en planes).
-  bool get canViewPrescription =>
-      needsPrescriptionCheck && order.missionType == MissionType.emergency;
+  /// Ver la fórmula mientras decide: urgencias y programados (RF-27).
+  bool get canViewPrescription => needsPrescriptionCheck;
+
+  /// Volver a ver la fórmula después de autorizar: solo la central que lo
+  /// autorizó, desde su histórico, para una auditoría o un reclamo.
+  bool get canReviewPrescription =>
+      needsPrescriptionCheck &&
+      !canDecide &&
+      myHubId != null &&
+      order.originHubId == myHubId;
 
   /// Programado con fecha futura en Bogotá.
   bool get notYet => isFutureSchedule(order.scheduledFor);

@@ -762,10 +762,19 @@ class ScheduledEntry {
 
 /// Imagen de la fórmula: bytes en memoria, nunca en disco ni en logs.
 class PrescriptionFile {
-  const PrescriptionFile({required this.bytes, required this.mime});
+  const PrescriptionFile({
+    required this.bytes,
+    required this.mime,
+    this.name = 'formula',
+  });
 
   final Uint8List bytes;
   final String mime;
+
+  /// El nombre con el que se abre en otra app (`formula-1a2b3c4d-2.jpg`).
+  final String name;
+
+  bool get isPdf => mime == 'application/pdf';
 }
 
 /// Body de `POST /orders/emergencies`. Sin `quantity`: el servidor guarda 1.

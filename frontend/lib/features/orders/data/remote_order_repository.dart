@@ -120,9 +120,30 @@ class RemoteOrderRepository implements OrderRepository {
   }
 
   @override
-  Future<PrescriptionFile> prescription(String orderId) async {
-    final file = await apiClient.getBytes('/orders/$orderId/prescription');
-    return PrescriptionFile(bytes: file.bytes, mime: file.mime);
+  Future<List<PrescriptionFile>> prescriptionFiles(String orderId) async {
+    final data = _asMap(
+      await apiClient.getJson('/orders/$orderId/prescription/files'),
+    );
+    final pages = (data['files'] as List? ?? const []).whereType<Map>();
+    return [
+      for (final page in pages)
+        await _prescriptionPage(orderId, page.cast<String, dynamic>()),
+    ];
+  }
+
+  Future<PrescriptionFile> _prescriptionPage(
+    String orderId,
+    Map<String, dynamic> page,
+  ) async {
+    final index = (page['index'] as num?)?.toInt() ?? 0;
+    final file = await apiClient.getBytes(
+      '/orders/$orderId/prescription/$index',
+    );
+    return PrescriptionFile(
+      bytes: file.bytes,
+      mime: page['mime'] as String? ?? file.mime,
+      name: page['filename'] as String? ?? 'formula-${index + 1}',
+    );
   }
 
   @override

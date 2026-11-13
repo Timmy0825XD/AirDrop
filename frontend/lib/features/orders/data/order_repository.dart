@@ -48,8 +48,10 @@ abstract class OrderRepository {
   /// `GET /orders/:id` — quien puede leerlo.
   Future<Order> findOne(String id);
 
-  /// `GET /orders/:id/prescription` — bytes, solo despachador en cola.
-  Future<PrescriptionFile> prescription(String orderId);
+  /// La fórmula, hoja por hoja (RF-27): `GET /orders/:id/prescription/files`
+  /// y cada `GET /orders/:id/prescription/:index`. Solo el despachador de la
+  /// central que decide o que la autorizó (histórico).
+  Future<List<PrescriptionFile>> prescriptionFiles(String orderId);
 
   /// `POST /orders/:id/reject` — despachador, 201. Cierra el pedido para
   /// todas las centrales (la fórmula no cumple).

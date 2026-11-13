@@ -34,8 +34,10 @@ Order _order({
 
 void main() {
   test('en recibido decide; si su central es solo el destino, no', () {
-    expect(DispatcherPermissions(order: _order(), myHubId: 'h1').canDecide,
-        isTrue);
+    expect(
+      DispatcherPermissions(order: _order(), myHubId: 'h1').canDecide,
+      isTrue,
+    );
     final transfer = _order(
       destination: DestinationKind.hub,
       destinationHubId: 'h1',
@@ -51,6 +53,43 @@ void main() {
     final can = DispatcherPermissions(order: order, myHubId: 'h1');
     expect(can.needsPrescriptionCheck, isTrue);
     expect(can.canViewPrescription, isTrue);
+  });
+
+  test('la central que autorizó vuelve a ver la fórmula en el histórico', () {
+    final delivered = _order(
+      status: OrderStatus.delivered,
+      sale: SaleType.prescription,
+      originHubId: 'h1',
+    );
+    expect(
+      DispatcherPermissions(
+        order: delivered,
+        myHubId: 'h1',
+      ).canReviewPrescription,
+      isTrue,
+    );
+    expect(
+      DispatcherPermissions(
+        order: delivered,
+        myHubId: 'h2',
+      ).canReviewPrescription,
+      isFalse,
+    );
+    // Mientras decide, la fórmula va en la sección de autorizar.
+    expect(
+      DispatcherPermissions(
+        order: _order(sale: SaleType.prescription, originHubId: 'h1'),
+        myHubId: 'h1',
+      ).canReviewPrescription,
+      isFalse,
+    );
+    expect(
+      DispatcherPermissions(
+        order: _order(status: OrderStatus.delivered, originHubId: 'h1'),
+        myHubId: 'h1',
+      ).canReviewPrescription,
+      isFalse,
+    );
   });
 
   test('confirma la carga solo la central de origen y una vez', () {
