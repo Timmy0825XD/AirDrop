@@ -86,6 +86,13 @@ export class User {
   @Column({ type: 'boolean', default: false })
   simulated: boolean;
 
+  /**
+   * RF-41: las alergias a medicamentos del titular, que la siguiente urgencia
+   * trae llenas. Nulo es ninguna o todavía no se preguntó. Dato de salud.
+   */
+  @Column({ type: 'varchar', length: FIELD_LIMITS.allergies, nullable: true })
+  allergies: string | null;
+
   @Column({ type: 'smallint', default: 0 })
   failedLoginCount: number;
 

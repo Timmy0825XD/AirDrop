@@ -9,6 +9,7 @@ import { SaleType } from '../common/enums/sale-type.enum';
 import { PRESCRIPTION_MAX_BYTES } from '../common/field-limits';
 import { User } from '../users/user.entity';
 import { simClock } from '../common/clock/sim-clock';
+import { PATIENT_DOCUMENT_TWICE } from './triage.rules';
 
 export const SPECIAL_CONTROL_MESSAGE =
   'El control especial no se pide por este canal.';
@@ -103,6 +104,8 @@ export function patientFormula(
     patientDocumentNumber?: string;
     prescriptionMime?: string;
     prescriptionImageBase64?: string;
+    /** RF-42: el paciente a cargo; su documento ya lo validó `patientColumns`. */
+    patient?: unknown;
   },
 ): Buffer | null {
   if (saleType === SaleType.SPECIAL_CONTROL) {
@@ -120,6 +123,17 @@ export function patientFormula(
   }
   if (!hasImage || !input.prescriptionMime) {
     throw new BadRequestException(PRESCRIPTION_IMAGE_REQUIRED);
+  }
+  if (input.patient) {
+    // La fórmula es de la persona a cargo: el despachador compara su nombre y
+    // documento con los del pedido. El de la cuenta no entra.
+    if (hasDocument) {
+      throw new BadRequestException(PATIENT_DOCUMENT_TWICE);
+    }
+    return decodePrescription(
+      input.prescriptionMime,
+      input.prescriptionImageBase64!,
+    );
   }
   if (!input.patientDocumentType || !input.patientDocumentNumber) {
     throw new BadRequestException(DOCUMENT_MISMATCH);

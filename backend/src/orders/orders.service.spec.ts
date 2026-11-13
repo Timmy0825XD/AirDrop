@@ -122,6 +122,8 @@ function emergencyDto(
     saleType: SaleType.OVER_THE_COUNTER,
     description: 'Dolor fuerte desde anoche',
     address: 'Calle 20 # 8-15',
+    latitude: 10.46,
+    longitude: -73.25,
     ...overrides,
   };
 }
@@ -766,6 +768,8 @@ describe('OrdersService plans', () => {
       frequency: PlanFrequency.WEEKLY,
       startDate: start,
       address: 'Calle 20 # 8-15',
+      latitude: 10.46,
+      longitude: -73.25,
       ...overrides,
     };
   }

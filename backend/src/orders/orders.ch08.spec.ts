@@ -26,6 +26,7 @@ import { InventoryOfferQuery } from './inventory-offer.query';
 import { Order } from './order.entity';
 import { OrdersController } from './orders.controller';
 import { PlanAgendaService } from './plan-agenda.service';
+import { UsersService } from '../users/users.service';
 import { OrdersService } from './orders.service';
 
 // @nestjs/swagger se publica como ESM y Jest (CommonJS) no lo carga. Sus
@@ -106,6 +107,10 @@ describe('CH-08 — Interfaz – Inventario – Pedidos – BD (base de datos ca
         { provide: DecisionService, useValue: decision },
         // Con la base caída la urgencia no se crea: no llega a ofrecerse.
         { provide: EmergencyDispatchService, useValue: { start: jest.fn() } },
+        {
+          provide: UsersService,
+          useValue: { rememberAllergies: jest.fn() },
+        },
         {
           provide: PlanAgendaService,
           useValue: { withCapacity: (plan: object) => plan },

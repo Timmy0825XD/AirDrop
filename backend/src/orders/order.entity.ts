@@ -15,6 +15,17 @@ import { OrderPriority } from '../common/enums/order-priority.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { ReturnOutcome } from '../common/enums/return-outcome.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
+import {
+  PatientDocumentType,
+  PatientRelation,
+} from '../common/enums/patient.enum';
+import {
+  PatientGroup,
+  RedFlag,
+  Symptom,
+  SymptomOnset,
+  SymptomSeverity,
+} from '../common/enums/triage.enum';
 
 export type FallbackOption = {
   hubId: string;
@@ -295,6 +306,92 @@ export class Order {
   /** El despachador verificó la fórmula; el reintento automático no la repite. */
   @Column({ type: 'timestamptz', nullable: true })
   prescriptionVerifiedAt: Date | null;
+
+  // RF-41: el tamizaje de la urgencia. Todo nulo en un pedido sin tamizaje
+  // (programado, entre centrales o de la app anterior). Dato de salud: no
+  // va a logs, métricas ni radar.
+
+  /** Vacío es "Ninguno"; con uno, la urgencia va primero en la cola. */
+  @Column({
+    type: 'enum',
+    enum: RedFlag,
+    enumName: 'red_flag',
+    array: true,
+    nullable: true,
+  })
+  redFlags: RedFlag[] | null;
+
+  @Column({
+    type: 'enum',
+    enum: PatientGroup,
+    enumName: 'patient_group',
+    nullable: true,
+  })
+  patientGroup: PatientGroup | null;
+
+  @Column({ type: 'boolean', nullable: true })
+  pregnant: boolean | null;
+
+  @Column({
+    type: 'enum',
+    enum: Symptom,
+    enumName: 'symptom',
+    array: true,
+    nullable: true,
+  })
+  symptoms: Symptom[] | null;
+
+  @Column({
+    type: 'enum',
+    enum: SymptomOnset,
+    enumName: 'symptom_onset',
+    nullable: true,
+  })
+  symptomOnset: SymptomOnset | null;
+
+  @Column({
+    type: 'enum',
+    enum: SymptomSeverity,
+    enumName: 'symptom_severity',
+    nullable: true,
+  })
+  symptomSeverity: SymptomSeverity | null;
+
+  /** Alergias a medicamentos del paciente; nulo es ninguna o no se preguntó. */
+  @Column({ type: 'varchar', length: FIELD_LIMITS.allergies, nullable: true })
+  allergies: string | null;
+
+  // RF-42: el paciente a cargo. Nulo si el paciente es el titular.
+
+  @Column({
+    type: 'varchar',
+    length: FIELD_LIMITS.patientFullName,
+    nullable: true,
+  })
+  patientFullName: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: PatientDocumentType,
+    enumName: 'patient_document_type',
+    nullable: true,
+  })
+  patientDocumentType: PatientDocumentType | null;
+
+  @Column({
+    type: 'varchar',
+    length: FIELD_LIMITS.documentNumber,
+    nullable: true,
+  })
+  patientDocumentNumber: string | null;
+
+  @Column({
+    type: 'enum',
+    enum: PatientRelation,
+    enumName: 'patient_relation',
+    nullable: true,
+  })
+  patientRelation: PatientRelation | null;
 
   @Index()
   @CreateDateColumn({ type: 'timestamptz' })

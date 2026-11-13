@@ -18,6 +18,7 @@ import { DocumentType } from '../../common/enums/document-type.enum';
 import { PlanFrequency } from '../../common/enums/plan-frequency.enum';
 import { SaleType } from '../../common/enums/sale-type.enum';
 import { FIELD_LIMITS } from '../../common/field-limits';
+import { PatientDto } from './patient.dto';
 import { PlanScheduleDto } from './plan-schedule.dto';
 
 export class CreatePlanDto {
@@ -71,25 +72,30 @@ export class CreatePlanDto {
   })
   prescriptionValidUntil?: string;
 
+  /** RU-02: la referencia para encontrar el punto; el destino es el punto. */
+  @IsOptional()
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
-  @IsString({ message: 'La dirección es obligatoria.' })
-  @MinLength(1, { message: 'La dirección es obligatoria.' })
+  @IsString({ message: 'La referencia debe ser texto.' })
   @MaxLength(FIELD_LIMITS.address, {
-    message: `La dirección no puede superar ${FIELD_LIMITS.address} caracteres.`,
+    message: `La referencia no puede superar ${FIELD_LIMITS.address} caracteres.`,
   })
-  address: string;
+  address?: string;
 
-  @IsOptional()
   @Type(() => Number)
-  @IsLatitude({ message: 'La latitud no es válida.' })
-  latitude?: number;
+  @IsLatitude({ message: 'Marca en el mapa dónde debe llegar el dron.' })
+  latitude: number;
 
-  @IsOptional()
   @Type(() => Number)
-  @IsLongitude({ message: 'La longitud no es válida.' })
-  longitude?: number;
+  @IsLongitude({ message: 'Marca en el mapa dónde debe llegar el dron.' })
+  longitude: number;
+
+  /** RF-42: sin este objeto, el paciente es el titular de la cuenta. */
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PatientDto)
+  patient?: PatientDto;
 
   @IsOptional()
   @IsEnum(DocumentType, { message: 'El tipo de documento no es válido.' })
