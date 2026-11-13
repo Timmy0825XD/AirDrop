@@ -7,7 +7,7 @@ import '../../../core/validators.dart';
 import '../data/auth_models.dart';
 import 'auth_controller.dart';
 import 'login_screen.dart';
-import 'widgets/auth_morph_button.dart';
+import '../../../core/widgets/auth_morph_button.dart';
 import 'widgets/auth_step_scaffold.dart';
 import 'widgets/auth_text_link.dart';
 import 'widgets/forgot/forgot_password_content.dart';

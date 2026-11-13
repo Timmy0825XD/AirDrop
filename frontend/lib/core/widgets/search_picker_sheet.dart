@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/widgets/app_sheet.dart';
-import '../../../../core/widgets/message_view.dart';
-import '../../../../core/widgets/rise_in.dart';
-import '../../../../core/widgets/tone_tile.dart';
+import 'app_sheet.dart';
+import 'message_view.dart';
+import 'rise_in.dart';
+import 'tone_tile.dart';
 
 /// Una opción de una lista larga: su valor, el texto y, si hay, una línea
 /// de detalle y un ícono (el copo de nieve del frío, por ejemplo).

@@ -4,7 +4,7 @@ import '../../../../core/date_format.dart';
 import '../../../../core/widgets/row_action_button.dart';
 import '../../../../core/widgets/status_card.dart';
 import '../../../../core/widgets/tone_tile.dart';
-import '../../../auth/presentation/widgets/drone_glyph.dart';
+import '../../../../core/widgets/drone_glyph.dart';
 import '../../data/fleet_models.dart';
 import 'drone_health.dart';
 import 'drone_status_chip.dart';

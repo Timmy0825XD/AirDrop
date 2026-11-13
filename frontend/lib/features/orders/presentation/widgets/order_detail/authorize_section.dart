@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/widgets/choice_pill.dart';
 import '../../../../../core/widgets/detail_section.dart';
-import '../../../../auth/presentation/widgets/auth_morph_button.dart';
+import '../../../../../core/widgets/auth_morph_button.dart';
 
 const _authorizeNote =
     'Se reserva el dron y la ruta. El vuelo arranca cuando confirmes la carga.';

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/core/widgets/form_sheet_card.dart';
-import 'package:frontend/features/auth/presentation/widgets/auth_field.dart';
-import 'package:frontend/features/auth/presentation/widgets/auth_picker_field.dart';
-import 'package:frontend/features/auth/presentation/widgets/search_picker_sheet.dart';
+import 'package:frontend/core/widgets/auth_field.dart';
+import 'package:frontend/core/widgets/auth_picker_field.dart';
+import 'package:frontend/core/widgets/search_picker_sheet.dart';
 
 void main() {
   testWidgets('el lector de pantalla lee la etiqueta en el campo', (

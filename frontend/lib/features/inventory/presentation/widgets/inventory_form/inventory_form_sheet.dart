@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/field_limits.dart';
 import '../../../../../core/widgets/form_sheet_card.dart';
 import '../../../../auth/presentation/widgets/auth_date_field.dart';
-import '../../../../auth/presentation/widgets/auth_field.dart';
+import '../../../../../core/widgets/auth_field.dart';
 import '../inventory_form_values.dart';
 import 'inventory_kind_fields.dart';
 

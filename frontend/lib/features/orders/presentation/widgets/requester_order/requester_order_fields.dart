@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/field_limits.dart';
 import '../../../../auth/data/auth_models.dart';
-import '../../../../auth/presentation/widgets/auth_field.dart';
+import '../../../../../core/widgets/auth_field.dart';
 import '../../../../auth/presentation/widgets/auth_location_field.dart';
-import '../../../../auth/presentation/widgets/auth_picker_field.dart';
+import '../../../../../core/widgets/auth_picker_field.dart';
 import '../offer_option.dart';
 import '../../../../inventory/data/inventory_models.dart' show SaleType;
 import '../../../data/order_models.dart';

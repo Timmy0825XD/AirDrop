@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/widgets/press_scale.dart';
-import '../../../../theme/app_motion.dart';
-import '../../../../theme/app_palette.dart';
+import 'press_scale.dart';
+import '../../theme/app_motion.dart';
+import '../../theme/app_palette.dart';
 import 'check_mark.dart';
 import 'drone_glyph.dart';
 

@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/api_exception.dart';
-import '../../../../auth/presentation/widgets/auth_picker_field.dart';
-import '../../../../auth/presentation/widgets/search_picker_sheet.dart';
+import '../../../../../core/widgets/auth_picker_field.dart';
+import '../../../../../core/widgets/search_picker_sheet.dart';
 import '../../../../inventory/data/inventory_models.dart' show SaleType;
 import '../../../data/order_models.dart';
 import '../../../data/order_providers.dart';

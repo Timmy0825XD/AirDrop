@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/widgets/choice_pill.dart';
 import '../../../../auth/presentation/widgets/auth_choice_group.dart';
 import '../../../../auth/presentation/widgets/auth_date_field.dart';
-import '../../../../auth/presentation/widgets/auth_field.dart';
+import '../../../../../core/widgets/auth_field.dart';
 import 'schedule_values.dart';
 import 'schedule_fields.dart';
 

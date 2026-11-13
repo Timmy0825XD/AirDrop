@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../../core/field_limits.dart';
-import '../auth_field.dart';
+import '../../../../../core/widgets/auth_field.dart';
 import 'otp_boxes.dart';
 import 'otp_success_check.dart';
 

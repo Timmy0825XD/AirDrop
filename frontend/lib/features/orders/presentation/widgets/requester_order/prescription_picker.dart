@@ -4,7 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../auth/data/auth_models.dart';
-import '../../../../auth/presentation/widgets/auth_field.dart';
+import '../../../../../core/widgets/auth_field.dart';
 import '../../../../auth/presentation/widgets/document_type_labels.dart';
 
 /// La imagen elegida: bytes y tipo.

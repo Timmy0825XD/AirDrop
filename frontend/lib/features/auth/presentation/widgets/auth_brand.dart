@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'auth_glass.dart';
-import 'drone_glyph.dart';
+import '../../../../core/widgets/drone_glyph.dart';
 
 /// Alturas del encabezado de auth. El login lo usa alto, las pantallas de
 /// paso medio y el registro compacto; al pasar de una a otra el encabezado

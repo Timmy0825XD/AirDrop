@@ -6,7 +6,7 @@ import '../../../../core/widgets/app_map.dart';
 import '../../../../core/widgets/map_markers.dart';
 import '../../../../core/widgets/press_scale.dart';
 import '../../../../theme/app_palette.dart';
-import 'auth_field.dart';
+import '../../../../core/widgets/auth_field.dart';
 import 'location_picker.dart';
 
 /// Campo de ubicación con la forma de [AuthField]: una vista previa quieta

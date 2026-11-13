@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'auth_field.dart';
+import '../../../../core/widgets/auth_field.dart';
 import '../../../../core/clock/sim_clock.dart';
 import '../../../../core/date_format.dart';
 

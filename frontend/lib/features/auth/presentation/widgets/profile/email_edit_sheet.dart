@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/widgets/form_bottom_sheet.dart';
 import '../../../data/auth_models.dart';
-import '../auth_field.dart';
+import '../../../../../core/widgets/auth_field.dart';
 import 'profile_field_type.dart';
 
 /// Editar el correo (RNF-04): si cambia, pide la contraseña actual. El

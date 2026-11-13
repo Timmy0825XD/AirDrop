@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/widgets/detail_section.dart';
-import '../../../../auth/presentation/widgets/auth_morph_button.dart';
+import '../../../../../core/widgets/auth_morph_button.dart';
 
 /// Confirmar la carga: el despachador de la central de origen avisa que el
 /// insumo ya va en el dron. Recién ahí arranca la simulación del vuelo. El

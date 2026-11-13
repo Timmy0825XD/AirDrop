@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../auth/presentation/widgets/search_picker_sheet.dart';
+import '../../../../core/widgets/search_picker_sheet.dart';
 import '../../data/order_models.dart';
 
 /// Un insumo del catálogo como opción del buscador: el nombre, la venta,

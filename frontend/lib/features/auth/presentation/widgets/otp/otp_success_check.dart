@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../check_mark.dart';
+import '../../../../../core/widgets/check_mark.dart';
 
 /// El círculo verde con el check que reemplaza a las cajas del código. Crece
 /// con un rebote mientras las cajas se juntan y luego el check se dibuja.

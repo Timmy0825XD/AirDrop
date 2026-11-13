@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/field_limits.dart';
 import '../../../../../core/widgets/detail_section.dart';
-import '../../../../auth/presentation/widgets/auth_field.dart';
+import '../../../../../core/widgets/auth_field.dart';
 
 /// Rechazar un pedido en `received`, con un motivo obligatorio que luego
 /// ve el solicitante. Empieza cerrado ("Rechazar pedido") para que no

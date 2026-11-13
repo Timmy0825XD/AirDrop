@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/field_limits.dart';
 import '../../../../../core/widgets/form_sheet_card.dart';
-import '../../../../auth/presentation/widgets/auth_field.dart';
+import '../../../../../core/widgets/auth_field.dart';
 import '../../../../auth/presentation/widgets/auth_location_field.dart';
 import '../hub_form_values.dart';
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'auth_field.dart';
+import '../../../../core/widgets/auth_field.dart';
 
 /// Un grupo de chips con su label y el error que tiembla.
 /// Sin chips muestra [empty].

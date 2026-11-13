@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../auth_field.dart';
+import '../../../../../core/widgets/auth_field.dart';
 import '../otp/otp_code_field.dart';
 
 /// El código del correo: label, enlace para pedir otro y las seis cajas.
