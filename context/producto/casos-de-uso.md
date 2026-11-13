@@ -46,11 +46,13 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Actores:** Solicitante
 - **Antes:** Sesión activa
 - **Pasos:**
-  1. Elige el medicamento y escribe una descripción breve.
-  2. Si el tipo de venta es bajo fórmula, adjunta la imagen. El documento de la cuenta debe ser el del paciente escrito en la fórmula.
-  3. Confirma la ubicación. Si no hay GPS, escribe la dirección.
-  4. El pedido queda en `recibido`, con prioridad alta, y entra a la cola de la central que llega antes. Si no la autoriza a tiempo, entra también a la de la siguiente (RU-10).
-- **Si falla:** Bajo fórmula sin imagen, o documento distinto: no se crea. Control especial: no se crea y se explica que ese canal no existe aquí. Si ninguna central con el insumo tiene un dron que alcance el destino: queda en traslado convencional (CU-31).
+  1. Responde el tamizaje (RF-41). Si marca un signo de alarma, la app le ofrece llamar al 123 y puede seguir.
+  2. Dice si es para él o para una persona a su cargo; si es a cargo, sus datos y parentesco (RF-42).
+  3. Elige el medicamento y confirma sus alergias.
+  4. Si el tipo de venta es bajo fórmula, adjunta un PDF o de 1 a 3 fotos a nombre del paciente.
+  5. Toca "Usar mi ubicación" o marca el punto en el mapa, y lo afina con el pin. Puede escribir una referencia corta.
+  6. El pedido queda en `recibido`, con prioridad alta, y entra a la cola de la central que llega antes. Si no la autoriza a tiempo, entra también a la de la siguiente (RU-10).
+- **Si falla:** Bajo fórmula sin fórmula, sin el documento del paciente o con un archivo que no es PDF, JPG o PNG: no se crea. Sin permiso de ubicación: marca el punto a mano. Control especial: no se crea y se explica que ese canal no existe aquí. Si ninguna central con el insumo tiene un dron que alcance el destino: queda en traslado convencional (CU-31).
 - **Después:** Ningún dron está reservado. El motor de decisión no corre.
 - **Por qué:** RU-02 y RU-25. Crear el pedido no es autorizar la salida.
 
@@ -60,8 +62,8 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Antes:** Sesión activa
 - **Pasos:**
   1. Elige medicamento, cantidad, el calendario (días de la semana, un día del mes o fechas sueltas), cuándo termina (fecha o número de entregas) y la hora de la franja.
-  2. Si es bajo fórmula, adjunta la imagen, el documento coincide igual que en CU-04, y escribe hasta cuándo vale la fórmula.
-  3. Fija la ubicación de entrega.
+  2. Si es bajo fórmula, adjunta la fórmula igual que en CU-04 (para él o para una persona a su cargo) y escribe hasta cuándo vale.
+  3. Fija la ubicación de entrega como en CU-04.
   4. La app muestra las fechas y horas que van a quedar (vista previa). Al confirmar, el sistema crea una entrega por fecha, cada una con su franja de 1 hora, en `recibido`, como pedido programado y no como urgencia.
   5. Puede cambiar el calendario o la hora: las entregas sin dron se rehacen. Puede cancelar el plan: las que siguen en `recibido` pasan a `cancelado` y las demás no cambian.
 - **Si falla:** Las mismas exclusiones de fórmula y de control especial que CU-04. No se crea si empieza antes de hoy, si dura más de 3 meses, si pasa de la vigencia de la fórmula, si la hora no es una franja válida o si no queda ninguna entrega a más de 2 horas.
@@ -140,7 +142,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Actores:** Despachador de la central que tiene el insumo
 - **Antes:** Hay una urgencia en su cola. Puede venir de un solicitante o de otra central.
 - **Pasos:**
-  1. Abre detalle: medicamento, destino y, si el destino es una persona, la fórmula.
+  1. Abre detalle: el tamizaje (RF-41), el paciente, medicamento, destino y, si el destino es una persona, la fórmula a pantalla completa con zoom.
   2. Si hay fórmula, comprueba la lista de [../entregas/persona.md](../entregas/persona.md). Si es un traslado, comprueba que el pedido no traiga fórmula de paciente y que existan unidades selladas.
   3. Elige el lote que vence primero y que no esté vencido.
   4. Autoriza. Corre CU-26 y CU-27.
@@ -192,8 +194,8 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 
 - **Actores:** Despachador
 - **Antes:** Su central tuvo misiones
-- **Pasos:** Lista emergencias y programadas con estado final y fecha.
-- **Por qué:** RU-13. No ve el histórico de otra central.
+- **Pasos:** Lista emergencias y programadas con estado final y fecha. En un pedido que su central autorizó con fórmula, puede volver a abrir la fórmula, sin cambiarla.
+- **Por qué:** RU-13 y RF-27. No ve el histórico de otra central. La fórmula queda a mano para una auditoría o un reclamo.
 
 ### CU-14 — Urgencia quieta
 
