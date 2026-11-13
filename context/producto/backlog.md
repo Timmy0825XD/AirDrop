@@ -119,6 +119,21 @@ Se agregó después de planear los seis sprints, para presentar el sistema en un
 
 **Suma del módulo 9: 107 SP.**
 
+## Módulo 10 — Solicitud de urgencia (ampliación)
+
+Se agregó después de probar la urgencia con personas: pedir debía ser más rápido y darle al despachador lo que necesita para decidir. Se cuenta aparte.
+
+| ID | Historia | Pri | SP | Sprint |
+| --- | --- | --- | --- | --- |
+| HU-53 | Tamizaje de la urgencia: alarma con 123, síntomas, desde cuándo, intensidad y alergias (RF-41) | Alta | 8 | 6 |
+| HU-54 | Paciente a cargo: la urgencia o el plan para un hijo o un familiar (RF-42) | Alta | 5 | 6 |
+| HU-55 | Fórmula en PDF o hasta 3 fotos, con cámara (RU-25, RF-27) | Alta | 5 | 6 |
+| HU-56 | Visor de la fórmula con zoom, abrir con otra app y consulta desde el histórico (RF-27, CU-13) | Alta | 5 | 6 |
+| HU-57 | Ubicación por GPS con pin para afinar y referencia en vez de dirección (RU-02) | Alta | 5 | 6 |
+| HU-58 | Urgencia en 3 pasos y tamizaje en el detalle y la cola del despachador | Alta | 8 | 6 |
+
+**Suma del módulo 10: 36 SP.**
+
 ---
 
 ## Incrementos

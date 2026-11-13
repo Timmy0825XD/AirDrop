@@ -18,9 +18,13 @@ Nombre, tipo y número de documento, celular de 10 dígitos, correo, contraseña
 
 ### RU-02 — Urgencia a mi ubicación
 
-Medicamento, ubicación y una descripción breve, con prioridad alta.
+Tres pasos cortos, con prioridad alta:
 
-**Por qué.** La urgencia civil no es un traslado entre centrales. El destino es la persona, y el despachador todavía no ha autorizado.
+1. **Qué pasa:** el tamizaje de RF-41 (signos de alarma, para quién, qué siente, desde cuándo y qué tan fuerte) y una nota opcional.
+2. **Qué necesita:** el medicamento, sus alergias a medicamentos y, si es bajo fórmula, la fórmula (RU-25).
+3. **Dónde:** el punto en el mapa, con "Usar mi ubicación" (GPS) y el pin para afinarlo, y una referencia corta opcional para encontrarlo. El punto es el destino; no hay un segundo campo de dirección.
+
+**Por qué.** La urgencia civil no es un traslado entre centrales. El destino es la persona, y el despachador todavía no ha autorizado. El dron llega a una coordenada, no a una dirección escrita: el punto manda y la referencia solo ayuda a quien retira. El despachador necesita saber qué tan grave es sin leer un texto libre, y el solicitante no puede tardar más de un minuto en pedir.
 
 ### RU-30 — Entrega periódica a mi ubicación
 
@@ -40,9 +44,9 @@ Cada entrega a una persona pide confirmación: el día anterior le llega el avis
 
 ### RU-25 — Fórmula cuando el ítem la exige
 
-Si el tipo de venta es bajo fórmula, la imagen es obligatoria y el documento de la cuenta es el del paciente. El control especial no se pide por este canal.
+Si el tipo de venta es bajo fórmula, la fórmula es obligatoria: **un PDF o de 1 a 3 fotos** (JPG o PNG), tomadas con la cámara o elegidas del teléfono, de hasta 5 MB cada archivo. La fórmula va a nombre del paciente: el titular de la cuenta o una persona a su cargo (RF-42). El control especial no se pide por este canal.
 
-**Por qué.** El Decreto 2200 prohíbe dispensar sin fórmula lo que la etiqueta marca como venta bajo fórmula, y prohíbe entregar a una persona distinta de la prescrita. El control especial tiene otro régimen.
+**Por qué.** El Decreto 2200 prohíbe dispensar sin fórmula lo que la etiqueta marca como venta bajo fórmula, y prohíbe entregar a una persona distinta de la prescrita. Muchas fórmulas llegan en PDF desde la EPS y las de papel pueden tener varias hojas. El control especial tiene otro régimen.
 
 ### RU-03 — Ver el estado
 
@@ -84,7 +88,7 @@ Entra a la central que el administrador le asignó. No se registra solo y no abr
 
 ### RU-10 — Cola de emergencia
 
-Ve la urgencia dirigida a su central, el stock, la fórmula si el destino es una persona, y autoriza o rechaza con motivo.
+Ve la urgencia dirigida a su central, el tamizaje (RF-41), el stock, la fórmula si el destino es una persona, y autoriza o rechaza con motivo. Entre las urgencias, las que traen un signo de alarma van primero; entre iguales, la más antigua.
 
 Una urgencia de un solicitante no aparece a la vez en todas las centrales. El sistema ordena las centrales activas que tienen el lote, un corredor libre y batería para ida, regreso y reserva (RF-11 y RF-12): primero las que tienen un dron elegible y, dentro de cada grupo, la que llega antes por su corredor. La urgencia entra solo a la cola de la primera. Si no la autoriza a tiempo, también entra a la cola de la siguiente, sin salir de la primera, y la autoriza la que lo haga antes. Ese tiempo de ventaja es lo que la central ahorra frente a la siguiente, con un mínimo de 1 minuto y un máximo de 3.
 
@@ -330,7 +334,32 @@ Sin meta, solo informativos: misiones, unidades entregadas, km volados, de autor
 
 ### RF-27 — Fórmula
 
-Hacia una persona y en venta bajo fórmula: sin imagen, o con documento distinto al del paciente, el pedido no se crea. Al autorizar, el despachador verifica la lista de [../entregas/persona.md](../entregas/persona.md). Si no cumple, no autoriza. La imagen tiene acceso restringido. Entre centrales no hay fórmula de paciente.
+Hacia una persona y en venta bajo fórmula: sin fórmula, o sin el documento del paciente, el pedido no se crea. Se acepta un PDF o de 1 a 3 imágenes JPEG o PNG, de hasta 5 MB cada una; el backend revisa el contenido del archivo, no solo su extensión. Al autorizar, el despachador verifica la lista de [../entregas/persona.md](../entregas/persona.md), incluido que el paciente de la fórmula sea el del pedido. Si no cumple, no autoriza.
+
+El despachador la ve a pantalla completa con zoom (las fotos y cada página del PDF) y puede abrirla con otra app del teléfono desde una copia temporal que se borra; no se guarda en su galería ni en sus descargas. Mientras decide, la ve la central que la tiene en la cola. Después, la central que autorizó la sigue viendo desde su histórico (CU-13), sin poder cambiarla, por si hay una auditoría o un reclamo. La fórmula tiene acceso restringido y no se escribe en los logs. Entre centrales no hay fórmula de paciente.
+
+### RF-41 — Tamizaje de la urgencia
+
+Lo que el solicitante dice de la urgencia, en fichas y no en texto libre:
+
+- **Signos de alarma** (varios o "Ninguno"): dificultad para respirar, dolor en el pecho, convulsión, sangrado que no para, desmayo o reacción alérgica grave. Si marca alguno, la app le muestra "Llama al 123" con el botón para marcar y le deja seguir con el pedido.
+- **Para quién:** él mismo o una persona a su cargo (RF-42), y si es bebé, niño, adulto o adulto mayor. Si aplica, si está embarazada.
+- **Qué siente** (uno o varios): fiebre, dolor, respiración, alergia, azúcar, presión, infección, estómago u otro.
+- **Desde cuándo:** horas, hoy o varios días. **Qué tan fuerte:** leve, moderado o fuerte.
+- **Alergias a medicamentos:** ninguna o cuáles. Se guardan en la cuenta y la siguiente urgencia las trae llenas.
+- **Nota** opcional y corta.
+
+El despachador lo ve arriba del detalle, con la alarma en rojo. La alarma ordena la cola (RU-10); no cambia la elegibilidad ni la ruta.
+
+**Por qué.** Los tamizajes de urgencia preguntan primero por los signos de alarma, porque son los que más se pasan por alto. El dron no reemplaza una ambulancia: el 123 va primero, pero el medicamento puede ayudar mientras llega. Edad, embarazo y alergias son lo que el despachador revisa antes de dispensar.
+
+### RF-42 — Paciente a cargo
+
+La urgencia o el plan puede ser para el titular o para una persona a su cargo: un hijo, su madre o su padre, su pareja, otro familiar o alguien que cuida. Para esa persona pide nombre completo, tipo de documento (registro civil, tarjeta de identidad, cédula, cédula de extranjería o PPT), número y parentesco. Quien recibe y digita el código sigue siendo el titular.
+
+Bajo fórmula, el documento del paciente es el que debe estar en la fórmula. El despachador lo verifica.
+
+**Por qué.** En la práctica una madre pide el medicamento de su hijo y lo recibe ella. La norma prohíbe dispensar a un paciente distinto del prescrito, no que un acudiente lo reciba. El menor no tiene cuenta: sus datos los da su representante, solo para esa entrega y en su interés (Ley 1581, artículo 7).
 
 ### RF-28 — Confirmación de carga
 

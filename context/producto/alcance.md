@@ -28,6 +28,7 @@
   - Eventos de entorno: geovalla temporal, central sin energía, pico de urgencias, nadie retira el paquete (RF-36).
   - Actores simulados (despachador automático, generador de pedidos, receptor) para una demo híbrida con personas reales usando la app (RF-37).
   - Modo caos realista, apagado por defecto (RF-38), línea de tiempo con alertas pendientes (RF-39) y reinicio del escenario (RF-40).
+- **Solicitud de urgencia en 3 pasos:** tamizaje con signos de alarma y 123 (RF-41), paciente a cargo (RF-42), fórmula en PDF o hasta 3 fotos con visor y consulta desde el histórico (RF-27), y ubicación por GPS (RU-02).
 
 ## Limitaciones explícitas
 
