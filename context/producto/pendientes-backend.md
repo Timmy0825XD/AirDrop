@@ -877,3 +877,35 @@ Las urgencias del generador de la consola traen un tamizaje de venta libre;
 **La app lo usará** en F4 (urgencia en 3 pasos y tarjeta de tamizaje del
 despachador) y F1 (referencia en vez de dirección).
 
+### 19.2 Fórmula en PDF o hasta 3 fotos — Hecho (rama `feature/formula-pdf`)
+
+- **Envío** (`POST /orders/emergencies` y `POST /orders/plans`): campo nuevo
+  `prescriptions: [{ mime, base64 }]`, con un solo PDF o de 1 a 3 fotos JPG o
+  PNG, sin mezclarlos. Cada archivo pesa hasta **5 MB** y el backend revisa
+  sus primeros bytes (un JPG renombrado a PDF responde 400). Los campos
+  `prescriptionMime` y `prescriptionImageBase64` siguen sirviendo para un
+  solo archivo (la app anterior). El cuerpo admite hasta 22 MB.
+- **Mensajes 400:** "La fórmula va en un solo PDF o en 1 a 3 fotos, sin
+  mezclarlos.", "La fórmula debe ser un PDF o una foto JPG o PNG.", "Cada
+  archivo de la fórmula debe pesar hasta 5 MB.", "El archivo de la fórmula
+  no es válido." y, sin archivos, "La venta bajo fórmula exige la fórmula:
+  un PDF o de 1 a 3 fotos."
+- **Lectura** (solo despachador):
+  - `GET /orders/:id/prescription/files` → `{ files: [{ index, mime,
+    filename }] }`.
+  - `GET /orders/:id/prescription/:index` → el archivo, con
+    `Content-Disposition: inline; filename="formula-1a2b3c4d-2.jpg"` y
+    `Cache-Control: no-store`. Una hoja que no existe responde 404.
+  - `GET /orders/:id/prescription` sigue devolviendo la primera hoja.
+- **Quién la ve:** la central que tiene el pedido en su cola o su agenda
+  (ahora también los programados, no solo las urgencias) y, después de
+  autorizar, la central que lo autorizó, en cualquier estado, desde su
+  histórico. A las demás les responde 404, como si el pedido no existiera.
+- **Base:** `prescription_images` gana `position` y el único pasa a
+  `(orderId, position)`; la clave del objeto llega a 48 caracteres
+  (`{uuid}-2.jpg`, `{uuid}.pdf`). Lo hace `ensure-prescription-bucket.ts`
+  al arrancar, también en producción, y el bucket acepta PDF hasta 5 MB.
+
+**La app lo usará** en F2 (cámara, PDF y hasta 3 fotos) y F3 (visor por
+hojas y "Abrir con…", también desde el histórico).
+

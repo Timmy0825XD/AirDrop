@@ -42,6 +42,9 @@ import {
 } from './orders.rules';
 import { OrdersService } from './orders.service';
 
+/** Una fórmula con la firma de un JPEG (FF D8 FF): el backend la revisa. */
+const FORMULA = Buffer.from([0xff, 0xd8, 0xff, 0x66, 0x6f, 0x72]);
+
 const destination = {
   id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
   status: HubStatus.ACTIVE,
@@ -152,12 +155,14 @@ function build(options?: {
     create: jest.fn((value: object) => value),
     save: jest.fn((value: object) => value),
     findOne: jest.fn(),
+    find: jest.fn().mockResolvedValue([]),
+    delete: jest.fn(),
   };
   const storage = {
     upload: jest.fn((orderId: string, _content: Buffer, mime: string) =>
       Promise.resolve(`${orderId}.${mime === 'image/png' ? 'png' : 'jpg'}`),
     ),
-    download: jest.fn(() => Promise.resolve(Buffer.from('formula'))),
+    download: jest.fn(() => Promise.resolve(FORMULA)),
   };
   const hubs = { find: jest.fn() };
   const stockForHub = jest.fn();
@@ -303,7 +308,7 @@ describe('OrdersService emergencies', () => {
           patientDocumentType: DocumentType.CITIZENSHIP_ID,
           patientDocumentNumber: '1000000000',
           prescriptionMime: 'image/jpeg',
-          prescriptionImageBase64: Buffer.from('formula').toString('base64'),
+          prescriptionImageBase64: FORMULA.toString('base64'),
         }),
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
@@ -323,7 +328,7 @@ describe('OrdersService emergencies', () => {
           patientDocumentType: DocumentType.CITIZENSHIP_ID,
           patientDocumentNumber: '1098765432',
           prescriptionMime: 'image/jpeg',
-          prescriptionImageBase64: Buffer.from('formula').toString('base64'),
+          prescriptionImageBase64: FORMULA.toString('base64'),
         }),
       ),
     ).rejects.toBeInstanceOf(ServiceUnavailableException);
@@ -342,14 +347,15 @@ describe('OrdersService emergencies', () => {
         patientDocumentType: DocumentType.CITIZENSHIP_ID,
         patientDocumentNumber: '1098765432',
         prescriptionMime: 'image/jpeg',
-        prescriptionImageBase64: Buffer.from('formula').toString('base64'),
+        prescriptionImageBase64: FORMULA.toString('base64'),
       }),
     );
     const orderId = '11111111-1111-4111-8111-111111111111';
     expect(storage.upload).toHaveBeenCalledWith(
       orderId,
-      Buffer.from('formula'),
+      FORMULA,
       'image/jpeg',
+      0,
     );
     expect(images.save).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -367,7 +373,7 @@ describe('OrdersService emergencies', () => {
       medicationName: 'Acetaminofén 500 mg',
       saleType: SaleType.OVER_THE_COUNTER,
       quantity: 4,
-      prescriptionImageBase64: Buffer.from('formula').toString('base64'),
+      prescriptionImageBase64: FORMULA.toString('base64'),
     };
     await expect(service.createHubEmergency(dispatcher(), dto)).rejects.toThrow(
       new BadRequestException(FORMULA_NOT_FOR_TRANSFER),
@@ -708,7 +714,7 @@ describe('OrdersService queue', () => {
 
   it('returns the formula only to the hub that can attend a received person order', async () => {
     const { service, orders, images, storage, stockForHub } = build();
-    const formula = Buffer.from('formula');
+    const formula = FORMULA;
     stockForHub.mockResolvedValue([
       {
         name: offer.name,
@@ -723,10 +729,13 @@ describe('OrdersService queue', () => {
         destinationKind: DestinationKind.PERSON,
       }),
     );
-    images.findOne.mockResolvedValue({
-      objectKey: `${receivedOrder().id}.jpg`,
-      mime: 'image/jpeg',
-    });
+    images.find.mockResolvedValue([
+      {
+        position: 0,
+        objectKey: `${receivedOrder().id}.jpg`,
+        mime: 'image/jpeg',
+      },
+    ]);
 
     const image = await service.readPrescription(
       dispatcher(),
@@ -740,7 +749,7 @@ describe('OrdersService queue', () => {
     await expect(
       service.readPrescription(originDispatcher(), receivedOrder().id),
     ).rejects.toBeInstanceOf(NotFoundException);
-    expect(images.findOne).toHaveBeenCalledTimes(1);
+    expect(images.find).toHaveBeenCalledTimes(1);
   });
 
   it('marks the queue row when the emergency has waited more than five minutes', async () => {
@@ -815,7 +824,7 @@ describe('OrdersService plans', () => {
         quantity: 2,
         frequency: PlanFrequency.WEEKLY,
         startDate: start,
-        prescriptionImageBase64: Buffer.from('formula').toString('base64'),
+        prescriptionImageBase64: FORMULA.toString('base64'),
       }),
     ).rejects.toThrow(new BadRequestException(FORMULA_NOT_FOR_TRANSFER));
     expect(orders.save).not.toHaveBeenCalled();

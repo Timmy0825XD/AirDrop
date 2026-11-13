@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PRESCRIPTION_BUCKET } from '../common/field-limits';
+import { prescriptionExtension } from './prescription.rules';
 
 /**
  * Sube y lee la fórmula en un bucket privado.
@@ -18,8 +19,9 @@ export class PrescriptionStorage {
     orderId: string,
     content: Buffer,
     mime: string,
+    position = 0,
   ): Promise<string> {
-    const objectKey = prescriptionObjectKey(orderId, mime);
+    const objectKey = prescriptionObjectKey(orderId, mime, position);
     const response = await fetch(this.objectUrl(objectKey), {
       method: 'POST',
       headers: {
@@ -72,7 +74,16 @@ export class PrescriptionStorage {
   }
 }
 
-export function prescriptionObjectKey(orderId: string, mime: string): string {
-  const extension = mime === 'image/png' ? 'png' : 'jpg';
-  return `${orderId}.${extension}`;
+/**
+ * La primera hoja conserva el nombre de siempre (`{uuid}.jpg`); las demás
+ * llevan su número (`{uuid}-2.jpg`).
+ */
+export function prescriptionObjectKey(
+  orderId: string,
+  mime: string,
+  position = 0,
+): string {
+  const extension = prescriptionExtension(mime);
+  const suffix = position === 0 ? '' : `-${position + 1}`;
+  return `${orderId}${suffix}.${extension}`;
 }

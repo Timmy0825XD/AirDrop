@@ -28,6 +28,9 @@ import {
 } from './orders.service';
 import { PRESCRIPTION_VALIDITY_REQUIRED } from './plan-schedule.rules';
 
+/** Una fórmula con la firma de un JPEG (FF D8 FF): el backend la revisa. */
+const FORMULA = Buffer.from([0xff, 0xd8, 0xff, 0x66, 0x6f, 0x72]);
+
 // Lunes 2 de noviembre de 2026, 08:00 en Colombia.
 const NOW = new Date('2026-11-02T13:00:00.000Z');
 const PLAN_ID = '44444444-4444-4444-8444-444444444444';
@@ -99,6 +102,8 @@ function build(state: { plan?: DeliveryPlan; occurrences?: Order[] } = {}) {
     create: jest.fn((value: object) => value),
     save: jest.fn(),
     findOne: jest.fn().mockResolvedValue(null),
+    find: jest.fn().mockResolvedValue([]),
+    delete: jest.fn(),
   };
   const storage = {
     upload: jest.fn((orderId: string) => Promise.resolve(`${orderId}.jpg`)),
@@ -243,7 +248,7 @@ describe('OrdersService planes con calendario (RU-30)', () => {
       patientDocumentType: DocumentType.CITIZENSHIP_ID,
       patientDocumentNumber: '1098765432',
       prescriptionMime: 'image/jpeg',
-      prescriptionImageBase64: Buffer.from('formula').toString('base64'),
+      prescriptionImageBase64: FORMULA.toString('base64'),
     };
     const { service, storage } = build();
     await expect(

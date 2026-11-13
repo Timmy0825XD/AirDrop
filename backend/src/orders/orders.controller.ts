@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Header,
+  ParseIntPipe,
   HttpCode,
   Param,
   Patch,
@@ -227,15 +229,37 @@ export class OrdersController {
 
   @Get(':id/prescription')
   @Roles(UserRole.DISPATCHER)
+  @Header('Cache-Control', 'no-store')
   async prescription(
     @CurrentUser() user: User,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
   ) {
-    const image = await this.ordersService.readPrescription(user, id);
-    return new StreamableFile(image.content, {
-      type: image.mime,
-      disposition: 'inline',
-    });
+    return prescriptionFile(
+      await this.ordersService.readPrescription(user, id),
+    );
+  }
+
+  /** RF-27: los archivos de la fórmula (un PDF o hasta 3 fotos). */
+  @Get(':id/prescription/files')
+  @Roles(UserRole.DISPATCHER)
+  prescriptionFiles(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
+    return this.ordersService.listPrescription(user, id);
+  }
+
+  @Get(':id/prescription/:index')
+  @Roles(UserRole.DISPATCHER)
+  @Header('Cache-Control', 'no-store')
+  async prescriptionPage(
+    @CurrentUser() user: User,
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Param('index', ParseIntPipe) index: number,
+  ) {
+    return prescriptionFile(
+      await this.ordersService.readPrescription(user, id, index),
+    );
   }
 
   /** Traza del motor de decisión y escalera de ofertas de la urgencia. */
@@ -301,4 +325,19 @@ export class OrdersController {
   ) {
     return this.ordersService.reject(user, id, dto);
   }
+}
+
+/**
+ * La fórmula se muestra en la app (`inline`) con un nombre legible para
+ * abrirla con otra app. No se cachea: es un dato de salud.
+ */
+function prescriptionFile(file: {
+  content: Buffer;
+  mime: string;
+  filename: string;
+}) {
+  return new StreamableFile(file.content, {
+    type: file.mime,
+    disposition: `inline; filename="${file.filename}"`,
+  });
 }

@@ -63,7 +63,10 @@ const despachador = {
 } as unknown as User;
 
 function imagen(bytes: number): string {
-  return Buffer.alloc(bytes, 1).toString('base64');
+  // Empieza con la firma de un JPEG (FF D8 FF): el backend revisa el contenido.
+  const content = Buffer.alloc(bytes, 1);
+  content.set([0xff, 0xd8, 0xff]);
+  return content.toString('base64');
 }
 
 /** Urgencia bajo fórmula con los datos de CP-09-01. */
@@ -213,9 +216,7 @@ describe('CU-09 Crear pedido de emergencia', () => {
     await expect(intento).rejects.toThrow(
       new BadRequestException(PRESCRIPTION_IMAGE_REQUIRED),
     );
-    await expect(intento).rejects.toThrow(
-      'La venta bajo fórmula exige la imagen de la fórmula.',
-    );
+    await expect(intento).rejects.toThrow(PRESCRIPTION_IMAGE_REQUIRED);
     expect(pedidos.save).not.toHaveBeenCalled();
   });
 
@@ -236,16 +237,16 @@ describe('CU-09 Crear pedido de emergencia', () => {
     expect(pedidos.save).not.toHaveBeenCalled();
   });
 
-  it('CP-09-06 rechaza una imagen de 2 MB + 1 byte (400)', async () => {
+  it('CP-09-06 rechaza una imagen de 5 MB + 1 byte (400)', async () => {
     const { service, pedidos } = build();
 
     const intento = service.createEmergency(
       solicitante,
-      conFormula({ prescriptionImageBase64: imagen(2 * MB + 1) }),
+      conFormula({ prescriptionImageBase64: imagen(5 * MB + 1) }),
     );
 
     await expect(intento).rejects.toThrow(
-      'La imagen de la fórmula debe pesar hasta 2 MB.',
+      'Cada archivo de la fórmula debe pesar hasta 5 MB.',
     );
     expect(pedidos.save).not.toHaveBeenCalled();
   });

@@ -6,16 +6,21 @@ import { OrderStatus } from '../common/enums/order-status.enum';
 import { PlanFrequency } from '../common/enums/plan-frequency.enum';
 import { PlanStatus } from '../common/enums/plan-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
-import { PRESCRIPTION_MAX_BYTES } from '../common/field-limits';
 import { User } from '../users/user.entity';
 import { simClock } from '../common/clock/sim-clock';
 import { PATIENT_DOCUMENT_TWICE } from './triage.rules';
+import {
+  decodePrescriptionFiles,
+  PRESCRIPTION_IMAGE_REQUIRED,
+  PrescriptionFile,
+  RawPrescriptionFile,
+  rawPrescriptionFiles,
+} from './prescription.rules';
+
+export { PRESCRIPTION_IMAGE_REQUIRED } from './prescription.rules';
 
 export const SPECIAL_CONTROL_MESSAGE =
   'El control especial no se pide por este canal.';
-
-export const PRESCRIPTION_IMAGE_REQUIRED =
-  'La venta bajo fórmula exige la imagen de la fórmula.';
 
 export const DOCUMENT_MISMATCH =
   'El documento de la cuenta debe ser el del paciente de la fórmula.';
@@ -67,8 +72,6 @@ export const PLAN_RENEWAL_NOTICE_DAYS = 7;
 /** RU-15: la urgencia en recibido avisa al pasar de 5 minutos. */
 export const UNATTENDED_EMERGENCY_MS = 5 * 60 * 1000;
 
-const PRESCRIPTION_MIMES = new Set(['image/jpeg', 'image/png']);
-
 export function todayInColombia(now = simClock.now()): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Bogota',
@@ -104,24 +107,25 @@ export function patientFormula(
     patientDocumentNumber?: string;
     prescriptionMime?: string;
     prescriptionImageBase64?: string;
+    prescriptions?: RawPrescriptionFile[];
     /** RF-42: el paciente a cargo; su documento ya lo validó `patientColumns`. */
     patient?: unknown;
   },
-): Buffer | null {
+): PrescriptionFile[] | null {
   if (saleType === SaleType.SPECIAL_CONTROL) {
     throw new BadRequestException(SPECIAL_CONTROL_MESSAGE);
   }
-  const hasImage = Boolean(input.prescriptionImageBase64);
+  const files = rawPrescriptionFiles(input);
   const hasDocument =
     input.patientDocumentType != null ||
     (input.patientDocumentNumber != null && input.patientDocumentNumber !== '');
   if (saleType !== SaleType.PRESCRIPTION) {
-    if (hasImage || hasDocument) {
+    if (files.length || hasDocument) {
       throw new BadRequestException(OVER_THE_COUNTER_HAS_NO_FORMULA);
     }
     return null;
   }
-  if (!hasImage || !input.prescriptionMime) {
+  if (!files.length) {
     throw new BadRequestException(PRESCRIPTION_IMAGE_REQUIRED);
   }
   if (input.patient) {
@@ -130,10 +134,7 @@ export function patientFormula(
     if (hasDocument) {
       throw new BadRequestException(PATIENT_DOCUMENT_TWICE);
     }
-    return decodePrescription(
-      input.prescriptionMime,
-      input.prescriptionImageBase64!,
-    );
+    return decodePrescriptionFiles(files);
   }
   if (!input.patientDocumentType || !input.patientDocumentNumber) {
     throw new BadRequestException(DOCUMENT_MISMATCH);
@@ -149,10 +150,7 @@ export function patientFormula(
   ) {
     throw new BadRequestException(DOCUMENT_MISMATCH);
   }
-  return decodePrescription(
-    input.prescriptionMime,
-    input.prescriptionImageBase64!,
-  );
+  return decodePrescriptionFiles(files);
 }
 
 export function assertNoPatientFormula(input: {
@@ -173,26 +171,6 @@ export function assertNoPatientFormula(input: {
   if (hasFormula) {
     throw new BadRequestException(FORMULA_NOT_FOR_TRANSFER);
   }
-}
-
-export function decodePrescription(mime: string, base64: string): Buffer {
-  if (!PRESCRIPTION_MIMES.has(mime)) {
-    throw new BadRequestException('La fórmula debe ser una imagen JPEG o PNG.');
-  }
-  const payload = base64.includes(',')
-    ? base64.slice(base64.indexOf(',') + 1)
-    : base64;
-  const cleaned = payload.replace(/\s/g, '');
-  if (!/^[A-Za-z0-9+/]+={0,2}$/.test(cleaned)) {
-    throw new BadRequestException('La imagen de la fórmula no es válida.');
-  }
-  const content = Buffer.from(cleaned, 'base64');
-  if (content.length === 0 || content.length > PRESCRIPTION_MAX_BYTES) {
-    throw new BadRequestException(
-      'La imagen de la fórmula debe pesar hasta 2 MB.',
-    );
-  }
-  return content;
 }
 
 export function addCalendarDays(isoDate: string, days: number): string {

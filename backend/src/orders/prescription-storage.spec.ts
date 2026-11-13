@@ -34,6 +34,15 @@ describe('PrescriptionStorage', () => {
     );
   });
 
+  it('numbers the other pages and keeps the PDF extension', () => {
+    expect(prescriptionObjectKey(ORDER_ID, 'image/jpeg', 2)).toBe(
+      `${ORDER_ID}-3.jpg`,
+    );
+    expect(prescriptionObjectKey(ORDER_ID, 'application/pdf')).toBe(
+      `${ORDER_ID}.pdf`,
+    );
+  });
+
   it('refuses to upload when the bucket credentials are missing', async () => {
     await expect(
       storage().upload(ORDER_ID, Buffer.from('formula'), 'image/jpeg'),

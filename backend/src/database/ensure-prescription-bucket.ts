@@ -1,9 +1,11 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import {
+  FIELD_LIMITS,
   PRESCRIPTION_BUCKET,
   PRESCRIPTION_MAX_BYTES,
 } from '../common/field-limits';
+import { PRESCRIPTION_MIMES } from '../orders/prescription.rules';
 
 type PostgresOptions = TypeOrmModuleOptions & {
   type: 'postgres';
@@ -52,14 +54,11 @@ export async function ensurePrescriptionBucket(
          public = false,
          file_size_limit = EXCLUDED.file_size_limit,
          allowed_mime_types = EXCLUDED.allowed_mime_types`,
-      [
-        PRESCRIPTION_BUCKET,
-        PRESCRIPTION_MAX_BYTES,
-        ['image/jpeg', 'image/png'],
-      ],
+      [PRESCRIPTION_BUCKET, PRESCRIPTION_MAX_BYTES, PRESCRIPTION_MIMES],
     );
     await dropStoredBytes(boot);
     await ensureObjectKey(boot);
+    await allowSeveralFiles(boot);
   } finally {
     if (boot.isInitialized) {
       await boot.destroy();
@@ -123,4 +122,46 @@ async function ensureObjectKey(boot: DataSource): Promise<void> {
       `ALTER TABLE prescription_images ALTER COLUMN "objectKey" SET NOT NULL`,
     );
   }
+}
+
+/**
+ * RU-25: la fórmula pasa de una imagen a un PDF o hasta 3 fotos. Corre antes
+ * de `synchronize` y también en producción, donde `synchronize` está apagado:
+ * - alarga la clave antes de que TypeORM la vea distinta, porque al cambiar
+ *   el largo TypeORM borra la columna y la vuelve a crear;
+ * - agrega `position`;
+ * - cambia el único por `orderId` por el único de `orderId` y `position`.
+ */
+async function allowSeveralFiles(boot: DataSource): Promise<void> {
+  const table = await boot.query<Array<{ name: string | null }>>(
+    `SELECT to_regclass('public.prescription_images') AS name`,
+  );
+  if (!table[0]?.name) {
+    return;
+  }
+  await boot.query(
+    `ALTER TABLE prescription_images ALTER COLUMN "objectKey" TYPE varchar(${FIELD_LIMITS.prescriptionObjectKey})`,
+  );
+  await boot.query(
+    `ALTER TABLE prescription_images ADD COLUMN IF NOT EXISTS position smallint NOT NULL DEFAULT 0`,
+  );
+  const singles = await boot.query<Array<{ name: string }>>(
+    `SELECT i.relname AS name
+     FROM pg_index x
+     JOIN pg_class i ON i.oid = x.indexrelid
+     JOIN pg_class t ON t.oid = x.indrelid
+     JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = x.indkey[0]
+     WHERE t.relname = 'prescription_images'
+       AND x.indisunique
+       AND NOT x.indisprimary
+       AND x.indnatts = 1
+       AND a.attname = 'orderId'`,
+  );
+  for (const index of singles) {
+    await boot.query(`DROP INDEX IF EXISTS "${index.name}"`);
+  }
+  await boot.query(
+    `CREATE UNIQUE INDEX IF NOT EXISTS prescription_images_order_position
+     ON prescription_images ("orderId", position)`,
+  );
 }
