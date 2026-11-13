@@ -12,6 +12,9 @@ import '../../auth/data/auth_models.dart' show DocumentType;
 import 'fallback_models.dart';
 import 'plan_schedule_models.dart';
 import 'prescription_attachment.dart';
+import 'triage_models.dart';
+
+export 'triage_models.dart';
 
 export 'decision_models.dart';
 export 'fallback_models.dart';
@@ -225,6 +228,9 @@ class Order {
     required this.address,
     required this.hasPrescription,
     this.description,
+    this.triage,
+    this.patient,
+    this.allergies,
     this.requesterId,
     required this.createdByUserId,
     this.destinationHubId,
@@ -269,6 +275,9 @@ class Order {
       requiresColdChain: json['requiresColdChain'] as bool,
       quantity: _asInt(json['quantity']),
       description: json['description'] as String?,
+      triage: OrderTriage.fromJson(json['triage']),
+      patient: OrderPatient.fromJson(json['patient']),
+      allergies: json['allergies'] as String?,
       requesterId: json['requesterId'] as String?,
       createdByUserId: json['createdByUserId'] as String,
       destinationHubId: json['destinationHubId'] as String?,
@@ -340,6 +349,9 @@ class Order {
       address: address,
       hasPrescription: hasPrescription,
       description: description,
+      triage: triage,
+      patient: patient,
+      allergies: allergies,
       requesterId: requesterId,
       createdByUserId: createdByUserId,
       destinationHubId: destinationHubId,
@@ -414,6 +426,15 @@ class Order {
   final bool requiresColdChain;
   final int quantity;
   final String? description;
+
+  /// RF-41: lo que contó el solicitante; `null` sin tamizaje.
+  final OrderTriage? triage;
+
+  /// RF-42: la persona a cargo; `null` si el paciente es el titular.
+  final OrderPatient? patient;
+
+  /// Alergias a medicamentos del paciente; `null` es ninguna.
+  final String? allergies;
   final String? requesterId;
   final String createdByUserId;
   final String? destinationHubId;
@@ -783,6 +804,9 @@ class CreateEmergencyRequest {
     required this.medicationName,
     required this.saleType,
     required this.description,
+    this.triage,
+    this.patient,
+    this.allergies,
     this.address,
     this.latitude,
     this.longitude,
@@ -795,15 +819,20 @@ class CreateEmergencyRequest {
     return {
       'medicationName': medicationName,
       'saleType': saleType.apiValue,
-      'description': description,
+      // Con tamizaje la nota es opcional (§19.1): vacía no se manda.
+      if (triage == null || description.isNotEmpty) 'description': description,
+      'triage': ?triage?.toJson(),
+      'patient': ?patient?.toJson(),
+      'allergies': ?allergies,
       // RU-02: la referencia es opcional; sin ella Nest guarda "Punto marcado
       // en el mapa".
       'address': ?address,
       if (latitude != null && longitude != null) 'latitude': latitude,
       if (latitude != null && longitude != null) 'longitude': longitude,
       if (saleType == SaleType.prescription) ...{
-        'patientDocumentType': patientDocumentType!.apiValue,
-        'patientDocumentNumber': patientDocumentNumber,
+        // Sin documento cuando el paciente es una persona a cargo (§19.1).
+        'patientDocumentType': ?patientDocumentType?.apiValue,
+        'patientDocumentNumber': ?patientDocumentNumber,
         // RU-25: un PDF o hasta 3 fotos (§19.2).
         'prescriptions': [for (final file in prescriptions) file.toJson()],
       },
@@ -813,6 +842,15 @@ class CreateEmergencyRequest {
   final String medicationName;
   final SaleType saleType;
   final String description;
+
+  /// RF-41: el tamizaje.
+  final OrderTriage? triage;
+
+  /// RF-42: la persona a cargo; sin ella, el paciente es el titular.
+  final OrderPatient? patient;
+
+  /// Vacío es "ninguna"; `null` no se preguntó.
+  final String? allergies;
 
   /// La referencia para encontrar el punto ("reja verde, patio de atrás").
   final String? address;
@@ -835,6 +873,7 @@ class CreatePlanRequest {
     required this.saleType,
     required this.quantity,
     this.address,
+    this.patient,
     this.frequency,
     this.startDate,
     this.schedule,
@@ -853,14 +892,16 @@ class CreatePlanRequest {
       'quantity': quantity,
       ..._timingJson(schedule, frequency, startDate),
       'prescriptionValidUntil': ?prescriptionValidUntil,
+      'patient': ?patient?.toJson(),
       // RU-02: la referencia es opcional; sin ella Nest guarda "Punto marcado
       // en el mapa".
       'address': ?address,
       if (latitude != null && longitude != null) 'latitude': latitude,
       if (latitude != null && longitude != null) 'longitude': longitude,
       if (saleType == SaleType.prescription) ...{
-        'patientDocumentType': patientDocumentType!.apiValue,
-        'patientDocumentNumber': patientDocumentNumber,
+        // Sin documento cuando el paciente es una persona a cargo (§19.1).
+        'patientDocumentType': ?patientDocumentType?.apiValue,
+        'patientDocumentNumber': ?patientDocumentNumber,
         // RU-25: un PDF o hasta 3 fotos (§19.2).
         'prescriptions': [for (final file in prescriptions) file.toJson()],
       },
@@ -879,6 +920,9 @@ class CreatePlanRequest {
 
   /// La referencia para encontrar el punto; opcional (RU-02).
   final String? address;
+
+  /// RF-42: la persona a cargo; sin ella, el paciente es el titular.
+  final OrderPatient? patient;
   final double? latitude;
   final double? longitude;
   final DocumentType? patientDocumentType;

@@ -115,11 +115,17 @@ class _PillFace extends StatelessWidget {
                   child: Icon(icon, size: 16, color: color),
                 ),
         ),
-        Text(
-          label,
-          style: Theme.of(
-            context,
-          ).textTheme.titleSmall?.copyWith(fontSize: 13, color: color),
+        // En un teléfono angosto o con letra grande, se recorta en vez de
+        // desbordar (el chip tiene alto fijo).
+        Flexible(
+          child: Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(
+              context,
+            ).textTheme.titleSmall?.copyWith(fontSize: 13, color: color),
+          ),
         ),
       ],
     );

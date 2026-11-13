@@ -6,6 +6,7 @@ import '../../../../auth/data/auth_models.dart';
 import '../../../../../core/widgets/auth_field.dart';
 import '../../../../auth/presentation/widgets/document_type_labels.dart';
 import '../../../data/prescription_attachment.dart';
+import '../../../data/triage_models.dart';
 
 /// Abre el selector de archivos para la fórmula: un PDF, o una o varias
 /// fotos JPG o PNG (RU-25). Vacío si se cerró sin elegir; lanza
@@ -50,6 +51,7 @@ class PrescriptionPicker extends StatelessWidget {
   const PrescriptionPicker({
     super.key,
     required this.user,
+    this.dependent,
     required this.files,
     required this.onTakePhoto,
     required this.onPickFiles,
@@ -58,6 +60,9 @@ class PrescriptionPicker extends StatelessWidget {
   });
 
   final PublicUser? user;
+
+  /// RF-42: la persona a cargo; la fórmula va a su nombre.
+  final OrderPatient? dependent;
   final List<PrescriptionAttachment> files;
   final VoidCallback onTakePhoto;
   final VoidCallback onPickFiles;
@@ -78,7 +83,7 @@ class PrescriptionPicker extends StatelessWidget {
         children: [
           Text('Fórmula médica', style: theme.textTheme.labelSmall),
           const SizedBox(height: 6),
-          _PatientLine(user: user),
+          _PatientLine(user: user, dependent: dependent),
           for (final (index, file) in files.indexed)
             PrescriptionFileTile(file: file, onRemove: () => onRemove(index)),
           const SizedBox(height: 10),
@@ -95,15 +100,20 @@ class PrescriptionPicker extends StatelessWidget {
 }
 
 class _PatientLine extends StatelessWidget {
-  const _PatientLine({required this.user});
+  const _PatientLine({required this.user, required this.dependent});
 
   final PublicUser? user;
+  final OrderPatient? dependent;
 
   @override
   Widget build(BuildContext context) {
     final type = user?.documentType;
+    final other = dependent;
     return Text(
-      type == null
+      other != null
+          ? 'Paciente: ${other.fullName} · ${other.documentType.label} '
+                '${other.documentNumber}. La fórmula debe ir a su nombre.'
+          : type == null
           ? 'La fórmula va a nombre del titular de la cuenta.'
           : 'Paciente: ${DocumentTypeLabels.label(type)} · '
                 '${user?.documentNumber ?? ''}',

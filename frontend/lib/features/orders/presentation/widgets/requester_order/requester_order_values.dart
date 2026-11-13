@@ -6,6 +6,7 @@ import '../../../../inventory/data/inventory_models.dart' show SaleType;
 import '../../../data/order_models.dart';
 import '../../../data/prescription_attachment.dart';
 import '../plan_schedule/schedule_values.dart';
+import 'triage_values.dart';
 
 /// Los campos de un pedido del solicitante que pueden tener error.
 enum RequesterInput { offer, description, quantity, location, prescription }
@@ -33,25 +34,25 @@ class RequesterOrderValues {
   List<PrescriptionAttachment> prescriptions = const [];
   final schedule = ScheduleDraft();
 
+  /// RF-41 y RF-42: el tamizaje (solo la urgencia) y para quién es.
+  final triage = TriageDraft();
+
   void dispose() {
     for (final c in [description, quantity, address]) {
       c.dispose();
     }
     schedule.dispose();
+    triage.dispose();
   }
 
   bool get needsPrescription => offer?.saleType == SaleType.prescription;
 
   /// Un mensaje por campo con error; vacío si todo está bien.
   Map<RequesterInput, String> validate({required bool plan}) {
-    final text = description.text.trim();
     final qty = int.tryParse(quantity.text.trim());
     final errors = <RequesterInput, String?>{
       RequesterInput.offer: offer == null
           ? 'Elige un medicamento del catálogo.'
-          : null,
-      RequesterInput.description: !plan && text.isEmpty
-          ? 'Cuéntale al despachador para qué lo necesitas.'
           : null,
       RequesterInput.quantity: plan && (qty == null || qty < 1 || qty > 100000)
           ? 'La cantidad debe ser un entero entre 1 y 100000.'
@@ -80,32 +81,42 @@ class RequesterOrderValues {
   /// El paciente de la fórmula es el titular de la cuenta.
   CreateEmergencyRequest emergency(PublicUser user) {
     final rx = needsPrescription;
+    final holderFormula = rx && !triage.forSomeoneElse;
     return CreateEmergencyRequest(
       medicationName: offer!.name,
       saleType: offer!.saleType,
       description: description.text.trim(),
+      triage: triage.toTriage(),
+      patient: triage.toPatient(),
+      allergies: triage.allergiesValue,
       address: reference,
       latitude: _round(location!.latitude),
       longitude: _round(location!.longitude),
-      patientDocumentType: rx ? user.documentType : null,
-      patientDocumentNumber: rx ? user.documentNumber : null,
+      // Con una persona a cargo, la fórmula es de ella: el documento va
+      // en `patient`, no el de la cuenta (§19.1).
+      patientDocumentType: holderFormula ? user.documentType : null,
+      patientDocumentNumber: holderFormula ? user.documentNumber : null,
       prescriptions: rx ? prescriptions : const [],
     );
   }
 
   CreatePlanRequest plan(PublicUser user) {
     final rx = needsPrescription;
+    final holderFormula = rx && !triage.forSomeoneElse;
     return CreatePlanRequest(
       medicationName: offer!.name,
       saleType: offer!.saleType,
       quantity: int.parse(quantity.text.trim()),
       schedule: schedule.toSchedule(),
       prescriptionValidUntil: rx ? schedule.prescriptionValidUntil : null,
+      patient: triage.toPatient(),
       address: reference,
       latitude: _round(location!.latitude),
       longitude: _round(location!.longitude),
-      patientDocumentType: rx ? user.documentType : null,
-      patientDocumentNumber: rx ? user.documentNumber : null,
+      // Con una persona a cargo, la fórmula es de ella: el documento va
+      // en `patient`, no el de la cuenta (§19.1).
+      patientDocumentType: holderFormula ? user.documentType : null,
+      patientDocumentNumber: holderFormula ? user.documentNumber : null,
       prescriptions: rx ? prescriptions : const [],
     );
   }

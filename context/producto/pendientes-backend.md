@@ -875,8 +875,11 @@ Las urgencias del generador de la consola traen un tamizaje de venta libre;
 1 de cada 10 con un signo de alarma.
 
 **La app ya usa** la referencia opcional en vez de la dirección, con "Usar
-mi ubicación" (F1, rama `feature/ubicacion-gps`). **Usará** el tamizaje y el
-paciente a cargo en F4 (urgencia en 3 pasos y tarjeta del despachador).
+mi ubicación" (F1, rama `feature/ubicacion-gps`). **Ya manda** el tamizaje, las
+alergias y el paciente a cargo (F4, rama `feature/urgencia-por-pasos`): la
+urgencia va en 3 pasos (qué pasa, qué necesitas, dónde), la entrega
+periódica pregunta para quién es, el despachador ve la tarjeta "Tamizaje" y
+la cola marca en rojo las urgencias con un signo de alarma.
 
 ### 19.2 Fórmula en PDF o hasta 3 fotos — Hecho (rama `feature/formula-pdf`)
 

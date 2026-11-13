@@ -25,7 +25,11 @@ class _FakeLocation extends DeviceLocation {
   Future<void> openSettings(PhoneSetting which) async => opened = which;
 }
 
-Future<void> _pump(WidgetTester tester, _FakeLocation gps) async {
+Future<void> _pump(
+  WidgetTester tester,
+  _FakeLocation gps, {
+  bool toWhere = true,
+}) async {
   tester.view.physicalSize = const Size(400, 1600);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -47,6 +51,29 @@ Future<void> _pump(WidgetTester tester, _FakeLocation gps) async {
     ),
   );
   await tester.pumpAndSettle();
+  if (toWhere) await _toWhere(tester);
+}
+
+Future<void> _tap(WidgetTester tester, Finder target) async {
+  await tester.ensureVisible(target);
+  await tester.pumpAndSettle();
+  await tester.tap(target);
+  await tester.pumpAndSettle();
+}
+
+/// Llena "Qué pasa" y "Qué necesitas" (RF-41) para llegar a "Dónde".
+Future<void> _toWhere(WidgetTester tester) async {
+  await _tap(tester, find.text('Ninguno'));
+  await _tap(tester, find.text('Adulto mayor'));
+  await _tap(tester, find.text('Fiebre'));
+  await _tap(tester, find.text('Desde hoy'));
+  await _tap(tester, find.text('Leve'));
+  await _tap(tester, find.text('Siguiente'));
+  await _tap(tester, find.text('Elige el medicamento'));
+  await _tap(tester, find.text('Acetaminofén 500 mg').last);
+  await _tap(tester, find.text('No'));
+  await _tap(tester, find.text('Siguiente'));
+  expect(find.text('Paso 3 de 3 · Dónde'), findsOneWidget);
 }
 
 Future<void> _tapGps(WidgetTester tester) async {

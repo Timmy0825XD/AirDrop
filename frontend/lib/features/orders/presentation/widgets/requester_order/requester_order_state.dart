@@ -10,6 +10,8 @@ import '../../../data/prescription_attachment.dart';
 import 'prescription_picker.dart';
 import 'requester_order_fields.dart';
 import 'requester_order_values.dart';
+import 'triage_fields.dart';
+import 'triage_values.dart';
 
 /// El estado que comparten la urgencia y la entrega periódica del
 /// solicitante: los valores, los errores con su temblor, adjuntar la
@@ -19,6 +21,9 @@ mixin RequesterOrderState<T extends ConsumerStatefulWidget>
     on ConsumerState<T> {
   final values = RequesterOrderValues();
   Map<RequesterInput, String> errors = const {};
+
+  /// Los errores del tamizaje y de la persona a cargo (RF-41, RF-42).
+  Map<TriageInput, String> triageErrors = const {};
   int shakeCount = 0;
   bool sending = false;
   bool locating = false;
@@ -30,6 +35,17 @@ mixin RequesterOrderState<T extends ConsumerStatefulWidget>
   }
 
   PublicUser? get user => ref.watch(authControllerProvider).value?.user;
+
+  /// Los campos del tamizaje. Trae las alergias de la cuenta la primera
+  /// vez que hay usuario.
+  TriageForm get triageForm {
+    values.triage.prefillFrom(user);
+    return TriageForm(
+      draft: values.triage,
+      errors: triageErrors,
+      onChanged: () => setState(() {}),
+    );
+  }
 
   RequesterOrderForm get form => RequesterOrderForm(
     values: values,

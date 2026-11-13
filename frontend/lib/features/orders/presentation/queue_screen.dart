@@ -39,7 +39,8 @@ class QueueScreen extends ConsumerWidget {
 /// Una urgencia de la cola: qué y cuánto, a quién va, el stock de la
 /// central y hace cuánto espera ("Espera 6 min", ámbar a los 3 y rojo a
 /// los 5 o si Nest la marcó sin atender). "Viene de otra central" si otra
-/// central sin dron se la pasó (CU-31).
+/// central sin dron se la pasó (CU-31). Con un signo de alarma (RF-41) la
+/// pastilla va en rojo: Nest ya la puso primero.
 class QueueTile extends StatelessWidget {
   const QueueTile({super.key, required this.entry, required this.onTap});
 
@@ -63,6 +64,12 @@ class QueueTile extends StatelessWidget {
           ? const StatusPill(
               label: 'Viene de otra central',
               tone: PillTone.attention,
+            )
+          // RF-41: con un signo de alarma va primero y se marca en rojo.
+          : order.triage?.hasRedFlag == true
+          ? StatusPill(
+              label: 'Signo de alarma · ${queueWaitLabel(wait)}',
+              tone: PillTone.negative,
             )
           : StatusPill(
               label: queueWaitLabel(wait),

@@ -97,6 +97,7 @@ class PrescriptionSlot extends StatelessWidget {
               padding: const EdgeInsets.only(top: 16),
               child: PrescriptionPicker(
                 user: form.user,
+                dependent: form.values.triage.toPatientOrNull(),
                 files: form.values.prescriptions,
                 onTakePhoto: form.onTakePrescriptionPhoto,
                 onPickFiles: form.onPickPrescriptionFiles,
