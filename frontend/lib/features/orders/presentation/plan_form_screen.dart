@@ -35,7 +35,7 @@ class PlanFormScreen extends ConsumerStatefulWidget {
       RequesterInput.quantity,
     },
     <RequesterInput>{},
-    {RequesterInput.address, RequesterInput.location},
+    {RequesterInput.location},
   ];
 
   @override

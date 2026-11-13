@@ -874,8 +874,9 @@ a logs, métricas ni radar.
 Las urgencias del generador de la consola traen un tamizaje de venta libre;
 1 de cada 10 con un signo de alarma.
 
-**La app lo usará** en F4 (urgencia en 3 pasos y tarjeta de tamizaje del
-despachador) y F1 (referencia en vez de dirección).
+**La app ya usa** la referencia opcional en vez de la dirección, con "Usar
+mi ubicación" (F1, rama `feature/ubicacion-gps`). **Usará** el tamizaje y el
+paciente a cargo en F4 (urgencia en 3 pasos y tarjeta del despachador).
 
 ### 19.2 Fórmula en PDF o hasta 3 fotos — Hecho (rama `feature/formula-pdf`)
 

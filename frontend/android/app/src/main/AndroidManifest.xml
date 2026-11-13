@@ -3,6 +3,9 @@
          esto un APK de release no carga nada: debug y profile ya lo traen
          en su propio manifest. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- RU-02: "Usar mi ubicación" en la urgencia y la entrega periódica. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <application
         android:label="frontend"
         android:name="${applicationName}"

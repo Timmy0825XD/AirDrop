@@ -773,7 +773,7 @@ class CreateEmergencyRequest {
     required this.medicationName,
     required this.saleType,
     required this.description,
-    required this.address,
+    this.address,
     this.latitude,
     this.longitude,
     this.patientDocumentType,
@@ -787,7 +787,9 @@ class CreateEmergencyRequest {
       'medicationName': medicationName,
       'saleType': saleType.apiValue,
       'description': description,
-      'address': address,
+      // RU-02: la referencia es opcional; sin ella Nest guarda "Punto marcado
+      // en el mapa".
+      'address': ?address,
       if (latitude != null && longitude != null) 'latitude': latitude,
       if (latitude != null && longitude != null) 'longitude': longitude,
       if (saleType == SaleType.prescription) ...{
@@ -802,7 +804,9 @@ class CreateEmergencyRequest {
   final String medicationName;
   final SaleType saleType;
   final String description;
-  final String address;
+
+  /// La referencia para encontrar el punto ("reja verde, patio de atrás").
+  final String? address;
   final double? latitude;
   final double? longitude;
   final DocumentType? patientDocumentType;
@@ -820,7 +824,7 @@ class CreatePlanRequest {
     required this.medicationName,
     required this.saleType,
     required this.quantity,
-    required this.address,
+    this.address,
     this.frequency,
     this.startDate,
     this.schedule,
@@ -840,7 +844,9 @@ class CreatePlanRequest {
       'quantity': quantity,
       ..._timingJson(schedule, frequency, startDate),
       'prescriptionValidUntil': ?prescriptionValidUntil,
-      'address': address,
+      // RU-02: la referencia es opcional; sin ella Nest guarda "Punto marcado
+      // en el mapa".
+      'address': ?address,
       if (latitude != null && longitude != null) 'latitude': latitude,
       if (latitude != null && longitude != null) 'longitude': longitude,
       if (saleType == SaleType.prescription) ...{
@@ -861,7 +867,9 @@ class CreatePlanRequest {
 
   /// Obligatoria con fórmula: el plan no pasa de esa fecha.
   final String? prescriptionValidUntil;
-  final String address;
+
+  /// La referencia para encontrar el punto; opcional (RU-02).
+  final String? address;
   final double? latitude;
   final double? longitude;
   final DocumentType? patientDocumentType;
