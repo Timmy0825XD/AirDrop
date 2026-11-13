@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/api_exception.dart';
+import '../../../../../core/location/device_location.dart';
 import '../../../../../core/widgets/app_snack.dart';
 import '../../../../auth/data/auth_models.dart';
 import '../../../../auth/presentation/auth_controller.dart';
@@ -19,6 +20,7 @@ mixin RequesterOrderState<T extends ConsumerStatefulWidget>
   Map<RequesterInput, String> errors = const {};
   int shakeCount = 0;
   bool sending = false;
+  bool locating = false;
 
   @override
   void dispose() {
@@ -35,7 +37,38 @@ mixin RequesterOrderState<T extends ConsumerStatefulWidget>
     user: user,
     onChanged: () => setState(() {}),
     onPickPrescription: _pickPrescription,
+    onUseMyLocation: _useMyLocation,
+    locating: locating,
   );
+
+  /// RU-02: pone el pin donde está el teléfono. Si no se puede (sin permiso,
+  /// GPS apagado), lo dice y deja marcar el punto a mano.
+  Future<void> _useMyLocation() async {
+    final device = ref.read(deviceLocationProvider);
+    setState(() => locating = true);
+    try {
+      final fix = await device.current();
+      if (!mounted) return;
+      setState(() {
+        values
+          ..location = fix.point
+          ..locationAccuracyM = fix.accuracyM;
+        errors = {...errors}..remove(RequesterInput.location);
+      });
+    } on LocationProblem catch (problem) {
+      if (!mounted) return;
+      final fix = problem.fix;
+      showAppSnack(
+        context,
+        problem.message,
+        tone: SnackTone.warning,
+        actionLabel: fix == null ? null : 'Ajustes',
+        onAction: fix == null ? null : () => device.openSettings(fix),
+      );
+    } finally {
+      if (mounted) setState(() => locating = false);
+    }
+  }
 
   Future<void> _pickPrescription() async {
     try {

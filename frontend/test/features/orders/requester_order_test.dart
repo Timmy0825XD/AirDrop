@@ -39,8 +39,30 @@ void main() {
       ..address.text = 'Calle 16 # 9-40';
 
     expect(values.validate(plan: false), {
-      RequesterInput.location: 'Toca el mapa donde debe llegar el dron.',
+      RequesterInput.location:
+          'Usa tu ubicación o toca el mapa donde debe llegar el dron.',
     });
+  });
+
+  test('la referencia es opcional y, vacía, no se manda (RU-02)', () {
+    final values = RequesterOrderValues()
+      ..offer = const CatalogOffer(
+        name: 'Acetaminofén 500 mg',
+        saleType: SaleType.overTheCounter,
+        requiresColdChain: false,
+      )
+      ..location = const LatLng(10.46, -73.25);
+    addTearDown(values.dispose);
+    values.description.text = 'Fiebre';
+
+    expect(values.validate(plan: false), isEmpty);
+    expect(values.emergency(_ana).toJson().containsKey('address'), isFalse);
+
+    values.address.text = '  Reja verde, patio de atrás ';
+    expect(
+      values.emergency(_ana).toJson()['address'],
+      'Reja verde, patio de atrás',
+    );
   });
 
   test('bajo fórmula pide la imagen', () {

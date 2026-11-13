@@ -7,12 +7,16 @@ import '../../../../core/widgets/map_markers.dart';
 import '../../../../core/widgets/press_scale.dart';
 import '../../../../theme/app_palette.dart';
 import '../../../../core/widgets/auth_field.dart';
+import 'location_gps_row.dart';
 import 'location_picker.dart';
 
 /// Campo de ubicación con la forma de [AuthField]: una vista previa quieta
 /// del mapa con el pin y, al tocarla, el mapa a pantalla completa para
 /// elegir el punto (`pickLocation`). Dentro del scroll del formulario no
 /// se arrastra nada: así no pelea con el scroll.
+///
+/// Con [gps] suma "Usar mi ubicación" (RU-02) y, si el punto salió del GPS,
+/// su precisión.
 class AuthLocationField extends StatelessWidget {
   const AuthLocationField({
     super.key,
@@ -21,6 +25,7 @@ class AuthLocationField extends StatelessWidget {
     this.errorText,
     this.emptyHint = 'Toca para elegir el punto en el mapa',
     this.pickerTitle = 'Elige el punto',
+    this.gps,
   });
 
   final LatLng? location;
@@ -32,6 +37,9 @@ class AuthLocationField extends StatelessWidget {
 
   /// El título del mapa a pantalla completa ("Punto de entrega").
   final String pickerTitle;
+
+  /// Sin él no hay botón de GPS.
+  final LocationGps? gps;
 
   Future<void> _pick(BuildContext context) async {
     final point = await pickLocation(
@@ -56,6 +64,7 @@ class AuthLocationField extends StatelessWidget {
           hasError: errorText != null,
           onTap: () => _pick(context),
         ),
+        if (gps case final gps?) LocationGpsExtras(gps: gps),
         AuthFieldError(message: errorText),
       ],
     );

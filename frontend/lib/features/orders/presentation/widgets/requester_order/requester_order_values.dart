@@ -10,18 +10,11 @@ import '../../../data/order_models.dart';
 import '../plan_schedule/schedule_values.dart';
 
 /// Los campos de un pedido del solicitante que pueden tener error.
-enum RequesterInput {
-  offer,
-  description,
-  quantity,
-  address,
-  location,
-  prescription,
-}
+enum RequesterInput { offer, description, quantity, location, prescription }
 
 /// Lo que comparten la urgencia y la entrega periódica del solicitante:
-/// qué insumo, a dónde (dirección y punto en el mapa) y, si es bajo
-/// fórmula, la imagen. La urgencia suma la descripción; la entrega
+/// qué insumo, a dónde (el punto en el mapa y una referencia opcional,
+/// RU-02) y, si es bajo fórmula, la imagen. La urgencia suma la descripción; la entrega
 /// periódica, la cantidad y el calendario ([schedule], RU-30).
 ///
 /// La ubicación es **obligatoria**: sin coordenadas Nest no deja autorizar
@@ -33,6 +26,10 @@ class RequesterOrderValues {
   final address = TextEditingController();
   CatalogOffer? offer;
   LatLng? location;
+
+  /// El error del GPS si el punto salió de "Usar mi ubicación"; `null` si se
+  /// marcó a mano.
+  double? locationAccuracyM;
   Uint8List? prescription;
   String? prescriptionMime;
   final schedule = ScheduleDraft();
@@ -49,7 +46,6 @@ class RequesterOrderValues {
   /// Un mensaje por campo con error; vacío si todo está bien.
   Map<RequesterInput, String> validate({required bool plan}) {
     final text = description.text.trim();
-    final place = address.text.trim();
     final qty = int.tryParse(quantity.text.trim());
     final errors = <RequesterInput, String?>{
       RequesterInput.offer: offer == null
@@ -61,11 +57,8 @@ class RequesterOrderValues {
       RequesterInput.quantity: plan && (qty == null || qty < 1 || qty > 100000)
           ? 'La cantidad debe ser un entero entre 1 y 100000.'
           : null,
-      RequesterInput.address: place.isEmpty
-          ? 'La dirección es obligatoria.'
-          : null,
       RequesterInput.location: location == null
-          ? 'Toca el mapa donde debe llegar el dron.'
+          ? 'Usa tu ubicación o toca el mapa donde debe llegar el dron.'
           : null,
       RequesterInput.prescription: needsPrescription && prescription == null
           ? 'La venta bajo fórmula exige la imagen de la fórmula.'
@@ -79,6 +72,12 @@ class RequesterOrderValues {
 
   double _round(double value) => double.parse(value.toStringAsFixed(6));
 
+  /// La referencia escrita, o `null` para que Nest ponga la de siempre.
+  String? get reference {
+    final text = address.text.trim();
+    return text.isEmpty ? null : text;
+  }
+
   /// El paciente de la fórmula es el titular de la cuenta.
   CreateEmergencyRequest emergency(PublicUser user) {
     final rx = needsPrescription;
@@ -86,7 +85,7 @@ class RequesterOrderValues {
       medicationName: offer!.name,
       saleType: offer!.saleType,
       description: description.text.trim(),
-      address: address.text.trim(),
+      address: reference,
       latitude: _round(location!.latitude),
       longitude: _round(location!.longitude),
       patientDocumentType: rx ? user.documentType : null,
@@ -104,7 +103,7 @@ class RequesterOrderValues {
       quantity: int.parse(quantity.text.trim()),
       schedule: schedule.toSchedule(),
       prescriptionValidUntil: rx ? schedule.prescriptionValidUntil : null,
-      address: address.text.trim(),
+      address: reference,
       latitude: _round(location!.latitude),
       longitude: _round(location!.longitude),
       patientDocumentType: rx ? user.documentType : null,
