@@ -909,6 +909,7 @@ paciente a cargo en F4 (urgencia en 3 pasos y tarjeta del despachador).
 
 **La app ya manda** `prescriptions` (F2, rama `feature/formula-pdf-camara`):
 "Tomar foto" con la cámara y "Subir archivo" para un PDF o fotos, con la
-miniatura y la X de cada uno. **Usará** la lectura por hojas en F3 (visor y
-"Abrir con…", también desde el histórico).
+miniatura y la X de cada uno. **Ya lee** las hojas en el visor del despachador (F3, rama
+`feature/visor-formula`): zoom, PDF por páginas, "Abrir con…" desde una
+copia temporal y "Ver fórmula" en un pedido que su central ya autorizó.
 

@@ -348,9 +348,15 @@ class LocalOrderRepository implements OrderRepository {
   }
 
   @override
-  Future<PrescriptionFile> prescription(String orderId) async {
+  Future<List<PrescriptionFile>> prescriptionFiles(String orderId) async {
     await findOne(orderId);
-    return PrescriptionFile(bytes: Uint8List(0), mime: 'image/jpeg');
+    return [
+      PrescriptionFile(
+        bytes: Uint8List(0),
+        mime: 'image/jpeg',
+        name: 'formula-1.jpg',
+      ),
+    ];
   }
 
   @override

@@ -33,7 +33,8 @@ import 'widgets/order_detail/occurrence_rules.dart';
 import 'widgets/order_detail/occurrence_section.dart';
 import 'widgets/order_detail/order_assignment_card.dart';
 import 'widgets/order_detail/order_summary.dart';
-import 'widgets/order_detail/prescription_viewer.dart';
+import 'prescription_viewer_screen.dart';
+import 'widgets/order_detail/prescription_record_card.dart';
 import 'widgets/order_detail/reject_section.dart';
 import 'widgets/order_detail/return_check_section.dart';
 import 'widgets/order_detail/status_reason_banner.dart';
@@ -48,7 +49,6 @@ enum _Action {
   decline,
   reject,
   confirmLoad,
-  prescription,
   returnCheck,
   occurrence,
 }
@@ -226,12 +226,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     });
   }
 
-  Future<void> _viewPrescription() => _act(_Action.prescription, () async {
-    final file = await ref
-        .read(orderRepositoryProvider)
-        .prescription(widget.orderId);
-    if (mounted) await showPrescription(context, file);
-  });
+  Future<void> _viewPrescription() => showPrescription(context, widget.orderId);
 
   @override
   Widget build(BuildContext context) {
@@ -358,8 +353,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           loading: _running == _Action.authorize,
           onAuthorize: () => _authorize(can),
         ),
-        if (canDecline(can.order))
-          DeclineButton(busy: _busy, onTap: _decline),
+        if (canDecline(can.order)) DeclineButton(busy: _busy, onTap: _decline),
         RejectSection(
           note: canDecline(can.order)
               ? 'Cierra el pedido para todas las centrales. Si solo tu '
@@ -372,6 +366,8 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           onReject: _reject,
         ),
       ],
+      if (can.canReviewPrescription)
+        PrescriptionRecordCard(busy: _busy, onView: _viewPrescription),
       if (canReturnCheck(can))
         ReturnCheckSection(
           coldChainAlert: can.order.coldChainAlert,
