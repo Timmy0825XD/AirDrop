@@ -131,7 +131,7 @@ class TelemetryClient {
 
   /// Sala de una central (`subscribe-hub`, §16 y §17): el operador recibe
   /// cada tick de **todos** sus vuelos, sus cambios de estado, el fin de
-  /// cada vuelo, los incidentes y las alertas (batería, falla, frío y
+  /// cada vuelo, los incidentes, los cambios de ruta y las alertas (batería, falla, frío y
   /// viento). Un socket por central; cancelar el stream lo cierra. Si Nest
   /// rechaza la suscripción (`error`), el socket se cierra sin reintentar.
   Stream<FleetEvent> watchFleet(String hubId, {required String? token}) {
@@ -163,6 +163,10 @@ class TelemetryClient {
         'hub-incident',
         (data) =>
             add(FleetIncidentReceived(FleetIncident.fromJson(_map(data)))),
+      )
+      ..on(
+        'hub-reroute',
+        (data) => add(FleetRerouteReceived(FleetReroute.fromJson(_map(data)))),
       )
       ..on(
         'alert',
