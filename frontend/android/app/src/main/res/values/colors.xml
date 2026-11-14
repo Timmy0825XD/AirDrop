@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Grafito de la marca: el fondo de la app mientras arranca. -->
+    <color name="launch_background">#17191B</color>
+</resources>

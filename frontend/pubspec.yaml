@@ -32,7 +32,26 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.4
 
 flutter:
   uses-material-design: true
 
+
+# Íconos de la app (logo Dron-cruz). Las imágenes salen de
+# Airdrop_Products/_brand/logo/app. Para regenerarlos:
+#   dart run flutter_launcher_icons
+flutter_launcher_icons:
+  image_path: "assets/launcher/app-icon-1024.png"
+  android: true
+  adaptive_icon_foreground: "assets/launcher/adaptive-foreground-1024.png"
+  adaptive_icon_background: "assets/launcher/adaptive-background-1024.png"
+  # El frente ya trae el margen de la zona segura (66 dp); sin inset extra.
+  adaptive_icon_foreground_inset: 0
+  ios: true
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: "assets/launcher/app-icon-1024.png"
+    background_color: "#17191B"
+    theme_color: "#17191B"

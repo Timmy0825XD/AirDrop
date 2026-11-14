@@ -35,6 +35,12 @@
   /* Carta: zonas restringidas. */
   --magenta: #e05ad6;
 
+  /* Marca (manual Dron-cruz): solo para el logo; no se usan en la interfaz. */
+  --brand-teal: #159aa4;
+  --brand-petrol: #0a4e58;
+  --brand-mist: #bdefed;
+  --brand-cross: #ffffff;
+
   --shadow: rgb(0 0 0 / 0.45);
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);

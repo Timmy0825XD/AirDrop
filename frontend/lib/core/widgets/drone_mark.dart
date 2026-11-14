@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 /// El dron de la marca como ficha: un círculo claro con sombra y el dron
 /// dibujado con líneas (cuatro rotores, brazos en X y el núcleo del
-/// acento). Es el mismo dron del logo del auth; marca el dron en el mapa,
-/// en el recorrido del pedido y en los inicios.
+/// acento). Marca el dron en el mapa, en el recorrido del pedido y en los
+/// inicios. No es el logo ([AirDropLogo]): gira con el rumbo, y el manual de
+/// marca prohíbe rotar el logo.
 ///
 /// [halo] (0 a 1) dibuja un anillo fino del acento alrededor.
 class DroneMark extends StatelessWidget {

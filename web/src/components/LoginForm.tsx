@@ -64,7 +64,7 @@ export function LoginForm({ onLogin }: Props) {
   return (
     <main className="flex min-h-dvh flex-col bg-ground">
       <header className="px-6 py-6 sm:px-10">
-        <Wordmark />
+        <Wordmark size={48} />
       </header>
 
       <div className="flex flex-1 items-center justify-center px-6 pb-16">

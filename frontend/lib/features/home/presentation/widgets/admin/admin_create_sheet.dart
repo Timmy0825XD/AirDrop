@@ -11,7 +11,6 @@ import '../../../../../core/widgets/tone_tile.dart';
 Future<void> showAdminCreateSheet(BuildContext context) {
   return showAppSheet<void>(
     context,
-    showDragHandle: false,
     builder: (sheet) => SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),

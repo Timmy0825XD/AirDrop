@@ -5,17 +5,19 @@ import 'package:flutter/material.dart';
 /// (en el navegador del `ShellRoute` la hoja quedaba debajo de la barra).
 ///
 /// Adentro, cerrar con el `context` de la hoja (el del [builder]).
+///
+/// Siempre lleva la barrita de arrastre: el contenido de las hojas arranca
+/// sin margen arriba y la barrita es la que lo separa del borde.
 Future<T?> showAppSheet<T>(
   BuildContext context, {
   required WidgetBuilder builder,
-  bool showDragHandle = true,
 }) {
   return showModalBottomSheet<T>(
     context: context,
     useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
-    showDragHandle: showDragHandle,
+    showDragHandle: true,
     builder: builder,
   );
 }
