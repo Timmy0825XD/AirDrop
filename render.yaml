@@ -1,0 +1,56 @@
+# Blueprint de Render: backend de desarrollo (plan free).
+# Cada push a develop que toque backend/ lo vuelve a desplegar.
+# Las claves con `sync: false` se piden una sola vez al crear el Blueprint.
+
+services:
+  - type: web
+    name: airdrop-backend
+    runtime: node
+    plan: free
+    # La más cercana a Supabase (sa-east-1) y a Colombia. No se cambia después.
+    region: virginia
+    branch: develop
+    rootDir: backend
+    autoDeployTrigger: commit
+    # --prod=false: el build necesita @nestjs/cli, que es devDependency.
+    buildCommand: corepack enable && pnpm install --frozen-lockfile --prod=false && pnpm build
+    startCommand: pnpm start:prod
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 24.14.1
+      # development a propósito: TypeORM sincroniza el esquema con cada cambio
+      # de develop y Swagger queda en /api. Cambiarlo a production exige
+      # crear el esquema a mano (ver typeorm.config.ts).
+      - key: NODE_ENV
+        value: development
+      - key: CONTROL_ENABLED
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRES_IN
+        value: 8h
+      # Upstash (rediss://), la misma del .env.
+      - key: REDIS_URL
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: ADMIN_EMAIL
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: ADMIN_FULL_NAME
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: BREVO_API_KEY
+        sync: false
+      - key: BREVO_SENDER_EMAIL
+        sync: false
+      - key: BREVO_SENDER_NAME
+        sync: false
+      # Dominio de la web (radar). La app móvil no la necesita.
+      - key: CORS_ORIGINS
+        sync: false
