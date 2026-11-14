@@ -1,0 +1,75 @@
+# Cobertura regional
+
+La demo cubre unos 45 km alrededor de Valledupar: los corregimientos del municipio, más La Paz, San Diego, Manaure, Pueblo Bello y Agustín Codazzi. Valledupar es de donde sale el abastecimiento, pero no recibe vuelos: casi toda la ciudad está dentro del anillo de 9 km del aeropuerto (ver [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md)).
+
+## Los tres tipos de sitio
+
+| Sitio | Qué tiene | Qué hace | Cuenta en el sistema |
+| --- | --- | --- | --- |
+| **Nodo** | Drones, inventario y despachador | Despega. Atiende a pacientes y reabastece a las ESE | Central de tipo `NODO` |
+| **ESE** | Inventario y despachador, sin drones | Pide el reabastecimiento y recibe traslados | Central de tipo `ESE` |
+| **Punto de entrega** | Dronpuerto o puesto de salud, con un observador | El paciente recoge su pedido con el código | No es una cuenta; es un lugar del seed |
+
+El abastecimiento de los nodos desde Valledupar va por carretera y queda fuera del sistema ([modelo.md](modelo.md)).
+
+## Ubicaciones
+
+Las coordenadas de municipios y corregimientos son las de GeoNames (consultadas con el geocodificador de Open-Meteo). Su elevación es la de ese mismo registro. Los nodos son instalaciones ficticias de AirDrop, ubicadas a propósito:
+
+- a más de 9 km del ARP del aeropuerto;
+- a más de 2 km de cualquier instalación militar, de policía, penitenciaria o eléctrica de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md);
+- cerca de las ESE que atiende el Cóndor.
+
+### Nodos
+
+| Nodo | Lat | Lon | Elevación | Al ARP | Atiende |
+| --- | --- | --- | --- | --- | --- |
+| Nodo Norte (Río Seco) | 10.6075 | −73.2237 | 235 m | 19,4 km | Corregimientos del norte y la Sierra kankuama |
+| Nodo Sur (La Paz – San Diego) | 10.3550 | −73.1400 | 170 m | 14,9 km | ESE La Paz, ESE San Diego, ESE Manaure, Media Luna |
+| Nodo Occidente (Valencia de Jesús) | 10.3000 | −73.4050 | 185 m | 22,7 km | Valle del Cesar occidental y Pueblo Bello |
+| Nodo Codazzi | 10.0550 | −73.2550 | 140 m | 42,3 km | ESE Codazzi y el sur |
+
+### ESE (centrales sin drones)
+
+| ESE | Lat | Lon | Elevación | Nodo | Distancia |
+| --- | --- | --- | --- | --- | --- |
+| La Paz | 10.3844 | −73.1733 | 152 m | Sur | 4,9 km |
+| San Diego | 10.3338 | −73.1805 | 180 m | Sur | 5,0 km |
+| Manaure Balcón del Cesar | 10.3928 | −73.0325 | 726 m | Sur | 12,5 km |
+| Pueblo Bello | 10.4171 | −73.5804 | 1.108 m | Occidente | 23,2 km |
+| Agustín Codazzi | 10.0367 | −73.2356 | 136 m | Codazzi | 2,9 km |
+
+### Puntos de entrega
+
+| Punto | Lat | Lon | Elevación | Nodo | Distancia | Nota |
+| --- | --- | --- | --- | --- | --- | --- |
+| Patillal | 10.7064 | −73.2123 | 513 m | Norte | 11,1 km | |
+| Badillo | 10.6314 | −73.1279 | 200 m | Norte | 10,8 km | |
+| Guacoche | 10.4964 | −73.1660 | 130 m | Norte | 13,9 km | |
+| Guacochito | 10.5154 | −73.1517 | 133 m | Norte | 12,9 km | |
+| Atánquez | 10.6976 | −73.3545 | 793 m | Norte | 17,5 km | Resguardo kankuamo y estación de policía: zona coordinada |
+| Guatapurí | 10.7261 | −73.3925 | 1.277 m | Norte | 22,7 km | Resguardo kankuamo; instalación militar: zona coordinada |
+| Chemesquemena | 10.7132 | −73.4007 | 1.427 m | Norte | 22,6 km | Resguardo kankuamo: zona coordinada |
+| Media Luna | 10.2455 | −73.1439 | 407 m | Sur | 12,2 km | |
+| Valencia de Jesús | 10.3017 | −73.3945 | 185 m | Occidente | 1,2 km | |
+| Aguas Blancas | 10.2253 | −73.4910 | 184 m | Occidente | 12,6 km | |
+| Mariangola | 10.1851 | −73.5871 | 124 m | Occidente | 23,7 km | |
+| Villa Germania | 10.2669 | −73.7151 | 614 m | Occidente | 34,1 km | Solo la alcanza el Colibrí |
+
+Nabusímake (resguardo arhuaco, 2.135 m) queda a 37,7 km del Nodo Occidente y 1.950 m más arriba. No es punto de entrega: con el ascenso no alcanza ningún tipo. Sirve para explicar el límite de la red.
+
+## Alcance útil de cada tipo
+
+Cada misión es de ida y vuelta por el mismo corredor (si nadie recibe, el dron vuelve con el paquete). Además, se aterriza con el 20 % de reserva. Despegue, transición, descenso y aterrizaje cuestan 8 % por tramo. Por eso, en terreno plano y sin viento, el radio útil es:
+
+> radio ≈ (100 − 20 − 2 × 8) / 2 % del alcance = **32 % del alcance**
+
+| Tipo | Alcance | Radio útil en plano |
+| --- | --- | --- |
+| Colibrí | 120 km | 38 km |
+| Garza | 90 km | 29 km |
+| Cóndor | 30 km | 10 km |
+
+El terreno y el viento lo reducen: subir cuesta energía ([../operacion/condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md)). El motor hace la cuenta real sobre el perfil de cada ruta. La tabla solo sirve para ubicar los nodos.
+
+Las ubicaciones exactas de los dronpuertos de una operación real se definirían con cada ESE, cada alcaldía y cada comunidad. En la demo son ilustrativas.
