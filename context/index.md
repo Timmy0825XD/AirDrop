@@ -12,6 +12,7 @@ En esta raíz solo está este índice. El resto vive en carpetas. Cada carpeta r
 | `operacion/` | Cómo vuela de verdad: flota, espacio aéreo, condiciones, contingencias |
 | `legal/` | Qué norma lo permite o lo prohíbe |
 | `producto/` | Qué se construye: alcance, requisitos, casos de uso, backlog |
+| `calidad/` | Seguridad, rendimiento y usabilidad |
 | `diseno/` | Cómo está armado el software y cómo se programa |
 | `sustentacion/` | Cómo se defiende ante el jurado |
 | `historial/` | Bitácoras del equipo. **No es especificación** |
@@ -41,6 +42,9 @@ En esta raíz solo está este índice. El resto vive en carpetas. Cada carpeta r
 | Requisitos y su fundamento | [producto/requisitos.md](producto/requisitos.md) |
 | Casos de uso | [producto/casos-de-uso.md](producto/casos-de-uso.md) |
 | Historias y sprints | [producto/backlog.md](producto/backlog.md) |
+| Controles de seguridad y riesgos aceptados | [calidad/seguridad.md](calidad/seguridad.md) |
+| Límites del despliegue y cómo se mide | [calidad/rendimiento.md](calidad/rendimiento.md) |
+| Accesibilidad, conexión rural y lenguaje | [calidad/usabilidad.md](calidad/usabilidad.md) |
 | Cómo está armado el software | [diseno/arquitectura.md](diseno/arquitectura.md) |
 | Cómo se programa | [diseno/principios.md](diseno/principios.md) |
 | Problema, objetivos, marco, glosario, fuentes | [sustentacion/](sustentacion/) |

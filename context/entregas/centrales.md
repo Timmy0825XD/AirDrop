@@ -2,13 +2,15 @@
 
 Esto es distribución física, no dispensación. No hay fórmula de paciente ni consejo de uso para un ciudadano. Hay una remisión de unidades selladas. La norma está en [../legal/salud.md](../legal/salud.md). Lote, frío y cuarentena están en [productos.md](productos.md).
 
-Lo pide el despachador de la central que **necesita** el insumo. Lo suelta el despachador de la central que **lo tiene**. El dron sale de la segunda.
+Lo pide el despachador de la central que **necesita** el insumo: casi siempre una ESE, aunque un nodo también puede pedirle a otro. Lo suelta el despachador del **nodo que lo tiene**, que es de donde sale el dron. Una ESE no tiene drones, así que nunca es el origen.
 
-1. El despachador de destino elige la central de origen, el medicamento y la cantidad. Si el pedido es programado, también el calendario, cuándo termina y la hora de la franja (RU-30). No adjunta fórmula.
-2. El despachador de origen confirma unidades selladas del mismo genérico, concentración y forma. Arma la remisión: origen, destino, medicamento, lote, vencimiento y cantidad. Autorizar reserva el dron. El vuelo no empieza.
-3. Al confirmar la carga descuenta ese lote en origen. No adjunta información de uso para un paciente: quien recibe es otro servicio de la red.
+El caso típico es el reabastecimiento programado de una ESE desde el nodo más cercano, que la ESE paga con su suscripción ([../negocio/modelo.md](../negocio/modelo.md)). El Cóndor lleva hasta 15 kg a las ESE que están a menos de 10 km de su nodo ([../operacion/flota.md](../operacion/flota.md)).
+
+1. El despachador de destino elige el nodo de origen, el medicamento y la cantidad. Si el pedido es programado, también el calendario, cuándo termina y la hora de la franja (RU-30). No adjunta fórmula.
+2. El despachador del nodo confirma unidades selladas del mismo genérico, concentración y forma. Arma la remisión: origen, destino, medicamento, lote, vencimiento y cantidad. Autorizar reserva el dron. El vuelo no empieza.
+3. Al confirmar la carga descuenta ese lote en el nodo y se emite el manifiesto ([../operacion/manifiesto.md](../operacion/manifiesto.md)). No adjunta información de uso para un paciente: quien recibe es otro servicio de la red.
 4. En destino, el despachador que pidió ingresa el código y compara la remisión: cantidad, lote, vencimiento, sello y, si el ítem lleva frío, la temperatura del trayecto.
-5. Si todo coincide y no hubo alerta de frío, el inventario entra en la central de destino. La app manda esa comparación junto con el código (remisión y sello). El dron espera 1 minuto a que descarguen y vuelve vacío a origen.
+5. Si todo coincide y no hubo alerta de frío, el inventario entra en la central de destino. La app manda esa comparación junto con el código (remisión y sello). El dron espera 1 minuto a que descarguen y vuelve vacío al nodo.
 6. Si no hay código, la cantidad no coincide, el sello está mal o hubo alerta de temperatura, no entra. El paquete vuelve a origen y sigue la cuarentena.
 
 Una central del simulador no le vende al detal a otra. El control especial no usa este camino: el pedido se rechaza, porque en la práctica ese movimiento pertenece al Fondo Nacional de Estupefacientes.

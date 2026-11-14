@@ -39,19 +39,20 @@ La arquitectura prevista multi-ciudad (varias centrales, varios drones) se **mod
 Los mismos nombres en backend (módulos Nest) y, en lo posible, en frontend (features):
 
 1. **Auth** — registro solo del solicitante, OTP, JWT, roles. Despachador y operador los crea el admin.
-2. **Hubs (centrales)** — alta y suspensión por el administrador, perfil.
+2. **Hubs (centrales)** — nodos y ESE, alta y suspensión por el administrador, perfil, puntos de entrega.
 3. **Inventory** — existencias, lote, vencimiento, cadena de frío y tipo de venta.
-4. **Fleet** — drones, `DroneModel`, estados, mantenimiento.
+4. **Fleet** — drones, `DroneModel` de los tres tipos, compartimento de frío, estados, mantenimiento.
 5. **Geofences** — polígonos PostGIS.
 6. **Orders** — los cuatro pedidos de [`../app/roles.md`](../app/roles.md), con las reglas de [`../entregas/`](../entregas/).
 7. **Decision** — elegibilidad + prioridad emergencia > programado; salida: dron asignado pendiente de carga, no vuelo.
-8. **Routing** — corredores a altitud fija evitando geovallas.
+8. **Routing** — corredores que evitan las zonas, con perfil de terreno.
 9. **Simulation** — reloj (tras confirmar carga), fases de vuelo, espera de código, retorno con paquete, batería, temperatura simulada.
 10. **Telemetry** — Redis + gateway WebSocket.
 11. **Notifications** — push por cambio de estado y alertas.
 12. **Analytics** — dashboard epidemiológico y métricas admin (consultas SQL, no un data warehouse).
 13. **Weather** — celdas de clima simulado; responde si un punto o una ruta se puede volar y con qué viento.
 14. **Control** — consola de simulación: reloj, eventos, actores simulados, modo caos, línea de tiempo y reinicio. No tiene reglas propias: usa los servicios de los demás dominios.
+15. **Airspace** — zonas legales del RAC 100, corredores pactados, malla de terreno y luz del día.
 
 No hace falta un “bounded context” formal ni eventos de dominio entre estos módulos: llamadas de servicio y, si hace falta, un `EventEmitter` de Nest **dentro del mismo proceso**.
 
@@ -117,9 +118,9 @@ Emergencia **siempre** gana el dron si hay competencia (RF-11, HU-22, CU-26).
 
 ## 7. Calibración del dron (una entidad, no un simulador de física)
 
-`DroneModel` (Wingcopter 198): velocidad máxima ~150 km/h, payload hasta 6 kg, alcance hasta 110 km con carga ligera. Consumo de batería **por fase**: despegue vertical, transición, crucero ala fija, descenso, aterrizaje.
+`DroneModel` por tipo: Colibrí (2 kg, 140 km/h, 120 km), Garza (5 kg, 110 km/h, 90 km) y Cóndor (15 kg, 60 km/h, 30 km), con techo, velocidad vertical, masa, energía y límite de viento ([../operacion/flota.md](../operacion/flota.md)). Consumo de batería **por fase**: despegue vertical, transición, crucero, descenso, aterrizaje, más la energía del ascenso.
 
-No se modela aerodinámica, viento real ni colisiones 3D. Obstáculos = geovallas + banda de altitud fija. El viento simulado (RF-32) es un número por zona que cambia la velocidad sobre el suelo y el consumo del crucero, y un incidente es un efecto con nombre (más consumo, menos velocidad), no física.
+No se modela aerodinámica, viento real ni colisiones 3D. Obstáculos = zonas y geovallas en planta + perfil de terreno a 90 m AGL. El viento simulado (RF-32) es un número por zona que cambia la velocidad sobre el suelo y el consumo del crucero, y un incidente es un efecto con nombre (más consumo, menos velocidad), no física.
 
 ---
 
