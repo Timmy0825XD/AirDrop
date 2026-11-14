@@ -18,6 +18,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { SimulationModule } from './simulation/simulation.module';
 import { TelemetryModule } from './telemetry/telemetry.module';
 import { GeofencesModule } from './geofences/geofences.module';
+import { HealthModule } from './health/health.module';
 import { HubsModule } from './hubs/hubs.module';
 import { InventoryModule } from './inventory/inventory.module';
 import { OrdersModule } from './orders/orders.module';
@@ -61,6 +62,7 @@ import { WeatherModule } from './weather/weather.module';
     RadarModule,
     WeatherModule,
     ControlModule,
+    HealthModule,
   ],
 })
 export class AppModule {}
