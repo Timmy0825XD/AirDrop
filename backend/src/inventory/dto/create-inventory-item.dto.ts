@@ -4,8 +4,10 @@ import {
   IsDateString,
   IsEnum,
   IsInt,
+  IsOptional,
   IsString,
   Matches,
+  Max,
   MaxLength,
   Min,
   MinLength,
@@ -60,4 +62,16 @@ export class CreateInventoryItemDto {
       'El tipo de venta debe ser libre, bajo fórmula o control especial.',
   })
   saleType: SaleType;
+
+  /** Peso de una unidad tal como viaja, en gramos (RF-11). */
+  @Type(() => Number)
+  @IsInt({ message: 'El peso por unidad debe ser un entero en gramos.' })
+  @Min(1, { message: 'El peso por unidad debe ser mayor que cero.' })
+  @Max(20000, { message: 'El peso por unidad no puede superar 20 kg.' })
+  unitWeightG: number;
+
+  /** Mercancía peligrosa para el transporte aéreo: no viaja por dron. */
+  @IsOptional()
+  @IsBoolean({ message: 'Debes indicar si es mercancía peligrosa.' })
+  dangerousGoods?: boolean;
 }

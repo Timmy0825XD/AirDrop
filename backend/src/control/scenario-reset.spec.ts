@@ -31,8 +31,18 @@ describe('reinicio del escenario: reglas (RF-40)', () => {
       droneResetState(`${plan.dronePrefix}-0${free}`, plan, TODAY),
     ).toEqual({
       status: DroneStatus.AVAILABLE,
+      coldCompartment: plan.fleet[free - 1].cold,
       maintenanceReason: null,
       maintenanceUntil: null,
+    });
+  });
+
+  it('RF-49: cada dron vuelve con el compartimento de frío de la semilla', () => {
+    plan.fleet.forEach((drone, index) => {
+      expect(
+        droneResetState(`${plan.dronePrefix}-0${index + 1}`, plan, TODAY)
+          .coldCompartment,
+      ).toBe(drone.cold);
     });
   });
 

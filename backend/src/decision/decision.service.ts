@@ -59,12 +59,13 @@ import { assignedHubIds } from '../users/hub-assignment';
 import { User } from '../users/user.entity';
 import { AuthorizeOrderDto } from './dto/authorize-order.dto';
 import {
-  LOT_NOT_AVAILABLE,
-  NOT_THE_LOADING_HUB,
-  NO_ELIGIBLE_DRONE,
-  ONLY_PENDING_LOAD_IS_CONFIRMED,
   assertAuthorizingHub,
   assertCanAuthorize,
+  LOT_NOT_AVAILABLE,
+  NO_ELIGIBLE_DRONE,
+  NOT_THE_LOADING_HUB,
+  ONLY_PENDING_LOAD_IS_CONFIRMED,
+  payloadKgOf,
 } from './decision.rules';
 import {
   HUB_SUSPENDED_NOTE,
@@ -701,6 +702,7 @@ export class DecisionService {
       held.status = OrderStatus.RECEIVED;
       held.droneId = null;
       held.inventoryItemId = null;
+      held.payloadKg = null;
       await manager.save(held);
       await this.routes.deleteOutbound(held.id, manager);
     }
@@ -710,6 +712,7 @@ export class DecisionService {
     order.authorizedAt = simClock.now();
     order.droneId = drone.id;
     order.inventoryItemId = lot.id;
+    order.payloadKg = payloadKgOf(lot, order.quantity);
     order.originHubId = originHubId;
     await manager.save(order);
     await this.routes.saveOutbound(order.id, corridor, manager);
@@ -754,6 +757,7 @@ export class DecisionService {
       await this.routes.deleteOutbound(order.id, manager);
       order.droneId = null;
       order.inventoryItemId = null;
+      order.payloadKg = null;
     }
     const window = dispatchWindow(order);
     if (window && !order.scheduledAt) {

@@ -11,8 +11,8 @@ export const DISPATCH_TOO_EARLY =
 export const WINDOW_CLOSED = 'La franja de esta entrega ya cerró.';
 export const WINDOW_MISSED = 'La franja cerró sin despegue.';
 
-/** Crucero del Wingcopter 198 si la central todavía no tiene un dron. */
-export const DEFAULT_CRUISE_KMH = 150;
+/** Crucero del Garza (RF-49) si la central todavía no tiene un dron. */
+export const DEFAULT_CRUISE_KMH = 110;
 
 /** Todavía no despegó: al cerrar la franja entra el fallback. */
 export const MISSED_STATUSES = [
@@ -172,7 +172,9 @@ export function buildAgenda(
     groups.set(order.time, group);
   }
   const slots = [...groups.entries()].map(([time, rows]) => {
-    const deliveries = rows.filter((row) => SLOT_LOAD.includes(row.status)).length;
+    const deliveries = rows.filter((row) =>
+      SLOT_LOAD.includes(row.status),
+    ).length;
     return {
       time,
       deliveries,

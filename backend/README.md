@@ -124,9 +124,12 @@ La central la crea el administrador y nace `active`; no hay estado de aprobació
 | GET | `/fleet/drones?hubId=` | operador o admin (el admin hoy recibe 403, pendiente 5) |
 | POST | `/fleet/drones` | operador |
 | PATCH | `/fleet/drones/:id/status` | operador |
+| PATCH | `/fleet/drones/:id/cold-compartment` | operador |
 | POST | `/fleet/drones/:id/maintenance` | operador |
 
-Al arrancar se siembra el `DroneModel` Wingcopter 198 (150 km/h, 6 kg, 110 km). El dron nace en `available`. Identificador máximo 32 caracteres. Un dron en misión no cambia de estado.
+Al arrancar se siembran los tres tipos de RF-49 (`src/fleet/drone-types.ts`): Colibrí (`rapid`, 2 kg, 140 km/h, 120 km), Garza (`balanced`, 5 kg, 110 km/h, 90 km) y Cóndor (`cargo`, 15 kg, 60 km/h, 30 km), con techo, velocidad vertical, masa, batería y límite de viento. Si queda el modelo comercial de antes, sus drones pasan a Garza y el modelo se borra. El dron nace en `available` y puede llevar `coldCompartment` (resta 1 kg de carga útil); `PATCH /fleet/drones/:id/cold-compartment` lo pone o lo quita con el dron en tierra. Identificador máximo 32 caracteres. Un dron en misión no cambia de estado.
+
+El motor descarta por estado, carga (unidades × `unitWeightG` del lote), frío, batería, viento del tipo y corredor; entre los que quedan, la urgencia elige el de menor tiempo de llegada y el programado el de menor energía (Wh). El pedido guarda `payloadKg` al reservar el lote. El inventario exige `unitWeightG` y admite `dangerousGoods`: la mercancía peligrosa no se ofrece ni vuela.
 
 ### Geovallas (HU-14)
 

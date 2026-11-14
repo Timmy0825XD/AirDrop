@@ -9,7 +9,7 @@ import { SaleType } from '../src/common/enums/sale-type.enum';
 import { UserRole } from '../src/common/enums/user-role.enum';
 import { DroneStatus } from '../src/common/enums/drone-status.enum';
 import { UserStatus } from '../src/common/enums/user-status.enum';
-import { WINGCOPTER_198_CODE } from '../src/fleet/drone-model-seed.service';
+import { BALANCED_MODEL_CODE } from '../src/fleet/drone-model-seed.service';
 import {
   camilaDiaz,
   createStaff,
@@ -113,6 +113,7 @@ describeIfDb('Sprint 2 (e2e)', () => {
         expirationDate: '2027-03-01',
         requiresColdChain: false,
         saleType: SaleType.PRESCRIPTION,
+        unitWeightG: 30,
       })
       .expect(201);
     expect(item.body).toMatchObject({
@@ -138,6 +139,7 @@ describeIfDb('Sprint 2 (e2e)', () => {
         expirationDate: '2027-06-01',
         requiresColdChain: false,
         saleType: SaleType.OVER_THE_COUNTER,
+        unitWeightG: 30,
       })
       .expect(403);
 
@@ -151,16 +153,16 @@ describeIfDb('Sprint 2 (e2e)', () => {
       .get('/fleet/models')
       .set('Authorization', `Bearer ${operator.token}`)
       .expect(200);
-    const wingcopter = (
-      models.body as Array<{ id: string; code: string }>
-    ).find((row) => row.code === WINGCOPTER_198_CODE);
+    const garza = (models.body as Array<{ id: string; code: string }>).find(
+      (row) => row.code === BALANCED_MODEL_CODE,
+    );
 
     const drone = await request(app!.getHttpServer())
       .post('/fleet/drones')
       .set('Authorization', `Bearer ${operator.token}`)
       .send({
         identifier: DRONE_VUP_01,
-        droneModelId: wingcopter!.id,
+        droneModelId: garza!.id,
         hubId,
       })
       .expect(201);

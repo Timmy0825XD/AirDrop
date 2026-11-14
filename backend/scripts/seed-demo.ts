@@ -22,7 +22,7 @@ import {
   operator,
   requesters,
 } from '../src/control/demo-scenario';
-import { WINGCOPTER_198_CODE } from '../src/fleet/drone-model-seed.service';
+import { BALANCED_MODEL_CODE } from '../src/fleet/drone-model-seed.service';
 import { addCalendarDays, todayInColombia } from '../src/orders/orders.rules';
 import {
   createStaff,
@@ -90,11 +90,15 @@ async function seedDemoData(): Promise<void> {
       .get('/fleet/models')
       .set('Authorization', `Bearer ${operatorSession.token}`)
       .expect(200);
-    const wingcopter = (
-      models.body as Array<{ id: string; code: string }>
-    ).find((model) => model.code === WINGCOPTER_198_CODE);
-    if (!wingcopter) {
-      throw new Error('No existe el modelo Wingcopter 198.');
+    // RF-49: los tres tipos, por su código (rapid, balanced, cargo).
+    const modelIdByKind = new Map(
+      (models.body as Array<{ id: string; kind: string }>).map((model) => [
+        model.kind,
+        model.id,
+      ]),
+    );
+    if (!modelIdByKind.get(BALANCED_MODEL_CODE)) {
+      throw new Error('No existen los tipos de dron de la flota.');
     }
 
     for (const [index, plan] of hubPlans.entries()) {
@@ -116,13 +120,16 @@ async function seedDemoData(): Promise<void> {
           expirationDate: addCalendarDays(today, item.expiresInDays),
           requiresColdChain: item.cold ?? false,
           saleType: item.saleType,
+          unitWeightG: item.unitWeightG,
         });
       }
       for (let number = 1; number <= plan.droneCount; number += 1) {
+        const spec = plan.fleet[number - 1];
         const droneId = await createDrone(app, operatorSession.token, {
           identifier: `${plan.dronePrefix}-0${number}`,
-          droneModelId: wingcopter.id,
+          droneModelId: modelIdByKind.get(spec.kind),
           hubId,
+          coldCompartment: spec.cold,
         });
         const note = plan.droneNotes.find((entry) => entry.number === number);
         if (!note) {

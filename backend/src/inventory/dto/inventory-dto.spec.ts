@@ -14,6 +14,7 @@ const validCreate = {
   expirationDate: tomorrow,
   requiresColdChain: false,
   saleType: SaleType.OVER_THE_COUNTER,
+  unitWeightG: 30,
 };
 
 async function messages(
@@ -25,6 +26,26 @@ async function messages(
 }
 
 describe('CreateInventoryItemDto', () => {
+  it('RF-11 exige el peso por unidad en gramos, de 1 g a 20 kg', async () => {
+    for (const unitWeightG of [undefined, 0, 20001, 2.5]) {
+      expect(
+        (
+          await messages(CreateInventoryItemDto, {
+            ...validCreate,
+            unitWeightG,
+          })
+        ).length,
+      ).toBeGreaterThan(0);
+    }
+    expect(
+      await messages(CreateInventoryItemDto, {
+        ...validCreate,
+        unitWeightG: 20000,
+        dangerousGoods: true,
+      }),
+    ).toEqual([]);
+  });
+
   it('acepta un ítem con cantidad positiva y vencimiento futuro', async () => {
     expect(await messages(CreateInventoryItemDto, validCreate)).toEqual([]);
   });

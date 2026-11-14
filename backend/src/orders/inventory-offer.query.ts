@@ -49,6 +49,8 @@ export class InventoryOfferQuery {
       .where('hub.status = :active', { active: HubStatus.ACTIVE })
       // RF-06: lo que se ofrece para volar está en un nodo.
       .andWhere('hub.networkRole = :node', { node: HubNetworkRole.NODE })
+      // salud.md: la mercancía peligrosa no viaja por dron.
+      .andWhere('item.dangerousGoods = false')
       .andWhere('item.quantity > 0')
       .andWhere('item.expirationDate >= :today', { today: todayInColombia() })
       .andWhere('item.saleType != :special', {

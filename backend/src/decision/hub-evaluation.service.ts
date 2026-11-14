@@ -21,9 +21,9 @@ import {
   TRANSITION_MS,
 } from '../simulation/simulation.rules';
 import { reverseCorridor } from '../routing/routing.rules';
-import { corridorWeather } from '../weather/weather.rules';
+import { corridorWeather, windLimitsOf } from '../weather/weather.rules';
 import { WeatherService } from '../weather/weather.service';
-import { DroneCandidate, chooseDrone } from './decision.rules';
+import { DroneCandidate, chooseDrone, payloadKgOf } from './decision.rules';
 import { EligibilityService } from './eligibility.service';
 import { simClock } from '../common/clock/sim-clock';
 
@@ -107,27 +107,26 @@ export class HubEvaluationService {
       polygons,
       { destinationIsHub: order.destinationKind === DestinationKind.HUB },
     );
-    // RF-32: el clima del corredor de ida y del regreso por el mismo camino.
-    const speed = modelsById.get(drones[0]?.droneModelId ?? '')?.maxSpeedKmh;
-    // Sin celdas vigentes el cielo está despejado: cuentan los km del corredor.
+    // RF-32: el clima del corredor de ida y del regreso por el mismo camino,
+    // para cada tipo: su crucero cambia los km equivalentes y su límite de
+    // viento decide si vuela.
     const cells = this.weather.active(now);
-    const withWeather = cells.length > 0 && corridor != null && speed != null;
-    const there = withWeather ? corridorWeather(corridor, cells, speed) : null;
-    const back = withWeather
-      ? corridorWeather(reverseCorridor(corridor), cells, speed)
-      : null;
-    const energyKm =
-      there && back
-        ? Math.round(((there.energyKm + back.energyKm) / 2) * 100) / 100
-        : (corridor?.distanceKm ?? null);
+    const weatherByModel = new Map(
+      [...modelsById.values()].map((model) => [
+        model.id,
+        modelWeather(corridor, cells, model),
+      ]),
+    );
     const choice = this.eligibility.choose({
       missionType: order.missionType,
       quantity: order.quantity,
-      weatherFlyable: (there?.flyable ?? true) && (back?.flyable ?? true),
-      weatherReason: there?.reason ?? back?.reason ?? null,
+      payloadKg: payloadKgOf(lot, order.quantity),
+      requiresCold: order.requiresColdChain,
+      weatherFlyable: true,
       candidates: drones.flatMap((drone) => {
         const model = modelsById.get(drone.droneModelId);
-        if (!model) {
+        const weather = weatherByModel.get(drone.droneModelId);
+        if (!model || !weather) {
           return [];
         }
         return [
@@ -138,7 +137,8 @@ export class HubEvaluationService {
               heldByDrone.get(drone.id) ?? null,
               batteryByDrone.get(drone.id) ?? 100,
             ),
-            distanceKm: corridor ? energyKm : null,
+            distanceKm: weather.energyKm,
+            weather: { flyable: weather.flyable, reason: weather.reason },
           },
         ];
       }),
@@ -146,9 +146,15 @@ export class HubEvaluationService {
     const chosenDrone = drones.find(
       (drone) => drone.id === choice.chosen?.droneId,
     );
-    const model = modelsById.get(
-      (chosenDrone ?? drones[0])?.droneModelId ?? '',
-    );
+    // La llegada y el alcance de la central: los del dron elegido o, si no
+    // hay, los del tipo de más alcance (la central "podría" con él).
+    const model =
+      modelsById.get(chosenDrone?.droneModelId ?? '') ??
+      [...modelsById.values()].sort((a, b) => b.maxRangeKm - a.maxRangeKm)[0];
+    const there = model ? weatherByModel.get(model.id)?.there : null;
+    const energyKm = model
+      ? (weatherByModel.get(model.id)?.energyKm ?? null)
+      : (corridor?.distanceKm ?? null);
     const reach =
       corridor && model
         ? {
@@ -195,6 +201,8 @@ export class HubEvaluationService {
       .andWhere('item.saleType = :saleType', { saleType: order.saleType })
       .andWhere('item.expirationDate >= :today', { today })
       .andWhere('item.quantity >= :quantity', { quantity: order.quantity })
+      // salud.md: la mercancía peligrosa no viaja por dron.
+      .andWhere('item.dangerousGoods = false')
       .orderBy('item.expirationDate', 'ASC')
       .addOrderBy('item.lot', 'ASC');
     return (lock ? query.setLock('pessimistic_write') : query).getOne();
@@ -241,6 +249,9 @@ function toCandidate(
     status: drone.status,
     maxPayloadKg: model.maxPayloadKg,
     maxRangeKm: model.maxRangeKm,
+    coldCompartment: drone.coldCompartment ?? false,
+    cruiseKmh: model.maxSpeedKmh,
+    batteryWh: model.batteryWh,
     held: held
       ? {
           orderId: held.id,
@@ -248,5 +259,41 @@ function toCandidate(
           status: held.status,
         }
       : null,
+  };
+}
+
+/**
+ * El clima de ida y de regreso para un tipo de dron. Sin celdas vigentes,
+ * cuentan los km del corredor; sin corredor, no hay energía que medir.
+ */
+function modelWeather(
+  corridor: PlannedCorridor | null,
+  cells: ReturnType<WeatherService['active']>,
+  model: DroneModel,
+) {
+  if (!corridor) {
+    return { flyable: true, reason: null, energyKm: null, there: null };
+  }
+  if (!cells.length) {
+    return {
+      flyable: true,
+      reason: null,
+      energyKm: corridor.distanceKm,
+      there: null,
+    };
+  }
+  const limits = windLimitsOf(model);
+  const there = corridorWeather(corridor, cells, model.maxSpeedKmh, limits);
+  const back = corridorWeather(
+    reverseCorridor(corridor),
+    cells,
+    model.maxSpeedKmh,
+    limits,
+  );
+  return {
+    flyable: there.flyable && back.flyable,
+    reason: there.reason ?? back.reason,
+    energyKm: Math.round(((there.energyKm + back.energyKm) / 2) * 100) / 100,
+    there,
   };
 }

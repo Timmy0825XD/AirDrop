@@ -48,6 +48,8 @@ export class InventoryService {
       expirationDate: dto.expirationDate,
       requiresColdChain: dto.requiresColdChain,
       saleType: dto.saleType,
+      unitWeightG: dto.unitWeightG,
+      dangerousGoods: dto.dangerousGoods ?? false,
     });
     const saved = await this.items.save(item);
     return this.toPublicItem(saved);
@@ -69,7 +71,9 @@ export class InventoryService {
       dto.lot === undefined &&
       dto.expirationDate === undefined &&
       dto.requiresColdChain === undefined &&
-      dto.saleType === undefined
+      dto.saleType === undefined &&
+      dto.unitWeightG === undefined &&
+      dto.dangerousGoods === undefined
     ) {
       throw new BadRequestException(
         'Debes enviar al menos un campo para actualizar.',
@@ -93,6 +97,12 @@ export class InventoryService {
     }
     if (dto.saleType !== undefined) {
       item.saleType = dto.saleType;
+    }
+    if (dto.unitWeightG !== undefined) {
+      item.unitWeightG = dto.unitWeightG;
+    }
+    if (dto.dangerousGoods !== undefined) {
+      item.dangerousGoods = dto.dangerousGoods;
     }
     const saved = await this.items.save(item);
     return this.toPublicItem(saved);
@@ -119,6 +129,8 @@ export class InventoryService {
       expirationDate: item.expirationDate,
       requiresColdChain: item.requiresColdChain,
       saleType: item.saleType,
+      unitWeightG: item.unitWeightG,
+      dangerousGoods: item.dangerousGoods,
       createdAt: item.createdAt,
     };
   }

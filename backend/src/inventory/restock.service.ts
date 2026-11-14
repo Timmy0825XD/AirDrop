@@ -178,6 +178,8 @@ export class RestockService {
         expirationDate: lot.expirationDate,
         requiresColdChain: order.requiresColdChain,
         saleType: order.saleType,
+        // El lote que llega pesa lo mismo que en origen (RF-11).
+        unitWeightG: unitWeightOf(order),
       }),
     );
   }
@@ -206,4 +208,11 @@ export class RestockService {
     const hub = await this.hubsService.requireActive(hubIds[0]);
     return hub.id;
   }
+}
+
+/** Gramos por unidad del lote que voló; sin dato, los 100 g por defecto. */
+function unitWeightOf(order: Order): number {
+  return order.payloadKg && order.quantity > 0
+    ? Math.round((order.payloadKg * 1000) / order.quantity)
+    : 100;
 }

@@ -21,6 +21,7 @@ import { CreateDroneDto } from './dto/create-drone.dto';
 import { ListDronesQueryDto } from './dto/list-drones-query.dto';
 import { ListFlightsQueryDto } from './dto/list-flights-query.dto';
 import { RegisterMaintenanceDto } from './dto/register-maintenance.dto';
+import { SetColdCompartmentDto } from './dto/set-cold-compartment.dto';
 import { UpdateDroneStatusDto } from './dto/update-drone-status.dto';
 import { FleetDashboardService } from './fleet-dashboard.service';
 import { FleetFlightsService } from './fleet-flights.service';
@@ -49,6 +50,17 @@ export class FleetController {
   @Roles(UserRole.FLEET_OPERATOR)
   createDrone(@CurrentUser() user: User, @Body() dto: CreateDroneDto) {
     return this.fleetService.createDrone(user, dto);
+  }
+
+  /** RF-49: poner o quitar el compartimento de frío (dron en tierra). */
+  @Patch('drones/:id/cold-compartment')
+  @Roles(UserRole.FLEET_OPERATOR)
+  setColdCompartment(
+    @CurrentUser() user: User,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: SetColdCompartmentDto,
+  ) {
+    return this.fleetService.setColdCompartment(user, id, dto.installed);
   }
 
   @Get('drones')

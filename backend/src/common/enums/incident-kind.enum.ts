@@ -5,7 +5,7 @@
 export enum IncidentKind {
   /** La batería bajó del 20 % (CU-32). */
   BATTERY_CRITICAL = 'battery_critical',
-  /** RF-32: el viento donde va el dron pasa del límite del Wingcopter. */
+  /** RF-32: el viento donde va el dron pasa del límite de su tipo. */
   WIND_LIMIT = 'wind_limit',
   /** RF-33: una zona nueva cruza el tramo que falta y no hay otro camino. */
   ROUTE_BLOCKED = 'route_blocked',

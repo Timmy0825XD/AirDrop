@@ -180,6 +180,19 @@ export class Order {
   @Column({ type: 'uuid', nullable: true })
   inventoryItemId: string | null;
 
+  /**
+   * RF-11: peso de la carga (unidades por el peso por unidad del lote), en
+   * kg. Se fija al reservar el lote.
+   */
+  @Column({
+    type: 'numeric',
+    precision: 5,
+    scale: 2,
+    nullable: true,
+    transformer: NUMERIC_TRANSFORMER,
+  })
+  payloadKg: number | null;
+
   /** Cuándo se reservó el dron (RF-26: tiempo de respuesta). */
   @Column({ type: 'timestamptz', nullable: true })
   authorizedAt: Date | null;

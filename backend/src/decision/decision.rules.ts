@@ -6,11 +6,17 @@ import { MissionType } from '../common/enums/mission-type.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 import { assertDispatchWindow } from '../orders/plan-dispatch.rules';
+import { usablePayloadKg } from '../fleet/drone-types';
 import { missionBatteryPercent } from '../simulation/flight-energy.rules';
 import { isAwaitingHub } from './fallback.rules';
 
-/** El inventario no guarda masa. Cada unidad cuenta 0,5 kg. */
-export const UNIT_MASS_KG = 0.5;
+/** RF-11: peso de la carga en kg, con el peso por unidad del lote. */
+export function payloadKgOf(
+  lot: { unitWeightG?: number | null },
+  quantity: number,
+): number {
+  return Math.round((lot.unitWeightG ?? 100) * quantity) / 1000;
+}
 
 export const PRESCRIPTION_NOT_VERIFIED =
   'Debes verificar la fórmula antes de autorizar.';
@@ -48,6 +54,9 @@ export const DRONE_IN_MISSION = 'El dron ya está en misión.';
 
 export const PAYLOAD_TOO_HEAVY = 'La carga supera la capacidad del dron.';
 
+export const NEEDS_COLD_COMPARTMENT =
+  'La carga exige frío y el dron no lleva el compartimento.';
+
 export const BATTERY_TOO_LOW =
   'La batería no alcanza para la ida, el regreso y la reserva del 20 %.';
 
@@ -65,6 +74,12 @@ export type DroneCandidate = {
   status: DroneStatus;
   maxPayloadKg: number;
   maxRangeKm: number;
+  /** RF-49: lleva el compartimento de frío (resta 1 kg de carga útil). */
+  coldCompartment?: boolean;
+  /** Crucero del tipo, en km/h: decide el tiempo de llegada. */
+  cruiseKmh?: number;
+  /** Energía de la batería del tipo, en Wh: decide el programado. */
+  batteryWh?: number;
   held: HeldMission | null;
   /** Batería ahora, con lo que recargó en tierra. */
   batteryPercent: number;
@@ -103,7 +118,14 @@ export type DiscardedDrone = {
 type RankedCandidate = {
   drone: DroneCandidate;
   distanceKm: number;
+  /** Minutos de crucero hasta el destino (urgencia). */
+  etaMin: number;
+  /** Wh que gasta la misión completa (programado). */
+  energyWh: number;
 };
+
+/** El clima del corredor para un tipo de dron: su viento límite es el suyo. */
+export type CandidateWeather = { flyable: boolean; reason: string | null };
 
 export function assertCanAuthorize(
   order: AuthorizableOrder,
@@ -148,25 +170,36 @@ export function assertAuthorizingHub(
 export function chooseDrone(input: {
   missionType: MissionType;
   quantity: number;
+  /** RF-11: peso real de la carga; sin él, 0,5 kg por unidad (filas de antes). */
+  payloadKg?: number;
+  /** El pedido exige frío: solo un dron con compartimento. */
+  requiresCold?: boolean;
   weatherFlyable: boolean;
   /** Por qué no deja volar el clima (tormenta o viento); sin él, el genérico. */
   weatherReason?: string | null;
   /**
    * Km del corredor, o km equivalentes con el clima (RF-32): con viento en
-   * contra el crucero cuesta como uno más largo.
+   * contra el crucero cuesta como uno más largo. `weather`, si viene, es el
+   * clima con el límite de viento de ese tipo y manda sobre el general.
    */
-  candidates: Array<{ drone: DroneCandidate; distanceKm: number | null }>;
+  candidates: Array<{
+    drone: DroneCandidate;
+    distanceKm: number | null;
+    weather?: CandidateWeather;
+  }>;
 }): { chosen: ChosenDrone | null; discarded: DiscardedDrone[] } {
   const discarded: DiscardedDrone[] = [];
   const eligible: RankedCandidate[] = [];
+  const payloadKg = input.payloadKg ?? input.quantity * LEGACY_UNIT_MASS_KG;
   for (const candidate of input.candidates) {
     const reason = discardReason(
       input.missionType,
-      input.quantity,
-      input.weatherFlyable,
+      payloadKg,
+      candidate.weather?.flyable ?? input.weatherFlyable,
       candidate.drone,
       candidate.distanceKm,
-      input.weatherReason,
+      candidate.weather?.reason ?? input.weatherReason,
+      input.requiresCold ?? false,
     );
     if (reason) {
       discarded.push({
@@ -176,16 +209,13 @@ export function chooseDrone(input: {
       });
       continue;
     }
-    eligible.push({
-      drone: candidate.drone,
-      distanceKm: candidate.distanceKm ?? 0,
-    });
+    eligible.push(ranked(candidate.drone, candidate.distanceKm ?? 0));
   }
   const free = eligible.filter(
     (entry) => entry.drone.status === DroneStatus.AVAILABLE,
   );
   const pool = free.length ? free : eligible;
-  pool.sort(byRotation);
+  pool.sort(input.missionType === MissionType.EMERGENCY ? byArrival : byEnergy);
   const winner = pool[0];
   if (!winner) {
     return { chosen: null, discarded };
@@ -202,6 +232,38 @@ export function chooseDrone(input: {
     },
     discarded,
   };
+}
+
+/** Sin peso por unidad en el lote (filas de antes de RF-11): 0,5 kg. */
+export const LEGACY_UNIT_MASS_KG = 0.5;
+
+function ranked(drone: DroneCandidate, distanceKm: number): RankedCandidate {
+  const etaMin = drone.cruiseKmh
+    ? (distanceKm / drone.cruiseKmh) * 60
+    : distanceKm;
+  const energyWh = drone.batteryWh
+    ? (missionBatteryPercent(distanceKm, drone.maxRangeKm) / 100) *
+      drone.batteryWh
+    : distanceKm;
+  return {
+    drone,
+    distanceKm,
+    etaMin: Math.round(etaMin * 10) / 10,
+    energyWh: Math.round(energyWh),
+  };
+}
+
+/**
+ * RF-11, `operacion/flota.md`: en una urgencia gana el que llega antes. Si
+ * empatan (dos drones del mismo tipo), decide la rotación.
+ */
+function byArrival(left: RankedCandidate, right: RankedCandidate): number {
+  return left.etaMin - right.etaMin || byRotation(left, right);
+}
+
+/** En un programado gana el que gasta menos energía; empate, la rotación. */
+function byEnergy(left: RankedCandidate, right: RankedCandidate): number {
+  return left.energyWh - right.energyWh || byRotation(left, right);
 }
 
 /**
@@ -227,11 +289,12 @@ function byRotation(left: RankedCandidate, right: RankedCandidate): number {
 
 export function discardReason(
   missionType: MissionType,
-  quantity: number,
+  payloadKg: number,
   weatherFlyable: boolean,
   candidate: DroneCandidate,
   distanceKm: number | null,
   weatherReason?: string | null,
+  requiresCold = false,
 ): string | null {
   if (!weatherFlyable) {
     return weatherReason ?? WEATHER_BLOCKS;
@@ -245,7 +308,14 @@ export function discardReason(
   if (!canTake(missionType, candidate)) {
     return DRONE_IN_MISSION;
   }
-  if (quantity * UNIT_MASS_KG > candidate.maxPayloadKg) {
+  if (requiresCold && !candidate.coldCompartment) {
+    return NEEDS_COLD_COMPARTMENT;
+  }
+  const usable = usablePayloadKg(
+    candidate.maxPayloadKg,
+    candidate.coldCompartment ?? false,
+  );
+  if (payloadKg > usable + 1e-9) {
     return PAYLOAD_TOO_HEAVY;
   }
   if (distanceKm == null) {

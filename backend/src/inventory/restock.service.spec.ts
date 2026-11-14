@@ -157,6 +157,8 @@ describe('RestockService.checkReturn', () => {
           expirationDate: '2027-03-01',
           requiresColdChain: true,
           saleType: SaleType.PRESCRIPTION,
+          // Sin peso del pedido, los 100 g por defecto.
+          unitWeightG: 100,
         },
       },
     ]);

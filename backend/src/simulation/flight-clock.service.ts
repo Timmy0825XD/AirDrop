@@ -104,6 +104,8 @@ type FlightSession = {
   hub: LngLat;
   identifier: string;
   quantity: number;
+  /** RF-11: peso de la carga del pedido, para la telemetría. */
+  payloadKg?: number | null;
   requiresColdChain: boolean;
   corridor: PlannedCorridor;
   model: FlightModel;
@@ -858,11 +860,14 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       hub: { latitude: hub.latitude, longitude: hub.longitude },
       identifier: drone.identifier,
       quantity: order.quantity,
+      payloadKg: order.payloadKg ?? null,
       requiresColdChain: order.requiresColdChain,
       corridor,
       model: {
         maxSpeedKmh: drone.droneModel.maxSpeedKmh,
         maxRangeKm: drone.droneModel.maxRangeKm,
+        windSustainedMs: drone.droneModel.windSustainedMs,
+        windGustMs: drone.droneModel.windGustMs,
       },
       progress,
       loadConfirmedAt: order.loadConfirmedAt,
@@ -1018,6 +1023,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
           droneId: session.droneId,
           identifier: session.identifier,
           quantity: session.quantity,
+          payloadKg: session.payloadKg,
           requiresColdChain: carriesColdLoad,
           temperatureC,
           step,

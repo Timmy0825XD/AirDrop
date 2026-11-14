@@ -13,15 +13,12 @@ import { CreateDroneDto } from './dto/create-drone.dto';
 import { Drone } from './drone.entity';
 import { DroneModel } from './drone-model.entity';
 import { FleetService } from './fleet.service';
-import { WINGCOPTER_198_CODE } from './drone-model-seed.service';
+import { BALANCED_MODEL_CODE } from './drone-model-seed.service';
+import { DRONE_TYPES } from './drone-types';
 
 const model: DroneModel = {
   id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
-  code: WINGCOPTER_198_CODE,
-  name: 'Wingcopter 198',
-  maxSpeedKmh: 150,
-  maxPayloadKg: 6,
-  maxRangeKm: 110,
+  ...DRONE_TYPES[1],
 };
 
 const hub = { id: 'dddddddd-dddd-dddd-dddd-dddddddddddd' } as Hub;
@@ -103,7 +100,7 @@ describe('FleetService', () => {
   it('lists seeded-style models', async () => {
     const { service } = buildService({});
     const rows = await service.listModels();
-    expect(rows[0].code).toBe(WINGCOPTER_198_CODE);
+    expect(rows[0].code).toBe(BALANCED_MODEL_CODE);
   });
 
   it('creates a drone as available', async () => {

@@ -13,9 +13,30 @@ import { LngLat, PlannedCorridor, haversineKm } from '../routing/routing.rules';
  * velocidad en el aire / velocidad sobre el suelo. La lluvia suma un 10 %.
  */
 
-/** Límites del Wingcopter 198 (fuente 19 de `context/sustentacion/fuentes.md`). */
+/**
+ * RF-32: límite de viento del Garza, el de referencia cuando no se conoce el
+ * tipo. Cada tipo trae el suyo (`context/operacion/condiciones-de-vuelo.md`).
+ */
 export const WIND_SUSTAINED_LIMIT_MS = 15;
 export const WIND_GUST_LIMIT_MS = 20;
+
+export type WindLimits = { sustainedMs: number; gustMs: number };
+
+export const DEFAULT_WIND_LIMITS: WindLimits = {
+  sustainedMs: WIND_SUSTAINED_LIMIT_MS,
+  gustMs: WIND_GUST_LIMIT_MS,
+};
+
+/** El límite de viento de un tipo de dron; sin dato, el de referencia. */
+export function windLimitsOf(model: {
+  windSustainedMs?: number | null;
+  windGustMs?: number | null;
+}): WindLimits {
+  return {
+    sustainedMs: model.windSustainedMs ?? WIND_SUSTAINED_LIMIT_MS,
+    gustMs: model.windGustMs ?? WIND_GUST_LIMIT_MS,
+  };
+}
 
 /** RF-32: con lluvia el crucero gasta un 10 % más. */
 export const RAIN_BURN_FACTOR = 1.1;
@@ -32,7 +53,7 @@ const SAMPLE_KM = 0.25;
 export const WEATHER_STORM_BLOCKS =
   'Hay una tormenta sobre el corredor: no se vuela hasta que pase.';
 export const WEATHER_WIND_BLOCKS =
-  'El viento pasa de 15 m/s sostenidos o 20 m/s en ráfagas sobre el corredor.';
+  'El viento sobre el corredor pasa del límite de este tipo de dron.';
 
 export type WeatherCellView = {
   id: string;
@@ -136,6 +157,7 @@ export function conditionsAt(
   point: LngLat,
   trackDeg: number,
   airspeedKmh: number,
+  limits: WindLimits = DEFAULT_WIND_LIMITS,
 ): FlightConditions {
   let tailwind = 0;
   let windMs = 0;
@@ -163,7 +185,7 @@ export function conditionsAt(
     burnFactor: rain ? RAIN_BURN_FACTOR : 1,
     windMs,
     gustMs,
-    overLimit: windMs > WIND_SUSTAINED_LIMIT_MS || gustMs > WIND_GUST_LIMIT_MS,
+    overLimit: windMs > limits.sustainedMs || gustMs > limits.gustMs,
   };
 }
 
@@ -184,6 +206,7 @@ export function corridorWeather(
   corridor: PlannedCorridor,
   cells: WeatherCellView[],
   airspeedKmh: number,
+  limits: WindLimits = DEFAULT_WIND_LIMITS,
 ): CorridorWeather {
   let energyKm = 0;
   let cruiseMs = 0;
@@ -203,7 +226,7 @@ export function corridorWeather(
         latitude: start.latitude + (end.latitude - start.latitude) * ratio,
       };
       const km = segmentKm / samples;
-      const here = conditionsAt(cells, point, track, airspeedKmh);
+      const here = conditionsAt(cells, point, track, airspeedKmh, limits);
       storm ||= cells.some(
         (cell) => cell.kind === WeatherKind.STORM && cellContains(cell, point),
       );

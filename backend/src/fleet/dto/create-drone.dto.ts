@@ -1,5 +1,12 @@
 import { Transform } from 'class-transformer';
-import { IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import {
+  IsBoolean,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { FIELD_LIMITS } from '../../common/field-limits';
 
 export class CreateDroneDto {
@@ -18,4 +25,9 @@ export class CreateDroneDto {
 
   @IsUUID('4', { message: 'La central no es válida.' })
   hubId: string;
+
+  /** RF-49: nace con el compartimento de frío (1 kg menos de carga útil). */
+  @IsOptional()
+  @IsBoolean({ message: 'Indica si lleva el compartimento de frío.' })
+  coldCompartment?: boolean;
 }
