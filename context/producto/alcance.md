@@ -2,7 +2,7 @@
 
 ## Entorno geográfico
 
-- **MVP:** red regional de unos 45 km alrededor de Valledupar. Abarca los corregimientos del municipio, La Paz, San Diego, Manaure, Pueblo Bello y Agustín Codazzi: 4 nodos, 5 ESE y 12 puntos de entrega ([../negocio/cobertura.md](../negocio/cobertura.md)).
+- **MVP:** red regional de unos 45 km alrededor de Valledupar. Abarca los corregimientos del municipio, La Paz, San Diego, Manaure, Pueblo Bello y Agustín Codazzi: 4 nodos, 5 ESE y 10 puntos de entrega ([../negocio/cobertura.md](../negocio/cobertura.md)).
 - **La ciudad de Valledupar no recibe vuelos.** Casi toda está dentro del anillo de 9 km del aeropuerto y es zona urbana ([../operacion/espacio-aereo.md](../operacion/espacio-aereo.md)). Abastece a los nodos por carretera, fuera del sistema.
 - **Visión posterior:** otras regiones del Caribe con la misma red de nodos. Se reserva en el modelo de datos si es barato (la central ya tiene ubicación y tipo), pero **no** se entrega como producto multirregión.
 
@@ -23,7 +23,7 @@
 - **Carga.** El despachador ve la **referencia del dron asignado**, coloca el insumo sellado y **marca la carga**. Se emite el **manifiesto numerado** ([../operacion/manifiesto.md](../operacion/manifiesto.md)). Solo entonces arranca la simulación.
 - **Vuelo:**
   - Solo de día, de la salida a la puesta del sol, calculadas para la fecha simulada ([../operacion/condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md)).
-  - Rutas por corredores que evitan las zonas, con tolerancia de 30 m. Siguen el terreno a 90 m sobre el suelo y nunca pasan de 120 m AGL. El terreno sale de una malla SRTM.
+  - Rutas por corredores que evitan las zonas, con tolerancia de 30 m. Siguen el terreno entre 60 y 120 m sobre el suelo (90 m de referencia). El terreno sale de una malla SRTM.
 - **Seguimiento:**
   - Telemetría en tiempo real en la app, con la identificación remota del dron.
   - Panel de operador: posición, altitud sobre el terreno y sobre el nivel del mar, velocidad, batería, carga, temperatura de la carga, latencia y fase de vuelo.

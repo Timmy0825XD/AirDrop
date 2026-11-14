@@ -34,5 +34,5 @@ Documento base del proyecto (Word). Conservadas para la sustentación y el marco
 30. Superintendencia de Industria y Comercio. Circular Externa 005 de 2017, transferencias internacionales de datos.
 31. GeoNames, consultado con el geocodificador de Open-Meteo (https://open-meteo.com/en/docs/geocoding-api). Coordenadas y elevación de municipios y corregimientos.
 32. OpenStreetMap, consulta con Overpass (noviembre de 2026). Instalaciones militares, de policía, penitenciarias y eléctricas, helipuntos y pistas de la región.
-33. NASA. Shuttle Radar Topography Mission (SRTM), modelo digital de elevación. Base de la malla de terreno.
+33. NASA. Shuttle Radar Topography Mission (SRTM), modelo digital de elevación, consultado en los mosaicos Terrain Tiles de AWS (https://registry.opendata.aws/terrain-tiles/). Base de la malla de terreno.
 34. NOAA Global Monitoring Laboratory. Ecuaciones de la calculadora solar (salida y puesta del sol).

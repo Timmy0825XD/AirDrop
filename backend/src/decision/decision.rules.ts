@@ -6,6 +6,7 @@ import { MissionType } from '../common/enums/mission-type.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 import { assertDispatchWindow } from '../orders/plan-dispatch.rules';
+import { CEILING_TOO_LOW } from '../airspace/terrain.rules';
 import { usablePayloadKg } from '../fleet/drone-types';
 import { missionBatteryPercent } from '../simulation/flight-energy.rules';
 import { isAwaitingHub } from './fallback.rules';
@@ -58,7 +59,7 @@ export const NEEDS_COLD_COMPARTMENT =
   'La carga exige frío y el dron no lleva el compartimento.';
 
 export const BATTERY_TOO_LOW =
-  'La batería no alcanza para la ida, el regreso y la reserva del 20 %.';
+  'La batería no alcanza para la ida, el regreso, la subida y la reserva del 20 %.';
 
 export const NO_CORRIDOR = 'No hay un corredor libre de geovallas.';
 
@@ -80,6 +81,10 @@ export type DroneCandidate = {
   cruiseKmh?: number;
   /** Energía de la batería del tipo, en Wh: decide el programado. */
   batteryWh?: number;
+  /** RF-46: techo de servicio sobre el nivel del mar. */
+  ceilingM?: number;
+  /** RF-46: % de batería por metro de ascenso. */
+  climbPercentPerM?: number;
   held: HeldMission | null;
   /** Batería ahora, con lo que recargó en tierra. */
   batteryPercent: number;
@@ -126,6 +131,24 @@ type RankedCandidate = {
 
 /** El clima del corredor para un tipo de dron: su viento límite es el suyo. */
 export type CandidateWeather = { flyable: boolean; reason: string | null };
+
+/**
+ * RF-46: el terreno de la misión para un tipo de dron: metros de ascenso de
+ * ida y de regreso, y el punto más alto del vuelo.
+ */
+export type CandidateTerrain = { climbM: number; peakMslM: number };
+
+/** RF-46: la batería de la misión más la de subir. */
+export function missionWithClimbPercent(
+  distanceKm: number,
+  drone: Pick<DroneCandidate, 'maxRangeKm' | 'climbPercentPerM'>,
+  terrain?: CandidateTerrain,
+): number {
+  return (
+    missionBatteryPercent(distanceKm, drone.maxRangeKm) +
+    (terrain?.climbM ?? 0) * (drone.climbPercentPerM ?? 0)
+  );
+}
 
 export function assertCanAuthorize(
   order: AuthorizableOrder,
@@ -186,6 +209,7 @@ export function chooseDrone(input: {
     drone: DroneCandidate;
     distanceKm: number | null;
     weather?: CandidateWeather;
+    terrain?: CandidateTerrain;
   }>;
 }): { chosen: ChosenDrone | null; discarded: DiscardedDrone[] } {
   const discarded: DiscardedDrone[] = [];
@@ -200,6 +224,7 @@ export function chooseDrone(input: {
       candidate.distanceKm,
       candidate.weather?.reason ?? input.weatherReason,
       input.requiresCold ?? false,
+      candidate.terrain,
     );
     if (reason) {
       discarded.push({
@@ -209,7 +234,9 @@ export function chooseDrone(input: {
       });
       continue;
     }
-    eligible.push(ranked(candidate.drone, candidate.distanceKm ?? 0));
+    eligible.push(
+      ranked(candidate.drone, candidate.distanceKm ?? 0, candidate.terrain),
+    );
   }
   const free = eligible.filter(
     (entry) => entry.drone.status === DroneStatus.AVAILABLE,
@@ -237,12 +264,16 @@ export function chooseDrone(input: {
 /** Sin peso por unidad en el lote (filas de antes de RF-11): 0,5 kg. */
 export const LEGACY_UNIT_MASS_KG = 0.5;
 
-function ranked(drone: DroneCandidate, distanceKm: number): RankedCandidate {
+function ranked(
+  drone: DroneCandidate,
+  distanceKm: number,
+  terrain?: CandidateTerrain,
+): RankedCandidate {
   const etaMin = drone.cruiseKmh
     ? (distanceKm / drone.cruiseKmh) * 60
     : distanceKm;
   const energyWh = drone.batteryWh
-    ? (missionBatteryPercent(distanceKm, drone.maxRangeKm) / 100) *
+    ? (missionWithClimbPercent(distanceKm, drone, terrain) / 100) *
       drone.batteryWh
     : distanceKm;
   return {
@@ -295,6 +326,7 @@ export function discardReason(
   distanceKm: number | null,
   weatherReason?: string | null,
   requiresCold = false,
+  terrain?: CandidateTerrain,
 ): string | null {
   if (!weatherFlyable) {
     return weatherReason ?? WEATHER_BLOCKS;
@@ -322,7 +354,14 @@ export function discardReason(
     return NO_CORRIDOR;
   }
   if (
-    missionBatteryPercent(distanceKm, candidate.maxRangeKm) >
+    terrain &&
+    candidate.ceilingM != null &&
+    terrain.peakMslM > candidate.ceilingM
+  ) {
+    return CEILING_TOO_LOW;
+  }
+  if (
+    missionWithClimbPercent(distanceKm, candidate, terrain) >
     candidate.batteryPercent
   ) {
     return BATTERY_TOO_LOW;

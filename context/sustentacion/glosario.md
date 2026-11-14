@@ -33,7 +33,7 @@ Términos que deben usarse igual en código, UI y sustentación.
 | Zona legal | Zona del RAC 100 que trae el escenario: aeródromo, prohibida, helipuerto, coordinada, urbana, temporal o precaución. No se edita. |
 | Zona coordinada | Zona (estación de policía municipal, resguardo) donde solo se vuela por el corredor pactado hacia el punto pactado. |
 | ARP | Punto de referencia del aeródromo. Desde él se miden los 9 km. |
-| Corredor | Ruta en planta, con un perfil de altura que sigue el terreno a 90 m AGL. |
+| Corredor | Ruta en planta, con un perfil de altura que sigue el terreno entre 60 y 120 m AGL. |
 | AGL | Altura sobre el terreno (above ground level). El techo es de 120 m AGL. |
 | VMC | Condiciones meteorológicas visuales. Sin ellas (tormenta, niebla) no se vuela. |
 | Manifiesto | Documento numerado de cada vuelo: qué lleva, de dónde a dónde y quién autorizó. |

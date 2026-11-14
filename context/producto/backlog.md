@@ -140,7 +140,7 @@ Se agregó tras revisar el RAC 100, la Ley 1581 y la crítica del profesor a la 
 
 | ID | Historia | Pri | SP | Sprint |
 | --- | --- | --- | --- | --- |
-| HU-59 | Red regional: central nodo o ESE, puntos de entrega y escenario con 4 nodos, 5 ESE y 12 puntos (RF-06, RF-07, RF-45) | Alta | 8 | 6 |
+| HU-59 | Red regional: central nodo o ESE, puntos de entrega y escenario con 4 nodos, 5 ESE y 10 puntos (RF-06, RF-07, RF-45) | Alta | 8 | 6 |
 | HU-60 | Zonas legales del RAC 100 con sus márgenes y corredores pactados en zonas coordinadas (RF-43, RF-12) | Alta | 13 | 6 |
 | HU-61 | Solo de día: salida y puesta del sol con la NOAA, urgencia nocturna a traslado convencional (RF-44) | Alta | 5 | 6 |
 | HU-62 | Malla de terreno SRTM, perfil a 90 m AGL y energía de ascenso (RF-46) | Alta | 13 | 6 |

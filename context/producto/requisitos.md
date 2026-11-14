@@ -582,7 +582,7 @@ Lugar fijo de la red, con nombre, ubicación, municipio, nodo que lo atiende, si
 
 ### RF-46 — Altura y terreno
 
-Crucero a 90 m sobre el terreno, nunca más de 120 m ni menos de 60 m AGL. El terreno sale de una malla SRTM precalculada de unos 500 m por celda, con el máximo de cada celda. La ruta se muestrea cada 250 m. El ascenso está limitado por la velocidad vertical del tipo y cada metro de ascenso neto cuesta batería ([../operacion/condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md)). La telemetría lleva la altura sobre el terreno y sobre el nivel del mar.
+Despega a 90 m sobre el terreno y en crucero mantiene la altitud mientras quede entre 60 y 120 m AGL; si el terreno lo saca de esa banda, sube o baja lo justo. El terreno sale de una malla SRTM precalculada de unos 500 m por celda, con el máximo de cada celda. La ruta se muestrea cada 250 m. El ascenso está limitado por la velocidad vertical del tipo y cada metro de ascenso neto cuesta batería ([../operacion/condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md)). La telemetría lleva la altura sobre el terreno y sobre el nivel del mar.
 
 **Por qué.** El techo de 122 m del RAC 100 se mide sobre el terreno. Volar a una altitud fija sobre el nivel del mar haría chocar al dron contra la Sierra o lo dejaría por encima del techo legal en el valle.
 

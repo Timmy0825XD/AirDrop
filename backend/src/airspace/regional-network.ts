@@ -93,7 +93,11 @@ export const ESES = {
   },
 } satisfies Record<string, NetworkSite>;
 
-/** RF-45: puntos de entrega, con el nodo que los atiende. */
+/**
+ * RF-45: puntos de entrega, con el nodo que los atiende. Chemesquemena y
+ * Villa Germania no están: con la subida del terreno (RF-46) ningún tipo
+ * llega y vuelve con la reserva (`context/negocio/cobertura.md`).
+ */
 export const DELIVERY_POINTS: Array<NetworkSite & { nodeCode: string }> = [
   site(
     'dp-patillal',
@@ -150,15 +154,6 @@ export const DELIVERY_POINTS: Array<NetworkSite & { nodeCode: string }> = [
     NODES.north,
   ),
   site(
-    'dp-chemesquemena',
-    'Puesto de salud de Chemesquemena',
-    'Valledupar',
-    10.7132,
-    -73.4007,
-    1427,
-    NODES.north,
-  ),
-  site(
     'dp-media-luna',
     'Puesto de salud de Media Luna',
     'San Diego',
@@ -192,15 +187,6 @@ export const DELIVERY_POINTS: Array<NetworkSite & { nodeCode: string }> = [
     10.1851,
     -73.5871,
     124,
-    NODES.west,
-  ),
-  site(
-    'dp-villa-germania',
-    'Puesto de salud de Villa Germania',
-    'Valledupar',
-    10.2669,
-    -73.7151,
-    614,
     NODES.west,
   ),
 ];
