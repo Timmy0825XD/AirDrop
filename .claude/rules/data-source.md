@@ -1,7 +1,6 @@
 ---
-description: Frontend local/remote data switch
-globs: frontend/**/*.dart
-alwaysApply: false
+paths:
+  - "frontend/**/*.dart"
 ---
 
 # Origen de datos

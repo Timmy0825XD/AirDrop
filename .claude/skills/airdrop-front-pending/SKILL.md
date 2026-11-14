@@ -27,7 +27,7 @@ Entregable: un `.md` en `learning/` (carpeta gitignored, solo del usuario).
 Lee antes de redactar:
 
 - `frontend/AGENTS.md`, `backend/AGENTS.md`, `AGENTS.md`
-- `.cursor/rules/flutter.mdc`, `language.mdc`, `domain-model.mdc`, `data-source.mdc`
+- `.claude/rules/flutter.md`, `language.md`, `domain-model.md`, `data-source.md`
 - `INDEX.md` y el `context/` del dominio que falte
 - Controllers + DTOs del backend
 - `frontend/lib/` (hoy puede ser casi vacío)

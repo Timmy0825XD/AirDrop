@@ -27,7 +27,7 @@ Cada FK, filtro frecuente (`status`, fechas, `hubId`) y lookup único (email) ll
 
 ## Modelo de datos (tipos y tamaños)
 
-Columnas con tipo PostgreSQL real y longitud coherente (no `varchar(255)` por defecto). IDs `uuid`; instantes `timestamptz`; flags `boolean`; roles/estados `enum`; decimales `numeric`, nunca `float`. El `MaxLength` del DTO coincide con la columna. Referencia: regla `.cursor/rules/domain-model.mdc`.
+Columnas con tipo PostgreSQL real y longitud coherente (no `varchar(255)` por defecto). IDs `uuid`; instantes `timestamptz`; flags `boolean`; roles/estados `enum`; decimales `numeric`, nunca `float`. El `MaxLength` del DTO coincide con la columna. Referencia: regla `.claude/rules/domain-model.md`.
 
 ## Módulos
 

@@ -1,12 +1,12 @@
 # Personal (never commit)
 learning/
 
-# Cursor: rules y skills del proyecto sí se versionan
-.cursor/*
-!.cursor/rules/
-!.cursor/rules/**
-!.cursor/skills/
-!.cursor/skills/**
+# Claude Code: rules y skills del proyecto sí se versionan; lo local no
+.claude/*
+!.claude/rules/
+!.claude/rules/**
+!.claude/skills/
+!.claude/skills/**
 
 # Env and secrets
 .env

@@ -1,8 +1,3 @@
----
-description: English identifiers, Spanish UI (Colombia)
-alwaysApply: true
----
-
 # Idioma
 
 - Identificadores de código (variables, clases, archivos, APIs): **inglés**.

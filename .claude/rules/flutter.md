@@ -1,7 +1,6 @@
 ---
-description: Flutter widgets, 60-line limit, theme, reuse
-globs: frontend/**/*.dart
-alwaysApply: false
+paths:
+  - "frontend/**/*.dart"
 ---
 
 # Flutter
