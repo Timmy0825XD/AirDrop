@@ -226,7 +226,7 @@ describe('planes con la frecuencia anterior', () => {
   it('sin hora, la franja es todo el horario operativo', () => {
     const slot = slotFor('2026-11-05', null);
     expect(slot.scheduledAt.toISOString()).toBe('2026-11-05T12:00:00.000Z');
-    expect(slot.windowEndsAt.toISOString()).toBe('2026-11-05T23:00:00.000Z');
+    expect(slot.windowEndsAt.toISOString()).toBe('2026-11-05T22:00:00.000Z');
   });
 
   it('isoWeekday cuenta el lunes como 1 y el domingo como 7', () => {

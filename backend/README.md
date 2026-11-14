@@ -147,10 +147,15 @@ Todas del operador de flota.
 | Método | Ruta | Auth |
 | --- | --- | --- |
 | GET | `/airspace/zones` | cualquier sesión |
+| GET | `/airspace/daylight` | cualquier sesión |
 
 Las zonas legales del RAC 100 viven en `src/airspace/regional-airspace.ts` (no en la base) y no se editan: aeródromo (anillo de 9 km de SKVP), prohibidas con 2 km de margen, helipuerto, urbana, coordinadas (policía municipal y resguardos, con entrada pactada) y de precaución (pistas privadas, no bloquean). El planificador rodea las bloqueantes y las coordinadas; a un sitio pactado entra por su entrada. El radar las trae en `airspace`. La red (nodos, ESE y puntos) está en `src/airspace/regional-network.ts`.
 
 **Terreno (RF-46).** `src/airspace/terrain-grid.json` es una malla de 189×189 celdas de ~500 m con la elevación máxima de cada una, sacada de SRTM (mosaicos Terrain Tiles de AWS). Se regenera con `python scripts/build-terrain-grid.py <carpeta-cache>` (PIL y numpy) y `nest build` la copia a `dist`. El dron despega a 90 m AGL y en crucero mantiene la altitud entre 60 y 120 m AGL; sube antes de una ladera según su velocidad vertical. La decisión descarta un tipo si el punto más alto supera su techo o si la batería no alcanza ida, regreso, subida y reserva; el vuelo cobra cada metro ganado. La telemetría trae `altitudeM` (AGL) y `altitudeMslM`.
+
+**Solo de día (RF-44).** `src/airspace/daylight.rules.ts` calcula la salida y la puesta del sol con las ecuaciones de la NOAA (sin API) para la fecha simulada. Un dron se descarta si su misión (ida, 5 min de espera y regreso, con su crucero) no termina antes de la puesta en su nodo. Una urgencia creada de noche no entra a ninguna cola: pasa de una vez a traslado convencional con el motivo. Las franjas de los programados van de 07:00 a 16:00 (la última cierra a las 17:00). `GET /airspace/daylight` devuelve la salida, la puesta y si ahora es de día.
+
+**Niebla (RF-32, VMC).** El clima admite `fog`: como la tormenta, es zona no volable que las rutas rodean, con su propio motivo. El modo caos la saca más de 05:00 a 08:00.
 
 ### Pedidos (HU-15 a HU-21)
 

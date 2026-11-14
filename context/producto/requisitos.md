@@ -34,7 +34,7 @@ Medicamento, cantidad, punto de entrega, calendario y hora. El calendario se arm
 - **Un día del mes** (por ejemplo, el 15; si el mes es más corto, el último día).
 - **Fechas sueltas**, hasta 30.
 
-Termina en una fecha o después de un número de entregas, nunca las dos. Un plan dura como máximo **3 meses** desde su inicio y, si es bajo fórmula, no pasa de la vigencia de la fórmula. Cada entrega tiene una **franja de 1 hora**, que empieza a una hora en punto entre las 07:00 y las 16:00 (la última cierra a las 17:00). Así toda franja cabe en la luz del día con ida y regreso (RF-44); en el Cesar el sol no se pone antes de las 17:40. Una entrega que empezaría en menos de 2 horas no se agenda: no da tiempo de avisar ni de preparar la carga. Antes de crear el plan, la app muestra las fechas y horas que van a quedar.
+Termina en una fecha o después de un número de entregas, nunca las dos. Un plan dura como máximo **3 meses** desde su inicio y, si es bajo fórmula, no pasa de la vigencia de la fórmula. Cada entrega tiene una **franja de 1 hora**, que empieza a una hora en punto entre las 07:00 y las 16:00 (la última cierra a las 17:00). Una entrega que despegue tarde y no alcance a volver antes de la puesta del sol (en noviembre, 17:27) la bloquea RF-44 y sigue RF-18. Una entrega que empezaría en menos de 2 horas no se agenda: no da tiempo de avisar ni de preparar la carga. Antes de crear el plan, la app muestra las fechas y horas que van a quedar.
 
 Quien lo creó puede cambiar el calendario o la hora: las entregas que todavía no tienen dron se rehacen con la regla nueva y las que ya salieron no cambian. Puede cancelarlo cuando quiera: el plan queda cancelado y las entregas que siguen en recibido también. Las que ya salieron de recibido no se revierten.
 
@@ -295,7 +295,7 @@ Depende del servicio:
 | --- | --- |
 | Urgencia a una persona | Pasa a la central activa que llega antes por su corredor y tiene el lote y un dron elegible. Queda `reasignado` y entra primero en su cola. |
 | Urgencia entre centrales | Igual, con otro nodo de origen. Nunca la central que pidió. |
-| Urgencia de noche (RF-44) | No se encola: queda `reasignado` como **traslado convencional** y se avisa al despachador y al operador. Si amanece antes de que se resuelva por tierra, el despachador puede volver a autorizarla |
+| Urgencia de noche (RF-44) | No se encola: queda `reasignado` como **traslado convencional**, con el motivo, y quien pidió ve las centrales con el insumo |
 | Programado | Sigue en recibido y se reintenta solo cada 15 minutos mientras el siguiente intento caiga dentro de la franja. Si la franja cierra sin despegue, queda vencido, suelta el dron si ya estaba reservado y busca otra central como una urgencia. Esa central autoriza sin la franja original. |
 
 Un solicitante en zona urbana, o sin un punto de entrega al alcance de ningún nodo, no llega a crear el pedido: la app le muestra directamente la alternativa terrestre (RU-02).

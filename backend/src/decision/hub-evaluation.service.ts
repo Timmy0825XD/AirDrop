@@ -1,3 +1,5 @@
+import { DaylightService } from '../airspace/daylight.service';
+import { DEFAULT_DELIVERY_WAIT_MS } from '../delivery/delivery.rules';
 import { TerrainService } from '../airspace/terrain.service';
 import { climbPercentPerM } from '../airspace/terrain.rules';
 import { Injectable } from '@nestjs/common';
@@ -60,6 +62,7 @@ export class HubEvaluationService {
     private readonly eligibility: EligibilityService,
     private readonly weather: WeatherService,
     private readonly terrain: TerrainService,
+    private readonly daylight: DaylightService,
   ) {}
 
   async evaluate(
@@ -131,6 +134,22 @@ export class HubEvaluationService {
         corridor ? this.missionTerrain(corridor, model) : undefined,
       ]),
     );
+    // RF-44: ida, espera del código y regreso, con el crucero de cada tipo,
+    // tienen que caber entre la salida y la puesta del sol del nodo.
+    const daylightByModel = new Map(
+      [...modelsById.values()].map((model) => [
+        model.id,
+        this.daylight.fits(
+          now,
+          { latitude: hub.latitude, longitude: hub.longitude },
+          missionMs(
+            corridor,
+            model,
+            weatherByModel.get(model.id)?.there?.cruiseMs ?? null,
+          ),
+        ),
+      ]),
+    );
     const choice = this.eligibility.choose({
       missionType: order.missionType,
       quantity: order.quantity,
@@ -154,6 +173,7 @@ export class HubEvaluationService {
             distanceKm: weather.energyKm,
             weather: { flyable: weather.flyable, reason: weather.reason },
             terrain: terrainByModel.get(drone.droneModelId),
+            daylight: daylightByModel.get(drone.droneModelId) ?? true,
           },
         ];
       }),
@@ -330,4 +350,22 @@ function modelWeather(
     energyKm: Math.round(((there.energyKm + back.energyKm) / 2) * 100) / 100,
     there,
   };
+}
+
+/**
+ * RF-44: lo que dura la misión completa para la ventana de luz: ida, espera
+ * del código (5 min) y regreso por el mismo corredor.
+ */
+function missionMs(
+  corridor: PlannedCorridor | null,
+  model: DroneModel,
+  cruiseMs: number | null,
+): number {
+  if (!corridor) {
+    return 0;
+  }
+  const cruise =
+    cruiseMs ?? (corridor.distanceKm / model.maxSpeedKmh) * 3_600_000;
+  const leg = TAKEOFF_MS + TRANSITION_MS + cruise + DESCENT_MS + LANDING_MS;
+  return 2 * leg + DEFAULT_DELIVERY_WAIT_MS;
 }

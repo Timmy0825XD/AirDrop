@@ -1,3 +1,5 @@
+import { NIGHT_EMERGENCY } from '../airspace/daylight.rules';
+import { ALWAYS_DAY } from '../airspace/daylight.testing';
 import { ForbiddenException } from '@nestjs/common';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { FallbackKind } from '../common/enums/fallback-kind.enum';
@@ -74,7 +76,11 @@ function dispatcherOf(hubId: string): User {
   } as unknown as User;
 }
 
-function build(reach: Record<string, Reach>, order = emergency()) {
+function build(
+  reach: Record<string, Reach>,
+  order = emergency(),
+  daylight = ALWAYS_DAY,
+) {
   const state = { order };
   const manager = {
     findOne: jest.fn(() => Promise.resolve(state.order)),
@@ -118,6 +124,7 @@ function build(reach: Record<string, Reach>, order = emergency()) {
     routes as never,
     hubsService as never,
     notifications as never,
+    daylight,
   );
   return { service, state, notifications };
 }
@@ -147,6 +154,22 @@ describe('EmergencyDispatchService.start', () => {
     expect(state.order.originHubId).toBeNull();
     expect(notifications.queueChanged).toHaveBeenCalledTimes(1);
     expect(notifications.queueChanged).toHaveBeenCalledWith('A', ORDER_ID);
+  });
+
+  it('RF-44: de noche la urgencia no se ofrece: va directo a la alternativa terrestre', async () => {
+    const night = { ...ALWAYS_DAY, isDaylight: () => false } as never;
+    const { service, state, notifications } = build(
+      threeHubs,
+      emergency(),
+      night,
+    );
+
+    await service.start(ORDER_ID, t0);
+
+    expect(state.order.status).toBe(OrderStatus.REASSIGNED);
+    expect(state.order.fallbackReason).toBe(NIGHT_EMERGENCY);
+    expect(state.order.dispatchOffers ?? []).toEqual([]);
+    expect(notifications.queueChanged).not.toHaveBeenCalled();
   });
 
   it('la central más cercana sin dron va después de una lista', async () => {

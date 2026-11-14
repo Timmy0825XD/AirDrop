@@ -1,6 +1,6 @@
+import { blocksFlight } from '../weather/weather.rules';
 import { Injectable } from '@nestjs/common';
 import { IncidentKind } from '../common/enums/incident-kind.enum';
-import { WeatherKind } from '../common/enums/weather-kind.enum';
 import {
   GeofencesService,
   NewTemporaryGeofence,
@@ -33,8 +33,8 @@ export class ConsoleEventsService {
 
   async createWeather(userId: string, input: NewWeatherCell) {
     const cell = await this.weather.create(userId, input);
-    if (cell.kind === WeatherKind.STORM) {
-      // RF-33: la tormenta puede cruzar el tramo que le falta a un dron.
+    if (blocksFlight(cell.kind)) {
+      // RF-33: la tormenta o la niebla pueden cruzar el tramo que le falta.
       await this.flights.recheckRoutes();
     }
     return presentWeatherCell(cell);

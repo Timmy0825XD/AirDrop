@@ -50,6 +50,8 @@ const MIN_GROUND_SPEED_RATIO = 0.3;
 /** Cada cuánto se mira el clima a lo largo de un corredor. */
 const SAMPLE_KM = 0.25;
 
+export const WEATHER_FOG_BLOCKS =
+  'Hay niebla sobre el corredor: sin visibilidad (VMC) no se vuela hasta que se levante.';
 export const WEATHER_STORM_BLOCKS =
   'Hay una tormenta sobre el corredor: no se vuela hasta que pase.';
 export const WEATHER_WIND_BLOCKS =
@@ -106,10 +108,14 @@ export function stormPolygon(cell: WeatherCellView): GeoJsonPolygon {
   return { type: 'Polygon', coordinates: [ring] };
 }
 
+/** RF-32: tormenta y niebla son zonas no volables (sin VMC). */
+export function blocksFlight(kind: WeatherKind): boolean {
+  return kind === WeatherKind.STORM || kind === WeatherKind.FOG;
+}
+
+/** Las celdas que una ruta rodea: tormentas y niebla vigentes. */
 export function stormPolygons(cells: WeatherCellView[]): GeoJsonPolygon[] {
-  return cells
-    .filter((cell) => cell.kind === WeatherKind.STORM)
-    .map(stormPolygon);
+  return cells.filter((cell) => blocksFlight(cell.kind)).map(stormPolygon);
 }
 
 /** Rumbo de `from` a `to`, en grados (0 = norte, 90 = este). */
@@ -212,6 +218,7 @@ export function corridorWeather(
   let cruiseMs = 0;
   let overLimit = false;
   let storm = false;
+  let fog = false;
   const coordinates = corridor.coordinates;
   for (let index = 1; index < coordinates.length; index += 1) {
     const start = toLngLat(coordinates[index - 1]);
@@ -230,6 +237,9 @@ export function corridorWeather(
       storm ||= cells.some(
         (cell) => cell.kind === WeatherKind.STORM && cellContains(cell, point),
       );
+      fog ||= cells.some(
+        (cell) => cell.kind === WeatherKind.FOG && cellContains(cell, point),
+      );
       overLimit ||= here.overLimit;
       const hours = km / here.groundSpeedKmh;
       cruiseMs += hours * 3_600_000;
@@ -238,9 +248,11 @@ export function corridorWeather(
   }
   const reason = storm
     ? WEATHER_STORM_BLOCKS
-    : overLimit
-      ? WEATHER_WIND_BLOCKS
-      : null;
+    : fog
+      ? WEATHER_FOG_BLOCKS
+      : overLimit
+        ? WEATHER_WIND_BLOCKS
+        : null;
   return {
     flyable: reason == null,
     reason,

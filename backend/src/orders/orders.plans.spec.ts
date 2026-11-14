@@ -284,7 +284,7 @@ describe('OrdersService planes con calendario (RU-30)', () => {
       '2026-11-05T12:00:00.000Z',
     );
     expect(saved[0].windowEndsAt?.toISOString()).toBe(
-      '2026-11-05T23:00:00.000Z',
+      '2026-11-05T22:00:00.000Z',
     );
     expect(plan.frequency).toBe(PlanFrequency.WEEKLY);
     expect(plan.schedule).toMatchObject({
