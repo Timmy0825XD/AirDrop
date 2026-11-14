@@ -2,7 +2,7 @@
 
 Logística aérea médica **simulada** para emergencias y reabastecimiento programado. Decide qué central despacha, qué dron puede cumplir la misión y qué ruta es segura, y si ningún dron es viable propone una alternativa en lugar de rechazar el pedido.
 
-Caso de estudio: Valledupar y zona cercana. El dron se simula con los parámetros del [Wingcopter 198](https://wingcopter.com/); no hay hardware real. La única web es el radar y consola de simulación del administrador (`web/`).
+Caso de estudio: la zona rural de Valledupar y los municipios vecinos del Cesar. La flota es propia y simulada (tres tipos de dron) y vuela según el RAC 100; no hay hardware real. La única web es el radar y consola de simulación del administrador (`web/`).
 
 ## Qué hace
 

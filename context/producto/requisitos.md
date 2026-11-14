@@ -2,7 +2,7 @@
 
 Cada requisito dice qué se exige y por qué. Los ID no se renumeran. Los flujos están en [casos-de-uso.md](casos-de-uso.md). Las historias, en [backlog.md](backlog.md).
 
-Roles: [../app/roles.md](../app/roles.md). Entregas: [../entregas/](../entregas/). Norma: [../legal/](../legal/).
+Roles: [../app/roles.md](../app/roles.md). Entregas: [../entregas/](../entregas/). Cómo vuela: [../operacion/](../operacion/). Norma: [../legal/](../legal/).
 
 No hay rol receptor. La recepción se cierra con el código (RU-07, RU-24).
 
@@ -16,25 +16,25 @@ Nombre, tipo y número de documento, celular de 10 dígitos, correo, contraseña
 
 **Se cumple cuando.** Falta uno de esos datos, el documento o el celular ya existen, o no hay consentimiento: la cuenta no se crea. Sin OTP válido queda sin activar.
 
-### RU-02 — Urgencia a mi ubicación
+### RU-02 — Urgencia en un punto de entrega
 
 Tres pasos cortos, con prioridad alta:
 
 1. **Qué pasa:** el tamizaje de RF-41 (signos de alarma, para quién, qué siente, desde cuándo y qué tan fuerte) y una nota opcional.
 2. **Qué necesita:** el medicamento, sus alergias a medicamentos y, si es bajo fórmula, la fórmula (RU-25).
-3. **Dónde:** el punto en el mapa, con "Usar mi ubicación" (GPS) y el pin para afinarlo, y una referencia corta opcional para encontrarlo. El punto es el destino; no hay un segundo campo de dirección.
+3. **Dónde:** el punto de entrega (RF-45). La app toma el GPS ("Usar mi ubicación") y propone el punto activo más cercano. El solicitante puede elegir otro en la lista o en el mapa. Si está en zona urbana o ningún punto está al alcance de un nodo, la app se lo dice y muestra la alternativa terrestre (RF-18) en vez de crear el pedido.
 
-**Por qué.** La urgencia civil no es un traslado entre centrales. El destino es la persona, y el despachador todavía no ha autorizado. El dron llega a una coordenada, no a una dirección escrita: el punto manda y la referencia solo ayuda a quien retira. El despachador necesita saber qué tan grave es sin leer un texto libre, y el solicitante no puede tardar más de un minuto en pedir.
+**Por qué.** La urgencia civil no es un traslado entre centrales. El destino es la persona, pero el dron no puede llegar a su puerta: en zona urbana la norma solo permite volar con línea de vista (RAC 100.220(b)). Llega a un punto despejado, con observador, al que la persona va con su código. El GPS sirve para proponerle el punto más cercano, no como destino del vuelo. El despachador necesita saber qué tan grave es sin leer un texto libre, y el solicitante no puede tardar más de un minuto en pedir.
 
-### RU-30 — Entrega periódica a mi ubicación
+### RU-30 — Entrega periódica en mi punto de entrega
 
-Medicamento, cantidad, calendario y hora. El calendario se arma como en un calendario de teléfono:
+Medicamento, cantidad, punto de entrega, calendario y hora. El calendario se arma como en un calendario de teléfono:
 
 - **Días de la semana**, cada 1 a 4 semanas (por ejemplo, todos los jueves, o martes y jueves cada 15 días).
 - **Un día del mes** (por ejemplo, el 15; si el mes es más corto, el último día).
 - **Fechas sueltas**, hasta 30.
 
-Termina en una fecha o después de un número de entregas, nunca las dos. Un plan dura como máximo **3 meses** desde su inicio y, si es bajo fórmula, no pasa de la vigencia de la fórmula. Cada entrega tiene una **franja de 1 hora**, que empieza a una hora en punto entre las 07:00 y las 17:00 (la última cierra a las 18:00). Una entrega que empezaría en menos de 2 horas no se agenda: no da tiempo de avisar ni de preparar la carga. Antes de crear el plan, la app muestra las fechas y horas que van a quedar.
+Termina en una fecha o después de un número de entregas, nunca las dos. Un plan dura como máximo **3 meses** desde su inicio y, si es bajo fórmula, no pasa de la vigencia de la fórmula. Cada entrega tiene una **franja de 1 hora**, que empieza a una hora en punto entre las 07:00 y las 16:00 (la última cierra a las 17:00). Así toda franja cabe en la luz del día con ida y regreso (RF-44); en el Cesar el sol no se pone antes de las 17:40. Una entrega que empezaría en menos de 2 horas no se agenda: no da tiempo de avisar ni de preparar la carga. Antes de crear el plan, la app muestra las fechas y horas que van a quedar.
 
 Quien lo creó puede cambiar el calendario o la hora: las entregas que todavía no tienen dron se rehacen con la regla nueva y las que ya salieron no cambian. Puede cancelarlo cuando quiera: el plan queda cancelado y las entregas que siguen en recibido también. Las que ya salieron de recibido no se revierten.
 
@@ -70,7 +70,7 @@ Si ningún dron puede salir, el sistema propone otra central o un traslado conve
 
 ### RU-07 y RU-24 — Código de un uso
 
-El solicitante genera el código y lo ingresa cuando el dron está en su ubicación. La pantalla de confirmación no crea una cuenta de receptor.
+El solicitante genera el código y lo ingresa cuando el dron está en el punto de entrega. La pantalla de confirmación no crea una cuenta de receptor.
 
 **Por qué.** Alguien tiene que acusar recibo. Un rol receptor duplicaría a la persona que ya pidió.
 
@@ -90,7 +90,7 @@ Entra a la central que el administrador le asignó. No se registra solo y no abr
 
 Ve la urgencia dirigida a su central, el tamizaje (RF-41), el stock, la fórmula si el destino es una persona, y autoriza o rechaza con motivo. Entre las urgencias, las que traen un signo de alarma van primero; entre iguales, la más antigua.
 
-Una urgencia de un solicitante no aparece a la vez en todas las centrales. El sistema ordena las centrales activas que tienen el lote, un corredor libre y batería para ida, regreso y reserva (RF-11 y RF-12): primero las que tienen un dron elegible y, dentro de cada grupo, la que llega antes por su corredor. La urgencia entra solo a la cola de la primera. Si no la autoriza a tiempo, también entra a la cola de la siguiente, sin salir de la primera, y la autoriza la que lo haga antes. Ese tiempo de ventaja es lo que la central ahorra frente a la siguiente, con un mínimo de 1 minuto y un máximo de 3.
+Una urgencia de un solicitante no aparece a la vez en todos los nodos. El sistema ordena los nodos activos que tienen el lote, un corredor libre y batería para ida, regreso y reserva (RF-11 y RF-12): primero las que tienen un dron elegible y, dentro de cada grupo, la que llega antes por su corredor. La urgencia entra solo a la cola de la primera. Si no la autoriza a tiempo, también entra a la cola de la siguiente, sin salir de la primera, y la autoriza la que lo haga antes. Ese tiempo de ventaja es lo que la central ahorra frente a la siguiente, con un mínimo de 1 minuto y un máximo de 3.
 
 El despachador puede declinarla ("No puedo atenderla": sin dron, sin personal o sin lote). Entonces la ve la siguiente central en ese instante. Rechazar con motivo queda para una fórmula que no cumple, y cierra el pedido. Si ninguna central puede llegar, o todas declinan, el pedido pasa a traslado convencional (RF-18). Una urgencia entre centrales (RU-31) ya trae su central de origen y no se escalona.
 
@@ -102,15 +102,15 @@ Cantidad, lote, vencimiento, tipo de venta y si exige frío.
 
 **Por qué.** Sin lote no hay remisión ni dispensación trazable. El tipo de venta decide si hace falta fórmula. El frío decide si el trayecto se monitorea.
 
-### RU-12 — Abastecimiento programado desde otra central
+### RU-12 — Abastecimiento programado desde un nodo
 
-Pide a otra central un plan: suministro, cantidad, calendario y hora. El destino es su central. El calendario, la franja, los topes, el cambio y la cancelación son los de RU-30. Una central siempre tiene personal, así que sus entregas no piden confirmación.
+Pide a un nodo un plan: suministro, cantidad, calendario y hora. El destino es su central. El calendario, la franja, los topes, el cambio y la cancelación son los de RU-30. Una central siempre tiene personal, así que sus entregas no piden confirmación.
 
 ### RU-31 — Urgencia de abastecimiento
 
-Pide a otra central un insumo que a la suya le falta, con prioridad alta. El destino es su central.
+Pide a un nodo un insumo que a su central le falta, con prioridad alta. El destino es su central.
 
-**Por qué.** RU-12 y RU-31 no los crea el solicitante. Los crea el despachador que necesita el stock. Quien suelta el insumo es el despachador de la otra central.
+**Por qué.** RU-12 y RU-31 no los crea el solicitante. Los crea el despachador que necesita el stock, casi siempre de una ESE. Quien suelta el insumo es el despachador del nodo, porque solo el nodo tiene drones.
 
 ### RU-29 — Carga antes del vuelo
 
@@ -128,9 +128,9 @@ Si una urgencia en su cola lleva más de 5 minutos en recibido, al abrir la cola
 
 ## Operador de flota
 
-### RU-16 — Centrales asignadas
+### RU-16 — Nodos asignados
 
-Entra con la cuenta que creó el administrador y ve una o varias centrales. No se registra solo.
+Entra con la cuenta que creó el administrador y ve uno o varios nodos (las ESE no tienen drones). No se registra solo.
 
 **Por qué.** El técnico no está atado a un solo sitio. El despachador sí, porque el inventario y la firma de salida son de una central.
 
@@ -140,11 +140,11 @@ Disponible, en misión, en tierra fuera de base, en mantenimiento o fuera de ser
 
 ### RU-18 — Telemetría
 
-Posición, altitud, velocidad, batería, carga, temperatura, latencia y fase.
+Posición, altitud sobre el terreno y sobre el nivel del mar, velocidad, batería, carga, temperatura, latencia, fase, número del manifiesto y estado del enlace.
 
 ### RU-19 — Geovallas
 
-Dibujar, editar y borrar polígonos. Toda ruta nueva los respeta.
+Dibujar, editar y borrar polígonos propios. Toda ruta nueva los respeta. Las zonas legales (RF-43) se ven en el mismo mapa, pero no las puede borrar ni mover.
 
 ### RU-20 y RU-21 — Alertas de vuelo
 
@@ -162,13 +162,13 @@ Medicamentos más pedidos y zona, en agregados. Sin identificar personas. Lo dic
 
 ### RU-26 — Centrales
 
-Crea la central (nombre, tipo, ubicación, contacto) y puede suspenderla. No hay alta pública.
+Crea la central (nombre, tipo de red —nodo o ESE—, tipo de servicio, ubicación, contacto) y puede suspenderla. No hay alta pública.
 
 **Por qué.** Si el despachador no se autoregistra, la central tampoco puede nacer de su registro. Suspenderla la saca de despacho y de pedido.
 
 ### RU-27 — Cuentas institucionales
 
-Crea despachadores (una central, correo institucional) y operadores (una o varias centrales, correo institucional). Puede suspenderlos y reactivarlos. Esas cuentas no pasan por OTP de registro público.
+Crea despachadores (una central, nodo o ESE, correo institucional) y operadores (uno o varios nodos, correo institucional). Puede suspenderlos y reactivarlos. Esas cuentas no pasan por OTP de registro público.
 
 ### RU-28 — Métricas
 
@@ -176,7 +176,7 @@ Número de misiones, tiempo promedio e incidencias, incluidos los retornos sin e
 
 ### RU-32 — Consola de simulación
 
-En la web, sobre el mapa del radar y en la misma pantalla (una TV), maneja el reloj simulado, lanza eventos sobre un dron, una zona o una central, enciende el despachador automático y el modo caos, sigue la línea de tiempo y las alertas pendientes, y reinicia el escenario. No crea pedidos a mano, no autoriza ni pilotea: los eventos los resuelve el sistema con sus propias reglas.
+En la web, sobre el mapa del radar y en la misma pantalla (una TV), maneja el reloj simulado, lanza eventos sobre un dron, una zona o una central, crea restricciones temporales, enciende el despachador automático y el modo caos, sigue la línea de tiempo y las alertas pendientes, y reinicia el escenario. No crea pedidos a mano, no autoriza ni pilotea: los eventos los resuelve el sistema con sus propias reglas.
 
 **Por qué.** Mostrar drones volando no demuestra nada. La consola pone al sistema frente a situaciones realistas (clima, fallas, choques, una central caída) y deja ver en vivo cómo decide, mientras otras personas usan la app en su celular.
 
@@ -206,7 +206,7 @@ Código de 15 minutos al correo de la cuenta. Si el correo no existe, el mensaje
 
 ### RF-06 y RF-07 — Central
 
-El administrador la crea con nombre, tipo (hospital, clínica, farmacia, banco de sangre o vacunación), ubicación y contacto, y puede suspenderla.
+El administrador la crea con nombre, **tipo de red** (nodo o ESE), tipo de servicio (hospital, clínica, farmacia, banco de sangre o vacunación), ubicación y contacto, y puede suspenderla. Solo un nodo tiene drones y despega. Un nodo no se puede ubicar dentro de una zona prohibida, del anillo de un aeródromo ni de la zona urbana (RF-43).
 
 ### RF-08 — Inventario
 
@@ -214,37 +214,58 @@ Alta, edición y baja con cantidad, lote, vencimiento, frío y tipo de venta: li
 
 ### RF-09 — Emergencia
 
-La crea el solicitante (destino: su ubicación) o el despachador que necesita stock (destino: su central, origen: otra). Prioridad alta. Si el destino es una persona y el ítem es bajo fórmula, exige imagen y documento coincidente. Control especial: no se crea.
+La crea el solicitante (destino: un punto de entrega, RF-45) o el despachador que necesita stock (destino: su central, origen: un nodo). Prioridad alta. Si el destino es una persona y el ítem es bajo fórmula, exige imagen y documento coincidente. Control especial: no se crea.
 
 ### RF-10 — Programado
 
-Suministro, cantidad, calendario (días de la semana cada 1 a 4 semanas, un día del mes o fechas sueltas) con fin por fecha o por número de entregas, y la hora de la franja de 1 hora (en punto, de 07:00 a 17:00). El destino es la ubicación del solicitante o la central que pide el abastecimiento. Máximo 3 meses y, bajo fórmula, no más que su vigencia. Las entregas que empezarían en menos de 2 horas no se agendan. El plan guarda la regla y crea todas sus entregas al crearse; cambiar la regla rehace las que no tienen dron. Los planes anteriores (frecuencia única, semanal, quincenal o mensual con 8 semanas) siguen valiendo: su franja es todo el horario operativo y se pueden extender otras 8 semanas. El despachador ve el día agrupado por franja: si la entrega está confirmada, si hay stock, si la fórmula sigue vigente y hasta cuándo tiene que despegar para llegar antes del cierre. Si en una franja ya hay más entregas que drones en la central, el plan se crea igual y lo avisa.
+Suministro, cantidad, calendario (días de la semana cada 1 a 4 semanas, un día del mes o fechas sueltas) con fin por fecha o por número de entregas, y la hora de la franja de 1 hora (en punto, de 07:00 a 16:00). El destino es el punto de entrega del solicitante o la central que pide el abastecimiento. El origen es siempre un nodo. Máximo 3 meses y, bajo fórmula, no más que su vigencia. Las entregas que empezarían en menos de 2 horas no se agendan. El plan guarda la regla y crea todas sus entregas al crearse; cambiar la regla rehace las que no tienen dron. Los planes anteriores (frecuencia única, semanal, quincenal o mensual con 8 semanas) siguen valiendo: su franja es todo el horario operativo y se pueden extender otras 8 semanas. El despachador ve el día agrupado por franja: si la entrega está confirmada, si hay stock, si la fórmula sigue vigente y hasta cuándo tiene que despegar para llegar antes del cierre. Si en una franja ya hay más entregas que drones en la central, el plan se crea igual y lo avisa.
 
 ### RF-11 — Elegibilidad
 
-Al autorizar: batería, carga, mantenimiento, clima simulado y ruta sin geovallas. La emergencia gana el dron si compite con un programado. Reserva el dron y no inicia el vuelo.
+Al autorizar, el motor elige el dron en dos pasos. Las reglas completas están en [../operacion/flota.md](../operacion/flota.md). La emergencia gana el dron si compite con un programado. Elegir reserva el dron y no inicia el vuelo.
 
-La batería se evalúa con la misma cuenta del simulador: ida y regreso por el corredor (8 % de fases verticales por tramo más el crucero) y aterrizar todavía con la reserva crítica del 20 %. Con la batería llena, el Wingcopter 198 llega hasta **35,2 km** de ida. Más lejos, el dron no es elegible.
+**1. Filtros.** Se descarta, con su motivo, el dron que:
 
-La batería es la de cada dron: al volver guarda con cuánta llegó y en tierra recarga 1,5 % por minuto (de 0 a 100 % en algo más de una hora). Un dron que acaba de volver puede no alcanzar para otra misión larga, y entonces sale otro. El vuelo arranca con esa batería.
+- no esté disponible (mantenimiento, fuera de servicio, en tierra fuera de base);
+- no lleve el peso del pedido. El peso es la suma del peso por unidad de cada ítem ([../entregas/productos.md](../entregas/productos.md)); si el dron lleva compartimento de frío, se le descuenta 1 kg de carga útil;
+- no tenga compartimento de frío y algún ítem lo exija;
+- no tenga batería para ida, regreso y reserva, sobre el perfil real de la ruta;
+- tenga un techo de servicio menor que el punto más alto de la ruta más 90 m (RF-46);
+- no tenga un corredor legal (RF-12, RF-43), o el viento del corredor pase de su límite (RF-32);
+- no alcance a **aterrizar de regreso en el nodo antes de la puesta del sol** (RF-44).
 
-Entre los drones que pueden cumplir, sale el que lleva más tiempo en tierra (el que nunca ha volado, primero). Si empatan, el de más batería. Así la flota se alterna y no vuela siempre el mismo.
+**Batería.** Se cuenta con la misma física del simulador:
 
-El clima simulado (RF-32) también decide: un dron no es elegible si su corredor cruza una tormenta, o si en algún tramo el viento sostenido pasa de **15 m/s** o las ráfagas de **20 m/s**. La batería se cuenta con el viento de cada tramo.
+- ida y regreso por el corredor, porque si nadie recibe el dron vuelve con el paquete;
+- 8 % de fases verticales por tramo, más el crucero (recorrer todo el alcance del tipo cuesta el 100 %);
+- la energía de cada metro de ascenso neto (RF-46);
+- aterrizar todavía con la reserva crítica del 20 %.
 
-**Por qué.** Los 110 km del modelo son el alcance total en crucero. Si la ida y el regreso los consumen enteros, no queda batería para despegar y aterrizar ni reserva: el dron se apagaría volviendo.
+En plano y sin viento, eso da un radio útil del 32 % del alcance: 38 km el Colibrí, 29 km el Garza y 10 km el Cóndor. Con viento en contra, el crucero cuesta como uno más largo.
 
-Cada decisión queda explicada en el pedido: qué centrales miró el motor, si tenían lote y corredor, cuántos minutos de vuelo y cuánta batería pedía la misión, y qué pasó con cada dron (elegido, elegible o descartado con su motivo). El despachador que puede abrir el pedido la consulta. No guarda datos clínicos.
+La batería es la de cada dron: al volver guarda con cuánta llegó y en tierra recarga 1,5 % por minuto (de 0 a 100 % en algo más de una hora). Un dron que acaba de volver puede no alcanzar para otra misión larga, y entonces sale otro.
+
+**2. Puntaje.** Entre los que pasan:
+
+- en una urgencia gana el de **menor tiempo estimado de llegada**;
+- en un programado, el de **menor energía** para esa ruta;
+- si empatan, el que lleva más tiempo en tierra, luego el de más batería y al final el identificador. Así la flota se alterna y el resultado es estable.
+
+**Por qué.** Los tres tipos existen para escenarios distintos: el motor debe poder explicar por qué una urgencia de 300 g voló en el Colibrí y un reabastecimiento de 12 kg en el Cóndor. El alcance de cada tipo es el total en crucero: si ida y regreso lo consumieran entero, no quedaría batería para despegar, aterrizar ni para la reserva.
+
+Cada decisión queda explicada en el pedido: qué nodos miró el motor, si tenían lote y corredor, cuántos minutos de vuelo y cuánta batería pedía la misión, y qué pasó con cada dron (elegido, elegible o descartado con su motivo). El despachador que puede abrir el pedido la consulta. No guarda datos clínicos.
 
 ### RF-12 — Ruta
 
-Corredor a altitud fija, de ida y de retorno si hace falta, sin cruzar geovallas.
+Corredor en planta, de ida y de retorno si hace falta, que respeta las zonas de RF-43 y las geovallas del operador. La altura la pone RF-46. Las reglas completas están en [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md).
 
-El corredor es el camino más corto que pasa a **150 m o más** del borde de toda geovalla. Si la línea recta cumple, es la línea recta. Si no, el planificador infla cada geovalla con ese margen y busca el camino más corto por sus esquinas (grafo de visibilidad con A*, un Dijkstra guiado hacia el destino), así esquiva varias geovallas seguidas o una cóncava. El margen no se exige a la central ni al destino: un destino a 100 m de una geovalla, pero fuera de ella, es válido. Si no hay camino, el dron no es elegible; si el camino existe pero es largo, lo descarta la batería (RF-11).
-
-Para rutas, una geovalla temporal vigente o una tormenta (RF-32, RF-36) cuentan igual que una geovalla del operador. Si una de esas zonas aparece con el dron en el aire y cruza el tramo que falta, la ruta cambia en vuelo (RF-33).
-
-El regreso se planea al salir de destino con las geovallas vigentes. Si una geovalla nueva bloquea la ruta, la rodea. Solo si el dron o la central quedaron dentro de una geovalla nueva, o la central quedó encerrada, el regreso la cruza: tiene que volver igual, y queda registrado.
+- **Fuera de una zona coordinada**, el corredor es el camino más corto que pasa a **150 m o más** del borde de toda zona bloqueante. Ya incluye el margen legal: 2 km en las prohibidas y 9 km en el aeródromo. Si la línea recta cumple, es la línea recta. Si no, el planificador infla cada zona con los 150 m y busca el camino más corto por sus esquinas (grafo de visibilidad con A*, un Dijkstra guiado hacia el destino). Así esquiva varias zonas seguidas o una cóncava.
+- **Dentro de una zona coordinada** (estación de policía, resguardo), el tramo es el **corredor pactado**, que es fijo, y solo lleva al punto pactado. Un destino dentro de una zona coordinada sin corredor pactado no es alcanzable.
+- **Holgura.** No se exige al nodo ni al destino: un punto a 100 m de una geovalla del operador, pero fuera de ella, es válido.
+- **Sin camino o camino largo.** Si no hay camino, el dron no es elegible. Si el camino existe pero es largo, lo descarta la batería (RF-11).
+- **Zonas que aparecen.** Una restricción temporal, una tormenta o una celda de niebla vigentes (RF-32, RF-36) cuentan igual que una zona prohibida. Si una aparece con el dron en el aire y cruza el tramo que falta, la ruta cambia en vuelo (RF-33).
+- **Desviación.** En vuelo, el dron no se aparta más de **30 m** del corredor (RAC 100.445). Un desvío por una zona nueva es una ruta nueva, no una deriva.
+- **Regreso.** Se planea al salir de destino con las zonas vigentes. Si una zona nueva bloquea la ruta, la rodea. Solo si el dron o el nodo quedaron dentro de una zona nueva, o el nodo quedó encerrado, el regreso la cruza: tiene que volver igual, y queda registrado.
 
 ### RF-13 y RF-14 — Telemetría
 
@@ -273,8 +294,11 @@ Depende del servicio:
 | Servicio | Sin dron elegible en la central que autoriza |
 | --- | --- |
 | Urgencia a una persona | Pasa a la central activa que llega antes por su corredor y tiene el lote y un dron elegible. Queda `reasignado` y entra primero en su cola. |
-| Urgencia entre centrales | Igual, con otra central de origen. Nunca la central que pidió. |
+| Urgencia entre centrales | Igual, con otro nodo de origen. Nunca la central que pidió. |
+| Urgencia de noche (RF-44) | No se encola: queda `reasignado` como **traslado convencional** y se avisa al despachador y al operador. Si amanece antes de que se resuelva por tierra, el despachador puede volver a autorizarla |
 | Programado | Sigue en recibido y se reintenta solo cada 15 minutos mientras el siguiente intento caiga dentro de la franja. Si la franja cierra sin despegue, queda vencido, suelta el dron si ya estaba reservado y busca otra central como una urgencia. Esa central autoriza sin la franja original. |
+
+Un solicitante en zona urbana, o sin un punto de entrega al alcance de ningún nodo, no llega a crear el pedido: la app le muestra directamente la alternativa terrestre (RU-02).
 
 Un pedido se reasigna **una sola vez**. Si la central que lo recibe tampoco puede, o si ninguna central sirve, queda `reasignado` como **traslado convencional**: es final, ningún dron despega y quien pidió ve hasta tres centrales con el insumo (nombre, dirección, contacto y distancia). La central que recibe un pedido reasignado verifica la fórmula otra vez, y puede autorizarlo o rechazarlo.
 
@@ -286,11 +310,11 @@ Un solo uso. Se ingresa con el dron en destino. La espera dura 5 minutos. Un có
 
 ### RF-20 — Flota
 
-Alta y estado de drones sobre el modelo Wingcopter 198. Un dron en misión no cambia de estado hasta cerrarla, salvo por un incidente (RF-34): pasa a en tierra fuera de base o a fuera de servicio.
+Alta y estado de drones de los tres tipos de [../operacion/flota.md](../operacion/flota.md) (RF-49): Colibrí, Garza y Cóndor. Cada dron pertenece a un nodo y puede tener el compartimento de frío instalado. Un dron en misión no cambia de estado hasta cerrarla, salvo por un incidente (RF-34): pasa a en tierra fuera de base o a fuera de servicio.
 
 ### RF-21 — Geovallas
 
-Crear, editar y borrar. Una ruta que las cruza, o que pasa a menos de 150 m de su borde, no es válida.
+Las del operador: crear, editar y borrar. Una ruta que las cruza, o que pasa a menos de 150 m de su borde, no es válida. Las zonas legales (RF-43) no son geovallas del operador: vienen con el escenario y no se editan desde la app.
 
 ### RF-22 — Historial
 
@@ -342,6 +366,8 @@ El despachador la ve a pantalla completa con zoom (las fotos y cada página del 
 
 Lo que el solicitante dice de la urgencia, en fichas y no en texto libre:
 
+Todo el tamizaje es **opcional**: la app avisa que son datos de salud y que puede seguir sin responder (Decreto 1377, art. 6).
+
 - **Signos de alarma** (varios o "Ninguno"): dificultad para respirar, dolor en el pecho, convulsión, sangrado que no para, desmayo o reacción alérgica grave. Si marca alguno, la app le muestra "Llama al 123" con el botón para marcar y le deja seguir con el pedido.
 - **Para quién:** él mismo o una persona a su cargo (RF-42), y si es bebé, niño, adulto o adulto mayor. Si aplica, si está embarazada.
 - **Qué siente** (uno o varios): fiebre, dolor, respiración, alergia, azúcar, presión, infección, estómago u otro.
@@ -387,17 +413,18 @@ El clima son celdas: un círculo en el mapa (centro y radio), con un tipo, una i
 
 | Tipo | Efecto |
 | --- | --- |
-| Viento | Dirección y velocidad. Solo cuenta la parte del viento a lo largo del tramo: en contra, la velocidad sobre el suelo es la del dron menos esa parte; a favor, más. El crucero gasta por tiempo en el aire, así que por km gasta en la proporción velocidad en el aire / velocidad sobre el suelo (10 m/s en contra a 150 km/h: 114 km/h y 1,32 veces el consumo). Sobre 15 m/s sostenidos o 20 m/s en ráfagas no se vuela |
+| Viento | Dirección y velocidad. Solo cuenta la parte del viento a lo largo del tramo: en contra, la velocidad sobre el suelo es la del dron menos esa parte; a favor, más. El crucero gasta por tiempo en el aire, así que por km gasta en la proporción velocidad en el aire / velocidad sobre el suelo (10 m/s en contra a 110 km/h: 74 km/h y 1,49 veces el consumo). Sobre el límite del tipo no se vuela: Colibrí 12/16 m/s, Garza 15/20 m/s, Cóndor 10/14 m/s (sostenido/ráfaga) |
 | Lluvia | Se vuela, con un 10 % más de consumo en crucero |
 | Tormenta | Zona no volable mientras dure: cuenta como geovalla para rutas (RF-12) |
+| Niebla | Visibilidad reducida: no hay condiciones visuales (VMC, RAC 100.440). Zona no volable mientras dure, igual que la tormenta |
 
 Al autorizar, el motor de decisión mira el clima del corredor de ida y del regreso por el mismo camino (RF-11). La batería se cuenta en km equivalentes: el crucero con viento en contra cuesta como uno más largo. En vuelo, una tormenta que cruza el tramo que falta cambia la ruta (RF-33), y un viento sobre el límite donde va el dron es un incidente (RF-34). Mientras ese protocolo no exista, se avisa y el dron sigue. Una tormenta no impide crear un pedido con destino bajo ella: lo que no deja es volar hasta que pase. Al vencer, la celda desaparece sola y la línea de tiempo lo cuenta.
 
-**Por qué.** El alcance ya pedía clima simulado en la decisión, y estaba fijo en "se puede volar". Los límites de viento (15 m/s sostenido, 20 m/s en ráfagas) son los que publica un distribuidor del Wingcopter 198; la página del fabricante solo dice que resiste vientos fuertes ([../sustentacion/fuentes.md](../sustentacion/fuentes.md)).
+**Por qué.** El alcance ya pedía clima simulado en la decisión, y estaba fijo en "se puede volar". La norma exige volar en VMC y monitorear el clima en toda la operación. Los límites de viento salen de [../operacion/condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md): los de ala fija toleran más que el multirrotor de carga.
 
 ### RF-33 — Cambio de ruta en vuelo
 
-Si con el dron en el aire aparece una zona (geovalla del operador, geovalla temporal o tormenta) que cruza el tramo que falta, el planificador traza un corredor nuevo desde la posición actual hasta el mismo destino, con las reglas de RF-12. Si la batería alcanza para terminar con la reserva del 20 %, el dron lo sigue. Si no, corre RF-34 con el protocolo de volver o aterrizar. Si el dron quedó dentro de la zona nueva, sale por el camino más corto y queda registrado.
+Si con el dron en el aire aparece una zona (geovalla del operador, restricción temporal, tormenta o niebla) que cruza el tramo que falta, el planificador traza un corredor nuevo desde la posición actual hasta el mismo destino, con las reglas de RF-12. Si la batería alcanza para terminar con la reserva del 20 %, el dron lo sigue. Si no, corre RF-34 con el protocolo de volver o aterrizar. Si el dron quedó dentro de la zona nueva, sale por el camino más corto y queda registrado.
 
 La ruta vieja se guarda y la consola la muestra punteada debajo de la nueva. El cambio queda en la línea de tiempo (RF-39) y avisa al operador.
 
@@ -410,16 +437,16 @@ Un incidente es algo que le pasa a un dron en vuelo. Lo lanza la consola sobre u
 | Incidente | Efecto | Protocolo |
 | --- | --- | --- |
 | Batería que se degrada | Sube el consumo | Según alcance (abajo) |
-| Falla de 1 motor | Vuelo degradado: más consumo, menos velocidad. El 198 tiene 8 motores | Según alcance |
+| Falla de 1 motor | Vuelo degradado: más consumo, menos velocidad. Los tres tipos tienen motores redundantes | Según alcance |
 | Falla de 2 motores | — | Aterrizaje de emergencia |
 | Pérdida de GPS, leve | Sigue con el sistema de posición de respaldo | Seguir, con alerta |
 | Pérdida de GPS, grave | Sin posición confiable | Aterrizaje de emergencia |
-| Pérdida de enlace | La telemetría queda marcada sin enlace | Volver a la central (procedimiento de enlace perdido) |
+| Pérdida de enlace C2 | La telemetría queda marcada sin enlace | Procedimiento de enlace perdido: espera 30 s en el aire; si no vuelve el enlace, regresa solo al nodo; si no alcanza, punto seguro ([../operacion/contingencias.md](../operacion/contingencias.md)) |
 | Falla de la refrigeración | La carga con frío se calienta (RF-17) | Seguir; alerta de frío y cuarentena |
 | Choque leve (ave u obstáculo) | Sube el consumo | Según alcance |
 | Choque grave | — | Aterrizaje de emergencia |
 | Dron perdido | Sin rastro | El dron queda fuera de servicio |
-| Viento sobre el límite | — | Volver a la central o, si no alcanza, aterrizaje de emergencia |
+| Viento sobre el límite del tipo | — | Volver al nodo o, si no alcanza, aterrizaje de emergencia |
 
 Los efectos se aplican al resto del vuelo y se suman si hay más de uno: batería degradada, +25 % de consumo; falla de 1 motor, +15 % de consumo por km y -10 % de velocidad; choque leve, +10 % de consumo. Sin enlace, la posición sigue avanzando en el radar y en la app marcada como estimada, y el enlace vuelve al aterrizar en la central. El choque grave no busca un punto seguro: el dron cae donde va. El dron perdido no tiene rescate.
 
@@ -429,7 +456,7 @@ La consola lanza estos incidentes sobre un dron en vuelo (CU-38). El viento sobr
 
 1. Si termina la misión (llegar al destino y volver) con la reserva del 20 %: sigue.
 2. Si no, pero alcanza a volver a la central con la reserva: vuelve con el paquete.
-3. Si tampoco: aterrizaje de emergencia en el punto más cercano fuera de toda geovalla y tormenta.
+3. Si tampoco: aterrizaje de emergencia en el **punto seguro** más cercano que alcance (un nodo, una ESE o un punto de entrega). Si no alcanza ninguno, en el punto más cercano fuera de toda zona bloqueante y tormenta. Son las áreas de aterrizaje forzoso que pide el RAC 100.440.
 
 De regreso, el paso 1 es llegar a la central. Si el dron ya va bajando, termina de bajar.
 
@@ -463,17 +490,18 @@ El pedido no tiene un estado nuevo: la misión fallida guarda el incidente y el 
 
 Los lanza la consola (RU-32) o el modo caos (RF-38), cada uno con una duración en hora simulada:
 
-- **Geovalla temporal:** un polígono con vencimiento (por ejemplo, un evento aéreo), de 5 a 240 minutos simulados. Mientras dure cuenta como geovalla (RF-12, RF-21): no puede cubrir una central y puede cambiar rutas en vuelo (RF-33). Al vencer desaparece sola y la línea de tiempo lo cuenta. La consola puede levantarla antes, pero no toca las geovallas del operador, que no vencen.
+- **Restricción temporal:** un polígono con motivo (orden público, evento como el Festival Vallenato, operativo o jornada electoral) y vencimiento, de 5 a 240 minutos simulados. Mientras dure cuenta como geovalla (RF-12, RF-21): no puede cubrir una central y puede cambiar rutas en vuelo (RF-33). Al vencer desaparece sola y la línea de tiempo lo cuenta. La consola puede levantarla antes, pero no toca las geovallas del operador, que no vencen.
 - **Central sin energía:** de 5 a 240 minutos simulados. Mientras dure, no autoriza ni confirma cargas y sus drones no son elegibles. Sus urgencias pasan a la siguiente central como si hubiera declinado (RU-10); lo que ya había autorizado sin cargar suelta el dron y el lote. Sus programados se reintentan dentro de la franja (RF-18); los que nadie ha autorizado esperan en su cola. Los drones en el aire que vuelven a ella aterrizan igual. Sus despachadores reciben un aviso al empezar y otro al volver la energía. No cambia el estado de la central, que es del administrador.
 - **Pico de urgencias:** el generador de RF-37 crea de 2 a 15 urgencias seguidas (las elige el administrador) dentro de un círculo del mapa.
 - **Nadie retira el paquete:** en un pedido del receptor simulado, el código no se ingresa y corre RF-30.
+- **Dron no identificado:** un contacto sin identificación remota (RF-48) que cruza la región durante 5 a 30 minutos simulados. El radar lo muestra distinto y avisa si pasa a menos de 1 km de un corredor activo. El sistema no actúa contra él.
 
 ### RF-37 — Actores simulados
 
 Para la demostración híbrida (personas reales con la app y el sistema mostrando el flujo solo) hay tres actores. Llaman a **los mismos servicios** que una persona, sin atajos:
 
 - **Despachador automático.** La consola lo enciende o lo apaga; arranca apagado. Encendido, en cualquier central activa autoriza cualquier pedido, de una persona real o generado, 10 segundos simulados después de que le toca, y confirma la carga 20 segundos simulados después de autorizar. Con fórmula, da la verificación por cumplida. El pedido y la línea de tiempo dicen que lo autorizó el despachador automático. Si las reglas no lo dejan (sin energía, sin lote, fuera de franja), espera un minuto simulado y vuelve a intentar. Apagado, lo hace un despachador real en la app.
-- **Generador de pedidos.** Crea urgencias y programados de solicitantes simulados (cuentas marcadas como simuladas, sin datos de personas reales), con destinos en barrios de Valledupar dentro de la zona de las centrales, fuera de geovallas y con insumos de venta libre que alguna central tiene en stock. El programado va a la primera franja que empieza en más de 2 horas. El administrador pide uno a la vez, o enciende el flujo continuo: un pedido cada 3 minutos simulados, 70 % urgencias. Arranca apagado.
+- **Generador de pedidos.** Crea urgencias y programados de solicitantes simulados (cuentas marcadas como simuladas, sin datos de personas reales), con destino en un punto de entrega activo al alcance de un nodo y con insumos de venta libre que algún nodo tiene en stock. El programado va a la primera franja que empieza en más de 2 horas. El administrador pide uno a la vez, o enciende el flujo continuo: un pedido cada 3 minutos simulados, 70 % urgencias. Arranca apagado.
 - **Receptor simulado.** En los pedidos generados, ingresa el código a tiempo en el 85 % de los casos, entre 20 segundos y 2 minutos simulados después del aterrizaje. En el resto deja vencer los 5 minutos (RF-30).
 
 El reinicio del escenario (RF-40) apaga el despachador automático y el flujo continuo.
@@ -486,9 +514,9 @@ Interruptor de la consola, **apagado por defecto**. Encendido, sortea eventos de
 
 - **Intensidad:** baja, un evento cada 15 minutos simulados en promedio; media, cada 8; alta, cada 4. Cada espera dura entre la mitad y vez y media del promedio.
 - **Familias:** clima 40 %, fallas del dron 35 %, entorno 20 % y choques 5 %. Sin drones en el aire no hay fallas ni choques.
-- **Clima:** viento, lluvia o tormenta, de 1,5 a 3,5 km y de 15 a 60 minutos, sobre el corredor de un dron en el aire (o un barrio, si no vuela ninguno). Las tormentas son tres veces más probables de 14:00 a 18:00 simuladas.
+- **Clima:** viento, lluvia, tormenta o niebla, de 1,5 a 3,5 km y de 15 a 60 minutos, sobre el corredor de un dron en el aire (o un punto de entrega, si no vuela ninguno). La niebla es más probable de 05:00 a 08:00 simuladas en la Sierra. Las tormentas son tres veces más probables de 14:00 a 18:00 simuladas.
 - **Fallas:** le caen al dron en el aire con más vuelos desde su último mantenimiento. La falla del frío, solo si lleva carga fría.
-- **Entorno:** geovalla temporal sobre un corredor, pico de 3 a 5 urgencias en un barrio o un pedido generado en el que nadie retira el paquete.
+- **Entorno:** restricción temporal sobre un corredor, pico de 3 a 5 urgencias alrededor de un punto de entrega, un pedido generado en el que nadie retira el paquete o un dron no identificado.
 - **Graves**, solo en intensidad alta y como el 10 % de su familia: falla de dos motores, dron perdido, choque grave y central sin energía (15 a 45 minutos, nunca la última central con energía).
 
 ### RF-39 — Línea de tiempo y alertas pendientes
@@ -514,13 +542,86 @@ Las últimas se guardan en Redis con un tope, para que una recarga no las pierda
 
 **Reiniciar el escenario:**
 
-- Borra los pedidos, incidentes, celdas de clima, geovallas temporales y eventos de la demostración.
+- Borra los pedidos, manifiestos, incidentes, celdas de clima, restricciones temporales y eventos de la demostración. Las zonas legales y los puntos de entrega no se borran.
 - Deja la flota y el stock de demostración como en la semilla.
 - Apaga el modo caos.
 - Devuelve el reloj a la hora real, a x1.
 
 Las cuentas de las personas reales no se borran.
 
+
+### RF-43 — Zonas legales
+
+El escenario trae cargadas las zonas de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md), cada una con su forma, su margen y su regla:
+
+| Tipo | Regla |
+| --- | --- |
+| Aeródromo | Prohibido el anillo de 9 km desde el ARP |
+| Prohibida | Prohibido, con 2 km de margen |
+| Helipuerto | Prohibido el círculo de 3 km |
+| Coordinada | Solo por el corredor pactado y hacia el punto pactado |
+| Urbana | Prohibido |
+| Temporal | Prohibido mientras dure (RF-36) |
+| Precaución | Se muestra y no bloquea |
+
+El operador no las borra ni las mueve: son la norma, no una decisión de la central. Cada zona dice de dónde sale: el artículo y la fuente del dato.
+
+**Por qué.** El RAC 100.315 fija distancias que no dependen de quién opera. La geovalla de un aeropuerto como una franja sobre la pista, que era lo que había antes, es una de las críticas más fáciles de hacerle a un sistema de drones.
+
+### RF-44 — Solo de día
+
+Un vuelo se despacha solo si el dron puede despegar después de la salida del sol y aterrizar de regreso en el nodo antes de la puesta, en la fecha y el lugar simulados. Las horas se calculan con las ecuaciones solares de la NOAA, sin API. Una urgencia de noche queda en traslado convencional (RF-18); un programado espera su franja, que ya cae de día (RU-30). La app muestra la salida y la puesta del sol del día.
+
+**Por qué.** RAC 100.220(a)(3): no se autorizan, en ningún caso, entregas con dron de noche.
+
+### RF-45 — Punto de entrega
+
+Lugar fijo de la red, con nombre, ubicación, municipio, nodo que lo atiende, si está activo y, si está en una zona coordinada, su corredor pactado. Lo crea el escenario y el administrador puede activarlo o desactivarlo. El solicitante recibe el más cercano a su GPS y puede elegir otro. Una ubicación en zona urbana, o sin un punto al alcance, no crea el pedido (RU-02).
+
+**Por qué.** En zona urbana solo se vuela con línea de vista y a 30 m de personas y edificios (RAC 100.220(b)). Un punto despejado con observador cumple eso; la puerta de una casa, no.
+
+### RF-46 — Altura y terreno
+
+Crucero a 90 m sobre el terreno, nunca más de 120 m ni menos de 60 m AGL. El terreno sale de una malla SRTM precalculada de unos 500 m por celda, con el máximo de cada celda. La ruta se muestrea cada 250 m. El ascenso está limitado por la velocidad vertical del tipo y cada metro de ascenso neto cuesta batería ([../operacion/condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md)). La telemetría lleva la altura sobre el terreno y sobre el nivel del mar.
+
+**Por qué.** El techo de 122 m del RAC 100 se mide sobre el terreno. Volar a una altitud fija sobre el nivel del mar haría chocar al dron contra la Sierra o lo dejaría por encima del techo legal en el valle.
+
+### RF-47 — Manifiesto de carga
+
+Al confirmar la carga se emite un manifiesto con número consecutivo (`MAN-2026-000123`). Lleva dron, origen, destino, contenido por ítem (medicamento, lote, vencimiento, cantidad), peso, frío y quién autorizó. No lleva datos del paciente. No se edita: si la carga cambia, se anula y se emite otro. Sin manifiesto no hay despegue.
+
+**Por qué.** RAC 100.440(a)(21). Además, en un país con drones usados como armas, cada vuelo debe poder demostrar qué lleva.
+
+### RF-48 — Identificación remota
+
+Cada dron publica con su telemetría su matrícula, el operador, el tipo, el número del manifiesto activo y su estado. El radar muestra esa identificación y distingue un contacto no identificado (RF-36).
+
+**Por qué.** Es lo que hace un sistema de identificación remota. Un dron sin identificar cerca de una instalación de la fuerza pública es tratado como amenaza ([../legal/seguridad-publica.md](../legal/seguridad-publica.md)).
+
+### RF-49 — Tipos de dron y frío
+
+Tres tipos con sus especificaciones: carga útil, crucero, alcance, techo, velocidad vertical, masa, energía y límite de viento. Son Colibrí (`RAPID`), Garza (`BALANCED`) y Cóndor (`CARGO`), de [../operacion/flota.md](../operacion/flota.md). El compartimento de frío lo instala o lo quita el operador con el dron en tierra; pesa 1 kg y se descuenta de la carga útil. La app y la web muestran el nombre del tipo, no un fabricante.
+
+**Por qué.** Un solo modelo no deja ver al motor elegir. Tres tipos con ventajas distintas sí, y la decisión se puede explicar.
+
+### RF-50 — Mis datos
+
+Desde el perfil, el solicitante:
+
+- ve la política de tratamiento vigente y la versión que aceptó; si hay una versión nueva sustancial, la acepta en su siguiente ingreso;
+- consulta y corrige sus datos;
+- **revoca** el consentimiento: la cuenta queda inactiva;
+- **pide la supresión**: se borran el contacto y el acceso, y se anonimizan sus pedidos, conservando lo que la norma obliga.
+
+La app explica qué se conserva antes de confirmar. Las respuestas del tamizaje son opcionales y la app lo dice (RF-41). Detalle en [../legal/datos.md](../legal/datos.md).
+
+**Por qué.** Ley 1581, arts. 6, 8, 9 y 12; Decreto 1377, arts. 6, 9 y 13.
+
+### RF-51 — Registro de acceso a fórmulas
+
+Cada apertura de una fórmula guarda quién, con qué rol, cuándo, desde qué pedido y para qué. No se edita ni se borra. El administrador ve el registro, no la fórmula.
+
+**Por qué.** Ley 1581, art. 17: el responsable debe poder demostrar que el dato sensible solo lo vio quien debía.
 
 ## No funcionales
 
@@ -541,3 +642,5 @@ Las cuentas de las personas reales no se borran.
 | RNF-13 | Módulos separados: flota, pedidos, despacho, rutas, geovallas, telemetría | |
 | RNF-14 | Versiones de Android e iOS que Flutter soporte al desarrollar | |
 | RNF-15 | Español de Colombia. Fechas, horas y unidades de aquí | |
+| RNF-16 | Pantallas del solicitante con WCAG 2.1 AA: contraste, texto escalable, lector de pantalla y botones de 48 dp | Lo usan personas mayores y de zona rural; la Ley 1618 de 2013 obliga a garantizar accesibilidad |
+| RNF-17 | La app tolera conexión rural débil: reintenta, muestra el último estado conocido y no pierde un pedido a medio llenar | En los corregimientos la señal es intermitente |

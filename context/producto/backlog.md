@@ -40,7 +40,7 @@ Prioridad **Alta** = núcleo del MVP. **Media** = necesario pero puede recortars
 
 | ID | Historia | Pri | SP | Sprint |
 | --- | --- | --- | --- | --- |
-| HU-11 | Alta de dron + `DroneModel` Wingcopter 198 | Alta | 8 | 1 |
+| HU-11 | Alta de dron + `DroneModel` (los tres tipos de RF-49 desde HU-63) | Alta | 8 | 1 |
 | HU-12 | Estados de disponibilidad | Alta | 5 | 2 |
 | HU-13 | Mantenimiento y fuera de servicio | Media | 3 | 2 |
 | HU-14 | Dibujar y editar geovallas | Alta | 8 | 2 |
@@ -129,10 +129,32 @@ Se agregó después de probar la urgencia con personas: pedir debía ser más r�
 | HU-54 | Paciente a cargo: la urgencia o el plan para un hijo o un familiar (RF-42) | Alta | 5 | 6 |
 | HU-55 | Fórmula en PDF o hasta 3 fotos, con cámara (RU-25, RF-27) | Alta | 5 | 6 |
 | HU-56 | Visor de la fórmula con zoom, abrir con otra app y consulta desde el histórico (RF-27, CU-13) | Alta | 5 | 6 |
-| HU-57 | Ubicación por GPS con pin para afinar y referencia en vez de dirección (RU-02) | Alta | 5 | 6 |
+| HU-57 | Ubicación por GPS (RU-02); desde HU-64 sirve para proponer el punto de entrega | Alta | 5 | 6 |
 | HU-58 | Urgencia en 3 pasos y tamizaje en el detalle y la cola del despachador | Alta | 8 | 6 |
 
 **Suma del módulo 10: 36 SP.**
+
+## Módulo 11 — Red regional y cumplimiento (ampliación)
+
+Se agregó tras revisar el RAC 100, la Ley 1581 y la crítica del profesor a la geovalla del aeropuerto. La demo pasa a ser regional ([../negocio/cobertura.md](../negocio/cobertura.md)) y el vuelo sigue la norma ([../operacion/](../operacion/)). Se cuenta aparte.
+
+| ID | Historia | Pri | SP | Sprint |
+| --- | --- | --- | --- | --- |
+| HU-59 | Red regional: central nodo o ESE, puntos de entrega y escenario con 4 nodos, 5 ESE y 12 puntos (RF-06, RF-07, RF-45) | Alta | 8 | 6 |
+| HU-60 | Zonas legales del RAC 100 con sus márgenes y corredores pactados en zonas coordinadas (RF-43, RF-12) | Alta | 13 | 6 |
+| HU-61 | Solo de día: salida y puesta del sol con la NOAA, urgencia nocturna a traslado convencional (RF-44) | Alta | 5 | 6 |
+| HU-62 | Malla de terreno SRTM, perfil a 90 m AGL y energía de ascenso (RF-46) | Alta | 13 | 6 |
+| HU-63 | Flota de tres tipos, compartimento de frío y selección por tipo de misión (RF-49, RF-11) | Alta | 8 | 6 |
+| HU-64 | Punto de entrega en la urgencia y en el plan; fuera de cobertura en zona urbana (RU-02, RU-30, RF-45) | Alta | 5 | 6 |
+| HU-65 | Manifiesto de carga numerado (RF-47) | Alta | 5 | 6 |
+| HU-66 | Identificación remota en el radar y dron no identificado (RF-48, RF-36) | Media | 5 | 6 |
+| HU-67 | Niebla y límite de viento por tipo (RF-32) | Media | 3 | 6 |
+| HU-68 | Pérdida de enlace C2 y aterrizaje en punto seguro (RF-34) | Media | 5 | 6 |
+| HU-69 | Política versionada, tamizaje opcional, revocar y suprimir la cuenta (RF-50) | Alta | 8 | 6 |
+| HU-70 | Registro de acceso a fórmulas (RF-51) | Media | 3 | 6 |
+| HU-71 | Accesibilidad y conexión rural débil (RNF-16, RNF-17) | Media | 5 | 6 |
+
+**Suma del módulo 11: 86 SP.**
 
 ---
 

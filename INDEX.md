@@ -10,13 +10,13 @@ Este archivo es el **índice raíz** del repositorio: objetivo, esencia y mapa d
 
 AirDrop decide **qué central** despacha, **qué dron** puede cumplir la misión y **qué ruta** es segura, para dos tipos de servicio: **emergencia** (bajo demanda, prioridad máxima) y **reabastecimiento programado** (sangre, vacunas y otros insumos). Si ningún dron es viable, el sistema **sugiere una alternativa** en lugar de rechazar el pedido.
 
-No es un dron aislado: es un **sistema de decisión** más un **motor de simulación** calibrado con el [Wingcopter 198](https://wingcopter.com/). No hay hardware real. La única web es el radar y consola de simulación del administrador ([`web/`](web/AGENTS.md)), que se proyecta en una TV.
+No es un dron aislado: es un **sistema de decisión** más un **motor de simulación** con una flota propia de tres tipos de dron (Colibrí, Garza y Cóndor) que vuela según el RAC 100 de la Aerocivil. No hay hardware real. La única web es el radar y consola de simulación del administrador ([`web/`](web/AGENTS.md)), que se proyecta en una TV.
 
 ---
 
 ## 2. Problema que resolvemos
 
-En la región Caribe colombiana (caso de estudio: **Valledupar** y municipios o corregimientos cercanos) el medicamento a menudo está en un lugar distinto al paciente o al centro de salud. El traslado terrestre es lento, a veces inseguro, y convierte el desabastecimiento en urgencias evitables.
+En la región Caribe colombiana (caso de estudio: la zona rural de **Valledupar** y los municipios vecinos del Cesar) el medicamento a menudo está en un lugar distinto al paciente o al centro de salud. El traslado terrestre es lento, a veces inseguro, y convierte el desabastecimiento en urgencias evitables.
 
 Pregunta del proyecto:
 
@@ -44,9 +44,9 @@ Objetivos ampliados: [`context/sustentacion/objetivos.md`](context/sustentacion/
 
 ## 4. Qué entra en el MVP (y qué no)
 
-**Sí (Valledupar + 1–2 zonas cercanas):** pedidos de emergencia y programados, a una persona o entre centrales ([`context/entregas/`](context/entregas/)), flota simulada, geovallas, motor de decisión al autorizar, confirmación de carga antes del despegue, rutas por corredores a altitud fija, telemetría en vivo, espera de código de entrega (5 min) o retorno con el paquete, cadena de frío simulada, fallback, dashboard epidemiológico simple. Para demostrarlo: reloj simulado, clima simulado por zonas, incidentes en vuelo con protocolos autónomos, actores simulados y modo caos, manejados desde la consola web.
+**Sí (red regional de 4 nodos, 5 ESE y 12 puntos de entrega, [`context/negocio/`](context/negocio/)):** pedidos de emergencia y programados, a una persona en un punto de entrega o de un nodo a una ESE ([`context/entregas/`](context/entregas/)), flota simulada de tres tipos, zonas legales del RAC 100 y geovallas, motor de decisión al autorizar, confirmación de carga y manifiesto antes del despegue, vuelo solo de día, rutas por corredores con perfil de terreno ([`context/operacion/`](context/operacion/)), telemetría en vivo, espera de código de entrega (5 min) o retorno con el paquete, cadena de frío simulada, fallback, dashboard epidemiológico simple. Para demostrarlo: reloj simulado, clima simulado por zonas, incidentes en vuelo con protocolos autónomos, actores simulados y modo caos, manejados desde la consola web.
 
-**No:** dron real, clima real, navegación 3D, multi-ciudad desplegada, integración hospitalaria, reemplazar la atención médica ni el traslado del paciente.
+**No:** dron real, clima real, navegación 3D, vuelos sobre la ciudad, multirregión, licencias y permisos de operación, integración hospitalaria, reemplazar la atención médica ni el traslado del paciente.
 
 Alcance completo: [`context/producto/alcance.md`](context/producto/alcance.md).
 
@@ -56,7 +56,7 @@ Alcance completo: [`context/producto/alcance.md`](context/producto/alcance.md).
 
 | Rol | Función |
 | --- | --- |
-| **Solicitante** | Persona civil. Única cuenta que se autoregistra. Pide urgencias y entregas periódicas a su ubicación. |
+| **Solicitante** | Persona civil. Única cuenta que se autoregistra. Pide urgencias y entregas periódicas en un punto de entrega. |
 | **Despachador** | Persona de **una** central, creada por el admin. Inventario, autoriza, carga y puede pedir abastecimiento a otra central. |
 | **Operador de flota** | Persona creada por el admin. Drones, geovallas, telemetría y mantenimiento de **una o varias** centrales. |
 | **Administrador** | Crea y suspende centrales y sus cuentas. Ve métricas. Maneja la consola de simulación. No despacha. |
@@ -80,7 +80,7 @@ Backend NestJS (módulos por dominio, no microservicios)
 Piezas de valor (las que hay que poder explicar en la sustentación):
 
 1. **Motor de decisión** — al autorizar el despachador, elige el mejor dron y **no** inicia el vuelo: muestra la referencia para cargar el insumo. Emergencia gana si hay competencia.
-2. **Cálculo de rutas** — corredores a altitud fija; no se cruza una geovalla.
+2. **Cálculo de rutas** — corredores que respetan las zonas legales y las geovallas, con perfil de terreno a 90 m AGL.
 3. **Motor de simulación** — “reloj” del backend: arranca **después** de confirmar la carga; en destino espera el código o regresa con el paquete.
 4. **Fallback** — si no hay dron, hay alternativa, no un rechazo ciego.
 5. **Contingencia** — ante un incidente en vuelo (clima, falla, choque), reglas explícitas eligen seguir, cambiar de ruta, volver o aterrizar de emergencia; una urgencia abortada se vuelve a despachar.

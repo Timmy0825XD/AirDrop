@@ -15,5 +15,5 @@ Desarrollar una aplicación móvil de logística aérea autónoma simulada que g
 | Objetivo | Evidencia esperada |
 | --- | --- |
 | 1 | Listas RU/RF/RNF, actores, casos de uso trazables a historias |
-| 2 | Código de decisión y simulación separable, calibración Wingcopter 198, geovallas en rutas |
+| 2 | Código de decisión y simulación separable, tres tipos de dron, zonas del RAC 100 y terreno en las rutas |
 | 3 | Pruebas del ciclo completo (incluida carga previa al vuelo y retorno si no hay código) y de fallback cuando no hay dron |

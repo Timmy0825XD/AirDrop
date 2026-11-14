@@ -1,39 +1,51 @@
 # Roles y registro
 
-AirDrop simula logística aérea de medicamentos e insumos en Valledupar y una o dos zonas cercanas. No prescribe, no atiende al paciente y no vuela un dron real.
+AirDrop simula una red regional de entrega de medicamentos e insumos con drones para la zona rural de Valledupar y los municipios vecinos del Cesar: La Paz, San Diego, Manaure, Pueblo Bello y Agustín Codazzi. No vuela sobre la ciudad, no prescribe, no atiende al paciente y no vuela un dron real. Para quién es y quién paga: [../negocio/modelo.md](../negocio/modelo.md). Dónde opera: [../negocio/cobertura.md](../negocio/cobertura.md).
 
-La **central** es el lugar donde están el inventario y los drones. No es una cuenta ni un quinto rol.
+La **central** es el lugar donde está el inventario. No es una cuenta ni un quinto rol. Hay dos tipos:
+
+| Tipo | Tiene | Hace |
+| --- | --- | --- |
+| **Nodo** | Drones, inventario y despachador | Despega. Atiende a pacientes y reabastece a las ESE |
+| **ESE** | Inventario y despachador, sin drones | Pide reabastecimiento y lo recibe |
+
+El **punto de entrega** (puesto de salud o dronpuerto de un corregimiento) tampoco es una cuenta: es el lugar donde el paciente recoge su pedido. Ver [../entregas/persona.md](../entregas/persona.md).
 
 ## Cuentas
 
 | Rol | Quién | Cómo entra | Qué no hace |
 | --- | --- | --- | --- |
 | Solicitante | Persona civil adulta, con documento | Registro público. Entra con correo y contraseña. El OTP va al correo | No opera una central ni autoriza una salida |
-| Despachador | Profesional de la salud, o persona con capacitación certificada para aprobar solicitudes | Lo crea el administrador, en **una** central | No se autoregistra y no cubre otra central |
-| Operador de flota | Técnico de los drones | Lo crea el administrador, en **una o varias** centrales | No dispensa ni autoriza pedidos |
+| Despachador | Profesional de la salud, o persona con capacitación certificada para aprobar solicitudes | Lo crea el administrador, en **una** central (nodo o ESE) | No se autoregistra y no cubre otra central |
+| Operador de flota | Técnico de los drones | Lo crea el administrador, en **uno o varios** nodos | No dispensa ni autoriza pedidos |
 | Administrador | Operación de la plataforma | La primera cuenta nace del sistema | No pide insumos, no autoriza una salida y no pilotea la flota |
 
-El administrador crea la central, puede suspenderla, crea a los despachadores y a los operadores, y ve las métricas. En la web maneja la consola de simulación (RU-32): reloj, eventos, actores simulados, modo caos y reinicio. Con eso no autoriza ni pilotea. Lanza la situación, y la respuesta la deciden las reglas del sistema. Cuando el despachador automático está encendido, el que autoriza es ese actor simulado, en nombre de la central (RF-37).
+El administrador:
+
+- crea la central, puede suspenderla, crea a los despachadores y a los operadores, y ve las métricas;
+- en la web maneja la consola de simulación (RU-32): reloj, eventos, restricciones temporales, actores simulados, modo caos y reinicio.
+
+Con eso no autoriza ni pilotea: lanza la situación, y la respuesta la deciden las reglas del sistema. Cuando el despachador automático está encendido, el que autoriza es ese actor simulado, en nombre de la central (RF-37).
 
 Los solicitantes simulados del generador (RF-37) no son personas: son cuentas marcadas como simuladas, sin datos reales.
 
-No hay rol receptor. El código de un uso lo ingresa el solicitante o, si el destino es una central, el despachador que pidió el abastecimiento.
+No hay rol receptor. El código de un uso lo ingresa el solicitante en el punto de entrega o, si el destino es una central, el despachador que pidió el abastecimiento.
 
 ## Registro del solicitante
 
-Nombre, tipo y número de documento, celular de 10 dígitos, correo, contraseña y consentimiento. El celular no recibe el código de verificación. Documentos admitidos: cédula de ciudadanía, cédula de extranjería o PPT. No se registra a un menor.
+Nombre, tipo y número de documento, celular de 10 dígitos, correo, contraseña y consentimiento, con el enlace a la política de tratamiento. El celular no recibe el código de verificación. Documentos admitidos: cédula de ciudadanía, cédula de extranjería o PPT. No se registra a un menor.
 
-En venta bajo fórmula, el documento de la cuenta es el del paciente de la fórmula. Si no coincide, el pedido no se crea. El fundamento está en [../legal/datos.md](../legal/datos.md) y [../legal/salud.md](../legal/salud.md).
+En venta bajo fórmula, el documento de la fórmula es el del paciente del pedido: el titular o una persona a su cargo (RF-42). Si no coincide, el pedido no se crea. El fundamento está en [../legal/datos.md](../legal/datos.md) y [../legal/salud.md](../legal/salud.md).
 
 ## Los cuatro pedidos
 
 | Pedido | Lo crea | Destino | Quién suelta el insumo | Detalle |
 | --- | --- | --- | --- | --- |
-| Urgencia civil | Solicitante | Su ubicación | Despachador de la central que lo tiene | [../entregas/persona.md](../entregas/persona.md) |
-| Programado civil | Solicitante | Su ubicación, con frecuencia | Ese despachador, en cada fecha | [../entregas/persona.md](../entregas/persona.md) |
-| Urgencia entre centrales | Despachador de la central que lo necesita | Su central | Despachador de la central que lo tiene | [../entregas/centrales.md](../entregas/centrales.md) |
-| Programado entre centrales | Despachador de la central que lo necesita | Su central | Despachador de la central que lo tiene | [../entregas/centrales.md](../entregas/centrales.md) |
+| Urgencia civil | Solicitante | El punto de entrega que elige | Despachador del nodo que lo tiene | [../entregas/persona.md](../entregas/persona.md) |
+| Programado civil | Solicitante | Su punto de entrega, con frecuencia | Ese despachador, en cada fecha | [../entregas/persona.md](../entregas/persona.md) |
+| Urgencia entre centrales | Despachador de la central que lo necesita | Su central | Despachador del nodo que lo tiene | [../entregas/centrales.md](../entregas/centrales.md) |
+| Programado entre centrales | Despachador de la central que lo necesita | Su central | Despachador del nodo que lo tiene | [../entregas/centrales.md](../entregas/centrales.md) |
 
-El dron sale siempre de la central que tiene el insumo, y solo después de que su despachador confirma la carga.
+El dron sale siempre de un nodo que tiene el insumo, y solo después de que su despachador confirma la carga. Una ESE no despacha: no tiene drones.
 
-El software no cobra. El relato de sustentación sí distingue tarifa por urgencia y suscripción de reabastecimiento. El dashboard muestra agregados, sin identificar personas.
+El software no cobra. El modelo de cobro (suscripción de las ESE, tarifa por entrega a las EPS, contrato con la Secretaría de Salud) está en [../negocio/modelo.md](../negocio/modelo.md). El dashboard muestra agregados, sin identificar personas.

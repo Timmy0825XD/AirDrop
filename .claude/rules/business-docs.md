@@ -18,6 +18,7 @@ Impleméntalo y, en el mismo cambio, corrige solo los párrafos que hayan quedad
 | Norma de medicamentos | `context/legal/salud.md` |
 | Consentimiento, datos, seguridad | `context/legal/datos.md` |
 | RU, RF, RNF | `context/producto/requisitos.md` |
+| Seguridad, rendimiento o usabilidad | `context/calidad/` |
 | Historia, sprint o SP | `context/producto/backlog.md` |
 | Caso de uso | `context/producto/casos-de-uso.md` |
 | Alcance, arquitectura, glosario o principios | el `.md` que lo afirma |

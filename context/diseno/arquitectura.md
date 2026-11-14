@@ -38,14 +38,16 @@ Dirección acordada en el documento base. El detalle de carpetas y convenciones 
 - Un **reloj** en el backend (intervalo configurable, techo 2 s reales en vuelo).
 - La hora la da `simClock` (`common/clock/`, RF-31): pausa, x1, x2, x4 o x8. Cada tick avanza el tiempo simulado que toque. JWT, OTP y login siguen en hora real.
 - Cada tick: avanza el dron en la ruta, recalcula batería según **fase** (vertical vs ala fija).
-- Specs desde `DroneModel` (Wingcopter 198), independientes de cada unidad de flota.
+- Specs desde `DroneModel` (Colibrí, Garza o Cóndor), independientes de cada unidad de flota.
+- La altura sale de la malla de terreno (`airspace/terrain`) y el ascenso gasta batería (RF-46).
 - La cuenta de batería vive en `simulation/flight-energy.rules.ts`. El reloj la usa para gastar en cada tick y el motor de decisión para saber si el vuelo alcanza (RF-11).
 - Cada dron guarda la batería con que aterrizó y cuándo; la recarga en tierra se calcula al leerla (`batteryNow`), sin un reloj aparte.
 - El reloj **no** arranca cuando el despachador autoriza. Autorizar dispara el motor de decisión (reserva dron + ruta). El tick de vuelo empieza cuando el despachador **confirma la carga**.
 - En el punto de destino el reloj pasa a una fase de **espera** (5 min). Código válido → cierra misión. Sin código → simula el **retorno** a la central con el paquete.
 - Emergencia: asignación al autorizar; el dron queda reservado hasta la carga o el fallback.
 - Programado: calendario, posibilidad de agrupar entregas si el payload alcanza (sin convertir esto en un VRP académico; heurística simple).
-- Si una zona nueva (geovalla, geovalla temporal, tormenta) cruza el tramo que falta, la ruta cambia en vuelo (RF-33).
+- Si una zona nueva (geovalla, restricción temporal, tormenta, niebla) cruza el tramo que falta, la ruta cambia en vuelo (RF-33).
+- No hay despegue de noche: la decisión consulta la salida y la puesta del sol (RF-44).
 - Ante un incidente, `contingency.rules.ts` elige el protocolo y el reloj lo ejecuta (RF-34). Una urgencia que no llega vuelve al motor de decisión (RF-35).
 
 ## 7. Cadena de frío
@@ -57,6 +59,7 @@ Dirección acordada en el documento base. El detalle de carpetas y convenciones 
 
 - Módulo `control/` en Nest y la web `web/`. Solo admin, y solo con `CONTROL_ENABLED`.
 - Clima simulado por celdas en `weather/` (RF-32). Lo leen la decisión, las rutas y el vuelo.
+- Espacio aéreo en `airspace/`: zonas legales del RAC 100, corredores pactados, malla de terreno y luz del día (RF-43, RF-44, RF-46). Es el sistema de gestión de vuelo con geocercas que pide el RAC 100.445.
 - Actores simulados (despachador automático, generador, receptor) que llaman a los mismos servicios que una persona (RF-37). Modo caos apagado por defecto (RF-38).
 - La línea de tiempo y las alertas pendientes van por la sala `radar` del mismo socket (RF-39).
 

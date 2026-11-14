@@ -46,13 +46,13 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Actores:** Solicitante
 - **Antes:** Sesión activa
 - **Pasos:**
-  1. Responde el tamizaje (RF-41). Si marca un signo de alarma, la app le ofrece llamar al 123 y puede seguir.
+  1. Responde el tamizaje (RF-41), que es opcional. Si marca un signo de alarma, la app le ofrece llamar al 123 y puede seguir.
   2. Dice si es para él o para una persona a su cargo; si es a cargo, sus datos y parentesco (RF-42).
   3. Elige el medicamento y confirma sus alergias.
   4. Si el tipo de venta es bajo fórmula, adjunta un PDF o de 1 a 3 fotos a nombre del paciente.
-  5. Toca "Usar mi ubicación" o marca el punto en el mapa, y lo afina con el pin. Puede escribir una referencia corta.
-  6. El pedido queda en `recibido`, con prioridad alta, y entra a la cola de la central que llega antes. Si no la autoriza a tiempo, entra también a la de la siguiente (RU-10).
-- **Si falla:** Bajo fórmula sin fórmula, sin el documento del paciente o con un archivo que no es PDF, JPG o PNG: no se crea. Sin permiso de ubicación: marca el punto a mano. Control especial: no se crea y se explica que ese canal no existe aquí. Si ninguna central con el insumo tiene un dron que alcance el destino: queda en traslado convencional (CU-31).
+  5. Toca "Usar mi ubicación". La app le propone el punto de entrega activo más cercano (RF-45); puede elegir otro en la lista o en el mapa.
+  6. El pedido queda en `recibido`, con prioridad alta, y entra a la cola del nodo que llega antes. Si no la autoriza a tiempo, entra también a la del siguiente (RU-10).
+- **Si falla:** Bajo fórmula sin fórmula, sin el documento del paciente o con un archivo que no es PDF, JPG o PNG: no se crea. Sin permiso de ubicación: elige el punto en la lista. Ubicación en zona urbana o sin un punto al alcance de un nodo: no se crea y la app muestra la alternativa terrestre (RF-18). Control especial: no se crea y se explica que ese canal no existe aquí. Si ningún nodo con el insumo tiene un dron que alcance el punto, o es de noche: queda en traslado convencional (CU-31).
 - **Después:** Ningún dron está reservado. El motor de decisión no corre.
 - **Por qué:** RU-02 y RU-25. Crear el pedido no es autorizar la salida.
 
@@ -63,10 +63,10 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Pasos:**
   1. Elige medicamento, cantidad, el calendario (días de la semana, un día del mes o fechas sueltas), cuándo termina (fecha o número de entregas) y la hora de la franja.
   2. Si es bajo fórmula, adjunta la fórmula igual que en CU-04 (para él o para una persona a su cargo) y escribe hasta cuándo vale.
-  3. Fija la ubicación de entrega como en CU-04.
+  3. Elige el punto de entrega como en CU-04.
   4. La app muestra las fechas y horas que van a quedar (vista previa). Al confirmar, el sistema crea una entrega por fecha, cada una con su franja de 1 hora, en `recibido`, como pedido programado y no como urgencia.
   5. Puede cambiar el calendario o la hora: las entregas sin dron se rehacen. Puede cancelar el plan: las que siguen en `recibido` pasan a `cancelado` y las demás no cambian.
-- **Si falla:** Las mismas exclusiones de fórmula y de control especial que CU-04. No se crea si empieza antes de hoy, si dura más de 3 meses, si pasa de la vigencia de la fórmula, si la hora no es una franja válida o si no queda ninguna entrega a más de 2 horas.
+- **Si falla:** Las mismas exclusiones de fórmula y de control especial que CU-04. No se crea si empieza antes de hoy, si dura más de 3 meses, si pasa de la vigencia de la fórmula, si la hora no es una franja válida (de 07:00 a 16:00), si no queda ninguna entrega a más de 2 horas o si no hay un punto de entrega al alcance.
 - **Después:** Hay un plan activo. Cada fecha espera autorización. No hay vuelo todavía.
 - **Por qué:** RU-30. El periódico civil no se pide desde la cuenta de una central.
 
@@ -105,7 +105,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 
 ### CU-21 — Confirmar con el código
 
-- **Actores:** Solicitante, si el destino es su ubicación. Despachador de la central que pidió, si el destino es esa central.
+- **Actores:** Solicitante, en el punto de entrega. Despachador de la central que pidió, si el destino es esa central.
 - **Antes:** El dron está en `en espera de entrega` y el código sigue vigente
 - **Pasos:**
   1. Ingresa el código.
@@ -115,6 +115,19 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Si falla:** Código incorrecto o ya usado: no cierra y permite otro intento dentro de los 5 minutos. Si la remisión no coincide o hubo alerta de frío: no ingresa el stock y sigue CU-34. A los 5 minutos sin código válido: CU-34.
 - **Después:** El código no vuelve a servir.
 - **Por qué:** RU-24 y RF-19. Aterrizar no es entregar. En un traslado, recibir es ingresar inventario, no solo marcar un estado.
+
+### CU-46 — Mis datos
+
+- **Actores:** Solicitante
+- **Antes:** Sesión activa
+- **Pasos:**
+  1. Abre "Mis datos" en el perfil: ve sus datos, la política de tratamiento vigente y la versión que aceptó.
+  2. Puede corregir sus datos.
+  3. Puede revocar el consentimiento: la app explica que la cuenta queda inactiva y qué pasa con los pedidos en curso, y pide confirmar.
+  4. Puede pedir la supresión: la app explica qué se borra, qué se anonimiza y qué se conserva por norma, y pide la contraseña.
+- **Si falla:** Con un pedido en vuelo, la supresión espera a que cierre.
+- **Después:** Tras la supresión, el correo y el celular quedan libres y sus pedidos ya no lo identifican.
+- **Por qué:** RF-50.
 
 ## Despachador
 
@@ -139,27 +152,27 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 
 ### CU-11 — Autorizar una urgencia
 
-- **Actores:** Despachador de la central que tiene el insumo
-- **Antes:** Hay una urgencia en su cola. Puede venir de un solicitante o de otra central.
+- **Actores:** Despachador del nodo que tiene el insumo
+- **Antes:** Hay una urgencia en su cola. Puede venir de un solicitante o de una central (ESE u otro nodo).
 - **Pasos:**
   1. Abre detalle: el tamizaje (RF-41), el paciente, medicamento, destino y, si el destino es una persona, la fórmula a pantalla completa con zoom.
   2. Si hay fórmula, comprueba la lista de [../entregas/persona.md](../entregas/persona.md). Si es un traslado, comprueba que el pedido no traiga fórmula de paciente y que existan unidades selladas.
   3. Elige el lote que vence primero y que no esté vencido.
   4. Autoriza. Corre CU-26 y CU-27.
-  5. Ve el identificador y el modelo del dron. El pedido queda en `pendiente de carga`.
-- **Si falla:** Sin stock, sin dron o sin personal en una urgencia de un solicitante: declina ("No puedo atenderla") y la urgencia pasa en ese instante a la siguiente central (RU-10). Fórmula ilegible, incompleta o vencida: rechaza con motivo y no autoriza. Sin dron elegible al autorizar: CU-31.
+  5. Ve el identificador y el tipo del dron, y por qué lo eligió el motor. El pedido queda en `pendiente de carga`.
+- **Si falla:** Sin stock, sin dron o sin personal en una urgencia de un solicitante: declina ("No puedo atenderla") y la urgencia pasa en ese instante al siguiente nodo (RU-10). Fórmula ilegible, incompleta o vencida: rechaza con motivo y no autoriza. Sin dron elegible al autorizar: CU-31.
 - **Después:** El dron está reservado. El inventario sigue igual. El vuelo no ha empezado.
 - **Por qué:** RU-10. Autorizar es la decisión del profesional. Cargar es otro acto.
 
 ### CU-36 — Urgencia entre centrales
 
 - **Actores:** Despachador de la central que necesita el insumo
-- **Antes:** Su central está activa y elige otra central activa como origen
+- **Antes:** Su central (ESE o nodo) está activa y elige un nodo activo como origen
 - **Pasos:**
   1. Elige medicamento y cantidad. No adjunta fórmula.
-  2. El pedido queda en `recibido`, prioridad alta, destino su central, origen la otra.
+  2. El pedido queda en `recibido`, prioridad alta, destino su central, origen el nodo.
   3. Entra a la cola del despachador de origen, que sigue CU-11.
-- **Si falla:** Origen inexistente, suspendido o igual al destino: no se crea. Control especial: no se crea.
+- **Si falla:** Origen inexistente, suspendido, que no es un nodo o igual al destino: no se crea. Control especial: no se crea.
 - **Después:** Nadie ha reservado un dron todavía.
 - **Por qué:** RU-31. Quien necesita el stock no es quien lo suelta.
 
@@ -179,14 +192,14 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 ### CU-12 — Plan entre centrales
 
 - **Actores:** Despachador de la central que necesita el insumo
-- **Antes:** Su central y la de origen están activas
+- **Antes:** Su central y el nodo de origen están activos
 - **Pasos:**
-  1. Elige origen, medicamento, cantidad, calendario, fin y la hora de la franja, como en CU-35.
+  1. Elige el nodo de origen, medicamento, cantidad, calendario, fin y la hora de la franja, como en CU-35.
   2. El sistema crea una entrega por fecha, con su franja, con destino en su central.
   3. En cada fecha, el despachador de origen autoriza y carga como en CU-11 y CU-22.
   4. Quien pidió recibe con CU-21. Si la remisión cuadra, el inventario entra en su central.
   5. Puede cambiar el calendario o la hora, o cancelar el plan: las entregas que siguen en `recibido` pasan a `cancelado`.
-- **Si falla:** Origen inactivo, o igual al destino: el plan no se crea. Control especial: no se crea.
+- **Si falla:** Origen inactivo, que no es un nodo, o igual al destino: el plan no se crea. Control especial: no se crea.
 - **Después:** El plan queda activo. Ninguna ocurrencia despega sola.
 - **Por qué:** RU-12. La frecuencia no salta la autorización de cada salida.
 
@@ -209,11 +222,11 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 
 ### CU-15 — Alta de dron
 
-- **Actores:** Operador, en una central que tiene asignada
-- **Antes:** Esa central está activa
-- **Pasos:** Registra identificador y modelo Wingcopter 198. El estado inicial es `disponible`.
+- **Actores:** Operador, en un nodo que tiene asignado
+- **Antes:** Ese nodo está activo
+- **Pasos:** Registra identificador, tipo (Colibrí, Garza o Cóndor) y si lleva el compartimento de frío. El estado inicial es `disponible`.
 - **Después:** Entra a los candidatos de CU-26.
-- **Por qué:** RU-17 y RF-20.
+- **Por qué:** RU-17, RF-20 y RF-49.
 
 ### CU-16 — Cambiar disponibilidad
 
@@ -232,7 +245,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 ### CU-18 — Geovallas
 
 - **Actores:** Operador
-- **Pasos:** Dibuja un polígono, le pone nombre y motivo. Puede editarlo o borrarlo. Las rutas que se calculen después no lo cruzan.
+- **Pasos:** Dibuja un polígono, le pone nombre y motivo. Puede editarlo o borrarlo. Las rutas que se calculen después no lo cruzan. Ve también las zonas legales (RF-43), pero no puede editarlas.
 - **Después:** Si un dron en el aire tiene esa geovalla en el tramo que le falta, cambia de ruta (CU-43).
 - **Por qué:** RU-19 y RF-33. Seguir el corredor viejo haría cruzar la geovalla a un dron que ya va volando.
 
@@ -240,7 +253,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 
 - **Actores:** Operador
 - **Antes:** Un dron de sus centrales está en misión de vuelo
-- **Pasos:** Ve posición, altitud, velocidad, batería, carga, temperatura, latencia y fase.
+- **Pasos:** Ve posición, altitud sobre el terreno y sobre el nivel del mar, velocidad, batería, carga, temperatura, latencia, fase, manifiesto y estado del enlace.
 - **Si falla:** Si el enlace se pierde, reintenta. Si sigue caído, queda el aviso.
 - **Por qué:** RU-18. El solicitante ve el mapa. El operador ve el paquete completo.
 
@@ -258,7 +271,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Actores:** Administrador
 - **Antes:** Sesión de administrador
 - **Pasos:**
-  1. Registra nombre, tipo, ubicación y contacto. La central queda activa.
+  1. Registra nombre, tipo de red (nodo o ESE), tipo de servicio, ubicación y contacto. La central queda activa. Un nodo dentro de una zona prohibida, del anillo del aeródromo o de la zona urbana no se crea (RF-43).
   2. Desde el detalle puede suspenderla. Suspendida, no despacha ni pide.
 - **Después:** No queda una solicitud “pendiente de aprobación” de un despachador, porque el despachador no crea centrales.
 - **Por qué:** RU-26.
@@ -268,7 +281,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Actores:** Administrador
 - **Pasos:**
   1. Crea un despachador con correo institucional y exactamente una central activa.
-  2. Crea un operador con correo institucional y una o varias centrales activas.
+  2. Crea un operador con correo institucional y uno o varios nodos activos.
   3. Puede suspender o reactivar cualquiera de las dos.
 - **Después:** Entran por CU-02, sin OTP de registro. Suspender les quita el acceso.
 - **Por qué:** RU-27. La capacitación para aprobar salidas no se autodeclara en el registro público.
@@ -294,7 +307,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Antes:** Lo mismo que CU-37
 - **Pasos:**
   1. Elige en el mapa un dron, una zona o una central.
-  2. Elige un evento que aplique a eso: clima (RF-32), incidente de dron (RF-34) o evento de entorno (RF-36), con su intensidad y duración si las tiene.
+  2. Elige un evento que aplique a eso: clima (RF-32), incidente de dron (RF-34) o evento de entorno (RF-36): restricción temporal con su motivo, central sin energía, pico de urgencias, nadie retira o dron no identificado. Lo lanza con su intensidad y duración si las tiene.
   3. El sistema lo aplica y lo publica en la línea de tiempo.
 - **Si falla:** Un evento que no aplica (por ejemplo, una falla de motor a un dron en tierra) no se lanza y se dice por qué.
 - **Después:** El sistema responde solo: CU-32, CU-43, CU-44 o CU-45.
@@ -332,6 +345,13 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Si falla:** Si se corta el socket, reconecta y recupera las últimas entradas guardadas.
 - **Por qué:** RF-39. En la TV se tiene que ver qué decide el sistema y por qué, no solo dónde va el dron.
 
+### CU-47 — Auditar el acceso a fórmulas
+
+- **Actores:** Administrador
+- **Pasos:** Filtra el registro por pedido, por cuenta o por fecha. Ve quién abrió cada fórmula, con qué rol, cuándo y para qué.
+- **Después:** No ve la fórmula.
+- **Por qué:** RF-51.
+
 ## Sistema
 
 ### CU-26 — Elegir dron
@@ -339,11 +359,11 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Actor:** Motor de decisión
 - **Antes:** Un despachador autorizó y el pedido espera asignación
 - **Pasos:**
-  1. Toma los drones de la central de origen.
-  2. Descarta los que no cumplan batería (ida, regreso y reserva del 20 %: hasta 35,2 km de ida), carga, mantenimiento, clima simulado o ruta.
-  3. Si una emergencia y un programado compiten por el mismo dron, se queda la emergencia. Entre los que sirven, sale el que lleva más tiempo en tierra (RF-11).
+  1. Toma los drones del nodo de origen.
+  2. Descarta los que no cumplan estado, carga (con el frío descontado), frío, batería sobre el perfil de la ruta (ida, regreso, ascenso y reserva del 20 %), techo, viento, corredor legal o luz del día (RF-11, RF-44, RF-46).
+  3. Si una emergencia y un programado compiten por el mismo dron, se queda la emergencia. Entre los que sirven, gana el de menor tiempo de llegada en una urgencia y el de menor energía en un programado (RF-11).
   4. Reserva el elegido y deja el pedido en `pendiente de carga`.
-  5. Guarda en el pedido la traza: centrales evaluadas y el veredicto de cada dron, con su motivo.
+  5. Guarda en el pedido la traza: nodos evaluados y el veredicto de cada dron, con su motivo.
 - **Si falla:** Ninguno sirve: CU-31.
 - **Después:** No hay telemetría de vuelo y el dron no se mueve.
 - **Por qué:** RF-11. La decisión ocurre al autorizar, no al despegar.
@@ -352,7 +372,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 
 - **Actor:** Sistema
 - **Antes:** Hay un dron reservado
-- **Pasos:** Traza el corredor de ida entre la central de origen y el destino, a altitud fija, a 150 m o más de toda geovalla, por el camino más corto (RF-12). El regreso se calcula al salir de destino, con las geovallas vigentes en ese momento.
+- **Pasos:** Traza el corredor de ida entre el nodo y el destino por el camino más corto que respeta las zonas legales con su margen y las geovallas con 150 m, y usa el corredor pactado dentro de una zona coordinada (RF-12, RF-43). Sobre ese corredor pone el perfil de altura: 90 m sobre el terreno, entre 60 y 120 m AGL (RF-46). El regreso se calcula al salir de destino, con las zonas vigentes en ese momento.
 - **Si falla:** Si ese dron no tiene camino, vuelve a CU-26 con otro.
 - **Después:** La simulación espera CU-22.
 - **Por qué:** RF-12.
@@ -361,7 +381,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 
 - **Actor:** Motor de simulación
 - **Antes:** Hay ruta y la carga ya se confirmó
-- **Pasos:** Despega, publica ticks, recorre las fases y aterriza. El pedido pasa a `en espera de entrega` y corre CU-33.
+- **Pasos:** Despega, publica ticks con su identificación remota (RF-48), sigue el perfil del terreno, recorre las fases y aterriza. El pedido pasa a `en espera de entrega` y corre CU-33.
 - **Si falla:** Con frío, cada tick lleva temperatura (CU-30). Con batería crítica, una falla o un incidente, corre CU-32. Si una zona nueva cruza el tramo que falta, corre CU-43.
 - **Después:** Está en el punto y el pedido no está `entregado`.
 - **Por qué:** RF-13. La simulación no entrega sola.
@@ -383,7 +403,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 ### CU-31 — Alternativa
 
 - **Actor:** Sistema
-- **Antes:** CU-26 no encontró dron, en el momento de autorizar
+- **Antes:** CU-26 no encontró dron en el momento de autorizar, o es de noche y el pedido es una urgencia (RF-44)
 - **Pasos:** Muestra otra central con stock o avisa que toca un traslado convencional. El estado queda `reasignado`. Un programado primero espera un dron mientras el siguiente intento caiga dentro de su franja. Si la franja cierra sin despegue, la entrega queda vencida y aplica RF-18: pasa a `reasignado` (otra central o traslado convencional).
 - **Después:** Quien pidió ve la alternativa. Ningún dron despegó vacío.
 - **Por qué:** RU-06. El rechazo mudo no es una respuesta.
@@ -394,7 +414,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Antes:** El dron va en vuelo, de ida o de regreso, y le pasa un incidente: lo lanzó la consola (CU-38), lo sorteó el modo caos (CU-40) o lo detectó el reloj (batería crítica, viento sobre el límite)
 - **Pasos:**
   1. Aplica el efecto del incidente (más consumo, menos velocidad, sin enlace, frío que sube).
-  2. Elige el protocolo con las reglas de RF-34: seguir, volver a la central con el paquete o aterrizar de emergencia en el punto seguro más cercano.
+  2. Elige el protocolo con las reglas de RF-34: seguir, volver al nodo con el paquete o aterrizar de emergencia en el punto seguro más cercano. Si perdió el enlace C2, espera 30 s antes de decidir.
   3. Guarda el incidente con tipo, gravedad, posición, protocolo y resultado.
   4. Avisa al operador, lo publica en la línea de tiempo y quien pidió ve el cambio de estado.
 - **Si falla:** Si al volver tampoco alcanza la batería, aterriza de emergencia.
@@ -426,7 +446,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 ### CU-43 — Cambiar la ruta en vuelo
 
 - **Actor:** Sistema
-- **Antes:** Un dron va en el aire y aparece una zona (geovalla, geovalla temporal o tormenta) que cruza el tramo que le falta
+- **Antes:** Un dron va en el aire y aparece una zona (geovalla, restricción temporal, tormenta o niebla) que cruza el tramo que le falta
 - **Pasos:**
   1. Traza un corredor nuevo desde la posición actual hasta el mismo destino (RF-12).
   2. Si la batería alcanza con la reserva del 20 %, el dron lo sigue y la ruta vieja queda guardada.
@@ -456,3 +476,13 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
   3. Sus programados autorizados sin cargar se reintentan dentro de la franja (RF-18). Los que nadie ha autorizado esperan en su cola.
 - **Después:** Al terminar, vuelve a operar sola y sus despachadores reciben otro aviso. Los drones que volvían a ella aterrizaron igual.
 - **Por qué:** RF-36. Una central caída no deja a la red sin respuesta.
+
+### CU-48 — Pedido que cae de noche
+
+- **Actor:** Sistema
+- **Antes:** Llega un pedido o una entrega programada, y la hora simulada está fuera de la luz del día o el vuelo no alcanzaría a volver antes de la puesta del sol
+- **Pasos:**
+  1. Programado: queda en su franja, que siempre cae de día. Si el reloj está de noche porque se aceleró, espera.
+  2. Urgencia: pasa a traslado convencional (CU-31) y avisa al despachador y al operador. La app le dice al solicitante por qué.
+- **Después:** Ningún dron despega de noche.
+- **Por qué:** RF-44.
