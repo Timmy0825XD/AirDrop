@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AirspaceModule } from '../airspace/airspace.module';
 import { Drone } from '../fleet/drone.entity';
 import { Hub } from '../hubs/hub.entity';
 import { InventoryItem } from '../inventory/inventory-item.entity';
@@ -23,6 +24,7 @@ import { RadarService } from './radar.service';
     ]),
     RoutingModule,
     TelemetryModule,
+    AirspaceModule,
   ],
   controllers: [RadarController],
   providers: [RadarService],

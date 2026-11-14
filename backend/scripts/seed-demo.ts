@@ -1,5 +1,6 @@
 /**
- * Datos para la demostración del flujo completo, en Valledupar.
+ * Datos para la demostración del flujo completo, en la red regional del
+ * Cesar (`context/negocio/cobertura.md`).
  *
  *   pnpm seed:demo         limpia lo de la demo y vuelve a crearlo
  *   pnpm seed:demo:clean   borra solo lo que creó este script
@@ -66,6 +67,7 @@ async function seedDemoData(): Promise<void> {
         await createHub(app, adminToken, {
           name: plan.name,
           type: plan.type,
+          networkRole: plan.networkRole,
           address: plan.address,
           latitude: plan.latitude,
           longitude: plan.longitude,
@@ -80,7 +82,8 @@ async function seedDemoData(): Promise<void> {
       adminToken,
       operator,
       UserRole.FLEET_OPERATOR,
-      hubIds,
+      // RF-06: el operador cuida la flota de los nodos; una ESE no tiene drones.
+      hubIds.filter((_, index) => hubPlans[index].droneCount > 0),
     );
 
     const models = await request(app.getHttpServer())
@@ -115,7 +118,7 @@ async function seedDemoData(): Promise<void> {
           saleType: item.saleType,
         });
       }
-      for (let number = 1; number <= 5; number += 1) {
+      for (let number = 1; number <= plan.droneCount; number += 1) {
         const droneId = await createDrone(app, operatorSession.token, {
           identifier: `${plan.dronePrefix}-0${number}`,
           droneModelId: wingcopter.id,
@@ -153,8 +156,14 @@ async function seedDemoData(): Promise<void> {
       await registerRequester(app, person);
     }
 
+    const nodes = hubPlans.filter((plan) => plan.droneCount > 0).length;
+    const drones = hubPlans.reduce((sum, plan) => sum + plan.droneCount, 0);
+    const dispatchers = hubPlans.reduce(
+      (sum, plan) => sum + plan.dispatchers.length,
+      0,
+    );
     console.log(
-      `Demo lista: 3 centrales, 15 drones, 6 despachadores, 1 operador, 3 solicitantes y ${geofences.length} geovallas.`,
+      `Demo lista: ${nodes} nodos, ${hubPlans.length - nodes} ESE, ${drones} drones, ${dispatchers} despachadores, 1 operador, ${requesters.length} solicitantes y ${geofences.length} geovallas.`,
     );
     console.log(`Contraseña de todas las cuentas: ${TEST_PASSWORD}`);
   } finally {

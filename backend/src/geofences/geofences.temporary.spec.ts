@@ -1,3 +1,4 @@
+import { NO_AIRSPACE } from '../airspace/airspace.testing';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
@@ -137,6 +138,7 @@ describe('Geovalla temporal: cuándo rige (RF-36)', () => {
       const planner = new RoutePlannerService(
         {} as never,
         { stormPolygons: () => [] } as never,
+        NO_AIRSPACE,
       );
       await planner.loadGeofences(manager as never);
       const [sql, params] = manager.query.mock.calls[0] as [string, Date[]];

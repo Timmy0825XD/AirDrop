@@ -1,3 +1,4 @@
+import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -72,7 +73,13 @@ export class PlanAgendaService {
           plan?.prescriptionValidUntil ?? null,
           date,
         ),
-        departBefore: this.departBy(hub, slot.windowEndsAt, order, polygons, fleet.kmh),
+        departBefore: this.departBy(
+          hub,
+          slot.windowEndsAt,
+          order,
+          polygons,
+          fleet.kmh,
+        ),
         availableQuantity,
       };
     });
@@ -142,6 +149,7 @@ export class PlanAgendaService {
       { latitude: hub.latitude, longitude: hub.longitude },
       { latitude: order.latitude, longitude: order.longitude },
       polygons,
+      { destinationIsHub: order.destinationKind === DestinationKind.HUB },
     );
     if (!corridor) {
       return null;
@@ -154,7 +162,10 @@ export class PlanAgendaService {
 
   private slotOf(order: Order) {
     if (order.scheduledAt && order.windowEndsAt) {
-      return { scheduledAt: order.scheduledAt, windowEndsAt: order.windowEndsAt };
+      return {
+        scheduledAt: order.scheduledAt,
+        windowEndsAt: order.windowEndsAt,
+      };
     }
     return slotFor(order.scheduledFor as string, null);
   }
@@ -188,7 +199,10 @@ export class PlanAgendaService {
   private async stockByKey(hubId: string) {
     const rows = await this.offers.stockForHub(hubId);
     return new Map(
-      rows.map((row) => [`${row.name.trim().toLowerCase()}|${row.saleType}`, row]),
+      rows.map((row) => [
+        `${row.name.trim().toLowerCase()}|${row.saleType}`,
+        row,
+      ]),
     );
   }
 

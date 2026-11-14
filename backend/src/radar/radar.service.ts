@@ -1,3 +1,4 @@
+import { AirspaceService } from '../airspace/airspace.service';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, In, Repository } from 'typeorm';
@@ -53,9 +54,10 @@ export class RadarService {
     private readonly dataSource: DataSource,
     private readonly telemetry: TelemetryPublisher,
     private readonly routes: RoutePlannerService,
+    private readonly airspace: AirspaceService,
   ) {}
 
-  /** Todo lo que el mapa dibuja al abrir: centrales, vuelos y geovallas. */
+  /** Todo lo que el mapa dibuja al abrir: centrales, vuelos, geovallas y zonas legales. */
   async snapshot() {
     const [hubs, drones, geofences, queues] = await Promise.all([
       this.hubs.find({ order: { name: 'ASC' } }),
@@ -69,6 +71,7 @@ export class RadarService {
         id: hub.id,
         name: hub.name,
         type: hub.type,
+        networkRole: hub.networkRole,
         status: hub.status,
         latitude: hub.latitude,
         longitude: hub.longitude,
@@ -83,6 +86,8 @@ export class RadarService {
       })),
       flights,
       geofences,
+      // RF-43: las zonas del RAC 100, con su regla y su fuente.
+      airspace: this.airspace.view(),
     };
   }
 

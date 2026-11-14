@@ -1,3 +1,4 @@
+import { NO_AIRSPACE } from '../airspace/airspace.testing';
 import {
   BadRequestException,
   ForbiddenException,
@@ -196,6 +197,7 @@ function build(options?: {
   const routes = new RoutePlannerService(
     { manager: { query: jest.fn().mockResolvedValue(polygons) } } as never,
     { stormPolygons: () => [] } as never,
+    NO_AIRSPACE,
   );
   const service = new OrdersService(
     orders as never,

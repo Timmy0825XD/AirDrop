@@ -1,3 +1,4 @@
+import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
 import {
   BadRequestException,
   ForbiddenException,
@@ -306,7 +307,12 @@ export class EmergencyDispatchService implements OnModuleInit, OnModuleDestroy {
         continue;
       }
       withStock.push(toOption(hub, distanceKm));
-      if (evaluation.inRange && Number.isFinite(evaluation.etaMs)) {
+      // RF-06: solo un nodo despega; una ESE con el lote cuenta como alternativa.
+      if (
+        hub.networkRole !== HubNetworkRole.ESE &&
+        evaluation.inRange &&
+        Number.isFinite(evaluation.etaMs)
+      ) {
         candidates.push({
           hubId: hub.id,
           name: hub.name,

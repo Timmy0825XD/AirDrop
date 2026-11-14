@@ -1,11 +1,19 @@
+import {
+  ESES,
+  DELIVERY_POINTS,
+  NODES,
+  NetworkSite,
+} from '../airspace/regional-network';
 import { DocumentType } from '../common/enums/document-type.enum';
+import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
 import { HubType } from '../common/enums/hub-type.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 
 /**
- * El escenario de la demostración en Valledupar (RF-40): lo crea
- * `pnpm seed:demo` y el reinicio de la consola lo devuelve a este estado.
- * Las personas son ficticias.
+ * El escenario de la demostración en la red regional (RF-40,
+ * `context/negocio/cobertura.md`): lo crea `pnpm seed:demo` y el reinicio de
+ * la consola lo devuelve a este estado. Las personas son ficticias y sus
+ * correos de personal usan el dominio reservado `airdrop.example`.
  */
 
 export type DemoPerson = { fullName: string; email: string; phone: string };
@@ -22,14 +30,18 @@ export type DemoStockItem = {
 export type DemoHubPlan = {
   name: string;
   type: HubType;
+  /** RF-06: solo un nodo tiene drones. */
+  networkRole: HubNetworkRole;
   address: string;
   latitude: number;
   longitude: number;
   contactPhone: string;
   contactEmail: string;
   dispatchers: DemoPerson[];
-  /** Prefijo del identificador de sus 5 drones. */
+  /** Prefijo del identificador de sus drones. */
   dronePrefix: string;
+  /** Cuántos drones tiene: 0 en una ESE. */
+  droneCount: number;
   /** Estados de los drones con novedad: el resto queda disponible. */
   droneNotes: Array<{
     number: number;
@@ -70,98 +82,104 @@ export const operator: DemoPerson = {
   phone: '3185550201',
 };
 
-export const hubPlans: DemoHubPlan[] = [
-  {
-    name: 'Hospital Rosario Pumarejo de López',
+function staff(fullName: string, user: string, phone: string): DemoPerson {
+  return { fullName, email: `${user}@airdrop.example`, phone };
+}
+
+function item(
+  name: string,
+  quantity: number,
+  lot: string,
+  expiresInDays: number,
+  saleType: SaleType,
+  cold = false,
+): DemoStockItem {
+  return { name, quantity, lot, expiresInDays, saleType, cold };
+}
+
+const OTC = SaleType.OVER_THE_COUNTER;
+const RX = SaleType.PRESCRIPTION;
+
+function node(
+  site: NetworkSite,
+  address: string,
+  phone: string,
+  dispatchers: DemoPerson[],
+  dronePrefix: string,
+  droneNotes: DemoHubPlan['droneNotes'],
+  stock: DemoStockItem[],
+): DemoHubPlan {
+  return {
+    name: site.name,
+    type: HubType.PHARMACY,
+    networkRole: HubNetworkRole.NODE,
+    address,
+    latitude: site.latitude,
+    longitude: site.longitude,
+    contactPhone: phone,
+    contactEmail: `${site.code}@airdrop.example`,
+    dispatchers,
+    dronePrefix,
+    droneCount: 5,
+    droneNotes,
+    stock,
+  };
+}
+
+function ese(
+  site: NetworkSite,
+  address: string,
+  phone: string,
+  dispatcher: DemoPerson,
+  stock: DemoStockItem[],
+): DemoHubPlan {
+  return {
+    name: site.name,
     type: HubType.HOSPITAL,
-    address: 'Carrera 15 No. 5-55, Valledupar',
-    latitude: 10.476,
-    longitude: -73.244,
-    contactPhone: '6055550301',
-    contactEmail: 'urgencias.rosario@gmail.com',
-    dispatchers: [
-      {
-        fullName: 'María Camila Orozco',
-        email: 'maria.orozco@gmail.com',
-        phone: '3005550311',
-      },
-      {
-        fullName: 'Jorge Iván Maestre',
-        email: 'jorge.maestre@outlook.com',
-        phone: '3005550312',
-      },
-    ],
-    dronePrefix: 'WG198-ROS',
+    networkRole: HubNetworkRole.ESE,
+    address,
+    latitude: site.latitude,
+    longitude: site.longitude,
+    contactPhone: phone,
+    contactEmail: `${site.code}@airdrop.example`,
+    dispatchers: [dispatcher],
+    dronePrefix: '',
+    droneCount: 0,
     droneNotes: [],
-    stock: [
-      {
-        name: 'Acetaminofén 500 mg',
-        quantity: 150,
-        lot: 'ACE-A-2601',
-        expiresInDays: 420,
-        saleType: SaleType.OVER_THE_COUNTER,
-      },
-      {
-        name: 'Ibuprofeno 400 mg',
-        quantity: 80,
-        lot: 'IBU-A-2602',
-        expiresInDays: 380,
-        saleType: SaleType.OVER_THE_COUNTER,
-      },
-      {
-        name: 'Amoxicilina 500 mg',
-        quantity: 60,
-        lot: 'AMX-A-2603',
-        expiresInDays: 300,
-        saleType: SaleType.PRESCRIPTION,
-      },
-      {
-        name: 'Insulina glargina 100 UI',
-        quantity: 30,
-        lot: 'INS-A-2604',
-        expiresInDays: 150,
-        saleType: SaleType.PRESCRIPTION,
-        cold: true,
-      },
-      {
-        name: 'Suero antiofídico polivalente',
-        quantity: 10,
-        lot: 'SAP-A-2605',
-        expiresInDays: 200,
-        saleType: SaleType.PRESCRIPTION,
-        cold: true,
-      },
-      {
-        name: 'Morfina 10 mg/mL',
-        quantity: 20,
-        lot: 'MOR-A-2606',
-        expiresInDays: 260,
-        saleType: SaleType.SPECIAL_CONTROL,
-      },
+    stock,
+  };
+}
+
+export const hubPlans: DemoHubPlan[] = [
+  node(
+    NODES.north,
+    'Vía a Río Seco, corregimiento de Río Seco, Valledupar',
+    '6055550301',
+    [
+      staff('María Camila Orozco', 'maria.orozco', '3005550311'),
+      staff('Jorge Iván Maestre', 'jorge.maestre', '3005550312'),
     ],
-  },
-  {
-    name: 'Clínica Valledupar',
-    type: HubType.CLINIC,
-    address: 'Calle 9 No. 19-40, Valledupar',
-    latitude: 10.456,
-    longitude: -73.264,
-    contactPhone: '6055550302',
-    contactEmail: 'despachos.clinicavalledupar@gmail.com',
-    dispatchers: [
-      {
-        fullName: 'Paola Andrea Daza',
-        email: 'paola.daza@hotmail.com',
-        phone: '3105550321',
-      },
-      {
-        fullName: 'Ricardo Arzuaga',
-        email: 'ricardo.arzuaga@gmail.com',
-        phone: '3105550322',
-      },
+    'AD-NOR',
+    [],
+    [
+      item('Acetaminofén 500 mg', 150, 'ACE-N-2601', 420, OTC),
+      item('Ibuprofeno 400 mg', 80, 'IBU-N-2602', 380, OTC),
+      item('Amoxicilina 500 mg', 60, 'AMX-N-2603', 300, RX),
+      item('Insulina glargina 100 UI', 30, 'INS-N-2604', 150, RX, true),
+      item('Suero antiofídico polivalente', 10, 'SAP-N-2605', 200, RX, true),
+      item('Morfina 10 mg/mL', 20, 'MOR-N-2606', 260, SaleType.SPECIAL_CONTROL),
     ],
-    dronePrefix: 'WG198-CVA',
-    droneNotes: [
+  ),
+  node(
+    NODES.south,
+    'Vía La Paz – San Diego, La Paz',
+    '6055550302',
+    [
+      staff('Paola Andrea Daza', 'paola.daza', '3105550321'),
+      staff('Ricardo Arzuaga', 'ricardo.arzuaga', '3105550322'),
+    ],
+    'AD-SUR',
+    [
       {
         number: 5,
         state: 'maintenance',
@@ -169,83 +187,27 @@ export const hubPlans: DemoHubPlan[] = [
         inDays: 3,
       },
     ],
-    stock: [
+    [
       // Dos lotes del mismo producto: sale primero el que vence antes (FEFO).
-      {
-        name: 'Acetaminofén 500 mg',
-        quantity: 40,
-        lot: 'ACE-B-2512',
-        expiresInDays: 70,
-        saleType: SaleType.OVER_THE_COUNTER,
-      },
-      {
-        name: 'Acetaminofén 500 mg',
-        quantity: 90,
-        lot: 'ACE-B-2701',
-        expiresInDays: 450,
-        saleType: SaleType.OVER_THE_COUNTER,
-      },
-      {
-        name: 'Loratadina 10 mg',
-        quantity: 100,
-        lot: 'LOR-B-2607',
-        expiresInDays: 400,
-        saleType: SaleType.OVER_THE_COUNTER,
-      },
-      {
-        name: 'Amoxicilina 500 mg',
-        quantity: 8,
-        lot: 'AMX-B-2608',
-        expiresInDays: 280,
-        saleType: SaleType.PRESCRIPTION,
-      },
-      {
-        name: 'Salbutamol inhalador 100 mcg',
-        quantity: 45,
-        lot: 'SAL-B-2609',
-        expiresInDays: 330,
-        saleType: SaleType.PRESCRIPTION,
-      },
-      {
-        name: 'Insulina glargina 100 UI',
-        quantity: 6,
-        lot: 'INS-B-2610',
-        expiresInDays: 120,
-        saleType: SaleType.PRESCRIPTION,
-        cold: true,
-      },
-      {
-        name: 'Vacuna antitetánica',
-        quantity: 25,
-        lot: 'VAT-B-2611',
-        expiresInDays: 180,
-        saleType: SaleType.PRESCRIPTION,
-        cold: true,
-      },
+      item('Acetaminofén 500 mg', 40, 'ACE-S-2512', 70, OTC),
+      item('Acetaminofén 500 mg', 90, 'ACE-S-2701', 450, OTC),
+      item('Loratadina 10 mg', 100, 'LOR-S-2607', 400, OTC),
+      item('Amoxicilina 500 mg', 40, 'AMX-S-2608', 280, RX),
+      item('Salbutamol inhalador 100 mcg', 45, 'SAL-S-2609', 330, RX),
+      item('Insulina glargina 100 UI', 20, 'INS-S-2610', 120, RX, true),
+      item('Vacuna antitetánica', 25, 'VAT-S-2611', 180, RX, true),
     ],
-  },
-  {
-    name: 'Droguería Central del Cesar',
-    type: HubType.PHARMACY,
-    address: 'Carrera 19 No. 14-20, Valledupar',
-    latitude: 10.487,
-    longitude: -73.265,
-    contactPhone: '6055550303',
-    contactEmail: 'pedidos.drogueriacesar@gmail.com',
-    dispatchers: [
-      {
-        fullName: 'Liliana Mendoza Castro',
-        email: 'liliana.mendoza@outlook.com',
-        phone: '3155550331',
-      },
-      {
-        fullName: 'Óscar David Pumarejo',
-        email: 'oscar.pumarejo@gmail.com',
-        phone: '3155550332',
-      },
+  ),
+  node(
+    NODES.west,
+    'Entrada a Valencia de Jesús, Valledupar',
+    '6055550303',
+    [
+      staff('Liliana Mendoza Castro', 'liliana.mendoza', '3155550331'),
+      staff('Óscar David Pumarejo', 'oscar.pumarejo', '3155550332'),
     ],
-    dronePrefix: 'WG198-DCC',
-    droneNotes: [
+    'AD-OCC',
+    [
       {
         number: 4,
         state: 'maintenance',
@@ -259,129 +221,95 @@ export const hubPlans: DemoHubPlan[] = [
         inDays: 14,
       },
     ],
-    stock: [
-      {
-        name: 'Acetaminofén 500 mg',
-        quantity: 200,
-        lot: 'ACE-C-2612',
-        expiresInDays: 500,
-        saleType: SaleType.OVER_THE_COUNTER,
-      },
-      {
-        name: 'Suero oral',
-        quantity: 120,
-        lot: 'SOR-C-2613',
-        expiresInDays: 360,
-        saleType: SaleType.OVER_THE_COUNTER,
-      },
-      {
-        name: 'Metformina 850 mg',
-        quantity: 90,
-        lot: 'MET-C-2614',
-        expiresInDays: 420,
-        saleType: SaleType.PRESCRIPTION,
-      },
-      {
-        name: 'Losartán 50 mg',
-        quantity: 70,
-        lot: 'LOS-C-2615',
-        expiresInDays: 410,
-        saleType: SaleType.PRESCRIPTION,
-      },
-      {
-        name: 'Epinefrina 1 mg/mL',
-        quantity: 25,
-        lot: 'EPI-C-2616',
-        expiresInDays: 240,
-        saleType: SaleType.PRESCRIPTION,
-      },
-      {
-        name: 'Insulina glargina 100 UI',
-        quantity: 50,
-        lot: 'INS-C-2617',
-        expiresInDays: 160,
-        saleType: SaleType.PRESCRIPTION,
-        cold: true,
-      },
+    [
+      item('Acetaminofén 500 mg', 200, 'ACE-O-2612', 500, OTC),
+      item('Suero oral', 120, 'SOR-O-2613', 360, OTC),
+      item('Metformina 850 mg', 90, 'MET-O-2614', 420, RX),
+      item('Losartán 50 mg', 70, 'LOS-O-2615', 410, RX),
+      item('Epinefrina 1 mg/mL', 25, 'EPI-O-2616', 240, RX),
+      item('Insulina glargina 100 UI', 50, 'INS-O-2617', 160, RX, true),
+      item('Suero antiofídico polivalente', 8, 'SAP-O-2618', 210, RX, true),
     ],
-  },
+  ),
+  node(
+    NODES.codazzi,
+    'Salida a Becerril, Agustín Codazzi',
+    '6055550304',
+    [
+      staff('Daniela Fragozo', 'daniela.fragozo', '3165550341'),
+      staff('Hernán Quintero', 'hernan.quintero', '3165550342'),
+    ],
+    'AD-COD',
+    [],
+    [
+      item('Acetaminofén 500 mg', 120, 'ACE-C-2619', 380, OTC),
+      item('Suero oral', 80, 'SOR-C-2620', 300, OTC),
+      item('Amoxicilina 500 mg', 50, 'AMX-C-2621', 260, RX),
+      item('Enalapril 20 mg', 60, 'ENA-C-2622', 400, RX),
+      item('Insulina glargina 100 UI', 15, 'INS-C-2623', 140, RX, true),
+    ],
+  ),
+  ese(
+    ESES.laPaz,
+    'Calle 4 No. 5-20, La Paz',
+    '6055550311',
+    staff('Yolanda Ariza', 'yolanda.ariza', '3175550351'),
+    [
+      item('Acetaminofén 500 mg', 20, 'ACE-LP-2624', 200, OTC),
+      item('Suero oral', 10, 'SOR-LP-2625', 180, OTC),
+    ],
+  ),
+  ese(
+    ESES.sanDiego,
+    'Carrera 6 No. 3-15, San Diego',
+    '6055550312',
+    staff('Ramiro Daza', 'ramiro.daza', '3175550352'),
+    [item('Acetaminofén 500 mg', 15, 'ACE-SD-2626', 190, OTC)],
+  ),
+  ese(
+    ESES.manaure,
+    'Calle Principal, Manaure Balcón del Cesar',
+    '6055550313',
+    staff('Kelly Montero', 'kelly.montero', '3175550353'),
+    [item('Acetaminofén 500 mg', 10, 'ACE-MA-2627', 210, OTC)],
+  ),
+  ese(
+    ESES.puebloBello,
+    'Calle 3 No. 4-10, Pueblo Bello',
+    '6055550314',
+    staff('Alba Torres Izquierdo', 'alba.torres', '3175550354'),
+    [
+      item('Acetaminofén 500 mg', 12, 'ACE-PB-2628', 220, OTC),
+      item('Suero oral', 6, 'SOR-PB-2629', 160, OTC),
+    ],
+  ),
+  ese(
+    ESES.codazzi,
+    'Carrera 17 No. 9-30, Agustín Codazzi',
+    '6055550315',
+    staff('Jesús Ovalle', 'jesus.ovalle', '3175550355'),
+    [item('Acetaminofén 500 mg', 25, 'ACE-AC-2630', 230, OTC)],
+  ),
 ];
 
 /**
- * Las geovallas del operador, con la forma que les dio el operador de flota
- * en la app (copiadas de la base el 2026-11-06). Cada anillo es
- * [longitud, latitud] y cierra en el mismo punto donde empieza.
+ * Las geovallas del operador de la demo. Las zonas legales (aeropuerto,
+ * bases, policía, resguardos) no van aquí: vienen con `airspace/` (RF-43).
  */
 export const geofences = [
   {
-    name: 'Zona de eventos Parque de la Leyenda',
+    name: 'Fumigación aérea de cultivos',
     reason:
-      'Evento masivo: no sobrevolar. Obliga a rodear entre dos centrales.',
+      'Avioneta fumigando entre Valencia de Jesús y Mariangola: obliga a rodear.',
     polygon: {
       type: 'Polygon' as const,
       coordinates: [
         [
-          [-73.264866, 10.490875],
-          [-73.262852, 10.489512],
-          [-73.26064, 10.491005],
-          [-73.258164, 10.492564],
-          [-73.258791, 10.494804],
-          [-73.260475, 10.496849],
-          [-73.262918, 10.49779],
-          [-73.264833, 10.498862],
-          [-73.26688, 10.499771],
-          [-73.268696, 10.499901],
-          [-73.2683, 10.49844],
-          [-73.268399, 10.497271],
-          [-73.268399, 10.496459],
-          [-73.264866, 10.490875],
-        ],
-      ],
-    },
-  },
-  {
-    name: 'Restricción aeroportuaria',
-    reason: 'Aproximación del aeropuerto. Un destino aquí no tiene corredor.',
-    polygon: {
-      type: 'Polygon' as const,
-      coordinates: [
-        [
-          [-73.250049, 10.445489],
-          [-73.250808, 10.434384],
-          [-73.252396, 10.425085],
-          [-73.250481, 10.424696],
-          [-73.248467, 10.428203],
-          [-73.247139, 10.434403],
-          [-73.245521, 10.445768],
-          [-73.250049, 10.445489],
-        ],
-      ],
-    },
-  },
-  {
-    name: 'Zona de seguridad militar',
-    reason: 'Instalación restringida entre dos centrales.',
-    polygon: {
-      type: 'Polygon' as const,
-      coordinates: [
-        [
-          [-73.280155, 10.468212],
-          [-73.275626, 10.468304],
-          [-73.275112, 10.469108],
-          [-73.274786, 10.470508],
-          [-73.270863, 10.469498],
-          [-73.269789, 10.467776],
-          [-73.268599, 10.466789],
-          [-73.266988, 10.465985],
-          [-73.266684, 10.464746],
-          [-73.269066, 10.463712],
-          [-73.271144, 10.462748],
-          [-73.273758, 10.462404],
-          [-73.275906, 10.462725],
-          [-73.277097, 10.462679],
-          [-73.278101, 10.462312],
-          [-73.280155, 10.466881],
-          [-73.280155, 10.468212],
+          [-73.49, 10.244],
+          [-73.47, 10.244],
+          [-73.468, 10.262],
+          [-73.49, 10.262],
+          [-73.49, 10.244],
         ],
       ],
     },
@@ -399,61 +327,14 @@ export const simulatedRequesters = [1, 2, 3, 4].map((number) => ({
 }));
 
 /**
- * RF-37: a dónde piden los solicitantes simulados. Barrios de Valledupar
- * dentro de la zona de las tres centrales y fuera de las geovallas.
+ * RF-37: a dónde piden los solicitantes simulados: los puntos de entrega de
+ * la red (RF-45).
  */
-export const simulatedDestinations = [
-  {
-    address: 'Barrio Los Mayales, Valledupar',
-    latitude: 10.488,
-    longitude: -73.238,
-  },
-  {
-    address: 'Barrio Novalito, Valledupar',
-    latitude: 10.47,
-    longitude: -73.24,
-  },
-  {
-    address: 'Barrio Primero de Mayo, Valledupar',
-    latitude: 10.452,
-    longitude: -73.247,
-  },
-  {
-    address: 'Barrio San Joaquín, Valledupar',
-    latitude: 10.462,
-    longitude: -73.272,
-  },
-  {
-    address: 'Barrio Villa Castro, Valledupar',
-    latitude: 10.447,
-    longitude: -73.262,
-  },
-  {
-    address: 'Barrio La Nevada, Valledupar',
-    latitude: 10.497,
-    longitude: -73.257,
-  },
-  {
-    address: 'Barrio Los Cortijos, Valledupar',
-    latitude: 10.478,
-    longitude: -73.276,
-  },
-  {
-    address: 'Barrio Garupal, Valledupar',
-    latitude: 10.448,
-    longitude: -73.233,
-  },
-  {
-    address: 'Barrio El Prado, Valledupar',
-    latitude: 10.472,
-    longitude: -73.258,
-  },
-  {
-    address: 'Barrio Villa Miriam, Valledupar',
-    latitude: 10.493,
-    longitude: -73.246,
-  },
-];
+export const simulatedDestinations = DELIVERY_POINTS.map((point) => ({
+  address: point.name,
+  latitude: point.latitude,
+  longitude: point.longitude,
+}));
 
 export const allEmails = [
   ...requesters.map((person) => person.email),

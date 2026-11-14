@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { FallbackKind } from '../common/enums/fallback-kind.enum';
+import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 
 export const EMPTY_HUB_UPDATE =
@@ -10,6 +11,19 @@ export const COORDINATES_TOGETHER =
 
 export const HUB_HAS_LIVE_ORDERS =
   'No se puede mover una central con vuelos o pedidos en curso.';
+
+export const ORIGIN_MUST_BE_NODE =
+  'Solo un nodo tiene drones: elige un nodo como origen.';
+
+/** RF-06: solo un nodo despega. Sin tipo (fila de antes) cuenta como nodo. */
+export function assertNodeOrigin(hub: { networkRole?: HubNetworkRole }): void {
+  if (hub.networkRole === HubNetworkRole.ESE) {
+    throw new BadRequestException(ORIGIN_MUST_BE_NODE);
+  }
+}
+
+export const ESE_WITH_DRONES =
+  'Una ESE no tiene drones: reasigna o da de baja los drones de esta central antes de cambiarla a ESE.';
 
 export const HUB_INSIDE_GEOFENCE =
   'La nueva ubicación queda dentro de una geovalla.';
@@ -32,6 +46,7 @@ export const REASSIGNED_HERE = {
 type HubPatch = {
   name?: string;
   type?: string;
+  networkRole?: string;
   address?: string;
   latitude?: number;
   longitude?: number;

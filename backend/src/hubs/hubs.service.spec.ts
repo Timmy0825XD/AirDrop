@@ -1,3 +1,5 @@
+import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
+import { NO_AIRSPACE } from '../airspace/airspace.testing';
 import {
   ConflictException,
   ForbiddenException,
@@ -19,6 +21,7 @@ const dto: CreateHubDto = {
   latitude: 10.4631,
   longitude: -73.2532,
   contactPhone: '3001234567',
+  networkRole: HubNetworkRole.NODE,
 };
 
 function admin(overrides: Partial<User> = {}): User {
@@ -35,7 +38,7 @@ function buildService(hubs: {
   create: jest.Mock;
   save: jest.Mock;
 }) {
-  return new HubsService(hubs as never);
+  return new HubsService(hubs as never, NO_AIRSPACE);
 }
 
 describe('HubsService', () => {
