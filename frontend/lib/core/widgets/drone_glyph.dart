@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 /// El dron de AirDrop dibujado con líneas: cuatro rotores, brazos en X y el
-/// núcleo del acento. Es el logo del auth y el indicador del botón mientras
-/// carga.
+/// núcleo del acento. Es el indicador del botón mientras carga y el ícono
+/// del dron en las listas. El logo de la marca es [AirDropLogo].
 class DroneGlyph extends StatelessWidget {
   const DroneGlyph({super.key, required this.color, this.size = 34});
 

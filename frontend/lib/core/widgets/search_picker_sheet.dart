@@ -47,7 +47,6 @@ Future<PickerOption<T>?> showSearchPicker<T>(
 }) {
   return showAppSheet<PickerOption<T>>(
     context,
-    showDragHandle: false,
     builder: (_) => DraggableScrollableSheet(
       expand: false,
       initialChildSize: 0.72,

@@ -145,7 +145,8 @@ class _Wordmark extends StatelessWidget {
       textDirection: TextDirection.ltr,
     )..layout();
     final left = layout.logoCorner.dx + AuthLogoTile.size + 12;
-    final top = layout.logoCorner.dy + 7;
+    // El nombre queda centrado en vertical con el logo.
+    final top = layout.logoCorner.dy + (AuthLogoTile.size - painter.height) / 2;
     final splash = Offset(
       layout.size.width / 2 - painter.width * _splashScale / 2,
       layout.logoSplashCenter.dy + 84,

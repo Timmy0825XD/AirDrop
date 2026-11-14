@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'auth_glass.dart';
-import '../../../../core/widgets/drone_glyph.dart';
+import '../../../../core/widgets/airdrop_logo.dart';
 
 /// Alturas del encabezado de auth. El login lo usa alto, las pantallas de
 /// paso medio y el registro compacto; al pasar de una a otra el encabezado
@@ -40,43 +40,15 @@ class AuthHeaderMetrics {
   static double brandTop(double topInset) => topInset + 20;
 }
 
-/// El logo: el dron de líneas dentro de un círculo claro con sombra, como
-/// una ficha sobre el mapa. El logo final aún no está definido; este es el
-/// provisional.
+/// El logo de AirDrop (Dron-cruz) en el encabezado de auth. Mide 48: desde
+/// ese tamaño el manual de marca deja ver el dron completo.
 class AuthLogoTile extends StatelessWidget {
   const AuthLogoTile({super.key});
 
-  static const double size = 42;
+  static const double size = 48;
 
   @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final dark = colors.brightness == Brightness.dark;
-    return Semantics(
-      label: 'Logo de AirDrop',
-      image: true,
-      child: Container(
-        width: size,
-        height: size,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: dark ? colors.onSurface : colors.surface,
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: dark ? 0.45 : 0.16),
-              blurRadius: 10,
-              offset: const Offset(0, 3),
-            ),
-          ],
-        ),
-        child: DroneGlyph(
-          color: dark ? colors.surface : colors.onSurface,
-          size: size * 0.62,
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const AirDropLogo(size: size);
 }
 
 /// Logo y nombre en la esquina del encabezado. Es la versión quieta; el
@@ -102,12 +74,14 @@ class AuthBrandBar extends StatelessWidget {
 TextStyle? authTitleStyle(ThemeData theme) => theme.textTheme.headlineLarge
     ?.copyWith(fontSize: 28, letterSpacing: -0.5, height: 1.15);
 
+/// El nombre como el wordmark del manual de marca: Figtree ExtraBold con
+/// tracking de −3,5 %.
 TextStyle? authWordmarkStyle(ThemeData theme) =>
     theme.textTheme.titleLarge?.copyWith(
       color: theme.colorScheme.onSurface,
       fontSize: 22,
-      fontWeight: FontWeight.w700,
-      letterSpacing: -0.3,
+      fontWeight: FontWeight.w800,
+      letterSpacing: -0.77,
     );
 
 /// Pastilla sobre el mapa, con un ícono opcional.

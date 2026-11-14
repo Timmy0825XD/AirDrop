@@ -73,7 +73,7 @@ src/
     EventDock.tsx      barra y tarjeta para lanzar clima y zonas (CU-38)
     EventPanel.tsx     el clima o la zona elegidos, y terminarlos
     IncidentActions.tsx el catálogo de incidentes de un dron (RF-34)
-    BrandMark.tsx      el dron de la marca, como en la app
+    BrandMark.tsx      el logo Dron-cruz y el wordmark (geometría en lib/brand-shape.ts)
     TimelinePanel.tsx  línea de tiempo (RF-39)
     AlertsTray.tsx     alertas pendientes
     ResetDialog.tsx    confirmación del reinicio
