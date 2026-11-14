@@ -12,6 +12,9 @@ Impleméntalo y, en el mismo cambio, corrige solo los párrafos que hayan quedad
 | Dispensación a una persona | `context/entregas/persona.md` |
 | Traslado entre centrales | `context/entregas/centrales.md` |
 | Lote, frío, cuarentena | `context/entregas/productos.md` |
+| Clientes, tarifas, región, nodos o puntos | `context/negocio/` |
+| Tipos de dron, selección, espacio aéreo, horario, clima, altura, incidentes, manifiesto | `context/operacion/` |
+| Norma de drones, seguridad pública o territorio | `context/legal/aeronautica.md`, `seguridad-publica.md`, `territorio.md` y la fila en `cumplimiento.md` |
 | Norma de medicamentos | `context/legal/salud.md` |
 | Consentimiento, datos, seguridad | `context/legal/datos.md` |
 | RU, RF, RNF | `context/producto/requisitos.md` |

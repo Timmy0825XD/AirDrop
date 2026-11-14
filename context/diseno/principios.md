@@ -10,7 +10,7 @@ Si una decisión de diseño no se puede explicar en la sustentación en menos de
 
 Preguntas antes de añadir una capa, librería o patrón:
 
-1. ¿Resuelve un requisito de [`requisitos.md`](requisitos.md) o un caso de uso de [`casos-de-uso.md`](casos-de-uso.md)?
+1. ¿Resuelve un requisito de [`requisitos.md`](../producto/requisitos.md) o un caso de uso de [`casos-de-uso.md`](../producto/casos-de-uso.md)?
 2. ¿El equipo de tres personas puede mantenerlo en 6 sprints?
 3. ¿Un profesor puede seguir el flujo de una misión en el código?
 
@@ -28,7 +28,7 @@ Una sola raíz de git.
 | `backend/` | Una API NestJS | Varios servicios desplegables |
 | `web/` | Radar y consola de simulación del administrador (Next.js), para una TV | Un panel de gestión ni otra app de roles |
 
-Comparten el **contrato** (HTTP + WebSocket) y el **vocabulario** del [`glosario.md`](glosario.md). No comparten código de UI ni de ORM.
+Comparten el **contrato** (HTTP + WebSocket) y el **vocabulario** del [`glosario.md`](../sustentacion/glosario.md). No comparten código de UI ni de ORM.
 
 La arquitectura prevista multi-ciudad (varias centrales, varios drones) se **modela** (entidades `City` / `Hub` opcionales o un `hubId` en drones) sin desplegar N ciudades en el MVP.
 
