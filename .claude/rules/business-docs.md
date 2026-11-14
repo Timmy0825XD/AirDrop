@@ -1,8 +1,3 @@
----
-description: El código sigue a context/. Si un cambio se sale, advertir y preguntar antes de seguir
-alwaysApply: true
----
-
 # Context manda
 
 `context/` es la especificación. Léelo antes de cambiar comportamiento. El mapa está en `context/index.md`.

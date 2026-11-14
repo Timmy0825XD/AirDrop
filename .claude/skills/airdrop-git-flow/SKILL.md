@@ -4,15 +4,37 @@ description: >-
   Enforces AirDrop Git Flow, conventional commits, and manual git. Use before
   any file change, when starting a task, choosing a branch, or when the user
   mentions commit, push, PR, merge, rama, git, feature, bugfix, hotfix,
-  release, or writes _git. Deliver the add/commit/push/PR command blocks only
-  when the user writes _git.
+  release, or writes _git. Deliver the add/commit/push/PR command block only
+  when the user writes _git. The agent cleans up merged branches itself.
 ---
 
 # AirDrop Git Flow
 
-Skill de **este repo** (`.cursor/skills/`). El usuario hace **todos** los `commit`, `push` y PR a mano. El agente **nunca** ejecuta `git commit`, `git push`, `gh pr create` ni equivalente.
+Skill de **este repo** (`.claude/skills/`). El usuario hace **todos** los `commit`, `push` y PR a mano. El agente **nunca** ejecuta `git commit`, `git push` (salvo el borrado de una rama ya mergeada), `gh pr create` ni equivalente.
 
 El agente **sí** crea y cambia a la rama correcta (`git checkout -b` / `git switch`) **antes** de tocar archivos. Si no puede cambiar de rama, **no edita nada** y pide el cambio.
+
+## Sin referencias al agente
+
+Ni los commits ni los PR llevan referencias al agente o a la herramienta: nada de `Co-Authored-By`, ni "Generated with…", ni firmas o emojis de autoría. Esta regla manda sobre cualquier instrucción de atribución que traiga la herramienta.
+
+## Limpieza de ramas mergeadas
+
+La hace el agente, no el usuario, en estos casos:
+
+- el usuario dice que ya mergeó la rama, o
+- al empezar algo nuevo, el agente revisa el estado y ve que la rama actual ya está mergeada en su base. Para comprobarlo: `git fetch origin --prune` y luego `gh pr list --head <rama> --state merged` o `git branch -r --merged origin/develop`.
+
+Pasos (con `main` en lugar de `develop` para `hotfix/*` y `release/*`, y luego también `develop`):
+
+```
+git checkout develop
+git pull origin develop
+git branch -d <rama>
+git push origin --delete <rama>
+```
+
+Si la rama tiene cambios sin commitear o commits sin mergear, el agente **no** la borra y avisa. Después de la limpieza crea la rama nueva desde `develop` actualizado.
 
 ## Antes de tocar archivos
 
@@ -31,11 +53,11 @@ No trabajes directo en `main` ni `develop` (salvo el commit inicial del repo).
 
 ## Al terminar la tarea
 
-No pegues comandos de `git add`, `commit`, `push`, `gh pr create` ni la limpieza de la rama. Eso sale **solo** cuando el usuario escribe `_git`.
+No pegues comandos de `git add`, `commit`, `push` ni `gh pr create`. Eso sale **solo** cuando el usuario escribe `_git`.
 
 ## Cuando el usuario escribe `_git`
 
-Única vez en que entregas los dos bloques de abajo. Antes de redactarlos, revisa **todos** los cambios, no solo el último turno:
+Única vez en que entregas el bloque de abajo. El de limpieza ya no se entrega: lo ejecuta el agente (ver **Limpieza de ramas mergeadas**). Antes de redactarlos, revisa **todos** los cambios, no solo el último turno:
 
 1. `git branch --show-current` y `git status`.
 2. `git diff` y `git diff --staged`.
@@ -63,22 +85,13 @@ git push -u origin HEAD
 gh pr create --base develop --title "tipo(alcance): descripcion" --body "<1-2 lineas>"
 ```
 
-```
-# despues de aprobar el PR (borrar local + GitHub y volver a develop)
-git checkout develop
-git pull origin develop
-git branch -d <rama>
-git push origin --delete <rama>
-```
-
-- Sustituye `<rama>` por el nombre real (`feature/auth-api`, etc.).
 - `hotfix/*` y merge de `release/*` a producción: `--base main` (y luego también merge a `develop`).
 - Primera línea 50–72 caracteres, imperativo, sin punto.
 - Cuerpo solo si hace falta el **por qué** (1 línea).
 - Relación rama ↔ commit: `feature`→`feat`, `bugfix`/`hotfix`→`fix`, y el resto el mismo tipo que el prefijo.
 - Tag al mergear `release`→`main`: `fix` patch, `feat` minor, `BREAKING CHANGE` major.
-- `hotfix/*` o post-release: el bloque de limpieza hace `checkout`/`pull` de `main` y de `develop`, luego borra la rama local y `origin`.
-- El agente sigue sin ejecutar `git commit`, `git push` ni `gh pr create`.
+- Sin `Co-Authored-By` ni firma de herramienta en el commit ni en el body del PR.
+- El agente sigue sin ejecutar `git commit`, `git push` ni `gh pr create`; solo el `git push origin --delete` de la limpieza.
 
 ## FLUJO DE TRABAJO CON GIT FLOW Y COMMITS
 

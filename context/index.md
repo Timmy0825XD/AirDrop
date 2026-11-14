@@ -1,6 +1,6 @@
 # Context
 
-Fuente de verdad de AirDrop. Si el código y esta carpeta no coinciden, manda esta carpeta. La regla `.cursor/rules/business-docs.mdc` obliga a detenerse y preguntar cuando un cambio se sale de aquí.
+Fuente de verdad de AirDrop. Si el código y esta carpeta no coinciden, manda esta carpeta. La regla `.claude/rules/business-docs.md` obliga a detenerse y preguntar cuando un cambio se sale de aquí.
 
 En esta raíz solo está este índice. El resto vive en carpetas.
 

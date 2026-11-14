@@ -1,8 +1,3 @@
----
-description: Realistic DB types and column sizes for domain entities
-alwaysApply: true
----
-
 # Modelo de dominio (tipos y tamaños)
 
 No uses el default de TypeORM (`varchar(255)`). Cada columna tiene un tipo PostgreSQL real y un tope **coherente con el dato**, no “por si acaso”. El `MaxLength` del DTO y el modelo Flutter deben coincidir con la columna.

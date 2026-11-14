@@ -1,7 +1,6 @@
 ---
-description: pnpm, Nest modules, database indexes
-globs: backend/**/*
-alwaysApply: false
+paths:
+  - "backend/**/*"
 ---
 
 # Backend
