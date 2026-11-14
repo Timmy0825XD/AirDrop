@@ -31,7 +31,7 @@ La autoridad completa de negocio está en [`../context/index.md`](../context/ind
 
 ## Avance por fases
 
-Antes de empezar, leer [`../context/producto/avance.md`](../context/producto/avance.md): dice en qué fase vamos, su rama y sus pasos. Cada fase va en su propia rama desde `develop` y al cerrarla se actualiza ese archivo.
+Antes de empezar, leer [`../context/historial/avance.md`](../context/historial/avance.md): dice en qué fase vamos, su rama y sus pasos. Cada fase va en su propia rama desde `develop` y al cerrarla se actualiza ese archivo.
 
 ## Organización
 
@@ -95,7 +95,7 @@ controller de la feature.
 Las pantallas de auth tienen identidad propia y **comparten andamiaje**. Antes de
 armar una pantalla nueva, reusar lo que ya existe.
 
-El rediseño natural de la Fase 21 (ver `../context/producto/avance.md`)
+El rediseño natural de la Fase 21 (ver `../context/historial/avance.md`)
 dejó el bloque de marca como **un mapa de ciudad común**: tierra, parques,
 río y calles, con las centrales unidas por rutas y drones de adorno. Es
 plano (sin inclinación 3D) y sin brillos. Es solo decoración: no muestra datos ni contadores (nada de "drones en vuelo" ni
