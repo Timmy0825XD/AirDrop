@@ -2,7 +2,7 @@
 
 API NestJS de AirDrop. Convenciones: [AGENTS.md](AGENTS.md). La regla de negocio está en [`../context/index.md`](../context/index.md).
 
-Las tablas de rutas de abajo salen de los controladores de `src/`. Lo que el contexto pide y todavía no existe está en [`../context/producto/pendientes-backend.md`](../context/producto/pendientes-backend.md).
+Las tablas de rutas de abajo salen de los controladores de `src/`. Lo que el contexto pide y todavía no existe está en [`../context/historial/pendientes-backend.md`](../context/historial/pendientes-backend.md).
 
 Postgres vive en **Supabase** (una BD para el equipo). No usamos Docker.
 
@@ -184,7 +184,7 @@ El código de entrega existe desde que se confirma la carga y lo ve quien recibe
 
 ## Lo que todavía no hay
 
-Cuarentena al volver el paquete e ingreso del lote al inventario de destino; fallback `reasignado`; módulo `Analytics`; vuelos en curso para el operador; verificar el correo nuevo; editar una central. El detalle de cada uno, con el documento que lo pide, está en [`pendientes-backend.md`](../context/producto/pendientes-backend.md).
+Cuarentena al volver el paquete e ingreso del lote al inventario de destino; fallback `reasignado`; módulo `Analytics`; vuelos en curso para el operador; verificar el correo nuevo; editar una central. El detalle de cada uno, con el documento que lo pide, está en [`pendientes-backend.md`](../context/historial/pendientes-backend.md).
 
 ## Documentación interactiva
 

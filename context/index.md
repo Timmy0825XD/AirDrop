@@ -2,7 +2,17 @@
 
 Fuente de verdad de AirDrop. Si el código y esta carpeta no coinciden, manda esta carpeta. La regla `.claude/rules/business-docs.md` obliga a detenerse y preguntar cuando un cambio se sale de aquí.
 
-En esta raíz solo está este índice. El resto vive en carpetas.
+En esta raíz solo está este índice. El resto vive en carpetas. Cada carpeta responde una sola pregunta:
+
+| Carpeta | Pregunta |
+| --- | --- |
+| `app/` | Quién usa el sistema y qué puede pedir |
+| `entregas/` | Cómo viaja cada tipo de pedido |
+| `legal/` | Qué norma lo permite o lo prohíbe |
+| `producto/` | Qué se construye: alcance, requisitos, casos de uso, backlog |
+| `diseno/` | Cómo está armado el software y cómo se programa |
+| `sustentacion/` | Cómo se defiende ante el jurado |
+| `historial/` | Bitácoras del equipo. **No es especificación** |
 
 ## Dónde buscar
 
@@ -18,11 +28,18 @@ En esta raíz solo está este índice. El resto vive en carpetas.
 | Requisitos y su fundamento | [producto/requisitos.md](producto/requisitos.md) |
 | Casos de uso | [producto/casos-de-uso.md](producto/casos-de-uso.md) |
 | Historias y sprints | [producto/backlog.md](producto/backlog.md) |
-| En qué fase va el frontend y qué historias están hechas | [producto/avance.md](producto/avance.md) |
-| Qué le falta al backend frente al contexto | [producto/pendientes-backend.md](producto/pendientes-backend.md) |
 | Cómo está armado el software | [diseno/arquitectura.md](diseno/arquitectura.md) |
 | Cómo se programa | [diseno/principios.md](diseno/principios.md) |
 | Problema, objetivos, marco, glosario, fuentes | [sustentacion/](sustentacion/) |
+
+## Historial
+
+Registran lo que pasó y lo que falta. Si chocan con la especificación, manda la especificación.
+
+| Bitácora | Archivo |
+| --- | --- |
+| En qué fase va el frontend y qué historias están hechas | [historial/avance.md](historial/avance.md) |
+| Qué le falta al backend frente al contexto | [historial/pendientes-backend.md](historial/pendientes-backend.md) |
 
 ## Orden si el cambio toca comportamiento
 

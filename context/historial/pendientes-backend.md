@@ -70,7 +70,7 @@ un traslado.**
 
 **Antes.** Si ningún dron era elegible, autorizar respondía 409 y nada más.
 
-**Ahora** (reglas en RF-18 de [`requisitos.md`](requisitos.md)): autorizar
+**Ahora** (reglas en RF-18 de [`requisitos.md`](../producto/requisitos.md)): autorizar
 responde **200** con el pedido y `fallback: { kind, reason, options,
 retryAfter, reassignedAt }`, y `assignment: null`.
 
@@ -116,7 +116,7 @@ pedido llevaba cada dron.
 
 **Antes.** No había módulo `Analytics` ni endpoints de métricas.
 
-**Ahora** (metas en RF-26 de [`requisitos.md`](requisitos.md)). Las tres
+**Ahora** (metas en RF-26 de [`requisitos.md`](../producto/requisitos.md)). Las tres
 rutas son solo del `admin` y aceptan `?from=AAAA-MM-DD&to=AAAA-MM-DD`; por
 defecto cubren los últimos 30 días. Ninguna devuelve nombres, documentos ni
 direcciones.
@@ -175,7 +175,7 @@ despachador. La app los muestra en "Traslados entrantes" (Fase 5), con
 **Antes.** `PATCH /auth/me` cambiaba el correo de una vez si no estaba
 tomado; un error de tipeo dejaba a la persona sin poder entrar.
 
-**Ahora** (RNF-04 en [`requisitos.md`](requisitos.md)):
+**Ahora** (RNF-04 en [`requisitos.md`](../producto/requisitos.md)):
 
 1. `PATCH /auth/me` con un `email` distinto exige `currentPassword`.
    - Sin ella: 400 "Para cambiar el correo escribe tu contraseña actual.".
@@ -224,7 +224,7 @@ mismas validaciones.
 **Antes.** Si el ítem llevaba frío, el reloj publicaba `temperatureC` fija en
 5 °C durante todo el vuelo. Nunca salía de rango y no había alerta.
 
-**Ahora** (reglas en RF-17 de [`requisitos.md`](requisitos.md)):
+**Ahora** (reglas en RF-17 de [`requisitos.md`](../producto/requisitos.md)):
 `temperatureC` varía en la telemetría de ida, espera y retorno con paquete.
 Con una falla, el socket manda una vez `alert` con `kind: 'cold_chain'` y el
 mensaje "La temperatura de la carga salió del rango de 2 a 8 °C." (solo al
@@ -368,7 +368,7 @@ las centrales con stock y la autorizaba la primera que la viera, aunque
 estuviera dos o tres veces más lejos. Además cualquiera de ellas podía
 rechazarla y la cerraba para todas.
 
-**Qué hace ahora** ([`requisitos.md`](requisitos.md) RU-10):
+**Qué hace ahora** ([`requisitos.md`](../producto/requisitos.md) RU-10):
 
 - Al crearla, entra solo a la cola de la central que llega antes (primero
   las que tienen dron elegible). Si no la autoriza a tiempo (lo que ahorra
@@ -453,7 +453,7 @@ una urgencia la escalera de centrales a las que se ofreció.
 central, el motor elegía siempre el mismo dron (el primero por
 identificador).
 
-**Qué hace ahora** ([`requisitos.md`](requisitos.md) RF-11):
+**Qué hace ahora** ([`requisitos.md`](../producto/requisitos.md) RF-11):
 
 - Al volver a la central, el dron guarda con cuánta batería llegó. En tierra
   recarga 1,5 % por minuto (`DRONE_RECHARGE_PERCENT_PER_MIN` la cambia para
