@@ -1486,7 +1486,7 @@ el solicitante; los pasos 1 y 2 cambian los cuatro roles.
 | 0 — Alinear `context/` | `docs/rediseno-corredor` | — | Hecho |
 | 1 — Cimientos: superficies, acento, cifras, bordes, íconos | `style/corredor-cimientos` | HU-72 | Hecho (2026-11-14) |
 | 2 — Carga, vacío y error | `feature/corredor-estados` | HU-73 | Hecho (2026-11-14) |
-| 3 — Inicio, urgencia y seguimiento del solicitante | `feature/corredor-solicitante` | HU-76 | Pendiente |
+| 3 — Inicio, urgencia y seguimiento del solicitante | `feature/corredor-solicitante` | HU-76 | Hecho (2026-11-14) |
 | 4 — Arranque, animaciones firma y vibración | `feature/corredor-movimiento` | HU-74 | Pendiente |
 | 5 — Bienvenida | `feature/bienvenida` | HU-75 | Pendiente |
 | 6 — Ajustes y modo sencillo | `feature/ajustes` | HU-77 | Pendiente |
@@ -1529,6 +1529,26 @@ el solicitante; los pasos 1 y 2 cambian los cuatro roles.
   alto (una hoja, el panel del mapa) se queda en ícono y texto.
 - `flutter analyze` sin issues y `flutter test` en verde (372). Revisado
   en web en claro y oscuro: esqueletos, vacío y error.
+
+### Paso 3 — Solicitante (hecho, 2026-11-14)
+
+- **`RouteLine`** (`core/widgets`, antes `MissionRoute` en el inicio): la
+  ruta de la central al punto de entrega. Lo recorrido va sólido y lo que
+  falta en puntos; con `hover: false` el dron espera en la central.
+- **Inicio:** los minutos de la misión van en cifra grande (`.figure`).
+  Quien todavía no ha pedido nada ve `FirstOrderCard` (la ruta, qué va a
+  pasar y "Pedir urgencia") en vez de un cero.
+- **Urgencia, paso 3:** `EmergencyFacts` muestra la ruta hasta "Tu punto
+  de entrega" y dice que un despachador revisa y autoriza. Se quitó el
+  nombre de un fabricante de dron y la promesa de "a donde estés": el
+  subtítulo ahora dice "Una unidad, a tu punto de entrega".
+- **Seguimiento:** el mapa lleva un resumen para el lector de pantalla
+  (`flightMapSummary`): estado, destino y minutos que faltan.
+- No cambian `data/`, controllers, rutas ni textos de Nest.
+- `flutter analyze` sin issues y `flutter test` en verde (378). Revisado
+  en web en claro y oscuro. La tarjeta de la misión en vuelo no se pudo
+  ver con datos locales (no hay un pedido volando): se revisó la ruta
+  suelta con avance.
 
 ## Pendiente del backend
 

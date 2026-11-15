@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/clock/sim_clock.dart';
 import '../../../../../core/widgets/glass_card.dart';
+import '../../../../../core/widgets/route_line.dart';
+import '../../../../../theme/app_figures.dart';
 import '../../../../../theme/app_palette.dart';
 import '../../../../orders/data/order_models.dart';
 import '../../../../orders/presentation/order_format.dart';
 import '../../../../orders/presentation/widgets/order_status_chip.dart';
 import '../../../../tracking/data/telemetry_models.dart';
-import 'mission_route.dart';
 
 /// El pedido que está volando, arriba del inicio: el estado con su punto
 /// verde, qué va en el dron, los minutos para llegar (de la telemetría en
@@ -49,7 +50,7 @@ class MissionCard extends StatelessWidget {
           children: [
             _Top(order: order, status: status, telemetry: telemetry),
             const SizedBox(height: 14),
-            MissionRoute(
+            RouteLine(
               endLabel: order.address.split(',').first,
               progress: progress,
             ),
@@ -155,10 +156,9 @@ class _Eta extends StatelessWidget {
       children: [
         Text(
           eta == null ? 'En destino' : '$eta min',
-          style: theme.textTheme.headlineMedium?.copyWith(
-            fontSize: eta == null ? 20 : 28,
-            letterSpacing: -0.5,
-          ),
+          style: eta == null
+              ? theme.textTheme.headlineSmall
+              : theme.textTheme.headlineLarge?.figure,
         ),
         if (arrives != null)
           Text('llega $arrives', style: theme.textTheme.bodySmall),

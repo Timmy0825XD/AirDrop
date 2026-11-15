@@ -100,12 +100,21 @@ class TrackingScreen extends ConsumerWidget {
               latencyMs: t.vitals?.latencyMs,
               linkLost: t.linkLost,
             ),
-      map: (sheetHeight) => FlightMap(
-        route: line,
-        returnLeg: back,
-        estimated: t?.linkLost ?? false,
-        drone: drone,
-        sheetHeight: sheetHeight,
+      // El mapa no se puede leer: el lector de pantalla oye un resumen.
+      map: (sheetHeight) => Semantics(
+        label: flightMapSummary(
+          status: status,
+          forRequester: role == UserRole.requester,
+          etaMinutes: hideReturn ? null : t?.etaMinutes,
+          destination: order?.address,
+        ),
+        child: FlightMap(
+          route: line,
+          returnLeg: back,
+          estimated: t?.linkLost ?? false,
+          drone: drone,
+          sheetHeight: sheetHeight,
+        ),
       ),
       sheet: flight.loading
           ? const [
@@ -147,6 +156,26 @@ class TrackingScreen extends ConsumerWidget {
             ],
     );
   }
+}
+
+/// Lo que el mapa muestra, dicho en una frase para el lector de pantalla:
+/// el estado del pedido, a dónde va y cuánto falta.
+String flightMapSummary({
+  required OrderStatus? status,
+  required bool forRequester,
+  int? etaMinutes,
+  String? destination,
+}) {
+  final parts = [
+    'Mapa del vuelo',
+    if (status != null)
+      forRequester ? OrderStatusChip.requesterLabel(status) : status.label,
+    if (destination != null && destination.isNotEmpty)
+      'Destino: ${destination.split(',').first}',
+    if (etaMinutes != null)
+      etaMinutes == 1 ? 'Llega en 1 minuto' : 'Llega en $etaMinutes minutos',
+  ];
+  return '${parts.join('. ')}.';
 }
 
 /// El medicamento y su estado, arriba de la hoja.

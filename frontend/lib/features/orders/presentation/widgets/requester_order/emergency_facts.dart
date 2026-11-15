@@ -1,35 +1,34 @@
 import 'package:flutter/material.dart';
 
-/// Lo que se sabe antes de pedir, en una nota gris sobre el deslizador:
-/// la urgencia va primero en la cola, la central la elige el despachador
-/// al autorizar y la ruta evita las geovallas (reglas del sistema). No
-/// promete central ni tiempos: la llegada se ve en el mapa cuando el dron
-/// despega.
+import '../../../../../core/widgets/route_line.dart';
+
+/// Lo que se sabe antes de pedir, sobre el deslizador: la ruta que va a
+/// recorrer el pedido (de una central al punto de entrega) y quién decide.
+/// La urgencia va primero en la cola y la autoriza un despachador. No
+/// promete central, dron ni tiempos: eso lo decide el sistema al autorizar
+/// y la llegada se ve en el mapa cuando el dron despega.
 class EmergencyFacts extends StatelessWidget {
   const EmergencyFacts({super.key});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final muted = theme.colorScheme.onSurfaceVariant;
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+      padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(14),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Icon(Icons.info_outline_rounded, size: 20, color: muted),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Va primero en la cola. Un despachador revisa tu pedido, elige '
-              'la central y sale un Wingcopter 198 por una ruta que evita las '
-              'geovallas. Te avisamos cuando despegue.',
-              style: theme.textTheme.bodySmall?.copyWith(height: 1.4),
-            ),
+          const RouteLine(endLabel: 'Tu punto de entrega', hover: false),
+          const SizedBox(height: 10),
+          Text(
+            'Va primero en la cola. Un despachador revisa tu pedido y '
+            'autoriza la salida; el dron sigue una ruta que evita las zonas '
+            'restringidas. Te avisamos cuando despegue.',
+            style: theme.textTheme.bodySmall?.copyWith(height: 1.4),
           ),
         ],
       ),
