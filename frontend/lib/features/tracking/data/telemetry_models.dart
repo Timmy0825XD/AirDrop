@@ -61,6 +61,67 @@ enum FlightLeg {
 }
 
 /// Una foto del vuelo: dónde va el dron y cómo va.
+/// RF-48: el estado que el dron anuncia en su identificación remota.
+enum RemoteIdStatus {
+  mission('mission', 'En misión'),
+  returning('returning', 'De regreso'),
+  linkLost('link_lost', 'Sin enlace'),
+  emergency('emergency', 'Emergencia'),
+  unknown('unknown', 'Sin dato');
+
+  const RemoteIdStatus(this.apiValue, this.label);
+
+  final String apiValue;
+  final String label;
+
+  static RemoteIdStatus fromJson(Object? value) => values.firstWhere(
+    (status) => status.apiValue == value,
+    orElse: () => RemoteIdStatus.unknown,
+  );
+}
+
+/// Identificación remota (RF-48): lo que el dron dice de sí mismo en cada
+/// lectura. Llega `null` en lecturas viejas.
+class RemoteId {
+  const RemoteId({
+    required this.registration,
+    required this.operator,
+    required this.type,
+    required this.status,
+    this.manifestNumber,
+  });
+
+  static RemoteId? fromJson(Object? json) {
+    if (json is! Map) return null;
+    return RemoteId(
+      registration: '${json['registration'] ?? ''}',
+      operator: '${json['operator'] ?? ''}',
+      type: '${json['type'] ?? ''}',
+      manifestNumber: json['manifestNumber'] as String?,
+      status: RemoteIdStatus.fromJson(json['status']),
+    );
+  }
+
+  /// La matrícula (`AD-NOR-01`).
+  final String registration;
+  final String operator;
+
+  /// Colibrí, Garza o Cóndor.
+  final String type;
+
+  /// El manifiesto vigente; `null` de regreso vacío.
+  final String? manifestNumber;
+  final RemoteIdStatus status;
+
+  /// "AD-NOR-01 · Colibrí", y con [withManifest] el número del manifiesto.
+  /// Al solicitante no se le muestra el manifiesto.
+  String label({required bool withManifest}) => [
+    registration,
+    if (type.isNotEmpty) type,
+    if (withManifest && manifestNumber != null) manifestNumber!,
+  ].join(' · ');
+}
+
 class Telemetry {
   const Telemetry({
     required this.orderId,
@@ -76,6 +137,8 @@ class Telemetry {
     this.etaSeconds,
     this.vitals,
     this.linkLost = false,
+    this.altitudeMslM,
+    this.remoteId,
   });
 
   factory Telemetry.fromJson(Map<String, dynamic> json) {
@@ -96,6 +159,8 @@ class Telemetry {
           ? FlightVitals.fromJson(json)
           : null,
       linkLost: json['linkLost'] == true,
+      altitudeMslM: (json['altitudeMslM'] as num?)?.toDouble(),
+      remoteId: RemoteId.fromJson(json['remoteId']),
     );
   }
 
@@ -106,7 +171,15 @@ class Telemetry {
   final String identifier;
   final double latitude;
   final double longitude;
+
+  /// Altura sobre el terreno (AGL).
   final double altitudeM;
+
+  /// RF-46: altura sobre el nivel del mar; `null` sin perfil de terreno.
+  final double? altitudeMslM;
+
+  /// RF-48: la identificación remota de esta lectura.
+  final RemoteId? remoteId;
   final double speedKmh;
   final FlightPhase phase;
   final OrderStatus status;
@@ -118,9 +191,13 @@ class Telemetry {
   /// Solo para el despachador u operador de origen (vista `full`).
   final FlightVitals? vitals;
 
-  /// RF-34: el dron perdió el enlace y la posición es estimada hasta que
-  /// aterrice en su central.
+  /// RF-34: el dron perdió el enlace C2. Espera unos 30 s simulados en el
+  /// mismo punto y después sigue (vuelve a `false`) o regresa; mientras
+  /// tanto la posición es estimada. No es el socket caído.
   final bool linkLost;
+
+  /// Sin enlace según la lectura o según la identificación remota.
+  bool get offLink => linkLost || remoteId?.status == RemoteIdStatus.linkLost;
 
   /// Minutos que faltan, redondeados hacia arriba; `null` en destino.
   int? get etaMinutes => etaSeconds == null ? null : (etaSeconds! / 60).ceil();

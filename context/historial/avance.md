@@ -1649,7 +1649,7 @@ La guía de partida es `learning/35-front-pending-red-regional.md` (local).
 | 2 — Política de datos | `feature/politica-de-datos` | RF-50, CU-46 | Hecho (2026-11-15) |
 | 3 — Centrales nodo y ESE | `feature/centrales-nodo-ese` | RF-06, RF-43 | Hecho (2026-11-15) |
 | 4 — Flota de tres tipos y peso del lote | `feature/flota-tres-tipos` | RF-49, RF-11 | Hecho (2026-11-15) |
-| 5 — Manifiesto e identificación | `feature/manifiesto-e-identificacion` | RF-47, RF-48 | Pendiente |
+| 5 — Manifiesto e identificación | `feature/manifiesto-e-identificacion` | RF-47, RF-48 | Hecho (2026-11-15) |
 | 6 — Propósito de la fórmula y luz del día | `feature/formula-proposito-y-luz` | RF-51, RF-44 | Pendiente |
 
 ### Paso 1 — Puntos de entrega (hecho, 2026-11-15)
@@ -1700,6 +1700,17 @@ La guía de partida es `learning/35-front-pending-red-regional.md` (local).
 - El lote pide "Peso por unidad (g)" (antes crear daba 400) y suma
   "Mercancía peligrosa"; la fila dice "No vuela".
 - `flutter analyze` sin issues y `flutter test` en verde (421).
+
+### Paso 5 — Manifiesto e identificación (hecho, 2026-11-15)
+
+- Confirmar la carga avisa el número del manifiesto. El detalle del pedido
+  le muestra al despachador la tarjeta del manifiesto (dron, origen y
+  destino, lote y vencimiento, peso, frío y quién autorizó).
+- El seguimiento dice la matrícula y el tipo del dron (identificación
+  remota) y la altura sobre el terreno y sobre el nivel del mar. El número
+  del manifiesto no se le muestra a quien pidió.
+- "Sin enlace" también sale cuando lo dice la identificación remota.
+- `flutter analyze` sin issues y `flutter test` en verde (425).
 
 ## Pendiente del backend
 

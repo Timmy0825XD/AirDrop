@@ -502,6 +502,33 @@ class LocalOrderRepository implements OrderRepository {
     );
   }
 
+  int _manifests = 0;
+
+  @override
+  Future<CargoManifest?> manifest(String orderId) async {
+    final order = await findOne(orderId);
+    final number = order.manifestNumber;
+    if (number == null) return null;
+    return CargoManifest(
+      number: number,
+      issuedAt: order.loadConfirmedAt,
+      droneIdentifier: order.assignment?.identifier ?? 'D-01',
+      originName: 'Central Demo',
+      destination: order.address,
+      items: [
+        ManifestItem(
+          medicationName: order.medicationName,
+          lot: order.dispatchedLot ?? 'LOC-0001',
+          expiresOn: order.dispatchedLotExpiresOn ?? '2027-06-30',
+          quantity: order.quantity,
+        ),
+      ],
+      payloadKg: 0.03 * order.quantity,
+      coldRange: order.requiresColdChain ? '2–8 °C' : null,
+      authorizedBy: 'Diego Despacho',
+    );
+  }
+
   @override
   Future<Order> confirmLoad(String id) async {
     final current = await findOne(id);
@@ -511,7 +538,10 @@ class LocalOrderRepository implements OrderRepository {
         statusCode: 400,
       );
     }
-    final confirmed = current.copyWith(loadConfirmedAt: DateTime.now().toUtc());
+    final confirmed = current.copyWith(
+      loadConfirmedAt: DateTime.now().toUtc(),
+      manifestNumber: 'MAN-2026-${'${++_manifests}'.padLeft(6, '0')}',
+    );
     // Como Nest, responde todavía en `pending_load`; pero aquí no hay reloj,
     // así que se guarda como si el primer tick ya lo hubiera puesto en vuelo.
     _replace(confirmed.copyWith(status: OrderStatus.inFlight));

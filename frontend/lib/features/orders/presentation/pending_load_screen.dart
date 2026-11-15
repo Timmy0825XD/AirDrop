@@ -1,3 +1,4 @@
+import 'order_format.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -32,11 +33,13 @@ class _PendingLoadScreenState extends ConsumerState<PendingLoadScreen> {
     final id = order.id;
     setState(() => _confirming.add(id));
     try {
-      await ref.read(orderDispatchProvider.notifier).confirmLoad(id);
+      final loaded = await ref
+          .read(orderDispatchProvider.notifier)
+          .confirmLoad(id);
       if (mounted) {
         showAppSnack(
           context,
-          'Carga confirmada. El vuelo arranca en segundos.',
+          loadConfirmedMessage(loaded),
           actionLabel: 'Ver vuelo',
           onAction: () => context.push('/tracking/$id'),
         );

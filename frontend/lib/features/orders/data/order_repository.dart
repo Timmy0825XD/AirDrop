@@ -60,6 +60,10 @@ abstract class OrderRepository {
   /// central que decide o que la autorizó (histórico).
   Future<List<PrescriptionFile>> prescriptionFiles(String orderId);
 
+  /// `GET /orders/:id/manifest` — el manifiesto de carga (RF-47), para el
+  /// despachador de origen o de destino. Sin manifiesto (404) es `null`.
+  Future<CargoManifest?> manifest(String orderId);
+
   /// `POST /orders/:id/reject` — despachador, 201. Cierra el pedido para
   /// todas las centrales (la fórmula no cumple).
   Future<Order> reject(String id, String reason);

@@ -49,7 +49,8 @@ void main() {
     expect(find.text('Revisa la carga'), findsNothing);
     expect(find.text('Insulina glargina 100 UI/ml'), findsOneWidget);
     expect(
-      find.text('Carga confirmada. El vuelo arranca en segundos.'),
+      // RF-47: confirmar la carga emite el manifiesto.
+      find.text('Carga confirmada. Manifiesto MAN-2026-000001.'),
       findsNothing,
     );
   });
@@ -70,7 +71,8 @@ void main() {
 
     expect(find.text('No hay drones esperando carga.'), findsOneWidget);
     expect(
-      find.text('Carga confirmada. El vuelo arranca en segundos.'),
+      // RF-47: confirmar la carga emite el manifiesto.
+      find.text('Carga confirmada. Manifiesto MAN-2026-000001.'),
       findsOneWidget,
     );
   });

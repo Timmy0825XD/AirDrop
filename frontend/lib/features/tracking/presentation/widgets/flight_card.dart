@@ -12,9 +12,18 @@ import '../../../../theme/app_figures.dart';
 /// y altitud; la central de origen ve además batería, carga y temperatura
 /// (si hay frío).
 class FlightCard extends StatelessWidget {
-  const FlightCard({super.key, required this.telemetry, this.progress});
+  const FlightCard({
+    super.key,
+    required this.telemetry,
+    this.progress,
+    this.showManifest = false,
+  });
 
   final Telemetry telemetry;
+
+  /// El número del manifiesto va en la identificación del dron solo para
+  /// la central y el operador; nunca para quien pidió (RF-47).
+  final bool showManifest;
 
   /// Cuánto de la ruta lleva el dron (0 a 1); sin ruta, no hay barra.
   final double? progress;
@@ -25,14 +34,20 @@ class FlightCard extends StatelessWidget {
     final v = t.vitals;
     final cold = v?.temperatureC;
     final rows = [
-      ('Altitud', '${t.altitudeM.round()} m', false),
+      ('Altitud', '${t.altitudeM.round()} m sobre el terreno', false),
+      if (t.altitudeMslM case final msl?)
+        ('Sobre el mar', '${msl.round()} m', false),
       ('Velocidad', '${t.speedKmh.round()} km/h', false),
       if (v != null) ('Batería', '${v.batteryPercent.round()} %', false),
       // Fuera de 2 a 8 °C se pinta en rojo (RF-17).
       if (cold != null)
         ('Nevera', '${_decimal(cold)} °C', isColdChainBreach(cold)),
       if (v != null) ('Carga', '${_decimal(v.payloadKg)} kg', false),
-      ('Dron', t.identifier, false),
+      (
+        'Dron',
+        t.remoteId?.label(withManifest: showManifest) ?? t.identifier,
+        false,
+      ),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -184,9 +199,9 @@ class _Row extends StatelessWidget {
             const Spacer(),
             Text(
               value,
-              style: theme.textTheme.titleSmall?.copyWith(
-                color: alert ? context.palette.danger : null,
-              ).figure,
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(color: alert ? context.palette.danger : null)
+                  .figure,
             ),
           ],
         ),

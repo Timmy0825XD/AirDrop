@@ -92,6 +92,12 @@ final orderDecisionProvider = FutureProvider.autoDispose
       return ref.watch(orderRepositoryProvider).decision(id);
     });
 
+/// El manifiesto de carga (RF-47); `null` si el pedido todavía no tiene.
+final orderManifestProvider = FutureProvider.autoDispose
+    .family<CargoManifest?, String>((ref, id) {
+      return ref.watch(orderRepositoryProvider).manifest(id);
+    });
+
 /// La fórmula del pedido, todas sus hojas (RF-27). Vive solo mientras el
 /// visor está abierto: la fórmula no queda en memoria después.
 final orderPrescriptionProvider = FutureProvider.autoDispose
@@ -233,7 +239,9 @@ class OrderDispatchNotifier extends AsyncNotifier<Order?> {
       ..invalidate(inFlightProvider)
       ..invalidate(orderDetailProvider(id))
       // Autorizar o declinar cambia la traza y la escalera.
-      ..invalidate(orderDecisionProvider(id));
+      ..invalidate(orderDecisionProvider(id))
+      // Confirmar la carga emite el manifiesto.
+      ..invalidate(orderManifestProvider(id));
     state = AsyncData(order);
     return order;
   }
