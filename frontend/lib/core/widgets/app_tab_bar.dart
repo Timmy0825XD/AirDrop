@@ -36,7 +36,8 @@ class NavCenterAction {
 
 /// La barra de pestañas del rol, pegada abajo como en cualquier app: dos
 /// destinos, la acción del centro y dos destinos más, todos del mismo
-/// tamaño. Con [collapsed] (en un detalle o al bajar en una lista) se
+/// tamaño. Sin [center] (el modo sencillo) quedan solo los destinos. Con
+/// [collapsed] (en un detalle o al bajar en una lista) se
 /// desliza hacia abajo; vuelve al subir.
 class AppTabBar extends StatelessWidget {
   const AppTabBar({
@@ -44,7 +45,7 @@ class AppTabBar extends StatelessWidget {
     required this.destinations,
     required this.selected,
     required this.onSelect,
-    required this.center,
+    this.center,
     this.centerActive = false,
     this.collapsed = false,
   });
@@ -55,7 +56,7 @@ class AppTabBar extends StatelessWidget {
   /// Índice del destino abierto; `null` si la pantalla no es un destino.
   final int? selected;
   final ValueChanged<int> onSelect;
-  final NavCenterAction center;
+  final NavCenterAction? center;
 
   /// La pantalla abierta es la del centro (la cola, el mapa en vivo).
   final bool centerActive;
@@ -87,17 +88,18 @@ class AppTabBar extends StatelessWidget {
       child: _BarBody(
         children: [
           for (var i = 0; i < half; i++) item(i),
-          Expanded(
-            child: _TabItem(
-              icon: center.icon,
-              label: center.tabLabel,
-              semantics: center.label,
-              active: centerActive,
-              showLabel: !compact || centerActive,
-              badge: center.badge,
-              onTap: center.onPressed,
+          if (center case final center?)
+            Expanded(
+              child: _TabItem(
+                icon: center.icon,
+                label: center.tabLabel,
+                semantics: center.label,
+                active: centerActive,
+                showLabel: !compact || centerActive,
+                badge: center.badge,
+                onTap: center.onPressed,
+              ),
             ),
-          ),
           for (var i = half; i < destinations.length; i++) item(i),
         ],
       ),

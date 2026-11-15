@@ -48,6 +48,57 @@ class AppTheme {
     ),
   );
 
+  /// Alto contraste (RF-52): el texto secundario sube a 7:1 y los bordes
+  /// y las líneas se marcan más. Los colores de marca no cambian.
+  static ThemeData get lightHighContrast => _build(
+    const _Palette(
+      brightness: Brightness.light,
+      primary: primary,
+      onPrimary: Color(0xFFFFFFFF),
+      surface: Color(0xFFFFFFFF),
+      sunk: Color(0xFFECE9E2),
+      line: Color(0xFF8C877D),
+      control: Color(0xFF4F4B45),
+      ink: Color(0xFF111315),
+      muted: Color(0xFF3F4449),
+      extra: AppPalette.light,
+    ),
+  );
+
+  static ThemeData get darkHighContrast => _build(
+    const _Palette(
+      brightness: Brightness.dark,
+      primary: primaryOnDark,
+      onPrimary: Color(0xFF10201F),
+      surface: Color(0xFF222528),
+      sunk: Color(0xFF2B2F33),
+      line: Color(0xFF7F858C),
+      control: Color(0xFFB8BDC3),
+      ink: Color(0xFFFFFFFF),
+      muted: Color(0xFFD2D5D8),
+      extra: AppPalette.dark,
+    ),
+  );
+
+  /// El modo sencillo (RF-52): los botones crecen a 56 dp. Parte del tema
+  /// que ya esté puesto, así vale en claro, oscuro y alto contraste.
+  static ThemeData roomy(ThemeData base) {
+    const tall = WidgetStatePropertyAll(Size(0, 56));
+    ButtonStyle grow(ButtonStyle? style) =>
+        (style ?? const ButtonStyle()).copyWith(minimumSize: tall);
+    return base.copyWith(
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: grow(base.elevatedButtonTheme.style),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: grow(base.filledButtonTheme.style),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: grow(base.outlinedButtonTheme.style),
+      ),
+    );
+  }
+
   static ThemeData _build(_Palette p) {
     final base = ThemeData(brightness: p.brightness, useMaterial3: true);
     final font = GoogleFonts.figtree(color: p.ink);

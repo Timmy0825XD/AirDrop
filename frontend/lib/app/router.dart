@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../core/prefs/app_prefs.dart';
 import '../features/onboarding/presentation/welcome_gate.dart';
 import '../features/onboarding/presentation/welcome_screen.dart';
+import '../features/settings/presentation/settings_screen.dart';
 import '../features/analytics/presentation/analytics_screen.dart';
 import '../features/auth/data/auth_models.dart';
 import '../features/auth/presentation/auth_controller.dart';
@@ -252,6 +253,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             path: '/profile/email',
             builder: (_, _) => const EmailChangeScreen(),
           ),
+          GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
           GoRoute(
             path: '/unauthorized',
             builder: (_, _) => const PlaceholderScreen(

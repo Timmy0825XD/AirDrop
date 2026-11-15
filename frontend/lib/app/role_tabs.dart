@@ -9,10 +9,12 @@ import '../features/fleet/data/fleet_providers.dart';
 import '../features/hubs/data/hub_providers.dart';
 import '../features/orders/data/order_providers.dart';
 import '../features/orders/data/queue_live.dart';
+import '../features/settings/data/app_settings.dart';
 
 /// Los destinos de la barra de cada rol y su acción del centro.
 ///
 /// - Solicitante: Inicio · Pedidos · (Pedir urgencia) · Planes · Perfil.
+///   En modo sencillo: Inicio · Pedidos · Perfil.
 /// - Despachador: Inicio · Agenda (las franjas del día) · (Cola de urgencias) ·
 ///   Inventario · Más. La cola también es destino: la abre el botón del centro.
 /// - Operador: Inicio · Flota · (Vuelos en curso) · Geovallas · Perfil. El
@@ -22,13 +24,15 @@ class RoleTabs {
   const RoleTabs({
     required this.destinations,
     required this.paths,
-    required this.center,
+    this.center,
     this.centerPath,
   });
 
   final List<NavDestination> destinations;
   final List<String> paths;
-  final NavCenterAction center;
+
+  /// La acción del centro; el modo sencillo no la tiene.
+  final NavCenterAction? center;
 
   /// Ruta que abre el botón del centro cuando es un destino más.
   final String? centerPath;
@@ -46,7 +50,10 @@ class RoleTabs {
 
   static RoleTabs of(UserRole role, BuildContext context, WidgetRef ref) =>
       switch (role) {
-        UserRole.requester => _requester(context),
+        UserRole.requester =>
+          ref.watch(settingsProvider).simpleMode
+              ? _simpleRequester
+              : _requester(context),
         UserRole.dispatcher => _dispatcher(context, ref),
         UserRole.fleetOperator => _operator(context, ref),
         UserRole.admin => _admin(context),
@@ -59,6 +66,17 @@ class RoleTabs {
   static const _profile = NavDestination(
     icon: Icons.person_outline_rounded,
     label: 'Perfil',
+  );
+
+  /// El modo sencillo (RF-52): tres destinos, siempre con su nombre.
+  /// Pedir urgencia pasa a ser el botón grande del inicio.
+  static const _simpleRequester = RoleTabs(
+    destinations: [
+      _home,
+      NavDestination(icon: Icons.receipt_long_rounded, label: 'Pedidos'),
+      _profile,
+    ],
+    paths: ['/home', '/orders/mine', '/profile'],
   );
 
   static RoleTabs _requester(BuildContext context) => RoleTabs(

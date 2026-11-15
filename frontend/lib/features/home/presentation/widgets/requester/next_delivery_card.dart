@@ -57,6 +57,8 @@ class NextDeliveryCard extends StatelessWidget {
                 ],
               ),
             ),
+            // Con el texto grande el nombre llega hasta la etiqueta.
+            const SizedBox(width: 8),
             _Tag(text: order.planId == null ? 'Programada' : 'Plan'),
           ],
         ),

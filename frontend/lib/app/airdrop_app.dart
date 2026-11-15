@@ -4,8 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../features/auth/presentation/auth_controller.dart';
+import '../features/settings/data/app_settings.dart';
+import '../features/settings/presentation/settings_scope.dart';
 import '../theme/app_backdrop.dart';
-import '../theme/app_theme.dart';
 import 'providers.dart';
 import 'router.dart';
 
@@ -31,17 +32,20 @@ class _AirDropAppState extends ConsumerState<AirDropApp> {
 
   @override
   Widget build(BuildContext context) {
+    final settings = ref.watch(settingsProvider);
+    final themes = themesFor(settings);
     return MaterialApp.router(
       title: 'AirDrop',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
+      theme: themes.light,
+      darkTheme: themes.dark,
+      themeMode: settings.themeMode,
       routerConfig: _router,
       // El degradado queda debajo de todo: las pantallas sin transición
       // (auth) lo ven a través de su scaffold transparente.
-      builder: (context, child) =>
-          AppBackdrop(child: child ?? const SizedBox.shrink()),
+      builder: (context, child) => SettingsScope(
+        child: AppBackdrop(child: child ?? const SizedBox.shrink()),
+      ),
       supportedLocales: const [Locale('es')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
