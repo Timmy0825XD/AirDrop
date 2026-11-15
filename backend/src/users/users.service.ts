@@ -1,3 +1,5 @@
+import { mustAcceptPolicy } from '../privacy/privacy.rules';
+import { POLICY_VERSION } from '../privacy/privacy-policy';
 import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
 import {
   BadRequestException,
@@ -102,6 +104,9 @@ export class UsersService {
       status: user.status,
       hubIds: assignedHubIds(user),
       allergies: user.allergies ?? null,
+      // RF-50: si debe aceptar la política vigente en este ingreso.
+      policyVersion: user.consentPolicyVersion ?? null,
+      mustAcceptPolicy: mustAcceptPolicy(user.consentPolicyVersion ?? null),
     };
   }
 
@@ -156,6 +161,7 @@ export class UsersService {
       role: dto.role,
       status: UserStatus.ACTIVE,
       consentAcceptedAt: new Date(),
+      consentPolicyVersion: POLICY_VERSION,
       failedLoginCount: 0,
       lockedUntil: null,
     });

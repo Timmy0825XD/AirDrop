@@ -1,3 +1,5 @@
+import { CONSENT_REVOKED_LOGIN } from '../privacy/privacy.rules';
+import { POLICY_VERSION } from '../privacy/privacy-policy';
 import {
   BadRequestException,
   ConflictException,
@@ -88,6 +90,7 @@ export class AuthService {
       role: UserRole.REQUESTER,
       status: UserStatus.UNVERIFIED,
       consentAcceptedAt: new Date(),
+      consentPolicyVersion: POLICY_VERSION,
       failedLoginCount: 0,
       lockedUntil: null,
     });
@@ -179,6 +182,10 @@ export class AuthService {
       throw new ForbiddenException(
         'Tu cuenta está suspendida. Habla con el administrador.',
       );
+    }
+    if (user.status === UserStatus.REVOKED) {
+      // RF-50: revocar deja la cuenta inactiva.
+      throw new ForbiddenException(CONSENT_REVOKED_LOGIN);
     }
     Object.assign(user, clearLockState(user.status));
     await this.usersService.save(user);

@@ -112,7 +112,12 @@ export class InboxService {
         readAt: null,
       }),
     );
-    if (!user.email || !this.mailEnabled()) {
+    // RF-50: a quien revocó el consentimiento no se le envían correos.
+    if (
+      !user.email ||
+      user.status !== UserStatus.ACTIVE ||
+      !this.mailEnabled()
+    ) {
       return;
     }
     try {

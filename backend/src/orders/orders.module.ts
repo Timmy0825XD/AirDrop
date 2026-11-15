@@ -1,3 +1,4 @@
+import { PrivacyModule } from '../privacy/privacy.module';
 import { DeliveryPointsModule } from '../delivery-points/delivery-points.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -40,6 +41,7 @@ import { PrescriptionStorage } from './prescription-storage';
     NotificationsModule,
     RoutingModule,
     DeliveryPointsModule,
+    PrivacyModule,
   ],
   controllers: [OrdersController, PlanOccurrencesController],
   providers: [
