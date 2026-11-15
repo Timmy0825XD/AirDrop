@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { circlePolygon } from "@/lib/geo";
+import { circlePolygon, distanceKm } from "@/lib/geo";
 import { useSimNow } from "@/lib/sim-time";
 import type { RadarSource } from "@/lib/source";
 import type { PendingAlert, Selection, TimelineEntry } from "@/lib/types";
@@ -19,7 +19,7 @@ import { FlightPanel } from "./FlightPanel";
 import { AlertIcon, CheckIcon } from "./icons";
 import { HubPanel } from "./HubPanel";
 import { RadarMap, type EventDraft, type MapFocus } from "./map/RadarMap";
-import { AirspacePanel, PointPanel } from "./RegionPanel";
+import { AirspacePanel, ContactPanel, PointPanel } from "./RegionPanel";
 import { ResetDialog } from "./ResetDialog";
 import { TimelinePanel } from "./TimelinePanel";
 import { TopBar } from "./TopBar";
@@ -31,6 +31,8 @@ const DAYLIGHT_REFRESH_MS = 60_000;
 const NOTICE_MS = 7_000;
 /** Incidentes, apagones y ráfagas en un ensayo no tienen backend. */
 const DEMO_BLOCKED = "En modo demostración no se lanzan incidentes ni apagones.";
+/** RF-36: el backend solo crea urgencias hacia puntos dentro del círculo. */
+const SURGE_NEEDS_POINT = "El pico necesita un punto de entrega disponible dentro del círculo.";
 
 type Props = {
   source: RadarSource;
@@ -159,20 +161,51 @@ export function Dashboard({ source, userName, onLogout }: Props) {
     if (next) setSelection(null);
   }, []);
 
+  const availablePoints = useMemo(
+    () => region.points.filter((point) => point.available),
+    [region.points],
+  );
+
   const pick = useCallback(
     (point: { latitude: number; longitude: number }) => {
-      if (!tool) return;
-      setDraft((current) => ({
-        kind: tool,
-        ...point,
-        radiusKm: current?.radiusKm ?? (tool === "zone" || tool === "surge" ? 1 : 3),
-      }));
+      if (!tool || tool === "unidentified") return;
+      setDraft((current) => {
+        const radiusKm = current?.radiusKm ?? (tool === "zone" || tool === "surge" ? 1 : 3);
+        // RF-36: un pico sin punto de entrega adentro no crea nada: el centro
+        // se pega al punto disponible más cercano.
+        let center = point;
+        if (tool === "surge" && availablePoints.length) {
+          const nearest = availablePoints.reduce((best, row) =>
+            distanceKm(point, row) < distanceKm(point, best) ? row : best,
+          );
+          if (distanceKm(point, nearest) > radiusKm) {
+            center = { latitude: nearest.latitude, longitude: nearest.longitude };
+          }
+        }
+        return { kind: tool, ...center, radiusKm };
+      });
     },
-    [tool],
+    [tool, availablePoints],
   );
+
+  // Al achicar el radio el punto puede quedar afuera: se avisa y no se lanza.
+  const surgeBlocked =
+    draft?.kind === "surge" &&
+    !availablePoints.some((point) => distanceKm(draft, point) <= draft.radiusKm)
+      ? SURGE_NEEDS_POINT
+      : null;
 
   const launch = useCallback(
     async (event: EventLaunch) => {
+      if (event.tool === "unidentified") {
+        // RF-36: cruza el corredor de un dron en el aire; llega por el socket.
+        const contact = await consola.launchUnidentified(event.durationMin);
+        if (contact) {
+          closeTool();
+          setSelection({ kind: "contact", id: contact.id });
+        }
+        return;
+      }
       if (event.tool === "surge") {
         // RF-36: las urgencias llegan al mapa y a la línea de tiempo por el socket.
         const result = await consola.surge({
@@ -257,6 +290,10 @@ export function Dashboard({ source, userName, onLogout }: Props) {
   const selectedPoint =
     selection?.kind === "point"
       ? (region.points.find((point) => point.id === selection.id) ?? null)
+      : null;
+  const selectedContact =
+    selection?.kind === "contact"
+      ? (consola.state.contacts.find((contact) => contact.id === selection.id) ?? null)
       : null;
   const hubOutage =
     selectedHub?.powerOutageUntil && Date.parse(selectedHub.powerOutageUntil) > mapNow
@@ -346,9 +383,10 @@ export function Dashboard({ source, userName, onLogout }: Props) {
             focus={focus}
             onSelect={setSelection}
             weather={consola.state.weather}
+            contacts={consola.state.contacts}
             landings={landings}
             now={mapNow}
-            picking={tool != null}
+            picking={tool != null && tool !== "unidentified"}
             draft={draft}
             onPick={pick}
           />
@@ -366,6 +404,7 @@ export function Dashboard({ source, userName, onLogout }: Props) {
               tool={tool}
               center={draft ? { latitude: draft.latitude, longitude: draft.longitude } : null}
               busy={consola.state.busy}
+              blocked={surgeBlocked}
               onDraft={setDraft}
               onLaunch={(event) => void launch(event)}
               onClose={closeTool}
@@ -433,6 +472,14 @@ export function Dashboard({ source, userName, onLogout }: Props) {
           busy={region.busy}
           blocked={source.demo ? null : offReason}
           onToggle={(id, active) => void region.setActive(id, active)}
+          onSelect={setSelection}
+        />
+      )}
+      {selection?.kind === "contact" && (
+        <ContactPanel
+          key={selection.id}
+          contact={selectedContact}
+          now={mapNow}
           onSelect={setSelection}
         />
       )}

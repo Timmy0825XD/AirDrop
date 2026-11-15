@@ -17,6 +17,7 @@ import type {
   TelemetryEvent,
   TemporaryZone,
   TimelineEntry,
+  UnidentifiedContact,
   WeatherCell,
 } from "./types";
 
@@ -304,6 +305,8 @@ export function demoSource(): RadarSource {
   /** Lo que se ensaya en este navegador; se pierde al recargar. */
   const cells: WeatherCell[] = [];
   const zones: TemporaryZone[] = [];
+  // RF-36: el contacto se ensaya quieto, cruzando el corredor de la primera misión.
+  const contacts: UnidentifiedContact[] = [];
   // RF-37: los interruptores se ensayan aquí; no hay actores que corran.
   let actors: ActorsState = { autoDispatcher: false, orderFlow: false };
   // RF-38: el interruptor se ensaya; en el ensayo no se sortea nada.
@@ -403,6 +406,36 @@ export function demoSource(): RadarSource {
           }),
         );
         return { ...actors };
+      },
+      unidentified: async () => contacts.filter((row) => Date.parse(row.endsAt) > Date.now()),
+      launchUnidentified: async (durationMin) => {
+        const now = Date.now();
+        const mission = missions[0];
+        const a = hubs[mission.from];
+        const b = hubs[mission.to];
+        const contact: UnidentifiedContact = {
+          id: `demo-contact-${now}`,
+          latitude: lerp(a.latitude, b.latitude, 0.5),
+          longitude: lerp(a.longitude, b.longitude, 0.5),
+          from: { latitude: a.latitude + 0.03, longitude: a.longitude - 0.04 },
+          to: { latitude: b.latitude - 0.03, longitude: b.longitude + 0.04 },
+          speedKmh: 45,
+          startedAt: new Date(now).toISOString(),
+          endsAt: new Date(now + durationMin * 60_000).toISOString(),
+          nearIdentifier: mission.identifier,
+        };
+        contacts.push(contact);
+        listeners?.onUnidentified({ action: "started", contact });
+        listeners?.onTimeline(
+          demoEntry(nowOf(), {
+            kind: "alert",
+            severity: "danger",
+            title: "Dron no identificado cerca de un corredor (demo)",
+            latitude: contact.latitude,
+            longitude: contact.longitude,
+          }),
+        );
+        return contact;
       },
       chaos: async () => ({ ...chaos }),
       setChaos: async (change) => {

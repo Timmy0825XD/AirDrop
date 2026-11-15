@@ -105,11 +105,12 @@ export const ALERT_KIND: Record<string, string> = {
   emergency_landing: "Aterrizaje de emergencia",
 };
 
-/** RF-32: los tres tipos de clima. */
+/** RF-32: los tipos de clima. */
 export const WEATHER_KIND: Record<string, string> = {
   wind: "Viento",
   rain: "Lluvia",
   storm: "Tormenta",
+  fog: "Niebla",
 };
 
 /** RF-34: lo que el sistema hizo con el dron. */

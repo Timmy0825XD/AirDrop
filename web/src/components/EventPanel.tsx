@@ -4,13 +4,14 @@ import { compassOf } from "@/lib/geo";
 import { WEATHER_KIND, minutesLeft } from "@/lib/labels";
 import { formatTime } from "@/lib/sim-time";
 import type { Geofence, Selection, WeatherCell } from "@/lib/types";
-import { ClockIcon, RainIcon, StormIcon, WindIcon, ZoneIcon } from "./icons";
+import { ClockIcon, FogIcon, RainIcon, StormIcon, WindIcon, ZoneIcon } from "./icons";
 import { Button, PanelShell, Pill, Section, Stat } from "./ui";
 
 const EFFECT: Record<WeatherCell["kind"], string> = {
   wind: "Solo cuenta la parte del viento a lo largo del tramo: en contra frena al dron y gasta más; a favor, al revés. Sobre 15 m/s sostenidos o 20 m/s en ráfagas no se vuela.",
   rain: "Se vuela con un 10 % más de consumo en crucero dentro de la celda.",
   storm: "Zona no volable mientras dure: las rutas la rodean y un dron en el aire que la tiene adelante cambia de camino o vuelve.",
+  fog: "Sin visibilidad: zona no volable mientras dure. Las rutas la rodean y un dron en el aire que la tiene adelante cambia de camino o vuelve.",
 };
 
 /**
@@ -39,7 +40,15 @@ export function EventPanel({
   if (weather) {
     const storm = weather.kind === "storm";
     const icon =
-      weather.kind === "wind" ? <WindIcon size={20} /> : storm ? <StormIcon size={20} /> : <RainIcon size={20} />;
+      weather.kind === "wind" ? (
+        <WindIcon size={20} />
+      ) : storm ? (
+        <StormIcon size={20} />
+      ) : weather.kind === "fog" ? (
+        <FogIcon size={20} />
+      ) : (
+        <RainIcon size={20} />
+      );
     return (
       <PanelShell
         title={WEATHER_KIND[weather.kind]}

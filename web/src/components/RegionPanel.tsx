@@ -1,8 +1,14 @@
 "use client";
 
-import { AIRSPACE_KIND, label } from "@/lib/labels";
-import type { AirspaceZone, DeliveryPoint, Selection } from "@/lib/types";
-import { PinIcon, ShieldIcon } from "./icons";
+import { AIRSPACE_KIND, label, minutesLeft } from "@/lib/labels";
+import { formatTime } from "@/lib/sim-time";
+import type {
+  AirspaceZone,
+  DeliveryPoint,
+  Selection,
+  UnidentifiedContact,
+} from "@/lib/types";
+import { ClockIcon, PinIcon, ShieldIcon, UnknownIcon } from "./icons";
 import { Button, Note, PanelShell, Pill, Section, Stat } from "./ui";
 
 /** Qué significa cada tipo de zona para un vuelo. */
@@ -145,6 +151,62 @@ export function PointPanel({
         >
           {point.active ? "Desactivar el punto" : "Activar el punto"}
         </Button>
+      </Section>
+    </PanelShell>
+  );
+}
+
+/**
+ * RF-36 y RF-48: un dron sin identificación que cruza la región. AirDrop no
+ * actúa contra él: lo muestra y avisa si pasa cerca de un corredor propio.
+ */
+export function ContactPanel({
+  contact,
+  now,
+  onSelect,
+}: {
+  contact: UnidentifiedContact | null;
+  /** Hora simulada (ms). */
+  now: number;
+  onSelect: (selection: Selection) => void;
+}) {
+  const close = () => onSelect(null);
+  if (!contact) {
+    return (
+      <PanelShell title="Dron no identificado" onClose={close}>
+        <p className="px-5 py-10 text-center text-[14px] text-muted">Ya salió de la región.</p>
+      </PanelShell>
+    );
+  }
+  return (
+    <PanelShell
+      title="Dron no identificado"
+      subtitle={`Sale a las ${formatTime(contact.endsAt)}`}
+      icon={<UnknownIcon size={20} className="text-magenta" />}
+      onClose={close}
+      badge={
+        <>
+          <Pill tone="bad">Sin identificación remota</Pill>
+          <Pill tone="neutral" icon={<ClockIcon size={12} />}>
+            {minutesLeft(contact.endsAt, now)} min
+          </Pill>
+        </>
+      }
+    >
+      <div className="grid grid-cols-2 gap-x-4 gap-y-5 px-5 py-5">
+        <Stat label="Velocidad" value={Math.round(contact.speedKmh)} unit="km/h" />
+        <Stat label="Quedan" value={minutesLeft(contact.endsAt, now)} unit="min" />
+      </div>
+      {contact.nearIdentifier && (
+        <div className="px-5 py-4">
+          <Note tone="bad">Cerca del corredor de {contact.nearIdentifier}.</Note>
+        </div>
+      )}
+      <Section title="Qué hace AirDrop">
+        <p className="text-[14px] leading-relaxed text-muted">
+          AirDrop no actúa contra él: solo lo muestra y avisa. No tiene matrícula ni manifiesto
+          porque no es de la red.
+        </p>
       </Section>
     </PanelShell>
   );

@@ -264,6 +264,8 @@ export type Selection =
   /** Una zona legal (RF-43) o un punto de entrega (RF-45). */
   | { kind: "airspace"; id: string }
   | { kind: "point"; id: string }
+  /** Un dron no identificado (RF-36). */
+  | { kind: "contact"; id: string }
   | null;
 
 /* Consola de simulación (`/control/*` y el socket). Ver backend/src/control. */
@@ -322,7 +324,8 @@ export type ResetSummary = {
 
 /* Eventos de la consola (CU-38): clima, geovallas temporales, incidentes y apagones. */
 
-export type WeatherKind = "wind" | "rain" | "storm";
+/** RF-32: la niebla es zona no volable, como la tormenta. */
+export type WeatherKind = "wind" | "rain" | "storm" | "fog";
 
 /** `GET /control/weather` y `radar-weather` (RF-32). */
 export type WeatherCell = {
@@ -453,6 +456,29 @@ export type GeneratedOrder = {
   address: string;
   latitude: number;
   longitude: number;
+  /** RF-45: el punto de entrega al que va. */
+  deliveryPointId?: string;
+};
+
+/** RF-36 y RF-48: un dron sin identificación que cruza la región. */
+export type UnidentifiedContact = {
+  id: string;
+  latitude: number;
+  longitude: number;
+  from: { latitude: number; longitude: number };
+  to: { latitude: number; longitude: number };
+  speedKmh: number;
+  /** Hora simulada. */
+  startedAt: string;
+  endsAt: string;
+  /** La matrícula del dron propio a menos de 1 km, si hay. */
+  nearIdentifier: string | null;
+};
+
+/** Evento `radar-unidentified`. */
+export type UnidentifiedEvent = {
+  action: "started" | "moved" | "ended";
+  contact: UnidentifiedContact;
 };
 
 /** RF-36: pico de urgencias dentro de un círculo del mapa. */

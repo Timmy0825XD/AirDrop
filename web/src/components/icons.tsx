@@ -279,6 +279,22 @@ export const StormIcon = (p: IconProps) => (
   </Icon>
 );
 
+/** Niebla: tres bandas que tapan la vista. */
+export const FogIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M4 8h13M7 12h13M4 16h10M17 16h3" />
+  </Icon>
+);
+
+/** Dron no identificado: un rombo con un signo de pregunta. */
+export const UnknownIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M12 3l9 9-9 9-9-9z" />
+    <path d="M10.2 10.2a1.9 1.9 0 1 1 2.6 1.8c-.5.2-.8.6-.8 1.1v.3" />
+    <circle cx="12" cy="15.9" r="0.8" fill="currentColor" stroke="none" />
+  </Icon>
+);
+
 /** Zona temporal: un área de trazos con un reloj. */
 export const ZoneIcon = (p: IconProps) => (
   <Icon {...p}>

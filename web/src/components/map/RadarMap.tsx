@@ -20,6 +20,7 @@ import type {
   Incident,
   RadarFlight,
   Selection,
+  UnidentifiedContact,
   WeatherCell,
   WeatherKind,
 } from "@/lib/types";
@@ -152,6 +153,8 @@ type Props = {
   onSelect: (selection: Selection) => void;
   /** RF-32: las celdas de clima que rigen. */
   weather: WeatherCell[];
+  /** RF-36: los drones no identificados que cruzan ahora. */
+  contacts: UnidentifiedContact[];
   /** RF-34: drones caídos o aterrizando de emergencia que esperan rescate. */
   landings: Array<{ incident: Incident; identifier: string }>;
   /** Hora simulada (ms) para las cuentas regresivas. */
@@ -188,6 +191,7 @@ export function RadarMap({
   focus,
   onSelect,
   weather,
+  contacts,
   landings,
   now,
   picking,
@@ -426,6 +430,35 @@ export function RadarMap({
     [weather],
   );
 
+  // RF-36: el contacto sin matrícula y su estela desde donde apareció.
+  const contactCollection = useMemo(
+    () => ({
+      type: "FeatureCollection" as const,
+      features: contacts.flatMap((contact) => [
+        {
+          type: "Feature" as const,
+          properties: { part: "trail", id: contact.id, near: contact.nearIdentifier != null },
+          geometry: {
+            type: "LineString" as const,
+            coordinates: [
+              [contact.from.longitude, contact.from.latitude],
+              [contact.longitude, contact.latitude],
+            ],
+          },
+        },
+        {
+          type: "Feature" as const,
+          properties: { part: "dot", id: contact.id, near: contact.nearIdentifier != null },
+          geometry: {
+            type: "Point" as const,
+            coordinates: [contact.longitude, contact.latitude],
+          },
+        },
+      ]),
+    }),
+    [contacts],
+  );
+
   const draftCollection = useMemo(
     () => ({
       type: "FeatureCollection" as const,
@@ -458,6 +491,7 @@ export function RadarMap({
       const properties = feature?.properties ?? {};
       const layer = feature?.layer?.id;
       if (layer === "drones") onSelect({ kind: "flight", id: properties.orderId as string });
+      else if (layer === "contacts") onSelect({ kind: "contact", id: properties.id as string });
       else if (layer === "points") onSelect({ kind: "point", id: properties.id as string });
       else if (layer === "airspace-fill") {
         onSelect({ kind: "airspace", id: properties.code as string });
@@ -473,6 +507,7 @@ export function RadarMap({
 
   const selectedFlightId = selection?.kind === "flight" ? selection.id : "";
   const selectedPointId = selection?.kind === "point" ? selection.id : "";
+  const selectedContactId = selection?.kind === "contact" ? selection.id : "";
   const selectedZoneCode = selection?.kind === "airspace" ? selection.id : "";
   const geofenceVisibility = showGeofences ? "visible" : "none";
 
@@ -485,7 +520,7 @@ export function RadarMap({
         minZoom={8}
         maxZoom={17}
         attributionControl={{ compact: true }}
-        interactiveLayerIds={picking ? [] : ["drones", "points", "airspace-fill"]}
+        interactiveLayerIds={picking ? [] : ["drones", "contacts", "points", "airspace-fill"]}
         onClick={onClick}
         onLoad={onLoad}
         onMouseEnter={() => setHovering(true)}
@@ -590,11 +625,13 @@ export function RadarMap({
                 ["get", "kind"],
                 "storm",
                 COLORS.storm,
+                "fog",
+                COLORS.fog,
                 "rain",
                 COLORS.rain,
                 COLORS.wind,
               ],
-              "fill-opacity": ["match", ["get", "kind"], "storm", 0.16, 0.08],
+              "fill-opacity": ["match", ["get", "kind"], "storm", 0.16, "fog", 0.18, 0.08],
             }}
           />
           <Layer
@@ -607,6 +644,8 @@ export function RadarMap({
                 ["get", "kind"],
                 "storm",
                 COLORS.storm,
+                "fog",
+                COLORS.fog,
                 "rain",
                 COLORS.rain,
                 COLORS.wind,
@@ -724,6 +763,49 @@ export function RadarMap({
               "circle-opacity": 0,
               "circle-stroke-color": COLORS.accent,
               "circle-stroke-width": 1.6,
+            }}
+          />
+        </Source>
+
+        {/* RF-36: el dron no identificado, en magenta y sin matrícula. */}
+        <Source id="contacts" type="geojson" data={contactCollection}>
+          <Layer
+            id="contact-trail"
+            type="line"
+            filter={["==", ["get", "part"], "trail"]}
+            paint={{
+              "line-color": COLORS.contact,
+              "line-width": 1.6,
+              "line-opacity": 0.7,
+              "line-dasharray": [1, 2],
+            }}
+          />
+          {/* Cerca de un corredor propio: un halo rojo. */}
+          <Layer
+            id="contact-halo"
+            type="circle"
+            filter={["all", ["==", ["get", "part"], "dot"], ["get", "near"]]}
+            paint={{
+              "circle-radius": 18,
+              "circle-opacity": 0,
+              "circle-stroke-color": COLORS.alert,
+              "circle-stroke-width": 2,
+            }}
+          />
+          <Layer
+            id="contacts"
+            type="circle"
+            filter={["==", ["get", "part"], "dot"]}
+            paint={{
+              "circle-radius": 8,
+              "circle-color": COLORS.contact,
+              "circle-stroke-color": [
+                "case",
+                ["==", ["get", "id"], selectedContactId],
+                COLORS.accent,
+                COLORS.ink,
+              ],
+              "circle-stroke-width": 2,
             }}
           />
         </Source>
