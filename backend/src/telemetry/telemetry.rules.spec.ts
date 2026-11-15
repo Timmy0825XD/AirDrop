@@ -151,3 +151,21 @@ describe('Mapa de la flota en la sala de la central', () => {
     );
   });
 });
+
+describe('Altura del vuelo (RF-46)', () => {
+  it('publica la altura sobre el terreno y sobre el nivel del mar', () => {
+    const withTerrain = { ...flight, altitudeMslM: 735 } as LiveFlight;
+    expect(presentTelemetry(withTerrain, 'map')).toMatchObject({
+      altitudeM: 100,
+      altitudeMslM: 735,
+    });
+    expect(presentTelemetry(withTerrain, 'full')).toMatchObject({
+      altitudeMslM: 735,
+    });
+  });
+
+  it('sin perfil de terreno, la altura sobre el mar llega nula', () => {
+    const flat = { ...flight, altitudeMslM: null } as LiveFlight;
+    expect(presentTelemetry(flat, 'map').altitudeMslM).toBeNull();
+  });
+});

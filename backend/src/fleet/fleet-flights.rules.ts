@@ -107,6 +107,7 @@ export function presentOperatorFlight(
     latitude: flight?.latitude ?? null,
     longitude: flight?.longitude ?? null,
     altitudeM: flight?.altitudeM ?? null,
+    altitudeMslM: flight?.altitudeMslM ?? null,
     speedKmh: flight?.speedKmh ?? null,
     batteryPercent: flight?.batteryPercent ?? null,
     payloadKg: flight?.payloadKg ?? null,
