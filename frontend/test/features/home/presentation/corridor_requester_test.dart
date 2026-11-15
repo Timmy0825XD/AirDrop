@@ -9,15 +9,25 @@ import 'package:frontend/features/orders/presentation/widgets/requester_order/em
 import 'package:frontend/features/tracking/presentation/tracking_screen.dart';
 import 'package:frontend/theme/app_theme.dart';
 
-Future<void> _pump(WidgetTester tester, Widget child) {
-  return tester.pumpWidget(
+Future<void> _pump(
+  WidgetTester tester,
+  Widget child, {
+  bool still = false,
+  bool settle = true,
+}) async {
+  await tester.pumpWidget(
     MaterialApp(
       theme: AppTheme.light,
-      home: Scaffold(
-        body: Center(child: SizedBox(width: 320, child: child)),
+      home: MediaQuery(
+        data: MediaQueryData(disableAnimations: still),
+        child: Scaffold(
+          body: Center(child: SizedBox(width: 320, child: child)),
+        ),
       ),
     ),
   );
+  // La ruta se dibuja al aparecer: se espera a que termine.
+  if (settle) await tester.pump(const Duration(seconds: 1));
 }
 
 double _droneLeft(WidgetTester tester) =>
@@ -34,6 +44,34 @@ void main() {
 
     expect(find.text('Central'), findsOneWidget);
     expect(find.text('Guacoche'), findsOneWidget);
+  });
+
+  testWidgets('al aparecer la ruta se dibuja y el dron sale de la central', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      const RouteLine(endLabel: 'Guacoche', progress: 1),
+      settle: false,
+    );
+    expect(_droneLeft(tester), closeTo(0, 0.5));
+
+    await tester.pump(const Duration(seconds: 1));
+    expect(_droneLeft(tester), closeTo(320 - 30, 0.5));
+    expect(tester.hasRunningAnimations, isFalse);
+  });
+
+  testWidgets('con reducir movimiento la ruta aparece ya dibujada', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      const RouteLine(endLabel: 'Guacoche', progress: 1),
+      still: true,
+      settle: false,
+    );
+    expect(_droneLeft(tester), closeTo(320 - 30, 0.5));
+    expect(tester.hasRunningAnimations, isFalse);
   });
 
   testWidgets('sin avance y sin flotar, el dron espera en la central', (

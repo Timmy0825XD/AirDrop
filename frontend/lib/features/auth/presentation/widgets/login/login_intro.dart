@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../auth_brand.dart';
 import '../auth_curved_header.dart';
 import 'login_timeline.dart';
+import '../../../../../core/widgets/airdrop_logo.dart';
 
 /// La capa de marca del login: el mapa de la ciudad, el logo, el nombre y
 /// el eslogan. Empieza como entrada a pantalla completa y termina como
@@ -114,7 +115,7 @@ class _BrandMark extends StatelessWidget {
                   lerpDouble(_splashScale, 1, m)! * lerpDouble(0.25, 1, pop)!,
               child: Opacity(
                 opacity: pop.clamp(0, 1),
-                child: const AuthLogoTile(),
+                child: const LiveLogo(size: AuthLogoTile.size),
               ),
             ),
           );

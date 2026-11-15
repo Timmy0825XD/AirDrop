@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/widgets/error_banner.dart';
+import '../../../../theme/app_motion.dart';
 import '../../../orders/data/order_models.dart' show OrderStatus;
 import '../../data/telemetry_models.dart';
 import '../../data/tracking_providers.dart';
@@ -71,8 +72,16 @@ class FlightNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     final (message, isError) = _pickNotice(state, showReturn);
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 280),
-      switchInCurve: Curves.fastOutSlowIn,
+      duration: AppMotion.of(context, AppMotion.bounce),
+      switchInCurve: AppMotion.bounceCurve,
+      // El aviso nuevo crece desde un poco más chico: el cambio se nota.
+      transitionBuilder: (child, animation) => FadeTransition(
+        opacity: animation.drive(CurveTween(curve: const Interval(0, 0.6))),
+        child: ScaleTransition(
+          scale: Tween(begin: 0.94, end: 1.0).animate(animation),
+          child: child,
+        ),
+      ),
       child: message == null
           ? const SizedBox(width: double.infinity)
           : Padding(

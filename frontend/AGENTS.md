@@ -85,6 +85,7 @@ controller de la feature.
 
 - Español de Colombia (RNF-15). Identificadores en inglés.
 - Contraste y tamaños legibles (RNF-10).
+- La vibración sale solo de `AppHaptics` (`core/app_haptics.dart`); ninguna pantalla llama a `HapticFeedback`. Siempre acompaña un cambio visible, nunca es el único aviso.
 - Cada pantalla tiene sus cuatro estados (RNF-18): con datos; cargando con `SkeletonList` o `SkeletonDetail` (no un `CircularProgressIndicator` suelto; ese queda para botones, el mapa y el visor); vacío con `MessageView` (ícono, `title` opcional, mensaje y acción); y error con `MessageView.error`. La ilustración es `CorridorArt`.
 - Reutilizar widgets. Ningún widget supera **60 líneas**; si pasa, se descompone. Se mide la clase entera con `tools/ui_inventory.ps1` (escribe `docs/ui_inventory.md`); los `*_values.dart` guardan datos y validan, no pintan, y no entran en la regla.
 - `dart format` solo sobre los archivos que se tocaron: sobre carpetas enteras reformatea archivos ajenos y ensucia el PR.
@@ -110,6 +111,7 @@ colores salen del tema. Piezas (en `widgets/` y `widgets/airspace/`;
 | `AirspaceMap` | El mapa de la ciudad (tierra, parques, río, avenidas y calles; centrales como cuadro del acento con la cruz, rutas sólidas y drones como fichas claras). Lo mueven `network` (dibuja rutas y centrales), `traffic` (suelta los drones) y `dive` (la cámara se acerca en la salida). No se inclina. Con "reducir movimiento" queda quieto y sin drones. El dibujo vive en `AirspacePainter` (colores en `AppMapLook`, `theme/app_map_style.dart`) y los vuelos en `AirspaceTraffic`. |
 | `RouteLine` (`core/widgets`) | El motivo del concepto Corredor: la ruta de la central al punto de entrega, sólida en lo recorrido y en puntos en lo que falta, con `DroneMark` en su avance. La usan la misión del inicio y el resumen de la urgencia. Con `hover: false` el dron espera en la central. |
 | `DroneMark` (`core/widgets`) | El dron de la marca como ficha: círculo claro con sombra y el dron de líneas con el núcleo del acento. Lo usan el mapa (`DroneMarker`), el recorrido del pedido y los inicios. `halo` dibuja un anillo fino del acento. No es el logo: gira con el rumbo. |
+| `LiveLogo` (`core/widgets`) | El logo arrancando: los rotores giran sobre su eje y se detienen. Solo en la entrada del login. |
 | `AirDropLogo` (`core/widgets`) | El logo Dron-cruz del manual de marca (`Airdrop_Products/_brand`): ficha con degradado, dron y cruz, con los colores fijos de la marca. Por debajo de 48 px dibuja la versión simple (ficha y cruz). |
 | `AuthCurvedHeader` | El `AirspaceMap` recortado con las esquinas de abajo redondeadas y un velo arriba para leer el logo. Altura y curva se animan desde afuera (entrada → encabezado); el mapa no se deforma, solo cambia el recorte. |
 | `AuthHeaderMetrics` | Alturas del encabezado: alto (login, `tallOf`), de paso (`stepOf`) y compacto (registro). El alto y el de paso crecen con la pantalla para que en un teléfono largo la hoja no quede vacía. Con ellas una pantalla arranca con la forma de la anterior. |

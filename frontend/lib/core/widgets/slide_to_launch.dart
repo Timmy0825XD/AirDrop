@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 
+import '../app_haptics.dart';
+
 /// Deslizar para confirmar una acción seria (pedir una urgencia): el botón
 /// redondo sigue al dedo 1:1, resiste al pasarse del borde y, si se suelta
 /// antes del 75 % (o sin impulso), vuelve con un resorte. Al llegar al final
@@ -87,6 +89,7 @@ class _SlideToLaunchState extends State<SlideToLaunch>
       _launch();
       return;
     }
+    AppHaptics.tap();
     setState(() => _armed = true);
     _disarm = Timer(const Duration(seconds: 4), () {
       if (mounted) setState(() => _armed = false);
@@ -95,6 +98,7 @@ class _SlideToLaunchState extends State<SlideToLaunch>
 
   Future<void> _launch([double velocity = 0]) async {
     _disarm?.cancel();
+    AppHaptics.confirm();
     setState(() {
       _launched = true;
       _armed = false;

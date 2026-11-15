@@ -2,6 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../app_haptics.dart';
+
 /// El estilo de los labels de campo: 14, seminegrita y en el color del
 /// texto, escritos normal (sin mayúsculas). Lo comparten todos los campos
 /// con la forma de [AuthField].
@@ -175,6 +177,8 @@ class _ShakeOnErrorState extends State<ShakeOnError> {
     if (_scrollTaken) return;
     // Los campos se actualizan de arriba abajo: el primero se lleva el scroll.
     _scrollTaken = true;
+    // Un solo aviso por envío, del primer campo con error.
+    AppHaptics.warning();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollTaken = false;
       if (!mounted) return;

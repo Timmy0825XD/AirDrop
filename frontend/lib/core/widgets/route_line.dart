@@ -10,8 +10,9 @@ import 'drone_mark.dart';
 /// telemetría) el dron va en su punto real. Sin él y con [hover], queda en
 /// medio y sube y baja despacio, para decir "va en camino" sin inventar la
 /// posición. Sin [hover] espera quieto en la central (un resumen antes de
-/// pedir). Es decoración para el lector de pantalla: quien la usa dice el
-/// estado en texto.
+/// pedir). Al aparecer la ruta se dibuja de la central hacia el destino y
+/// el dron sale con ella. Es decoración para el lector de pantalla: quien
+/// la usa dice el estado en texto.
 class RouteLine extends StatefulWidget {
   const RouteLine({
     super.key,
@@ -30,25 +31,47 @@ class RouteLine extends StatefulWidget {
   State<RouteLine> createState() => _RouteLineState();
 }
 
-class _RouteLineState extends State<RouteLine>
-    with SingleTickerProviderStateMixin {
+class _RouteLineState extends State<RouteLine> with TickerProviderStateMixin {
   late final _hover = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 2400),
   );
+
+  // La ruta se dibuja una vez, al aparecer.
+  late final _draw = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 700),
+  );
+  bool _drawn = false;
 
   bool get _floats => widget.progress == null && widget.hover;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final still = MediaQuery.disableAnimationsOf(context) || !widget.hover;
-    still ? _hover.stop() : _hover.repeat();
+    final still = MediaQuery.disableAnimationsOf(context);
+    // Solo flota mientras no se sabe dónde va el dron.
+    still || !_floats ? _hover.stop() : _hover.repeat();
+    if (_drawn) return;
+    _drawn = true;
+    still ? _draw.value = 1 : _draw.forward();
+  }
+
+  @override
+  void didUpdateWidget(RouteLine old) {
+    super.didUpdateWidget(old);
+    if (!_floats) {
+      _hover.stop();
+    } else if (!_hover.isAnimating &&
+        !MediaQuery.disableAnimationsOf(context)) {
+      _hover.repeat();
+    }
   }
 
   @override
   void dispose() {
     _hover.dispose();
+    _draw.dispose();
     super.dispose();
   }
 
@@ -61,9 +84,10 @@ class _RouteLineState extends State<RouteLine>
             height: 40,
             child: LayoutBuilder(
               builder: (context, box) => AnimatedBuilder(
-                animation: _hover,
+                animation: Listenable.merge([_hover, _draw]),
                 builder: (context, _) => _Track(
                   width: box.maxWidth,
+                  reveal: Curves.easeOutCubic.transform(_draw.value),
                   at: widget.progress ?? (widget.hover ? 0.5 : 0),
                   bob: _floats ? 3 * math.sin(_hover.value * 2 * math.pi) : 0,
                 ),
@@ -108,7 +132,12 @@ class _Ends extends StatelessWidget {
 
 /// La ruta, sus extremos y el dron en [at] (0 a 1).
 class _Track extends StatelessWidget {
-  const _Track({required this.width, required this.at, required this.bob});
+  const _Track({
+    required this.width,
+    required this.at,
+    required this.bob,
+    this.reveal = 1,
+  });
 
   static const double _drone = 30;
 
@@ -116,17 +145,24 @@ class _Track extends StatelessWidget {
   final double at;
   final double bob;
 
+  /// Cuánto de la ruta ya se dibujó al aparecer (0 a 1).
+  final double reveal;
+
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    final done = at.clamp(0.0, 1.0);
+    final done = at.clamp(0.0, 1.0) * reveal;
     return Stack(
       clipBehavior: Clip.none,
       alignment: Alignment.centerLeft,
       children: [
         CustomPaint(
           size: Size(width, 4),
-          painter: _DotsPainter(color: colors.primary, from: width * done),
+          painter: _DotsPainter(
+            color: colors.primary,
+            from: width * done,
+            to: width * reveal,
+          ),
         ),
         Container(
           width: width * done,
@@ -137,7 +173,13 @@ class _Track extends StatelessWidget {
           ),
         ),
         _End(color: colors.primary, filled: true),
-        Positioned(right: 0, child: _End(color: colors.primary)),
+        Positioned(
+          right: 0,
+          child: Opacity(
+            opacity: reveal,
+            child: _End(color: colors.primary),
+          ),
+        ),
         Positioned(
           left: (width - _drone) * done,
           top: (40 - _drone) / 2 + bob,
@@ -150,22 +192,27 @@ class _Track extends StatelessWidget {
 
 /// Lo que falta por volar: puntos del acento desde [from] hasta el final.
 class _DotsPainter extends CustomPainter {
-  const _DotsPainter({required this.color, required this.from});
+  const _DotsPainter({
+    required this.color,
+    required this.from,
+    required this.to,
+  });
 
   final Color color;
   final double from;
+  final double to;
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..color = color.withValues(alpha: 0.55);
-    for (var x = from + 6; x < size.width - 8; x += 8) {
+    for (var x = from + 6; x < to - 8; x += 8) {
       canvas.drawCircle(Offset(x, size.height / 2), 1.6, paint);
     }
   }
 
   @override
   bool shouldRepaint(_DotsPainter old) =>
-      old.from != from || old.color != color;
+      old.from != from || old.to != to || old.color != color;
 }
 
 /// Un extremo de la ruta: la central (relleno) o el destino (anillo).

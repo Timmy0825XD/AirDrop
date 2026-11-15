@@ -20,6 +20,7 @@ import 'widgets/flight_hud.dart';
 import 'widgets/flight_map.dart';
 import 'widgets/flight_notice.dart';
 import 'widgets/flight_timeline.dart';
+import 'flight_moment.dart';
 
 /// El vuelo de un pedido en vivo (`/tracking/:orderId`): el mapa a
 /// pantalla completa con la barra "En vivo" arriba; en la hoja de abajo, el medicamento con su estado, el aviso,
@@ -46,6 +47,9 @@ class TrackingScreen extends ConsumerWidget {
       final nowBack = next.telemetry?.returning ?? false;
       final wasBack = previous?.telemetry?.returning ?? false;
       if (nowBack && !wasBack) ref.invalidate(orderDetailProvider(orderId));
+      // Despegue, llegada, entrega y retorno se sienten además de verse.
+      final moment = flightMomentBetween(previous, next);
+      if (moment != null) feelFlightMoment(moment);
     });
     final role = ref.watch(authControllerProvider).value?.user?.role;
     final t = flight.telemetry;

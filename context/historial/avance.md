@@ -1487,7 +1487,7 @@ el solicitante; los pasos 1 y 2 cambian los cuatro roles.
 | 1 — Cimientos: superficies, acento, cifras, bordes, íconos | `style/corredor-cimientos` | HU-72 | Hecho (2026-11-14) |
 | 2 — Carga, vacío y error | `feature/corredor-estados` | HU-73 | Hecho (2026-11-14) |
 | 3 — Inicio, urgencia y seguimiento del solicitante | `feature/corredor-solicitante` | HU-76 | Hecho (2026-11-14) |
-| 4 — Arranque, animaciones firma y vibración | `feature/corredor-movimiento` | HU-74 | Pendiente |
+| 4 — Arranque, animaciones firma y vibración | `feature/corredor-movimiento` | HU-74 | Hecho (2026-11-14) |
 | 5 — Bienvenida | `feature/bienvenida` | HU-75 | Pendiente |
 | 6 — Ajustes y modo sencillo | `feature/ajustes` | HU-77 | Pendiente |
 | 7 — Medicamentos disponibles | `feature/medicamentos-disponibles` | HU-78 | Pendiente |
@@ -1549,6 +1549,30 @@ el solicitante; los pasos 1 y 2 cambian los cuatro roles.
   en web en claro y oscuro. La tarjeta de la misión en vuelo no se pudo
   ver con datos locales (no hay un pedido volando): se revisó la ruta
   suelta con avance.
+
+### Paso 4 — Movimiento y vibración (hecho, 2026-11-14)
+
+- **Arranque:** `LiveLogo` gira los rotores del logo sobre su eje (las
+  diagonales en sentidos opuestos) y los detiene despacio; lo usa la
+  entrada del login. El logo entero no rota. `AirDropLogo` gana
+  `rotorTurns`.
+- **La ruta se dibuja:** `RouteLine` aparece de la central hacia el
+  destino y el dron sale con ella. Solo flota mientras no se conoce su
+  posición.
+- **Momentos del vuelo** (`tracking/presentation/flight_moment.dart`):
+  despegue, llegada, entrega y retorno se reconocen por el cambio de
+  estado y vibran; el aviso del vuelo entra con un rebote corto. Abrir el
+  mapa de un pedido que ya vuela no cuenta como despegue.
+- **`AppHaptics`** (`core/app_haptics.dart`): la única puerta a la
+  vibración. La usan `SlideToLaunch` (primer toque y confirmación), el
+  primer campo con error de un formulario y la recepción con el código.
+- Con "reducir movimiento" nada de esto se anima.
+- Lo que no entró: una animación propia para cada momento (hoy comparten
+  el rebote del aviso) y reemplazar la pantalla de arranque nativa.
+- `flutter analyze` sin issues y `flutter test` en verde (385). Revisado
+  en web con movimiento: la entrada del login y el flujo del solicitante
+  y del despachador. La vibración no se puede probar en web: la cubren
+  las pruebas.
 
 ## Pendiente del backend
 
