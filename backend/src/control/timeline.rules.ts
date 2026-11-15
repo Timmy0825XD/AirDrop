@@ -436,6 +436,8 @@ export type IncidentFacts = {
   landingLatitude: number | null;
   landingLongitude: number | null;
   packageOnBoard: boolean;
+  /** RF-34 (C2): el enlace perdido sigue abierto mientras espera. */
+  resolvedAt?: string | null;
 };
 
 const INCIDENT_NAME: Record<IncidentKind, string> = {
@@ -484,6 +486,25 @@ export function incidentDraft(
   };
   const battery = `Batería ${Math.round(incident.batteryPercent)} %.`;
   const what = `${drone}: ${INCIDENT_NAME[incident.kind]}`;
+  if (incident.kind === IncidentKind.LINK_LOSS && !landed) {
+    // RF-34 (C2): primero espera 30 s; lo que sigue se cuenta después.
+    if (incident.resolvedAt == null) {
+      return {
+        ...base,
+        severity: 'danger',
+        title: `${what}; espera 30 s en el aire`,
+        detail: `${battery} Si el enlace no vuelve, regresa solo al nodo.`,
+      };
+    }
+    if (incident.outcome === IncidentOutcome.CONTINUED) {
+      return {
+        ...base,
+        severity: 'success',
+        title: `${drone}: recuperó el enlace; sigue su misión`,
+        detail: battery,
+      };
+    }
+  }
   switch (incident.outcome) {
     case IncidentOutcome.CONTINUED:
       return {

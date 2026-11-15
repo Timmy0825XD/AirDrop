@@ -1,3 +1,4 @@
+import { UnidentifiedContactsService } from './unidentified-contacts.service';
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In, IsNull } from 'typeorm';
@@ -57,6 +58,7 @@ export class ScenarioResetService {
     private readonly receiver: SimulatedReceiverService,
     private readonly chaos: ChaosService,
     private readonly deliveryPoints: DeliveryPointsService,
+    private readonly unidentified: UnidentifiedContactsService,
   ) {}
 
   async reset(admin: User): Promise<ResetSummary> {
@@ -77,6 +79,8 @@ export class ScenarioResetService {
     await this.clock.resetToRealTime();
     // Sin clima: las tormentas ya no cuentan para las rutas de la semilla.
     await this.weather.clearAll();
+    // RF-36: sin drones no identificados en el aire.
+    await this.unidentified.clear();
     const hubIds = hubs.map((hub) => hub.id);
     const orders = await this.scopedOrders(hubIds);
     const orderIds = orders.map((order) => order.id);
@@ -156,6 +160,8 @@ export class ScenarioResetService {
         'missions',
         'flight_incidents',
         'notifications',
+        // RF-40: los manifiestos de la demostración.
+        'cargo_manifests',
       ]) {
         await manager.query(
           `DELETE FROM ${table} WHERE "orderId" = ANY($1::uuid[])`,

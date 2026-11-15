@@ -77,6 +77,9 @@ function build(airborne = [FLYING]) {
     receiver as never,
     drones as never,
     hubs as never,
+    {
+      launch: jest.fn().mockResolvedValue({ latitude: 10.4, longitude: -73.2 }),
+    } as never,
   );
   return { service, events, timeline, publisher, generator, receiver };
 }

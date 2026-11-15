@@ -1,3 +1,8 @@
+import { incidentDraft } from './timeline.rules';
+import { IncidentOutcome } from '../common/enums/incident-outcome.enum';
+import { ContingencyProtocol } from '../common/enums/contingency-protocol.enum';
+import { RouteLeg } from '../common/enums/route-leg.enum';
+import { IncidentKind } from '../common/enums/incident-kind.enum';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { FallbackKind } from '../common/enums/fallback-kind.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
@@ -255,5 +260,38 @@ describe('línea de tiempo (RF-39)', () => {
     expect(clampTimelineLimit('0')).toBe(TIMELINE_DEFAULT_LIMIT);
     expect(clampTimelineLimit('10')).toBe(10);
     expect(clampTimelineLimit('5000')).toBe(TIMELINE_MAX);
+  });
+});
+
+describe('Pérdida de enlace en la línea de tiempo (RF-34, C2)', () => {
+  const facts = {
+    orderId: 'o1',
+    droneId: 'd1',
+    hubId: 'h1',
+    kind: IncidentKind.LINK_LOSS,
+    leg: RouteLeg.OUTBOUND,
+    protocol: ContingencyProtocol.CONTINUE,
+    outcome: IncidentOutcome.CONTINUED,
+    latitude: 10.5,
+    longitude: -73.2,
+    batteryPercent: 80,
+    landingLatitude: null,
+    landingLongitude: null,
+    packageOnBoard: true,
+  };
+
+  it('primero cuenta la espera, sin adelantar qué pasará', () => {
+    const draft = incidentDraft({ ...facts, resolvedAt: null }, 'AD-NOR-01');
+    expect(draft.title).toBe(
+      'AD-NOR-01: perdió el enlace; espera 30 s en el aire',
+    );
+  });
+
+  it('si vuelve el enlace, lo dice', () => {
+    const draft = incidentDraft(
+      { ...facts, resolvedAt: '2026-11-15T15:00:30.000Z' },
+      'AD-NOR-01',
+    );
+    expect(draft.title).toBe('AD-NOR-01: recuperó el enlace; sigue su misión');
   });
 });

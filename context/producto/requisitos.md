@@ -448,7 +448,7 @@ Un incidente es algo que le pasa a un dron en vuelo. Lo lanza la consola sobre u
 | Dron perdido | Sin rastro | El dron queda fuera de servicio |
 | Viento sobre el límite del tipo | — | Volver al nodo o, si no alcanza, aterrizaje de emergencia |
 
-Los efectos se aplican al resto del vuelo y se suman si hay más de uno: batería degradada, +25 % de consumo; falla de 1 motor, +15 % de consumo por km y -10 % de velocidad; choque leve, +10 % de consumo. Sin enlace, la posición sigue avanzando en el radar y en la app marcada como estimada, y el enlace vuelve al aterrizar en la central. El choque grave no busca un punto seguro: el dron cae donde va. El dron perdido no tiene rescate.
+Los efectos se aplican al resto del vuelo y se suman si hay más de uno: batería degradada, +25 % de consumo; falla de 1 motor, +15 % de consumo por km y -10 % de velocidad; choque leve, +10 % de consumo. Sin enlace, el dron espera 30 s en el mismo punto; después su posición sigue avanzando en el radar y en la app marcada como estimada, y el enlace vuelve al aterrizar en la central. El choque grave no busca un punto seguro: el dron cae donde va. El dron perdido no tiene rescate.
 
 La consola lanza estos incidentes sobre un dron en vuelo (CU-38). El viento sobre el límite, la batería crítica y el camino bloqueado o sin batería tras un desvío los detecta el reloj.
 

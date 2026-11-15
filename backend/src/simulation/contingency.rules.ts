@@ -293,3 +293,76 @@ export function emergencyCorridor(
     coordinates: [...split.flown, [landing.longitude, landing.latitude]],
   };
 }
+
+/**
+ * RF-34 (C2): el procedimiento de enlace perdido espera 30 s en el aire antes
+ * de decidir. En la demo el enlace vuelve en la mitad de los casos.
+ */
+export const LINK_HOLD_MS = 30_000;
+export const LINK_RECOVERY_CHANCE = 0.5;
+
+/** Bajan donde están: no buscan un punto seguro (RF-34). */
+const IMMEDIATE_LANDING_KINDS = new Set<IncidentKind>([
+  IncidentKind.DUAL_MOTOR_FAILURE,
+  IncidentKind.GPS_LOSS_MAJOR,
+]);
+
+export function landsImmediately(kind: IncidentKind): boolean {
+  return IMMEDIATE_LANDING_KINDS.has(kind);
+}
+
+/** Cuántos sitios, de los más cercanos en línea recta, se prueban por corredor. */
+const SAFE_POINT_CANDIDATES = 6;
+
+export type SafeSite = LngLat & { name: string };
+
+/**
+ * RF-34, paso 3 de "según alcance": el punto seguro de la red (nodo, ESE o
+ * punto de entrega) más cercano por corredor al que la batería alcanza con
+ * el margen de aterrizaje. `null` si ninguno: baja en `safeLandingPoint`.
+ */
+export function nearestSafeSite(input: {
+  at: LngLat;
+  sites: SafeSite[];
+  polygons: GeoJsonPolygon[];
+  batteryPercent: number;
+  burnFactor: number;
+  maxRangeKm: number;
+}): { site: SafeSite; corridor: PlannedCorridor } | null {
+  const candidates = [...input.sites]
+    .sort(
+      (left, right) =>
+        haversineKm(input.at, left) - haversineKm(input.at, right),
+    )
+    .slice(0, SAFE_POINT_CANDIDATES);
+  let best: { site: SafeSite; corridor: PlannedCorridor } | null = null;
+  for (const site of candidates) {
+    const corridor = homeCorridor(input.at, site, input.polygons);
+    if (!corridor) {
+      continue;
+    }
+    const needed =
+      input.burnFactor * percentToLand(corridor.distanceKm, input.maxRangeKm);
+    if (input.batteryPercent - needed < LANDING_MARGIN_PERCENT) {
+      continue;
+    }
+    if (!best || corridor.distanceKm < best.corridor.distanceKm) {
+      best = { site, corridor };
+    }
+  }
+  return best;
+}
+
+/** Lo ya volado más el desvío hasta el punto seguro, sin saltos. */
+export function divertCorridor(
+  corridor: PlannedCorridor,
+  cruiseKm: number,
+  path: PlannedCorridor,
+): PlannedCorridor {
+  const split = splitCorridorAt(corridor, cruiseKm);
+  return {
+    altitudeM: corridor.altitudeM,
+    distanceKm: cruiseKm + path.distanceKm,
+    coordinates: [...split.flown, ...path.coordinates.slice(1)],
+  };
+}

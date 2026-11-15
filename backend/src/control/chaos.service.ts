@@ -1,3 +1,5 @@
+import { UnidentifiedContactsService } from './unidentified-contacts.service';
+import { randomContactMinutes } from './unidentified.rules';
 import {
   Injectable,
   Logger,
@@ -87,6 +89,7 @@ export class ChaosService implements OnModuleInit, OnModuleDestroy {
     private readonly drones: Repository<Drone>,
     @InjectRepository(Hub)
     private readonly hubs: Repository<Hub>,
+    private readonly unidentified: UnidentifiedContactsService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -256,6 +259,14 @@ export class ChaosService implements OnModuleInit, OnModuleDestroy {
       return {
         detail: `${result.created.length} urgencias cerca de ${place.address}`,
         position: { latitude: place.latitude, longitude: place.longitude },
+      };
+    }
+    if (event.kind === 'unidentified') {
+      const durationMin = randomContactMinutes(this.random);
+      const contact = await this.unidentified.launch({ durationMin });
+      return {
+        detail: `Cruza la región por ${durationMin} min`,
+        position: { latitude: contact.latitude, longitude: contact.longitude },
       };
     }
     if (event.kind === 'no_show') {

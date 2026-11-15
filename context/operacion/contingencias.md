@@ -35,7 +35,7 @@ Qué hace un dron cuando algo sale mal en vuelo. Los incidentes son de RF-34. El
 El RAC 100.445 trata la pérdida o degradación del enlace de mando y control como una emergencia. El protocolo simulado:
 
 1. **Espera 30 segundos** en vuelo estacionario o en círculo, a la misma altura, mientras intenta recuperar el enlace.
-2. Si lo recupera, sigue la misión y el incidente queda registrado.
+2. Si lo recupera, sigue la misión y el incidente queda registrado. En la demo el enlace vuelve en la mitad de los casos.
 3. Si no, **regresa solo al nodo** por el corredor aprobado, a su altura de crucero.
 4. Si la batería no alcanza para regresar, aterriza en el punto seguro más cercano.
 5. Mientras no hay enlace, el radar pinta el dron en su última posición conocida, con el estado "sin enlace", y estima su recorrido.

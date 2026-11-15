@@ -166,6 +166,16 @@ Los puntos son lugares del escenario (`delivery_points`, tomados de `regional-ne
 
 La urgencia y el plan del solicitante van a un punto: `deliveryPointId` reemplaza a `latitude`, `longitude` y `address`, que ahora salen del punto. `requesterLocation` (`{ latitude, longitude }`, opcional, no se guarda) hace que el pedido no se cree si el solicitante está en la ciudad. El pedido y el plan traen `deliveryPointId` (nulo entre centrales).
 
+### Manifiesto e identificación (RF-47, RF-48)
+
+| Método | Ruta | Auth |
+| --- | --- | --- |
+| GET | `/orders/:id/manifest` | despachador de origen o destino, operador del nodo, administrador |
+| GET | `/control/unidentified` | administrador (`CONTROL_ENABLED`) |
+| POST | `/control/unidentified` (`{ durationMin, from?, to? }`) | administrador (`CONTROL_ENABLED`) |
+
+`confirm-load` emite el manifiesto en la misma transacción y responde `manifestNumber`. El manifiesto (`MAN-2026-000123`) trae dron, origen, destino, ítems con lote y vencimiento, peso, frío y quién confirmó; `previous` lista los anulados por una carga nueva. La telemetría y los vuelos del radar traen `remoteId` (matrícula, operador, tipo, manifiesto y estado). `radar-unidentified` (`started`, `moved`, `ended`) mueve en la consola un dron no identificado.
+
 **Niebla (RF-32, VMC).** El clima admite `fog`: como la tormenta, es zona no volable que las rutas rodean, con su propio motivo. El modo caos la saca más de 05:00 a 08:00.
 
 ### Pedidos (HU-15 a HU-21)

@@ -87,6 +87,12 @@ export async function cleanScope(
 
     await deleteIfTableExists(
       db,
+      'cargo_manifests',
+      `DELETE FROM cargo_manifests WHERE "orderId" IN ${orders}`,
+      params,
+    );
+    await deleteIfTableExists(
+      db,
       'delivery_codes',
       `DELETE FROM delivery_codes WHERE "orderId" IN ${orders}`,
       params,

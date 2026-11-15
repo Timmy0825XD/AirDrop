@@ -1,3 +1,4 @@
+import { ManifestsModule } from '../manifests/manifests.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Drone } from '../fleet/drone.entity';
@@ -18,6 +19,7 @@ import { Mission } from './mission.entity';
     TelemetryModule,
     NotificationsModule,
     WeatherModule,
+    ManifestsModule,
   ],
   providers: [FlightClockService, FlightIncidentsService],
   exports: [FlightClockService, FlightIncidentsService],

@@ -1,3 +1,4 @@
+import { manifestsStub } from '../manifests/manifests.testing';
 import { FLAT_TERRAIN } from '../airspace/terrain.testing';
 import { DroneStatus } from '../common/enums/drone-status.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
@@ -128,6 +129,7 @@ function build(
     { active: () => [] } as never,
     incidents as never,
     FLAT_TERRAIN,
+    manifestsStub() as never,
   );
   service['waiting'].set(ORDER_ID, LANDED_AT);
   return {
@@ -790,6 +792,8 @@ describe('FlightClockService recheckRoutes (RF-33)', () => {
       hubId: 'hub-1',
       hub: { latitude: 10.46, longitude: -73.27 },
       identifier: 'WG-198-001',
+      typeName: 'Garza',
+      manifestNumber: 'MAN-2026-000001',
       quantity: 1,
       requiresColdChain: false,
       corridor: straight,

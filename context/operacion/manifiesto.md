@@ -20,7 +20,7 @@ Se genera cuando el despachador confirma la carga. No hay vuelo sin manifiesto, 
 | Pedido | Referencia al pedido o a la remisión |
 
 - **Lo que no lleva:** el nombre ni el documento del paciente. El manifiesto describe la carga, no a la persona. El vínculo con el paciente queda en el pedido, que solo ve quien debe verlo ([../legal/datos.md](../legal/datos.md)).
-- **Quién lo ve:** el despachador de origen y el de destino, el operador del dron y el administrador (en el radar).
+- **Quién lo ve:** el despachador de origen y el de destino, el operador del dron y el administrador. El radar se proyecta en la sala: ahí, si la carga va a una persona, el manifiesto sale sin el nombre del medicamento.
 - **No se edita.** Si la carga cambia, se anula y se emite uno nuevo con otro número.
 
 ## Identificación del dron

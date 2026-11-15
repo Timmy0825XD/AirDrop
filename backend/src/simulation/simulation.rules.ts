@@ -1,3 +1,4 @@
+import { RemoteId, buildRemoteId } from './remote-id.rules';
 import { TerrainProfile, altitudeAt } from '../airspace/terrain.rules';
 import { ContingencyProtocol } from '../common/enums/contingency-protocol.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
@@ -104,6 +105,15 @@ export type FlightProgress = {
   speedFactor?: number;
   /** RF-34: sin enlace; la posición que se publica es estimada. */
   linkLost?: boolean;
+  /**
+   * RF-34 (C2): espera en el aire hasta `untilMs` (hora simulada) y después
+   * aplica el protocolo ya elegido: seguir si el enlace volvió.
+   */
+  linkHold?: {
+    untilMs: number;
+    protocol: ContingencyProtocol;
+    incidentId: string;
+  } | null;
 };
 
 export type FlightModel = {
@@ -153,6 +163,8 @@ export type LiveFlight = {
   etaSeconds: number | null;
   /** RF-34: sin enlace, la posición es estimada hasta aterrizar en la central. */
   linkLost?: boolean;
+  /** RF-48: la identificación remota del dron. */
+  remoteId?: RemoteId;
   progress: FlightProgress;
 };
 
@@ -390,8 +402,12 @@ export function buildLiveFlight(input: {
   requiresColdChain: boolean;
   /** Lectura de `coldChainReading`; sin ella, la estable. */
   temperatureC?: number | null;
+  /** RF-48: tipo y manifiesto vigente, para la identificación remota. */
+  typeName?: string;
+  manifestNumber?: string | null;
   step: FlightStep;
 }): LiveFlight {
+  const leg = input.leg ?? RouteLeg.OUTBOUND;
   return {
     orderId: input.orderId,
     droneId: input.droneId,
@@ -411,10 +427,17 @@ export function buildLiveFlight(input: {
       : null,
     latencyMs: SIMULATED_LATENCY_MS,
     phase: input.step.progress.phase,
-    leg: input.leg ?? RouteLeg.OUTBOUND,
+    leg,
     status: input.step.progress.orderStatus,
     etaSeconds: input.step.etaSeconds,
     linkLost: input.step.progress.linkLost === true,
+    remoteId: buildRemoteId({
+      identifier: input.identifier,
+      typeName: input.typeName ?? '',
+      manifestNumber: input.manifestNumber ?? null,
+      progress: input.step.progress,
+      leg,
+    }),
     progress: input.step.progress,
   };
 }

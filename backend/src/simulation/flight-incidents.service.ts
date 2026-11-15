@@ -181,8 +181,10 @@ export class FlightIncidentsService implements OnModuleInit, OnModuleDestroy {
         packageQuantity: order?.quantity ?? null,
         packageLot: order?.dispatchedLot ?? null,
         packageLotExpiresOn: order?.dispatchedLotExpiresOn ?? null,
+        // RF-34 (C2): el enlace perdido queda abierto durante la espera.
         resolvedAt:
-          outcome === IncidentOutcome.CONTINUED ||
+          (outcome === IncidentOutcome.CONTINUED &&
+            input.kind !== IncidentKind.LINK_LOSS) ||
           outcome === IncidentOutcome.LOST
             ? now
             : null,
@@ -193,6 +195,17 @@ export class FlightIncidentsService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** El aterrizaje de emergencia va hacia este punto. */
+  /** RF-34 (C2): el enlace volvió durante la espera; el dron sigue. */
+  async linkRecovered(id: string): Promise<void> {
+    const repo = this.dataSource.getRepository(FlightIncident);
+    const incident = await repo.findOne({ where: { id } });
+    if (!incident) {
+      return;
+    }
+    incident.resolvedAt = simClock.now();
+    await this.announce(await repo.save(incident));
+  }
+
   async setLanding(id: string, landing: LngLat): Promise<void> {
     await this.dataSource.getRepository(FlightIncident).update(
       { id },
