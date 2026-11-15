@@ -19,11 +19,6 @@ La salud es un dato sensible (Ley 1581, art. 5). La imagen de la fórmula tambi�
   - **Cada vez que alguien la abre queda registrado** (ver "Registro de acceso").
 - El dashboard epidemiológico usa agregados, sin documento, nombre ni dirección. Así cabe en un fin estadístico sin identificar al titular.
 - El manifiesto de carga describe la carga, no al paciente ([../operacion/manifiesto.md](../operacion/manifiesto.md)).
-- **Avisos del sistema (RF-55).**
-  - Para avisar con la app cerrada se guarda un identificador del dispositivo, ligado a la cuenta. Sirve solo para entregar el aviso.
-  - El aviso dice el estado del pedido y el punto de entrega. No lleva el nombre del medicamento ni el del paciente, porque puede verse en la pantalla bloqueada.
-  - El permiso se pide aparte, después del primer pedido, y se puede apagar desde Ajustes.
-  - El identificador se borra al cerrar sesión, al revocar el consentimiento y al suprimir la cuenta.
 - Los ajustes de la app (tema, tamaño del texto, modo sencillo) se guardan solo en el teléfono y no son datos de la cuenta (RF-52).
 - Canal cifrado, contraseña con bcrypt, sesión con JWT, acceso por rol y límite de intentos de login. El token no se guarda en texto plano si la plataforma ofrece almacenamiento seguro.
 
@@ -38,7 +33,7 @@ Contenido mínimo:
 3. Qué datos son sensibles y que responderlos es opcional.
 4. Derechos del titular (art. 8): conocer, actualizar, rectificar, pedir prueba de la autorización, ser informado del uso, revocar la autorización, pedir la supresión y quejarse ante la SIC.
 5. Cómo ejercerlos: desde el perfil o por el canal de contacto. Una consulta se responde en **10 días hábiles** y un reclamo en **15** (arts. 14 y 15).
-6. **Encargados y dónde están los datos.** Base de datos y archivos en Supabase (región São Paulo, Brasil); servidor en Render (EE. UU.); caché en Upstash; correo en Brevo; avisos del sistema en Firebase Cloud Messaging (Google, EE. UU.), que recibe el identificador del dispositivo y el texto del aviso. Sumar este encargado es un cambio sustancial: la política sube de versión y se acepta de nuevo. Los datos se **transmiten** a esos encargados bajo un contrato de transmisión (Decreto 1377, art. 25), no se transfieren a otro responsable.
+6. **Encargados y dónde están los datos.** Base de datos y archivos en Supabase (región São Paulo, Brasil); servidor en Render (EE. UU.); caché en Upstash; correo en Brevo. Los datos se **transmiten** a esos encargados bajo un contrato de transmisión (Decreto 1377, art. 25), no se transfieren a otro responsable.
 7. Cuánto se conservan los datos (ver "Revocar y suprimir").
 8. Fecha de vigencia y versión.
 
@@ -51,7 +46,7 @@ Desde el perfil, el titular puede:
 
 La supresión **no puede borrar todo**: los registros de dispensación y las remisiones tienen deber de conservación por la norma del servicio farmacéutico ([salud.md](salud.md)). Por eso la supresión:
 
-1. **Borra** los datos de contacto y de acceso: correo, celular, contraseña y los dispositivos registrados para avisos.
+1. **Borra** los datos de contacto y de acceso: correo, celular y contraseña.
 2. **Anonimiza** los pedidos, las fichas y las entregas. El nombre y el documento se reemplazan por un identificador sin relación con la persona. El medicamento, el lote, la fecha y el punto se conservan.
 3. **Borra** la imagen de la fórmula cuando vence su plazo de conservación. Hasta entonces, solo la ve la central que la recibió.
 

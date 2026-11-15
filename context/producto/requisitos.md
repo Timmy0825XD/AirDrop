@@ -60,7 +60,7 @@ Ver el dron en el mapa desde que despega, en la ida y en el retorno.
 
 ### RU-05 — Avisos
 
-Aviso cuando el dron está por aterrizar, cuando espera el código o cuando cambia el estado. Las entregas programadas avisan el día anterior para confirmar, si puede faltar stock, cuando despegan (con la hora estimada de llegada) y si una entrega no sale. Esos avisos quedan en la bandeja de la app y llegan al correo, sin el nombre del medicamento. Con la app cerrada, los avisos del pedido llegan además como aviso del sistema, y al tocarlo se abre el pedido (RF-55).
+Aviso cuando el dron está por aterrizar, cuando espera el código o cuando cambia el estado. Las entregas programadas avisan el día anterior para confirmar, si puede faltar stock, cuando despegan (con la hora estimada de llegada) y si una entrega no sale. Esos avisos quedan en la bandeja de la app y llegan al correo, sin el nombre del medicamento.
 
 ### RU-06 — Alternativa, no un rechazo vacío
 
@@ -86,7 +86,7 @@ Ver, antes de necesitarlo, qué se puede pedir por dron: el nombre, si exige fó
 
 ### RU-34 — Ajustes de la app
 
-Elegir el tema (claro, oscuro o automático), el tamaño del texto, el alto contraste, reducir el movimiento, el modo sencillo y si recibe avisos del sistema. Los ajustes son de cualquier rol; el modo sencillo es del solicitante.
+Elegir el tema (claro, oscuro o automático), el tamaño del texto, el alto contraste, reducir el movimiento y el modo sencillo. Los ajustes son de cualquier rol; el modo sencillo es del solicitante.
 
 **Por qué.** Quien pide puede ser una persona mayor, a pleno sol y con un teléfono modesto. La app se acomoda a ella, no al revés.
 
@@ -295,7 +295,7 @@ Estado y mapa desde el despegue, ida y retorno. No antes: todavía no hay vuelo.
 
 ### RF-16 y RF-24 — Avisos
 
-Cambios de estado, llegada, espera de código, retorno, temperatura, batería y urgencia quieta más de 5 minutos en recibido. El aviso de la cola se calcula al abrirla. Los avisos de las entregas programadas (confirmar, abastecimiento que llega o que hay que despachar, stock que puede faltar, despegue con hora de llegada y entrega omitida o vencida) se guardan en una bandeja por cuenta y se mandan al correo; si el correo falla, el aviso igual queda. Los avisos del pedido del solicitante salen además como aviso del sistema (RF-55).
+Cambios de estado, llegada, espera de código, retorno, temperatura, batería y urgencia quieta más de 5 minutos en recibido. El aviso de la cola se calcula al abrirla. Los avisos de las entregas programadas (confirmar, abastecimiento que llega o que hay que despachar, stock que puede faltar, despegue con hora de llegada y entrega omitida o vencida) se guardan en una bandeja por cuenta y se mandan al correo; si el correo falla, el aviso igual queda.
 
 ### RF-17 — Frío
 
@@ -649,7 +649,6 @@ Pantalla que se abre desde el perfil, para cualquier rol:
 - **Tamaño del texto:** normal, grande o muy grande. Se suma al tamaño de letra del teléfono.
 - **Alto contraste** y **reducir movimiento**, aunque el teléfono no lo pida.
 - **Modo sencillo** (solo solicitante): una columna, botones de 56 dp con el verbo completo y tres destinos en la barra (Inicio, Pedidos y Perfil). Pedir urgencia pasa a ser el botón principal del inicio.
-- **Avisos del sistema:** encenderlos o apagarlos (RF-55).
 - **Ver la bienvenida** otra vez (RF-53, solo solicitante).
 
 Los ajustes se guardan en el teléfono, no en la cuenta: no viajan al backend y siguen ahí al cerrar sesión. No se puede elegir el color de acento, los íconos ni el fondo.
@@ -674,21 +673,6 @@ Lista del solicitante sobre el mismo catálogo que usa la urgencia (RF-09):
 - Un ítem de control especial no se puede pedir por este canal (RF-09) y la lista lo dice.
 
 **Por qué.** RU-33. La cantidad exacta es un dato de la central; al solicitante le basta saber si puede pedirlo.
-
-### RF-55 — Avisos del sistema y enlace al pedido
-
-La app registra el dispositivo en la cuenta del solicitante para avisarle con la app cerrada:
-
-- **Qué avisa:** pedido autorizado o rechazado, despegue con la hora estimada de llegada, dron por aterrizar, espera del código con los 5 minutos, retorno con el paquete y, en los planes, la entrega del día siguiente por confirmar.
-- **Qué dice:** el estado y el punto de entrega. Nunca el nombre del medicamento ni el del paciente, igual que el correo (RU-05).
-- **Enlace:** tocar el aviso abre ese pedido: el mapa si va en vuelo, la pantalla del código si está en espera y el detalle en los demás casos. Sin sesión, la app pide ingresar y después abre el pedido. Vale la misma autorización por rol (RNF-03).
-- **Permiso:** se pide después de crear el primer pedido, con una frase que dice para qué. Si la persona lo niega, la app sigue con la bandeja y el correo, y no vuelve a insistir sola.
-- **Baja:** el registro del dispositivo se borra al cerrar sesión, al revocar el consentimiento y al suprimir la cuenta (RF-50). Desde Ajustes se apagan (RF-52).
-- Si el envío falla, el aviso igual queda en la bandeja (RF-16).
-
-Los demás roles siguen con la bandeja y el socket. No hay widgets ni ingreso con huella. El aviso del sistema no reemplaza al socket: no lleva telemetría.
-
-**Por qué.** RU-05. Los 5 minutos de espera no sirven si la persona tiene el teléfono guardado. El servicio de mensajería es un encargado más ([../legal/datos.md](../legal/datos.md)).
 
 ## No funcionales
 
