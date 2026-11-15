@@ -206,6 +206,14 @@ function flightOf(mission: Mission, now: number): RadarFlight {
     temperatureC: mission.cold ? 5.1 : null,
     etaSeconds: s.eta,
     alerts: { battery: false, failure: false, coldChain: false },
+    altitudeMslM: (s.phase === "cruise" ? 90 : 40) + 160,
+    remoteId: {
+      registration: mission.identifier,
+      operator: "AirDrop (demo)",
+      type: mission.cold ? "Colibrí" : "Garza",
+      manifestNumber: s.outbound ? `MAN-2026-00000${mission.cold ? 1 : 2}` : null,
+      status: s.outbound ? "mission" : "returning",
+    },
   };
 }
 
@@ -447,6 +455,20 @@ export function demoSource(): RadarSource {
       ],
       airspace,
     }),
+    daylight: async () => {
+      // De 6 a 18, hora de Colombia, del día del reloj de demostración.
+      const now = Date.parse(nowOf());
+      const day = new Date(now - 5 * 3_600_000).toISOString().slice(0, 10);
+      const sunrise = Date.parse(`${day}T06:00:00-05:00`);
+      const sunset = Date.parse(`${day}T18:00:00-05:00`);
+      return {
+        date: day,
+        sunrise: new Date(sunrise).toISOString(),
+        sunset: new Date(sunset).toISOString(),
+        now: new Date(now).toISOString(),
+        daylight: now >= sunrise && now < sunset,
+      };
+    },
     deliveryPoints: async () => points.map((point) => ({ ...point })),
     setPointActive: async (id, active) => {
       const point = points.find((row) => row.id === id);
@@ -493,6 +515,32 @@ export function demoSource(): RadarSource {
         previousReturnRoute: null,
         originHub: { id: hubs[m.from].id, name: hubs[m.from].name },
         destinationHub: { id: hubs[m.to].id, name: hubs[m.to].name },
+        manifest:
+          flight.leg === "outbound"
+            ? {
+                id: `demo-manifest-${m.orderId}`,
+                number: flight.remoteId?.manifestNumber ?? "MAN-2026-000001",
+                orderId: m.orderId,
+                issuedAt: nowOf(),
+                drone: { id: m.droneId, identifier: m.identifier, kind: m.cold ? "rapid" : "balanced" },
+                origin: { hubId: hubs[m.from].id, name: hubs[m.from].name },
+                destination: hubs[m.to].name,
+                items: [
+                  {
+                    medicationName: flight.medicationName,
+                    lot: m.cold ? "L-2041" : "L-1187",
+                    expiresOn: m.cold ? "2027-03-14" : "2027-08-01",
+                    quantity: flight.quantity,
+                  },
+                ],
+                payloadKg: m.cold ? 0.24 : 2.1,
+                coldCompartmentKg: m.cold ? 1 : null,
+                coldRange: m.cold ? "2–8 °C" : null,
+                authorizedBy: { userId: null, name: "Despachador automático (demo)" },
+                voidedAt: null,
+                voidReason: null,
+              }
+            : null,
       };
     },
     connect(handlers) {
@@ -517,6 +565,8 @@ export function demoSource(): RadarSource {
             etaSeconds: f.etaSeconds,
             batteryPercent: f.batteryPercent as number,
             temperatureC: f.temperatureC,
+            altitudeMslM: f.altitudeMslM,
+            remoteId: f.remoteId,
           };
           handlers.onTelemetry(event);
         }

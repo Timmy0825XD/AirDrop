@@ -13,6 +13,7 @@ import { AlertsTray } from "./AlertsTray";
 import { ActorsMenu } from "./ActorsMenu";
 import { ClockControl } from "./ClockControl";
 import { EventComposer, EventDock, type EventLaunch, type EventTool } from "./EventDock";
+import { DaylightChip } from "./DaylightChip";
 import { EventPanel } from "./EventPanel";
 import { FlightPanel } from "./FlightPanel";
 import { AlertIcon, CheckIcon } from "./icons";
@@ -24,6 +25,8 @@ import { TimelinePanel } from "./TimelinePanel";
 import { TopBar } from "./TopBar";
 
 const FLIGHT_REFRESH_MS = 8_000;
+/** La luz del día cambia despacio: basta una lectura por minuto. */
+const DAYLIGHT_REFRESH_MS = 60_000;
 /** Cuánto se quedan los avisos de la consola. */
 const NOTICE_MS = 7_000;
 /** Incidentes, apagones y ráfagas en un ensayo no tienen backend. */
@@ -69,6 +72,11 @@ export function Dashboard({ source, userName, onLogout }: Props) {
   const flightId = selection?.kind === "flight" ? selection.id : null;
   const loadFlight = useCallback(() => source.flight(flightId as string), [source, flightId]);
   const detail = usePolled(loadFlight, flightId, FLIGHT_REFRESH_MS);
+
+  // RF-44: se vuelve a leer al cambiar la velocidad del reloj o al reiniciar.
+  const loadDaylight = useCallback(() => source.daylight(), [source]);
+  const daylightKey = `day-${data.clock?.speed ?? 1}-${data.clock?.paused ?? false}-${consola.state.lastReset ? "r" : ""}`;
+  const daylight = usePolled(loadDaylight, daylightKey, DAYLIGHT_REFRESH_MS);
 
   // Solo el vuelo elegido dibuja su ruta (y la de antes, si cambió en el aire).
   const routes = useMemo(
@@ -297,6 +305,7 @@ export function Dashboard({ source, userName, onLogout }: Props) {
             onChange={(change) => void consola.setClock(change)}
           />
         }
+        daylight={<DaylightChip day={daylight.data} />}
         actors={
           consoleOn ? (
             <ActorsMenu

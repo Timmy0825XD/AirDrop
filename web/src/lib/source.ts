@@ -7,6 +7,7 @@ import type {
   ClockSpeed,
   ClockView,
   ConsoleIncidentKind,
+  Daylight,
   DeliveryPoint,
   FlightDetail,
   GeneratedKind,
@@ -95,6 +96,8 @@ export type RadarSource = {
   deliveryPoints: () => Promise<DeliveryPoint[]>;
   /** Activa o desactiva un punto (`PATCH /delivery-points/:id`). */
   setPointActive: (id: string, active: boolean) => Promise<void>;
+  /** RF-44: salida y puesta del sol del día simulado y si ahora se vuela. */
+  daylight: () => Promise<Daylight>;
   control: ConsoleApi;
   connect: (handlers: RadarHandlers) => () => void;
 };
@@ -113,6 +116,7 @@ export function liveSource(token: string): RadarSource {
         body: JSON.stringify({ active }),
       });
     },
+    daylight: () => api<Daylight>("/airspace/daylight", token),
     control: {
       clock: () => api<ClockView>("/control/clock", token),
       setClock: (change) =>

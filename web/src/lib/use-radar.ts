@@ -71,6 +71,9 @@ function fromTelemetry(event: TelemetryEvent, previous?: RadarFlight): RadarFlig
     temperatureC: event.temperatureC,
     etaSeconds: event.etaSeconds,
     linkLost: event.linkLost ?? false,
+    // Una lectura vieja no los trae: se conserva lo último conocido.
+    altitudeMslM: event.altitudeMslM ?? previous?.altitudeMslM ?? null,
+    remoteId: event.remoteId ?? previous?.remoteId ?? null,
   };
 }
 
@@ -115,12 +118,17 @@ export function useRadar(
       for (const flight of snapshot.flights) {
         const live = flights.current.get(flight.orderId);
         // Sin Redis el snapshot no trae posición: se conserva la del socket.
-        // El snapshot no sabe del enlace: se conserva lo que dijo el socket.
+        // El socket va más al día que la foto: gana su enlace y su identificación.
         const merged =
           flight.latitude == null && live
             ? { ...live, ...flight, latitude: live.latitude, longitude: live.longitude }
             : flight;
-        next.set(flight.orderId, { ...merged, linkLost: live?.linkLost ?? false });
+        next.set(flight.orderId, {
+          ...merged,
+          linkLost: live?.linkLost ?? flight.linkLost ?? false,
+          remoteId: live?.remoteId ?? flight.remoteId ?? null,
+          altitudeMslM: live?.altitudeMslM ?? flight.altitudeMslM ?? null,
+        });
       }
       flights.current = next;
       setData((current) => ({

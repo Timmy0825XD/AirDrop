@@ -2,6 +2,7 @@
 
 import { formatEta, label, ORDER_STATUS, PHASE } from "@/lib/labels";
 import type { ConsoleIncidentKind, FlightDetail, RadarFlight, Selection } from "@/lib/types";
+import { ManifestSection, RemoteIdSection } from "./FlightIdentity";
 import { IncidentActions } from "./IncidentActions";
 import { AlertIcon, ChevronIcon, DroneIcon, HubIcon, LinkOffIcon, SnowflakeIcon } from "./icons";
 import { PanelMessage, PanelShell, Pill, Section, Stat } from "./ui";
@@ -175,10 +176,14 @@ export function FlightPanel({
           unit="km/h"
         />
         <Stat
-          label="Altitud"
+          label="Sobre el terreno"
           value={flight.altitudeM != null ? Math.round(flight.altitudeM) : "—"}
           unit="m"
         />
+        {flight.altitudeMslM != null && (
+          // RF-46: el techo legal se mide sobre el terreno; esta es la del mar.
+          <Stat label="Sobre el mar" value={Math.round(flight.altitudeMslM)} unit="m s. n. m." />
+        )}
         <Stat
           label="Fase"
           value={<span className="font-sans text-[17px]">{label(PHASE, flight.phase)}</span>}
@@ -195,6 +200,8 @@ export function FlightPanel({
 
       <Alerts flight={flight} />
 
+      <RemoteIdSection remoteId={flight.remoteId} />
+
       <Section title="Carga">
         <p className="text-[14px] text-muted">
           <span className="figures mr-1.5 text-[20px] font-medium text-text">{flight.quantity}</span>
@@ -209,6 +216,8 @@ export function FlightPanel({
           )}
         </p>
       </Section>
+
+      <ManifestSection manifest={detail?.manifest} />
 
       <Route detail={detail} flight={flight} />
 

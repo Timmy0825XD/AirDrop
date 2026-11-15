@@ -48,8 +48,60 @@ export type RadarFlight = {
   temperatureC: number | null;
   etaSeconds: number | null;
   alerts: { battery: boolean; failure: boolean; coldChain: boolean };
-  /** RF-34: sin enlace, la posición es estimada. Llega por el socket. */
+  /** RF-34: sin enlace, la posición es estimada. */
   linkLost?: boolean;
+  /** RF-46: metros sobre el nivel del mar; `null` sin perfil de terreno. */
+  altitudeMslM?: number | null;
+  /** RF-48: la identificación remota de la última lectura. */
+  remoteId?: RemoteId | null;
+};
+
+export type RemoteIdStatus = "mission" | "returning" | "link_lost" | "emergency";
+
+/** RF-48: lo que el dron anuncia de sí mismo. */
+export type RemoteId = {
+  /** "AD-NOR-01" */
+  registration: string;
+  operator: string;
+  /** "Colibrí", "Garza" o "Cóndor". */
+  type: string;
+  /** `null` de regreso vacío. */
+  manifestNumber: string | null;
+  status: RemoteIdStatus;
+};
+
+/** RF-47: el manifiesto en `GET /radar/flights/:orderId`. */
+export type RadarManifest = {
+  id: string;
+  number: string;
+  orderId: string;
+  issuedAt: string;
+  drone: { id: string; identifier: string; kind: "rapid" | "balanced" | "cargo" };
+  origin: { hubId: string; name: string };
+  /** El punto de entrega o la ESE. */
+  destination: string;
+  /** `medicationName` llega `null` en una entrega a una persona. */
+  items: Array<{
+    medicationName: string | null;
+    lot: string;
+    expiresOn: string;
+    quantity: number;
+  }>;
+  payloadKg: number;
+  coldCompartmentKg: number | null;
+  coldRange: string | null;
+  authorizedBy: { userId: string | null; name: string };
+  voidedAt: string | null;
+  voidReason: string | null;
+};
+
+/** RF-44: `GET /airspace/daylight`, con la hora simulada. */
+export type Daylight = {
+  date: string;
+  sunrise: string;
+  sunset: string;
+  now: string;
+  daylight: boolean;
 };
 
 export type Geofence = {
@@ -170,6 +222,8 @@ export type FlightDetail = {
   previousReturnRoute: Array<[number, number]> | null;
   originHub: { id: string; name: string } | null;
   destinationHub: { id: string; name: string } | null;
+  /** RF-47: el manifiesto vigente; `null` si todavía no hay. */
+  manifest?: RadarManifest | null;
 };
 
 /** Evento `radar-telemetry` (vista `full` de la telemetría). */
@@ -188,6 +242,8 @@ export type TelemetryEvent = {
   batteryPercent: number;
   temperatureC: number | null;
   linkLost?: boolean;
+  altitudeMslM?: number | null;
+  remoteId?: RemoteId | null;
 };
 
 export type StatusEvent = { orderId: string; status: string };
