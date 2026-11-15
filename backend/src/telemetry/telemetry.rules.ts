@@ -122,6 +122,8 @@ export function presentTelemetry(flight: LiveFlight, view: TelemetryView) {
     latitude: flight.latitude,
     longitude: flight.longitude,
     altitudeM: flight.altitudeM,
+    // RF-46: también sobre el nivel del mar; `null` sin perfil de terreno.
+    altitudeMslM: flight.altitudeMslM ?? null,
     speedKmh: flight.speedKmh,
     phase: flight.phase,
     leg: flight.leg,
