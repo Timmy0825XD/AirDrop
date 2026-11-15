@@ -11,6 +11,7 @@ InventoryFormValues _filled({required String quantity, required String date}) {
     ..name.text = 'Suero oral'
     ..lot.text = 'SUO-2026'
     ..quantity.text = quantity
+    ..unitWeight.text = '30'
     ..expirationDate.text = date;
 }
 

@@ -191,6 +191,7 @@ void _openDroneActions(BuildContext context, WidgetRef ref, Drone drone) {
     context,
     drone: drone,
     actions: (
+      toggleColdCompartment: () => _setColdCompartment(context, ref, drone),
       setAvailable: () => _patchStatus(
         context,
         ref,
@@ -205,6 +206,31 @@ void _openDroneActions(BuildContext context, WidgetRef ref, Drone drone) {
       ),
     ),
   );
+}
+
+/// RF-49: pone o quita el compartimento de frío. En misión Nest responde
+/// 409 y el mensaje se muestra tal cual.
+Future<void> _setColdCompartment(
+  BuildContext context,
+  WidgetRef ref,
+  Drone drone,
+) async {
+  final install = !drone.coldCompartment;
+  try {
+    await ref
+        .read(fleetRepositoryProvider)
+        .setColdCompartment(drone.id, installed: install);
+    ref.invalidate(dronesProvider);
+    if (!context.mounted) return;
+    showAppSnack(
+      context,
+      install
+          ? 'Compartimento de frío instalado.'
+          : 'Compartimento de frío retirado.',
+    );
+  } on ApiException catch (error) {
+    if (context.mounted) showErrorSnack(context, error.message);
+  }
 }
 
 /// `PATCH .../status` con `out_of_service`: indefinido, solo el motivo

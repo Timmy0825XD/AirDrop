@@ -158,8 +158,10 @@ void main() {
         expirationDate: '2027-03-31',
         requiresColdChain: false,
         saleType: SaleType.overTheCounter,
+        unitWeightG: 25,
       ),
     );
+    expect(created.unitWeightG, 25);
     expect(
       created.lot,
       'SUO-2026',

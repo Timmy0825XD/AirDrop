@@ -12,9 +12,12 @@ import 'fleet_map_models.dart';
 import 'fleet_models.dart';
 import 'fleet_repository.dart';
 
-/// Id del modelo de dron de la maqueta, para que los fixtures locales y
-/// los tests apunten al mismo modelo que siembra Nest (`WINGCOPTER_198`).
+/// Id del tipo Garza de la maqueta, para que los fixtures locales y los
+/// tests apunten al mismo modelo. Los otros dos tipos (RF-49) tienen el
+/// suyo.
 const String localFixtureDroneModelId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+const String localRapidModelId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb1';
+const String localCargoModelId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbb3';
 
 /// Flota simulada en memoria, para trabajar sin NestJS. Replica los
 /// mensajes y el 409 de `FleetService` para que el comportamiento sea el
@@ -184,10 +187,43 @@ class LocalFleetRepository implements FleetRepository {
       hubId: request.hubId,
       status: DroneStatus.available,
       createdAt: DateTime.now(),
+      coldCompartment: request.coldCompartment,
     );
     _drones.add(drone);
     return drone;
   }
+
+  @override
+  Future<Drone> setColdCompartment(String id, {required bool installed}) async {
+    final index = await _ownDroneIndex(id);
+    final current = _drones[index];
+    if (current.status.isInMission) {
+      throw const ApiException(
+        'El compartimento de frío se cambia con el dron en tierra, no en '
+        'misión.',
+        statusCode: 409,
+      );
+    }
+    _drones[index] = _copy(current, coldCompartment: installed);
+    return _drones[index];
+  }
+
+  Drone _copy(Drone current, {required bool coldCompartment}) => Drone(
+    id: current.id,
+    identifier: current.identifier,
+    droneModelId: current.droneModelId,
+    hubId: current.hubId,
+    status: current.status,
+    maintenanceReason: current.maintenanceReason,
+    maintenanceUntil: current.maintenanceUntil,
+    createdAt: current.createdAt,
+    batteryPercent: current.batteryPercent,
+    lastFlightEndedAt: current.lastFlightEndedAt,
+    flightsSinceMaintenance: current.flightsSinceMaintenance,
+    maintenanceCycles: current.maintenanceCycles,
+    maintenanceDue: current.maintenanceDue,
+    coldCompartment: coldCompartment,
+  );
 
   @override
   Future<Drone> updateStatus(
@@ -292,6 +328,7 @@ class LocalFleetRepository implements FleetRepository {
       flightsSinceMaintenance: flights,
       maintenanceCycles: current.maintenanceCycles,
       maintenanceDue: !reviewed && current.maintenanceDue,
+      coldCompartment: current.coldCompartment,
     );
   }
 
@@ -421,15 +458,44 @@ class LocalFleetRepository implements FleetRepository {
     return null;
   }
 
-  /// Modelos de la maqueta: los mismos que siembra Nest.
+  /// Los tres tipos de la maqueta, con las cifras que siembra Nest
+  /// (`backend/src/fleet/drone-types.ts`, RF-49).
   static final List<DroneModel> _models = [
     const DroneModel(
+      id: localRapidModelId,
+      code: 'rapid',
+      name: 'Colibrí',
+      kind: DroneKind.rapid,
+      maxSpeedKmh: 140,
+      maxPayloadKg: 2,
+      maxRangeKm: 120,
+      ceilingM: 3500,
+      windSustainedMs: 12,
+      windGustMs: 16,
+    ),
+    const DroneModel(
       id: localFixtureDroneModelId,
-      code: 'wingcopter_198',
-      name: 'Wingcopter 198',
-      maxSpeedKmh: 150,
-      maxPayloadKg: 6,
-      maxRangeKm: 110,
+      code: 'balanced',
+      name: 'Garza',
+      kind: DroneKind.balanced,
+      maxSpeedKmh: 110,
+      maxPayloadKg: 5,
+      maxRangeKm: 90,
+      ceilingM: 4000,
+      windSustainedMs: 15,
+      windGustMs: 20,
+    ),
+    const DroneModel(
+      id: localCargoModelId,
+      code: 'cargo',
+      name: 'Cóndor',
+      kind: DroneKind.cargo,
+      maxSpeedKmh: 60,
+      maxPayloadKg: 15,
+      maxRangeKm: 30,
+      ceilingM: 2500,
+      windSustainedMs: 10,
+      windGustMs: 14,
     ),
   ];
 }

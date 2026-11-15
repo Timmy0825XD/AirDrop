@@ -43,6 +43,15 @@ class RemoteFleetRepository implements FleetRepository {
   }
 
   @override
+  Future<Drone> setColdCompartment(String id, {required bool installed}) async {
+    final data = await apiClient.patchJson(
+      '/fleet/drones/$id/cold-compartment',
+      body: {'installed': installed},
+    );
+    return Drone.fromJson(_asJsonMap(data));
+  }
+
+  @override
   Future<Drone> updateStatus(
     String id,
     UpdateDroneStatusRequest request,

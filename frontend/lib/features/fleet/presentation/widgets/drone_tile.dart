@@ -82,6 +82,7 @@ class _DroneInfo extends StatelessWidget {
     final note = [
       // En misión: la fase y el pedido (id corto, sin datos clínicos).
       if (drone.phase case final phase?) phase.label,
+      if (drone.coldCompartment) 'Con frío',
       if (order != null) 'Pedido ${shortId(order)}',
       if (reason != null && reason.isNotEmpty) 'Motivo: $reason',
       if (until != null && until.isNotEmpty)

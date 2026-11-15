@@ -4,20 +4,23 @@ import '../../../../core/widgets/choice_pill.dart';
 import '../../../auth/presentation/widgets/auth_choice_group.dart';
 import '../../data/fleet_models.dart';
 
-/// El modelo de dron en chips (muestra el `name` de `GET /fleet/models` y
-/// devuelve el `id`, que es lo que Nest espera en `droneModelId`). Debajo,
-/// velocidad, carga y alcance del elegido; con un solo modelo sembrado
-/// (Wingcopter 198) igual le sirve al operador para verlo.
+/// El tipo de dron en chips: Colibrí, Garza o Cóndor (RF-49). Muestra el
+/// `name` de `GET /fleet/models` y devuelve el `id`, que es lo que Nest
+/// espera en `droneModelId`. Debajo, velocidad, carga, alcance, techo y
+/// viento del elegido; la carga ya descuenta el compartimento de frío.
 class DroneModelField extends StatelessWidget {
   const DroneModelField({
     super.key,
     required this.models,
     required this.selectedId,
     required this.onChanged,
+    this.coldCompartment = false,
     this.errorText,
     this.shakeCount = 0,
   });
 
+  /// Con el compartimento de frío la carga útil baja 1 kg.
+  final bool coldCompartment;
   final List<DroneModel> models;
   final String? selectedId;
   final ValueChanged<String> onChanged;
@@ -31,7 +34,7 @@ class DroneModelField extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AuthChoiceGroup(
-          label: 'Modelo de dron',
+          label: 'Tipo de dron',
           errorText: errorText,
           shakeCount: shakeCount,
           children: [
@@ -48,18 +51,31 @@ class DroneModelField extends StatelessWidget {
           curve: Curves.fastOutSlowIn,
           child: selected == null
               ? const SizedBox(width: double.infinity)
-              : _ModelSpecs(model: selected),
+              : _ModelSpecs(model: selected, cold: coldCompartment),
         ),
       ],
     );
   }
 }
 
-/// Velocidad, carga y alcance del modelo elegido.
+/// "110 km/h · 4 kg de carga · 90 km de alcance", y si Nest los manda, el
+/// techo y el viento que aguanta.
+String droneModelSpecs(DroneModel model, {bool coldCompartment = false}) => [
+  '${_number(model.maxSpeedKmh)} km/h',
+  '${_number(model.payloadKg(coldCompartment: coldCompartment))} kg de carga',
+  '${_number(model.maxRangeKm)} km de alcance',
+  if (model.ceilingM case final ceiling?)
+    'techo ${_number(ceiling)} m s. n. m.',
+  if (model.windSustainedMs case final wind?)
+    'viento hasta ${_number(wind)} m/s',
+].join(' · ');
+
+/// Las cifras del tipo elegido.
 class _ModelSpecs extends StatelessWidget {
-  const _ModelSpecs({required this.model});
+  const _ModelSpecs({required this.model, required this.cold});
 
   final DroneModel model;
+  final bool cold;
 
   @override
   Widget build(BuildContext context) {
@@ -67,9 +83,7 @@ class _ModelSpecs extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 8),
       child: Text(
-        '${_number(model.maxSpeedKmh)} km/h · '
-        '${_number(model.maxPayloadKg)} kg de carga · '
-        '${_number(model.maxRangeKm)} km de alcance',
+        droneModelSpecs(model, coldCompartment: cold),
         style: theme.textTheme.bodySmall?.copyWith(
           color: theme.colorScheme.onSurfaceVariant,
         ),

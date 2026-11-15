@@ -23,6 +23,7 @@ void main() {
         ..quantity.text = ' 50 '
         ..lot.text = ' suo-2026 '
         ..expirationDate.text = ' 2027-03-31 '
+        ..unitWeight.text = ' 30 '
         ..saleType = SaleType.prescription
         ..requiresColdChain = true;
 
@@ -35,8 +36,33 @@ void main() {
         'expirationDate': '2027-03-31',
         'requiresColdChain': true,
         'saleType': 'prescription',
+        'unitWeightG': 30,
       });
       expect(body.toJson(), isNot(contains('hubId')));
+    });
+
+    test('el peso por unidad es un entero de 1 g a 20 kg (RF-11)', () {
+      String? error(String text) => InventoryFormValues.unitWeightError(text);
+
+      expect(error(''), 'El peso por unidad debe ser un entero en gramos.');
+      expect(error('1,5'), 'El peso por unidad debe ser un entero en gramos.');
+      expect(error('0'), 'El peso por unidad debe ser mayor que cero.');
+      expect(error('20001'), 'El peso por unidad no puede superar 20 kg.');
+      expect(error('1'), isNull);
+      expect(error(' 20000 '), isNull);
+    });
+
+    test('la mercancía peligrosa viaja solo cuando se marca', () {
+      final values = InventoryFormValues()
+        ..name.text = 'Alcohol antiséptico'
+        ..quantity.text = '10'
+        ..lot.text = 'ALC-1'
+        ..expirationDate.text = '2027-03-31'
+        ..unitWeight.text = '500'
+        ..dangerousGoods = true;
+      addTearDown(values.dispose);
+
+      expect(values.request().toJson()['dangerousGoods'], isTrue);
     });
   });
 

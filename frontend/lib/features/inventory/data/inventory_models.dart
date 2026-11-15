@@ -40,6 +40,8 @@ class InventoryItem {
     required this.expirationDate,
     required this.requiresColdChain,
     required this.saleType,
+    this.unitWeightG,
+    this.dangerousGoods = false,
     this.createdAt,
   });
 
@@ -53,6 +55,8 @@ class InventoryItem {
       expirationDate: json['expirationDate'] as String,
       requiresColdChain: json['requiresColdChain'] as bool,
       saleType: SaleType.fromJson(json['saleType'] as String),
+      unitWeightG: (json['unitWeightG'] as num?)?.toInt(),
+      dangerousGoods: json['dangerousGoods'] == true,
       createdAt: DateTime.tryParse('${json['createdAt']}'),
     );
   }
@@ -69,6 +73,14 @@ class InventoryItem {
 
   final bool requiresColdChain;
   final SaleType saleType;
+
+  /// RF-11: gramos por unidad; con él Nest calcula la carga del pedido.
+  /// `null` si Nest no lo manda.
+  final int? unitWeightG;
+
+  /// Mercancía peligrosa para el transporte aéreo: no sale en el catálogo
+  /// para volar.
+  final bool dangerousGoods;
   final DateTime? createdAt;
 }
 
@@ -82,6 +94,8 @@ class CreateInventoryItemRequest {
     required this.expirationDate,
     required this.requiresColdChain,
     required this.saleType,
+    required this.unitWeightG,
+    this.dangerousGoods = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -92,6 +106,8 @@ class CreateInventoryItemRequest {
       'expirationDate': expirationDate,
       'requiresColdChain': requiresColdChain,
       'saleType': saleType.apiValue,
+      'unitWeightG': unitWeightG,
+      if (dangerousGoods) 'dangerousGoods': true,
     };
   }
 
@@ -101,6 +117,10 @@ class CreateInventoryItemRequest {
   final String expirationDate;
   final bool requiresColdChain;
   final SaleType saleType;
+
+  /// Obligatorio: entero de 1 a 20000 gramos.
+  final int unitWeightG;
+  final bool dangerousGoods;
 }
 
 /// Body de `PATCH /inventory/:id`. Todos los campos son opcionales y Nest
@@ -115,6 +135,8 @@ class UpdateInventoryItemRequest {
     this.expirationDate,
     this.requiresColdChain,
     this.saleType,
+    this.unitWeightG,
+    this.dangerousGoods,
   });
 
   bool get isEmpty =>
@@ -123,7 +145,9 @@ class UpdateInventoryItemRequest {
       lot == null &&
       expirationDate == null &&
       requiresColdChain == null &&
-      saleType == null;
+      saleType == null &&
+      unitWeightG == null &&
+      dangerousGoods == null;
 
   Map<String, dynamic> toJson() {
     return {
@@ -133,6 +157,8 @@ class UpdateInventoryItemRequest {
       if (expirationDate != null) 'expirationDate': expirationDate,
       if (requiresColdChain != null) 'requiresColdChain': requiresColdChain,
       if (saleType != null) 'saleType': saleType!.apiValue,
+      'unitWeightG': ?unitWeightG,
+      'dangerousGoods': ?dangerousGoods,
     };
   }
 
@@ -142,6 +168,8 @@ class UpdateInventoryItemRequest {
   final String? expirationDate;
   final bool? requiresColdChain;
   final SaleType? saleType;
+  final int? unitWeightG;
+  final bool? dangerousGoods;
 }
 
 /// Postgres `numeric`/`int` puede serializarse como número o como texto;

@@ -68,6 +68,50 @@ void main() {
     });
   });
 
+  test('los tres tipos traen su clase, techo y viento (RF-49)', () {
+    final model = DroneModel.fromJson({
+      'id': 'm1',
+      'code': 'cargo',
+      'name': 'Cóndor',
+      'kind': 'cargo',
+      'maxSpeedKmh': 60,
+      'maxPayloadKg': 15,
+      'maxRangeKm': 30,
+      'ceilingM': 2500,
+      'verticalSpeedMs': 3,
+      'windSustainedMs': 10,
+      'windGustMs': 14,
+    });
+    expect(model.kind, DroneKind.cargo);
+    expect(model.ceilingM, 2500);
+    expect(model.windGustMs, 14);
+    // El compartimento de frío resta 1 kg de carga útil.
+    expect(model.payloadKg(coldCompartment: false), 15);
+    expect(model.payloadKg(coldCompartment: true), 14);
+    // Un tipo nuevo de Nest no tumba la lista.
+    expect(DroneKind.fromJson('heavy'), DroneKind.unknown);
+  });
+
+  test('el dron trae el compartimento de frío y el alta lo manda', () {
+    final drone = Drone.fromJson({
+      'id': 'd1',
+      'identifier': 'AD-NOR-01',
+      'droneModelId': 'm1',
+      'hubId': 'h1',
+      'status': 'available',
+      'coldCompartment': true,
+    });
+    expect(drone.coldCompartment, isTrue);
+
+    const request = CreateDroneRequest(
+      identifier: 'AD-NOR-02',
+      droneModelId: 'm1',
+      hubId: 'h1',
+      coldCompartment: true,
+    );
+    expect(request.toJson()['coldCompartment'], isTrue);
+  });
+
   test('Drone.fromJson lee el estado y la fecha de mantenimiento', () {
     final drone = Drone.fromJson({
       'id': 'd1',

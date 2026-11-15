@@ -186,13 +186,18 @@ class FakeFleetRepository implements FleetRepository {
   Future<List<DroneModel>> listModels() async => const [
     DroneModel(
       id: 'm1',
-      code: 'wingcopter_198',
-      name: 'Wingcopter 198',
-      maxSpeedKmh: 150,
-      maxPayloadKg: 6,
-      maxRangeKm: 110,
+      code: 'balanced',
+      name: 'Garza',
+      kind: DroneKind.balanced,
+      maxSpeedKmh: 110,
+      maxPayloadKg: 5,
+      maxRangeKm: 90,
     ),
   ];
+
+  @override
+  Future<Drone> setColdCompartment(String id, {required bool installed}) =>
+      throw UnimplementedError();
 
   @override
   Future<List<Drone>> listDrones(String hubId) async => [
@@ -432,7 +437,7 @@ void main() {
     expect(find.byType(FleetScreen), findsOneWidget);
     expect(find.text('DRON-01'), findsOneWidget);
     expect(find.textContaining('Central de prueba'), findsOneWidget);
-    expect(find.text('Wingcopter 198'), findsWidgets);
+    expect(find.text('Garza'), findsWidgets);
     expect(find.text('Disponible'), findsOneWidget);
     // Las entradas de la flota terminan antes de cerrar la prueba.
     await tester.pump(const Duration(seconds: 4));

@@ -13,6 +13,9 @@ class DroneFormValues {
   /// `id` del modelo elegido. Llega del dropdown, no del teclado.
   String? droneModelId;
 
+  /// RF-49: nace con el compartimento de frío (resta 1 kg de carga).
+  bool coldCompartment = false;
+
   bool get hasModel => droneModelId != null && droneModelId!.isNotEmpty;
 
   void dispose() => identifier.dispose();
@@ -24,6 +27,7 @@ class DroneFormValues {
       identifier: identifier.text.trim(),
       droneModelId: droneModelId!,
       hubId: hubId,
+      coldCompartment: coldCompartment,
     );
   }
 

@@ -25,6 +25,9 @@ class FieldLimits {
   static const int allergies = 200;
   static const int droneIdentifier = 32;
 
+  /// RF-11: el peso por unidad de un lote, de 1 g a 20 kg.
+  static const int unitWeightGMax = 20000;
+
   /// Código de lote del empaque.
   static const int lotCode = 20;
 

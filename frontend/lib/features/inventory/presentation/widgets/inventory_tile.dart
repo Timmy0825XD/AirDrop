@@ -127,6 +127,7 @@ class _ItemInfo extends StatelessWidget {
           [
             item.saleType.label,
             if (item.requiresColdChain) 'Cadena de frío',
+            if (item.dangerousGoods) 'No vuela',
             'Vence ${formatDay(item.expirationDate)}',
           ].join(' · '),
           maxLines: 2,
