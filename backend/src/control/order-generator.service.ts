@@ -20,7 +20,11 @@ import { OrdersService } from '../orders/orders.service';
 import { DESTINATION_IN_GEOFENCE } from '../routing/routing.rules';
 import { User } from '../users/user.entity';
 import { isControlEnabled } from './control.rules';
-import { simulatedDestinations, simulatedRequesters } from './demo-scenario';
+import { simulatedRequesters } from './demo-scenario';
+import { DeliveryPointsService } from '../delivery-points/delivery-points.service';
+import { NO_POINT_IN_CIRCLE } from '../delivery-points/delivery-points.rules';
+import { DeliveryPoint } from '../delivery-points/delivery-point.entity';
+import { haversineKm } from '../routing/routing.rules';
 import {
   GeneratedKind,
   NO_SIMULATED_DESTINATION,
@@ -32,13 +36,10 @@ import {
   pickOne,
   randomQuantity,
   simulatedTriage,
-  scatterAround,
 } from './sim-actors.rules';
 import { SimActorsService } from './sim-actors.service';
 import { TimelineService } from './timeline.service';
 
-/** Cuánto se aleja un pedido suelto del centro del barrio. */
-const NEIGHBORHOOD_SCATTER_KM = 0.4;
 /** Intentos para caer fuera de una geovalla (temporal o tormenta incluidas). */
 const PLACEMENT_TRIES = 4;
 const DESCRIPTION = 'Pedido de la demostración, de un solicitante simulado.';
@@ -48,6 +49,8 @@ export type GeneratedOrder = {
   /** La urgencia; el programado se sigue por su plan. */
   orderId: string | null;
   planId: string | null;
+  /** RF-45: el punto de entrega del pedido. */
+  deliveryPointId: string;
   address: string;
   latitude: number;
   longitude: number;
@@ -60,7 +63,12 @@ export type SurgeResult = {
   failures: string[];
 };
 
-type Point = { address: string; latitude: number; longitude: number };
+type Point = {
+  deliveryPointId: string;
+  address: string;
+  latitude: number;
+  longitude: number;
+};
 
 /**
  * RF-37: el generador de pedidos. Crea urgencias y programados de los
@@ -83,6 +91,7 @@ export class OrderGeneratorService implements OnModuleInit, OnModuleDestroy {
     private readonly timeline: TimelineService,
     @InjectRepository(User)
     private readonly users: Repository<User>,
+    private readonly deliveryPoints: DeliveryPointsService,
   ) {}
 
   onModuleInit(): void {
@@ -103,7 +112,10 @@ export class OrderGeneratorService implements OnModuleInit, OnModuleDestroy {
 
   /** CU-39: el administrador pide una urgencia o un programado. */
   async generate(kind: GeneratedKind): Promise<GeneratedOrder> {
-    const order = await this.create(kind, () => this.neighborhoodPoint());
+    const order = await this.create(
+      kind,
+      await this.deliveryPoints.available(),
+    );
     await this.timeline.recordConsole(
       kind === 'emergency'
         ? 'Generador: nueva urgencia simulada'
@@ -114,24 +126,26 @@ export class OrderGeneratorService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * RF-36: pico de urgencias. Varias seguidas dentro del círculo elegido en
-   * el mapa; las que el servicio rechaza se cuentan, no se inventan.
+   * RF-36: pico de urgencias. Varias seguidas a los puntos de entrega
+   * activos dentro del círculo elegido en el mapa; las que el servicio
+   * rechaza se cuentan, no se inventan.
    */
   async surge(
     center: { latitude: number; longitude: number },
     radiusKm: number,
     count: number,
   ): Promise<SurgeResult> {
+    const inside = (await this.deliveryPoints.available()).filter(
+      (point) => haversineKm(center, point) <= radiusKm,
+    );
+    if (!inside.length) {
+      throw new BadRequestException(NO_POINT_IN_CIRCLE);
+    }
     const created: GeneratedOrder[] = [];
     const failures: string[] = [];
     for (let index = 0; index < count; index += 1) {
       try {
-        created.push(
-          await this.create('emergency', () => ({
-            address: 'Zona del pico de urgencias, Valledupar',
-            ...scatterAround(center, radiusKm, this.random),
-          })),
-        );
+        created.push(await this.create('emergency', inside));
       } catch (error) {
         failures.push(error instanceof Error ? error.message : 'No se creó.');
       }
@@ -148,7 +162,10 @@ export class OrderGeneratorService implements OnModuleInit, OnModuleDestroy {
       return;
     }
     try {
-      await this.create(flowKind(this.random), () => this.neighborhoodPoint());
+      await this.create(
+        flowKind(this.random),
+        await this.deliveryPoints.available(),
+      );
     } catch (error) {
       const message = error instanceof Error ? error.message : 'pedido';
       this.logger.warn(`El flujo de pedidos no creó uno: ${message}`);
@@ -157,13 +174,16 @@ export class OrderGeneratorService implements OnModuleInit, OnModuleDestroy {
 
   private async create(
     kind: GeneratedKind,
-    place: () => Point,
+    points: DeliveryPoint[],
   ): Promise<GeneratedOrder> {
+    if (!points.length) {
+      throw new BadRequestException(NO_SIMULATED_DESTINATION);
+    }
     const requesters = await this.ensureRequesters();
     const requester = pickOne(requesters, this.random);
     const medicationName = await this.pickMedication(requester);
     for (let attempt = 1; ; attempt += 1) {
-      const point = place();
+      const point = toPoint(pickOne(points, this.random));
       try {
         return kind === 'emergency'
           ? await this.createEmergency(requester, medicationName, point)
@@ -193,7 +213,7 @@ export class OrderGeneratorService implements OnModuleInit, OnModuleDestroy {
       description: DESCRIPTION,
       triage: simulatedTriage(this.random),
       allergies: '',
-      ...point,
+      deliveryPointId: point.deliveryPointId,
     });
     // RU-10: igual que el controlador, entra a la cola de la que llega primero.
     await this.dispatch.start(created.id);
@@ -215,7 +235,7 @@ export class OrderGeneratorService implements OnModuleInit, OnModuleDestroy {
         dates: [slot.date],
         time: slot.time,
       },
-      ...point,
+      deliveryPointId: point.deliveryPointId,
     });
     // Una sola fecha a más de 2 horas: la entrega nace confirmada (RU-30).
     return { kind: 'scheduled', orderId: null, planId: plan.id, ...point };
@@ -234,14 +254,6 @@ export class OrderGeneratorService implements OnModuleInit, OnModuleDestroy {
       throw new BadRequestException(NO_SIMULATED_STOCK);
     }
     return pickOne(free, this.random).name;
-  }
-
-  private neighborhoodPoint(): Point {
-    const place = pickOne(simulatedDestinations, this.random);
-    return {
-      address: place.address,
-      ...scatterAround(place, NEIGHBORHOOD_SCATTER_KM, this.random),
-    };
   }
 
   /**
@@ -276,4 +288,13 @@ export class OrderGeneratorService implements OnModuleInit, OnModuleDestroy {
     }
     return existing;
   }
+}
+
+function toPoint(point: DeliveryPoint): Point {
+  return {
+    deliveryPointId: point.id,
+    address: point.name,
+    latitude: point.latitude,
+    longitude: point.longitude,
+  };
 }

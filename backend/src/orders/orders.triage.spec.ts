@@ -1,3 +1,7 @@
+import {
+  deliveryPointsStub,
+  TEST_POINT,
+} from '../delivery-points/delivery-points.testing';
 /**
  * Urgencia con tamizaje (RF-41) y paciente a cargo (RF-42). El almacenamiento
  * de la fórmula y las existencias se simulan, como en `orders.cu09.spec.ts`.
@@ -28,7 +32,7 @@ import { Order } from './order.entity';
 import { presentOrder } from './order.presenter';
 import { DOCUMENT_MISMATCH } from './orders.rules';
 import { OrdersService } from './orders.service';
-import { DEFAULT_REFERENCE, PATIENT_DOCUMENT_TWICE } from './triage.rules';
+import { PATIENT_DOCUMENT_TWICE } from './triage.rules';
 
 const holder = {
   id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
@@ -60,8 +64,7 @@ function dto(overrides: Partial<CreateEmergencyDto> = {}): CreateEmergencyDto {
     saleType: SaleType.OVER_THE_COUNTER,
     triage: fever,
     allergies: '',
-    latitude: 10.4631,
-    longitude: -73.2532,
+    deliveryPointId: TEST_POINT.id,
     ...overrides,
   };
 }
@@ -103,6 +106,7 @@ function build(saleType = SaleType.OVER_THE_COUNTER) {
     {} as never,
     { assertDestinationAllowed: () => Promise.resolve() } as never,
     { statusChanged: jest.fn().mockResolvedValue(undefined) } as never,
+    deliveryPointsStub() as never,
   );
   const saved = () => orders.save.mock.calls[0][0];
   return { service, saved, storage };
@@ -130,7 +134,8 @@ describe('Urgencia con tamizaje y paciente a cargo (RF-41, RF-42)', () => {
       symptomSeverity: SymptomSeverity.SEVERE,
       description: null,
       allergies: null,
-      address: DEFAULT_REFERENCE,
+      address: 'Puesto de salud de Badillo, Valledupar',
+      deliveryPointId: TEST_POINT.id,
       patientFullName: null,
     });
     expect(result.triage).toEqual({
@@ -213,12 +218,10 @@ describe('Urgencia con tamizaje y paciente a cargo (RF-41, RF-42)', () => {
         triage: undefined,
         allergies: undefined,
         description: 'Fiebre alta',
-        address: 'Calle 16 # 9-40',
       }),
     );
     expect(saved()).toMatchObject({
       description: 'Fiebre alta',
-      address: 'Calle 16 # 9-40',
       redFlags: null,
     });
     expect(result.triage).toBeNull();
@@ -233,8 +236,7 @@ describe('CreateEmergencyDto con tamizaje', () => {
   const base = {
     medicationName: 'Acetaminofén jarabe',
     saleType: SaleType.OVER_THE_COUNTER,
-    latitude: 10.4631,
-    longitude: -73.2532,
+    deliveryPointId: TEST_POINT.id,
   };
 
   it('con tamizaje, la nota y la referencia son opcionales', async () => {
@@ -254,9 +256,13 @@ describe('CreateEmergencyDto con tamizaje', () => {
     expect(found).toContain('Un signo de alarma no es válido.');
   });
 
-  it('el punto en el mapa es obligatorio', async () => {
-    const found = await errors({ ...base, latitude: undefined, triage: fever });
-    expect(found).toContain('Marca en el mapa dónde debe llegar el dron.');
+  it('el punto de entrega es obligatorio (RF-45)', async () => {
+    const found = await errors({
+      ...base,
+      deliveryPointId: undefined,
+      triage: fever,
+    });
+    expect(found).toContain('Elige un punto de entrega.');
   });
 
   it('valida a la persona a cargo', async () => {

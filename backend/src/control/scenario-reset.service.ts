@@ -30,6 +30,7 @@ import { SimulatedReceiverService } from './simulated-receiver.service';
 import { TimelineService } from './timeline.service';
 import { WeatherService } from '../weather/weather.service';
 import { GeofencesService } from '../geofences/geofences.service';
+import { DeliveryPointsService } from '../delivery-points/delivery-points.service';
 
 /**
  * RF-40, CU-41: devuelve el escenario de `pnpm seed:demo` a su estado
@@ -55,6 +56,7 @@ export class ScenarioResetService {
     private readonly dispatcher: AutoDispatcherService,
     private readonly receiver: SimulatedReceiverService,
     private readonly chaos: ChaosService,
+    private readonly deliveryPoints: DeliveryPointsService,
   ) {}
 
   async reset(admin: User): Promise<ResetSummary> {
@@ -94,6 +96,8 @@ export class ScenarioResetService {
       const temporaryGeofences =
         await this.geofenceService.clearTemporary(manager);
       const fences = await this.resetGeofences(manager, admin);
+      // RF-40: los puntos de entrega no se borran; vuelven activos.
+      await this.deliveryPoints.syncScenario(manager, true);
       return {
         orders: orderIds.length,
         drones,
@@ -116,7 +120,8 @@ export class ScenarioResetService {
 
   /**
    * Pedidos que salen, llegan o están ofrecidos (RU-10) a una central de la
-   * demo. Una urgencia en cola todavía no tiene central de origen: su
+   * demo, o que van a un punto de entrega de la red (RF-45): una urgencia de
+   * noche queda en traslado convencional sin central (RF-44). Una urgencia en cola todavía no tiene central de origen: su
    * central está en `dispatchOffers`.
    */
   private scopedOrders(
@@ -126,6 +131,7 @@ export class ScenarioResetService {
       `SELECT id, "planId" FROM orders
        WHERE "originHubId" = ANY($1::uuid[])
           OR "destinationHubId" = ANY($1::uuid[])
+          OR "deliveryPointId" IN (SELECT id FROM delivery_points)
           OR EXISTS (
             SELECT 1
             FROM jsonb_array_elements(COALESCE("dispatchOffers", '[]'::jsonb)) AS offer

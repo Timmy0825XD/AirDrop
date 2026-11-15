@@ -2,6 +2,7 @@ import { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ConfigService } from '@nestjs/config';
 import { OneTimeCode } from '../auth/one-time-code.entity';
 import { DeliveryCode } from '../delivery/delivery-code.entity';
+import { DeliveryPoint } from '../delivery-points/delivery-point.entity';
 import { Drone } from '../fleet/drone.entity';
 import { DroneMaintenance } from '../fleet/drone-maintenance.entity';
 import { DroneModel } from '../fleet/drone-model.entity';
@@ -52,6 +53,7 @@ export function typeOrmOptions(config: ConfigService): TypeOrmModuleOptions {
       DeliveryPlan,
       PrescriptionImage,
       DeliveryCode,
+      DeliveryPoint,
       WeatherCell,
       FlightIncident,
     ],

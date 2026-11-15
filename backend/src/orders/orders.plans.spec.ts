@@ -1,3 +1,7 @@
+import {
+  deliveryPointsStub,
+  TEST_POINT,
+} from '../delivery-points/delivery-points.testing';
 import { BadRequestException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
@@ -132,6 +136,7 @@ function build(state: { plan?: DeliveryPlan; occurrences?: Order[] } = {}) {
     plans as never,
     { assertDestinationAllowed: () => Promise.resolve() } as never,
     { statusChanged: jest.fn().mockResolvedValue(undefined) } as never,
+    deliveryPointsStub() as never,
   );
   return { service, orders, plans, saved, storage };
 }
@@ -141,9 +146,7 @@ function planDto(overrides: object = {}) {
     medicationName: 'Insulina NPH',
     saleType: SaleType.OVER_THE_COUNTER,
     quantity: 2,
-    address: 'Calle 20 # 8-15',
-    latitude: 10.46,
-    longitude: -73.25,
+    deliveryPointId: TEST_POINT.id,
     schedule: thursdays,
     ...overrides,
   };
@@ -174,6 +177,7 @@ function existingPlan(overrides: Partial<DeliveryPlan> = {}): DeliveryPlan {
     destinationKind: DestinationKind.PERSON,
     destinationHubId: null,
     originHubId: null,
+    deliveryPointId: TEST_POINT.id,
     address: 'Calle 20 # 8-15',
     latitude: 10.46,
     longitude: -73.25,

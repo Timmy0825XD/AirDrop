@@ -15,9 +15,6 @@ import { User } from '../users/user.entity';
 import { PatientDto } from './dto/patient.dto';
 import { TriageDto } from './dto/triage.dto';
 
-/** RU-02: la referencia cuando el solicitante no escribe ninguna. */
-export const DEFAULT_REFERENCE = 'Punto marcado en el mapa';
-
 export const PREGNANT_BABY = 'Un bebé no puede estar embarazado.';
 
 export const PATIENT_DOCUMENT_INVALID =

@@ -1,3 +1,4 @@
+import { DeliveryPointsModule } from '../delivery-points/delivery-points.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DecisionModule } from '../decision/decision.module';
@@ -42,6 +43,7 @@ import { TimelineService } from './timeline.service';
     OrdersModule,
     DecisionModule,
     DeliveryModule,
+    DeliveryPointsModule,
   ],
   controllers: [ControlController],
   providers: [

@@ -2,9 +2,8 @@ import { Transform, Type } from 'class-transformer';
 import {
   IsEnum,
   IsInt,
-  IsLatitude,
-  IsLongitude,
   IsOptional,
+  IsUUID,
   IsString,
   Matches,
   Max,
@@ -24,6 +23,7 @@ import {
   PRESCRIPTION_MAX_IMAGES,
 } from '../../common/field-limits';
 import { PrescriptionFileDto } from './prescription-file.dto';
+import { RequesterLocationDto } from '../../delivery-points/dto/requester-location.dto';
 import { PatientDto } from './patient.dto';
 import { PlanScheduleDto } from './plan-schedule.dto';
 
@@ -78,24 +78,18 @@ export class CreatePlanDto {
   })
   prescriptionValidUntil?: string;
 
-  /** RU-02: la referencia para encontrar el punto; el destino es el punto. */
+  /** RU-02 y RF-45: el punto de entrega donde baja el dron. */
+  @IsUUID('4', { message: 'Elige un punto de entrega.' })
+  deliveryPointId: string;
+
+  /**
+   * RU-02: dónde está el solicitante. Si llega y cae en la ciudad, el pedido
+   * no se crea. No se guarda.
+   */
   @IsOptional()
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
-  @IsString({ message: 'La referencia debe ser texto.' })
-  @MaxLength(FIELD_LIMITS.address, {
-    message: `La referencia no puede superar ${FIELD_LIMITS.address} caracteres.`,
-  })
-  address?: string;
-
-  @Type(() => Number)
-  @IsLatitude({ message: 'Marca en el mapa dónde debe llegar el dron.' })
-  latitude: number;
-
-  @Type(() => Number)
-  @IsLongitude({ message: 'Marca en el mapa dónde debe llegar el dron.' })
-  longitude: number;
+  @ValidateNested()
+  @Type(() => RequesterLocationDto)
+  requesterLocation?: RequesterLocationDto;
 
   /** RF-42: sin este objeto, el paciente es el titular de la cuenta. */
   @IsOptional()

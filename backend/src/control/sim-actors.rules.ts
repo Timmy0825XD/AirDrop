@@ -344,30 +344,3 @@ export function randomQuantity(random: Random): number {
     SCHEDULED_MIN_QUANTITY + Math.min(span - 1, Math.floor(random() * span))
   );
 }
-
-const KM_PER_DEGREE = 111.32;
-
-/**
- * Un punto al azar dentro del círculo (uniforme en el área), redondeado a
- * 6 decimales como pide la validación de coordenadas.
- */
-export function scatterAround(
-  center: { latitude: number; longitude: number },
-  radiusKm: number,
-  random: Random,
-): { latitude: number; longitude: number } {
-  const distance = radiusKm * Math.sqrt(random());
-  const angle = random() * 2 * Math.PI;
-  const dLat = (distance * Math.cos(angle)) / KM_PER_DEGREE;
-  const dLng =
-    (distance * Math.sin(angle)) /
-    (KM_PER_DEGREE * Math.cos((center.latitude * Math.PI) / 180));
-  return {
-    latitude: round6(center.latitude + dLat),
-    longitude: round6(center.longitude + dLng),
-  };
-}
-
-function round6(value: number): number {
-  return Math.round(value * 1e6) / 1e6;
-}

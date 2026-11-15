@@ -14,6 +14,7 @@ import { removeRetiredUserRoles } from './database/remove-retired-user-roles';
 import { typeOrmOptions } from './database/typeorm.config';
 import { DecisionModule } from './decision/decision.module';
 import { DeliveryModule } from './delivery/delivery.module';
+import { DeliveryPointsModule } from './delivery-points/delivery-points.module';
 import { FleetModule } from './fleet/fleet.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SimulationModule } from './simulation/simulation.module';
@@ -49,6 +50,7 @@ import { WeatherModule } from './weather/weather.module';
     UsersModule,
     AuthModule,
     HubsModule,
+    DeliveryPointsModule,
     InventoryModule,
     FleetModule,
     GeofencesModule,

@@ -49,6 +49,14 @@ export class AirspaceService {
     );
   }
 
+  /** La zona de alguno de esos tipos que contiene el punto (RU-02: la ciudad). */
+  zoneOfKindAt(point: LngLat, kinds: AirspaceZoneKind[]): AirspaceZone | null {
+    return zoneAt(
+      point,
+      this.zones.filter((zone) => kinds.includes(zone.kind)),
+    );
+  }
+
   /**
    * RF-06 y RF-07: un nodo no queda en zona urbana, en el anillo de un
    * aeródromo, en una zona prohibida ni en una coordinada. Una ESE puede
