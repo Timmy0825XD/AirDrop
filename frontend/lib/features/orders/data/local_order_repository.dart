@@ -146,6 +146,24 @@ class LocalOrderRepository implements OrderRepository {
         requiresColdChain: false,
         availableQuantity: 8,
       ),
+      CatalogOffer(
+        name: 'Insulina glargina 100 UI/ml',
+        saleType: SaleType.prescription,
+        requiresColdChain: true,
+        availableQuantity: 3,
+      ),
+      CatalogOffer(
+        name: 'Ibuprofeno 400 mg',
+        saleType: SaleType.overTheCounter,
+        requiresColdChain: false,
+        availableQuantity: 40,
+      ),
+      CatalogOffer(
+        name: 'Tramadol 50 mg',
+        saleType: SaleType.specialControl,
+        requiresColdChain: false,
+        availableQuantity: 12,
+      ),
     ];
   }
 

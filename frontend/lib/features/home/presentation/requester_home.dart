@@ -144,6 +144,12 @@ class _RequesterGrid extends StatelessWidget {
                 onTap: () => context.push('/orders/plans'),
               ),
             MenuItem(
+              title: 'Medicamentos disponibles',
+              subtitle: 'Mira qué puedes pedir por dron',
+              icon: Icons.medication_rounded,
+              onTap: () => context.push('/medications'),
+            ),
+            MenuItem(
               title: 'Entrega periódica',
               subtitle: 'Tu tratamiento, cada semana o mes',
               icon: Icons.calendar_month_rounded,
