@@ -7,6 +7,7 @@ import '../../../../core/widgets/form_sheet_card.dart';
 import '../../../../core/widgets/message_view.dart';
 import '../../../home/presentation/widgets/section_form_page.dart';
 import '../../../home/presentation/widgets/section_header.dart';
+import '../../../../core/widgets/skeleton.dart';
 
 /// El armado de un formulario de pedido: encabezado curvo, la tarjeta del
 /// formulario sobre la curva y el botón. Los campos dependen de una lista
@@ -37,6 +38,7 @@ class OrderFormScaffold<T> extends StatelessWidget {
   /// Los campos de la tarjeta, ya con la lista cargada.
   final List<Widget> Function(List<T> rows) fields;
   final Widget button;
+
   /// Por pasos: el avance (`FormSteps`) y volver al paso anterior.
   final Widget? steps;
   final VoidCallback? onBack;
@@ -44,16 +46,14 @@ class OrderFormScaffold<T> extends StatelessWidget {
   /// Lo que va en vez del formulario mientras la lista no sirve; `null`
   /// cuando ya llegó con algo.
   Widget? _stateView() => switch (source) {
-    AsyncValue(hasValue: true, hasError: false, :final value?) when value.isEmpty => MessageView(
-      icon: emptyIcon,
-      message: emptyText,
-    ),
+    AsyncValue(hasValue: true, hasError: false, :final value?)
+        when value.isEmpty =>
+      MessageView(icon: emptyIcon, message: emptyText),
     AsyncValue(hasValue: true, hasError: false) => null,
-    AsyncError(:final error) => MessageView(
-      icon: Icons.cloud_off_rounded,
+    AsyncError(:final error) => MessageView.error(
       message: ApiException.messageOf(error),
     ),
-    _ => const Center(child: CircularProgressIndicator()),
+    _ => const SkeletonDetail(),
   };
 
   @override

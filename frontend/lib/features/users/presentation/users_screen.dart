@@ -16,6 +16,7 @@ import 'widgets/user_confirm.dart';
 import 'widgets/user_labels.dart';
 import 'widgets/user_status_filter.dart';
 import 'widgets/user_tile.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Listado de cuentas institucionales del administrador. Los filtros viven
 /// en providers, así que tras suspender basta con invalidar `usersProvider`
@@ -71,7 +72,7 @@ class _UserList extends ConsumerWidget {
     final hubNames = {for (final hub in hubs) hub.id: hub.name};
 
     return users.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const SkeletonList(),
       error: (error, _) => MessageView(message: ApiException.messageOf(error)),
       data: (rows) => rows.isEmpty
           ? const MessageView(

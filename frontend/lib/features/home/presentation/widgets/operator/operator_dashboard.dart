@@ -7,6 +7,7 @@ import '../../../../fleet/data/fleet_dashboard_models.dart';
 import 'fleet_health_card.dart';
 import 'fleet_incidents_card.dart';
 import 'fleet_usage_card.dart';
+import '../../../../../core/widgets/skeleton.dart';
 
 /// El tablero de la flota en el inicio del operador (CU-20): uso, salud e
 /// incidentes del periodo. Mientras carga la primera vez, un indicador; con
@@ -34,14 +35,10 @@ class OperatorDashboard extends StatelessWidget {
           FleetIncidentsCard(dashboard: value),
         ],
       ),
-      AsyncError(:final error) => MessageView(
-        icon: Icons.cloud_off_rounded,
+      AsyncError(:final error) => MessageView.error(
         message: ApiException.messageOf(error),
       ),
-      _ => const Padding(
-        padding: EdgeInsets.all(24),
-        child: Center(child: CircularProgressIndicator()),
-      ),
+      _ => const Padding(padding: EdgeInsets.all(24), child: SkeletonList()),
     };
   }
 }

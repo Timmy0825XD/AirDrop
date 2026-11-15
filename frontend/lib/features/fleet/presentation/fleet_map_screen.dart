@@ -52,7 +52,7 @@ class FleetMapScreen extends ConsumerWidget {
               ),
         sheet: switch (live) {
           FleetMapState(:final problem?) => [
-            MessageView(icon: Icons.cloud_off_rounded, message: problem),
+            MessageView.error(message: problem),
           ],
           FleetMapState(map: null) => const [
             Center(child: CircularProgressIndicator()),

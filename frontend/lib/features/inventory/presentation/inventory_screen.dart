@@ -14,6 +14,7 @@ import '../data/inventory_models.dart';
 import '../data/inventory_providers.dart';
 import 'widgets/inventory_delete_confirm.dart';
 import 'widgets/inventory_tile.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Los insumos de la central del despachador. El encabezado dice cuántos
 /// hay y cuántos están vencidos o por vencer. Cada mutación invalida
@@ -57,29 +58,31 @@ class _InventoryList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return switch (ref.watch(inventoryProvider)) {
-      AsyncValue(hasValue: true, hasError: false, :final value?) when value.isEmpty => const MessageView(
-        icon: Icons.inventory_2_rounded,
-        message: 'Aún no hay insumos en el inventario.',
-      ),
-      AsyncValue(hasValue: true, hasError: false, :final value?) => ListView.separated(
-        padding: listPadding(context),
-        itemCount: value.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 10),
-        itemBuilder: (context, i) => RiseIn(
-          key: ValueKey(value[i].id),
-          delay: RiseIn.stagger(i),
-          child: InventoryTile(
-            item: value[i],
-            onTap: () => context.go('/inventory/${value[i].id}'),
-            onDelete: () => _deleteItem(context, ref, value[i]),
+      AsyncValue(hasValue: true, hasError: false, :final value?)
+          when value.isEmpty =>
+        const MessageView(
+          icon: Icons.inventory_2_rounded,
+          message: 'Aún no hay insumos en el inventario.',
+        ),
+      AsyncValue(hasValue: true, hasError: false, :final value?) =>
+        ListView.separated(
+          padding: listPadding(context),
+          itemCount: value.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 10),
+          itemBuilder: (context, i) => RiseIn(
+            key: ValueKey(value[i].id),
+            delay: RiseIn.stagger(i),
+            child: InventoryTile(
+              item: value[i],
+              onTap: () => context.go('/inventory/${value[i].id}'),
+              onDelete: () => _deleteItem(context, ref, value[i]),
+            ),
           ),
         ),
-      ),
-      AsyncError(:final error) => MessageView(
-        icon: Icons.cloud_off_rounded,
+      AsyncError(:final error) => MessageView.error(
         message: ApiException.messageOf(error),
       ),
-      _ => const Center(child: CircularProgressIndicator()),
+      _ => const SkeletonList(),
     };
   }
 }

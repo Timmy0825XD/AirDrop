@@ -14,6 +14,7 @@ import '../data/order_providers.dart';
 import 'widgets/plan_detail/plan_sections.dart';
 import 'widgets/plan_tile.dart';
 import 'order_format.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Detalle del plan (`GET /orders/plans/:id`): sus datos, sus entregas con
 /// fecha y franja, y las acciones (cambiar calendario, pausar o reanudar,
@@ -124,11 +125,10 @@ class _PlanDetailScreenState extends ConsumerState<PlanDetailScreen> {
               child: switch (detail) {
                 AsyncValue(hasValue: true, hasError: false, :final value?) =>
                   _content(value),
-                AsyncError(:final error) => MessageView(
-                  icon: Icons.cloud_off_rounded,
+                AsyncError(:final error) => MessageView.error(
                   message: ApiException.messageOf(error),
                 ),
-                _ => const Center(child: CircularProgressIndicator()),
+                _ => const SkeletonDetail(),
               },
             ),
           ),

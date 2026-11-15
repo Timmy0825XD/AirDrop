@@ -15,6 +15,7 @@ import '../data/hub_providers.dart';
 import 'widgets/hub_actions_sheet.dart';
 import 'widgets/hub_confirm.dart';
 import 'widgets/hub_tile.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Listado de centrales del administrador. El filtro vive en
 /// `hubFilterProvider`, así que tras suspender basta con invalidar
@@ -69,7 +70,7 @@ class _HubList extends ConsumerWidget {
     final filtered = ref.watch(hubFilterProvider) != null;
 
     return hubs.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const SkeletonList(),
       error: (error, _) => MessageView(message: ApiException.messageOf(error)),
       data: (rows) => rows.isEmpty
           ? MessageView(

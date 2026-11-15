@@ -9,6 +9,7 @@ import 'admin_home.dart';
 import 'dispatcher_home.dart';
 import 'fleet_operator_home.dart';
 import 'requester_home.dart';
+import '../../../core/widgets/skeleton.dart';
 
 class RoleHomeScreen extends ConsumerWidget {
   const RoleHomeScreen({super.key});
@@ -17,8 +18,7 @@ class RoleHomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final auth = ref.watch(authControllerProvider);
     return auth.when(
-      loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
+      loading: () => const Scaffold(body: SkeletonList()),
       error: (error, _) => _HomeError(message: ApiException.messageOf(error)),
       data: (state) {
         final user = state.user;

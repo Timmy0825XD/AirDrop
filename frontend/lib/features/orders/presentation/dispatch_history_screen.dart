@@ -11,6 +11,7 @@ import '../data/agenda_models.dart';
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
 import 'widgets/order_tile.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Lo cerrado que despachó la central (`/orders/history`, HU-36): de a 20,
 /// filtrado por estado, con "Cargar más".
@@ -65,15 +66,14 @@ class _DispatchHistoryScreenState extends ConsumerState<DispatchHistoryScreen> {
           ),
           Expanded(
             child: switch (first) {
-              AsyncError(:final error) => MessageView(
-                icon: Icons.cloud_off_rounded,
+              AsyncError(:final error) => MessageView.error(
                 message: ApiException.messageOf(error),
               ),
               AsyncValue(hasValue: true) => _HistoryList(
                 pages: pages,
                 onMore: () => setState(() => _pages++),
               ),
-              _ => const Center(child: CircularProgressIndicator()),
+              _ => const SkeletonList(),
             },
           ),
         ],
@@ -106,7 +106,7 @@ class _HistoryList extends StatelessWidget {
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, i) {
         if (i == items.length) {
-          if (loading) return const Center(child: CircularProgressIndicator());
+          if (loading) return const SkeletonList();
           return more
               ? OutlinedButton(
                   onPressed: onMore,

@@ -85,6 +85,7 @@ controller de la feature.
 
 - Español de Colombia (RNF-15). Identificadores en inglés.
 - Contraste y tamaños legibles (RNF-10).
+- Cada pantalla tiene sus cuatro estados (RNF-18): con datos; cargando con `SkeletonList` o `SkeletonDetail` (no un `CircularProgressIndicator` suelto; ese queda para botones, el mapa y el visor); vacío con `MessageView` (ícono, `title` opcional, mensaje y acción); y error con `MessageView.error`. La ilustración es `CorridorArt`.
 - Reutilizar widgets. Ningún widget supera **60 líneas**; si pasa, se descompone. Se mide la clase entera con `tools/ui_inventory.ps1` (escribe `docs/ui_inventory.md`); los `*_values.dart` guardan datos y validan, no pintan, y no entran en la regla.
 - `dart format` solo sobre los archivos que se tocaron: sobre carpetas enteras reformatea archivos ajenos y ensucia el PR.
 - Tema solo en `lib/theme/`. Las pantallas leen `Theme.of(context)`.

@@ -14,6 +14,7 @@ import '../data/inventory_models.dart';
 import '../data/inventory_providers.dart';
 import 'widgets/inventory_form/inventory_form_sheet.dart';
 import 'widgets/inventory_form_values.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Alta (`/inventory/new`) y edición (`/inventory/:id`) del inventario.
 /// La edición arma el diff contra el ítem original y, si no cambió nada,
@@ -77,7 +78,11 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
     });
     if (errors.isNotEmpty) return;
     if (original != null && _values.diff(original).isEmpty) {
-      showAppSnack(context, 'No hay cambios para guardar.', tone: SnackTone.info);
+      showAppSnack(
+        context,
+        'No hay cambios para guardar.',
+        tone: SnackTone.info,
+      );
       return;
     }
     FocusScope.of(context).unfocus();
@@ -119,7 +124,7 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
     }
     final rows = state.value;
     if (rows == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: SkeletonDetail());
     }
     final item = rows.where((row) => row.id == widget.itemId).firstOrNull;
     if (item == null) return _message('El ítem de inventario no existe.');

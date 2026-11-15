@@ -14,6 +14,7 @@ import '../data/analytics_providers.dart';
 import 'widgets/demand_cards.dart';
 import 'widgets/hub_ranking_card.dart';
 import 'widgets/kpi_card.dart';
+import '../../../core/widgets/skeleton.dart';
 
 enum _View { kpis, demand, hubs }
 
@@ -186,11 +187,10 @@ class _Async<T> extends StatelessWidget {
       AsyncValue(hasValue: true, hasError: false, :final value?) => _Cards(
         cards: builder(value),
       ),
-      AsyncError(:final error) => MessageView(
-        icon: Icons.cloud_off_rounded,
+      AsyncError(:final error) => MessageView.error(
         message: ApiException.messageOf(error),
       ),
-      _ => const Center(child: CircularProgressIndicator()),
+      _ => const SkeletonList(),
     };
   }
 }

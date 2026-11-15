@@ -16,6 +16,7 @@ import '../data/fleet_models.dart';
 import '../data/fleet_providers.dart';
 import 'widgets/drone_form_values.dart';
 import 'widgets/drone_model_field.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Alta de dron (`/fleet/new`).
 ///
@@ -78,7 +79,8 @@ class _DroneFormScreenState extends ConsumerState<DroneFormScreen> {
     );
     final message = switch (models) {
       _ when hub == null => 'No tienes centrales asignadas.',
-      AsyncValue(hasValue: true, hasError: false, :final value?) when value.isEmpty =>
+      AsyncValue(hasValue: true, hasError: false, :final value?)
+          when value.isEmpty =>
         'No hay modelos de dron disponibles.',
       AsyncError(:final error) => ApiException.messageOf(error),
       _ => null,
@@ -87,7 +89,7 @@ class _DroneFormScreenState extends ConsumerState<DroneFormScreen> {
       return SectionStatePage(
         header: header,
         body: message == null
-            ? const Center(child: CircularProgressIndicator())
+            ? const SkeletonDetail()
             : MessageView(icon: Icons.flight_rounded, message: message),
       );
     }
