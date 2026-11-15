@@ -375,7 +375,24 @@ class LocalOrderRepository implements OrderRepository {
   }
 
   @override
-  Future<List<PrescriptionFile>> prescriptionFiles(String orderId) async {
+  Future<Daylight> daylight() async {
+    // Sin Nest: de 6 a 18, hora de Colombia (UTC-5), del día real.
+    final now = DateTime.now().toUtc();
+    final local = now.subtract(const Duration(hours: 5));
+    final sunrise = DateTime.utc(local.year, local.month, local.day, 11);
+    final sunset = DateTime.utc(local.year, local.month, local.day, 23);
+    return Daylight(
+      sunrise: sunrise,
+      sunset: sunset,
+      daylight: !now.isBefore(sunrise) && now.isBefore(sunset),
+    );
+  }
+
+  @override
+  Future<List<PrescriptionFile>> prescriptionFiles(
+    String orderId, {
+    PrescriptionPurpose? purpose,
+  }) async {
     await findOne(orderId);
     return [
       PrescriptionFile(

@@ -18,6 +18,7 @@ import 'triage_models.dart';
 
 export 'triage_models.dart';
 
+export 'daylight_models.dart';
 export 'decision_models.dart';
 export 'delivery_point_models.dart';
 export 'fallback_models.dart';

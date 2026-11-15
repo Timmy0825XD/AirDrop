@@ -7,7 +7,7 @@ import '../../../data/order_models.dart';
 import '../../order_format.dart';
 
 /// Elige la nueva franja de una entrega: el mismo día o el siguiente, a
-/// una hora en punto entre 07:00 y 17:00. Devuelve `(fecha, hora)` o
+/// una hora en punto entre 07:00 y 16:00. Devuelve `(fecha, hora)` o
 /// `null` si se cierra.
 Future<(String, String)?> showRescheduleSheet(
   BuildContext context, {

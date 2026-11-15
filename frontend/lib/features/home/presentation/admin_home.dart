@@ -85,6 +85,12 @@ class AdminHome extends ConsumerWidget {
               icon: Icons.insights_rounded,
               onTap: () => context.push('/analytics'),
             ),
+            MenuItem(
+              title: 'Accesos a fórmulas',
+              subtitle: 'Quién abrió una fórmula y para qué',
+              icon: Icons.fact_check_rounded,
+              onTap: () => context.push('/privacy/prescription-access'),
+            ),
           ],
         ),
       ],

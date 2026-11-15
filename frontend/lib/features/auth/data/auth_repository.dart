@@ -43,6 +43,10 @@ abstract class AuthRepository {
   /// `POST /privacy/me/revoke` — solicitante: la cuenta queda inactiva.
   Future<void> revokeConsent(String password);
 
+  /// `GET /privacy/prescription-access` — administrador: el registro de
+  /// accesos a fórmulas (RF-51), hasta 200, el más reciente primero.
+  Future<List<PrescriptionAccess>> prescriptionAccess();
+
   /// `POST /privacy/me/delete` — solicitante: suprime la cuenta. 409 con un
   /// pedido en curso.
   Future<void> deleteAccount(String password);

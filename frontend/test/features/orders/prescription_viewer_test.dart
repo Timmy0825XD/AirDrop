@@ -82,7 +82,10 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            orderPrescriptionProvider('o1').overrideWith((ref) => files()),
+            orderPrescriptionProvider((
+              orderId: 'o1',
+              purpose: null,
+            )).overrideWith((ref) => files()),
             tempFileShareProvider.overrideWithValue(share),
           ],
           child: MaterialApp(

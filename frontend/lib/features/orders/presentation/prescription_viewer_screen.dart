@@ -13,12 +13,18 @@ import 'widgets/prescription_viewer/prescription_image_page.dart';
 import 'widgets/prescription_viewer/prescription_pages_bar.dart';
 import 'widgets/prescription_viewer/prescription_pdf_page.dart';
 
-/// Abre la fórmula del pedido a pantalla completa (RF-27).
-Future<void> showPrescription(BuildContext context, String orderId) {
+/// Abre la fórmula del pedido a pantalla completa (RF-27). [purpose] dice
+/// para qué se abre y queda en el registro de accesos (RF-51).
+Future<void> showPrescription(
+  BuildContext context,
+  String orderId, {
+  PrescriptionPurpose? purpose,
+}) {
   return Navigator.of(context, rootNavigator: true).push(
     MaterialPageRoute<void>(
       fullscreenDialog: true,
-      builder: (_) => PrescriptionViewerScreen(orderId: orderId),
+      builder: (_) =>
+          PrescriptionViewerScreen(orderId: orderId, purpose: purpose),
     ),
   );
 }
@@ -28,9 +34,16 @@ Future<void> showPrescription(BuildContext context, String orderId) {
 /// verificación y "Abrir con…" (una copia temporal que se borra al cerrar).
 /// La fórmula vive en memoria solo mientras el visor está abierto.
 class PrescriptionViewerScreen extends ConsumerStatefulWidget {
-  const PrescriptionViewerScreen({super.key, required this.orderId});
+  const PrescriptionViewerScreen({
+    super.key,
+    required this.orderId,
+    this.purpose,
+  });
 
   final String orderId;
+
+  /// Para qué se abre: autorizar o consultar el histórico.
+  final PrescriptionPurpose? purpose;
 
   @override
   ConsumerState<PrescriptionViewerScreen> createState() =>
@@ -76,7 +89,12 @@ class _PrescriptionViewerScreenState
 
   @override
   Widget build(BuildContext context) {
-    final files = ref.watch(orderPrescriptionProvider(widget.orderId));
+    final files = ref.watch(
+      orderPrescriptionProvider((
+        orderId: widget.orderId,
+        purpose: widget.purpose,
+      )),
+    );
     final current = files.value?.elementAtOrNull(_index);
     return Scaffold(
       appBar: AppBar(

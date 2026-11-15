@@ -22,11 +22,12 @@ enum ScheduleKind {
   }
 }
 
-/// La primera franja empieza a las 07:00 y la última a las 17:00.
+/// La primera franja empieza a las 07:00 y la última a las 16:00: de
+/// noche no se vuela (RF-44).
 const firstSlotHour = 7;
-const lastSlotHour = 17;
+const lastSlotHour = 16;
 
-/// Las horas en punto que acepta Nest: `07:00` … `17:00`.
+/// Las horas en punto que acepta Nest: `07:00` … `16:00`.
 List<String> get slotTimes => [
   for (var hour = firstSlotHour; hour <= lastSlotHour; hour++)
     '${hour.toString().padLeft(2, '0')}:00',

@@ -120,6 +120,16 @@ class RemoteAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<List<PrescriptionAccess>> prescriptionAccess() async {
+    final data = await apiClient.getJson('/privacy/prescription-access');
+    return [
+      if (data is List)
+        for (final row in data.whereType<Map>())
+          PrescriptionAccess.fromJson(Map<String, dynamic>.from(row)),
+    ];
+  }
+
+  @override
   Future<void> revokeConsent(String password) =>
       apiClient.postJson('/privacy/me/revoke', body: {'password': password});
 

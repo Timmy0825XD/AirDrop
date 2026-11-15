@@ -1650,7 +1650,7 @@ La guía de partida es `learning/35-front-pending-red-regional.md` (local).
 | 3 — Centrales nodo y ESE | `feature/centrales-nodo-ese` | RF-06, RF-43 | Hecho (2026-11-15) |
 | 4 — Flota de tres tipos y peso del lote | `feature/flota-tres-tipos` | RF-49, RF-11 | Hecho (2026-11-15) |
 | 5 — Manifiesto e identificación | `feature/manifiesto-e-identificacion` | RF-47, RF-48 | Hecho (2026-11-15) |
-| 6 — Propósito de la fórmula y luz del día | `feature/formula-proposito-y-luz` | RF-51, RF-44 | Pendiente |
+| 6 — Propósito de la fórmula y luz del día | `feature/formula-proposito-y-luz` | RF-51, RF-44 | Hecho (2026-11-15) |
 
 ### Paso 1 — Puntos de entrega (hecho, 2026-11-15)
 
@@ -1711,6 +1711,21 @@ La guía de partida es `learning/35-front-pending-red-regional.md` (local).
   del manifiesto no se le muestra a quien pidió.
 - "Sin enlace" también sale cuando lo dice la identificación remota.
 - `flutter analyze` sin issues y `flutter test` en verde (425).
+
+### Paso 6 — Propósito de la fórmula y luz del día (hecho, 2026-11-15)
+
+- Abrir una fórmula dice para qué (`authorize` o `history`) y queda en el
+  registro de accesos.
+- El administrador tiene "Accesos a fórmulas" en su inicio: quién abrió
+  qué hoja, para qué y cuándo.
+- El inicio del solicitante dice de qué hora a qué hora se vuela hoy y, de
+  noche, que una urgencia va por la alternativa terrestre.
+- Las franjas de un plan y de mover una entrega van de 07:00 a 16:00
+  (antes ofrecían las 17:00, que Nest rechaza).
+- `flutter analyze` sin issues y `flutter test` en verde (430).
+
+Con este paso la app ya usa todos los contratos del backend regional.
+Falta probar el recorrido contra Nest (Render) y llevar lo mismo a `web/`.
 
 ## Pendiente del backend
 

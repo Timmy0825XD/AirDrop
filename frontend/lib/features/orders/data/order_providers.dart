@@ -101,9 +101,19 @@ final orderManifestProvider = FutureProvider.autoDispose
 /// La fórmula del pedido, todas sus hojas (RF-27). Vive solo mientras el
 /// visor está abierto: la fórmula no queda en memoria después.
 final orderPrescriptionProvider = FutureProvider.autoDispose
-    .family<List<PrescriptionFile>, String>((ref, id) {
-      return ref.watch(orderRepositoryProvider).prescriptionFiles(id);
+    .family<List<PrescriptionFile>, PrescriptionKey>((ref, key) {
+      return ref
+          .watch(orderRepositoryProvider)
+          .prescriptionFiles(key.orderId, purpose: key.purpose);
     });
+
+/// Qué fórmula y para qué se abre (RF-51).
+typedef PrescriptionKey = ({String orderId, PrescriptionPurpose? purpose});
+
+/// Cuándo se vuela hoy (`GET /airspace/daylight`, RF-44).
+final daylightProvider = FutureProvider.autoDispose<Daylight>(
+  (ref) => ref.watch(orderRepositoryProvider).daylight(),
+);
 
 final planDetailProvider = FutureProvider.family<PlanDetail, String>((ref, id) {
   return ref.watch(orderRepositoryProvider).planDetail(id);
