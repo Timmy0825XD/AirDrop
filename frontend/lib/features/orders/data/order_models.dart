@@ -7,6 +7,8 @@ library;
 
 import 'dart:typed_data';
 
+import 'package:latlong2/latlong.dart';
+
 import '../../inventory/data/inventory_models.dart' show SaleType;
 import '../../auth/data/auth_models.dart' show DocumentType;
 import 'fallback_models.dart';
@@ -17,6 +19,7 @@ import 'triage_models.dart';
 export 'triage_models.dart';
 
 export 'decision_models.dart';
+export 'delivery_point_models.dart';
 export 'fallback_models.dart';
 export 'plan_schedule_models.dart';
 
@@ -798,6 +801,17 @@ class PrescriptionFile {
   bool get isPdf => mime == 'application/pdf';
 }
 
+/// El destino de un pedido del solicitante (RF-45): el punto de entrega y,
+/// si se leyó, el GPS con 6 decimales.
+Map<String, dynamic> destinationJson(String pointId, LatLng? gps) => {
+  'deliveryPointId': pointId,
+  if (gps != null)
+    'requesterLocation': {
+      'latitude': double.parse(gps.latitude.toStringAsFixed(6)),
+      'longitude': double.parse(gps.longitude.toStringAsFixed(6)),
+    },
+};
+
 /// Body de `POST /orders/emergencies`. Sin `quantity`: el servidor guarda 1.
 class CreateEmergencyRequest {
   const CreateEmergencyRequest({
@@ -807,9 +821,8 @@ class CreateEmergencyRequest {
     this.triage,
     this.patient,
     this.allergies,
-    this.address,
-    this.latitude,
-    this.longitude,
+    required this.deliveryPointId,
+    this.requesterLocation,
     this.patientDocumentType,
     this.patientDocumentNumber,
     this.prescriptions = const [],
@@ -824,11 +837,7 @@ class CreateEmergencyRequest {
       'triage': ?triage?.toJson(),
       'patient': ?patient?.toJson(),
       'allergies': ?allergies,
-      // RU-02: la referencia es opcional; sin ella Nest guarda "Punto marcado
-      // en el mapa".
-      'address': ?address,
-      if (latitude != null && longitude != null) 'latitude': latitude,
-      if (latitude != null && longitude != null) 'longitude': longitude,
+      ...destinationJson(deliveryPointId, requesterLocation),
       if (saleType == SaleType.prescription) ...{
         // Sin documento cuando el paciente es una persona a cargo (§19.1).
         'patientDocumentType': ?patientDocumentType?.apiValue,
@@ -852,10 +861,12 @@ class CreateEmergencyRequest {
   /// Vacío es "ninguna"; `null` no se preguntó.
   final String? allergies;
 
-  /// La referencia para encontrar el punto ("reja verde, patio de atrás").
-  final String? address;
-  final double? latitude;
-  final double? longitude;
+  /// RF-45: el punto de entrega donde baja el dron.
+  final String deliveryPointId;
+
+  /// El GPS del solicitante. Nest no lo guarda: solo revisa que no esté en
+  /// la ciudad.
+  final LatLng? requesterLocation;
   final DocumentType? patientDocumentType;
   final String? patientDocumentNumber;
 
@@ -872,14 +883,13 @@ class CreatePlanRequest {
     required this.medicationName,
     required this.saleType,
     required this.quantity,
-    this.address,
+    required this.deliveryPointId,
+    this.requesterLocation,
     this.patient,
     this.frequency,
     this.startDate,
     this.schedule,
     this.prescriptionValidUntil,
-    this.latitude,
-    this.longitude,
     this.patientDocumentType,
     this.patientDocumentNumber,
     this.prescriptions = const [],
@@ -893,11 +903,7 @@ class CreatePlanRequest {
       ..._timingJson(schedule, frequency, startDate),
       'prescriptionValidUntil': ?prescriptionValidUntil,
       'patient': ?patient?.toJson(),
-      // RU-02: la referencia es opcional; sin ella Nest guarda "Punto marcado
-      // en el mapa".
-      'address': ?address,
-      if (latitude != null && longitude != null) 'latitude': latitude,
-      if (latitude != null && longitude != null) 'longitude': longitude,
+      ...destinationJson(deliveryPointId, requesterLocation),
       if (saleType == SaleType.prescription) ...{
         // Sin documento cuando el paciente es una persona a cargo (§19.1).
         'patientDocumentType': ?patientDocumentType?.apiValue,
@@ -918,13 +924,14 @@ class CreatePlanRequest {
   /// Obligatoria con fórmula: el plan no pasa de esa fecha.
   final String? prescriptionValidUntil;
 
-  /// La referencia para encontrar el punto; opcional (RU-02).
-  final String? address;
+  /// RF-45: el punto de entrega donde baja el dron.
+  final String deliveryPointId;
+
+  /// El GPS del solicitante; Nest no lo guarda.
+  final LatLng? requesterLocation;
 
   /// RF-42: la persona a cargo; sin ella, el paciente es el titular.
   final OrderPatient? patient;
-  final double? latitude;
-  final double? longitude;
   final DocumentType? patientDocumentType;
   final String? patientDocumentNumber;
 

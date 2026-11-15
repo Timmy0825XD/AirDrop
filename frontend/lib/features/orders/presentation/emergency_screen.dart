@@ -11,6 +11,7 @@ import '../data/order_models.dart';
 import '../data/order_providers.dart';
 import 'widgets/form_steps.dart';
 import 'widgets/order_form_scaffold.dart';
+import 'widgets/requester_order/delivery_point_step.dart';
 import 'widgets/requester_order/emergency_facts.dart';
 import 'widgets/requester_order/patient_fields.dart';
 import 'widgets/requester_order/requester_order_fields.dart';
@@ -23,7 +24,7 @@ import 'widgets/requester_order/triage_fields.dart';
 /// 1. **Qué pasa:** signos de alarma (con el 123), para quién, qué siente,
 ///    desde cuándo y qué tan fuerte (RF-41, RF-42).
 /// 2. **Qué necesitas:** el medicamento, las alergias y la fórmula.
-/// 3. **Dónde:** el punto en el mapa.
+/// 3. **Dónde:** el punto de entrega (RF-45).
 ///
 /// "Siguiente" valida solo el paso abierto; volver regresa sin perder lo
 /// escrito. Al crearla se abre su detalle.
@@ -81,7 +82,9 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen>
         shakeCount++;
       }
     });
-    if (ok) FocusScope.of(context).unfocus();
+    if (!ok) return;
+    FocusScope.of(context).unfocus();
+    if (_last && coverage == null) loadCoverage();
   }
 
   Future<void> _send() => submit(
@@ -112,8 +115,15 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen>
         steps: FormSteps(labels: EmergencyScreen.steps, current: _step),
         onBack: _back,
         fields: _fields,
-        button: _last
-            ? Column(
+        button: !_last
+            ? AuthMorphButton(
+                label: 'Siguiente',
+                loadingLabel: 'Siguiente',
+                onPressed: _next,
+              )
+            : !canOrder
+            ? const SizedBox.shrink()
+            : Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const EmergencyFacts(),
@@ -125,11 +135,6 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen>
                     onLaunch: _send,
                   ),
                 ],
-              )
-            : AuthMorphButton(
-                label: 'Siguiente',
-                loadingLabel: 'Siguiente',
-                onPressed: _next,
               ),
       ),
     );
@@ -163,7 +168,7 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen>
         AllergiesField(form: triage),
         PrescriptionSlot(form: form),
       ],
-      _ => [DestinationFields(form: form)],
+      _ => [DeliveryPointStep(form: form)],
     };
   }
 }

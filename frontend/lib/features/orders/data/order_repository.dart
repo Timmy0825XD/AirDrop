@@ -1,3 +1,5 @@
+import 'package:latlong2/latlong.dart';
+
 import 'agenda_models.dart';
 import 'order_models.dart';
 
@@ -8,6 +10,11 @@ import 'order_models.dart';
 abstract class OrderRepository {
   /// `GET /orders/catalog` — sin `hubId` para el solicitante.
   Future<List<CatalogOffer>> catalog({String? hubId});
+
+  /// `GET /delivery-points` — los puntos de entrega y si hay cobertura
+  /// desde [from] (RU-02, RF-45). Con [medicationName], sin cobertura trae
+  /// dónde recogerlo.
+  Future<CoverageResult> coverage({LatLng? from, String? medicationName});
 
   /// `GET /orders/origin-hubs` — despachador.
   Future<List<OriginHub>> originHubs();
