@@ -156,6 +156,24 @@ Se agregó tras revisar el RAC 100, la Ley 1581 y la crítica del profesor a la 
 
 **Suma del módulo 11: 86 SP.**
 
+## Módulo 12 — Rediseño Corredor (ampliación)
+
+Se agregó tras revisar la app terminada: funcionaba, pero se veía plana, sin marca y sin estados intermedios. El concepto elegido es "Corredor": la ruta entre la central y el punto de entrega ordena la pantalla. Empieza por el solicitante; los cimientos cambian los cuatro roles. Se cuenta aparte.
+
+| ID | Historia | Pri | SP | Sprint |
+| --- | --- | --- | --- | --- |
+| HU-72 | Cimientos visuales: tres niveles de superficie, acento del manual de marca, cifras en monoespaciada, bordes a 3:1 y una sola familia de íconos (RNF-16, RNF-18) | Alta | 8 | 6 |
+| HU-73 | Estados de carga con esqueleto, vacío y error con ilustración (RNF-18) | Alta | 5 | 6 |
+| HU-74 | Arranque con el logo por capas; despegue, llegada, código y retorno con animación propia y vibración | Media | 8 | 6 |
+| HU-75 | Bienvenida de tres pasos (RF-53) | Media | 3 | 6 |
+| HU-76 | Inicio, urgencia y seguimiento del solicitante con la ruta como motivo | Alta | 8 | 6 |
+| HU-77 | Ajustes: tema con vista previa, texto, contraste, movimiento y modo sencillo (RF-52) | Alta | 8 | 6 |
+| HU-78 | Medicamentos disponibles (RF-54) | Media | 5 | 6 |
+| HU-79 | Avisos del sistema en el backend: registro del dispositivo y envío (RF-55) | Media | 8 | 6 |
+| HU-80 | Avisos del sistema en la app: permiso en contexto y enlace al pedido (RF-55) | Media | 5 | 6 |
+
+**Suma del módulo 12: 58 SP.**
+
 ---
 
 ## Incrementos

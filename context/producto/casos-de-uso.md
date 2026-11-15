@@ -129,6 +129,43 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Después:** Tras la supresión, el correo y el celular quedan libres y sus pedidos ya no lo identifican.
 - **Por qué:** RF-50.
 
+### CU-49 — Ver los medicamentos disponibles
+
+- **Actores:** Solicitante
+- **Antes:** Sesión activa
+- **Pasos:**
+  1. Abre "Medicamentos". Ve la lista con el nombre, si exige fórmula, si viaja en frío y la disponibilidad en palabras.
+  2. Busca por nombre o filtra por frío o por fórmula.
+  3. Abre un medicamento y toca "Pedir este medicamento".
+  4. La app abre la urgencia (CU-04) con ese ítem ya elegido.
+- **Si falla:** Sin conexión: muestra la última lista conocida con su hora (RNF-17). Control especial: la lista dice que no se pide por este canal. Sin resultados: lo dice y deja borrar la búsqueda.
+- **Después:** No se creó ningún pedido. El tamizaje, el paciente, la fórmula y el punto se piden igual en CU-04.
+- **Por qué:** RU-33, RF-54. La lista no muestra cantidades ni tiempos: el motor no ha corrido.
+
+### CU-50 — Ajustar la app
+
+- **Actores:** Cualquier rol
+- **Antes:** Sesión activa
+- **Pasos:**
+  1. Abre "Ajustes" desde el perfil.
+  2. Elige un tema. La vista previa cambia; el tema de la app cambia cuando toca "Aplicar".
+  3. Cambia el tamaño del texto, el alto contraste, reducir movimiento o, si es solicitante, el modo sencillo. Cada uno se aplica al instante.
+  4. Enciende o apaga los avisos del sistema (RF-55).
+- **Si falla:** Si el teléfono tiene los avisos bloqueados, la app lo dice y ofrece abrir los ajustes del sistema.
+- **Después:** Los ajustes quedan en el teléfono y se aplican antes de la primera pantalla en el siguiente arranque.
+- **Por qué:** RU-34, RF-52.
+
+### CU-51 — Bienvenida
+
+- **Actores:** Solicitante
+- **Antes:** Primer ingreso en ese teléfono
+- **Pasos:**
+  1. Tras el código de verificación o el primer login, la app muestra tres pasos: pide, sigue el vuelo, recibe con tu código.
+  2. Avanza con "Continuar" o sale con "Omitir".
+  3. Llega al inicio.
+- **Después:** No vuelve a salir sola. Se puede ver de nuevo desde Ajustes.
+- **Por qué:** RU-35, RF-53.
+
 ## Despachador
 
 ### CU-09 — Entrar a su central
@@ -389,8 +426,12 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 ### CU-29 — Avisar
 
 - **Actores:** Sistema, y según el evento el solicitante, el despachador o el operador
-- **Pasos:** En cada cambio de estado, llegada, espera, retorno o alerta, envía el aviso a quien participa en ese pedido.
-- **Por qué:** RF-16. El operador recibe alertas de vuelo, no la fórmula.
+- **Pasos:**
+  1. En cada cambio de estado, llegada, espera, retorno o alerta, envía el aviso a quien participa en ese pedido.
+  2. Si el aviso es del pedido de un solicitante con un dispositivo registrado, lo manda además como aviso del sistema, sin el nombre del medicamento (RF-55).
+  3. Al tocarlo, la app abre ese pedido: el mapa si va en vuelo, el código si está en espera.
+- **Si falla:** Si el envío al dispositivo falla, el aviso queda en la bandeja. Sin sesión, la app pide ingresar antes de abrir el pedido.
+- **Por qué:** RF-16 y RF-55. El operador recibe alertas de vuelo, no la fórmula.
 
 ### CU-30 — Frío
 

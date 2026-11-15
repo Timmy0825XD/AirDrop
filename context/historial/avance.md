@@ -1472,6 +1472,28 @@ Pendiente:
   backend (las pantallas con telemetría no se pudieron ver con datos
   locales).
 
+## Fase 22 — Rediseño Corredor
+
+Concepto elegido el 2026-11-14 entre cinco propuestas
+(<https://claude.ai/artifact/STBUXjTf4xHgnebaknmC4L>). Parte del diseño
+natural de la Fase 21 y le suma jerarquía, marca y estados. Historias
+HU-72 a HU-80 (módulo 12 del backlog). El plan detallado está en
+`learning/37-plan-rediseno-corredor.md` (local, fuera de git). Empieza por
+el solicitante; los pasos 1 y 2 cambian los cuatro roles.
+
+| Paso | Rama | Historia | Estado |
+| --- | --- | --- | --- |
+| 0 — Alinear `context/` | `docs/rediseno-corredor` | — | Hecho |
+| 1 — Cimientos: superficies, acento, cifras, bordes, íconos | `style/corredor-cimientos` | HU-72 | Pendiente |
+| 2 — Carga, vacío y error | `feature/corredor-estados` | HU-73 | Pendiente |
+| 3 — Inicio, urgencia y seguimiento del solicitante | `feature/corredor-solicitante` | HU-76 | Pendiente |
+| 4 — Arranque, animaciones firma y vibración | `feature/corredor-movimiento` | HU-74 | Pendiente |
+| 5 — Bienvenida | `feature/bienvenida` | HU-75 | Pendiente |
+| 6 — Ajustes y modo sencillo | `feature/ajustes` | HU-77 | Pendiente |
+| 7 — Medicamentos disponibles | `feature/medicamentos-disponibles` | HU-78 | Pendiente |
+| 8 — Avisos del sistema, backend | `feature/push-dispositivos` | HU-79 | Pendiente |
+| 9 — Avisos del sistema, app | `feature/push-app` | HU-80 | Pendiente |
+
 ## Pendiente del backend
 
 Vive en [`pendientes-backend.md`](pendientes-backend.md), para que la persona
