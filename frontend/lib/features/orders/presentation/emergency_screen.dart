@@ -95,7 +95,7 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen>
       },
       child: OrderFormScaffold<CatalogOffer>(
         title: 'Pedir urgencia',
-        subtitle: 'Una unidad, a donde estés',
+        subtitle: 'Una unidad, a tu punto de entrega',
         source: ref.watch(catalogProvider),
         emptyIcon: Icons.medication_rounded,
         emptyText: 'No hay medicamentos disponibles por ahora.',

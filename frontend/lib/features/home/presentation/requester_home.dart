@@ -16,13 +16,14 @@ import 'widgets/home_header.dart';
 import 'widgets/home_page.dart';
 import 'live_mission.dart';
 import 'widgets/home_spotlight.dart';
+import 'widgets/requester/first_order_card.dart';
 import 'widgets/requester/next_delivery_card.dart';
 import 'widgets/requester/requester_stats.dart';
 
 /// Inicio del solicitante. Con un pedido en el aire, arriba va la misión en
 /// curso con la telemetría en vivo de ese vuelo (el mismo socket del mapa,
-/// abierto solo mientras se ve el inicio); si no, el dron sobre el radar
-/// con cuántos pedidos van en curso. Debajo, sus números, la próxima
+/// abierto solo mientras se ve el inicio); si no, cuántos pedidos van en
+/// curso, o la invitación a pedir la primera urgencia si no hay ninguno. Debajo, sus números, la próxima
 /// entrega programada y "Entrega periódica" (pedir urgencia, Mis pedidos y
 /// Mis planes ya están en la barra). La cifra abre Mis pedidos en curso.
 /// Los pedidos salen de `mineProvider` y se refrescan cada 10 s.
@@ -60,6 +61,8 @@ class RequesterHome extends ConsumerWidget {
           const SizedBox(height: 18),
           if (flying != null)
             LiveMission(order: flying, forRequester: true)
+          else if (orders != null && orders.isEmpty)
+            FirstOrderCard(onOrder: () => context.push('/orders/emergency'))
           else
             HomeSpotlight(
               value: open?.length,
@@ -70,7 +73,8 @@ class RequesterHome extends ConsumerWidget {
                 tone: PillTone.neutral,
               ),
             ),
-          if (flying == null) const SizedBox(height: 12),
+          if (flying == null && (orders?.isNotEmpty ?? true))
+            const SizedBox(height: 12),
           if (orders != null && orders.isNotEmpty)
             RequesterStats(orders: orders),
           if (next != null)
