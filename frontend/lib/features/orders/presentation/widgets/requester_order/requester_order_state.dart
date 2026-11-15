@@ -147,6 +147,14 @@ mixin RequesterOrderState<T extends ConsumerStatefulWidget>
     }
   }
 
+  Future<void> _reloadAccount() async {
+    try {
+      await ref.read(authControllerProvider.notifier).reloadUser();
+    } on ApiException {
+      // Sin red la cuenta queda como estaba; el aviso ya se mostró.
+    }
+  }
+
   /// Valida, y si todo está bien llama [send] con el usuario y avisa con
   /// el mensaje de Nest si falla.
   Future<void> submit({
@@ -165,7 +173,11 @@ mixin RequesterOrderState<T extends ConsumerStatefulWidget>
     try {
       await send(account);
     } on ApiException catch (e) {
-      if (mounted) showErrorSnack(context, e.message);
+      if (!mounted) return;
+      showErrorSnack(context, e.message);
+      // RF-50: 403 "Acepta la política…": la cuenta se relee y el router
+      // lleva a aceptarla.
+      if (e.statusCode == 403) await _reloadAccount();
     } finally {
       if (mounted) setState(() => sending = false);
     }

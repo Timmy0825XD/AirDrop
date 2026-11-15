@@ -1,6 +1,7 @@
 import '../../../../core/network/api_client.dart';
 import '../auth_models.dart';
 import '../auth_repository.dart';
+import '../privacy_models.dart';
 
 class RemoteAuthRepository implements AuthRepository {
   RemoteAuthRepository({required this.apiClient});
@@ -96,6 +97,35 @@ class RemoteAuthRepository implements AuthRepository {
     final data = await apiClient.deleteJson('/auth/me/email/pending');
     return PublicUser.fromJson(_asJsonMap(data));
   }
+
+  @override
+  Future<PrivacyPolicy> policy() async {
+    final data = await apiClient.getJson('/privacy/policy');
+    return PrivacyPolicy.fromJson(_asJsonMap(data));
+  }
+
+  @override
+  Future<PrivacyOverview> privacyMe() async {
+    final data = await apiClient.getJson('/privacy/me');
+    return PrivacyOverview.fromJson(_asJsonMap(data));
+  }
+
+  @override
+  Future<ConsentState> acceptPolicy(String version) async {
+    final data = await apiClient.postJson(
+      '/privacy/me/accept',
+      body: {'version': version},
+    );
+    return ConsentState.fromJson(_asJsonMap(data));
+  }
+
+  @override
+  Future<void> revokeConsent(String password) =>
+      apiClient.postJson('/privacy/me/revoke', body: {'password': password});
+
+  @override
+  Future<void> deleteAccount(String password) =>
+      apiClient.postJson('/privacy/me/delete', body: {'password': password});
 
   Map<String, dynamic> _asJsonMap(Object? data) {
     if (data is Map<String, dynamic>) {

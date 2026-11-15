@@ -48,6 +48,20 @@ final List<LocalUser> localFixtureUsers = [
     status: UserStatus.active,
     password: 'Admin1234',
   ),
+  // Se registró antes de la política vigente (RF-50): al entrar debe
+  // aceptarla.
+  LocalUser(
+    id: '55555555-5555-4555-8555-555555555555',
+    fullName: 'Pedro Antiguo',
+    email: 'antiguo@airdrop.local',
+    phone: '3009876543',
+    documentType: DocumentType.citizenshipId,
+    documentNumber: '1012345678',
+    role: UserRole.requester,
+    status: UserStatus.active,
+    password: 'Demo1234',
+    policyVersion: null,
+  ),
 ];
 
 /// Id de la central de demostración que comparten las fixtures

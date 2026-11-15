@@ -594,6 +594,11 @@ La pantalla y las capas de datos no deben inventar endpoints ni cambiar el contr
 | Reset | `POST /auth/reset-password` | `AuthMessage` |
 | Usuario actual | `GET /auth/me` | `PublicUser` |
 | Actualizar perfil | `PATCH /auth/me` | `PublicUser` |
+| Política vigente | `GET /privacy/policy` (pública) | `PrivacyPolicy` |
+| Mis datos | `GET /privacy/me` | `PrivacyOverview` |
+| Aceptar la política | `POST /privacy/me/accept` | `ConsentState` |
+| Revocar el consentimiento | `POST /privacy/me/revoke` | Sin cuerpo útil |
+| Suprimir la cuenta | `POST /privacy/me/delete` | Sin cuerpo útil (409 con un pedido en curso) |
 
 - Cambiar el correo es en dos pasos (RNF-04): `PATCH /auth/me` con
   `email` y `currentPassword` (la hoja `EmailEditSheet` la pide solo si el
@@ -606,6 +611,27 @@ La pantalla y las capas de datos no deben inventar endpoints ni cambiar el contr
 - Los repositorios no conocen Riverpod, Flutter UI ni `TokenStore` salvo el repositorio local para su sesión simulada.
 - La UI muestra el mensaje de `ApiException`; no reemplaza el mensaje del backend por otro texto genérico cuando este viene definido.
 - El OTP de registro dura 10 minutos; el de reset, 15 minutos.
+
+### Datos personales (RF-50, CU-46)
+
+- `PublicUser` trae `policyVersion` y `mustAcceptPolicy`. Con
+  `mustAcceptPolicy`, el router (`policyRedirect`, `policy_gate.dart`) solo
+  deja ver `/privacy/accept` (`AcceptPolicyScreen`): sin aceptar, Nest
+  responde 403 al pedir. Al aceptar, el controller relee la cuenta
+  (`reloadUser`) y el router sigue al inicio. Un 403 al crear un pedido
+  también relee la cuenta.
+- `/privacy/policy` (`PolicyScreen`) se abre con o sin sesión: desde "Leer
+  la política" del registro y desde "Mis datos".
+- `/privacy` (`PrivacyScreen`, "Mis datos", solo solicitante, se entra
+  desde el perfil): la versión aceptada, y revocar o suprimir. Las dos
+  piden la contraseña en `showPasswordConfirmSheet` con los avisos de Nest
+  (`notices`), no la guardan y cierran la sesión en el teléfono
+  (`AuthController.endSession`, sin llamar a Nest: ese token ya responde
+  401). Suprimir con un pedido en curso da 409 y la sesión sigue.
+- `UserStatus` suma `revoked` y `deleted`. No hay reactivación de una
+  cuenta revocada: el contexto no la define.
+- Con datos locales, `antiguo@airdrop.local` / `Demo1234` es una cuenta
+  que todavía no aceptó la política.
 
 ### Registro: solo solicitante
 

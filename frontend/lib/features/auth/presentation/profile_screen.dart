@@ -53,6 +53,13 @@ class ProfileScreen extends ConsumerWidget {
       if (user.hubIds.isNotEmpty) ProfileHubsCard(names: _hubNames(ref, user)),
       MenuList(
         items: [
+          if (user.isRequester)
+            MenuItem(
+              title: 'Mis datos',
+              subtitle: 'Tu consentimiento y tus derechos',
+              icon: Icons.verified_user_rounded,
+              onTap: () => context.push('/privacy'),
+            ),
           MenuItem(
             title: 'Ajustes',
             subtitle: 'Tema, tamaño del texto y accesibilidad',

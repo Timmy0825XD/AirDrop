@@ -10,10 +10,14 @@ class RegisterConsentRow extends StatelessWidget {
     super.key,
     required this.value,
     required this.onChanged,
+    required this.onReadPolicy,
   });
 
   final bool value;
   final ValueChanged<bool> onChanged;
+
+  /// Abre la política real (`GET /privacy/policy`, RF-50).
+  final VoidCallback onReadPolicy;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +37,23 @@ class RegisterConsentRow extends StatelessWidget {
               children: [
                 _CheckBox(checked: value),
                 const SizedBox(width: 14),
-                Expanded(child: _ConsentText(theme: theme)),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _ConsentText(theme: theme),
+                      TextButton(
+                        onPressed: onReadPolicy,
+                        style: TextButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(48, 48),
+                          alignment: Alignment.centerLeft,
+                        ),
+                        child: const Text('Leer la política'),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -60,7 +80,6 @@ class _ConsentText extends StatelessWidget {
             style: TextStyle(
               color: colors.onSurface,
               fontWeight: FontWeight.w700,
-              decoration: TextDecoration.underline,
             ),
           ),
           const TextSpan(text: '.'),

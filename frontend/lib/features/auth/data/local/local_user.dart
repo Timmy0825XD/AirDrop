@@ -1,5 +1,8 @@
 import '../auth_models.dart';
 
+/// La versión de la política en los datos locales.
+const localPolicyVersion = '1.0';
+
 /// Usuario de la sesión simulada. Es el mismo `PublicUser` que devuelve
 /// el repositorio remoto, más la contraseña que solo existe en el cliente.
 class LocalUser {
@@ -15,6 +18,8 @@ class LocalUser {
     this.documentNumber,
     this.hubIds = const [],
     this.pendingEmail,
+    this.policyVersion = localPolicyVersion,
+    this.policyAcceptedAt,
   });
 
   final String id;
@@ -38,6 +43,10 @@ class LocalUser {
   /// Correo nuevo que espera el código (`123456` en local).
   String? pendingEmail;
 
+  /// RF-50: la versión de la política que aceptó; `null` obliga a aceptar.
+  String? policyVersion;
+  DateTime? policyAcceptedAt;
+
   LocalUser copy() {
     return LocalUser(
       id: id,
@@ -51,6 +60,8 @@ class LocalUser {
       password: password,
       hubIds: List.of(hubIds),
       pendingEmail: pendingEmail,
+      policyVersion: policyVersion,
+      policyAcceptedAt: policyAcceptedAt,
     );
   }
 
@@ -66,6 +77,9 @@ class LocalUser {
       status: status,
       hubIds: hubIds,
       pendingEmail: pendingEmail,
+      policyVersion: policyVersion,
+      mustAcceptPolicy:
+          role == UserRole.requester && policyVersion != localPolicyVersion,
     );
   }
 }

@@ -82,7 +82,10 @@ class AuthController extends AsyncNotifier<AuthState> {
 
   /// Inicia sesión y guarda el token. Con [announce] en `false` no avisa
   /// todavía al router (ver [announce]).
-  Future<AuthSession> login(LoginRequest request, {bool announce = true}) async {
+  Future<AuthSession> login(
+    LoginRequest request, {
+    bool announce = true,
+  }) async {
     final session = await _repository.login(request);
     await _saveSession(session, announce: announce);
     return session;
@@ -133,11 +136,39 @@ class AuthController extends AsyncNotifier<AuthState> {
     return user;
   }
 
+  /// Vuelve a leer la cuenta (`GET /auth/me`) y la publica.
+  Future<PublicUser> reloadUser() => _publish(_repository.me());
+
+  /// RF-50: acepta la política vigente. La cuenta se relee: deja de traer
+  /// `mustAcceptPolicy` y el router sigue al inicio.
+  Future<void> acceptPolicy(String version) async {
+    await _repository.acceptPolicy(version);
+    await reloadUser();
+  }
+
+  /// RF-50: revoca el consentimiento. La sesión se cierra con [endSession].
+  Future<void> revokeConsent(String password) =>
+      _repository.revokeConsent(password);
+
+  /// RF-50: suprime la cuenta. Con un pedido en curso Nest responde 409.
+  Future<void> deleteAccount(String password) =>
+      _repository.deleteAccount(password);
+
+  /// Cierra la sesión en este teléfono sin llamar a Nest: la cuenta ya no
+  /// entra (revocada o suprimida) y su token responde 401.
+  Future<void> endSession() async {
+    await _tokenStore.delete();
+    state = const AsyncData(AuthState.unauthenticated());
+  }
+
   void clearSession() {
     state = const AsyncData(AuthState.unauthenticated());
   }
 
-  Future<void> _saveSession(AuthSession session, {required bool announce}) async {
+  Future<void> _saveSession(
+    AuthSession session, {
+    required bool announce,
+  }) async {
     await _tokenStore.write(session.accessToken);
     if (announce) this.announce(session);
   }

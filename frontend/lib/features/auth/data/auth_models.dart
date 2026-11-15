@@ -46,6 +46,12 @@ enum UserStatus {
   locked('locked'),
   suspended('suspended'),
 
+  /// RF-50: revocó el consentimiento; la cuenta no entra.
+  revoked('revoked'),
+
+  /// RF-50: pidió la supresión; ya no tiene correo ni documento.
+  deleted('deleted'),
+
   /// Un estado que Nest agregó y la app todavía no conoce: la cuenta se
   /// muestra igual, sin tumbar la lista de cuentas.
   unknown('unknown');
@@ -75,6 +81,8 @@ class PublicUser {
     this.documentNumber,
     this.pendingEmail,
     this.allergies,
+    this.policyVersion,
+    this.mustAcceptPolicy = false,
   });
 
   factory PublicUser.fromJson(Map<String, dynamic> json) {
@@ -90,6 +98,8 @@ class PublicUser {
       hubIds: _hubIdsFrom(json['hubIds']),
       pendingEmail: json['pendingEmail'] as String?,
       allergies: json['allergies'] as String?,
+      policyVersion: json['policyVersion'] as String?,
+      mustAcceptPolicy: json['mustAcceptPolicy'] == true,
     );
   }
 
@@ -119,6 +129,13 @@ class PublicUser {
   /// llenar la siguiente. `null` es ninguna o todavía no se preguntó.
   final String? allergies;
 
+  /// RF-50: la versión de la política que aceptó; `null` si se registró
+  /// antes de que existiera.
+  final String? policyVersion;
+
+  /// Debe aceptar la política vigente: hasta entonces no puede pedir.
+  final bool mustAcceptPolicy;
+
   bool get isRequester => role == UserRole.requester;
 
   Map<String, dynamic> toJson() {
@@ -134,6 +151,8 @@ class PublicUser {
       'hubIds': hubIds,
       'pendingEmail': pendingEmail,
       'allergies': allergies,
+      'policyVersion': policyVersion,
+      'mustAcceptPolicy': mustAcceptPolicy,
     };
   }
 
