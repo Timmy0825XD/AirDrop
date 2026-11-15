@@ -1,3 +1,7 @@
+import {
+  deliveryPointsStub,
+  TEST_POINT,
+} from '../delivery-points/delivery-points.testing';
 /**
  * Pruebas unitarias del CU-10 (Crear pedido programado), casos CP-10-01 a
  * CP-10-11 de la Segunda Parte del documento. El nombre de cada `it` empieza
@@ -52,9 +56,7 @@ function planDto(overrides: Partial<CreatePlanDto> = {}): CreatePlanDto {
     quantity: 4,
     frequency: PlanFrequency.WEEKLY,
     startDate: '2026-10-22',
-    address: 'Calle 16 No. 19-35, Valledupar',
-    latitude: 10.4631,
-    longitude: -73.2532,
+    deliveryPointId: TEST_POINT.id,
     ...overrides,
   };
 }
@@ -91,6 +93,7 @@ function build(medicationName = 'Insulina glargina') {
     plans as never,
     { assertDestinationAllowed: () => Promise.resolve() } as never,
     { statusChanged: jest.fn().mockResolvedValue(undefined) } as never,
+    deliveryPointsStub() as never,
   );
   return { service, orders, plans };
 }

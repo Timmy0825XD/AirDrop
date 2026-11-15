@@ -16,7 +16,6 @@ import {
   parseActorsState,
   pickAuthorizingHub,
   receiverCodeAt,
-  scatterAround,
   turnStartedAt,
 } from './sim-actors.rules';
 
@@ -207,22 +206,6 @@ describe('sim-actors.rules (RF-37)', () => {
         date: '2026-11-07',
         time: '07:00',
       });
-    });
-
-    it('reparte el pico dentro del radio, con 6 decimales', () => {
-      const center = { latitude: 10.47, longitude: -73.25 };
-      const random = sequence(0.99, 0.25, 0.5, 0.75, 0.3, 0.1);
-      for (let index = 0; index < 3; index += 1) {
-        const point = scatterAround(center, 1, random);
-        const km = Math.hypot(
-          (point.latitude - center.latitude) * 111.32,
-          (point.longitude - center.longitude) *
-            111.32 *
-            Math.cos((center.latitude * Math.PI) / 180),
-        );
-        expect(km).toBeLessThanOrEqual(1.001);
-        expect(Number(point.latitude.toFixed(6))).toBe(point.latitude);
-      }
     });
   });
 });

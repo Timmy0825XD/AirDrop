@@ -1,3 +1,8 @@
+import { URBAN_NOT_SERVED } from '../delivery-points/delivery-points.rules';
+import {
+  deliveryPointsStub,
+  TEST_POINT,
+} from '../delivery-points/delivery-points.testing';
 /**
  * Pruebas unitarias del CU-09 (Crear pedido de emergencia), casos CP-09-01 a
  * CP-09-12 de la Segunda Parte. El nombre de cada `it` empieza con el ID del
@@ -21,7 +26,6 @@ import { CreateEmergencyDto } from './dto/create-emergency.dto';
 import { InventoryOfferQuery } from './inventory-offer.query';
 import { Order } from './order.entity';
 import {
-  COORDINATES_TOGETHER,
   DOCUMENT_MISMATCH,
   NO_STOCK_MESSAGE,
   ORIGIN_STOCK_MESSAGE,
@@ -77,9 +81,7 @@ function conFormula(
     medicationName: 'Insulina glargina',
     saleType: SaleType.PRESCRIPTION,
     description: 'Paciente diabético sin insulina',
-    address: 'Calle 16 No. 19-35, Valledupar',
-    latitude: 10.4631,
-    longitude: -73.2532,
+    deliveryPointId: TEST_POINT.id,
     patientDocumentType: DocumentType.CITIZENSHIP_ID,
     patientDocumentNumber: '1099000001',
     prescriptionMime: 'image/jpeg',
@@ -96,9 +98,7 @@ function libre(
     medicationName: 'Acetaminofén 500 mg',
     saleType: SaleType.OVER_THE_COUNTER,
     description: 'Fiebre alta persistente',
-    address: 'Calle 16 No. 19-35, Valledupar',
-    latitude: 10.4631,
-    longitude: -73.2532,
+    deliveryPointId: TEST_POINT.id,
     ...overrides,
   };
 }
@@ -150,6 +150,7 @@ function build(
     {} as never,
     { assertDestinationAllowed: () => Promise.resolve() } as never,
     { statusChanged: jest.fn().mockResolvedValue(undefined) } as never,
+    deliveryPointsStub() as never,
   );
   return { service, pedidos, imagenes, almacenamiento, buscarOferta };
 }
@@ -257,20 +258,29 @@ describe('CU-09 Crear pedido de emergencia', () => {
     );
   });
 
-  it('CP-09-08 rechaza una ubicación con una sola coordenada (400)', async () => {
+  it('CP-09-08 rechaza una ubicación en la ciudad de Valledupar (400)', async () => {
     const { service, pedidos } = build();
+    const puntos = service['deliveryPoints'] as unknown as {
+      requireForOrder: jest.Mock;
+    };
+    puntos.requireForOrder.mockRejectedValue(
+      new BadRequestException(URBAN_NOT_SERVED),
+    );
 
     const intento = service.createEmergency(
       solicitante,
-      conFormula({ longitude: undefined }),
+      conFormula({
+        requesterLocation: { latitude: 10.4631, longitude: -73.2532 },
+      }),
     );
 
     await expect(intento).rejects.toThrow(
-      new BadRequestException(COORDINATES_TOGETHER),
+      new BadRequestException(URBAN_NOT_SERVED),
     );
-    await expect(intento).rejects.toThrow(
-      'La ubicación lleva latitud y longitud juntas.',
-    );
+    expect(puntos.requireForOrder).toHaveBeenCalledWith(TEST_POINT.id, {
+      latitude: 10.4631,
+      longitude: -73.2532,
+    });
     expect(pedidos.save).not.toHaveBeenCalled();
   });
 

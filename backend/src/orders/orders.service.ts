@@ -50,7 +50,6 @@ import {
   SAME_HUB_MESSAGE,
   SPECIAL_CONTROL_MESSAGE,
   addCalendarDays,
-  assertCoordinates,
   assertNoPatientFormula,
   assertStartDate,
   assertStillReceived,
@@ -66,7 +65,6 @@ import { presentOrder } from './order.presenter';
 import { PrescriptionFile, prescriptionFilename } from './prescription.rules';
 import {
   compareEmergencyQueue,
-  DEFAULT_REFERENCE,
   orderAllergies,
   PatientColumns,
   patientColumns,
@@ -90,6 +88,8 @@ import { PreviewPlanDto, UpdatePlanScheduleDto } from './dto/plan-schedule.dto';
 import { PrescriptionImage } from './prescription-image.entity';
 import { PrescriptionStorage } from './prescription-storage';
 import { simClock } from '../common/clock/sim-clock';
+import { DeliveryPointsService } from '../delivery-points/delivery-points.service';
+import { pointAddress } from '../delivery-points/delivery-points.rules';
 
 export const RULE_PLAN_NOT_EXTENDED =
   'Para alargar este plan cambia su calendario.';
@@ -144,6 +144,7 @@ export class OrdersService {
     private readonly plans: Repository<DeliveryPlan>,
     private readonly routes: RoutePlannerService,
     private readonly notifications: NotificationsService,
+    private readonly deliveryPoints: DeliveryPointsService,
   ) {}
 
   async catalog(user: User, query: CatalogQueryDto) {
@@ -187,8 +188,11 @@ export class OrdersService {
     const patient = patientColumns(user, dto.patient);
     const triage = triageColumns(dto.triage);
     const formula = patientFormula(user, dto.saleType, dto);
-    const coords = assertCoordinates(dto.latitude, dto.longitude);
-    await this.assertDestinationAllowed(coords);
+    const point = await this.deliveryPoints.requireForOrder(
+      dto.deliveryPointId,
+      dto.requesterLocation,
+    );
+    await this.assertDestinationAllowed(point);
     const offer = await this.requireOffer(dto.medicationName, dto.saleType);
     const saved = await this.orders.save(
       this.orders.create({
@@ -208,9 +212,10 @@ export class OrdersService {
         createdByUserId: user.id,
         destinationHubId: null,
         originHubId: null,
-        address: dto.address || DEFAULT_REFERENCE,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
+        deliveryPointId: point.id,
+        address: pointAddress(point),
+        latitude: point.latitude,
+        longitude: point.longitude,
         droneId: null,
         statusReason: null,
         planId: null,
@@ -253,6 +258,7 @@ export class OrdersService {
         createdByUserId: user.id,
         destinationHubId: destination.id,
         originHubId: origin.id,
+        deliveryPointId: null,
         address: destination.address,
         latitude: destination.latitude,
         longitude: destination.longitude,
@@ -270,8 +276,11 @@ export class OrdersService {
     this.requireRequester(user);
     const patient = patientColumns(user, dto.patient);
     const formula = patientFormula(user, dto.saleType, dto);
-    const coords = assertCoordinates(dto.latitude, dto.longitude);
-    await this.assertDestinationAllowed(coords);
+    const point = await this.deliveryPoints.requireForOrder(
+      dto.deliveryPointId,
+      dto.requesterLocation,
+    );
+    await this.assertDestinationAllowed(point);
     const offer = await this.requireOffer(
       dto.medicationName,
       dto.saleType,
@@ -290,9 +299,10 @@ export class OrdersService {
         destinationKind: DestinationKind.PERSON,
         destinationHubId: null,
         originHubId: null,
-        address: dto.address || DEFAULT_REFERENCE,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
+        deliveryPointId: point.id,
+        address: pointAddress(point),
+        latitude: point.latitude,
+        longitude: point.longitude,
         ...patient,
       },
       timing,
@@ -327,6 +337,7 @@ export class OrdersService {
         destinationKind: DestinationKind.HUB,
         destinationHubId: destination.id,
         originHubId: origin.id,
+        deliveryPointId: null,
         address: destination.address,
         latitude: destination.latitude,
         longitude: destination.longitude,
@@ -915,6 +926,7 @@ export class OrdersService {
       destinationKind: DestinationKind;
       destinationHubId: string | null;
       originHubId: string | null;
+      deliveryPointId: string | null;
       address: string;
       latitude: number | null;
       longitude: number | null;
@@ -959,6 +971,7 @@ export class OrdersService {
         createdByUserId: plan.createdByUserId,
         destinationHubId: plan.destinationHubId,
         originHubId: plan.originHubId,
+        deliveryPointId: plan.deliveryPointId ?? null,
         address: plan.address,
         latitude: plan.latitude,
         longitude: plan.longitude,
@@ -1087,6 +1100,7 @@ export class OrdersService {
       destinationKind: plan.destinationKind,
       originHubId: plan.originHubId,
       destinationHubId: plan.destinationHubId,
+      deliveryPointId: plan.deliveryPointId ?? null,
       address: plan.address,
       latitude: plan.latitude,
       longitude: plan.longitude,

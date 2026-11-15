@@ -14,6 +14,8 @@
  * cuentas ni centrales.
  */
 import request from 'supertest';
+import { DataSource } from 'typeorm';
+import { DeliveryPointsService } from '../src/delivery-points/delivery-points.service';
 import { UserRole } from '../src/common/enums/user-role.enum';
 import {
   allEmails,
@@ -76,6 +78,10 @@ async function seedDemoData(): Promise<void> {
         }),
       );
     }
+
+    // RF-45: los puntos de entrega, enlazados con los nodos recién creados.
+    const points = app.get(DeliveryPointsService);
+    await points.syncScenario(app.get(DataSource).manager, true);
 
     const operatorSession = await createStaff(
       app,
@@ -170,7 +176,7 @@ async function seedDemoData(): Promise<void> {
       0,
     );
     console.log(
-      `Demo lista: ${nodes} nodos, ${hubPlans.length - nodes} ESE, ${drones} drones, ${dispatchers} despachadores, 1 operador, ${requesters.length} solicitantes y ${geofences.length} geovallas.`,
+      `Demo lista: ${nodes} nodos, ${hubPlans.length - nodes} ESE, ${drones} drones, ${dispatchers} despachadores, 1 operador, ${requesters.length} solicitantes y ${geofences.length} geovallas, con los puntos de entrega de la red.`,
     );
     console.log(`Contraseña de todas las cuentas: ${TEST_PASSWORD}`);
   } finally {

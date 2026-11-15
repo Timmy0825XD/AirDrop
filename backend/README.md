@@ -155,6 +155,17 @@ Las zonas legales del RAC 100 viven en `src/airspace/regional-airspace.ts` (no e
 
 **Solo de día (RF-44).** `src/airspace/daylight.rules.ts` calcula la salida y la puesta del sol con las ecuaciones de la NOAA (sin API) para la fecha simulada. Un dron se descarta si su misión (ida, 5 min de espera y regreso, con su crucero) no termina antes de la puesta en su nodo. Una urgencia creada de noche no entra a ninguna cola: pasa de una vez a traslado convencional con el motivo. Las franjas de los programados van de 07:00 a 16:00 (la última cierra a las 17:00). `GET /airspace/daylight` devuelve la salida, la puesta y si ahora es de día.
 
+### Puntos de entrega (RF-45)
+
+| Método | Ruta | Auth |
+| --- | --- | --- |
+| GET | `/delivery-points?latitude=&longitude=&medicationName=` | cualquier sesión |
+| PATCH | `/delivery-points/:id` (`{ active }`) | administrador |
+
+Los puntos son lugares del escenario (`delivery_points`, tomados de `regional-network.ts`), no cuentas. Se crean al arrancar y `pnpm seed:demo` y el reinicio los enlazan con su nodo y los dejan activos. Con el GPS, `GET` los ordena por distancia y trae `nearestPointId` (el disponible más cercano). Un punto está disponible si está activo y su nodo también; el solicitante solo ve esos y el administrador ve todos, con `available`. Si el GPS cae en la ciudad (zona urbana o anillo de SKVP), `coverage` es `urban`; si no hay punto disponible, `no_point`. En los dos casos llega `message` y, con `medicationName`, `alternatives`: hasta tres centrales con el insumo para recogerlo por tierra (RF-18). Un punto en zona coordinada trae `corridor` (zona y entrada pactada).
+
+La urgencia y el plan del solicitante van a un punto: `deliveryPointId` reemplaza a `latitude`, `longitude` y `address`, que ahora salen del punto. `requesterLocation` (`{ latitude, longitude }`, opcional, no se guarda) hace que el pedido no se cree si el solicitante está en la ciudad. El pedido y el plan traen `deliveryPointId` (nulo entre centrales).
+
 **Niebla (RF-32, VMC).** El clima admite `fog`: como la tormenta, es zona no volable que las rutas rodean, con su propio motivo. El modo caos la saca más de 05:00 a 08:00.
 
 ### Pedidos (HU-15 a HU-21)

@@ -31,12 +31,6 @@ export const FORMULA_NOT_FOR_TRANSFER =
 export const OVER_THE_COUNTER_HAS_NO_FORMULA =
   'La venta libre no lleva fórmula.';
 
-export const COORDINATES_TOGETHER =
-  'La ubicación lleva latitud y longitud juntas.';
-
-export const COORDINATES_PRECISION =
-  'Las coordenadas admiten hasta 6 decimales.';
-
 export const SAME_HUB_MESSAGE =
   'La central de origen no puede ser la misma que la de destino.';
 
@@ -79,24 +73,6 @@ export function todayInColombia(now = simClock.now()): string {
     month: '2-digit',
     day: '2-digit',
   }).format(now);
-}
-
-export function assertCoordinates(
-  latitude?: number | null,
-  longitude?: number | null,
-): { latitude: number | null; longitude: number | null } {
-  const hasLatitude = latitude !== undefined && latitude !== null;
-  const hasLongitude = longitude !== undefined && longitude !== null;
-  if (hasLatitude !== hasLongitude) {
-    throw new BadRequestException(COORDINATES_TOGETHER);
-  }
-  if (!hasLatitude || !hasLongitude) {
-    return { latitude: null, longitude: null };
-  }
-  if (!hasAtMostSixDecimals(latitude) || !hasAtMostSixDecimals(longitude)) {
-    throw new BadRequestException(COORDINATES_PRECISION);
-  }
-  return { latitude, longitude };
 }
 
 export function patientFormula(
@@ -284,13 +260,4 @@ export function assertStillReceived(order: {
   if (order.status !== OrderStatus.RECEIVED && !reassignedHere) {
     throw new BadRequestException(ONLY_RECEIVED_IS_REJECTED);
   }
-}
-
-function hasAtMostSixDecimals(value: number): boolean {
-  if (!Number.isFinite(value)) {
-    return false;
-  }
-  const text = value.toString();
-  const decimals = text.split('.')[1];
-  return !decimals || decimals.length <= 6;
 }

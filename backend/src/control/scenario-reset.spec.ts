@@ -1,3 +1,4 @@
+import { deliveryPointsStub } from '../delivery-points/delivery-points.testing';
 import { ConflictException } from '@nestjs/common';
 import { simClock } from '../common/clock/sim-clock';
 import { DroneStatus } from '../common/enums/drone-status.enum';
@@ -180,6 +181,7 @@ function build(hubs: Array<Partial<Hub>>) {
       return Promise.resolve();
     }),
   };
+  const points = deliveryPointsStub();
   const service = new ScenarioResetService(
     dataSource as never,
     flights as never,
@@ -193,9 +195,11 @@ function build(hubs: Array<Partial<Hub>>) {
     dispatcher as never,
     receiver as never,
     chaos as never,
+    points as never,
   );
   return {
     service,
+    points,
     actors,
     dispatcher,
     receiver,
@@ -241,8 +245,14 @@ describe('ScenarioResetService (RF-40, CU-41)', () => {
     ];
     expect(sql).toContain('"originHubId"');
     expect(sql).toContain('dispatchOffers');
+    // RF-44: la urgencia de noche a un punto queda sin central.
+    expect(sql).toContain('"deliveryPointId"');
     expect(params).toEqual([['hub-1'], ['hub-1']]);
     expect(built.flights.forget).toHaveBeenCalledWith(['o1', 'o2']);
+    expect(built.points.syncScenario).toHaveBeenCalledWith(
+      expect.anything(),
+      true,
+    );
     expect(built.calls).toEqual(
       expect.arrayContaining([
         'DELETE FROM delivery_codes',

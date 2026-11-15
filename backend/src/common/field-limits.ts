@@ -15,6 +15,11 @@ export const FIELD_LIMITS = {
   medicationName: 80,
   geofenceName: 80,
   address: 160,
+  /** RF-45: código del punto en el escenario (`dp-aguas-blancas`). */
+  deliveryPointCode: 32,
+  municipality: 80,
+  /** RF-43: código de una zona legal (`resguardo-kankuamo`). */
+  airspaceZoneCode: 32,
   reason: 160,
   droneIdentifier: 32,
   droneModelName: 80,
