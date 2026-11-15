@@ -8,10 +8,15 @@ import 'package:flutter/material.dart';
 /// La geometría es la de `Airdrop_Products/_brand/logo/svg/airdrop-app-icon.svg`
 /// (lienzo de 1024). Por debajo de 48 px el manual pide la versión simple
 /// (ficha y cruz), porque los trazos del dron ya no se ven.
+///
+/// [rotorTurns] gira cada rotor sobre su propio eje (en vueltas), las
+/// diagonales en sentidos opuestos, como en un dron real. El logo entero
+/// nunca rota: el manual lo prohíbe (la cruz pasaría a ser una X).
 class AirDropLogo extends StatelessWidget {
-  const AirDropLogo({super.key, this.size = 48});
+  const AirDropLogo({super.key, this.size = 48, this.rotorTurns = 0});
 
   final double size;
+  final double rotorTurns;
 
   @override
   Widget build(BuildContext context) {
@@ -20,7 +25,7 @@ class AirDropLogo extends StatelessWidget {
       image: true,
       child: CustomPaint(
         size: Size.square(size),
-        painter: _AirDropLogoPainter(full: size >= 48),
+        painter: _AirDropLogoPainter(full: size >= 48, turns: rotorTurns),
       ),
     );
   }
@@ -35,9 +40,12 @@ abstract final class _Brand {
 }
 
 class _AirDropLogoPainter extends CustomPainter {
-  const _AirDropLogoPainter({required this.full});
+  const _AirDropLogoPainter({required this.full, this.turns = 0});
 
   final bool full;
+
+  /// Vueltas de cada rotor sobre su eje.
+  final double turns;
 
   static const _rotors = [
     Offset(327, 327),
@@ -92,7 +100,9 @@ class _AirDropLogoPainter extends CustomPainter {
     const period = 226 / circumference * 2 * math.pi;
     for (var i = 0; i < _rotors.length; i++) {
       final rect = Rect.fromCircle(center: _rotors[i], radius: radius);
-      final turn = _rotorTurn[i] * math.pi / 180;
+      // Los rotores 0 y 3 (una diagonal) giran a un lado; 1 y 2, al otro.
+      final spin = (i == 0 || i == 3 ? 1 : -1) * turns * 2 * math.pi;
+      final turn = _rotorTurn[i] * math.pi / 180 + spin;
       for (var start = 0.0; start < 2 * math.pi - 1e-6; start += period) {
         final sweep = math.min(dash, 2 * math.pi - start);
         canvas.drawArc(rect, turn + start, sweep, false, stroke);
@@ -120,5 +130,57 @@ class _AirDropLogoPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_AirDropLogoPainter old) => old.full != full;
+  bool shouldRepaint(_AirDropLogoPainter old) =>
+      old.full != full || old.turns != turns;
+}
+
+/// El logo arrancando: los rotores giran unas vueltas y se detienen
+/// despacio. Es la firma del arranque de la app. Con "reducir movimiento"
+/// queda quieto desde el principio.
+class LiveLogo extends StatefulWidget {
+  const LiveLogo({super.key, this.size = 48, this.turns = 3});
+
+  final double size;
+
+  /// Cuántas vueltas da cada rotor antes de parar.
+  final double turns;
+
+  @override
+  State<LiveLogo> createState() => _LiveLogoState();
+}
+
+class _LiveLogoState extends State<LiveLogo>
+    with SingleTickerProviderStateMixin {
+  late final _spin = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2200),
+  );
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (!MediaQuery.disableAnimationsOf(context)) _spin.forward();
+  }
+
+  @override
+  void dispose() {
+    _spin.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _spin,
+      builder: (context, _) => AirDropLogo(
+        size: widget.size,
+        // Arranca rápido y frena: termina en una vuelta entera, que es la
+        // misma posición del logo quieto.
+        rotorTurns: widget.turns * Curves.easeOutCubic.transform(_spin.value),
+      ),
+    );
+  }
 }

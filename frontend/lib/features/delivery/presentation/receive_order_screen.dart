@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api_exception.dart';
+import '../../../core/app_haptics.dart';
 import '../../../core/clock/sim_clock.dart';
 import '../../../core/field_limits.dart';
 import '../../../core/widgets/app_snack.dart';
@@ -165,9 +166,11 @@ class _ReceiveOrderScreenState extends ConsumerState<ReceiveOrderScreen>
             order.receiptRejectedReason ??
             'El traslado no se recibió. El dron regresa con el paquete.';
         _close(reason);
+        AppHaptics.warning();
         showAppSnack(context, reason, tone: SnackTone.warning);
         return;
       }
+      AppHaptics.success();
       setState(() => _delivered = true);
       await _collapse.forward();
       if (!mounted) return;
