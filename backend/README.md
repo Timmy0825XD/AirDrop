@@ -150,6 +150,8 @@ Todas del operador de flota.
 
 Las zonas legales del RAC 100 viven en `src/airspace/regional-airspace.ts` (no en la base) y no se editan: aeródromo (anillo de 9 km de SKVP), prohibidas con 2 km de margen, helipuerto, urbana, coordinadas (policía municipal y resguardos, con entrada pactada) y de precaución (pistas privadas, no bloquean). El planificador rodea las bloqueantes y las coordinadas; a un sitio pactado entra por su entrada. El radar las trae en `airspace`. La red (nodos, ESE y puntos) está en `src/airspace/regional-network.ts`.
 
+**Terreno (RF-46).** `src/airspace/terrain-grid.json` es una malla de 189×189 celdas de ~500 m con la elevación máxima de cada una, sacada de SRTM (mosaicos Terrain Tiles de AWS). Se regenera con `python scripts/build-terrain-grid.py <carpeta-cache>` (PIL y numpy) y `nest build` la copia a `dist`. El dron despega a 90 m AGL y en crucero mantiene la altitud entre 60 y 120 m AGL; sube antes de una ladera según su velocidad vertical. La decisión descarta un tipo si el punto más alto supera su techo o si la batería no alcanza ida, regreso, subida y reserva; el vuelo cobra cada metro ganado. La telemetría trae `altitudeM` (AGL) y `altitudeMslM`.
+
 ### Pedidos (HU-15 a HU-21)
 
 | Método | Ruta | Auth |

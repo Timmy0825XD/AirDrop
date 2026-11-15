@@ -218,11 +218,7 @@ export function regionalAirspace(): AirspaceZone[] {
         [-73.43, 10.755],
       ]),
       gateway: { latitude: 10.655, longitude: -73.33 },
-      sites: [
-        point('dp-atanquez'),
-        point('dp-guatapuri'),
-        point('dp-chemesquemena'),
-      ],
+      sites: [point('dp-atanquez'), point('dp-guatapuri')],
     },
     {
       code: 'resguardo-arhuaco',

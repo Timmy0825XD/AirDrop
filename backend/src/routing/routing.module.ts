@@ -12,6 +12,7 @@ import { RoutePlannerService } from './route-planner.service';
     AirspaceModule,
   ],
   providers: [RoutePlannerService],
-  exports: [RoutePlannerService],
+  // Quien planea rutas también necesita las zonas y el terreno (RF-43, RF-46).
+  exports: [RoutePlannerService, AirspaceModule],
 })
 export class RoutingModule {}

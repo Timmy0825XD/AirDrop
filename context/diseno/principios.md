@@ -120,7 +120,7 @@ Emergencia **siempre** gana el dron si hay competencia (RF-11, HU-22, CU-26).
 
 `DroneModel` por tipo: Colibrí (2 kg, 140 km/h, 120 km), Garza (5 kg, 110 km/h, 90 km) y Cóndor (15 kg, 60 km/h, 30 km), con techo, velocidad vertical, masa, energía y límite de viento ([../operacion/flota.md](../operacion/flota.md)). Consumo de batería **por fase**: despegue vertical, transición, crucero, descenso, aterrizaje, más la energía del ascenso.
 
-No se modela aerodinámica, viento real ni colisiones 3D. Obstáculos = zonas y geovallas en planta + perfil de terreno a 90 m AGL. El viento simulado (RF-32) es un número por zona que cambia la velocidad sobre el suelo y el consumo del crucero, y un incidente es un efecto con nombre (más consumo, menos velocidad), no física.
+No se modela aerodinámica, viento real ni colisiones 3D. Obstáculos = zonas y geovallas en planta + perfil de terreno entre 60 y 120 m AGL. El viento simulado (RF-32) es un número por zona que cambia la velocidad sobre el suelo y el consumo del crucero, y un incidente es un efecto con nombre (más consumo, menos velocidad), no física.
 
 ---
 

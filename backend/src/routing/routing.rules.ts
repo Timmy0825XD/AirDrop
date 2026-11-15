@@ -7,8 +7,12 @@ import {
   shortestVisiblePath,
 } from './visibility.rules';
 
-/** RF-12: el corredor va a una altitud fija, tanto de ida como de regreso. */
-export const CORRIDOR_ALTITUDE_M = 100;
+/**
+ * RF-46: altura de crucero sobre el terreno. El perfil real (que sigue el
+ * terreno) lo calcula `airspace/terrain.rules`; este número es el de
+ * referencia cuando no hay perfil.
+ */
+export const CORRIDOR_ALTITUDE_M = 90;
 
 /** RF-21: el corredor pasa a 150 m o más del borde de cualquier geovalla. */
 export const GEOFENCE_MARGIN_KM = 0.15;

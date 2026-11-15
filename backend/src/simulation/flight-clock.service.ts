@@ -1,3 +1,5 @@
+import { TerrainService } from '../airspace/terrain.service';
+import { TerrainProfile, climbPercentPerM } from '../airspace/terrain.rules';
 import {
   BadRequestException,
   Injectable,
@@ -109,6 +111,12 @@ type FlightSession = {
   requiresColdChain: boolean;
   corridor: PlannedCorridor;
   model: FlightModel;
+  /**
+   * RF-46: el perfil vertical del corredor que vuela, y el corredor del que
+   * salió. Si el corredor cambia (desvío, aterrizaje, regreso), se recalcula.
+   */
+  terrain?: TerrainProfile;
+  terrainOf?: PlannedCorridor;
   progress: FlightProgress;
   loadConfirmedAt: Date;
   /** Aviso de despegue, solo en la ida de un programado que todavía no volaba. */
@@ -159,7 +167,23 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     private readonly inbox: InboxService,
     private readonly weather: WeatherService,
     private readonly incidents: FlightIncidentsService,
+    private readonly terrainService: TerrainService,
   ) {}
+
+  /** RF-46: el perfil del corredor actual de la sesión, calculado una vez. */
+  private terrainOf(session: FlightSession): TerrainProfile | undefined {
+    if (session.model.verticalSpeedMs == null) {
+      return undefined;
+    }
+    if (session.terrainOf !== session.corridor) {
+      session.terrain = this.terrainService.profile(session.corridor, {
+        verticalSpeedMs: session.model.verticalSpeedMs,
+        maxSpeedKmh: session.model.maxSpeedKmh,
+      });
+      session.terrainOf = session.corridor;
+    }
+    return session.terrain;
+  }
 
   async onModuleInit(): Promise<void> {
     if (!this.isReady()) {
@@ -868,6 +892,8 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
         maxRangeKm: drone.droneModel.maxRangeKm,
         windSustainedMs: drone.droneModel.windSustainedMs,
         windGustMs: drone.droneModel.windGustMs,
+        verticalSpeedMs: drone.droneModel.verticalSpeedMs,
+        climbPercentPerM: climbPercentPerM(drone.droneModel),
       },
       progress,
       loadConfirmedAt: order.loadConfirmedAt,
@@ -977,6 +1003,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       model: session.model,
       loadConfirmedAt: session.loadConfirmedAt,
       weather: this.weather.active(),
+      terrain: this.terrainOf(session),
     });
     if (!step) {
       return;

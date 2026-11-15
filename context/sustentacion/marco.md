@@ -9,7 +9,7 @@
 | **Motor de decisión** | Software que, con reglas y datos actuales, dice si una unidad puede cumplir la tarea **cuando el despachador autoriza**. Asigna el dron; el vuelo espera la confirmación de carga. Es el núcleo de inteligencia de AirDrop. |
 | **Geovalla** | Perímetro virtual sobre coordenadas reales: restringe o permite movimiento. Aquí: polígonos que el enrutador no puede cruzar. |
 | **DroneModel** | Configuración reutilizable (no cada dron suelto) con las specs de un tipo de dron. |
-| **Corredor con perfil de terreno** | Sustituto simple de pathfinding 3D: se rodean las zonas en planta y la altura sigue el terreno a 90 m AGL, con techo de 120 m. |
+| **Corredor con perfil de terreno** | Sustituto simple de pathfinding 3D: se rodean las zonas en planta y la altura sigue el terreno entre 60 y 120 m AGL. |
 | **Nodo y punto de entrega** | El modelo de Zipline: el dron sale de un centro de distribución y entrega en un sitio fijo y despejado, no en la puerta. |
 
 ## Antecedentes

@@ -1,3 +1,4 @@
+import { FLAT_TERRAIN } from '../airspace/terrain.testing';
 import { DroneStatus } from '../common/enums/drone-status.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { RouteLeg } from '../common/enums/route-leg.enum';
@@ -126,6 +127,7 @@ function build(
     { notifyUser: jest.fn(), notifyHubDispatchers: jest.fn() } as never,
     { active: () => [] } as never,
     incidents as never,
+    FLAT_TERRAIN,
   );
   service['waiting'].set(ORDER_ID, LANDED_AT);
   return {
@@ -504,6 +506,7 @@ describe('FlightClockService cadena de frío (RF-17)', () => {
       latitude: 10.46,
       longitude: -73.25,
       altitudeM: 0,
+      altitudeMslM: null,
       speedKmh: 0,
       batteryPercent: 80,
       payloadKg: 0.5,

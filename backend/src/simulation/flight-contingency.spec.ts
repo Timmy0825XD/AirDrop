@@ -1,3 +1,4 @@
+import { FLAT_TERRAIN } from '../airspace/terrain.testing';
 import { BadRequestException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
@@ -119,6 +120,7 @@ function build(polygons: GeoJsonPolygon[] = []) {
     { notifyUser: jest.fn(), notifyHubDispatchers: jest.fn() } as never,
     { active: () => [] } as never,
     incidents as never,
+    FLAT_TERRAIN,
   );
   const aborted = jest.fn().mockResolvedValue(undefined);
   service.onMissionAborted(aborted);

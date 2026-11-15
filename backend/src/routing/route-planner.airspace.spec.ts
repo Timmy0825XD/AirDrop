@@ -137,7 +137,7 @@ describe('RoutePlannerService con las zonas del RAC 100', () => {
     const started = Date.now();
     planner.plan(
       NODES.west,
-      point('dp-villa-germania'),
+      point('dp-mariangola'),
       airspace.blockingPolygons(),
     );
     planner.plan(NODES.north, ESES.laPaz, airspace.blockingPolygons(), {

@@ -1,3 +1,4 @@
+import { TerrainProfile, altitudeAt } from '../airspace/terrain.rules';
 import { ContingencyProtocol } from '../common/enums/contingency-protocol.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { RouteLeg } from '../common/enums/route-leg.enum';
@@ -111,13 +112,20 @@ export type FlightModel = {
   /** RF-32: límite de viento del tipo; sin dato, el de referencia. */
   windSustainedMs?: number;
   windGustMs?: number;
+  /** RF-46: % de batería por metro de ascenso en crucero. */
+  climbPercentPerM?: number;
+  /** RF-46: con su crucero, decide cuándo empieza a subir. */
+  verticalSpeedMs?: number;
 };
 
 export type FlightStep = {
   progress: FlightProgress;
   latitude: number;
   longitude: number;
+  /** Altura sobre el terreno (AGL). */
   altitudeM: number;
+  /** RF-46: altitud sobre el nivel del mar; `null` sin perfil de terreno. */
+  altitudeMslM: number | null;
   speedKmh: number;
   etaSeconds: number | null;
   statusChanges: OrderStatus[];
@@ -130,7 +138,10 @@ export type LiveFlight = {
   identifier: string;
   latitude: number;
   longitude: number;
+  /** Altura sobre el terreno (AGL). */
   altitudeM: number;
+  /** RF-46: altitud sobre el nivel del mar. */
+  altitudeMslM: number | null;
   speedKmh: number;
   batteryPercent: number;
   payloadKg: number;
@@ -196,6 +207,8 @@ export function advanceFlight(input: {
   model: FlightModel;
   loadConfirmedAt: Date | null;
   weather?: WeatherCellView[];
+  /** RF-46: el perfil vertical del corredor; sin él, altura fija. */
+  terrain?: TerrainProfile;
 }): FlightStep | null {
   if (input.loadConfirmedAt == null) {
     return null;
@@ -218,6 +231,7 @@ export function advanceFlight(input: {
     if (progress.phase === FlightPhase.CRUISE) {
       // El crucero termina al llegar al final del corredor, no a una hora fija:
       // con viento en contra tarda más.
+      const fromKm = progress.cruiseKm;
       elapsed = cruiseStep(
         progress,
         elapsed,
@@ -226,6 +240,7 @@ export function advanceFlight(input: {
         cells,
         alerts,
       );
+      burnClimb(progress, fromKm, input.terrain, input.model, alerts);
       if (progress.cruiseKm >= input.corridor.distanceKm - CRUISE_END_KM) {
         progress.cruiseKm = input.corridor.distanceKm;
         finishPhase(progress, statusChanges, leg);
@@ -250,8 +265,36 @@ export function advanceFlight(input: {
       finishPhase(progress, statusChanges, leg);
     }
   }
-  const pose = poseOf(progress, input.corridor, input.model, cells);
+  const pose = poseOf(
+    progress,
+    input.corridor,
+    input.model,
+    cells,
+    input.terrain,
+  );
   return { progress, ...pose, statusChanges, alerts };
+}
+
+/**
+ * RF-46: subir cuesta batería. Entre dos posiciones del crucero, los metros
+ * que ganó el perfil se cobran con el % por metro del tipo. Bajar no devuelve.
+ */
+function burnClimb(
+  progress: FlightProgress,
+  fromKm: number,
+  terrain: TerrainProfile | undefined,
+  model: FlightModel,
+  alerts: FlightAlertKind[],
+): void {
+  if (!terrain || !model.climbPercentPerM) {
+    return;
+  }
+  const gained =
+    altitudeAt(terrain, progress.cruiseKm).altitudeMslM -
+    altitudeAt(terrain, fromKm).altitudeMslM;
+  if (gained > 0) {
+    burn(progress, gained * model.climbPercentPerM, alerts);
+  }
 }
 
 /** Margen para dar por terminado el crucero (unos centímetros). */
@@ -356,6 +399,7 @@ export function buildLiveFlight(input: {
     latitude: input.step.latitude,
     longitude: input.step.longitude,
     altitudeM: input.step.altitudeM,
+    altitudeMslM: input.step.altitudeMslM ?? null,
     speedKmh: input.step.speedKmh,
     batteryPercent: roundTo(input.step.progress.batteryPercent, 1),
     payloadKg: roundTo(
@@ -573,16 +617,34 @@ function poseOf(
   corridor: PlannedCorridor,
   model: FlightModel,
   cells: WeatherCellView[] = [],
+  terrain?: TerrainProfile,
 ): Pick<
   FlightStep,
-  'latitude' | 'longitude' | 'altitudeM' | 'speedKmh' | 'etaSeconds'
+  | 'latitude'
+  | 'longitude'
+  | 'altitudeM'
+  | 'altitudeMslM'
+  | 'speedKmh'
+  | 'etaSeconds'
 > {
   const origin = pointOf(corridor.coordinates, 0);
   const destination = pointOf(
     corridor.coordinates,
     Math.max(0, corridor.coordinates.length - 1),
   );
-  const altitude = corridor.altitudeM;
+  // RF-46: con perfil, la altura AGL es la del perfil en ese km; sin él, fija.
+  const aglAt = (km: number) => {
+    if (!terrain) {
+      return corridor.altitudeM;
+    }
+    const here = altitudeAt(terrain, km);
+    return here.altitudeMslM - here.groundM;
+  };
+  const altitude =
+    progress.phase === FlightPhase.DESCENT ||
+    progress.phase === FlightPhase.LANDING
+      ? aglAt(corridor.distanceKm)
+      : aglAt(0);
   let point = origin;
   let altitudeM = 0;
   let speedKmh = 0;
@@ -597,7 +659,7 @@ function poseOf(
       speedKmh = model.maxSpeedKmh / 2;
       break;
     case FlightPhase.CRUISE:
-      altitudeM = altitude;
+      altitudeM = aglAt(progress.cruiseKm);
       point = pointAt(corridor.coordinates, progress.cruiseKm);
       speedKmh = cruiseConditions(
         progress,
@@ -616,10 +678,19 @@ function poseOf(
       altitudeM = 0;
       speedKmh = 0;
   }
+  const groundKm =
+    progress.phase === FlightPhase.CRUISE
+      ? progress.cruiseKm
+      : point === origin
+        ? 0
+        : corridor.distanceKm;
   return {
     latitude: roundTo(point.latitude, 6),
     longitude: roundTo(point.longitude, 6),
     altitudeM: roundTo(altitudeM, 1),
+    altitudeMslM: terrain
+      ? roundTo(altitudeAt(terrain, groundKm).groundM + altitudeM, 1)
+      : null,
     speedKmh: roundTo(speedKmh, 1),
     etaSeconds: etaSeconds(progress, corridor, model, cells),
   };

@@ -1,3 +1,5 @@
+import { TerrainService } from '../airspace/terrain.service';
+import { climbPercentPerM } from '../airspace/terrain.rules';
 import { Injectable } from '@nestjs/common';
 import { EntityManager, In } from 'typeorm';
 import { OrderStatus } from '../common/enums/order-status.enum';
@@ -10,10 +12,7 @@ import { InventoryItem } from '../inventory/inventory-item.entity';
 import { Order } from '../orders/order.entity';
 import { PlannedCorridor } from '../routing/routing.rules';
 import { RoutePlannerService } from '../routing/route-planner.service';
-import {
-  batteryNow,
-  missionBatteryPercent,
-} from '../simulation/flight-energy.rules';
+import { batteryNow } from '../simulation/flight-energy.rules';
 import {
   DESCENT_MS,
   LANDING_MS,
@@ -23,7 +22,13 @@ import {
 import { reverseCorridor } from '../routing/routing.rules';
 import { corridorWeather, windLimitsOf } from '../weather/weather.rules';
 import { WeatherService } from '../weather/weather.service';
-import { DroneCandidate, chooseDrone, payloadKgOf } from './decision.rules';
+import {
+  CandidateTerrain,
+  DroneCandidate,
+  chooseDrone,
+  missionWithClimbPercent,
+  payloadKgOf,
+} from './decision.rules';
 import { EligibilityService } from './eligibility.service';
 import { simClock } from '../common/clock/sim-clock';
 
@@ -54,6 +59,7 @@ export class HubEvaluationService {
     private readonly routes: RoutePlannerService,
     private readonly eligibility: EligibilityService,
     private readonly weather: WeatherService,
+    private readonly terrain: TerrainService,
   ) {}
 
   async evaluate(
@@ -117,6 +123,14 @@ export class HubEvaluationService {
         modelWeather(corridor, cells, model),
       ]),
     );
+    // RF-46: el perfil del terreno de ida y de regreso para cada tipo (su
+    // velocidad vertical decide cuándo empieza a subir).
+    const terrainByModel = new Map(
+      [...modelsById.values()].map((model) => [
+        model.id,
+        corridor ? this.missionTerrain(corridor, model) : undefined,
+      ]),
+    );
     const choice = this.eligibility.choose({
       missionType: order.missionType,
       quantity: order.quantity,
@@ -139,6 +153,7 @@ export class HubEvaluationService {
             ),
             distanceKm: weather.energyKm,
             weather: { flyable: weather.flyable, reason: weather.reason },
+            terrain: terrainByModel.get(drone.droneModelId),
           },
         ];
       }),
@@ -167,9 +182,13 @@ export class HubEvaluationService {
               DESCENT_MS +
               LANDING_MS,
             inRange:
-              missionBatteryPercent(
+              missionWithClimbPercent(
                 energyKm ?? corridor.distanceKm,
-                model.maxRangeKm,
+                {
+                  maxRangeKm: model.maxRangeKm,
+                  climbPercentPerM: climbPercentPerM(model),
+                },
+                terrainByModel.get(model.id),
               ) <= 100,
           }
         : { etaMs: null, inRange: false };
@@ -182,6 +201,19 @@ export class HubEvaluationService {
       ...reach,
       batteryByDrone,
       energyKm,
+    };
+  }
+
+  /** Subida de ida y de regreso, y el punto más alto, para un tipo. */
+  private missionTerrain(
+    corridor: PlannedCorridor,
+    model: DroneModel,
+  ): CandidateTerrain {
+    const out = this.terrain.profile(corridor, model);
+    const back = this.terrain.profile(reverseCorridor(corridor), model);
+    return {
+      climbM: out.climbM + back.climbM,
+      peakMslM: Math.max(out.peakMslM, back.peakMslM),
     };
   }
 
@@ -252,6 +284,8 @@ function toCandidate(
     coldCompartment: drone.coldCompartment ?? false,
     cruiseKmh: model.maxSpeedKmh,
     batteryWh: model.batteryWh,
+    ceilingM: model.ceilingM,
+    climbPercentPerM: climbPercentPerM(model),
     held: held
       ? {
           orderId: held.id,

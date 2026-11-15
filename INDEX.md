@@ -44,7 +44,7 @@ Objetivos ampliados: [`context/sustentacion/objetivos.md`](context/sustentacion/
 
 ## 4. Qué entra en el MVP (y qué no)
 
-**Sí (red regional de 4 nodos, 5 ESE y 12 puntos de entrega, [`context/negocio/`](context/negocio/)):** pedidos de emergencia y programados, a una persona en un punto de entrega o de un nodo a una ESE ([`context/entregas/`](context/entregas/)), flota simulada de tres tipos, zonas legales del RAC 100 y geovallas, motor de decisión al autorizar, confirmación de carga y manifiesto antes del despegue, vuelo solo de día, rutas por corredores con perfil de terreno ([`context/operacion/`](context/operacion/)), telemetría en vivo, espera de código de entrega (5 min) o retorno con el paquete, cadena de frío simulada, fallback, dashboard epidemiológico simple. Para demostrarlo: reloj simulado, clima simulado por zonas, incidentes en vuelo con protocolos autónomos, actores simulados y modo caos, manejados desde la consola web.
+**Sí (red regional de 4 nodos, 5 ESE y 10 puntos de entrega, [`context/negocio/`](context/negocio/)):** pedidos de emergencia y programados, a una persona en un punto de entrega o de un nodo a una ESE ([`context/entregas/`](context/entregas/)), flota simulada de tres tipos, zonas legales del RAC 100 y geovallas, motor de decisión al autorizar, confirmación de carga y manifiesto antes del despegue, vuelo solo de día, rutas por corredores con perfil de terreno ([`context/operacion/`](context/operacion/)), telemetría en vivo, espera de código de entrega (5 min) o retorno con el paquete, cadena de frío simulada, fallback, dashboard epidemiológico simple. Para demostrarlo: reloj simulado, clima simulado por zonas, incidentes en vuelo con protocolos autónomos, actores simulados y modo caos, manejados desde la consola web.
 
 **No:** dron real, clima real, navegación 3D, vuelos sobre la ciudad, multirregión, licencias y permisos de operación, integración hospitalaria, reemplazar la atención médica ni el traslado del paciente.
 
@@ -80,7 +80,7 @@ Backend NestJS (módulos por dominio, no microservicios)
 Piezas de valor (las que hay que poder explicar en la sustentación):
 
 1. **Motor de decisión** — al autorizar el despachador, elige el mejor dron y **no** inicia el vuelo: muestra la referencia para cargar el insumo. Emergencia gana si hay competencia.
-2. **Cálculo de rutas** — corredores que respetan las zonas legales y las geovallas, con perfil de terreno a 90 m AGL.
+2. **Cálculo de rutas** — corredores que respetan las zonas legales y las geovallas, con perfil de terreno entre 60 y 120 m AGL.
 3. **Motor de simulación** — “reloj” del backend: arranca **después** de confirmar la carga; en destino espera el código o regresa con el paquete.
 4. **Fallback** — si no hay dron, hay alternativa, no un rechazo ciego.
 5. **Contingencia** — ante un incidente en vuelo (clima, falla, choque), reglas explícitas eligen seguir, cambiar de ruta, volver o aterrizar de emergencia; una urgencia abortada se vuelve a despachar.

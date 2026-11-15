@@ -1,3 +1,4 @@
+import { FLAT_TERRAIN } from '../airspace/terrain.testing';
 import { ConflictException } from '@nestjs/common';
 import {
   BadRequestException,
@@ -297,6 +298,7 @@ function build(state?: {
     new EligibilityService(),
     // Sin clima: el cielo despejado de antes de RF-32.
     { active: () => [] } as never,
+    FLAT_TERRAIN,
   );
   const inbox = {
     notifyUser: jest.fn().mockResolvedValue(undefined),

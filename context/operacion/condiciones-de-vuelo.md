@@ -42,15 +42,17 @@ El multirrotor pesado (Cóndor) tolera menos viento que los de ala fija. Así es
 
 **Reglas:**
 
-- Altura de crucero objetivo: **90 m sobre el terreno** (AGL).
+- Despega hasta **90 m sobre el terreno** (AGL), la altura de referencia.
 - Techo: **120 m AGL**. Queda por debajo de los 122 m (400 ft) del RAC 100, con margen.
-- Piso: 60 m AGL. Si el terreno sube más rápido de lo que el dron puede ascender, el dron baja su velocidad horizontal. Nunca baja del piso.
+- Piso: **60 m AGL**. Nunca baja de ahí.
+- Entre el piso y el techo, el dron **mantiene su altitud**: no baja a cada hondonada para volver a subir. Cuando el terreno lo saca de la banda, sube lo justo hasta el piso o baja lo justo hasta el techo. Es lo que gasta menos energía.
+- Como no sube más rápido que su velocidad vertical, empieza a subir antes de una ladera. Si ni así alcanza sin pasar del techo, prima el piso: en la vida real frenaría para subir.
 
-**Malla de elevación.** El terreno sale de una malla precalculada de la región, hecha con el modelo de elevación **SRTM** de la NASA (de acceso libre):
+**Malla de elevación.** El terreno sale de una malla precalculada de la región, hecha con el modelo de elevación **SRTM** de la NASA (de acceso libre), tomado de los mosaicos *Terrain Tiles* de AWS (zoom 12, unos 35 m por píxel):
 
 - Una celda mide unos 500 m de lado y guarda la **altura máxima** del terreno dentro de ella, para no subestimar un cerro entre dos muestras.
-- La malla es un archivo JSON del backend. Se genera una sola vez con un script y no se consulta en línea.
-- La ruta se muestrea cada **250 m**. En cada muestra, la altura de vuelo (sobre el nivel del mar) es la del terreno más 90 m.
+- La malla es un archivo JSON del backend (`terrain-grid.json`). Se genera una sola vez con `scripts/build-terrain-grid.py` y no se consulta en línea.
+- La ruta se muestrea cada **250 m** y en cada muestra se aplican las reglas de arriba.
 
 **Ascenso por tipo:**
 

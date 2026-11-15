@@ -48,15 +48,22 @@ Las coordenadas de municipios y corregimientos son las de GeoNames (consultadas 
 | Guacoche | 10.4964 | −73.1660 | 130 m | Norte | 13,9 km | |
 | Guacochito | 10.5154 | −73.1517 | 133 m | Norte | 12,9 km | |
 | Atánquez | 10.6976 | −73.3545 | 793 m | Norte | 17,5 km | Resguardo kankuamo y estación de policía: zona coordinada |
-| Guatapurí | 10.7261 | −73.3925 | 1.277 m | Norte | 22,7 km | Resguardo kankuamo; instalación militar: zona coordinada |
-| Chemesquemena | 10.7132 | −73.4007 | 1.427 m | Norte | 22,6 km | Resguardo kankuamo: zona coordinada |
+| Guatapurí | 10.7261 | −73.3925 | 1.277 m | Norte | 22,7 km | Resguardo kankuamo; instalación militar: zona coordinada. Con la subida, solo la alcanza el Colibrí |
 | Media Luna | 10.2455 | −73.1439 | 407 m | Sur | 12,2 km | |
 | Valencia de Jesús | 10.3017 | −73.3945 | 185 m | Occidente | 1,2 km | |
 | Aguas Blancas | 10.2253 | −73.4910 | 184 m | Occidente | 12,6 km | |
 | Mariangola | 10.1851 | −73.5871 | 124 m | Occidente | 23,7 km | |
-| Villa Germania | 10.2669 | −73.7151 | 614 m | Occidente | 34,1 km | Solo la alcanza el Colibrí |
 
-Nabusímake (resguardo arhuaco, 2.135 m) queda a 37,7 km del Nodo Occidente y 1.950 m más arriba. No es punto de entrega: con el ascenso no alcanza ningún tipo. Sirve para explicar el límite de la red.
+**Fuera de la red por el terreno.** Con la malla de elevación real (RF-46), la ida, el regreso y la reserva pasan del 100 % de la batería en todos los tipos:
+
+| Lugar | Nodo más cercano | Distancia | Batería que pide el mejor tipo (Colibrí) |
+| --- | --- | --- | --- |
+| Chemesquemena (1.427 m) | Norte | 22,8 km | 103 % |
+| Villa Germania (614 m, detrás de lomas) | Occidente | 34,1 km | 117 % |
+
+Nabusímake (resguardo arhuaco, 2.135 m) tampoco es punto de entrega: es un resguardo sin punto pactado y queda más lejos y más alto. Los tres sirven para explicar el límite de la red: ahí sigue la alternativa terrestre.
+
+La ESE de Pueblo Bello (1.108 m, a 23 km del Nodo Occidente) solo la alcanza el Colibrí (87 %): su reabastecimiento va en entregas de hasta 2 kg.
 
 ## Alcance útil de cada tipo
 
@@ -70,6 +77,6 @@ Cada misión es de ida y vuelta por el mismo corredor (si nadie recibe, el dron 
 | Garza | 90 km | 29 km |
 | Cóndor | 30 km | 10 km |
 
-El terreno y el viento lo reducen: subir cuesta energía ([../operacion/condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md)). El motor hace la cuenta real sobre el perfil de cada ruta. La tabla solo sirve para ubicar los nodos.
+El terreno y el viento lo reducen: subir cuesta energía ([../operacion/condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md)). El motor hace la cuenta real sobre el perfil de cada ruta; por eso un punto de montaña a 23 km puede quedar fuera aunque esté dentro del radio en plano. La tabla solo sirve para ubicar los nodos.
 
 Las ubicaciones exactas de los dronpuertos de una operación real se definirían con cada ESE, cada alcaldía y cada comunidad. En la demo son ilustrativas.
