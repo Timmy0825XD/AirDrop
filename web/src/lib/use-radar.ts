@@ -6,6 +6,7 @@ import type { ReceivedClock } from "./sim-time";
 import type { Connection, RadarSource, WorldChange } from "./source";
 import type {
   ActorsState,
+  AirspaceZone,
   AlertEvent,
   ChaosState,
   Geofence,
@@ -25,6 +26,8 @@ export type RadarData = {
   hubs: HubSummary[];
   flights: RadarFlight[];
   geofences: Geofence[];
+  /** RF-43: las zonas legales de la región. */
+  airspace: AirspaceZone[];
   connection: Connection;
   message: string | null;
   loaded: boolean;
@@ -84,6 +87,7 @@ export function useRadar(
     hubs: [],
     flights: [],
     geofences: [],
+    airspace: [],
     connection: "connecting",
     message: null,
     loaded: false,
@@ -123,6 +127,11 @@ export function useRadar(
         ...current,
         hubs: snapshot.hubs,
         geofences: snapshot.geofences,
+        // No cambian en ejecución: si ya están, se conserva la misma lista.
+        airspace:
+          snapshot.airspace && snapshot.airspace.length !== current.airspace.length
+            ? snapshot.airspace
+            : current.airspace,
         flights: [...next.values()],
         loaded: true,
       }));

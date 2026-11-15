@@ -14,6 +14,8 @@ export type HubSummary = {
   id: string;
   name: string;
   type: string;
+  /** RF-06: solo un nodo tiene drones; una ESE recibe traslados. */
+  networkRole?: HubNetworkRole;
   status: "active" | "suspended" | string;
   latitude: number;
   longitude: number;
@@ -59,10 +61,59 @@ export type Geofence = {
   expiresAt?: string | null;
 };
 
+export type HubNetworkRole = "node" | "ese";
+
+export type AirspaceZoneKind =
+  | "aerodrome"
+  | "prohibited"
+  | "heliport"
+  | "coordinated"
+  | "urban"
+  | "caution";
+
+/** RF-43: una zona legal de la región (`snapshot.airspace`, `GET /airspace/zones`). */
+export type AirspaceZone = {
+  code: string;
+  kind: AirspaceZoneKind;
+  name: string;
+  /** La norma: "RAC 100.315(a)(14): 9 km desde el ARP". */
+  legalBasis: string;
+  source: string;
+  /** `false` en las coordinadas y en las de precaución. */
+  blocking: boolean;
+  polygon: { type: "Polygon"; coordinates: number[][][] };
+  /** La entrada pactada de una zona coordinada. */
+  gateway: { latitude: number; longitude: number } | null;
+  sites: Array<{ name: string; latitude: number; longitude: number }>;
+};
+
+/** RF-45: un punto de entrega (`GET /delivery-points`). */
+export type DeliveryPoint = {
+  id: string;
+  code: string;
+  name: string;
+  municipality: string;
+  latitude: number;
+  longitude: number;
+  elevationM: number;
+  /** El nodo que lo atiende. */
+  hubId: string | null;
+  active: boolean;
+  /** Activo y con su nodo activo. */
+  available: boolean;
+  corridor: {
+    zoneCode: string;
+    zoneName: string;
+    gateway: { latitude: number; longitude: number } | null;
+  } | null;
+};
+
 export type Snapshot = {
   hubs: HubSummary[];
   flights: RadarFlight[];
   geofences: Geofence[];
+  /** RF-43: las zonas legales. No cambian en ejecución. */
+  airspace?: AirspaceZone[];
 };
 
 export type HubDrone = {
@@ -154,6 +205,9 @@ export type Selection =
   /** Una celda de clima o una geovalla temporal (RF-32, RF-36). */
   | { kind: "weather"; id: string }
   | { kind: "zone"; id: string }
+  /** Una zona legal (RF-43) o un punto de entrega (RF-45). */
+  | { kind: "airspace"; id: string }
+  | { kind: "point"; id: string }
   | null;
 
 /* Consola de simulación (`/control/*` y el socket). Ver backend/src/control. */

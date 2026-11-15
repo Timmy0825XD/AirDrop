@@ -1727,6 +1727,31 @@ La guía de partida es `learning/35-front-pending-red-regional.md` (local).
 Con este paso la app ya usa todos los contratos del backend regional.
 Falta probar el recorrido contra Nest (Render) y llevar lo mismo a `web/`.
 
+## Fase 24 — La web adopta el backend regional
+
+Lo mismo que la Fase 23, en `web/` (radar y consola). La guía de partida
+es `learning/36-front-pending-web-consola.md` (local).
+
+| Paso | Rama | Qué cubre | Estado |
+| --- | --- | --- | --- |
+| 1 — Red regional | `feature/web-red-regional` | RF-43, RF-45, RF-06 | Hecho (2026-11-15) |
+| 2 — Vuelo e identificación | `feature/web-vuelo-identificacion` | RF-46, RF-47, RF-48, RF-44 | Pendiente |
+| 3 — Eventos regionales | `feature/web-eventos-regionales` | RF-32, RF-36 | Pendiente |
+
+### Paso 1 — Red regional (hecho, 2026-11-15)
+
+- El mapa dibuja las zonas legales (`snapshot.airspace`): donde no se
+  vuela en rojo, la urbana en gris y las coordinadas y de precaución con
+  borde punteado. Al tocar una, el panel dice su norma y su fuente.
+- Los puntos de entrega salen en el mapa; el inactivo va apagado y el que
+  tiene corredor pactado, con borde ámbar. Su panel lo activa o lo
+  desactiva.
+- El nodo es un cuadro y la ESE un círculo; el panel de una ESE no lista
+  flota.
+- El mapa encuadra la red entera y el modo demostración usa la red
+  regional (nodos, ESE, puntos, el anillo del aeropuerto y la ciudad).
+- `pnpm lint` sin errores y `pnpm build` en verde.
+
 ## Pendiente del backend
 
 Vive en [`pendientes-backend.md`](pendientes-backend.md), para que la persona

@@ -12,7 +12,9 @@ import { setWorkerUrl, type StyleSpecification } from "maplibre-gl";
 import { circlePolygon } from "@/lib/geo";
 import { COLORS } from "@/lib/theme";
 import type {
+  AirspaceZone,
   Corridor,
+  DeliveryPoint,
   Geofence,
   HubSummary,
   Incident,
@@ -42,7 +44,8 @@ import { useDroneTracks } from "./use-drone-tracks";
 // El worker lo copia `scripts/copy-maplibre.mjs` a /public antes de dev y build.
 if (typeof window !== "undefined") setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
 
-const VALLEDUPAR = { longitude: -73.2532, latitude: 10.4631, zoom: 11 };
+/** La región antes de que lleguen las centrales: de Atánquez a Codazzi. */
+const REGION = { longitude: -73.27, latitude: 10.38, zoom: 9.3 };
 /** El inspector mide 400 px más su margen: el mapa deja ese espacio al encuadrar. */
 const PANEL_PX = 416;
 
@@ -130,6 +133,10 @@ type Props = {
   hubs: HubSummary[];
   flights: RadarFlight[];
   geofences: Geofence[];
+  /** RF-43: las zonas legales de la región. */
+  airspace: AirspaceZone[];
+  /** RF-45: los puntos de entrega. */
+  points: DeliveryPoint[];
   showGeofences: boolean;
   selection: Selection;
   routes: {
@@ -171,6 +178,8 @@ export function RadarMap({
   hubs,
   flights,
   geofences,
+  airspace,
+  points,
   showGeofences,
   selection,
   routes,
@@ -188,7 +197,7 @@ export function RadarMap({
   const mapRef = useRef<MapRef>(null);
   const [ready, setReady] = useState(false);
   const [hovering, setHovering] = useState(false);
-  const fitted = useRef(false);
+  const fitted = useRef<"hubs" | "points" | null>(null);
 
   const { fontsReady } = useDroneTracks(mapRef, flights, ready);
   const darkHubs = useMemo(
@@ -219,13 +228,16 @@ export function RadarMap({
     setReady(true);
   }, []);
 
-  /** Encuadra todas las centrales: al llegar la primera vez y con "Recentrar". */
+  /**
+   * Encuadra la red (centrales y puntos de entrega): al llegar la primera
+   * vez y con "Recentrar".
+   */
   const fitHubs = useCallback(
     (duration: number) => {
       const map = mapRef.current;
       if (!map || !hubs.length) return;
-      const lngs = hubs.map((hub) => hub.longitude);
-      const lats = hubs.map((hub) => hub.latitude);
+      const lngs = [...hubs, ...points].map((place) => place.longitude);
+      const lats = [...hubs, ...points].map((place) => place.latitude);
       map.fitBounds(
         [
           [Math.min(...lngs), Math.min(...lats)],
@@ -243,14 +255,17 @@ export function RadarMap({
         },
       );
     },
-    [hubs, insetLeft, panelOpen],
+    [hubs, points, insetLeft, panelOpen],
   );
 
   useEffect(() => {
-    if (!ready || fitted.current || !hubs.length) return;
-    fitted.current = true;
+    if (!ready || !hubs.length) return;
+    // Se encuadra al llegar las centrales y otra vez al llegar los puntos.
+    const key = points.length ? "points" : "hubs";
+    if (fitted.current === key || fitted.current === "points") return;
+    fitted.current = key;
     fitHubs(0);
-  }, [ready, hubs, fitHubs]);
+  }, [ready, hubs, points, fitHubs]);
 
   // Al elegir una central, el mapa la lleva al centro del espacio libre.
   const selectedHubId = selection?.kind === "hub" ? selection.id : null;
@@ -357,6 +372,36 @@ export function RadarMap({
   );
   const zones = useMemo(() => geofences.filter((geofence) => geofence.expiresAt), [geofences]);
 
+  // RF-43: la carta legal. Va debajo de todo lo demás.
+  const airspaceCollection = useMemo(
+    () => ({
+      type: "FeatureCollection" as const,
+      features: airspace.map((zone) => ({
+        type: "Feature" as const,
+        properties: { code: zone.code, kind: zone.kind, blocking: zone.blocking },
+        geometry: zone.polygon,
+      })),
+    }),
+    [airspace],
+  );
+
+  // RF-45: los puntos de entrega; el inactivo o sin nodo, apagado.
+  const pointCollection = useMemo(
+    () => ({
+      type: "FeatureCollection" as const,
+      features: points.map((point) => ({
+        type: "Feature" as const,
+        properties: {
+          id: point.id,
+          available: point.available,
+          corridor: point.corridor != null,
+        },
+        geometry: { type: "Point" as const, coordinates: [point.longitude, point.latitude] },
+      })),
+    }),
+    [points],
+  );
+
   const weatherCollection = useMemo(
     () => ({
       type: "FeatureCollection" as const,
@@ -408,8 +453,15 @@ export function RadarMap({
         onPick({ latitude: event.lngLat.lat, longitude: event.lngLat.lng });
         return;
       }
-      const orderId = event.features?.[0]?.properties?.orderId as string | undefined;
-      onSelect(orderId ? { kind: "flight", id: orderId } : null);
+      // Lo de más arriba gana: un dron, luego un punto y, debajo, la zona.
+      const feature = event.features?.[0];
+      const properties = feature?.properties ?? {};
+      const layer = feature?.layer?.id;
+      if (layer === "drones") onSelect({ kind: "flight", id: properties.orderId as string });
+      else if (layer === "points") onSelect({ kind: "point", id: properties.id as string });
+      else if (layer === "airspace-fill") {
+        onSelect({ kind: "airspace", id: properties.code as string });
+      } else onSelect(null);
     },
     [onSelect, onPick, picking],
   );
@@ -420,24 +472,78 @@ export function RadarMap({
   const selectZone = useCallback((id: string) => onSelect({ kind: "zone", id }), [onSelect]);
 
   const selectedFlightId = selection?.kind === "flight" ? selection.id : "";
+  const selectedPointId = selection?.kind === "point" ? selection.id : "";
+  const selectedZoneCode = selection?.kind === "airspace" ? selection.id : "";
   const geofenceVisibility = showGeofences ? "visible" : "none";
 
   return (
     <>
       <Map
         ref={mapRef}
-        initialViewState={VALLEDUPAR}
+        initialViewState={REGION}
         mapStyle={STYLE}
         minZoom={8}
         maxZoom={17}
         attributionControl={{ compact: true }}
-        interactiveLayerIds={picking ? [] : ["drones"]}
+        interactiveLayerIds={picking ? [] : ["drones", "points", "airspace-fill"]}
         onClick={onClick}
         onLoad={onLoad}
         onMouseEnter={() => setHovering(true)}
         onMouseLeave={() => setHovering(false)}
         cursor={picking ? "crosshair" : hovering ? "pointer" : "grab"}
       >
+        {/* RF-43: la carta legal, debajo de las geovallas, el clima y las rutas. */}
+        <Source id="airspace" type="geojson" data={airspaceCollection}>
+          <Layer
+            id="airspace-fill"
+            type="fill"
+            layout={{ visibility: geofenceVisibility }}
+            paint={{
+              "fill-color": [
+                "match",
+                ["get", "kind"],
+                "urban",
+                COLORS.urban,
+                "coordinated",
+                COLORS.coordinated,
+                "caution",
+                COLORS.coordinated,
+                COLORS.noFly,
+              ],
+              "fill-opacity": [
+                "case",
+                ["==", ["get", "code"], selectedZoneCode],
+                0.2,
+                ["match", ["get", "kind"], "caution", 0.02, "coordinated", 0.05, 0.08],
+              ],
+            }}
+          />
+          <Layer
+            id="airspace-line"
+            type="line"
+            filter={["get", "blocking"]}
+            layout={{ visibility: geofenceVisibility }}
+            paint={{
+              "line-color": ["match", ["get", "kind"], "urban", COLORS.urban, COLORS.noFly],
+              "line-width": ["case", ["==", ["get", "code"], selectedZoneCode], 2.4, 1.3],
+              "line-opacity": 0.85,
+            }}
+          />
+          {/* Coordinada y precaución: se puede volar, con borde punteado. */}
+          <Layer
+            id="airspace-line-soft"
+            type="line"
+            filter={["!", ["get", "blocking"]]}
+            layout={{ visibility: geofenceVisibility }}
+            paint={{
+              "line-color": COLORS.coordinated,
+              "line-width": ["case", ["==", ["get", "code"], selectedZoneCode], 2.4, 1.3],
+              "line-opacity": 0.85,
+              "line-dasharray": [3, 2],
+            }}
+          />
+        </Source>
+
         {/* Se oculta con `visibility` en vez de desmontar la fuente. */}
         <Source id="geofences" type="geojson" data={geofenceCollection}>
           <Layer
@@ -583,6 +689,31 @@ export function RadarMap({
           />
         </Source>
 
+        {/* RF-45: los puntos de entrega. */}
+        <Source id="points" type="geojson" data={pointCollection}>
+          <Layer
+            id="point-halo"
+            type="circle"
+            filter={["==", ["get", "id"], selectedPointId]}
+            paint={{
+              "circle-radius": 14,
+              "circle-opacity": 0,
+              "circle-stroke-color": COLORS.accent,
+              "circle-stroke-width": 1.8,
+            }}
+          />
+          <Layer
+            id="points"
+            type="circle"
+            paint={{
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 5, 13, 7],
+              "circle-color": ["case", ["get", "available"], COLORS.point, COLORS.pointOff],
+              "circle-stroke-color": ["case", ["get", "corridor"], COLORS.coordinated, COLORS.ink],
+              "circle-stroke-width": ["case", ["get", "corridor"], 2, 1.5],
+            }}
+          />
+        </Source>
+
         {/* El punto que la consola pidió mostrar. */}
         <Source id="focus" type="geojson" data={focusCollection}>
           <Layer
@@ -719,7 +850,7 @@ export function RadarMap({
         <IconButton label="Alejar" onClick={() => mapRef.current?.zoomOut()}>
           <MinusIcon size={18} />
         </IconButton>
-        <IconButton label="Ver todas las centrales" onClick={() => fitHubs(700)}>
+        <IconButton label="Ver toda la red" onClick={() => fitHubs(700)}>
           <RecenterIcon size={18} />
         </IconButton>
       </div>

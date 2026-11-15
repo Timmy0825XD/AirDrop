@@ -10,6 +10,13 @@ export const COLORS = {
   accent: "#7aa7ff",
   /** Zona restringida: el magenta de las cartas. */
   geofence: "#e05ad6",
+  /** RF-43: zonas legales. Donde no se vuela, rojo; urbana, gris; coordinada, ámbar. */
+  noFly: "#ff6b6b",
+  urban: "#8c99a6",
+  coordinated: "#f0b445",
+  /** RF-45: un punto de entrega disponible y uno que no. */
+  point: "#4cc38a",
+  pointOff: "#5f6b78",
   /** RF-36: geovalla temporal (ámbar, vence sola). */
   zone: "#f0b445",
   /** RF-32: viento y lluvia (cielo) y tormenta (rojo de peligro). */

@@ -1,9 +1,12 @@
+import { circlePolygon } from "./geo";
 import type { RadarHandlers, RadarSource } from "./source";
 import type {
   ActorsState,
+  AirspaceZone,
   ChaosState,
   ClockView,
   Corridor,
+  DeliveryPoint,
   FleetCounts,
   FlightDetail,
   HubDetail,
@@ -26,33 +29,118 @@ const DEMO_ONLY_REAL =
  * ensayar o presentar sin backend. La interfaz lo marca siempre.
  */
 
+/** La red regional de la demostración: las coordenadas de `regional-network.ts`. */
 const hubs: Array<Omit<HubSummary, "fleet"> & { fleet: FleetCounts }> = [
   {
-    id: "demo-hub-1",
-    name: "Hospital Norte (demo)",
-    type: "hospital",
+    id: "demo-node-north",
+    name: "Nodo Norte (demo)",
+    type: "clinic",
+    networkRole: "node",
     status: "active",
-    latitude: 10.4962,
-    longitude: -73.2487,
-    fleet: { available: 2, inMission: 1, maintenance: 0, outOfService: 0, total: 3 },
+    latitude: 10.6075,
+    longitude: -73.2237,
+    fleet: { available: 2, inMission: 0, maintenance: 0, outOfService: 0, total: 2 },
   },
   {
-    id: "demo-hub-2",
-    name: "Clínica Centro (demo)",
+    id: "demo-node-south",
+    name: "Nodo Sur (demo)",
     type: "clinic",
+    networkRole: "node",
     status: "active",
-    latitude: 10.4631,
-    longitude: -73.2532,
+    latitude: 10.355,
+    longitude: -73.14,
     fleet: { available: 1, inMission: 1, maintenance: 1, outOfService: 0, total: 3 },
   },
   {
-    id: "demo-hub-3",
-    name: "Banco de sangre Sur (demo)",
-    type: "blood_bank",
+    id: "demo-node-codazzi",
+    name: "Nodo Codazzi (demo)",
+    type: "clinic",
+    networkRole: "node",
     status: "active",
-    latitude: 10.4318,
-    longitude: -73.2601,
-    fleet: { available: 2, inMission: 0, maintenance: 0, outOfService: 0, total: 2 },
+    latitude: 10.055,
+    longitude: -73.255,
+    fleet: { available: 1, inMission: 1, maintenance: 0, outOfService: 0, total: 2 },
+  },
+  {
+    id: "demo-ese-la-paz",
+    name: "ESE Hospital de La Paz (demo)",
+    type: "hospital",
+    networkRole: "ese",
+    status: "active",
+    latitude: 10.3844,
+    longitude: -73.1733,
+    fleet: { available: 0, inMission: 0, maintenance: 0, outOfService: 0, total: 0 },
+  },
+  {
+    id: "demo-ese-codazzi",
+    name: "ESE Hospital de Codazzi (demo)",
+    type: "hospital",
+    networkRole: "ese",
+    status: "active",
+    latitude: 10.0367,
+    longitude: -73.2356,
+    fleet: { available: 0, inMission: 0, maintenance: 0, outOfService: 0, total: 0 },
+  },
+];
+
+/** RF-45: puntos de entrega de la demostración. Se activan solo en este navegador. */
+const points: DeliveryPoint[] = [
+  demoPoint("badillo", "Puesto de salud de Badillo (demo)", "Valledupar", 10.6314, -73.1279, 200, 0),
+  demoPoint("guacoche", "Puesto de salud de Guacoche (demo)", "Valledupar", 10.4964, -73.166, 130, 0),
+  demoPoint("media-luna", "Puesto de salud de Media Luna (demo)", "San Diego", 10.2455, -73.1439, 407, 1),
+  {
+    ...demoPoint("atanquez", "Puesto de salud de Atánquez (demo)", "Valledupar", 10.6976, -73.3545, 793, 0),
+    corridor: { zoneCode: "demo-resguardo", zoneName: "Resguardo Kankuamo (demo)", gateway: null },
+  },
+];
+
+function demoPoint(
+  code: string,
+  name: string,
+  municipality: string,
+  latitude: number,
+  longitude: number,
+  elevationM: number,
+  hub: number,
+): DeliveryPoint {
+  return {
+    id: `demo-point-${code}`,
+    code: `dp-${code}`,
+    name,
+    municipality,
+    latitude,
+    longitude,
+    elevationM,
+    hubId: hubs[hub].id,
+    active: true,
+    available: true,
+    corridor: null,
+  };
+}
+
+/** RF-43: las dos zonas que más se preguntan: el anillo del aeropuerto y la ciudad. */
+const airspace: AirspaceZone[] = [
+  {
+    code: "demo-skvp",
+    kind: "aerodrome",
+    name: "Aeropuerto Alfonso López (demo)",
+    legalBasis: "RAC 100.315(a)(14): 9 km desde el punto de referencia del aeródromo",
+    source: "Datos de demostración",
+    blocking: true,
+    polygon: circlePolygon(10.43513, -73.2494, 9, 32),
+    gateway: null,
+    sites: [],
+  },
+  {
+    code: "demo-urban",
+    kind: "urban",
+    name: "Casco urbano de Valledupar (demo)",
+    legalBasis: "RAC 100.220(b): en zona urbana solo se vuela con línea de vista",
+    source: "Datos de demostración",
+    blocking: true,
+    polygon: circlePolygon(10.4631, -73.2532, 4, 24),
+    gateway: null,
+    sites: [],
   },
 ];
 
@@ -68,8 +156,9 @@ type Mission = {
 };
 
 const missions: Mission[] = [
-  { orderId: "demo-order-1", droneId: "demo-drone-1", identifier: "WG-198-001", from: 0, to: 1, periodMs: 90_000, offset: 0, cold: true },
-  { orderId: "demo-order-2", droneId: "demo-drone-2", identifier: "WG-198-004", from: 1, to: 2, periodMs: 120_000, offset: 40_000, cold: false },
+  // Un nodo le manda a la ESE de su zona.
+  { orderId: "demo-order-1", droneId: "demo-drone-1", identifier: "AD-SUR-01", from: 1, to: 3, periodMs: 90_000, offset: 0, cold: true },
+  { orderId: "demo-order-2", droneId: "demo-drone-2", identifier: "AD-COD-01", from: 2, to: 4, periodMs: 120_000, offset: 40_000, cold: false },
 ];
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -111,7 +200,7 @@ function flightOf(mission: Mission, now: number): RadarFlight {
     leg: s.outbound ? "outbound" : "return",
     latitude: s.latitude,
     longitude: s.longitude,
-    altitudeM: s.phase === "cruise" ? 120 : 40,
+    altitudeM: s.phase === "cruise" ? 90 : 40,
     speedKmh: s.phase === "cruise" ? 96 : 35,
     batteryPercent: Math.round(s.battery),
     temperatureC: mission.cold ? 5.1 : null,
@@ -129,8 +218,8 @@ function corridor(mission: Mission, reverse: boolean): Corridor {
     [b.longitude, b.latitude],
   ];
   return {
-    altitudeM: 120,
-    distanceKm: 6.4,
+    altitudeM: 90,
+    distanceKm: 4.8,
     coordinates: reverse ? points.reverse() : points,
   };
 }
@@ -181,25 +270,25 @@ export function demoSource(): RadarSource {
     return [
       demoEntry(at, {
         kind: "flight",
-        title: "Carga confirmada: despegó WG-198-001",
-        detail: "Desde Hospital Norte (demo), Insulina (demo) hacia Clínica Centro (demo)",
+        title: "Carga confirmada: despegó AD-SUR-01",
+        detail: "Desde Nodo Sur (demo), Insulina (demo) hacia ESE Hospital de La Paz (demo)",
         orderId: "demo-order-1",
-        latitude: hubs[0].latitude,
-        longitude: hubs[0].longitude,
+        latitude: hubs[1].latitude,
+        longitude: hubs[1].longitude,
         source: "system",
       }),
       demoEntry(at, {
         kind: "decision",
-        title: "Hospital Norte (demo) autorizó: sale WG-198-001",
-        detail: "Eligió WG-198-001. Descartó WG-198-002 (batería insuficiente para ida, regreso y reserva).",
+        title: "Nodo Sur (demo) autorizó: sale AD-SUR-01",
+        detail: "Eligió AD-SUR-01. Descartó AD-SUR-02 (batería insuficiente para ida, regreso y reserva).",
         orderId: "demo-order-1",
         source: "system",
       }),
       demoEntry(at, {
         kind: "queue",
-        title: "Urgencia entre centrales en la cola de Hospital Norte (demo)",
-        latitude: hubs[0].latitude,
-        longitude: hubs[0].longitude,
+        title: "Urgencia entre centrales en la cola de Nodo Sur (demo)",
+        latitude: hubs[1].latitude,
+        longitude: hubs[1].longitude,
         source: "system",
       }),
     ];
@@ -353,13 +442,18 @@ export function demoSource(): RadarSource {
           id: "demo-geo-1",
           name: "Zona de eventos (demo)",
           reason: "Evento masivo",
-          polygon: {
-            type: "Polygon",
-            coordinates: [[[-73.262, 10.482], [-73.248, 10.482], [-73.248, 10.472], [-73.262, 10.472], [-73.262, 10.482]]],
-          },
+          polygon: circlePolygon(10.3, -73.16, 1.5, 16),
         },
       ],
+      airspace,
     }),
+    deliveryPoints: async () => points.map((point) => ({ ...point })),
+    setPointActive: async (id, active) => {
+      const point = points.find((row) => row.id === id);
+      if (!point) throw new Error("El punto de entrega no existe.");
+      point.active = active;
+      point.available = active;
+    },
     hub: async (id): Promise<HubDetail> => {
       const hub = hubs.find((h) => h.id === id) ?? hubs[0];
       const flying = missions.filter((m) => hubs[m.from].id === hub.id);
@@ -377,8 +471,8 @@ export function demoSource(): RadarSource {
               : "maintenance";
           return {
             id: `${hub.id}-d${i}`,
-            identifier: m?.identifier ?? `WG-198-0${i + 1}${hubs.indexOf(hub)}`,
-            modelName: "Wingcopter 198",
+            identifier: m?.identifier ?? `AD-DEMO-${hubs.indexOf(hub)}${i + 1}`,
+            modelName: i % 2 ? "Colibrí" : "Garza",
             status,
             maintenanceReason: status === "maintenance" ? "Cambio de hélices" : null,
             flight: m ? flightOf(m, Date.now()) : null,
