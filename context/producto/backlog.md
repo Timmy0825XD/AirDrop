@@ -169,10 +169,8 @@ Se agregó tras revisar la app terminada: funcionaba, pero se veía plana, sin m
 | HU-76 | Inicio, urgencia y seguimiento del solicitante con la ruta como motivo | Alta | 8 | 6 |
 | HU-77 | Ajustes: tema con vista previa, texto, contraste, movimiento y modo sencillo (RF-52) | Alta | 8 | 6 |
 | HU-78 | Medicamentos disponibles (RF-54) | Media | 5 | 6 |
-| HU-79 | Avisos del sistema en el backend: registro del dispositivo y envío (RF-55) | Media | 8 | 6 |
-| HU-80 | Avisos del sistema en la app: permiso en contexto y enlace al pedido (RF-55) | Media | 5 | 6 |
 
-**Suma del módulo 12: 58 SP.**
+**Suma del módulo 12: 45 SP.**
 
 ---
 

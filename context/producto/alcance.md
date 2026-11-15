@@ -49,7 +49,6 @@
   - bienvenida de tres pasos para el solicitante (RF-53);
   - ajustes de tema, texto, contraste, movimiento y modo sencillo, guardados en el teléfono (RF-52);
   - lista de medicamentos disponibles, sin cantidades (RF-54);
-  - avisos del sistema con la app cerrada, que abren el pedido (RF-55);
   - estados de carga, vacío y error en cada pantalla (RNF-18).
 
 ## Limitaciones explícitas
@@ -65,7 +64,7 @@
 | Zonas de la demo | Ubicadas con datos abiertos (OpenStreetMap, GeoNames), no oficiales |
 | Geografía acotada | Una sola región. Multirregión no desplegada |
 | Inventario manual | El despachador carga el stock; no hay integración con el sistema del hospital. El abastecimiento de los nodos no se simula |
-| Avisos del sistema acotados | Solo para el solicitante y solo sobre su pedido. Sin widgets, sin ingreso con huella, sin ubicación ni socket en segundo plano |
+| Sin avisos del sistema | Con la app cerrada no llega una notificación al teléfono: los avisos quedan en la bandeja y llegan al correo (RU-05). Sin widgets, sin ingreso con huella, sin ubicación ni socket en segundo plano |
 | Personalización acotada | Tema, texto, contraste, movimiento y modo sencillo. No se elige color de acento, íconos ni fondo |
 | No es atención médica | Complementa el **insumo**, no el traslado ni la atención del paciente |
 

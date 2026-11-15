@@ -48,7 +48,7 @@ Los mismos nombres en backend (módulos Nest) y, en lo posible, en frontend (fea
 8. **Routing** — corredores que evitan las zonas, con perfil de terreno.
 9. **Simulation** — reloj (tras confirmar carga), fases de vuelo, espera de código, retorno con paquete, batería, temperatura simulada.
 10. **Telemetry** — Redis + gateway WebSocket.
-11. **Notifications** — push por cambio de estado y alertas.
+11. **Notifications** — avisos por cambio de estado y alertas: bandeja en la app y correo.
 12. **Analytics** — dashboard epidemiológico y métricas admin (consultas SQL, no un data warehouse).
 13. **Weather** — celdas de clima simulado; responde si un punto o una ruta se puede volar y con qué viento.
 14. **Control** — consola de simulación: reloj, eventos, actores simulados, modo caos, línea de tiempo y reinicio. No tiene reglas propias: usa los servicios de los demás dominios.

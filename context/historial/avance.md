@@ -1477,7 +1477,7 @@ Pendiente:
 Concepto elegido el 2026-11-14 entre cinco propuestas
 (<https://claude.ai/artifact/STBUXjTf4xHgnebaknmC4L>). Parte del diseño
 natural de la Fase 21 y le suma jerarquía, marca y estados. Historias
-HU-72 a HU-80 (módulo 12 del backlog). El plan detallado está en
+HU-72 a HU-78 (módulo 12 del backlog). El plan detallado está en
 `learning/37-plan-rediseno-corredor.md` (local, fuera de git). Empieza por
 el solicitante; los pasos 1 y 2 cambian los cuatro roles.
 
@@ -1491,8 +1491,10 @@ el solicitante; los pasos 1 y 2 cambian los cuatro roles.
 | 5 — Bienvenida | `feature/bienvenida` | HU-75 | Pendiente |
 | 6 — Ajustes y modo sencillo | `feature/ajustes` | HU-77 | Pendiente |
 | 7 — Medicamentos disponibles | `feature/medicamentos-disponibles` | HU-78 | Pendiente |
-| 8 — Avisos del sistema, backend | `feature/push-dispositivos` | HU-79 | Pendiente |
-| 9 — Avisos del sistema, app | `feature/push-app` | HU-80 | Pendiente |
+
+Los avisos del sistema con la app cerrada (push) se sacaron del alcance
+el 2026-11-14: pedían un servicio de mensajería externo. Los avisos
+siguen en la bandeja y en el correo.
 
 ## Pendiente del backend
 

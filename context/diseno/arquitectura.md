@@ -32,7 +32,6 @@ Dirección acordada en el documento base. El detalle de carpetas y convenciones 
 
 - **WebSockets** (gateway NestJS): telemetría y estado de pedido.
 - La app reconecta sola (RNF-12) y muestra último estado conocido.
-- **Avisos del sistema** (RF-55): el módulo `notifications/` manda el aviso del pedido al teléfono del solicitante por Firebase Cloud Messaging. No es un segundo canal de tiempo real: no lleva telemetría ni estados en vivo, solo despierta a la persona y abre el pedido. Con la app abierta manda el socket.
 
 ## 6. Motor de simulación
 
