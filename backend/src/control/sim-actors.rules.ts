@@ -262,7 +262,7 @@ export function receiverCodeAt(landedAt: Date, random: Random): Date | null {
 }
 
 /**
- * La primera franja (en punto, de 7:00 a 17:00, hora de Colombia) que
+ * La primera franja (en punto, de 7:00 a 16:00, hora de Colombia) que
  * empieza al menos 2 horas después: lo mínimo para agendar (RU-30).
  */
 export function nextScheduledSlot(now: Date): { date: string; time: string } {

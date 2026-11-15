@@ -6,6 +6,7 @@ import { MissionType } from '../common/enums/mission-type.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 import { assertDispatchWindow } from '../orders/plan-dispatch.rules';
+import { NIGHT_NO_FLIGHT } from '../airspace/daylight.rules';
 import { CEILING_TOO_LOW } from '../airspace/terrain.rules';
 import { usablePayloadKg } from '../fleet/drone-types';
 import { missionBatteryPercent } from '../simulation/flight-energy.rules';
@@ -210,6 +211,8 @@ export function chooseDrone(input: {
     distanceKm: number | null;
     weather?: CandidateWeather;
     terrain?: CandidateTerrain;
+    /** RF-44: despega con sol y aterriza de regreso antes de la puesta. */
+    daylight?: boolean;
   }>;
 }): { chosen: ChosenDrone | null; discarded: DiscardedDrone[] } {
   const discarded: DiscardedDrone[] = [];
@@ -225,6 +228,7 @@ export function chooseDrone(input: {
       candidate.weather?.reason ?? input.weatherReason,
       input.requiresCold ?? false,
       candidate.terrain,
+      candidate.daylight ?? true,
     );
     if (reason) {
       discarded.push({
@@ -327,7 +331,11 @@ export function discardReason(
   weatherReason?: string | null,
   requiresCold = false,
   terrain?: CandidateTerrain,
+  daylight = true,
 ): string | null {
+  if (!daylight) {
+    return NIGHT_NO_FLIGHT;
+  }
   if (!weatherFlyable) {
     return weatherReason ?? WEATHER_BLOCKS;
   }

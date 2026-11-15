@@ -483,6 +483,6 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Antes:** Llega un pedido o una entrega programada, y la hora simulada está fuera de la luz del día o el vuelo no alcanzaría a volver antes de la puesta del sol
 - **Pasos:**
   1. Programado: queda en su franja, que siempre cae de día. Si el reloj está de noche porque se aceleró, espera.
-  2. Urgencia: pasa a traslado convencional (CU-31) y avisa al despachador y al operador. La app le dice al solicitante por qué.
+  2. Urgencia: pasa a traslado convencional (CU-31) sin entrar a ninguna cola. Quien pidió ve el motivo y las centrales con el insumo.
 - **Después:** Ningún dron despega de noche.
 - **Por qué:** RF-44.

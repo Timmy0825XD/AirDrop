@@ -13,7 +13,7 @@ import { WeatherKind } from '../../common/enums/weather-kind.enum';
 /** RF-32, CU-38: una celda de clima desde la consola. */
 export class CreateWeatherDto {
   @IsEnum(WeatherKind, {
-    message: 'El clima debe ser viento, lluvia o tormenta.',
+    message: 'El clima debe ser viento, lluvia, tormenta o niebla.',
   })
   kind: WeatherKind;
 

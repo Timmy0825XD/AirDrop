@@ -20,6 +20,8 @@ import {
   stormPolygon,
   tailwindKmh,
   windLimitsOf,
+  WEATHER_FOG_BLOCKS,
+  stormPolygons,
 } from './weather.rules';
 import { DRONE_TYPES } from '../fleet/drone-types';
 
@@ -215,5 +217,30 @@ describe('Límite de viento por tipo de dron (RF-32, RF-49)', () => {
 
   it('sin límites del tipo se usa el de referencia (15 / 20 m/s)', () => {
     expect(windLimitsOf({})).toEqual({ sustainedMs: 15, gustMs: 20 });
+  });
+});
+
+describe('Niebla: sin condiciones visuales no se vuela (RF-32, VMC)', () => {
+  it('un corredor que cruza niebla no es volable y lo dice', () => {
+    const fog = [
+      cell({ kind: WeatherKind.FOG, windSpeedMs: null, windGustMs: null }),
+    ];
+    const result = corridorWeather(eastbound, fog, 110);
+    expect(result.flyable).toBe(false);
+    expect(result.reason).toBe(WEATHER_FOG_BLOCKS);
+  });
+
+  it('la niebla, como la tormenta, es zona que las rutas rodean', () => {
+    const fog = cell({
+      kind: WeatherKind.FOG,
+      windSpeedMs: null,
+      windGustMs: null,
+    });
+    const rain = cell({
+      kind: WeatherKind.RAIN,
+      windSpeedMs: null,
+      windGustMs: null,
+    });
+    expect(stormPolygons([fog, rain])).toHaveLength(1);
   });
 });

@@ -4,9 +4,13 @@ import { ScheduleKind } from '../common/enums/schedule-kind.enum';
 import { addCalendarDays, todayInColombia } from './orders.rules';
 import { simClock } from '../common/clock/sim-clock';
 
-/** RU-30: la primera franja empieza a las 07:00 y la última a las 17:00. */
+/**
+ * RU-30: la primera franja empieza a las 07:00 y la última a las 16:00
+ * (cierra a las 17:00). El sol se pone entre las 17:27 y las 18:17: un
+ * despegue tardío que no alcance a volver de día lo bloquea RF-44.
+ */
 export const FIRST_SLOT_HOUR = 7;
-export const LAST_SLOT_HOUR = 17;
+export const LAST_SLOT_HOUR = 16;
 export const SLOT_MS = 60 * 60 * 1000;
 /** Antes de esto no da tiempo de avisar ni de preparar la carga. */
 export const SCHEDULE_LEAD_MS = 2 * 60 * 60 * 1000;
@@ -25,7 +29,7 @@ export const SCHEDULE_NEEDS_DAYS = 'Elige al menos un día de la semana.';
 export const SCHEDULE_NEEDS_DAY_OF_MONTH = 'Elige el día del mes.';
 export const SCHEDULE_NEEDS_DATES = `Elige entre 1 y ${MAX_PLAN_DATES} fechas.`;
 export const SCHEDULE_BAD_TIME =
-  'La hora debe ser en punto, entre las 07:00 y las 17:00.';
+  'La hora debe ser en punto, entre las 07:00 y las 16:00.';
 export const SCHEDULE_COUNT_DOES_NOT_FIT = `Esas entregas no caben en ${MAX_PLAN_MONTHS} meses.`;
 export const SCHEDULE_EMPTY =
   'El plan no tiene entregas a más de 2 horas. Revisa las fechas y la hora.';

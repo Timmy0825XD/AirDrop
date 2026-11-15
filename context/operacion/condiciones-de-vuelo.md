@@ -7,7 +7,7 @@ Cuándo y a qué altura vuela un dron. Las reglas de dónde puede volar están e
 El RAC 100.220(a)(3) dice: "No se autorizarán, en ningún caso, operaciones nocturnas para actividades de transporte de carga (Drone Delivery)".
 
 - El RAC 100 no define la noche. Lo usual en aviación es tomarla desde el fin del crepúsculo civil vespertino hasta el inicio del matutino. AirDrop usa una ventana más estricta, **de la salida a la puesta del sol**, para que el despacho nunca dependa de la penumbra.
-- La salida y la puesta se calculan para la fecha simulada y la coordenada del nodo, con las ecuaciones solares de la NOAA. No usan una API. En el Cesar, la salida varía entre las 5:40 y las 6:20 y la puesta entre las 17:40 y las 18:20, según la época.
+- La salida y la puesta se calculan para la fecha simulada y la coordenada del nodo, con las ecuaciones solares de la NOAA. No usan una API. En Valledupar la salida varía entre las 5:33 y las 6:15 y la puesta entre las 17:27 y las 18:17, según la época (verificado contra api.sunrise-sunset.org).
 - Un vuelo solo se despacha si el dron puede **aterrizar de regreso en el nodo antes de la puesta del sol**, con el tiempo estimado de ida, la espera en destino y la vuelta.
 
 **Pedidos que caen de noche:**
@@ -15,7 +15,7 @@ El RAC 100.220(a)(3) dice: "No se autorizarán, en ningún caso, operaciones noc
 | Pedido | Qué hace el sistema |
 | --- | --- |
 | Programado | Queda en cola y sale en la primera franja con luz del día |
-| Urgencia | No se encola: se marca **"requiere alternativa terrestre"** (el fallback existente) y se avisa al despachador y al operador. Si la luz del día llega antes de que se resuelva por tierra, el despachador puede reactivarlo |
+| Urgencia | No se encola: pasa de una vez a **traslado convencional** (el fallback de RF-18), con el motivo "es de noche", y quien pidió ve las centrales con el insumo |
 
 ## Condiciones meteorológicas visuales (VMC)
 

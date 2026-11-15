@@ -162,16 +162,21 @@ export function colombiaHour(now: Date): number {
   return (now.getUTCHours() + 24 - 5) % 24;
 }
 
-/** Las tormentas, tres veces más probables de 14:00 a 18:00 (la tarde). */
+/**
+ * Las tormentas, tres veces más probables de 14:00 a 18:00 (la tarde). La
+ * niebla, de 05:00 a 08:00 (la mañana en la Sierra).
+ */
 export function weatherWeights(
   now: Date,
 ): ReadonlyArray<readonly [WeatherKind, number]> {
   const hour = colombiaHour(now);
   const afternoon = hour >= 14 && hour < 18;
+  const morning = hour >= 5 && hour < 8;
   return [
     [WeatherKind.WIND, 40],
     [WeatherKind.RAIN, 40],
     [WeatherKind.STORM, afternoon ? 60 : 20],
+    [WeatherKind.FOG, morning ? 40 : 5],
   ];
 }
 
@@ -359,6 +364,7 @@ const WEATHER_TITLE: Record<WeatherKind, string> = {
   [WeatherKind.WIND]: 'viento',
   [WeatherKind.RAIN]: 'lluvia',
   [WeatherKind.STORM]: 'tormenta',
+  [WeatherKind.FOG]: 'niebla',
 };
 
 const ENVIRONMENT_TITLE: Record<EnvironmentKind, string> = {

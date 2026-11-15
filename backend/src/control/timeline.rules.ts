@@ -1,3 +1,4 @@
+import { blocksFlight } from '../weather/weather.rules';
 import { ClockView } from '../common/clock/clock.rules';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { FallbackKind } from '../common/enums/fallback-kind.enum';
@@ -285,12 +286,14 @@ const WEATHER_NAME: Record<WeatherKind, string> = {
   [WeatherKind.WIND]: 'Viento',
   [WeatherKind.RAIN]: 'Lluvia',
   [WeatherKind.STORM]: 'Tormenta',
+  [WeatherKind.FOG]: 'Niebla',
 };
 
 const WEATHER_ENDED: Record<WeatherKind, string> = {
   [WeatherKind.WIND]: 'Se calmó el viento',
   [WeatherKind.RAIN]: 'Paró la lluvia',
   [WeatherKind.STORM]: 'Pasó la tormenta',
+  [WeatherKind.FOG]: 'Se levantó la niebla',
 };
 
 const COMPASS = [
@@ -346,14 +349,13 @@ export function weatherDraft(
       : '';
   return {
     ...base,
-    severity: cell.kind === WeatherKind.STORM ? 'danger' : 'warning',
+    severity: blocksFlight(cell.kind) ? 'danger' : 'warning',
     title: `${name}${wind} en ${radius} km por ${minutes} min`,
-    detail:
-      cell.kind === WeatherKind.STORM
-        ? 'Zona no volable: las rutas la rodean y los drones en el aire cambian de camino.'
-        : cell.kind === WeatherKind.RAIN
-          ? 'Se vuela con un 10 % más de consumo.'
-          : 'En contra frena al dron y gasta más; a favor, al revés.',
+    detail: blocksFlight(cell.kind)
+      ? 'Zona no volable: las rutas la rodean y los drones en el aire cambian de camino.'
+      : cell.kind === WeatherKind.RAIN
+        ? 'Se vuela con un 10 % más de consumo.'
+        : 'En contra frena al dron y gasta más; a favor, al revés.',
     source: 'console',
   };
 }

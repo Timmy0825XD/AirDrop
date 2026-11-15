@@ -1,3 +1,4 @@
+import { ALWAYS_DAY } from '../airspace/daylight.testing';
 import {
   BadRequestException,
   ConflictException,
@@ -140,6 +141,7 @@ describe('La central sin energía sale de la oferta escalonada (RU-10, RF-36)', 
       {} as never,
       {} as never,
       notifications as never,
+      ALWAYS_DAY,
     );
     await expect(service.withdrawHub('A', NOW)).resolves.toBe(1);
     expect(order.dispatchOffers![1].offeredAt).toBe(NOW.toISOString());
