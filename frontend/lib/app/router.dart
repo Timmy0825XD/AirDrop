@@ -11,6 +11,10 @@ import '../features/auth/presentation/auth_controller.dart';
 import '../features/auth/presentation/email_change_screen.dart';
 import '../features/auth/presentation/forgot_password_screen.dart';
 import '../features/auth/presentation/login_screen.dart';
+import '../features/auth/presentation/accept_policy_screen.dart';
+import '../features/auth/presentation/policy_gate.dart';
+import '../features/auth/presentation/policy_screen.dart';
+import '../features/auth/presentation/privacy_screen.dart';
 import '../features/auth/presentation/profile_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
 import '../features/auth/presentation/reset_password_screen.dart';
@@ -83,6 +87,7 @@ const _roleRoutes = <String, Set<UserRole>>{
   '/geofences/:id': {UserRole.fleetOperator},
   '/orders/emergency': {UserRole.requester},
   '/welcome': {UserRole.requester},
+  '/privacy': {UserRole.requester},
   '/medications': {UserRole.requester},
   '/orders/plans/new': {UserRole.requester},
   '/orders/plans': {UserRole.requester, UserRole.dispatcher},
@@ -175,6 +180,8 @@ final routerProvider = Provider<GoRouter>((ref) {
         '/verify-otp',
       };
 
+      // La política se lee con o sin sesión (RF-50).
+      if (location == '/privacy/policy') return null;
       if (location == '/') return isAuthenticated ? '/home' : '/login';
       if (!isAuthenticated && !publicLocations.contains(location)) {
         return '/login';
@@ -182,6 +189,14 @@ final routerProvider = Provider<GoRouter>((ref) {
       if (isAuthenticated && publicLocations.contains(location)) {
         return '/home';
       }
+
+      // RF-50: sin aceptar la política vigente no se sigue (Nest responde
+      // 403 al pedir).
+      final policy = policyRedirect(
+        mustAccept: auth.asData?.value.user?.mustAcceptPolicy ?? false,
+        location: location,
+      );
+      if (policy != null) return policy;
 
       // La bienvenida sale una vez: el primer ingreso de un solicitante
       // en este teléfono (RF-53).
@@ -208,6 +223,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/', redirect: (_, _) => '/login'),
       // Fuera del andamiaje del rol: ocupa toda la pantalla, sin barra.
       GoRoute(path: '/welcome', builder: (_, _) => const WelcomeScreen()),
+      GoRoute(path: '/privacy/policy', builder: (_, _) => const PolicyScreen()),
+      GoRoute(
+        path: '/privacy/accept',
+        builder: (_, _) => const AcceptPolicyScreen(),
+      ),
       // Las pantallas de auth rediseñadas animan su propia entrada (el
       // encabezado cambia de forma), así que la ruta no agrega otra encima.
       GoRoute(
@@ -257,6 +277,7 @@ final routerProvider = Provider<GoRouter>((ref) {
             builder: (_, _) => const EmailChangeScreen(),
           ),
           GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
+          GoRoute(path: '/privacy', builder: (_, _) => const PrivacyScreen()),
           GoRoute(
             path: '/unauthorized',
             builder: (_, _) => const PlaceholderScreen(

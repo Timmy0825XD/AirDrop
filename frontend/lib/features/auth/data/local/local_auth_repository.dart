@@ -1,3 +1,5 @@
+import '../privacy_models.dart';
+import 'local_privacy.dart';
 import '../../../../core/api_exception.dart';
 import '../../../../core/auth/token_store.dart';
 import '../auth_models.dart';
@@ -254,6 +256,69 @@ class LocalAuthRepository implements AuthRepository {
     user.documentNumber = documentNumber;
   }
 
+  @override
+  Future<PrivacyPolicy> policy() async => localPrivacyPolicy;
+
+  @override
+  Future<PrivacyOverview> privacyMe() async {
+    final user = await _requireSessionUser();
+    return PrivacyOverview(
+      user: user.toPublicUser(),
+      consent: _consentOf(user),
+      revokeNotice: localRevokeNotice,
+      suppressNotice: localSuppressNotice,
+    );
+  }
+
+  @override
+  Future<ConsentState> acceptPolicy(String version) async {
+    final user = await _requireSessionUser();
+    if (version != localPolicyVersion) {
+      throw const ApiException(
+        'Esa no es la versión vigente de la política.',
+        statusCode: 400,
+      );
+    }
+    user
+      ..policyVersion = version
+      ..policyAcceptedAt = DateTime.now().toUtc();
+    return _consentOf(user);
+  }
+
+  @override
+  Future<void> revokeConsent(String password) async {
+    final user = await _requirePassword(password);
+    user.status = UserStatus.revoked;
+  }
+
+  @override
+  Future<void> deleteAccount(String password) async {
+    final user = await _requirePassword(password);
+    user
+      ..status = UserStatus.deleted
+      ..email = null
+      ..phone = null
+      ..documentNumber = null;
+  }
+
+  Future<LocalUser> _requirePassword(String password) async {
+    final user = await _requireSessionUser();
+    if (user.password != password) {
+      throw const ApiException(
+        'La contraseña no es correcta.',
+        statusCode: 400,
+      );
+    }
+    return user;
+  }
+
+  ConsentState _consentOf(LocalUser user) => ConsentState(
+    acceptedAt: user.policyAcceptedAt,
+    acceptedVersion: user.policyVersion,
+    currentVersion: localPolicyVersion,
+    mustAccept: user.policyVersion != localPolicyVersion,
+  );
+
   ApiException? _loginBlock(UserStatus status) => switch (status) {
     UserStatus.unverified => const ApiException(
       'Debes verificar tu cuenta. Te enviamos un código nuevo a tu correo.',
@@ -268,8 +333,13 @@ class LocalAuthRepository implements AuthRepository {
       'Tu cuenta está suspendida. Habla con el administrador.',
       statusCode: 403,
     ),
-    // Los datos locales no traen estados que la app no conozca.
-    UserStatus.active || UserStatus.unknown => null,
+    UserStatus.revoked => const ApiException(
+      'Revocaste el consentimiento: tu cuenta está inactiva.',
+      statusCode: 403,
+    ),
+    // Los datos locales no traen estados que la app no conozca; una cuenta
+    // suprimida ya no tiene correo y no llega hasta aquí.
+    UserStatus.active || UserStatus.deleted || UserStatus.unknown => null,
   };
 
   LocalUser _requireUser(AuthContact contact) {

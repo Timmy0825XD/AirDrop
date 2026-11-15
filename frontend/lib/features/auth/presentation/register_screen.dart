@@ -229,6 +229,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen>
           RegisterConsentRow(
             value: _consentAccepted,
             onChanged: (value) => setState(() => _consentAccepted = value),
+            onReadPolicy: () => context.push('/privacy/policy'),
           ),
           const SizedBox(height: 22),
           Center(

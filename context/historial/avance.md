@@ -1646,7 +1646,7 @@ La guía de partida es `learning/35-front-pending-red-regional.md` (local).
 | Paso | Rama | Qué cubre | Estado |
 | --- | --- | --- | --- |
 | 1 — Puntos de entrega | `feature/puntos-de-entrega` | RU-02, RF-45 | Hecho (2026-11-15) |
-| 2 — Política de datos | `feature/politica-de-datos` | RF-50, RF-51 | Pendiente |
+| 2 — Política de datos | `feature/politica-de-datos` | RF-50, CU-46 | Hecho (2026-11-15) |
 | 3 — Centrales nodo y ESE | `feature/centrales-nodo-ese` | RF-06, RF-43 | Pendiente |
 | 4 — Flota de tres tipos y peso del lote | `feature/flota-tres-tipos` | RF-49, RF-11 | Pendiente |
 | 5 — Manifiesto e identificación | `feature/manifiesto-e-identificacion` | RF-47, RF-48 | Pendiente |
@@ -1665,6 +1665,20 @@ La guía de partida es `learning/35-front-pending-red-regional.md` (local).
 - El detalle del pedido y del plan dicen "Punto de entrega" en vez de
   "Dirección" cuando el destino es una persona.
 - `flutter analyze` sin issues y `flutter test` en verde (410).
+
+### Paso 2 — Política de datos (hecho, 2026-11-15)
+
+- La cuenta trae `policyVersion` y `mustAcceptPolicy`. Quien se registró
+  antes de la política vigente ve, al entrar, `/privacy/accept`: la lee y
+  la acepta (`POST /privacy/me/accept`). Antes recibía 403 al pedir.
+- "Leer la política" en el registro abre la política real
+  (`GET /privacy/policy`), sin sesión.
+- "Mis datos" (`/privacy`, desde el perfil del solicitante): la versión
+  aceptada, revocar el consentimiento y suprimir la cuenta, cada una con
+  los avisos de Nest y la contraseña. Suprimir con un pedido en curso
+  muestra el 409 y no cierra la sesión.
+- Estados de cuenta `revoked` y `deleted`.
+- `flutter analyze` sin issues y `flutter test` en verde (416).
 
 ## Pendiente del backend
 

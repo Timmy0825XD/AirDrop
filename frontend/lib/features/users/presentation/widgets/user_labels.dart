@@ -15,6 +15,8 @@ class UserLabels {
     UserStatus.active => 'Activa',
     UserStatus.locked => 'Bloqueada',
     UserStatus.suspended => 'Suspendida',
+    UserStatus.revoked => 'Consentimiento revocado',
+    UserStatus.deleted => 'Suprimida',
     UserStatus.unknown => 'Estado desconocido',
   };
 
@@ -22,6 +24,8 @@ class UserLabels {
     UserStatus.active => PillTone.positive,
     UserStatus.unverified => PillTone.attention,
     UserStatus.suspended || UserStatus.locked => PillTone.negative,
+    UserStatus.revoked ||
+    UserStatus.deleted ||
     UserStatus.unknown => PillTone.neutral,
   };
 
