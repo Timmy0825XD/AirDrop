@@ -1,3 +1,4 @@
+import { POLICY_VERSION } from '../privacy/privacy-policy';
 import { randomBytes } from 'node:crypto';
 import {
   BadRequestException,
@@ -282,6 +283,7 @@ export class OrderGeneratorService implements OnModuleInit, OnModuleDestroy {
             simulated: true,
             // El consentimiento va en hora real, como en el registro.
             consentAcceptedAt: new Date(),
+            consentPolicyVersion: POLICY_VERSION,
           }),
         ),
       );

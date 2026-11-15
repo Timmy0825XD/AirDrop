@@ -16,6 +16,7 @@ import { DecisionModule } from './decision/decision.module';
 import { DeliveryModule } from './delivery/delivery.module';
 import { DeliveryPointsModule } from './delivery-points/delivery-points.module';
 import { ManifestsModule } from './manifests/manifests.module';
+import { PrivacyModule } from './privacy/privacy.module';
 import { FleetModule } from './fleet/fleet.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { SimulationModule } from './simulation/simulation.module';
@@ -53,6 +54,7 @@ import { WeatherModule } from './weather/weather.module';
     HubsModule,
     DeliveryPointsModule,
     ManifestsModule,
+    PrivacyModule,
     InventoryModule,
     FleetModule,
     GeofencesModule,

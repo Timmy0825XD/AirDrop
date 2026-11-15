@@ -166,6 +166,19 @@ Los puntos son lugares del escenario (`delivery_points`, tomados de `regional-ne
 
 La urgencia y el plan del solicitante van a un punto: `deliveryPointId` reemplaza a `latitude`, `longitude` y `address`, que ahora salen del punto. `requesterLocation` (`{ latitude, longitude }`, opcional, no se guarda) hace que el pedido no se cree si el solicitante está en la ciudad. El pedido y el plan traen `deliveryPointId` (nulo entre centrales).
 
+### Datos personales (RF-50, RF-51)
+
+| Método | Ruta | Auth |
+| --- | --- | --- |
+| GET | `/privacy/policy` | pública |
+| GET | `/privacy/me` | cualquier sesión |
+| POST | `/privacy/me/accept` (`{ version }`) | cualquier sesión |
+| POST | `/privacy/me/revoke` (`{ password }`) | solicitante |
+| POST | `/privacy/me/delete` (`{ password }`) | solicitante |
+| GET | `/privacy/prescription-access?orderId=&userId=&from=&to=` | administrador |
+
+El usuario (login y `/auth/me`) trae `policyVersion` y `mustAcceptPolicy`; con `mustAcceptPolicy` la urgencia y el plan responden 403. Revocar deja la cuenta inactiva (el login responde 403) y cancela lo que no tiene dron. Suprimir responde 409 con un pedido en curso; si no, libera el correo y el celular y anonimiza los pedidos. Las rutas de la fórmula aceptan `?purpose=authorize|history|claim` y cada apertura queda en el registro.
+
 ### Manifiesto e identificación (RF-47, RF-48)
 
 | Método | Ruta | Auth |

@@ -14,6 +14,7 @@ const ana = {
   id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
   fullName: 'Ana Pérez',
   email: 'ana@gmail.com',
+  status: UserStatus.ACTIVE,
 } as User;
 
 const notice = {

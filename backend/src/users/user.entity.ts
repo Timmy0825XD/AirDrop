@@ -79,6 +79,22 @@ export class User {
   @Column({ type: 'timestamptz' })
   consentAcceptedAt: Date;
 
+  /** RF-50: la versión de la política que aceptó; nulo, antes de versionarla. */
+  @Column({
+    type: 'varchar',
+    length: FIELD_LIMITS.policyVersion,
+    nullable: true,
+  })
+  consentPolicyVersion: string | null;
+
+  /** RF-50: cuándo revocó el consentimiento. */
+  @Column({ type: 'timestamptz', nullable: true })
+  consentRevokedAt: Date | null;
+
+  /** RF-50: cuándo se suprimieron sus datos. */
+  @Column({ type: 'timestamptz', nullable: true })
+  suppressedAt: Date | null;
+
   /**
    * RF-37: solicitante de los actores simulados de la consola. No es una
    * persona: no tiene datos reales y nadie inicia sesión con ella.

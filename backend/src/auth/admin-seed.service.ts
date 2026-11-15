@@ -1,3 +1,4 @@
+import { POLICY_VERSION } from '../privacy/privacy-policy';
 import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UserRole } from '../common/enums/user-role.enum';
@@ -46,6 +47,7 @@ export class AdminSeedService implements OnModuleInit {
       role: UserRole.ADMIN,
       status: UserStatus.ACTIVE,
       consentAcceptedAt: new Date(),
+      consentPolicyVersion: POLICY_VERSION,
       failedLoginCount: 0,
       lockedUntil: null,
     });

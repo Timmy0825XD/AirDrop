@@ -1,3 +1,4 @@
+import { PrivacyService } from '../privacy/privacy.service';
 import {
   deliveryPointsStub,
   TEST_POINT,
@@ -117,6 +118,13 @@ describe('CH-08 — Interfaz – Inventario – Pedidos – BD (base de datos ca
         {
           provide: PlanAgendaService,
           useValue: { withCapacity: (plan: object) => plan },
+        },
+        {
+          provide: PrivacyService,
+          useValue: {
+            assertPolicyAccepted: jest.fn(),
+            recordAccess: jest.fn(),
+          },
         },
       ],
     })

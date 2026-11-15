@@ -24,6 +24,8 @@ export const FIELD_LIMITS = {
   manifestNumber: 16,
   /** RF-47: rango de frío exigido (`2–8 °C`). */
   coldRange: 16,
+  /** RF-50: versión de la política de tratamiento (`1.0`). */
+  policyVersion: 8,
   reason: 160,
   droneIdentifier: 32,
   droneModelName: 80,

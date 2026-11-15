@@ -1,3 +1,5 @@
+import { PrivacyService } from '../privacy/privacy.service';
+import { PrescriptionPurposeQueryDto } from '../privacy/dto/privacy.dto';
 import {
   Body,
   Controller,
@@ -50,6 +52,7 @@ export class OrdersController {
     private readonly dispatch: EmergencyDispatchService,
     private readonly agenda: PlanAgendaService,
     private readonly users: UsersService,
+    private readonly privacy: PrivacyService,
   ) {}
 
   @Get('catalog')
@@ -119,12 +122,19 @@ export class OrdersController {
   @Post('plans')
   @Roles(UserRole.REQUESTER)
   async createPlan(@CurrentUser() user: User, @Body() dto: CreatePlanDto) {
-    return this.agenda.withCapacity(await this.ordersService.createPlan(user, dto));
+    // RF-50: sin la política vigente aceptada, no pide.
+    this.privacy.assertPolicyAccepted(user);
+    return this.agenda.withCapacity(
+      await this.ordersService.createPlan(user, dto),
+    );
   }
 
   @Post('hub-plans')
   @Roles(UserRole.DISPATCHER)
-  async createHubPlan(@CurrentUser() user: User, @Body() dto: CreateHubPlanDto) {
+  async createHubPlan(
+    @CurrentUser() user: User,
+    @Body() dto: CreateHubPlanDto,
+  ) {
     return this.agenda.withCapacity(
       await this.ordersService.createHubPlan(user, dto),
     );
@@ -209,6 +219,7 @@ export class OrdersController {
     @CurrentUser() user: User,
     @Body() dto: CreateEmergencyDto,
   ) {
+    this.privacy.assertPolicyAccepted(user);
     const created = await this.ordersService.createEmergency(user, dto);
     const allergies = allergiesToRemember(dto);
     if (allergies !== undefined) {
@@ -233,10 +244,12 @@ export class OrdersController {
   async prescription(
     @CurrentUser() user: User,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Query() query: PrescriptionPurposeQueryDto,
   ) {
-    return prescriptionFile(
-      await this.ordersService.readPrescription(user, id),
-    );
+    const file = await this.ordersService.readPrescription(user, id);
+    // RF-51: cada apertura queda registrada, después de pasar el permiso.
+    await this.privacy.recordAccess(user, id, 0, query.purpose);
+    return prescriptionFile(file);
   }
 
   /** RF-27: los archivos de la fórmula (un PDF o hasta 3 fotos). */
@@ -256,10 +269,11 @@ export class OrdersController {
     @CurrentUser() user: User,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Param('index', ParseIntPipe) index: number,
+    @Query() query: PrescriptionPurposeQueryDto,
   ) {
-    return prescriptionFile(
-      await this.ordersService.readPrescription(user, id, index),
-    );
+    const file = await this.ordersService.readPrescription(user, id, index);
+    await this.privacy.recordAccess(user, id, index, query.purpose);
+    return prescriptionFile(file);
   }
 
   /** Traza del motor de decisión y escalera de ofertas de la urgencia. */
