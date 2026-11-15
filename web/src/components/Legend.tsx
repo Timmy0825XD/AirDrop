@@ -2,7 +2,15 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DRONE_BODY, DRONE_ROTOR_R, DRONE_ROTORS, DRONE_WINGS } from "@/lib/drone-shape";
-import { AlertIcon, HubIcon, LegendIcon, PowerOffIcon, StormIcon, WindIcon } from "./icons";
+import {
+  AlertIcon,
+  HubIcon,
+  LegendIcon,
+  PinIcon,
+  PowerOffIcon,
+  StormIcon,
+  WindIcon,
+} from "./icons";
 import { IconButton } from "./ui";
 
 /** El dron del mapa, relleno, con el color de su estado. */
@@ -69,14 +77,18 @@ export function Legend() {
         <div
           role="dialog"
           aria-label="Leyenda del mapa"
-          className="surface absolute bottom-0 right-[calc(100%+8px)] w-[220px] rounded-xl p-4 [animation:enter-side_180ms_var(--ease-out)_both]"
+          className="surface absolute bottom-0 right-[calc(100%+8px)] w-[270px] rounded-xl p-4 [animation:enter-side_180ms_var(--ease-out)_both]"
         >
           <h3 className="mb-3 text-[13px] font-semibold">En el mapa</h3>
           <ul className="space-y-2.5 text-[13px] text-muted">
             <Item mark={<DroneSwatch color="var(--text)" />}>Dron de ida</Item>
             <Item mark={<DroneSwatch color="var(--warning)" />}>Dron de regreso</Item>
             <Item mark={<DroneSwatch color="var(--danger)" />}>Dron con alerta</Item>
-            <Item mark={<HubIcon size={17} className="text-text" />}>Central</Item>
+            <Item mark={<HubIcon size={17} className="text-text" />}>Nodo (tiene drones)</Item>
+            <Item mark={<span className="size-3.5 rounded-full border-[1.5px] border-line-strong" />}>
+              ESE (solo recibe)
+            </Item>
+            <Item mark={<PinIcon size={17} className="text-success" />}>Punto de entrega</Item>
             <Item mark={<PowerOffIcon size={17} className="text-warning" />}>Sin energía</Item>
             <Item mark={<AlertIcon size={17} className="text-danger" />}>Espera rescate</Item>
             <Item
@@ -87,7 +99,13 @@ export function Legend() {
               Zona restringida
             </Item>
             <Item mark={<span className="size-3.5 rounded-[3px] border border-dashed border-warning" />}>
-              Zona temporal
+              Zona temporal o coordinada
+            </Item>
+            <Item mark={<span className="size-3.5 rounded-[3px] border border-danger bg-danger/15" />}>
+              No se vuela (aeródromo, prohibida)
+            </Item>
+            <Item mark={<span className="size-3.5 rounded-[3px] border border-muted bg-muted/15" />}>
+              Zona urbana
             </Item>
             <Item mark={<WindIcon size={17} className="text-info" />}>Viento o lluvia</Item>
             <Item mark={<StormIcon size={17} className="text-danger" />}>Tormenta</Item>
