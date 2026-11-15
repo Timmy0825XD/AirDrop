@@ -56,6 +56,7 @@ lib/
     analytics/   # métricas del administrador: KPI, demanda y ranking (`/analytics/*`)
     notifications/ # bandeja de avisos (`/notifications`), cualquier rol
     onboarding/  # bienvenida del solicitante (`/welcome`, RF-53); solo presentation/
+    settings/    # ajustes del teléfono (`/settings`, RF-52): tema, texto, contraste, movimiento, modo sencillo
 ```
 
 No Clean Architecture de tres capas por feature “porque sí”. Suficiente:
@@ -86,6 +87,7 @@ controller de la feature.
 
 - Español de Colombia (RNF-15). Identificadores en inglés.
 - Contraste y tamaños legibles (RNF-10).
+- Los ajustes (RF-52) llegan a las pantallas por `MediaQuery` y `Theme` (`SettingsScope`, en el `builder` de la app): el tamaño del texto, "reducir movimiento" y los botones del modo sencillo. Una pantalla no lee `settingsProvider` salvo que cambie de forma con el modo sencillo (la barra y el inicio del solicitante). Toda pantalla debe caber con el texto "muy grande".
 - Lo que se guarda en el teléfono y no en la cuenta (si ya vio la bienvenida, los ajustes) pasa por `PrefsStore` (`core/prefs/app_prefs.dart`, `prefsStoreProvider`). Nunca datos de salud ni de la cuenta; el token sigue en el almacenamiento seguro.
 - La vibración sale solo de `AppHaptics` (`core/app_haptics.dart`); ninguna pantalla llama a `HapticFeedback`. Siempre acompaña un cambio visible, nunca es el único aviso.
 - Cada pantalla tiene sus cuatro estados (RNF-18): con datos; cargando con `SkeletonList` o `SkeletonDetail` (no un `CircularProgressIndicator` suelto; ese queda para botones, el mapa y el visor); vacío con `MessageView` (ícono, `title` opcional, mensaje y acción); y error con `MessageView.error`. La ilustración es `CorridorArt`.
@@ -103,7 +105,7 @@ El rediseño natural de la Fase 21 (ver `../context/historial/avance.md`)
 dejó el bloque de marca como **un mapa de ciudad común**: tierra, parques,
 río y calles, con las centrales unidas por rutas y drones de adorno. Es
 plano (sin inclinación 3D) y sin brillos. Es solo decoración: no muestra datos ni contadores (nada de "drones en vuelo" ni
-"entregas hoy" inventados). Sirve igual en claro y en oscuro; todos los
+"entregas hoy" inventados). Sirve igual en claro y en oscuro (el tema lo elige la persona en Ajustes; automático es la opción inicial); todos los
 colores salen del tema. Piezas (en `widgets/` y `widgets/airspace/`;
 `AuthField`, `AuthPickerField`, `AuthMorphButton`, la hoja de búsqueda,
 `DroneGlyph` y `CheckMarkPainter` están en `core/widgets` porque las usa toda la app):

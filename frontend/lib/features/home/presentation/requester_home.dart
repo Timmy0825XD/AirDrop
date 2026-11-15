@@ -11,6 +11,7 @@ import '../../notifications/data/notice_providers.dart';
 import '../../orders/data/order_models.dart';
 import '../../orders/data/order_providers.dart';
 import '../../orders/presentation/order_history_screen.dart';
+import '../../settings/data/app_settings.dart';
 import 'widgets/home_grid.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_page.dart';
@@ -41,6 +42,8 @@ class RequesterHome extends ConsumerWidget {
         ?.where((o) => o.hasFlight && o.status != OrderStatus.returning)
         .firstOrNull;
     final next = _nextScheduled(orders);
+    final simple = ref.watch(settingsProvider).simpleMode;
+    final first = orders != null && orders.isEmpty;
     return AutoRefresh(
       onTick: () => ref
         ..invalidate(mineProvider)
@@ -75,14 +78,24 @@ class RequesterHome extends ConsumerWidget {
             ),
           if (flying == null && (orders?.isNotEmpty ?? true))
             const SizedBox(height: 12),
-          if (orders != null && orders.isNotEmpty)
+          // En modo sencillo no hay pestaña de urgencia: es el botón grande.
+          if (simple && !first)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: ElevatedButton.icon(
+                onPressed: () => context.push('/orders/emergency'),
+                icon: const Icon(Icons.bolt_rounded),
+                label: const Text('Pedir urgencia'),
+              ),
+            ),
+          if (!simple && orders != null && orders.isNotEmpty)
             RequesterStats(orders: orders),
           if (next != null)
             NextDeliveryCard(
               order: next,
               onTap: () => context.push('/orders/${next.id}'),
             ),
-          const _RequesterGrid(),
+          _RequesterGrid(simple: simple),
         ],
       ),
     );
@@ -110,16 +123,26 @@ class RequesterHome extends ConsumerWidget {
 /// Lo único que la barra no tiene: pedir una entrega periódica. Pedir
 /// urgencia es la pestaña del centro; Mis pedidos y Mis planes, destinos.
 class _RequesterGrid extends StatelessWidget {
-  const _RequesterGrid();
+  const _RequesterGrid({required this.simple});
+
+  /// En modo sencillo "Mis planes" no está en la barra: va aquí.
+  final bool simple;
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const HomeLabel('Pedir'),
+        HomeLabel(simple ? 'Entregas periódicas' : 'Pedir'),
         MenuList(
           items: [
+            if (simple)
+              MenuItem(
+                title: 'Mis planes',
+                subtitle: 'Las entregas que ya programaste',
+                icon: Icons.event_repeat_rounded,
+                onTap: () => context.push('/orders/plans'),
+              ),
             MenuItem(
               title: 'Entrega periódica',
               subtitle: 'Tu tratamiento, cada semana o mes',

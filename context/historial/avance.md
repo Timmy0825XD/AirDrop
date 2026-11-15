@@ -1489,7 +1489,7 @@ el solicitante; los pasos 1 y 2 cambian los cuatro roles.
 | 3 — Inicio, urgencia y seguimiento del solicitante | `feature/corredor-solicitante` | HU-76 | Hecho (2026-11-14) |
 | 4 — Arranque, animaciones firma y vibración | `feature/corredor-movimiento` | HU-74 | Hecho (2026-11-14) |
 | 5 — Bienvenida | `feature/bienvenida` | HU-75 | Hecho (2026-11-14) |
-| 6 — Ajustes y modo sencillo | `feature/ajustes` | HU-77 | Pendiente |
+| 6 — Ajustes y modo sencillo | `feature/ajustes` | HU-77 | Hecho (2026-11-14) |
 | 7 — Medicamentos disponibles | `feature/medicamentos-disponibles` | HU-78 | Pendiente |
 
 Los avisos del sistema con la app cerrada (push) se sacaron del alcance
@@ -1592,6 +1592,29 @@ siguen en la bandeja y en el correo.
 - `flutter analyze` sin issues y `flutter test` en verde (389). Probado
   en web: sale tras el primer ingreso, no vuelve a salir al recargar y el
   despachador entra directo.
+
+### Paso 6 — Ajustes y modo sencillo (hecho, 2026-11-14)
+
+- **`features/settings/`**: `AppSettings` y `SettingsController`
+  (`settingsProvider`) leen y guardan en `PrefsStore`. Pantalla
+  `/settings`, a la que se entra desde "Ajustes" en el perfil de
+  cualquier rol.
+- **Tema:** claro, oscuro o automático. `ThemePicker` muestra los tres en
+  miniatura; tocar uno solo cambia la vista previa y el tema de la app
+  cambia con "Aplicar". `AirDropApp` ya no fija `ThemeMode.system`.
+- **Tamaño del texto** (normal, grande, muy grande), **alto contraste** y
+  **reducir movimiento** se aplican al tocarlos. `SettingsScope`, en el
+  `builder` de la app, los pone en `MediaQuery`: ninguna pantalla sabe de
+  ajustes. Alto contraste usa `AppTheme.lightHighContrast` y
+  `darkHighContrast` (texto secundario a 7:1).
+- **Modo sencillo** (solo solicitante): botones de 56 dp
+  (`AppTheme.roomy`), barra de tres destinos (Inicio, Pedidos, Perfil) y
+  "Pedir urgencia" como botón grande del inicio; "Mis planes" pasa al
+  inicio. `AppTabBar` y `RoleTabs` aceptan no tener acción central.
+- **Ver la bienvenida** otra vez, desde Ajustes (solo solicitante).
+- `flutter analyze` sin issues y `flutter test` en verde (400). Probado
+  en web con el solicitante: vista previa y aplicar, texto muy grande,
+  alto contraste, modo sencillo y que todo siga puesto al recargar.
 
 ## Pendiente del backend
 

@@ -6,6 +6,7 @@ import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../../../core/widgets/message_view.dart';
 import '../../../core/widgets/rise_in.dart';
+import '../../../core/widgets/menu_list.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../../home/presentation/widgets/sign_out.dart';
 import '../../hubs/data/hub_providers.dart';
@@ -50,6 +51,16 @@ class ProfileScreen extends ConsumerWidget {
         onEdit: (type) => _edit(context, ref, user, type),
       ),
       if (user.hubIds.isNotEmpty) ProfileHubsCard(names: _hubNames(ref, user)),
+      MenuList(
+        items: [
+          MenuItem(
+            title: 'Ajustes',
+            subtitle: 'Tema, tamaño del texto y accesibilidad',
+            icon: Icons.tune_rounded,
+            onTap: () => context.push('/settings'),
+          ),
+        ],
+      ),
       OutlinedButton.icon(
         onPressed: () => signOut(context, ref),
         style: OutlinedButton.styleFrom(
