@@ -24,6 +24,21 @@ export const AIRSPACE_KIND: Record<string, string> = {
   caution: "Precaución",
 };
 
+/** RF-48: el estado de la identificación remota. */
+export const REMOTE_ID_STATUS: Record<string, string> = {
+  mission: "En misión",
+  returning: "Regreso",
+  link_lost: "Sin enlace",
+  emergency: "Emergencia",
+};
+
+/** RF-49: los tres tipos de dron. */
+export const DRONE_KIND: Record<string, string> = {
+  rapid: "Colibrí",
+  balanced: "Garza",
+  cargo: "Cóndor",
+};
+
 export const DRONE_STATUS: Record<string, string> = {
   available: "Disponible",
   in_mission: "En misión",
