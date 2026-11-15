@@ -1490,7 +1490,7 @@ el solicitante; los pasos 1 y 2 cambian los cuatro roles.
 | 4 — Arranque, animaciones firma y vibración | `feature/corredor-movimiento` | HU-74 | Hecho (2026-11-14) |
 | 5 — Bienvenida | `feature/bienvenida` | HU-75 | Hecho (2026-11-14) |
 | 6 — Ajustes y modo sencillo | `feature/ajustes` | HU-77 | Hecho (2026-11-14) |
-| 7 — Medicamentos disponibles | `feature/medicamentos-disponibles` | HU-78 | Pendiente |
+| 7 — Medicamentos disponibles | `feature/medicamentos-disponibles` | HU-78 | Hecho (2026-11-15) |
 
 Los avisos del sistema con la app cerrada (push) se sacaron del alcance
 el 2026-11-14: pedían un servicio de mensajería externo. Los avisos
@@ -1615,6 +1615,27 @@ siguen en la bandeja y en el correo.
 - `flutter analyze` sin issues y `flutter test` en verde (400). Probado
   en web con el solicitante: vista previa y aplicar, texto muy grande,
   alto contraste, modo sencillo y que todo siga puesto al recargar.
+
+### Paso 7 — Medicamentos disponibles (hecho, 2026-11-15)
+
+- **`/medications`** (`MedicationsScreen`, solo solicitante), sobre el
+  mismo `catalogProvider` de la urgencia (`GET /orders/catalog`). Se entra
+  desde "Medicamentos disponibles" en el inicio; no ocupa la barra.
+- Cada medicamento dice el nombre, el tipo de venta, si viaja en frío y
+  la disponibilidad en palabras (`availabilityOf`): "Disponible" o "Pocas
+  unidades" (5 o menos). No se pinta cantidad, central, dron ni tiempo.
+- Se busca por nombre (sin tildes ni mayúsculas) y se filtra por frío y
+  por fórmula (`MedicationFilter`).
+- El detalle (`MedicationSheet`) dice qué hace falta para pedirlo y
+  "Pedir este medicamento" abre `/orders/emergency` con el ítem en
+  `extra` (`EmergencyScreen.initialOffer`); los tres pasos se recorren
+  igual.
+- El catálogo de Nest ya no devuelve control especial
+  (`InventoryOfferQuery`); si llegara uno, la lista dice "No se pide por
+  aquí" y el botón queda apagado.
+- Sin conexión queda la última lista con su hora y "Reintentar" (RNF-17).
+- `StatusPill` corta un texto largo en vez de desbordar.
+- `flutter analyze` sin issues y `flutter test` en verde.
 
 ## Pendiente del backend
 

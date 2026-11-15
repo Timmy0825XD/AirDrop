@@ -52,11 +52,16 @@ class StatusPill extends StatelessWidget {
               decoration: BoxDecoration(color: color, shape: BoxShape.circle),
             ),
             const SizedBox(width: 6),
-            Text(
-              label,
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: color,
-                fontSize: 13,
+            // Un texto largo o "muy grande" se corta; no desborda la fila.
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: color,
+                  fontSize: 13,
+                ),
               ),
             ),
           ],

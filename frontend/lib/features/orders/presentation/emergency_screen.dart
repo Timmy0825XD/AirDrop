@@ -28,7 +28,11 @@ import 'widgets/requester_order/triage_fields.dart';
 /// "Siguiente" valida solo el paso abierto; volver regresa sin perder lo
 /// escrito. Al crearla se abre su detalle.
 class EmergencyScreen extends ConsumerStatefulWidget {
-  const EmergencyScreen({super.key});
+  const EmergencyScreen({super.key, this.initialOffer});
+
+  /// El medicamento ya elegido en la lista de disponibles (CU-49). Los
+  /// tres pasos se recorren igual: solo llega escogido.
+  final CatalogOffer? initialOffer;
 
   static const steps = ['Qué pasa', 'Qué necesitas', 'Dónde'];
 
@@ -39,6 +43,12 @@ class EmergencyScreen extends ConsumerStatefulWidget {
 class _EmergencyScreenState extends ConsumerState<EmergencyScreen>
     with RequesterOrderState {
   int _step = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    values.offer = widget.initialOffer;
+  }
 
   bool get _last => _step == EmergencyScreen.steps.length - 1;
 

@@ -35,6 +35,8 @@ import '../features/notifications/presentation/notices_screen.dart';
 import '../features/orders/presentation/agenda_screen.dart';
 import '../features/orders/presentation/dispatch_history_screen.dart';
 import '../features/orders/presentation/emergency_screen.dart';
+import '../features/orders/presentation/medications_screen.dart';
+import '../features/orders/data/order_models.dart';
 import '../features/orders/presentation/hub_emergency_screen.dart';
 import '../features/orders/presentation/hub_plan_form_screen.dart';
 import '../features/orders/presentation/in_flight_screen.dart';
@@ -81,6 +83,7 @@ const _roleRoutes = <String, Set<UserRole>>{
   '/geofences/:id': {UserRole.fleetOperator},
   '/orders/emergency': {UserRole.requester},
   '/welcome': {UserRole.requester},
+  '/medications': {UserRole.requester},
   '/orders/plans/new': {UserRole.requester},
   '/orders/plans': {UserRole.requester, UserRole.dispatcher},
   '/orders/mine': {UserRole.requester},
@@ -340,7 +343,15 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/orders/emergency',
-            builder: (_, _) => const EmergencyScreen(),
+            builder: (_, state) => EmergencyScreen(
+              initialOffer: state.extra is CatalogOffer
+                  ? state.extra as CatalogOffer
+                  : null,
+            ),
+          ),
+          GoRoute(
+            path: '/medications',
+            builder: (_, _) => const MedicationsScreen(),
           ),
           GoRoute(
             path: '/orders/plans/new',
