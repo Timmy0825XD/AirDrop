@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DRONE_BODY, DRONE_ROTOR_R, DRONE_ROTORS, DRONE_WINGS } from "@/lib/drone-shape";
 import {
   AlertIcon,
+  FogIcon,
   HubIcon,
   LegendIcon,
   PinIcon,
@@ -109,6 +110,10 @@ export function Legend() {
             </Item>
             <Item mark={<WindIcon size={17} className="text-info" />}>Viento o lluvia</Item>
             <Item mark={<StormIcon size={17} className="text-danger" />}>Tormenta</Item>
+            <Item mark={<FogIcon size={17} className="text-text" />}>Niebla (no se vuela)</Item>
+            <Item mark={<span className="size-3 rounded-full bg-magenta" />}>
+              Dron no identificado
+            </Item>
           </ul>
         </div>
       )}

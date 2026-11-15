@@ -26,6 +26,20 @@ export function circlePolygon(
   return { type: "Polygon", coordinates: [ring] };
 }
 
+/** Distancia en km entre dos puntos (haversine). */
+export function distanceKm(
+  a: { latitude: number; longitude: number },
+  b: { latitude: number; longitude: number },
+): number {
+  const rad = Math.PI / 180;
+  const dLat = (b.latitude - a.latitude) * rad;
+  const dLng = (b.longitude - a.longitude) * rad;
+  const h =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(a.latitude * rad) * Math.cos(b.latitude * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * 6371 * Math.asin(Math.sqrt(h));
+}
+
 /** El centro de un polígono (promedio de sus vértices sin repetir el cierre). */
 export function polygonCenter(coordinates: number[][][]): [number, number] | null {
   const ring = coordinates[0] ?? [];

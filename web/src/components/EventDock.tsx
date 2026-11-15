@@ -7,24 +7,28 @@ import type { EventDraft } from "./map/RadarMap";
 import {
   ArrowRightIcon,
   CloseIcon,
+  FogIcon,
   MinusIcon,
   PlusIcon,
   RainIcon,
   StormIcon,
   SurgeIcon,
+  UnknownIcon,
   WindIcon,
   ZoneIcon,
 } from "./icons";
 import { Button, Chip, IconButton } from "./ui";
 
-export type EventTool = WeatherKind | "zone" | "surge";
+export type EventTool = WeatherKind | "zone" | "surge" | "unidentified";
 
 const TOOLS: Array<{ tool: EventTool; label: string; icon: (size: number) => ReactNode }> = [
   { tool: "wind", label: "Viento", icon: (size) => <WindIcon size={size} /> },
   { tool: "rain", label: "Lluvia", icon: (size) => <RainIcon size={size} /> },
   { tool: "storm", label: "Tormenta", icon: (size) => <StormIcon size={size} /> },
+  { tool: "fog", label: "Niebla", icon: (size) => <FogIcon size={size} /> },
   { tool: "zone", label: "Zona temporal", icon: (size) => <ZoneIcon size={size} /> },
   { tool: "surge", label: "Pico", icon: (size) => <SurgeIcon size={size} /> },
+  { tool: "unidentified", label: "No identificado", icon: (size) => <UnknownIcon size={size} /> },
 ];
 
 const COPY: Record<EventTool, { title: string; hint: string }> = {
@@ -37,13 +41,21 @@ const COPY: Record<EventTool, { title: string; hint: string }> = {
     title: "Tormenta",
     hint: "Zona no volable: las rutas la rodean y los drones en el aire cambian de camino.",
   },
+  fog: {
+    title: "Niebla",
+    hint: "Sin visibilidad: zona no volable mientras dure. Las rutas la rodean.",
+  },
+  unidentified: {
+    title: "Dron no identificado",
+    hint: "Cruza por el corredor de un dron en el aire. AirDrop no actúa contra él: solo lo muestra y avisa.",
+  },
   zone: {
     title: "Zona temporal",
     hint: "Una geovalla que vence sola. No puede cubrir una central.",
   },
   surge: {
     title: "Pico de urgencias",
-    hint: "Urgencias seguidas de solicitantes simulados dentro del círculo. El motor las reparte entre las centrales.",
+    hint: "Urgencias seguidas de solicitantes simulados hacia los puntos de entrega dentro del círculo. El motor las reparte entre los nodos.",
   },
 };
 
@@ -52,6 +64,8 @@ const SURGE_MIN = 2;
 const SURGE_MAX = 15;
 
 const DURATIONS = [15, 30, 60, 120];
+/** RF-36: el dron no identificado cruza de 5 a 30 minutos. */
+const CONTACT_DURATIONS = [5, 10, 20, 30];
 
 /**
  * Lo que se manda al lanzar: el clima (RF-32), la geovalla temporal o el
@@ -119,6 +133,7 @@ export function EventComposer({
   tool,
   center,
   busy,
+  blocked,
   onDraft,
   onLaunch,
   onClose,
@@ -126,15 +141,18 @@ export function EventComposer({
   tool: EventTool;
   center: { latitude: number; longitude: number } | null;
   busy: boolean;
+  /** Por qué no se puede lanzar ahí (el pico sin un punto de entrega). */
+  blocked?: string | null;
   onDraft: (draft: EventDraft | null) => void;
   onLaunch: (launch: EventLaunch) => void;
   onClose: () => void;
 }) {
   const zone = tool === "zone";
   const surge = tool === "surge";
+  const contact = tool === "unidentified";
   const [radiusKm, setRadius] = useState(zone || surge ? 1 : 3);
   const [count, setCount] = useState(5);
-  const [durationMin, setDuration] = useState(30);
+  const [durationMin, setDuration] = useState(contact ? 10 : 30);
   const [windSpeedMs, setSpeed] = useState(18);
   const [windFromDeg, setFrom] = useState(45);
   const [name, setName] = useState("Evento aéreo");
@@ -142,8 +160,64 @@ export function EventComposer({
 
   const changeRadius = (value: number) => {
     setRadius(value);
-    if (center) onDraft({ kind: tool, ...center, radiusKm: value });
+    if (center && !contact) onDraft({ kind: tool, ...center, radiusKm: value });
   };
+
+  // El dron no identificado no se ubica: cruza el corredor de un dron en el aire.
+  if (contact) {
+    return (
+      <section
+        aria-label="Lanzar un dron no identificado"
+        className="surface enter-up absolute bottom-[92px] left-1/2 z-30 w-[min(440px,calc(100%-1.5rem))] -translate-x-1/2 rounded-xl"
+      >
+        <header className="flex items-start gap-3 px-5 pb-4 pt-4">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-[17px] font-semibold tracking-[-0.01em]">{copy.title}</h2>
+            <p className="mt-1 text-[13px] leading-snug text-muted">{copy.hint}</p>
+          </div>
+          <IconButton label="Cancelar" onClick={onClose} className="!size-8">
+            <CloseIcon size={15} />
+          </IconButton>
+        </header>
+        <div className="space-y-5 border-t border-line px-5 pb-5 pt-4">
+          <div>
+            <span className="text-[13px] text-muted">Cruza durante</span>
+            <div className="mt-2 grid grid-cols-4 gap-1">
+              {CONTACT_DURATIONS.map((minutes) => (
+                <Chip
+                  key={minutes}
+                  selected={durationMin === minutes}
+                  onClick={() => setDuration(minutes)}
+                >
+                  {minutes} min
+                </Chip>
+              ))}
+            </div>
+          </div>
+          <Button
+            busy={busy}
+            className="w-full"
+            onClick={() =>
+              onLaunch({
+                tool,
+                latitude: 0,
+                longitude: 0,
+                radiusKm: 0,
+                durationMin,
+                windSpeedMs: 0,
+                windFromDeg: 0,
+                name: "",
+                count: 0,
+              })
+            }
+          >
+            Cruzar un corredor
+            <ArrowRightIcon size={16} />
+          </Button>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -239,9 +313,14 @@ export function EventComposer({
               </div>
             </div>
           )}
+          {blocked && (
+            <p role="alert" className="text-[13px] leading-snug text-warning">
+              {blocked}
+            </p>
+          )}
           <Button
             busy={busy}
-            disabled={zone && !name.trim()}
+            disabled={(zone && !name.trim()) || blocked != null}
             className="w-full"
             onClick={() =>
               onLaunch({

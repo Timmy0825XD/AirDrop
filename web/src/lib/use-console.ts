@@ -16,6 +16,7 @@ import type {
   PendingAlert,
   ResetSummary,
   TimelineEntry,
+  UnidentifiedContact,
   WeatherCell,
 } from "./types";
 
@@ -39,6 +40,8 @@ export type ConsoleState = {
   weather: WeatherCell[];
   /** RF-34: los últimos incidentes en vuelo. */
   incidents: Incident[];
+  /** RF-36: los drones no identificados que cruzan ahora. */
+  contacts: UnidentifiedContact[];
   /** RF-37: qué actores simulados están encendidos. */
   actors: ActorsState;
   /** RF-38: el modo caos. */
@@ -70,6 +73,7 @@ export function useConsole(source: RadarSource) {
     alerts: [],
     weather: [],
     incidents: [],
+    contacts: [],
     actors: ACTORS_OFF,
     chaos: CHAOS_OFF,
     busy: false,
@@ -92,11 +96,12 @@ export function useConsole(source: RadarSource) {
 
   const loadWorld = useCallback(async () => {
     try {
-      const [weather, incidents] = await Promise.all([
+      const [weather, incidents, contacts] = await Promise.all([
         source.control.weather(),
         source.control.incidents(INCIDENTS_SIZE),
+        source.control.unidentified(),
       ]);
-      setState((current) => ({ ...current, weather, incidents }));
+      setState((current) => ({ ...current, weather, incidents, contacts }));
     } catch {
       // Igual que las alertas: la siguiente vuelta lo intenta otra vez.
     }
@@ -172,6 +177,7 @@ export function useConsole(source: RadarSource) {
           alerts: [],
           weather: [],
           incidents: [],
+          contacts: [],
           // RF-40: el reinicio apaga los actores (el socket lo confirma).
           actors: ACTORS_OFF,
           chaos: CHAOS_OFF,
@@ -179,6 +185,14 @@ export function useConsole(source: RadarSource) {
       },
       onActors: (actors) => setState((current) => ({ ...current, actors })),
       onChaos: (chaos) => setState((current) => ({ ...current, chaos })),
+      onUnidentified: ({ action, contact }) =>
+        setState((current) => {
+          const others = current.contacts.filter((row) => row.id !== contact.id);
+          return {
+            ...current,
+            contacts: action === "ended" ? others : [...others, contact],
+          };
+        }),
       onWorld: (what: WorldChange) => {
         if (what === "weather" || what === "incident") reloadSoon("world");
         if (what === "incident") reloadSoon("alerts");
@@ -320,6 +334,15 @@ export function useConsole(source: RadarSource) {
     [run, source],
   );
 
+  const launchUnidentified = useCallback(
+    (durationMin: number) =>
+      run(
+        () => source.control.launchUnidentified(durationMin),
+        () => "Dron no identificado en el mapa.",
+      ),
+    [run, source],
+  );
+
   const dismissError = useCallback(
     () => setState((current) => ({ ...current, error: null, notice: null, lastReset: null })),
     [],
@@ -341,6 +364,7 @@ export function useConsole(source: RadarSource) {
     setChaos,
     generateOrder,
     surge,
+    launchUnidentified,
     dismissError,
   };
 }

@@ -5,18 +5,28 @@ import { Marker } from "react-map-gl/maplibre";
 import { polygonCenter } from "@/lib/geo";
 import { WEATHER_KIND, minutesLeft } from "@/lib/labels";
 import type { Geofence, Incident, WeatherCell } from "@/lib/types";
-import { AlertIcon, CollisionIcon, RainIcon, StormIcon, WindIcon, ZoneIcon } from "../icons";
+import {
+  AlertIcon,
+  CollisionIcon,
+  FogIcon,
+  RainIcon,
+  StormIcon,
+  WindIcon,
+  ZoneIcon,
+} from "../icons";
 
 const WEATHER_ICON = {
   wind: (size: number) => <WindIcon size={size} />,
   rain: (size: number) => <RainIcon size={size} />,
   storm: (size: number) => <StormIcon size={size} />,
+  fog: (size: number) => <FogIcon size={size} />,
 } as const;
 
 const WEATHER_TONE = {
   wind: "border-info/45 text-info",
   rain: "border-info/45 text-info",
   storm: "border-danger/55 text-danger",
+  fog: "border-line-strong text-text",
 } as const;
 
 /** Placa sólida en el mapa: se toca para ver el evento y terminarlo. */

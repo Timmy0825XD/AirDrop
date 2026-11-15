@@ -23,6 +23,10 @@ export const COLORS = {
   wind: "#8ec5ff",
   rain: "#8ec5ff",
   storm: "#ff6b6b",
+  /** Niebla: gris claro, no volable. */
+  fog: "#c3ccd6",
+  /** RF-36: un dron no identificado. No es de la red: va en magenta. */
+  contact: "#e05ad6",
   /** Ruta de antes de cambiarla en el aire (RF-33). */
   previous: "#8c99a6",
   /** El fondo bajo los tiles: el mapa se apaga hacia el grafito de la consola. */

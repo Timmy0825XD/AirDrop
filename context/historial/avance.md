@@ -1736,7 +1736,7 @@ es `learning/36-front-pending-web-consola.md` (local).
 | --- | --- | --- | --- |
 | 1 — Red regional | `feature/web-red-regional` | RF-43, RF-45, RF-06 | Hecho (2026-11-15) |
 | 2 — Vuelo e identificación | `feature/web-vuelo-identificacion` | RF-46, RF-47, RF-48, RF-44 | Hecho (2026-11-15) |
-| 3 — Eventos regionales | `feature/web-eventos-regionales` | RF-32, RF-36 | Pendiente |
+| 3 — Eventos regionales | `feature/web-eventos-regionales` | RF-32, RF-36 | Hecho (2026-11-15) |
 
 ### Paso 1 — Red regional (hecho, 2026-11-15)
 
@@ -1762,6 +1762,23 @@ es `learning/36-front-pending-web-consola.md` (local).
 - La barra de arriba dice de qué hora a qué hora se vuela y, de noche, que
   las urgencias van por tierra.
 - `pnpm lint` sin errores y `pnpm build` en verde.
+
+### Paso 3 — Eventos regionales (hecho, 2026-11-15)
+
+- Herramienta "Niebla" en la barra de eventos, con su color en el mapa y
+  su explicación en el panel.
+- El pico de urgencias se pega al punto de entrega disponible más cercano
+  y no deja lanzar si el círculo no contiene ninguno (antes Nest respondía
+  400).
+- Herramienta "No identificado": lanza un dron sin identificación que
+  cruza un corredor. Se ve en magenta con su estela; su panel dice cuánto
+  le queda y si pasa cerca de un dron propio.
+- Falta trazar a mano el origen y el destino del dron no identificado
+  (dos toques en el mapa): hoy solo cruza un corredor.
+- `pnpm lint` sin errores y `pnpm build` en verde.
+
+Con este paso la web ya usa los contratos del backend regional. Falta
+probar las dos (app y web) contra Nest.
 
 ## Pendiente del backend
 

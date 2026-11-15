@@ -26,6 +26,8 @@ import type {
   TelemetryEvent,
   TemporaryZone,
   TimelineEntry,
+  UnidentifiedContact,
+  UnidentifiedEvent,
   WeatherCell,
 } from "./types";
 
@@ -51,6 +53,8 @@ export type RadarHandlers = {
   onActors: (actors: ActorsState) => void;
   /** RF-38: se encendió, se apagó o cambió de intensidad el modo caos. */
   onChaos: (chaos: ChaosState) => void;
+  /** RF-36: apareció, se movió o salió un dron no identificado. */
+  onUnidentified: (event: UnidentifiedEvent) => void;
 };
 
 export type WorldChange = "weather" | "zone" | "incident" | "outage" | "reroute";
@@ -81,6 +85,9 @@ export type ConsoleApi = {
   setActors: (change: Partial<ActorsState>) => Promise<ActorsState>;
   generateOrder: (kind: GeneratedKind) => Promise<GeneratedOrder>;
   surge: (input: NewSurge) => Promise<SurgeResult>;
+  /* RF-36: el dron no identificado. Sin origen ni destino, cruza un corredor. */
+  unidentified: () => Promise<UnidentifiedContact[]>;
+  launchUnidentified: (durationMin: number) => Promise<UnidentifiedContact>;
   /* RF-38, CU-40: el modo caos. */
   chaos: () => Promise<ChaosState>;
   setChaos: (change: Partial<ChaosState>) => Promise<ChaosState>;
@@ -171,6 +178,12 @@ export function liveSource(token: string): RadarSource {
           method: "POST",
           body: JSON.stringify(input),
         }),
+      unidentified: () => api<UnidentifiedContact[]>("/control/unidentified", token),
+      launchUnidentified: (durationMin) =>
+        api<UnidentifiedContact>("/control/unidentified", token, {
+          method: "POST",
+          body: JSON.stringify({ durationMin }),
+        }),
       chaos: () => api<ChaosState>("/control/chaos", token),
       setChaos: (change) =>
         api<ChaosState>("/control/chaos", token, {
@@ -205,6 +218,7 @@ export function liveSource(token: string): RadarSource {
       socket.on("radar-reroute", () => handlers.onWorld("reroute"));
       socket.on("radar-actors", handlers.onActors);
       socket.on("radar-chaos", handlers.onChaos);
+      socket.on("radar-unidentified", handlers.onUnidentified);
       return () => {
         socket.removeAllListeners();
         socket.disconnect();

@@ -15,6 +15,7 @@ import type {
   Snapshot,
   TelemetryEvent,
   TimelineEntry,
+  UnidentifiedEvent,
 } from "./types";
 
 /** Cada cuánto se agrupan los mensajes del socket antes de repintar. */
@@ -45,6 +46,8 @@ export type ConsoleListener = {
   onActors: (actors: ActorsState) => void;
   /** RF-38: cambió el modo caos. */
   onChaos: (chaos: ChaosState) => void;
+  /** RF-36: un dron no identificado apareció, se movió o salió. */
+  onUnidentified: (event: UnidentifiedEvent) => void;
 };
 
 function fromTelemetry(event: TelemetryEvent, previous?: RadarFlight): RadarFlight {
@@ -207,6 +210,7 @@ export function useRadar(
       onTimeline: (entry) => consoleListener.current.onTimeline(entry),
       onActors: (actors) => consoleListener.current.onActors(actors),
       onChaos: (chaos) => consoleListener.current.onChaos(chaos),
+      onUnidentified: (event) => consoleListener.current.onUnidentified(event),
       onWorld: (what) => {
         // Zonas, apagones e incidentes cambian el mapa y los contadores.
         if (what !== "weather") scheduleRefresh();
