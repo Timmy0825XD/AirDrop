@@ -1637,6 +1637,35 @@ siguen en la bandeja y en el correo.
 - `StatusPill` corta un texto largo en vez de desbordar.
 - `flutter analyze` sin issues y `flutter test` en verde.
 
+## Fase 23 — La app adopta el backend regional
+
+El backend regional (PR #182 a #188) rompió contratos a propósito. Esta
+fase los lleva a la app, una rama por tema desde `develop`, en este orden.
+La guía de partida es `learning/35-front-pending-red-regional.md` (local).
+
+| Paso | Rama | Qué cubre | Estado |
+| --- | --- | --- | --- |
+| 1 — Puntos de entrega | `feature/puntos-de-entrega` | RU-02, RF-45 | Hecho (2026-11-15) |
+| 2 — Política de datos | `feature/politica-de-datos` | RF-50, RF-51 | Pendiente |
+| 3 — Centrales nodo y ESE | `feature/centrales-nodo-ese` | RF-06, RF-43 | Pendiente |
+| 4 — Flota de tres tipos y peso del lote | `feature/flota-tres-tipos` | RF-49, RF-11 | Pendiente |
+| 5 — Manifiesto e identificación | `feature/manifiesto-e-identificacion` | RF-47, RF-48 | Pendiente |
+| 6 — Propósito de la fórmula y luz del día | `feature/formula-proposito-y-luz` | RF-51, RF-44 | Pendiente |
+
+### Paso 1 — Puntos de entrega (hecho, 2026-11-15)
+
+- La urgencia y la entrega periódica del solicitante ya no mandan
+  dirección ni coordenadas: mandan `deliveryPointId` y, si se leyó el GPS,
+  `requesterLocation`. Antes Nest respondía 400.
+- El paso "Dónde" (`DeliveryPointStep`) lee `GET /delivery-points`. "Usar
+  mi ubicación" propone el punto más cercano; se puede elegir otro en la
+  lista o en el mapa.
+- En la ciudad, o sin un punto al alcance, muestra el mensaje de Nest y las
+  centrales donde recoger el medicamento, y no deja enviar.
+- El detalle del pedido y del plan dicen "Punto de entrega" en vez de
+  "Dirección" cuando el destino es una persona.
+- `flutter analyze` sin issues y `flutter test` en verde (410).
+
 ## Pendiente del backend
 
 Vive en [`pendientes-backend.md`](pendientes-backend.md), para que la persona

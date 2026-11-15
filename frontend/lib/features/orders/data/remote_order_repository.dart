@@ -1,3 +1,5 @@
+import 'package:latlong2/latlong.dart';
+
 import '../../../core/network/api_client.dart';
 import 'agenda_models.dart';
 import 'order_models.dart';
@@ -19,6 +21,22 @@ class RemoteOrderRepository implements OrderRepository {
     return _asJsonList(
       data,
     ).map((row) => CatalogOffer.fromJson(_asMap(row))).toList();
+  }
+
+  @override
+  Future<CoverageResult> coverage({
+    LatLng? from,
+    String? medicationName,
+  }) async {
+    final data = await apiClient.getJson(
+      '/delivery-points',
+      query: {
+        if (from != null) 'latitude': from.latitude.toStringAsFixed(6),
+        if (from != null) 'longitude': from.longitude.toStringAsFixed(6),
+        'medicationName': ?medicationName,
+      },
+    );
+    return CoverageResult.fromJson(_asMap(data));
   }
 
   @override
