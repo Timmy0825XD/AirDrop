@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/prefs/app_prefs.dart';
+import '../features/onboarding/presentation/welcome_gate.dart';
+import '../features/onboarding/presentation/welcome_screen.dart';
 import '../features/analytics/presentation/analytics_screen.dart';
 import '../features/auth/data/auth_models.dart';
 import '../features/auth/presentation/auth_controller.dart';
@@ -76,6 +79,7 @@ const _roleRoutes = <String, Set<UserRole>>{
   '/geofences/new': {UserRole.fleetOperator},
   '/geofences/:id': {UserRole.fleetOperator},
   '/orders/emergency': {UserRole.requester},
+  '/welcome': {UserRole.requester},
   '/orders/plans/new': {UserRole.requester},
   '/orders/plans': {UserRole.requester, UserRole.dispatcher},
   '/orders/mine': {UserRole.requester},
@@ -175,6 +179,16 @@ final routerProvider = Provider<GoRouter>((ref) {
         return '/home';
       }
 
+      // La bienvenida sale una vez: el primer ingreso de un solicitante
+      // en este teléfono (RF-53).
+      if (shouldShowWelcome(
+        role: auth.asData?.value.user?.role,
+        location: location,
+        prefs: ref.read(prefsStoreProvider),
+      )) {
+        return '/welcome';
+      }
+
       // Guardia por rol: fuera del rol autorizado, a /unauthorized.
       final requiredRoles =
           _roleRoutes[location] ?? _parameterizedRole(location);
@@ -188,6 +202,8 @@ final routerProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: '/', redirect: (_, _) => '/login'),
+      // Fuera del andamiaje del rol: ocupa toda la pantalla, sin barra.
+      GoRoute(path: '/welcome', builder: (_, _) => const WelcomeScreen()),
       // Las pantallas de auth rediseñadas animan su propia entrada (el
       // encabezado cambia de forma), así que la ruta no agrega otra encima.
       GoRoute(

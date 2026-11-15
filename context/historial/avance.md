@@ -1488,7 +1488,7 @@ el solicitante; los pasos 1 y 2 cambian los cuatro roles.
 | 2 — Carga, vacío y error | `feature/corredor-estados` | HU-73 | Hecho (2026-11-14) |
 | 3 — Inicio, urgencia y seguimiento del solicitante | `feature/corredor-solicitante` | HU-76 | Hecho (2026-11-14) |
 | 4 — Arranque, animaciones firma y vibración | `feature/corredor-movimiento` | HU-74 | Hecho (2026-11-14) |
-| 5 — Bienvenida | `feature/bienvenida` | HU-75 | Pendiente |
+| 5 — Bienvenida | `feature/bienvenida` | HU-75 | Hecho (2026-11-14) |
 | 6 — Ajustes y modo sencillo | `feature/ajustes` | HU-77 | Pendiente |
 | 7 — Medicamentos disponibles | `feature/medicamentos-disponibles` | HU-78 | Pendiente |
 
@@ -1575,6 +1575,23 @@ siguen en la bandeja y en el correo.
   en web con movimiento: la entrada del login y el flujo del solicitante
   y del despachador. La vibración no se puede probar en web: la cubren
   las pruebas.
+
+### Paso 5 — Bienvenida (hecho, 2026-11-14)
+
+- **`features/onboarding/`** (solo `presentation/`): `WelcomeScreen` con
+  los tres pasos de `welcome_steps.dart` (pedir, seguir el vuelo, recibir
+  con el código en 5 minutos), "Omitir" y "Continuar". Ruta `/welcome`,
+  fuera del andamiaje del rol.
+- **`core/prefs/app_prefs.dart`**: `PrefsStore` sobre `shared_preferences`
+  (dependencia nueva), abierto en `main` antes del primer cuadro. Guarda
+  solo cosas de la app; si el teléfono no deja abrirlo, sigue en memoria.
+  Lo va a usar también Ajustes (paso 6).
+- **Cuándo sale** (`welcome_gate.dart`): el router manda a `/welcome` al
+  solicitante que va al inicio y no la ha visto en ese teléfono. Los
+  demás roles no la ven. No pide datos ni permisos.
+- `flutter analyze` sin issues y `flutter test` en verde (389). Probado
+  en web: sale tras el primer ingreso, no vuelve a salir al recargar y el
+  despachador entra directo.
 
 ## Pendiente del backend
 

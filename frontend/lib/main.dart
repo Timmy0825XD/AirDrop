@@ -3,9 +3,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'app/airdrop_app.dart';
 import 'app/provider_retry.dart';
+import 'core/prefs/app_prefs.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  // Las preferencias del teléfono se abren antes del primer cuadro.
+  final prefs = await loadPrefs();
   runApp(
-    const ProviderScope(retry: retryOnlyWithoutResponse, child: AirDropApp()),
+    ProviderScope(
+      retry: retryOnlyWithoutResponse,
+      overrides: [prefsStoreProvider.overrideWithValue(prefs)],
+      child: const AirDropApp(),
+    ),
   );
 }
