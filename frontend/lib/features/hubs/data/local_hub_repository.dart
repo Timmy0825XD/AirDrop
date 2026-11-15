@@ -56,6 +56,7 @@ class LocalHubRepository implements HubRepository {
       longitude: request.longitude,
       contactPhone: request.contactPhone,
       contactEmail: request.contactEmail,
+      networkRole: request.networkRole,
       status: HubStatus.active,
       createdAt: DateTime.now(),
     );
@@ -90,6 +91,9 @@ class LocalHubRepository implements HubRepository {
       contactEmail: changes.containsKey('contactEmail')
           ? changes['contactEmail'] as String?
           : current.contactEmail,
+      networkRole: changes['networkRole'] is String
+          ? HubNetworkRole.fromJson(changes['networkRole'])
+          : current.networkRole,
       status: current.status,
       createdAt: current.createdAt,
     );
@@ -121,6 +125,7 @@ class LocalHubRepository implements HubRepository {
       longitude: current.longitude,
       contactPhone: current.contactPhone,
       contactEmail: current.contactEmail,
+      networkRole: current.networkRole,
       status: next,
       createdAt: current.createdAt,
     );

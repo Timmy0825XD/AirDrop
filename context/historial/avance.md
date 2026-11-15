@@ -1647,7 +1647,7 @@ La guía de partida es `learning/35-front-pending-red-regional.md` (local).
 | --- | --- | --- | --- |
 | 1 — Puntos de entrega | `feature/puntos-de-entrega` | RU-02, RF-45 | Hecho (2026-11-15) |
 | 2 — Política de datos | `feature/politica-de-datos` | RF-50, CU-46 | Hecho (2026-11-15) |
-| 3 — Centrales nodo y ESE | `feature/centrales-nodo-ese` | RF-06, RF-43 | Pendiente |
+| 3 — Centrales nodo y ESE | `feature/centrales-nodo-ese` | RF-06, RF-43 | Hecho (2026-11-15) |
 | 4 — Flota de tres tipos y peso del lote | `feature/flota-tres-tipos` | RF-49, RF-11 | Pendiente |
 | 5 — Manifiesto e identificación | `feature/manifiesto-e-identificacion` | RF-47, RF-48 | Pendiente |
 | 6 — Propósito de la fórmula y luz del día | `feature/formula-proposito-y-luz` | RF-51, RF-44 | Pendiente |
@@ -1679,6 +1679,16 @@ La guía de partida es `learning/35-front-pending-red-regional.md` (local).
   muestra el 409 y no cierra la sesión.
 - Estados de cuenta `revoked` y `deleted`.
 - `flutter analyze` sin issues y `flutter test` en verde (416).
+
+### Paso 3 — Centrales nodo y ESE (hecho, 2026-11-15)
+
+- La central trae `networkRole`. El alta lo manda (antes Nest respondía
+  400 "El tipo de red debe ser nodo o ESE.") y la edición lo cambia.
+- El formulario suma "Tipo de red" con la ayuda "Solo un nodo tiene drones
+  y despega". El listado y el detalle dicen "Nodo · Hospital".
+- En una ESE no sale "Ver flota".
+- Los formularios del despachador dicen "Nodo de origen".
+- `flutter analyze` sin issues y `flutter test` en verde (417).
 
 ## Pendiente del backend
 
