@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/physics.dart';
 
@@ -8,7 +10,9 @@ import 'package:flutter/physics.dart';
 /// pantalla sigue abierta (faltaba un dato o el envío falló), regresa al
 /// inicio. [loading] mantiene el giro si la pantalla envía por su cuenta.
 ///
-/// Para el lector de pantalla es un botón: tocarlo dos veces confirma.
+/// Quien no puede arrastrar lo confirma con dos toques: el primero cambia
+/// el texto a "Toca otra vez para confirmar" durante unos segundos y el
+/// segundo lanza (WCAG 2.5.7). Para el lector de pantalla es un botón.
 class SlideToLaunch extends StatefulWidget {
   const SlideToLaunch({
     super.key,
@@ -25,6 +29,9 @@ class SlideToLaunch extends StatefulWidget {
 
   static const double height = 64;
 
+  /// Lo que dice la pista tras el primer toque.
+  static const String confirmLabel = 'Toca otra vez para confirmar';
+
   @override
   State<SlideToLaunch> createState() => _SlideToLaunchState();
 }
@@ -36,8 +43,13 @@ class _SlideToLaunchState extends State<SlideToLaunch>
   double _max = 0;
   bool _launched = false;
 
+  // Tras el primer toque queda armado unos segundos: otro toque lanza.
+  bool _armed = false;
+  Timer? _disarm;
+
   @override
   void dispose() {
+    _disarm?.cancel();
     _x.dispose();
     super.dispose();
   }
@@ -68,8 +80,25 @@ class _SlideToLaunchState extends State<SlideToLaunch>
     }
   }
 
+  void _tap() {
+    if (_launched || widget.loading) return;
+    _disarm?.cancel();
+    if (_armed) {
+      _launch();
+      return;
+    }
+    setState(() => _armed = true);
+    _disarm = Timer(const Duration(seconds: 4), () {
+      if (mounted) setState(() => _armed = false);
+    });
+  }
+
   Future<void> _launch([double velocity = 0]) async {
-    setState(() => _launched = true);
+    _disarm?.cancel();
+    setState(() {
+      _launched = true;
+      _armed = false;
+    });
     _settle(_max, velocity);
     await widget.onLaunch();
     if (!mounted) return;
@@ -93,8 +122,12 @@ class _SlideToLaunchState extends State<SlideToLaunch>
             builder: (context, _) => _Track(
               offset: _x.value,
               max: _max,
-              label: busy ? widget.loadingLabel : widget.label,
+              label: busy
+                  ? widget.loadingLabel
+                  : (_armed ? SlideToLaunch.confirmLabel : widget.label),
               busy: busy,
+              armed: _armed,
+              onTap: _tap,
               onDrag: _drag,
               onRelease: _release,
             ),
@@ -112,6 +145,8 @@ class _Track extends StatelessWidget {
     required this.max,
     required this.label,
     required this.busy,
+    required this.armed,
+    required this.onTap,
     required this.onDrag,
     required this.onRelease,
   });
@@ -120,6 +155,8 @@ class _Track extends StatelessWidget {
   final double max;
   final String label;
   final bool busy;
+  final bool armed;
+  final VoidCallback onTap;
   final GestureDragUpdateCallback onDrag;
   final GestureDragEndCallback onRelease;
 
@@ -129,46 +166,53 @@ class _Track extends StatelessWidget {
     const h = SlideToLaunch.height;
     final shown = offset.clamp(-12.0, max + 12);
     final fade = max <= 0 ? 0.0 : (1 - (shown / (max * 0.6))).clamp(0.0, 1.0);
-    return Container(
-      height: h,
-      decoration: BoxDecoration(
-        color: colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(h / 2),
-        border: Border.all(color: colors.outline.withValues(alpha: 0.6)),
-      ),
-      child: Stack(
-        children: [
-          Container(
-            width: h + shown.clamp(0, max),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(h / 2),
-              color: colors.primary.withValues(alpha: 0.16),
-            ),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Container(
+        height: h,
+        decoration: BoxDecoration(
+          color: colors.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(h / 2),
+          border: Border.all(
+            color: armed ? colors.primary : colors.outline,
+            width: armed ? 2 : 1,
           ),
-          Positioned.fill(
-            left: h - 8,
-            child: Center(
-              child: Opacity(
-                opacity: busy ? 1 : fade,
-                child: Text(
-                  label,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    color: colors.onSurfaceVariant,
+        ),
+        child: Stack(
+          children: [
+            Container(
+              width: h + shown.clamp(0, max),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(h / 2),
+                color: colors.primary.withValues(alpha: 0.16),
+              ),
+            ),
+            Positioned.fill(
+              left: h - 8,
+              child: Center(
+                child: Opacity(
+                  opacity: busy || armed ? 1 : fade,
+                  child: Text(
+                    label,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      color: colors.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-          Positioned(
-            left: shown + 5,
-            top: 5,
-            child: GestureDetector(
-              onHorizontalDragUpdate: onDrag,
-              onHorizontalDragEnd: onRelease,
-              child: _Knob(busy: busy),
+            Positioned(
+              left: shown + 5,
+              top: 5,
+              child: GestureDetector(
+                onHorizontalDragUpdate: onDrag,
+                onHorizontalDragEnd: onRelease,
+                child: _Knob(busy: busy),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

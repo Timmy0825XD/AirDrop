@@ -51,7 +51,7 @@ class RegisterIdentityFields extends StatelessWidget {
         AuthField(
           label: 'Número de documento',
           hint: DocumentTypeLabels.hint(documentType),
-          icon: Icons.badge_outlined,
+          icon: Icons.badge_rounded,
           trailing: AuthFieldNote(DocumentTypeLabels.lengthNote(documentType)),
           controller: c.document,
           errorText: data.errors[RegisterInput.document],

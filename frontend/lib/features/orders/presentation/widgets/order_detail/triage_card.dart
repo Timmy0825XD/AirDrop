@@ -23,7 +23,7 @@ class TriageCard extends StatelessWidget {
     final patient = order.patient;
     return DetailSection(
       title: 'Tamizaje',
-      icon: Icons.medical_information_outlined,
+      icon: Icons.medical_information_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

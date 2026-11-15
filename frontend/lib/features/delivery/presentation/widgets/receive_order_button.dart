@@ -26,7 +26,7 @@ class ReceiveOrderButton extends StatelessWidget {
         minimumSize: const Size.fromHeight(48),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      icon: Icon(landed ? Icons.key_rounded : Icons.pin_outlined),
+      icon: Icon(landed ? Icons.key_rounded : Icons.pin_rounded),
       label: Text(landed ? 'Recibir pedido' : 'Ver código de entrega'),
     );
   }

@@ -70,7 +70,7 @@ class FleetFlightCard extends StatelessWidget {
               ],
             ),
           ),
-          Icon(Icons.map_outlined, color: theme.colorScheme.onSurfaceVariant),
+          Icon(Icons.map_rounded, color: theme.colorScheme.onSurfaceVariant),
         ],
       ),
     );

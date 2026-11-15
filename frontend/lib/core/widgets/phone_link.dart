@@ -47,7 +47,7 @@ class PhoneLink extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.call_outlined, size: 18, color: color),
+              Icon(Icons.call_rounded, size: 18, color: color),
               const SizedBox(width: 6),
               Text(
                 text,

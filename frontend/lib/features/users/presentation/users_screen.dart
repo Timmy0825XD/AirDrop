@@ -75,7 +75,7 @@ class _UserList extends ConsumerWidget {
       error: (error, _) => MessageView(message: ApiException.messageOf(error)),
       data: (rows) => rows.isEmpty
           ? const MessageView(
-              icon: Icons.groups_outlined,
+              icon: Icons.groups_rounded,
               message: 'No hay cuentas con esos filtros.',
             )
           : ListView.separated(

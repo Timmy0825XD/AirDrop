@@ -119,7 +119,7 @@ class _SourcePicker extends StatelessWidget {
                   subtitle:
                       '${source.offer.availableQuantity} en stock · '
                       '${source.hub.address}',
-                  icon: Icons.home_work_outlined,
+                  icon: Icons.home_work_rounded,
                 ),
             ],
             isSelected: (source) => source.hub.id == values.originHubId,

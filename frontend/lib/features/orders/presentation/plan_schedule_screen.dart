@@ -71,7 +71,7 @@ class _PlanScheduleScreenState extends ConsumerState<PlanScheduleScreen>
           'Las entregas sin dron y a más de 2 horas se rehacen con el '
           'calendario nuevo; las demás no cambian.',
       confirmLabel: 'Guardar calendario',
-      icon: Icons.edit_calendar_outlined,
+      icon: Icons.edit_calendar_rounded,
       destructive: false,
       subject: PlanTile(plan: plan, onTap: () {}),
     );

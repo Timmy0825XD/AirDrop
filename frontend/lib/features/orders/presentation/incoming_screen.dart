@@ -22,7 +22,7 @@ class IncomingScreen extends ConsumerWidget {
       countLabel: (n) => n == 1 ? '1 traslado' : '$n traslados',
       rows: ref.watch(incomingProvider),
       onRefresh: () => ref.invalidate(incomingProvider),
-      emptyIcon: Icons.move_to_inbox_outlined,
+      emptyIcon: Icons.move_to_inbox_rounded,
       emptyText: 'Ninguna central le ha enviado nada a la tuya.',
       keyOf: (order) => order.id,
       itemBuilder: (context, order) => OrderTile(

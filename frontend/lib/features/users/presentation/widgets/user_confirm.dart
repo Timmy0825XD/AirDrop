@@ -23,7 +23,7 @@ Future<bool> confirmUserSuspension(
         ? 'Vuelve a entrar con su correo y su contraseña.'
         : 'Pierde el acceso hasta que la reactives.',
     confirmLabel: reactivate ? 'Reactivar' : 'Suspender',
-    icon: reactivate ? Icons.lock_open_rounded : Icons.person_off_outlined,
+    icon: reactivate ? Icons.lock_open_rounded : Icons.person_off_rounded,
     destructive: !reactivate,
     subject: _UserSubject(user: user),
   );

@@ -97,7 +97,7 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen>
         title: 'Pedir urgencia',
         subtitle: 'Una unidad, a donde estés',
         source: ref.watch(catalogProvider),
-        emptyIcon: Icons.medication_outlined,
+        emptyIcon: Icons.medication_rounded,
         emptyText: 'No hay medicamentos disponibles por ahora.',
         steps: FormSteps(labels: EmergencyScreen.steps, current: _step),
         onBack: _back,

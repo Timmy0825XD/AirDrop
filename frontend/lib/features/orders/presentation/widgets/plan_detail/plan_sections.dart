@@ -59,7 +59,7 @@ class PlanOccurrences extends StatelessWidget {
   Widget build(BuildContext context) {
     return DetailSection(
       title: 'Entregas',
-      icon: Icons.local_shipping_outlined,
+      icon: Icons.local_shipping_rounded,
       child: occurrences.isEmpty
           ? Text(
               'Este plan todavía no tiene entregas.',
@@ -95,7 +95,7 @@ class _OccurrenceRow extends StatelessWidget {
             children: [
               Icon(
                 o.droneId == null
-                    ? Icons.event_outlined
+                    ? Icons.event_rounded
                     : Icons.flight_takeoff_rounded,
                 size: 18,
                 color: theme.colorScheme.onSurfaceVariant,

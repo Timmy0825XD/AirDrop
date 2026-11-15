@@ -88,7 +88,7 @@ class _ActionList extends StatelessWidget {
           ),
         if (status != DroneStatus.maintenance)
           _ActionTile(
-            icon: Icons.build_outlined,
+            icon: Icons.build_rounded,
             tone: colors.primary,
             title: 'Enviar a mantenimiento',
             subtitle:

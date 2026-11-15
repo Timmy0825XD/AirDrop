@@ -96,7 +96,7 @@ class _RoleFace extends StatelessWidget {
       children: [
         Icon(
           role == UserRole.dispatcher
-              ? Icons.assignment_turned_in_outlined
+              ? Icons.assignment_turned_in_rounded
               : Icons.flight_takeoff_rounded,
           color: selected ? ink : colors.onSurfaceVariant,
         ),

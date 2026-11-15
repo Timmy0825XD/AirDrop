@@ -50,7 +50,7 @@ class _RejectSectionState extends State<RejectSection> {
         side: BorderSide(color: colors.error.withValues(alpha: 0.4)),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      icon: const Icon(Icons.block_outlined, size: 18),
+      icon: const Icon(Icons.block_rounded, size: 18),
       label: Text(_open ? 'Confirmar rechazo' : 'Rechazar pedido'),
     );
     return AnimatedSize(
@@ -61,7 +61,7 @@ class _RejectSectionState extends State<RejectSection> {
           ? button
           : DetailSection(
               title: 'Rechazar',
-              icon: Icons.block_outlined,
+              icon: Icons.block_rounded,
               tone: colors.error,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,

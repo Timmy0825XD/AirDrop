@@ -52,7 +52,7 @@ class _GeofenceList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return switch (ref.watch(geofencesProvider)) {
       AsyncValue(hasValue: true, hasError: false, :final value?) when value.isEmpty => const MessageView(
-        icon: Icons.polyline_outlined,
+        icon: Icons.polyline_rounded,
         message: 'Aún no hay geovallas registradas.',
       ),
       AsyncValue(hasValue: true, hasError: false, :final value?) => ListView.separated(

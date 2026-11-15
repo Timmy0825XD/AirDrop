@@ -5,8 +5,9 @@ import 'package:flutter/material.dart';
 import '../../theme/app_palette.dart';
 import 'press_scale.dart';
 
-/// La tarjeta base de la app: la superficie sólida del tema con una sombra
-/// suave en claro y un filo fino en oscuro (en oscuro la sombra no se ve).
+/// La tarjeta base de la app: la superficie sólida del tema con un filo
+/// fino en los dos modos y, en claro, una sombra suave (en oscuro la sombra
+/// no se ve). El filo separa la tarjeta del fondo aunque el tono se parezca.
 /// Con [onTap] se hunde al tocar; con [blur] desenfoca lo de atrás (solo
 /// sobre el mapa). El nombre viene del diseño anterior, que era de vidrio.
 class GlassCard extends StatelessWidget {
@@ -38,7 +39,7 @@ class GlassCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: strong ? palette.bar : palette.glass,
         borderRadius: shape,
-        border: light ? null : Border.all(color: palette.glassBorder),
+        border: Border.all(color: palette.glassBorder),
         boxShadow: [
           if (light || strong) ...[
             BoxShadow(

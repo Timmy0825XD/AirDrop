@@ -31,7 +31,7 @@ class GeofenceTile extends StatelessWidget {
         behavior: HitTestBehavior.opaque,
         child: StatusCard(
           leading: ToneTile.icon(
-            icon: Icons.polyline_outlined,
+            icon: Icons.polyline_rounded,
             tone: Theme.of(context).colorScheme.error,
             alpha: 0.10,
           ),

@@ -73,7 +73,7 @@ class _HubList extends ConsumerWidget {
       error: (error, _) => MessageView(message: ApiException.messageOf(error)),
       data: (rows) => rows.isEmpty
           ? MessageView(
-              icon: Icons.domain_outlined,
+              icon: Icons.domain_rounded,
               message: filtered
                   ? 'No hay centrales con este filtro.'
                   : 'Aún no hay centrales registradas.',

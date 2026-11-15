@@ -1,10 +1,39 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:frontend/theme/app_palette.dart';
 import 'package:frontend/theme/app_theme.dart';
 
+double _contrast(Color a, Color b) {
+  final la = a.computeLuminance();
+  final lb = b.computeLuminance();
+  return (math.max(la, lb) + 0.05) / (math.min(la, lb) + 0.05);
+}
+
 void main() {
+  test('El contraste cumple WCAG: texto 4,5:1 y bordes de control 3:1', () {
+    for (final theme in [AppTheme.light, AppTheme.dark]) {
+      final c = theme.colorScheme;
+      final backdrop = theme.extension<AppPalette>()!.backdrop.first;
+      final fieldFill = theme.brightness == Brightness.dark
+          ? c.surfaceContainerHighest
+          : c.surface;
+      for (final ground in [c.surface, backdrop]) {
+        expect(_contrast(c.onSurface, ground), greaterThanOrEqualTo(4.5));
+        expect(
+          _contrast(c.onSurfaceVariant, ground),
+          greaterThanOrEqualTo(4.5),
+        );
+        expect(_contrast(c.primary, ground), greaterThanOrEqualTo(4.5));
+        expect(_contrast(c.outline, ground), greaterThanOrEqualTo(3));
+      }
+      expect(_contrast(c.onPrimary, c.primary), greaterThanOrEqualTo(4.5));
+      expect(_contrast(c.outline, fieldFill), greaterThanOrEqualTo(3));
+    }
+  });
+
   testWidgets(
     'El tema aplica marca, paleta, foco y tipografía en claro y oscuro',
     (WidgetTester tester) async {

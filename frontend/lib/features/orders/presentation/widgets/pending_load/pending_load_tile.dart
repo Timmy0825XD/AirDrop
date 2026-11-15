@@ -31,7 +31,7 @@ class PendingLoadTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         OrderRowCard(
-          icon: Icons.inventory_outlined,
+          icon: Icons.inventory_rounded,
           tone: colors.primary,
           title: order.medicationName,
           accent: '${order.quantity} und. · ${destinationLabel(order)}',
@@ -76,7 +76,7 @@ class _ConfirmButton extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
               ),
             ),
-            icon: const Icon(Icons.fact_check_outlined),
+            icon: const Icon(Icons.fact_check_rounded),
             label: Text(confirming ? 'Confirmando…' : 'Revisar y cargar'),
           );
     return AnimatedSwitcher(

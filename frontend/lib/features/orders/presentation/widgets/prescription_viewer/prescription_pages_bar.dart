@@ -47,7 +47,7 @@ class PrescriptionPagesBar extends StatelessWidget {
             IconButton(
               tooltip: 'Girar',
               onPressed: onRotate,
-              icon: const Icon(Icons.rotate_90_degrees_cw_outlined),
+              icon: const Icon(Icons.rotate_90_degrees_cw_rounded),
             ),
           ],
         ),

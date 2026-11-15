@@ -19,7 +19,7 @@ Future<void> showHubActionsSheet(BuildContext context, Hub hub) {
             child: Text(hub.name, style: Theme.of(sheet).textTheme.titleLarge),
           ),
           ListTile(
-            leading: const Icon(Icons.edit_outlined),
+            leading: const Icon(Icons.edit_rounded),
             title: const Text('Editar central'),
             subtitle: const Text(
               'Nombre, tipo, dirección, ubicación y contacto',

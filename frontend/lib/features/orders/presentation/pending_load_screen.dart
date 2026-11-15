@@ -57,7 +57,7 @@ class _PendingLoadScreenState extends ConsumerState<PendingLoadScreen> {
           n == 1 ? '1 dron espera la carga' : '$n drones esperan la carga',
       rows: ref.watch(pendingLoadProvider),
       onRefresh: () => ref.invalidate(pendingLoadProvider),
-      emptyIcon: Icons.inventory_2_outlined,
+      emptyIcon: Icons.inventory_2_rounded,
       emptyText: 'No hay drones esperando carga.',
       keyOf: (order) => order.id,
       itemBuilder: (context, order) => PendingLoadTile(

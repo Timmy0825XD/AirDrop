@@ -192,7 +192,7 @@ class _OptionRow<T> extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       selectedTileColor: primary.withValues(alpha: 0.12),
       leading: ToneTile.icon(
-        icon: option.icon ?? Icons.medication_outlined,
+        icon: option.icon ?? Icons.medication_rounded,
         tone: primary,
         size: 40,
       ),

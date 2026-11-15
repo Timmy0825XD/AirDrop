@@ -4,15 +4,17 @@ import 'package:google_fonts/google_fonts.dart';
 import 'app_backdrop.dart';
 import 'app_palette.dart';
 
-/// Paleta y tipografía de AirDrop, rediseño "natural": fondo cálido y liso,
-/// superficies sólidas, un solo acento verde azulado y la fuente Figtree.
+/// Paleta y tipografía de AirDrop, concepto "Corredor" sobre el rediseño
+/// natural: fondo cálido y liso, tres niveles de superficie, el petróleo del
+/// manual de marca como único acento y la fuente Figtree (las cifras van en
+/// monoespaciada, ver `app_figures.dart`).
 /// Es la única fuente de colores de la app: las pantallas leen
 /// `Theme.of(context)` y `context.palette`, y nunca escriben hex.
 class AppTheme {
   AppTheme._();
 
-  /// Verde azulado de marca; en oscuro sube de luz para leerse sobre gris.
-  static const Color primary = Color(0xFF0F6E6A);
+  /// Petróleo del manual de marca; en oscuro, el acento claro del manual.
+  static const Color primary = Color(0xFF0A4E58);
   static const Color primaryOnDark = Color(0xFF5DBFB4);
   static const double radius = 16;
 
@@ -22,8 +24,9 @@ class AppTheme {
       primary: primary,
       onPrimary: Color(0xFFFFFFFF),
       surface: Color(0xFFFFFFFF),
-      sunk: Color(0xFFF3F1EC),
+      sunk: Color(0xFFECE9E2),
       line: Color(0xFFCFCBC3),
+      control: Color(0xFF8C877D),
       ink: Color(0xFF1B1D1F),
       muted: Color(0xFF62676D),
       extra: AppPalette.light,
@@ -38,6 +41,7 @@ class AppTheme {
       surface: Color(0xFF222528),
       sunk: Color(0xFF2B2F33),
       line: Color(0xFF3D4247),
+      control: Color(0xFF7F858C),
       ink: Color(0xFFF1F0EC),
       muted: Color(0xFFA6ABB0),
       extra: AppPalette.dark,
@@ -63,8 +67,10 @@ class AppTheme {
           onSurface: p.ink,
           onSurfaceVariant: p.muted,
           surfaceContainerHighest: p.sunk,
-          outline: p.line,
-          outlineVariant: x.glassBorder,
+          // `outline` es el borde de un control (3:1 contra su fondo);
+          // `outlineVariant`, la línea que solo separa.
+          outline: p.control,
+          outlineVariant: p.line,
         );
     final text = _textTheme(base.textTheme, font, p.muted);
     final shape = RoundedRectangleBorder(
@@ -110,7 +116,7 @@ class AppTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: p.ink,
           minimumSize: const Size(0, 48),
-          side: BorderSide(color: p.line),
+          side: BorderSide(color: p.control),
           shape: shape,
           textStyle: font.copyWith(fontSize: 15, fontWeight: FontWeight.w600),
         ),
@@ -207,8 +213,8 @@ class AppTheme {
     return InputDecorationTheme(
       filled: true,
       fillColor: p.extra.glass,
-      border: border(p.extra.glassBorder),
-      enabledBorder: border(p.extra.glassBorder),
+      border: border(p.control),
+      enabledBorder: border(p.control),
       focusedBorder: border(p.primary, 1.6),
       errorBorder: border(p.extra.danger),
       focusedErrorBorder: border(p.extra.danger, 1.6),
@@ -227,6 +233,7 @@ class _Palette {
     required this.surface,
     required this.sunk,
     required this.line,
+    required this.control,
     required this.ink,
     required this.muted,
     required this.extra,
@@ -238,6 +245,9 @@ class _Palette {
   final Color surface;
   final Color sunk;
   final Color line;
+
+  /// Borde de campos y botones de contorno: 3:1 contra su fondo.
+  final Color control;
   final Color ink;
   final Color muted;
   final AppPalette extra;

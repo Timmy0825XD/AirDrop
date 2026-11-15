@@ -24,7 +24,7 @@ class QuarantineScreen extends ConsumerWidget {
       countLabel: (n) => n == 1 ? '1 lote en cuarentena' : '$n lotes',
       rows: ref.watch(quarantineProvider),
       onRefresh: () => ref.invalidate(quarantineProvider),
-      emptyIcon: Icons.verified_outlined,
+      emptyIcon: Icons.verified_rounded,
       emptyText: 'No hay lotes en cuarentena.',
       keyOf: (row) => row.id,
       itemBuilder: (context, row) => QuarantineTile(
@@ -47,8 +47,8 @@ class QuarantineTile extends StatelessWidget {
     return OrderRowCard(
       icon: switch (record.reason) {
         QuarantineReason.coldChain => Icons.ac_unit_rounded,
-        QuarantineReason.incident => Icons.report_problem_outlined,
-        _ => Icons.inventory_2_outlined,
+        QuarantineReason.incident => Icons.report_problem_rounded,
+        _ => Icons.inventory_2_rounded,
       },
       tone: context.palette.warning,
       title: record.medicationName,

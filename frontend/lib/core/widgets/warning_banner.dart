@@ -10,7 +10,7 @@ class WarningBanner extends StatelessWidget {
   const WarningBanner({
     super.key,
     required this.message,
-    this.icon = Icons.report_problem_outlined,
+    this.icon = Icons.report_problem_rounded,
   });
 
   final String message;

@@ -67,7 +67,7 @@ List<MenuItem> dispatcherHubItems(BuildContext context, AccessOpener open) => [
   MenuItem(
     title: 'Mi central',
     subtitle: 'Datos, horario y estado',
-    icon: Icons.home_work_outlined,
+    icon: Icons.home_work_rounded,
     onTap: open('/hubs/me', always: true, push: true),
   ),
   MenuItem(
@@ -79,12 +79,12 @@ List<MenuItem> dispatcherHubItems(BuildContext context, AccessOpener open) => [
   MenuItem(
     title: 'Nuevo abastecimiento',
     subtitle: 'Entregas periódicas a tu central',
-    icon: Icons.calendar_month_outlined,
+    icon: Icons.calendar_month_rounded,
     onTap: open('/orders/hub-plans/new', push: true),
   ),
   MenuItem(
     title: 'Mis abastecimientos',
-    icon: Icons.event_repeat_outlined,
+    icon: Icons.event_repeat_rounded,
     onTap: () => context.push('/orders/plans'),
   ),
 ];

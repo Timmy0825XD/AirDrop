@@ -27,7 +27,7 @@ class ConfirmLoadSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return DetailSection(
       title: 'Confirmar carga',
-      icon: Icons.inventory_outlined,
+      icon: Icons.inventory_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

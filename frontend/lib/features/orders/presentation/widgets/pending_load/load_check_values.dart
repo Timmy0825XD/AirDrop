@@ -13,12 +13,12 @@ List<LoadCheckItem> loadChecklist(Order order) {
   final units = order.quantity == 1 ? '1 unidad' : '${order.quantity} unidades';
   final a = order.assignment;
   return [
-    (icon: Icons.medication_outlined, text: '${order.medicationName} · $units'),
+    (icon: Icons.medication_rounded, text: '${order.medicationName} · $units'),
     if (order.requiresColdChain)
       (icon: Icons.ac_unit_rounded, text: 'Va en nevera, de 2 a 8 °C'),
     if (order.saleType != SaleType.overTheCounter)
       (
-        icon: Icons.description_outlined,
+        icon: Icons.description_rounded,
         text: '${order.saleType.label}: la fórmula se revisó al autorizar',
       ),
     (
@@ -28,7 +28,7 @@ List<LoadCheckItem> loadChecklist(Order order) {
           : 'Dron ${a.identifier} · ${formatKm(a.distanceKm)}',
     ),
     (
-      icon: Icons.place_outlined,
+      icon: Icons.place_rounded,
       text: order.destinationKind == DestinationKind.hub
           ? 'A la central: ${order.address}'
           : 'A domicilio: ${order.address}',

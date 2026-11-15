@@ -4,6 +4,7 @@ import '../../../../core/clock/sim_clock.dart';
 import '../../../../core/date_format.dart';
 import '../../../../theme/app_palette.dart';
 import '../../data/telemetry_models.dart';
+import '../../../../theme/app_figures.dart';
 
 /// La telemetría en la hoja del vuelo, en palabras: arriba "Llega en 6
 /// min" con la hora estimada y la fase; debajo la barra de avance por la
@@ -185,8 +186,7 @@ class _Row extends StatelessWidget {
               value,
               style: theme.textTheme.titleSmall?.copyWith(
                 color: alert ? context.palette.danger : null,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
+              ).figure,
             ),
           ],
         ),

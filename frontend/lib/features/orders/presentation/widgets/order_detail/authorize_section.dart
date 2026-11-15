@@ -49,7 +49,7 @@ class AuthorizeSection extends StatelessWidget {
     final ready = blockedNote == null && checked;
     return DetailSection(
       title: 'Autorizar salida',
-      icon: Icons.verified_outlined,
+      icon: Icons.verified_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -91,7 +91,7 @@ class _PrescriptionCheck extends StatelessWidget {
           if (s.onViewPrescription != null)
             OutlinedButton.icon(
               onPressed: s.busy ? null : s.onViewPrescription,
-              icon: const Icon(Icons.receipt_long_outlined, size: 18),
+              icon: const Icon(Icons.receipt_long_rounded, size: 18),
               label: const Text('Ver fórmula'),
             ),
           ChoicePill(

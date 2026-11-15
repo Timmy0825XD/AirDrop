@@ -170,7 +170,7 @@ class _VerifyOtpScreenState extends ConsumerState<VerifyOtpScreen>
     ref.watch(authControllerProvider);
     return AuthStepScaffold(
       pill: 'Paso 2 de 2',
-      icon: Icons.verified_user_outlined,
+      icon: Icons.verified_user_rounded,
       onBack: () => context.go('/login', extra: LoginScreen.returnExtra),
       overlay: AirspaceReveal(progress: _reveal, center: _revealCenter),
       body: _body(),

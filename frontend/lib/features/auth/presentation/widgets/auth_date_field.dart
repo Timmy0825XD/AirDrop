@@ -79,7 +79,7 @@ class _DateBox extends StatelessWidget {
           child: Row(
             children: [
               const SizedBox(width: 14),
-              Icon(Icons.event_outlined, size: 20, color: colors.primary),
+              Icon(Icons.event_rounded, size: 20, color: colors.primary),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(

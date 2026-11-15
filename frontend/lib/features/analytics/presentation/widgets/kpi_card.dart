@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/widgets/detail_section.dart';
 import '../../../../core/widgets/status_pill.dart';
 import '../../data/analytics_models.dart';
+import '../../../../theme/app_figures.dart';
 
 /// `92,5 %`, `14,2 min`, `44`: coma decimal y sin decimales de más.
 String formatKpiValue(double? value, String unit) {
@@ -93,9 +94,7 @@ class KpiRow extends StatelessWidget {
         const SizedBox(height: 4),
         Text(
           formatKpiValue(kpi.value, kpi.unit),
-          style: theme.textTheme.headlineMedium?.copyWith(
-            fontFeatures: const [FontFeature.tabularFigures()],
-          ),
+          style: theme.textTheme.headlineMedium?.figure,
         ),
         Text(
           [

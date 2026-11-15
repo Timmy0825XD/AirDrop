@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../theme/app_motion.dart';
+import '../../theme/app_figures.dart';
 
 /// Un número que cuenta desde 0 hasta [value] al aparecer, y desde el
 /// valor anterior cuando cambia. Con "reducir movimiento" se muestra
@@ -13,6 +14,7 @@ class CountUpText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final style = this.style?.figure;
     final target = value;
     if (target == null) return Text('—', style: style);
     if (MediaQuery.disableAnimationsOf(context)) {

@@ -119,7 +119,7 @@ class _RequesterGrid extends StatelessWidget {
             MenuItem(
               title: 'Entrega periódica',
               subtitle: 'Tu tratamiento, cada semana o mes',
-              icon: Icons.calendar_month_outlined,
+              icon: Icons.calendar_month_rounded,
               onTap: () => context.push('/orders/plans/new'),
             ),
           ],

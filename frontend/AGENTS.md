@@ -185,7 +185,7 @@ Convenciones que ya están en el código:
 
 ## Paleta y tokens visuales
 
-Rediseño **natural** (Fase 21, rama `style/rediseno-frontend`; maquetas en el lienzo <https://claude.ai/artifact/VPqqU3ZLb4nhFTppKxJv14>, filas "Versión natural"). Reemplaza a "Grafito y turquesa": fondo cálido liso, superficies sólidas, un solo acento verde azulado, sin degradados, vidrio, velos ni brillos. Que se vea como un producto real; el movimiento solo donde dice algo.
+Concepto **Corredor** (Fase 22, [`../context/calidad/usabilidad.md`](../context/calidad/usabilidad.md)) sobre el rediseño **natural** (Fase 21, rama `style/rediseno-frontend`; maquetas en el lienzo <https://claude.ai/artifact/VPqqU3ZLb4nhFTppKxJv14>, filas "Versión natural"). Reemplaza a "Grafito y turquesa": fondo cálido liso, superficies sólidas, un solo acento verde azulado, sin degradados, vidrio, velos ni brillos. Que se vea como un producto real; el movimiento solo donde dice algo.
 
 La fuente de verdad ejecutable está en `lib/theme/`: [`app_theme.dart`](lib/theme/app_theme.dart) (`ThemeData`), [`app_palette.dart`](lib/theme/app_palette.dart) (`AppPalette`, la extensión con lo que `ColorScheme` no trae; se lee con `context.palette`), [`app_backdrop.dart`](lib/theme/app_backdrop.dart) (el fondo y la transición entre pantallas), [`app_motion.dart`](lib/theme/app_motion.dart) (tiempos y curvas) y [`app_map_style.dart`](lib/theme/app_map_style.dart) (el tinte de los tiles y `AppMapLook`, los colores del mapa dibujado del auth). No crear una segunda paleta ni escribir colores hardcodeados en las pantallas.
 
@@ -193,14 +193,15 @@ La fuente de verdad ejecutable está en `lib/theme/`: [`app_theme.dart`](lib/the
 
 | Token | Oscuro | Claro | Uso |
 | --- | --- | --- | --- |
-| `primary` / `onPrimary` | `#5DBFB4` / `#10201F` | `#0F6E6A` / `#FFFFFF` | Marca, enlaces, foco, botón principal |
+| `primary` / `onPrimary` | `#5DBFB4` / `#10201F` | `#0A4E58` / `#FFFFFF` | Marca (el petróleo del manual en claro, su acento en oscuro), enlaces, foco, botón principal |
 | `secondary` | `#E8B45A` | `#8F5200` | Atención (por cargar, pendientes) |
 | `tertiary` | `#6FCF97` | `#177A45` | Éxito (en vuelo, entregado) |
 | `error` | `#F0958E` | `#B3261E` | Errores, rechazo, geovallas |
 | `surface` | `#222528` | `#FFFFFF` | Tarjetas, hojas y diálogos (sólidos) |
-| `surfaceContainerHighest` | `#2B2F33` | `#F3F1EC` | Superficie hundida; campos en oscuro |
+| `surfaceContainerHighest` | `#2B2F33` | `#ECE9E2` | Superficie hundida; campos en oscuro |
 | `onSurface` / `onSurfaceVariant` | `#F1F0EC` / `#A6ABB0` | `#1B1D1F` / `#62676D` | Texto principal y secundario |
-| `outline` | `#3D4247` | `#CFCBC3` | Bordes de campos y líneas |
+| `outline` | `#7F858C` | `#8C877D` | Borde de un control (campos, botones de contorno): 3:1 contra su fondo (RNF-16) |
+| `outlineVariant` | `#3D4247` | `#CFCBC3` | Líneas que solo separan (divisores, barras vacías) |
 
 ### `AppPalette` (`context.palette`)
 
@@ -208,13 +209,15 @@ La fuente de verdad ejecutable está en `lib/theme/`: [`app_theme.dart`](lib/the
 | --- | --- | --- | --- |
 | `backdrop` | `#17191B` (liso) | `#F5F4F1` (liso) | Fondo de toda la app; las tres paradas son el mismo color |
 | `accentGlow` / `skyGlow` | transparente | transparente | Sin velos (se conservan para no romper a quien los lee) |
-| `accentGradient` / `onAccent` | `#5DBFB4` liso / `#10201F` | `#0F6E6A` liso / `#FFFFFF` | Acento sin degradado |
-| `glass` / `glassBorder` | `#222528` / `#363A3F` | `#FFFFFF` / `#E6E3DD` | Tarjetas, ya sólidas |
+| `accentGradient` / `onAccent` | `#5DBFB4` liso / `#10201F` | `#0A4E58` liso / `#FFFFFF` | Acento sin degradado |
+| `glass` / `glassBorder` | `#222528` / `#454A50` | `#FFFFFF` / `#DAD6CD` | Tarjetas, ya sólidas; el filo va en los dos modos para separarlas del fondo |
 | `bar` | `#222528` | `#FFFFFF` | Barra y paneles sobre el mapa |
 | `success` · `warning` · `danger` · `info` | `#6FCF97` · `#E8B45A` · `#F0958E` · `#8FB4D6` | `#177A45` · `#8F5200` · `#B3261E` · `#2F5F8A` | Semáforo (`StatusPill.colorOf`) |
 | `droneShell` / `droneMetal` | grafito | grafito | Sin uso desde la Fase 21 (eran del dron en tres cuartos, `DroneArt`, que se borró) |
 
-- Tipografía única: **Figtree** (`google_fonts`). Títulos en negrita (w700). Cifras con `FontFeature.tabularFigures()` para que los contadores no bailen. Escala: `displayLarge` 64, `displayMedium` 48, `headlineLarge` 32 (auth a 28 con `authTitleStyle`), `headlineMedium` 24, `titleLarge` 20, cuerpo 15–16. `labelSmall` (13, seminegrita, gris) es el rótulo de una sección dentro de una tarjeta. **Nada va en mayúsculas**: rótulos, etiquetas y títulos se escriben normal ("Revisión del traslado", no "REVISIÓN DEL TRASLADO"); los labels de campo usan `authLabelStyle` y los títulos de grupo, `HomeLabel`.
+- **Cifras protagonistas** (minutos, altura, batería, horas, el código de entrega): IBM Plex Mono con `.figure` ([`app_figures.dart`](lib/theme/app_figures.dart)) sobre cualquier estilo del tema. `CountUpText` ya la aplica. No se usa para texto.
+- **Íconos:** una sola familia, la redondeada (`Icons.*_rounded`). No se usan `_outlined` ni `_sharp`.
+- Tipografía de texto: **Figtree** (`google_fonts`). Títulos en negrita (w700). Cifras con `FontFeature.tabularFigures()` para que los contadores no bailen. Escala: `displayLarge` 64, `displayMedium` 48, `headlineLarge` 32 (auth a 28 con `authTitleStyle`), `headlineMedium` 24, `titleLarge` 20, cuerpo 15–16. `labelSmall` (13, seminegrita, gris) es el rótulo de una sección dentro de una tarjeta. **Nada va en mayúsculas**: rótulos, etiquetas y títulos se escriben normal ("Revisión del traslado", no "REVISIÓN DEL TRASLADO"); los labels de campo usan `authLabelStyle` y los títulos de grupo, `HomeLabel`.
 - Radios: campos 14; botones 16; tarjetas 20; hojas 28.
 - Superficies de formulario en [`app_surfaces.dart`](lib/theme/app_surfaces.dart): `AppSurfaces.sheet` (la superficie sólida con sombra suave) y `AppSurfaces.fields` (blancos con borde gris cálido en claro, gris hundido en oscuro; el ícono se enciende al enfocar). Las usan la hoja del auth y `FormSheetCard`.
 - El scaffold es transparente: el fondo lo pinta `AppBackdrop` (en `MaterialApp.builder` y en cada ruta con `AppPageTransitionsBuilder`).

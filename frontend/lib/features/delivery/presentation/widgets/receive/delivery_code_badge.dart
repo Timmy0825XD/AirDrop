@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../theme/app_figures.dart';
 
 /// El código de entrega en grande y, debajo, [caption]: que el dron va en
 /// camino o cuánto falta para que venza. Con [hurry] la línea va en rojo.
@@ -38,11 +39,7 @@ class DeliveryCodeBadge extends StatelessWidget {
             fit: BoxFit.scaleDown,
             child: Text(
               code.split('').join(' '),
-              style: theme.textTheme.displaySmall?.copyWith(
-                fontSize: 38,
-                letterSpacing: 2,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
+              style: theme.textTheme.displaySmall?.copyWith(fontSize: 38).figure,
             ),
           ),
           const SizedBox(height: 8),
