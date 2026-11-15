@@ -9,6 +9,7 @@ import '../../fleet/data/fleet_providers.dart';
 import '../../fleet/presentation/widgets/drone_tile.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../data/hub_providers.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// La flota de una central para el administrador (`/hubs/:id/fleet`):
 /// solo lectura. Crear drones y cambiarles el estado sigue siendo del
@@ -62,11 +63,10 @@ class HubFleetScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                AsyncError(:final error) => MessageView(
-                  icon: Icons.cloud_off_rounded,
+                AsyncError(:final error) => MessageView.error(
                   message: ApiException.messageOf(error),
                 ),
-                _ => const Center(child: CircularProgressIndicator()),
+                _ => const SkeletonList(),
               },
             ),
           ),

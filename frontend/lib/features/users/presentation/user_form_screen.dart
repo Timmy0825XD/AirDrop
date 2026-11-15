@@ -13,6 +13,7 @@ import '../../hubs/data/hub_providers.dart';
 import '../data/user_providers.dart';
 import 'widgets/user_form/user_form_sheet.dart';
 import 'widgets/user_form_values.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Alta de cuenta institucional, solo del administrador (`POST /users`).
 /// La cuenta nace `active` y sin OTP: entra con su correo y la contraseña
@@ -75,15 +76,15 @@ class _UserFormScreenState extends ConsumerState<UserFormScreen> {
       onBack: () => context.go('/users'),
     );
     return switch (ref.watch(assignableHubsProvider)) {
-      AsyncValue(hasValue: true, hasError: false, :final value?) => _form(header, value),
+      AsyncValue(hasValue: true, hasError: false, :final value?) => _form(
+        header,
+        value,
+      ),
       AsyncError(:final error) => SectionStatePage(
         header: header,
         body: MessageView(message: ApiException.messageOf(error)),
       ),
-      _ => SectionStatePage(
-        header: header,
-        body: const Center(child: CircularProgressIndicator()),
-      ),
+      _ => SectionStatePage(header: header, body: const SkeletonDetail()),
     };
   }
 

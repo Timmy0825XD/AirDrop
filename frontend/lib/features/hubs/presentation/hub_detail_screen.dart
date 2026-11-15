@@ -9,6 +9,7 @@ import '../data/hub_providers.dart';
 import 'widgets/hub_detail_content.dart';
 import 'widgets/hub_labels.dart';
 import 'widgets/hub_outage.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// `GET /hubs/me`: la central del despachador, en solo lectura.
 ///
@@ -34,25 +35,25 @@ class HubDetailScreen extends ConsumerWidget {
           ),
           Expanded(
             child: switch (state) {
-              AsyncValue(hasValue: true, hasError: false, value: final hub?) => ListView(
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
-                children: [
-                  if (hubOutageNote(hub) case final note?) ...[
-                    HubOutageBanner(note: note),
-                    const SizedBox(height: 12),
+              AsyncValue(hasValue: true, hasError: false, value: final hub?) =>
+                ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
+                  children: [
+                    if (hubOutageNote(hub) case final note?) ...[
+                      HubOutageBanner(note: note),
+                      const SizedBox(height: 12),
+                    ],
+                    HubDetailContent(hub: hub),
                   ],
-                  HubDetailContent(hub: hub),
-                ],
-              ),
+                ),
               AsyncValue(hasValue: true, hasError: false) => const MessageView(
                 icon: Icons.domain_disabled_rounded,
                 message: 'No tienes una central asignada.',
               ),
-              AsyncError(:final error) => MessageView(
-                icon: Icons.cloud_off_rounded,
+              AsyncError(:final error) => MessageView.error(
                 message: ApiException.messageOf(error),
               ),
-              _ => const Center(child: CircularProgressIndicator()),
+              _ => const SkeletonDetail(),
             },
           ),
         ],

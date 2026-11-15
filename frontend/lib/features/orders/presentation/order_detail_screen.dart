@@ -42,6 +42,7 @@ import 'widgets/order_detail/status_reason_banner.dart';
 import 'widgets/order_detail/reschedule_sheet.dart';
 import 'widgets/pending_load/load_check_sheet.dart';
 import 'widgets/watch_flight_button.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Lo que se está haciendo sobre el pedido, para mostrar el dron girando
 /// solo en ese botón.
@@ -254,11 +255,10 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
               child: switch (detail) {
                 AsyncValue(hasValue: true, hasError: false, :final value?) =>
                   _content(value),
-                AsyncError(:final error) => MessageView(
-                  icon: Icons.cloud_off_rounded,
+                AsyncError(:final error) => MessageView.error(
                   message: ApiException.messageOf(error),
                 ),
-                _ => const Center(child: CircularProgressIndicator()),
+                _ => const SkeletonDetail(),
               },
             ),
           ),

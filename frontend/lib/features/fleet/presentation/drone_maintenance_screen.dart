@@ -8,6 +8,7 @@ import '../../../core/widgets/rise_in.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../data/fleet_providers.dart';
 import 'widgets/maintenance_period_tile.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// El historial de taller de un dron (`/fleet/:id/maintenance`, CU-17):
 /// cada mantenimiento y cada salida fuera de servicio, del más reciente al
@@ -53,11 +54,10 @@ class DroneMaintenanceScreen extends ConsumerWidget {
                     child: MaintenancePeriodTile(period: value[i]),
                   ),
                 ),
-              AsyncError(:final error) => MessageView(
-                icon: Icons.cloud_off_rounded,
+              AsyncError(:final error) => MessageView.error(
                 message: ApiException.messageOf(error),
               ),
-              _ => const Center(child: CircularProgressIndicator()),
+              _ => const SkeletonList(),
             },
           ),
         ],

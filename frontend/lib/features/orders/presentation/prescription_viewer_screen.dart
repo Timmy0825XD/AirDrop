@@ -105,8 +105,7 @@ class _PrescriptionViewerScreenState
           icon: Icons.receipt_long_rounded,
           message: 'Este pedido no tiene fórmula.',
         ),
-        AsyncError(:final error) => MessageView(
-          icon: Icons.cloud_off_rounded,
+        AsyncError(:final error) => MessageView.error(
           message: ApiException.messageOf(error),
         ),
         _ => const Center(child: CircularProgressIndicator()),

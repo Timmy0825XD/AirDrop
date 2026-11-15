@@ -9,6 +9,7 @@ import '../../../../core/widgets/message_view.dart';
 import '../../../../core/widgets/rise_in.dart';
 import '../../../home/presentation/widgets/section_form_page.dart';
 import '../../../home/presentation/widgets/section_header.dart';
+import '../../../../core/widgets/skeleton.dart';
 
 /// El andamiaje de una bandeja del despachador (cola, programados,
 /// pendiente de carga, vuelos en curso): encabezado curvo con cuántas hay,
@@ -57,12 +58,12 @@ class OrderTray<T> extends StatelessWidget {
       body: AutoRefresh(
         onTick: onRefresh,
         child: switch (rows) {
-          AsyncValue(hasValue: true, hasError: false, :final value?) => _TrayList<T>(tray: this, items: value),
-          AsyncError(:final error) => MessageView(
-            icon: Icons.cloud_off_rounded,
+          AsyncValue(hasValue: true, hasError: false, :final value?) =>
+            _TrayList<T>(tray: this, items: value),
+          AsyncError(:final error) => MessageView.error(
             message: ApiException.messageOf(error),
           ),
-          _ => const Center(child: CircularProgressIndicator()),
+          _ => const SkeletonList(),
         },
       ),
     );

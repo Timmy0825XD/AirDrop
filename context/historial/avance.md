@@ -1485,7 +1485,7 @@ el solicitante; los pasos 1 y 2 cambian los cuatro roles.
 | --- | --- | --- | --- |
 | 0 — Alinear `context/` | `docs/rediseno-corredor` | — | Hecho |
 | 1 — Cimientos: superficies, acento, cifras, bordes, íconos | `style/corredor-cimientos` | HU-72 | Hecho (2026-11-14) |
-| 2 — Carga, vacío y error | `feature/corredor-estados` | HU-73 | Pendiente |
+| 2 — Carga, vacío y error | `feature/corredor-estados` | HU-73 | Hecho (2026-11-14) |
 | 3 — Inicio, urgencia y seguimiento del solicitante | `feature/corredor-solicitante` | HU-76 | Pendiente |
 | 4 — Arranque, animaciones firma y vibración | `feature/corredor-movimiento` | HU-74 | Pendiente |
 | 5 — Bienvenida | `feature/bienvenida` | HU-75 | Pendiente |
@@ -1512,6 +1512,23 @@ el solicitante; los pasos 1 y 2 cambian los cuatro roles.
   aquí: es un refactor aparte.
 - `flutter analyze` sin issues y `flutter test` en verde (368). Revisado
   en web con datos locales, los cuatro roles, en claro y oscuro.
+
+### Paso 2 — Carga, vacío y error (hecho, 2026-11-14)
+
+- **`Skeleton`, `SkeletonList` y `SkeletonDetail`** (`core/widgets`): el
+  esqueleto late despacio (quieto con "reducir movimiento") y el lector
+  de pantalla dice "Cargando". Reemplazan al indicador girando en 26
+  pantallas de lista, detalle y formulario. El mapa, el visor de la
+  fórmula y los botones conservan su indicador.
+- **`CorridorArt`**: la ilustración del concepto (tierra, río y la ruta
+  punteada), dibujada con los colores del tema. Tres escenas: sin ruta
+  (vacío), ruta cortada (error) y ruta completa.
+- **`MessageView`**: ahora lleva la ilustración con el ícono en una
+  ficha, `title` opcional y la acción. `MessageView.error` es el error
+  de carga ("No pudimos cargar esto" y el mensaje del backend). Con poco
+  alto (una hoja, el panel del mapa) se queda en ícono y texto.
+- `flutter analyze` sin issues y `flutter test` en verde (372). Revisado
+  en web en claro y oscuro: esqueletos, vacío y error.
 
 ## Pendiente del backend
 

@@ -15,6 +15,7 @@ import '../data/order_providers.dart';
 import 'order_format.dart';
 import 'widgets/agenda/agenda_day_bar.dart';
 import 'widgets/agenda/agenda_slot_card.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// La agenda del día de la central (`/orders/agenda`, RU-30): una sección
 /// por franja con sus entregas, si alcanzan los drones y hasta qué hora se
@@ -77,11 +78,10 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
                     day: value,
                     onOpen: (id) => context.push('/orders/$id'),
                   ),
-                AsyncError(:final error) => MessageView(
-                  icon: Icons.cloud_off_rounded,
+                AsyncError(:final error) => MessageView.error(
                   message: ApiException.messageOf(error),
                 ),
-                _ => const Center(child: CircularProgressIndicator()),
+                _ => const SkeletonList(),
               },
             ),
           ),

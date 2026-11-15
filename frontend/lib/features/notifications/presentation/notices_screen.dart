@@ -12,6 +12,7 @@ import '../../orders/data/order_providers.dart';
 import '../data/notice_models.dart';
 import '../data/notice_providers.dart';
 import 'widgets/notice_tile.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// La bandeja de avisos (`/notifications`, RU-05): lo más nuevo primero,
 /// los sin leer resaltados. Tocar un aviso lo marca leído y abre su pedido.
@@ -112,11 +113,10 @@ class NoticesScreen extends ConsumerWidget {
                       ),
                     ),
                   ),
-                AsyncError(:final error) => MessageView(
-                  icon: Icons.cloud_off_rounded,
+                AsyncError(:final error) => MessageView.error(
                   message: ApiException.messageOf(error),
                 ),
-                _ => const Center(child: CircularProgressIndicator()),
+                _ => const SkeletonList(),
               },
             ),
           ),

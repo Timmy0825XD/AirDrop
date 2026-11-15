@@ -11,6 +11,7 @@ import '../data/hub_models.dart';
 import '../data/hub_providers.dart';
 import 'widgets/hub_form/hub_form_sheet.dart';
 import 'widgets/hub_form_values.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Alta y edición de central, solo del administrador. El alta
 /// (`POST /hubs`) nace `active`: Nest no tiene etapa de aprobación. Con
@@ -108,7 +109,7 @@ class _HubFormScreenState extends ConsumerState<HubFormScreen> {
         onBack: () => context.go('/hubs'),
       ),
       card: editing && hub == null
-          ? const Center(child: CircularProgressIndicator())
+          ? const SkeletonDetail()
           : HubFormSheet(
               values: _values,
               errors: _errors,

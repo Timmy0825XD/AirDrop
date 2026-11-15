@@ -12,6 +12,7 @@ import '../data/geofence_providers.dart';
 import 'geofence_draw_screen.dart';
 import 'widgets/geofence_form_sheet.dart';
 import 'widgets/geofence_form_values.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Alta (`/geofences/new`) y edición (`/geofences/:id`) de geovallas.
 /// La edición arma el diff contra la geovalla original y, si no cambió
@@ -67,7 +68,11 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
     });
     if (errors.isNotEmpty) return;
     if (original != null && _values.diff(original).isEmpty) {
-      showAppSnack(context, 'No hay cambios para guardar.', tone: SnackTone.info);
+      showAppSnack(
+        context,
+        'No hay cambios para guardar.',
+        tone: SnackTone.info,
+      );
       return;
     }
     FocusScope.of(context).unfocus();
@@ -104,7 +109,7 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
     }
     final rows = state.value;
     if (rows == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: SkeletonDetail());
     }
     final geofence = rows.where((r) => r.id == widget.geofenceId).firstOrNull;
     if (geofence == null) return _message('La geovalla no existe.');

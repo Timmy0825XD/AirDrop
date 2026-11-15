@@ -18,6 +18,7 @@ import 'widgets/drone_tile.dart';
 import 'widgets/fleet_hub_selector.dart';
 import 'widgets/fleet_summary.dart';
 import 'widgets/maintenance_sheet.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Flota del operador: elige una de sus centrales (chips bajo el
 /// encabezado si tiene varias) y lista sus drones. De la central elegida
@@ -64,11 +65,10 @@ class _FleetBody extends ConsumerWidget {
       AsyncValue(hasValue: true, hasError: false, :final value?) => _FleetPane(
         hubs: value,
       ),
-      AsyncError(:final error) => MessageView(
-        icon: Icons.cloud_off_rounded,
+      AsyncError(:final error) => MessageView.error(
         message: ApiException.messageOf(error),
       ),
-      _ => const Center(child: CircularProgressIndicator()),
+      _ => const SkeletonList(),
     };
   }
 }
@@ -149,11 +149,10 @@ class _DroneList extends ConsumerWidget {
             );
           },
         ),
-      AsyncError(:final error) => MessageView(
-        icon: Icons.cloud_off_rounded,
+      AsyncError(:final error) => MessageView.error(
         message: ApiException.messageOf(error),
       ),
-      _ => const Center(child: CircularProgressIndicator()),
+      _ => const SkeletonList(),
     };
   }
 }

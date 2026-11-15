@@ -17,6 +17,7 @@ import 'widgets/plan_schedule/schedule_fields.dart';
 import 'widgets/plan_schedule/schedule_preview_card.dart';
 import 'widgets/plan_schedule/schedule_preview_state.dart';
 import 'widgets/plan_tile.dart';
+import '../../../core/widgets/skeleton.dart';
 
 /// Cambiar el calendario de un plan (`/orders/plans/:id/schedule`,
 /// `PATCH /orders/plans/:id/schedule`): la regla actual precargada, la
@@ -104,7 +105,7 @@ class _PlanScheduleScreenState extends ConsumerState<PlanScheduleScreen>
         body: Column(
           children: [
             header,
-            const Expanded(child: Center(child: CircularProgressIndicator())),
+            const Expanded(child: SkeletonList()),
           ],
         ),
       );
