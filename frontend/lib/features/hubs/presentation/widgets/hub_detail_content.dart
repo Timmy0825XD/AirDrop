@@ -96,7 +96,7 @@ class _HubIdentity extends StatelessWidget {
                 Text(hub.name, style: theme.textTheme.titleMedium),
                 const SizedBox(height: 3),
                 Text(
-                  HubLabels.type(hub.type),
+                  HubLabels.kind(hub),
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colors.primary,
                     fontWeight: FontWeight.w700,
