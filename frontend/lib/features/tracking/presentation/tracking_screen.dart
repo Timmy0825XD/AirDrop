@@ -102,7 +102,7 @@ class TrackingScreen extends ConsumerWidget {
               connected: flight.connected,
               identifier: t.identifier,
               latencyMs: t.vitals?.latencyMs,
-              linkLost: t.linkLost,
+              linkLost: t.offLink,
             ),
       // El mapa no se puede leer: el lector de pantalla oye un resumen.
       map: (sheetHeight) => Semantics(
@@ -115,7 +115,7 @@ class TrackingScreen extends ConsumerWidget {
         child: FlightMap(
           route: line,
           returnLeg: back,
-          estimated: t?.linkLost ?? false,
+          estimated: t?.offLink ?? false,
           drone: drone,
           sheetHeight: sheetHeight,
         ),
@@ -153,6 +153,7 @@ class TrackingScreen extends ConsumerWidget {
                   child: FlightCard(
                     telemetry: t,
                     progress: routed ? split / (points.length - 1) : null,
+                    showManifest: role != UserRole.requester,
                   ),
                 ),
               const SizedBox(height: 18),

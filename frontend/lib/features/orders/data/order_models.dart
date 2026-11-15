@@ -21,6 +21,7 @@ export 'triage_models.dart';
 export 'decision_models.dart';
 export 'delivery_point_models.dart';
 export 'fallback_models.dart';
+export 'manifest_models.dart';
 export 'plan_schedule_models.dart';
 
 enum MissionType {
@@ -260,6 +261,7 @@ class Order {
     this.confirmedAt,
     this.reassignedFromHubId,
     this.fallback,
+    this.manifestNumber,
     this.autoDispatched = false,
   });
 
@@ -314,6 +316,7 @@ class Order {
       reassignedFromHubId: json['reassignedFromHubId'] as String?,
       fallback: OrderFallback.fromJson(json['fallback']),
       autoDispatched: json['autoDispatched'] == true,
+      manifestNumber: json['manifestNumber'] as String?,
     );
   }
 
@@ -337,6 +340,7 @@ class Order {
     String? scheduledFor,
     OrderFallback? fallback,
     String? reassignedFromHubId,
+    String? manifestNumber,
     bool clearFallback = false,
   }) {
     return Order(
@@ -380,6 +384,7 @@ class Order {
       scheduledAt: scheduledAt ?? this.scheduledAt,
       windowEndsAt: windowEndsAt ?? this.windowEndsAt,
       confirmedAt: confirmedAt ?? this.confirmedAt,
+      manifestNumber: manifestNumber ?? this.manifestNumber,
       reassignedFromHubId: reassignedFromHubId ?? this.reassignedFromHubId,
       fallback: clearFallback ? null : (fallback ?? this.fallback),
       autoDispatched: autoDispatched,
@@ -498,6 +503,10 @@ class Order {
 
   /// RF-37: lo autorizó y cargó el despachador automático de la consola.
   final bool autoDispatched;
+
+  /// RF-47: el manifiesto que se emitió al confirmar la carga
+  /// (`MAN-2026-000001`); `null` antes de eso.
+  final String? manifestNumber;
 
   /// Volvió a la central y nadie ha revisado el paquete.
   bool get awaitsReturnCheck =>

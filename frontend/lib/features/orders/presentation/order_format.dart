@@ -88,6 +88,12 @@ String _isoOf(DateTime value) {
 }
 
 /// Distancia del corredor con coma decimal: `4,2 km`.
+/// Lo que se avisa al confirmar la carga, con el número del manifiesto
+/// (RF-47) si Nest lo mandó.
+String loadConfirmedMessage(Order order) => order.manifestNumber == null
+    ? 'Carga confirmada. El vuelo arranca en segundos.'
+    : 'Carga confirmada. Manifiesto ${order.manifestNumber}.';
+
 String formatKm(double km) =>
     '${km.toStringAsFixed(1).replaceAll('.', ',')} km';
 

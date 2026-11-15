@@ -19,6 +19,7 @@ import '../../home/presentation/widgets/section_header.dart';
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
 import 'order_format.dart';
+import 'widgets/order_detail/manifest_card.dart';
 import 'widgets/order_detail/order_journey.dart';
 import 'widgets/order_detail/authorize_outcome.dart';
 import 'widgets/order_detail/authorize_section.dart';
@@ -203,9 +204,9 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
   Future<void> _confirmLoad(Order order) async {
     if (!await showLoadCheckSheet(context, order) || !mounted) return;
     await _act(_Action.confirmLoad, () async {
-      await _dispatch.confirmLoad(widget.orderId);
+      final loaded = await _dispatch.confirmLoad(widget.orderId);
       if (!mounted) return;
-      showAppSnack(context, 'Carga confirmada. El vuelo arranca en segundos.');
+      showAppSnack(context, loadConfirmedMessage(loaded));
     });
   }
 
@@ -311,6 +312,11 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           assignment: order.assignment!,
           loadConfirmedAt: order.loadConfirmedAt,
         ),
+      // RF-47: el manifiesto, desde que se confirma la carga. Si no carga
+      // (otra central: 403), la tarjeta no sale.
+      if (isDispatcher && order.loadConfirmedAt != null)
+        if (ref.watch(orderManifestProvider(order.id)).value case final m?)
+          ManifestCard(manifest: m),
       // Si la traza no carga (otra central: 404), la sección no sale.
       if (isDispatcher)
         if (ref.watch(orderDecisionProvider(order.id)).value case final d?)

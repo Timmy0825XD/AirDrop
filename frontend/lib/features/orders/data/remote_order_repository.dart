@@ -1,5 +1,6 @@
 import 'package:latlong2/latlong.dart';
 
+import '../../../core/api_exception.dart';
 import '../../../core/network/api_client.dart';
 import 'agenda_models.dart';
 import 'order_models.dart';
@@ -195,6 +196,18 @@ class RemoteOrderRepository implements OrderRepository {
       body: {'prescriptionVerified': ?prescriptionVerified},
     );
     return Order.fromJson(_asMap(data));
+  }
+
+  @override
+  Future<CargoManifest?> manifest(String orderId) async {
+    try {
+      final data = await apiClient.getJson('/orders/$orderId/manifest');
+      return CargoManifest.fromJson(_asMap(data));
+    } on ApiException catch (e) {
+      // "El pedido todavía no tiene manifiesto."
+      if (e.statusCode == 404) return null;
+      rethrow;
+    }
   }
 
   @override

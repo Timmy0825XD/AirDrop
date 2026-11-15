@@ -192,7 +192,7 @@ class FleetIncident {
     'dual_motor_failure' => 'Falla de 2 motores',
     'gps_loss_minor' => 'GPS con falla',
     'gps_loss_major' => 'Sin GPS',
-    'link_loss' => 'Pérdida de enlace',
+    'link_loss' => 'Perdió el enlace: espera 30 s',
     'cooling_failure' => 'Falla del frío',
     'collision_minor' => 'Choque leve',
     'collision_major' => 'Choque grave',

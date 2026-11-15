@@ -354,6 +354,27 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
   (`isColdChainBreach`); con `coldChainAlert` o una alerta `cold_chain`
   sale el aviso "Alerta de frío" (`ColdChainBanner`).
 
+### Manifiesto e identificación remota (RF-47, RF-48)
+
+- `POST /orders/:id/confirm-load` devuelve el pedido con `manifestNumber`;
+  el aviso dice "Carga confirmada. Manifiesto MAN-2026-000001."
+  (`loadConfirmedMessage`).
+- `GET /orders/:id/manifest` (`OrderRepository.manifest`,
+  `orderManifestProvider`): el 404 es "sin manifiesto" (`null`).
+  `ManifestCard` sale en el detalle del pedido **solo para el despachador**
+  y desde que se confirmó la carga: número, dron, origen y destino, ítems
+  con lote y vencimiento, peso, frío, quién autorizó y a cuál reemplaza.
+  El solicitante nunca lo ve (Nest le responde 403).
+- Cada lectura de telemetría trae `remoteId` (`RemoteId`: matrícula,
+  operador, tipo, manifiesto y estado) y `altitudeMslM`; los dos pueden
+  venir `null`. `FlightCard` dice "80 m sobre el terreno", "Sobre el mar"
+  y, en "Dron", "AD-NOR-01 · Colibrí"; el número del manifiesto solo con
+  `showManifest` (no para quien pidió).
+- Sin enlace es `Telemetry.offLink`: `linkLost` o `remoteId.status ==
+  link_lost`. El dron se queda quieto unos 30 s simulados y después sigue
+  o regresa; no es el socket caído. El incidente `link_loss` se rotula
+  "Perdió el enlace: espera 30 s".
+
 ## Entrega (`features/delivery/`)
 
 - `GET /orders/:id/delivery-code` da `{ code, expiresAt }` desde que se
