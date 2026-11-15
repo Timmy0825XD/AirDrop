@@ -14,6 +14,7 @@ Controles que AirDrop debe tener para proteger datos de salud y la operación. L
 | Subida de archivos | El backend revisa el contenido real del archivo (PDF, JPG, PNG), no la extensión. Tope de 5 MB por archivo | ✔ |
 | Canal | HTTPS y WSS (RNF-02). El socket acepta solo los orígenes permitidos (`CORS_ORIGINS`) | HTTPS ✔; falta restringir el origen del socket |
 | Web | Cabeceras de seguridad y política de contenido (CSP). El token vive en `sessionStorage` y se borra al cerrar | Falta la CSP |
+| Avisos del sistema | El identificador del dispositivo va ligado a la cuenta y se borra al cerrar sesión (RF-55). El texto no lleva datos clínicos. El enlace del aviso pasa por la misma autorización por rol; la credencial del servicio de mensajería vive en una variable de entorno | Pendiente |
 | App Android | `allowBackup` apagado; release firmado con llave propia; identificador de paquete propio | Pendiente |
 | Documentación de la API | Swagger solo en local, nunca en un despliegue público | Pendiente: hoy depende de `NODE_ENV` |
 | Secretos | Solo en variables de entorno; nunca en el repo | ✔ |

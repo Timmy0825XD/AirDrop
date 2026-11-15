@@ -916,3 +916,23 @@ miniatura y la X de cada uno. **Ya lee** las hojas en el visor del despachador (
 `feature/visor-formula`): zoom, PDF por páginas, "Abrir con…" desde una
 copia temporal y "Ver fórmula" en un pedido que su central ya autorizó.
 
+
+## 20. Avisos del sistema (RF-55, HU-79) — Pendiente
+
+El rediseño Corredor suma el aviso con la app cerrada. Lo que le falta a Nest:
+
+- **Registro del dispositivo.** `POST /notifications/devices` con el token y la
+  plataforma (`android` o `ios`), y `DELETE /notifications/devices/:token`. Solo
+  el solicitante. Un token pertenece a una sola cuenta: si llega con otra, cambia
+  de dueño.
+- **Envío.** Cuando `notifications/` guarda un aviso del pedido de un
+  solicitante, lo manda también a sus dispositivos por Firebase Cloud Messaging,
+  con el texto sin medicamento y `orderId` y el estado en los datos, para que la
+  app abra el pedido. Si el envío falla, el aviso queda igual en la bandeja; un
+  token que el servicio da por inválido se borra.
+- **Baja.** Cerrar sesión, revocar el consentimiento y suprimir la cuenta borran
+  los dispositivos (RF-50).
+- **Configuración.** La credencial va en una variable de entorno. Sin ella, el
+  envío queda apagado y el resto sigue funcionando (local y pruebas).
+
+La lista de medicamentos (RF-54) no pide nada nuevo: usa `GET /orders/catalog`.
