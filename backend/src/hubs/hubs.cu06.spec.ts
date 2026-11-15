@@ -1,3 +1,5 @@
+import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
+import { NO_AIRSPACE } from '../airspace/airspace.testing';
 /**
  * Pruebas unitarias del CU-06 (Crear central), casos CP-06-01 a CP-06-08 de
  * la Segunda Parte. El nombre de cada `it` empieza con el ID del caso para que
@@ -26,6 +28,7 @@ const valido: CreateHubDto = {
   longitude: -73.2532,
   contactPhone: '3001234567',
   contactEmail: 'contacto@rosario.co',
+  networkRole: HubNetworkRole.NODE,
 };
 
 function usuario(overrides: Partial<User> = {}): User {
@@ -51,7 +54,11 @@ function build() {
       return Promise.resolve(hub);
     }),
   };
-  return { service: new HubsService(hubs as never), hubs, guardadas };
+  return {
+    service: new HubsService(hubs as never, NO_AIRSPACE),
+    hubs,
+    guardadas,
+  };
 }
 
 async function errores(data: object): Promise<string[]> {

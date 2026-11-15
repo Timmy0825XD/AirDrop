@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AirspaceModule } from '../airspace/airspace.module';
 import { AuthModule } from '../auth/auth.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { TelemetryModule } from '../telemetry/telemetry.module';
@@ -12,6 +13,7 @@ import { HubsService } from './hubs.service';
   imports: [
     TypeOrmModule.forFeature([Hub]),
     AuthModule,
+    AirspaceModule,
     TelemetryModule,
     NotificationsModule,
   ],

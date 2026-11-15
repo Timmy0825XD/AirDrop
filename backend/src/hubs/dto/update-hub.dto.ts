@@ -11,6 +11,7 @@ import {
   Matches,
   MaxLength,
 } from 'class-validator';
+import { HubNetworkRole } from '../../common/enums/hub-network-role.enum';
 import { HubType } from '../../common/enums/hub-type.enum';
 import { COLOMBIA_PHONE_REGEX, FIELD_LIMITS } from '../../common/field-limits';
 
@@ -30,6 +31,12 @@ export class UpdateHubDto {
   @IsOptional()
   @IsEnum(HubType, { message: 'El tipo de central no es válido.' })
   type?: HubType;
+
+  @IsOptional()
+  @IsEnum(HubNetworkRole, {
+    message: 'El tipo de red debe ser nodo o ESE.',
+  })
+  networkRole?: HubNetworkRole;
 
   @IsOptional()
   @Transform(({ value }: { value: unknown }) =>

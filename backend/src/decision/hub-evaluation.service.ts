@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { EntityManager, In } from 'typeorm';
 import { OrderStatus } from '../common/enums/order-status.enum';
+import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { Drone } from '../fleet/drone.entity';
 import { DroneModel } from '../fleet/drone-model.entity';
 import { GeoJsonPolygon } from '../geofences/geofences.rules';
@@ -104,6 +105,7 @@ export class HubEvaluationService {
         latitude: order.latitude as number,
       },
       polygons,
+      { destinationIsHub: order.destinationKind === DestinationKind.HUB },
     );
     // RF-32: el clima del corredor de ida y del regreso por el mismo camino.
     const speed = modelsById.get(drones[0]?.droneModelId ?? '')?.maxSpeedKmh;

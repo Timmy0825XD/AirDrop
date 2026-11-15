@@ -4,6 +4,7 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { DocumentType } from '../src/common/enums/document-type.enum';
 import { UserRole } from '../src/common/enums/user-role.enum';
+import { HubNetworkRole } from '../src/common/enums/hub-network-role.enum';
 import { HubType } from '../src/common/enums/hub-type.enum';
 
 export const TEST_PASSWORD = 'Password123';
@@ -82,9 +83,11 @@ const people = [
 export const hubPayload = {
   name: 'Hospital Rosario Pumarejo',
   type: HubType.HOSPITAL,
-  address: 'Calle 16 No. 19-35, Valledupar',
-  latitude: 10.46314,
-  longitude: -73.25322,
+  // RF-06 y RF-43: un nodo fuera del anillo del aeropuerto (Nodo Norte).
+  networkRole: HubNetworkRole.NODE,
+  address: 'Vía a Río Seco, Valledupar',
+  latitude: 10.6075,
+  longitude: -73.2237,
   contactPhone: '3001234567',
   contactEmail: 'urgencias.rosario@gmail.com',
 };
@@ -92,9 +95,10 @@ export const hubPayload = {
 export const clinicPayload = {
   name: 'Clínica Laura Daniela',
   type: HubType.CLINIC,
-  address: 'Carrera 19 No. 16-40, Valledupar',
-  latitude: 10.4742,
-  longitude: -73.2598,
+  networkRole: HubNetworkRole.NODE,
+  address: 'Vía La Paz – San Diego, La Paz',
+  latitude: 10.355,
+  longitude: -73.14,
   contactPhone: '3007654321',
   contactEmail: 'contacto.lauradaniela@hotmail.com',
 };
@@ -113,16 +117,16 @@ export const valleduparPolygon = {
   ],
 };
 
-/** Cuadro alrededor del Hospital Rosario Pumarejo (`hubPayload`). */
+/** Cuadro alrededor de la central de `hubPayload`. */
 export const polygonOverRosario = {
   type: 'Polygon' as const,
   coordinates: [
     [
-      [-73.255, 10.462],
-      [-73.252, 10.462],
-      [-73.252, 10.465],
-      [-73.255, 10.465],
-      [-73.255, 10.462],
+      [-73.2257, 10.6055],
+      [-73.2217, 10.6055],
+      [-73.2217, 10.6095],
+      [-73.2257, 10.6095],
+      [-73.2257, 10.6055],
     ],
   ],
 };

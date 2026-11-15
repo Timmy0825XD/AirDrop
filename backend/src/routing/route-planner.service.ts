@@ -7,6 +7,14 @@ import {
   activeGeofenceSql,
 } from '../geofences/geofences.rules';
 import { WeatherService } from '../weather/weather.service';
+import { AirspaceService } from '../airspace/airspace.service';
+import {
+  DESTINATION_IN_COORDINATED_ZONE,
+  gatewayPlan,
+  isPactedSite,
+  joinGatewayLegs,
+  zoneAt,
+} from '../airspace/airspace.rules';
 import {
   DESTINATION_IN_GEOFENCE,
   LngLat,
@@ -28,42 +36,101 @@ export class RoutePlannerService {
   constructor(
     private readonly dataSource: DataSource,
     private readonly weather: WeatherService,
+    private readonly airspace: AirspaceService,
   ) {}
 
+  /**
+   * RF-12: el corredor de ida. Las zonas coordinadas se rodean como
+   * cualquier zona, salvo la del destino, a la que se entra por su entrada
+   * pactada. `destinationIsHub`: una central dentro de una zona coordinada
+   * es un sitio pactado por definición (es quien acordó el paso).
+   */
   plan(
     origin: LngLat,
     destination: LngLat,
     geofences: GeoJsonPolygon[],
+    options: { destinationIsHub?: boolean } = {},
   ): PlannedCorridor | null {
-    return planCorridor(origin, destination, geofences);
+    const coordinated = this.airspace.coordinatedZones();
+    const gateways = gatewayPlan(origin, destination, coordinated, {
+      origin: true,
+      destination: options.destinationIsHub ?? false,
+    });
+    if (!gateways) {
+      return null;
+    }
+    const obstacles = [
+      ...geofences,
+      ...coordinated.map((zone) => zone.polygon),
+    ];
+    const core = planCorridor(gateways.start, gateways.end, obstacles);
+    return core ? joinGatewayLegs(gateways, core) : null;
   }
 
-  /** Regreso con las geovallas vigentes; ver `planReturnCorridor`. */
+  /**
+   * Regreso con las zonas vigentes; ver `planReturnCorridor`. Si el dron
+   * está dentro de una zona coordinada, sale por su entrada pactada.
+   */
   planReturn(
     from: LngLat,
     hub: LngLat,
     geofences: GeoJsonPolygon[],
     outbound: PlannedCorridor | null,
-  ) {
-    return planReturnCorridor(from, hub, geofences, outbound);
+  ): ReturnType<typeof planReturnCorridor> {
+    const coordinated = this.airspace.coordinatedZones();
+    const zone = zoneAt(from, coordinated);
+    const obstacles = [
+      ...geofences,
+      ...coordinated.map((entry) => entry.polygon),
+    ];
+    if (!zone?.gateway) {
+      return planReturnCorridor(from, hub, obstacles, outbound);
+    }
+    const core = planReturnCorridor(zone.gateway, hub, obstacles, null);
+    if (!core) {
+      return null;
+    }
+    return {
+      corridor: joinGatewayLegs(
+        { start: zone.gateway, end: hub, head: [from], tail: [] },
+        core.corridor,
+      ),
+      crossesGeofence: core.crossesGeofence,
+    };
   }
 
+  /**
+   * Un destino dentro de una geovalla o de una zona bloqueante no tiene
+   * corredor. Dentro de una zona coordinada, solo sus sitios pactados.
+   */
   async assertDestinationAllowed(
     destination: LngLat,
     manager: EntityManager = this.dataSource.manager,
   ): Promise<void> {
-    // Solo geovallas: una tormenta pasa, el punto de entrega sigue valiendo.
-    const polygons = await this.loadGeofences(manager);
+    // Solo geovallas y zonas: una tormenta pasa, el punto sigue valiendo.
+    const polygons = [
+      ...(await this.loadGeofences(manager)),
+      ...this.airspace.blockingPolygons(),
+    ];
     if (isInsideGeofence(destination, polygons)) {
       throw new BadRequestException(DESTINATION_IN_GEOFENCE);
     }
+    const zone = zoneAt(destination, this.airspace.coordinatedZones());
+    if (zone && !isPactedSite(destination, zone)) {
+      throw new BadRequestException(DESTINATION_IN_COORDINATED_ZONE);
+    }
   }
 
-  /** RF-12 y RF-32: lo que una ruta no puede cruzar: geovallas y tormentas vigentes. */
+  /**
+   * RF-12, RF-32 y RF-43: lo que una ruta no puede cruzar: geovallas,
+   * tormentas vigentes y zonas legales bloqueantes. Las coordinadas no van
+   * aquí: `plan` las rodea o entra por su entrada pactada.
+   */
   async loadPolygons(manager: EntityManager): Promise<GeoJsonPolygon[]> {
     return [
       ...(await this.loadGeofences(manager)),
       ...this.weather.stormPolygons(),
+      ...this.airspace.blockingPolygons(),
     ];
   }
 

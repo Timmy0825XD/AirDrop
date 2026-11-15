@@ -105,7 +105,7 @@ Nombre máximo 40, correo 50, celular **10 dígitos** colombianos. OTP de regist
 | GET | `/hubs/me` | despachador |
 | PATCH | `/hubs/:id/suspension` | admin |
 
-La central la crea el administrador y nace `active`; no hay estado de aprobación pendiente. Editarla no existe todavía (pendiente 8).
+La central la crea el administrador y nace `active`; no hay estado de aprobación pendiente. Lleva `networkRole` (RF-06): `node` tiene drones y despega; `ese` recibe reabastecimiento y no tiene drones. Un nodo no se crea en zona urbana, en el anillo del aeropuerto ni en una zona prohibida o coordinada; una ESE puede quedar en una coordinada (es el sitio pactado). El origen de un traslado y la central de un dron son siempre un nodo, y el operador de flota solo se asigna a nodos.
 
 ### Inventario (HU-09)
 
@@ -138,6 +138,14 @@ Todas del operador de flota.
 | GET | `/geofences` |
 | PATCH | `/geofences/:id` |
 | DELETE | `/geofences/:id` |
+
+### Espacio aéreo (RF-43, HU-60)
+
+| Método | Ruta | Auth |
+| --- | --- | --- |
+| GET | `/airspace/zones` | cualquier sesión |
+
+Las zonas legales del RAC 100 viven en `src/airspace/regional-airspace.ts` (no en la base) y no se editan: aeródromo (anillo de 9 km de SKVP), prohibidas con 2 km de margen, helipuerto, urbana, coordinadas (policía municipal y resguardos, con entrada pactada) y de precaución (pistas privadas, no bloquean). El planificador rodea las bloqueantes y las coordinadas; a un sitio pactado entra por su entrada. El radar las trae en `airspace`. La red (nodos, ESE y puntos) está en `src/airspace/regional-network.ts`.
 
 ### Pedidos (HU-15 a HU-21)
 

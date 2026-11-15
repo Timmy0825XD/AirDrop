@@ -8,6 +8,7 @@
  */
 import { DocumentType } from '../src/common/enums/document-type.enum';
 import { DroneStatus } from '../src/common/enums/drone-status.enum';
+import { HubNetworkRole } from '../src/common/enums/hub-network-role.enum';
 import { HubType } from '../src/common/enums/hub-type.enum';
 import { SaleType } from '../src/common/enums/sale-type.enum';
 import { UserRole } from '../src/common/enums/user-role.enum';
@@ -47,17 +48,19 @@ async function seedTestData(): Promise<void> {
     const hubA = await createHub(app, adminToken, {
       name: `${TEST_PREFIX}Hospital Rosario Pumarejo`,
       type: HubType.HOSPITAL,
-      address: 'Calle 16 No. 19-35, Valledupar',
-      latitude: 10.4631,
-      longitude: -73.2532,
+      networkRole: HubNetworkRole.NODE,
+      address: 'Vía a Río Seco, Valledupar',
+      latitude: 10.6075,
+      longitude: -73.2237,
       contactPhone: '3001234567',
     });
     const hubB = await createHub(app, adminToken, {
       name: `${TEST_PREFIX}Clínica del Norte`,
       type: HubType.CLINIC,
-      address: 'Carrera 9 No. 15-20, Valledupar',
-      latitude: 10.47,
-      longitude: -73.25,
+      networkRole: HubNetworkRole.NODE,
+      address: 'Vía La Paz – San Diego, La Paz',
+      latitude: 10.355,
+      longitude: -73.14,
       contactPhone: '3109876543',
     });
 

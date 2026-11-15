@@ -11,6 +11,7 @@ import {
   Matches,
   MaxLength,
 } from 'class-validator';
+import { HubNetworkRole } from '../../common/enums/hub-network-role.enum';
 import { HubType } from '../../common/enums/hub-type.enum';
 import { COLOMBIA_PHONE_REGEX, FIELD_LIMITS } from '../../common/field-limits';
 
@@ -27,6 +28,12 @@ export class CreateHubDto {
 
   @IsEnum(HubType, { message: 'El tipo de central no es válido.' })
   type: HubType;
+
+  /** RF-06: nodo (con drones) o ESE (sin drones). */
+  @IsEnum(HubNetworkRole, {
+    message: 'El tipo de red debe ser nodo o ESE.',
+  })
+  networkRole: HubNetworkRole;
 
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,

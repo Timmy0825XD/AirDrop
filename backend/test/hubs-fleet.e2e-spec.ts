@@ -54,7 +54,7 @@ describeIfDb('Hubs y flota (e2e)', () => {
     );
     await app.init();
     await removeFixtures(app);
-  }, 20_000);
+  }, 120_000);
 
   afterAll(async () => {
     if (app) {

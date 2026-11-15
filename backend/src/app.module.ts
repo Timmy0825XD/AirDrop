@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AirspaceModule } from './airspace/airspace.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AuthModule } from './auth/auth.module';
 import { ClockModule } from './common/clock/clock.module';
@@ -51,6 +52,7 @@ import { WeatherModule } from './weather/weather.module';
     InventoryModule,
     FleetModule,
     GeofencesModule,
+    AirspaceModule,
     RoutingModule,
     TelemetryModule,
     NotificationsModule,

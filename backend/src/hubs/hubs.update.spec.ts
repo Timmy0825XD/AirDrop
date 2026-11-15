@@ -1,3 +1,4 @@
+import { NO_AIRSPACE } from '../airspace/airspace.testing';
 import {
   BadRequestException,
   ConflictException,
@@ -72,7 +73,12 @@ function build(
     save: jest.fn((value: Hub) => Promise.resolve(value)),
     manager,
   };
-  return { service: new HubsService(hubs as never), hubs, manager, hub };
+  return {
+    service: new HubsService(hubs as never, NO_AIRSPACE),
+    hubs,
+    manager,
+    hub,
+  };
 }
 
 describe('HubsService.update', () => {

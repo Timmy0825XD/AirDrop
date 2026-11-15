@@ -7,7 +7,9 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
+import { AirspaceService } from '../airspace/airspace.service';
 import { DroneStatus } from '../common/enums/drone-status.enum';
+import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
 import { Drone } from '../fleet/drone.entity';
 import { Order } from '../orders/order.entity';
 import { UserRole } from '../common/enums/user-role.enum';
@@ -20,6 +22,7 @@ import { CreateHubDto } from './dto/create-hub.dto';
 import { UpdateHubDto } from './dto/update-hub.dto';
 import { Hub } from './hub.entity';
 import {
+  ESE_WITH_DRONES,
   HUB_HAS_LIVE_ORDERS,
   HUB_INSIDE_GEOFENCE,
   LIVE_ORDER_STATUSES,
@@ -33,13 +36,16 @@ export class HubsService {
   constructor(
     @InjectRepository(Hub)
     private readonly hubs: Repository<Hub>,
+    private readonly airspace: AirspaceService,
   ) {}
 
   async create(user: User, dto: CreateHubDto) {
     this.assertAdmin(user);
+    this.airspace.assertHubLocation(dto.networkRole, dto);
     const hub = this.hubs.create({
       name: dto.name.trim(),
       type: dto.type,
+      networkRole: dto.networkRole,
       address: dto.address.trim(),
       latitude: dto.latitude,
       longitude: dto.longitude,
@@ -64,6 +70,20 @@ export class HubsService {
     if (!hub) {
       throw new NotFoundException('La central no existe.');
     }
+    const role = dto.networkRole ?? hub.networkRole;
+    if (
+      role === HubNetworkRole.ESE &&
+      hub.networkRole === HubNetworkRole.NODE
+    ) {
+      await this.assertWithoutDrones(hub.id);
+    }
+    const nextPoint = movesLocation(hub, dto)
+      ? { latitude: dto.latitude as number, longitude: dto.longitude as number }
+      : hub;
+    if (role !== hub.networkRole || movesLocation(hub, dto)) {
+      this.airspace.assertHubLocation(role, nextPoint);
+    }
+    hub.networkRole = role;
     if (movesLocation(hub, dto)) {
       await this.assertCanMove(hub.id);
       await this.assertOutsideGeofences(
@@ -155,6 +175,7 @@ export class HubsService {
       id: hub.id,
       name: hub.name,
       type: hub.type,
+      networkRole: hub.networkRole,
       address: hub.address,
       latitude: hub.latitude,
       longitude: hub.longitude,
@@ -183,6 +204,12 @@ export class HubsService {
     ]);
     if (liveOrders || flyingDrones) {
       throw new ConflictException(HUB_HAS_LIVE_ORDERS);
+    }
+  }
+
+  private async assertWithoutDrones(hubId: string): Promise<void> {
+    if (await this.hubs.manager.exists(Drone, { where: { hubId } })) {
+      throw new ConflictException(ESE_WITH_DRONES);
     }
   }
 

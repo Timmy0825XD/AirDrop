@@ -2,6 +2,7 @@
  * Piezas comunes de los scripts de datos (`seed-test.ts` y `seed-demo.ts`).
  * Leen el DATABASE_URL del .env y se niegan a correr en producción.
  */
+import { LoginRateLimitGuard } from '../src/auth/login-rate-limit.guard';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
@@ -161,9 +162,14 @@ export async function createApp(): Promise<INestApplication<App>> {
   // En `test` el registro devuelve el OTP; nunca se borra el esquema.
   process.env.NODE_ENV = 'test';
   process.env.E2E_DROP_SCHEMA = 'false';
+  // Una semilla crea muchas cuentas de personal seguidas: el límite de
+  // intentos de login (RNF-04) es para personas, no para este script.
   const moduleRef = await Test.createTestingModule({
     imports: [AppModule],
-  }).compile();
+  })
+    .overrideGuard(LoginRateLimitGuard)
+    .useValue({ canActivate: () => true })
+    .compile();
   const app = moduleRef.createNestApplication<INestApplication<App>>();
   app.useGlobalPipes(
     new ValidationPipe({

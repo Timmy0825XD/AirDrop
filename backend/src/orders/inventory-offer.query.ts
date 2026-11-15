@@ -1,3 +1,4 @@
+import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -46,6 +47,8 @@ export class InventoryOfferQuery {
       .createQueryBuilder('item')
       .innerJoin('item.hub', 'hub')
       .where('hub.status = :active', { active: HubStatus.ACTIVE })
+      // RF-06: lo que se ofrece para volar está en un nodo.
+      .andWhere('hub.networkRole = :node', { node: HubNetworkRole.NODE })
       .andWhere('item.quantity > 0')
       .andWhere('item.expirationDate >= :today', { today: todayInColombia() })
       .andWhere('item.saleType != :special', {

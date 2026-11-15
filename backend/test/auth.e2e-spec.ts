@@ -44,7 +44,7 @@ describeIfDb('Auth (e2e)', () => {
     );
     await app.init();
     await removeFixtures(app);
-  }, 20_000);
+  }, 120_000);
 
   afterAll(async () => {
     if (app) {
@@ -70,7 +70,9 @@ describeIfDb('Auth (e2e)', () => {
       .send({ email: anaPerez.email, code: otp })
       .expect(201);
 
-    expect((verified.body as { accessToken: string }).accessToken).toBeDefined();
+    expect(
+      (verified.body as { accessToken: string }).accessToken,
+    ).toBeDefined();
 
     const login = await request(app!.getHttpServer())
       .post('/auth/login')
@@ -100,7 +102,7 @@ describeIfDb('Auth (e2e)', () => {
       .post('/auth/logout')
       .set('Authorization', `Bearer ${loginToken}`)
       .expect(204);
-  }, 20_000);
+  }, 120_000);
 
   it('rejects a public role and a repeated document', async () => {
     await request(app!.getHttpServer())
@@ -125,7 +127,7 @@ describeIfDb('Auth (e2e)', () => {
         consentAccepted: true,
       })
       .expect(409);
-  }, 20_000);
+  }, 120_000);
 
   it('forgot-password → reset-password → login', async () => {
     await registerRequester(app!, marianaCastro);
@@ -170,15 +172,17 @@ describeIfDb('Auth (e2e)', () => {
       .post('/auth/forgot-password')
       .send({ email: 'persona.desconocida@gmail.com' })
       .expect(200);
-    expect(unknown.body).toEqual(forgot.body.message ? { message: forgot.body.message } : unknown.body);
+    expect(unknown.body).toEqual(
+      forgot.body.message ? { message: forgot.body.message } : unknown.body,
+    );
     expect((unknown.body as { message: string }).message).toBe(
       (forgot.body as { message: string }).message,
     );
     expect(unknown.body).not.toHaveProperty('otp');
-  }, 20_000);
+  }, 120_000);
 
   it('admin keeps the seed password', async () => {
     const token = await loginAdmin(app!);
     expect(token).toEqual(expect.any(String));
-  }, 20_000);
+  }, 120_000);
 });

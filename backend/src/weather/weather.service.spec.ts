@@ -1,3 +1,4 @@
+import { NO_AIRSPACE } from '../airspace/airspace.testing';
 import { BadRequestException } from '@nestjs/common';
 import { simClock } from '../common/clock/sim-clock';
 import { WeatherKind } from '../common/enums/weather-kind.enum';
@@ -139,6 +140,7 @@ describe('el clima en el resto del sistema', () => {
     const routes = new RoutePlannerService(
       { manager: { query: jest.fn().mockResolvedValue([]) } } as never,
       service,
+      NO_AIRSPACE,
     );
     const manager = { query: jest.fn().mockResolvedValue([]) };
     expect(await routes.loadPolygons(manager as never)).toHaveLength(1);
