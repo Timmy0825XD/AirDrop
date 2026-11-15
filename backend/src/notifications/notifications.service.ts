@@ -11,8 +11,7 @@ const ALERT_MESSAGES: Record<FlightAlertKind, string> = {
   battery_critical: 'Batería crítica en el dron en vuelo.',
   failure: 'Falla de batería en el dron en vuelo.',
   cold_chain: 'La temperatura de la carga salió del rango de 2 a 8 °C.',
-  wind_limit:
-    'El viento donde va el dron pasa del límite del Wingcopter (15 m/s, ráfagas de 20 m/s).',
+  wind_limit: 'El viento donde va el dron pasa del límite de su tipo de dron.',
 };
 
 @Injectable()

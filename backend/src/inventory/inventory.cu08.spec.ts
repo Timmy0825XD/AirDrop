@@ -28,6 +28,7 @@ const valido: CreateInventoryItemDto = {
   expirationDate: '2027-06-30',
   requiresColdChain: false,
   saleType: SaleType.OVER_THE_COUNTER,
+  unitWeightG: 30,
 };
 
 function usuario(overrides: Partial<User> = {}): User {
@@ -93,6 +94,7 @@ describe('CU-08 Gestionar inventario', () => {
       expirationDate: '2027-03-15',
       requiresColdChain: true,
       saleType: SaleType.PRESCRIPTION,
+      unitWeightG: 60,
     };
     expect(await errores(insulina)).toEqual([]);
     const { service } = build();

@@ -19,7 +19,9 @@ import {
   corridorWeather,
   stormPolygon,
   tailwindKmh,
+  windLimitsOf,
 } from './weather.rules';
+import { DRONE_TYPES } from '../fleet/drone-types';
 
 const NOW = new Date('2026-11-05T15:00:00.000Z');
 const LATER = new Date('2026-11-05T15:30:00.000Z');
@@ -193,5 +195,25 @@ describe('el vuelo con clima (RF-32)', () => {
       1,
     );
     expect(storm.progress.phase).not.toBe(FlightPhase.CRUISE);
+  });
+});
+
+describe('Límite de viento por tipo de dron (RF-32, RF-49)', () => {
+  it('13 m/s: vuela el Garza (15) y no el Colibrí (12) ni el Cóndor (10)', () => {
+    const windy = [cell({ windSpeedMs: 13, windGustMs: 13 })];
+    const verdict = DRONE_TYPES.map((spec) => [
+      spec.name,
+      corridorWeather(eastbound, windy, spec.maxSpeedKmh, windLimitsOf(spec))
+        .flyable,
+    ]);
+    expect(verdict).toEqual([
+      ['Colibrí', false],
+      ['Garza', true],
+      ['Cóndor', false],
+    ]);
+  });
+
+  it('sin límites del tipo se usa el de referencia (15 / 20 m/s)', () => {
+    expect(windLimitsOf({})).toEqual({ sustainedMs: 15, gustMs: 20 });
   });
 });

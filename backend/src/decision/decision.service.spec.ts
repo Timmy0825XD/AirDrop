@@ -151,6 +151,7 @@ function received(overrides: Partial<Order> = {}): Order {
     longitude: -73.25,
     droneId: null,
     inventoryItemId: null,
+    payloadKg: null,
     authorizedAt: null,
     autoDispatched: false,
     loadConfirmedAt: null,

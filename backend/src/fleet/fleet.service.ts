@@ -40,6 +40,9 @@ type StatusChange = {
 export const DRONE_GROUNDED =
   'El dron aterrizó de emergencia y espera el rescate; al volver entra a mantenimiento.';
 
+export const COMPARTMENT_IN_MISSION =
+  'El compartimento de frío se cambia con el dron en tierra, no en misión.';
+
 @Injectable()
 export class FleetService {
   constructor(
@@ -77,6 +80,7 @@ export class FleetService {
       droneModelId: model.id,
       hubId: dto.hubId,
       status: DroneStatus.AVAILABLE,
+      coldCompartment: dto.coldCompartment ?? false,
       maintenanceReason: null,
       maintenanceUntil: null,
     });
@@ -128,6 +132,24 @@ export class FleetService {
       reason: dto.reason,
       estimatedEndDate: dto.estimatedEndDate,
     });
+    return this.toPublicDrone(saved);
+  }
+
+  /**
+   * RF-49: el compartimento de frío se pone o se quita con el dron en
+   * tierra; en misión cambiaría la carga que ya se aprobó.
+   */
+  async setColdCompartment(user: User, id: string, installed: boolean) {
+    const drone = await this.drones.findOne({ where: { id } });
+    if (!drone) {
+      throw new NotFoundException('El dron no existe.');
+    }
+    this.assertAssigned(user, drone.hubId);
+    if (drone.status === DroneStatus.IN_MISSION) {
+      throw new ConflictException(COMPARTMENT_IN_MISSION);
+    }
+    drone.coldCompartment = installed;
+    const saved = await this.drones.save(drone);
     return this.toPublicDrone(saved);
   }
 
@@ -217,10 +239,15 @@ export class FleetService {
     return {
       id: model.id,
       code: model.code,
+      kind: model.kind,
       name: model.name,
       maxSpeedKmh: model.maxSpeedKmh,
       maxPayloadKg: model.maxPayloadKg,
       maxRangeKm: model.maxRangeKm,
+      ceilingM: model.ceilingM,
+      verticalSpeedMs: model.verticalSpeedMs,
+      windSustainedMs: model.windSustainedMs,
+      windGustMs: model.windGustMs,
     };
   }
 
@@ -231,6 +258,7 @@ export class FleetService {
       droneModelId: drone.droneModelId,
       hubId: drone.hubId,
       status: drone.status,
+      coldCompartment: drone.coldCompartment ?? false,
       maintenanceReason: drone.maintenanceReason,
       maintenanceUntil: drone.maintenanceUntil,
       /** Batería ahora, con lo que recargó en tierra desde el último vuelo. */

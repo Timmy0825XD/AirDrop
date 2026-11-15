@@ -1,13 +1,14 @@
 import { ContingencyProtocol } from '../common/enums/contingency-protocol.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { RouteLeg } from '../common/enums/route-leg.enum';
-import { UNIT_MASS_KG } from '../decision/decision.rules';
+import { LEGACY_UNIT_MASS_KG } from '../decision/decision.rules';
 import { PlannedCorridor } from '../routing/routing.rules';
 import {
-  FlightConditions,
-  WeatherCellView,
   bearingDeg,
   conditionsAt,
+  FlightConditions,
+  WeatherCellView,
+  windLimitsOf,
 } from '../weather/weather.rules';
 import {
   CRITICAL_BATTERY_PERCENT,
@@ -72,7 +73,7 @@ export type FlightAlertKind =
   | 'battery_critical'
   | 'failure'
   | 'cold_chain'
-  /** RF-32: el viento donde va el dron pasa del límite del Wingcopter. */
+  /** RF-32: el viento donde va el dron pasa del límite de su tipo. */
   | 'wind_limit';
 
 export type FlightProgress = {
@@ -107,6 +108,9 @@ export type FlightProgress = {
 export type FlightModel = {
   maxSpeedKmh: number;
   maxRangeKm: number;
+  /** RF-32: límite de viento del tipo; sin dato, el de referencia. */
+  windSustainedMs?: number;
+  windGustMs?: number;
 };
 
 export type FlightStep = {
@@ -313,6 +317,7 @@ function cruiseConditions(
     point,
     trackAt(corridor.coordinates, progress.cruiseKm),
     airSpeedKmh,
+    windLimitsOf(model),
   );
 }
 
@@ -337,6 +342,8 @@ export function buildLiveFlight(input: {
   droneId: string;
   identifier: string;
   quantity: number;
+  /** RF-11: peso de la carga fijado al reservar el lote. */
+  payloadKg?: number | null;
   requiresColdChain: boolean;
   /** Lectura de `coldChainReading`; sin ella, la estable. */
   temperatureC?: number | null;
@@ -351,7 +358,10 @@ export function buildLiveFlight(input: {
     altitudeM: input.step.altitudeM,
     speedKmh: input.step.speedKmh,
     batteryPercent: roundTo(input.step.progress.batteryPercent, 1),
-    payloadKg: roundTo(input.quantity * UNIT_MASS_KG, 1),
+    payloadKg: roundTo(
+      input.payloadKg ?? input.quantity * LEGACY_UNIT_MASS_KG,
+      1,
+    ),
     temperatureC: input.requiresColdChain
       ? (input.temperatureC ?? COLD_CHAIN_TEMPERATURE_C)
       : null,

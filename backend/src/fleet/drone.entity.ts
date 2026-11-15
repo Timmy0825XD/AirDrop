@@ -65,6 +65,13 @@ export class Drone {
   @Column({ type: 'timestamptz', nullable: true })
   lastFlightEndedAt: Date | null;
 
+  /**
+   * RF-49: lleva el compartimento de frío de 2 a 8 °C. Pesa 1 kg y se
+   * descuenta de la carga útil. Lo pone o lo quita el operador en tierra.
+   */
+  @Column({ type: 'boolean', default: false })
+  coldCompartment: boolean;
+
   /** Vuelos desde el último mantenimiento (CU-17, preventivo). */
   @Column({ type: 'int', default: 0 })
   flightsSinceMaintenance: number;

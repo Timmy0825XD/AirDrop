@@ -8,6 +8,8 @@ export const NO_DEMO_SCENARIO =
 
 export type DroneReset = {
   status: DroneStatus;
+  /** RF-49: el compartimento de frío con que lo dejó la semilla. */
+  coldCompartment: boolean;
   maintenanceReason: string | null;
   maintenanceUntil: string | null;
 };
@@ -24,15 +26,21 @@ export function droneResetState(
   const note = plan.droneNotes.find(
     (entry) => identifier === `${plan.dronePrefix}-0${entry.number}`,
   );
+  const number = plan.fleet.findIndex(
+    (_, index) => identifier === `${plan.dronePrefix}-0${index + 1}`,
+  );
+  const coldCompartment = number >= 0 ? plan.fleet[number].cold : false;
   if (!note) {
     return {
       status: DroneStatus.AVAILABLE,
+      coldCompartment,
       maintenanceReason: null,
       maintenanceUntil: null,
     };
   }
   return {
     status: DroneStatus.MAINTENANCE,
+    coldCompartment,
     maintenanceReason: note.reason,
     maintenanceUntil: addCalendarDays(today, note.inDays),
   };
@@ -48,6 +56,7 @@ export function stockRows(plan: DemoHubPlan, hubId: string, today: string) {
     expirationDate: addCalendarDays(today, item.expiresInDays),
     requiresColdChain: item.cold ?? false,
     saleType: item.saleType,
+    unitWeightG: item.unitWeightG,
   }));
 }
 

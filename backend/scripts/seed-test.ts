@@ -12,7 +12,7 @@ import { HubNetworkRole } from '../src/common/enums/hub-network-role.enum';
 import { HubType } from '../src/common/enums/hub-type.enum';
 import { SaleType } from '../src/common/enums/sale-type.enum';
 import { UserRole } from '../src/common/enums/user-role.enum';
-import { WINGCOPTER_198_CODE } from '../src/fleet/drone-model-seed.service';
+import { BALANCED_MODEL_CODE } from '../src/fleet/drone-model-seed.service';
 import {
   createStaff,
   loginAdmin,
@@ -112,6 +112,7 @@ async function seedTestData(): Promise<void> {
       expirationDate: '2027-06-30',
       requiresColdChain: false,
       saleType: SaleType.OVER_THE_COUNTER,
+      unitWeightG: 30,
     });
     await createInventoryItem(app, dispatcherA.token, {
       name: 'Insulina glargina 100 UI',
@@ -120,6 +121,7 @@ async function seedTestData(): Promise<void> {
       expirationDate: '2027-03-15',
       requiresColdChain: true,
       saleType: SaleType.PRESCRIPTION,
+      unitWeightG: 30,
     });
     await createInventoryItem(app, dispatcherB.token, {
       name: 'Acetaminofén 500 mg',
@@ -128,27 +130,28 @@ async function seedTestData(): Promise<void> {
       expirationDate: '2027-06-30',
       requiresColdChain: false,
       saleType: SaleType.OVER_THE_COUNTER,
+      unitWeightG: 30,
     });
 
     const models = await request(app.getHttpServer())
       .get('/fleet/models')
       .set('Authorization', `Bearer ${operator.token}`)
       .expect(200);
-    const wingcopter = (
-      models.body as Array<{ id: string; code: string }>
-    ).find((model) => model.code === WINGCOPTER_198_CODE);
-    if (!wingcopter) {
-      throw new Error('No existe el modelo Wingcopter 198.');
+    const garza = (models.body as Array<{ id: string; code: string }>).find(
+      (model) => model.code === BALANCED_MODEL_CODE,
+    );
+    if (!garza) {
+      throw new Error('No existe el tipo Garza.');
     }
 
     await createDrone(app, operator.token, {
       identifier: 'WG-198-001',
-      droneModelId: wingcopter.id,
+      droneModelId: garza.id,
       hubId: hubA,
     });
     const droneB = await createDrone(app, operator.token, {
       identifier: 'WG-198-002',
-      droneModelId: wingcopter.id,
+      droneModelId: garza.id,
       hubId: hubB,
     });
     await request(app.getHttpServer())

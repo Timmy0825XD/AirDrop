@@ -20,6 +20,7 @@ const dto: CreateInventoryItemDto = {
   expirationDate: '2027-03-01',
   requiresColdChain: false,
   saleType: SaleType.PRESCRIPTION,
+  unitWeightG: 30,
 };
 
 const hub = {

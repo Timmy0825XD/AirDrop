@@ -14,6 +14,8 @@ export function presentOrder(order: Order) {
     coldChainAlert: order.coldChainAlertAt != null,
     coldChainAlertAt: order.coldChainAlertAt,
     quantity: order.quantity,
+    // RF-11: peso de la carga, fijado al reservar el lote.
+    payloadKg: order.payloadKg ?? null,
     description: order.description,
     requesterId: order.requesterId,
     createdByUserId: order.createdByUserId,

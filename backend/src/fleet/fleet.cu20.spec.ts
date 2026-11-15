@@ -23,7 +23,7 @@ import { CreateDroneDto } from './dto/create-drone.dto';
 import { UpdateDroneStatusDto } from './dto/update-drone-status.dto';
 import { Drone } from './drone.entity';
 import { DroneModel } from './drone-model.entity';
-import { WINGCOPTER_198_CODE } from './drone-model-seed.service';
+import { DRONE_TYPES } from './drone-types';
 import { FleetService } from './fleet.service';
 
 /**
@@ -32,13 +32,9 @@ import { FleetService } from './fleet.service';
  */
 const FIXED_NOW = new Date('2026-10-16T15:00:00.000Z');
 
-const wingcopter: DroneModel = {
+const garza: DroneModel = {
   id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
-  code: WINGCOPTER_198_CODE,
-  name: 'Wingcopter 198',
-  maxSpeedKmh: 150,
-  maxPayloadKg: 6,
-  maxRangeKm: 110,
+  ...DRONE_TYPES[1],
 };
 
 /** Central A: PRUEBA-Hospital Rosario Pumarejo, asignada al operador. */
@@ -60,7 +56,7 @@ function operator(overrides: Partial<User> = {}): User {
 function droneDto(overrides: Partial<CreateDroneDto> = {}): CreateDroneDto {
   return {
     identifier: 'WG-198-001',
-    droneModelId: wingcopter.id,
+    droneModelId: garza.id,
     hubId: rosario.id,
     ...overrides,
   };
@@ -70,7 +66,7 @@ function storedDrone(overrides: Partial<Drone> = {}): Drone {
   return {
     id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
     identifier: 'WG-198-001',
-    droneModelId: wingcopter.id,
+    droneModelId: garza.id,
     hubId: rosario.id,
     status: DroneStatus.AVAILABLE,
     maintenanceReason: null,
@@ -92,10 +88,10 @@ function build(
     save: jest.fn((value: Drone) => Promise.resolve(value)),
   };
   const models = {
-    find: jest.fn().mockResolvedValue([wingcopter]),
+    find: jest.fn().mockResolvedValue([garza]),
     findOne: jest
       .fn()
-      .mockResolvedValue(opts.model === undefined ? wingcopter : opts.model),
+      .mockResolvedValue(opts.model === undefined ? garza : opts.model),
   };
   const maintenances = {
     findOne: jest.fn().mockResolvedValue(null),
@@ -142,7 +138,7 @@ describe('CU-20 Gestionar flota', () => {
 
     expect(drones.save).toHaveBeenCalledTimes(1);
     expect(result.identifier).toBe('WG-198-001');
-    expect(result.droneModelId).toBe(wingcopter.id);
+    expect(result.droneModelId).toBe(garza.id);
     expect(result.hubId).toBe(rosario.id);
     expect(result.status).toBe(DroneStatus.AVAILABLE);
   });

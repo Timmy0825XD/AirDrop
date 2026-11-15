@@ -1,5 +1,5 @@
 /**
- * Cuenta de batería del Wingcopter 198 simulado. La usan el reloj de vuelo
+ * Cuenta de batería de los drones simulados (RF-49). La usan el reloj de vuelo
  * (cuánto gasta cada tick) y el motor de decisión (si el vuelo alcanza), para
  * que los dos hablen de la misma física.
  */

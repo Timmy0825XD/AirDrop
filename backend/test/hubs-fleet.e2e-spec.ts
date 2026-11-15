@@ -9,7 +9,7 @@ import { UserRole } from '../src/common/enums/user-role.enum';
 import { HubStatus } from '../src/common/enums/hub-status.enum';
 import { HubType } from '../src/common/enums/hub-type.enum';
 import { DroneStatus } from '../src/common/enums/drone-status.enum';
-import { WINGCOPTER_198_CODE } from '../src/fleet/drone-model-seed.service';
+import { BALANCED_MODEL_CODE } from '../src/fleet/drone-model-seed.service';
 import {
   andresLopez,
   clinicPayload,
@@ -136,17 +136,17 @@ describeIfDb('Hubs y flota (e2e)', () => {
       .get('/fleet/models')
       .set('Authorization', `Bearer ${operator.token}`)
       .expect(200);
-    const wingcopter = (
-      models.body as Array<{ id: string; code: string }>
-    ).find((row) => row.code === WINGCOPTER_198_CODE);
-    expect(wingcopter).toBeDefined();
+    const garza = (models.body as Array<{ id: string; code: string }>).find(
+      (row) => row.code === BALANCED_MODEL_CODE,
+    );
+    expect(garza).toBeDefined();
 
     await request(app!.getHttpServer())
       .post('/fleet/drones')
       .set('Authorization', `Bearer ${operator.token}`)
       .send({
         identifier: DRONE_VUP_02,
-        droneModelId: wingcopter!.id,
+        droneModelId: garza!.id,
         hubId: '00000000-0000-4000-8000-000000000000',
       })
       .expect(404);
@@ -156,7 +156,7 @@ describeIfDb('Hubs y flota (e2e)', () => {
       .set('Authorization', `Bearer ${operator.token}`)
       .send({
         identifier: DRONE_VUP_02,
-        droneModelId: wingcopter!.id,
+        droneModelId: garza!.id,
         hubId: hospitalId,
       })
       .expect(201);
@@ -171,7 +171,7 @@ describeIfDb('Hubs y flota (e2e)', () => {
       .set('Authorization', `Bearer ${operator.token}`)
       .send({
         identifier: DRONE_VUP_03,
-        droneModelId: wingcopter!.id,
+        droneModelId: garza!.id,
         hubId: clinicId,
       })
       .expect(201);
@@ -182,7 +182,7 @@ describeIfDb('Hubs y flota (e2e)', () => {
       .set('Authorization', `Bearer ${operator.token}`)
       .send({
         identifier: DRONE_VUP_02,
-        droneModelId: wingcopter!.id,
+        droneModelId: garza!.id,
         hubId: hospitalId,
       })
       .expect(409);

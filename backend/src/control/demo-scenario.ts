@@ -5,6 +5,7 @@ import {
   NetworkSite,
 } from '../airspace/regional-network';
 import { DocumentType } from '../common/enums/document-type.enum';
+import { DroneKind } from '../common/enums/drone-kind.enum';
 import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
 import { HubType } from '../common/enums/hub-type.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
@@ -25,7 +26,12 @@ export type DemoStockItem = {
   expiresInDays: number;
   saleType: SaleType;
   cold?: boolean;
+  /** Peso de una unidad tal como viaja, en gramos (RF-11). */
+  unitWeightG: number;
 };
+
+/** RF-49: un dron de la semilla, con su tipo y si lleva compartimento de frío. */
+export type DemoDrone = { kind: DroneKind; cold: boolean };
 
 export type DemoHubPlan = {
   name: string;
@@ -42,6 +48,8 @@ export type DemoHubPlan = {
   dronePrefix: string;
   /** Cuántos drones tiene: 0 en una ESE. */
   droneCount: number;
+  /** La flota del nodo, en el orden de su identificador (-01, -02…). */
+  fleet: DemoDrone[];
   /** Estados de los drones con novedad: el resto queda disponible. */
   droneNotes: Array<{
     number: number;
@@ -86,6 +94,27 @@ function staff(fullName: string, user: string, phone: string): DemoPerson {
   return { fullName, email: `${user}@airdrop.example`, phone };
 }
 
+/**
+ * Peso por unidad de cada presentación, tal como viaja (caja, frasco,
+ * vial), en gramos. Cifras de referencia de la demo.
+ */
+export const UNIT_WEIGHT_G: Record<string, number> = {
+  'Acetaminofén 500 mg': 30,
+  'Ibuprofeno 400 mg': 30,
+  'Amoxicilina 500 mg': 40,
+  'Insulina glargina 100 UI': 60,
+  'Suero antiofídico polivalente': 150,
+  'Morfina 10 mg/mL': 20,
+  'Loratadina 10 mg': 20,
+  'Salbutamol inhalador 100 mcg': 60,
+  'Vacuna antitetánica': 30,
+  'Suero oral': 30,
+  'Metformina 850 mg': 50,
+  'Losartán 50 mg': 40,
+  'Epinefrina 1 mg/mL': 20,
+  'Enalapril 20 mg': 40,
+};
+
 function item(
   name: string,
   quantity: number,
@@ -94,7 +123,23 @@ function item(
   saleType: SaleType,
   cold = false,
 ): DemoStockItem {
-  return { name, quantity, lot, expiresInDays, saleType, cold };
+  return {
+    name,
+    quantity,
+    lot,
+    expiresInDays,
+    saleType,
+    cold,
+    unitWeightG: UNIT_WEIGHT_G[name] ?? 100,
+  };
+}
+
+const RAPID = DroneKind.RAPID;
+const BALANCED = DroneKind.BALANCED;
+const CARGO = DroneKind.CARGO;
+
+function drones(...entries: Array<[DroneKind, boolean]>): DemoDrone[] {
+  return entries.map(([kind, cold]) => ({ kind, cold }));
 }
 
 const OTC = SaleType.OVER_THE_COUNTER;
@@ -106,6 +151,7 @@ function node(
   phone: string,
   dispatchers: DemoPerson[],
   dronePrefix: string,
+  fleet: DemoDrone[],
   droneNotes: DemoHubPlan['droneNotes'],
   stock: DemoStockItem[],
 ): DemoHubPlan {
@@ -120,7 +166,8 @@ function node(
     contactEmail: `${site.code}@airdrop.example`,
     dispatchers,
     dronePrefix,
-    droneCount: 5,
+    droneCount: fleet.length,
+    fleet,
     droneNotes,
     stock,
   };
@@ -145,6 +192,7 @@ function ese(
     dispatchers: [dispatcher],
     dronePrefix: '',
     droneCount: 0,
+    fleet: [],
     droneNotes: [],
     stock,
   };
@@ -160,6 +208,14 @@ export const hubPlans: DemoHubPlan[] = [
       staff('Jorge Iván Maestre', 'jorge.maestre', '3005550312'),
     ],
     'AD-NOR',
+    // Corregimientos y Sierra: rápidos para urgencias, Garza para subir.
+    drones(
+      [RAPID, true],
+      [RAPID, false],
+      [BALANCED, true],
+      [BALANCED, false],
+      [BALANCED, false],
+    ),
     [],
     [
       item('Acetaminofén 500 mg', 150, 'ACE-N-2601', 420, OTC),
@@ -179,6 +235,14 @@ export const hubPlans: DemoHubPlan[] = [
       staff('Ricardo Arzuaga', 'ricardo.arzuaga', '3105550322'),
     ],
     'AD-SUR',
+    // Reabastece tres ESE: dos Cóndor.
+    drones(
+      [RAPID, true],
+      [BALANCED, true],
+      [BALANCED, false],
+      [CARGO, false],
+      [CARGO, true],
+    ),
     [
       {
         number: 5,
@@ -196,6 +260,8 @@ export const hubPlans: DemoHubPlan[] = [
       item('Salbutamol inhalador 100 mcg', 45, 'SAL-S-2609', 330, RX),
       item('Insulina glargina 100 UI', 20, 'INS-S-2610', 120, RX, true),
       item('Vacuna antitetánica', 25, 'VAT-S-2611', 180, RX, true),
+      // Reabastecimiento pesado de las ESE: 300 sobres son 9 kg (Cóndor).
+      item('Suero oral', 400, 'SOR-S-2631', 300, OTC),
     ],
   ),
   node(
@@ -207,6 +273,14 @@ export const hubPlans: DemoHubPlan[] = [
       staff('Óscar David Pumarejo', 'oscar.pumarejo', '3155550332'),
     ],
     'AD-OCC',
+    // Los puntos más lejanos (Villa Germania): dos Colibrí.
+    drones(
+      [RAPID, true],
+      [RAPID, false],
+      [BALANCED, true],
+      [BALANCED, false],
+      [CARGO, false],
+    ),
     [
       {
         number: 4,
@@ -240,6 +314,13 @@ export const hubPlans: DemoHubPlan[] = [
       staff('Hernán Quintero', 'hernan.quintero', '3165550342'),
     ],
     'AD-COD',
+    drones(
+      [RAPID, true],
+      [BALANCED, false],
+      [BALANCED, true],
+      [CARGO, false],
+      [CARGO, false],
+    ),
     [],
     [
       item('Acetaminofén 500 mg', 120, 'ACE-C-2619', 380, OTC),
