@@ -15,7 +15,9 @@ import 'drone_status_chip.dart';
 /// - [putOutOfService] → `PATCH .../status` con `out_of_service` y el
 ///   motivo: indefinido, sin fecha.
 /// - [viewHistory] → el historial de taller.
+/// - [toggleColdCompartment] → `PATCH .../cold-compartment` (RF-49).
 typedef DroneActions = ({
+  VoidCallback toggleColdCompartment,
   VoidCallback setAvailable,
   VoidCallback sendToMaintenance,
   VoidCallback putOutOfService,
@@ -56,7 +58,7 @@ class DroneStatusSheet extends StatelessWidget {
           children: [
             _SheetHeader(drone: drone),
             const SizedBox(height: 16),
-            _ActionList(status: drone.status, actions: actions),
+            _ActionList(drone: drone, actions: actions),
           ],
         ),
       ),
@@ -67,14 +69,16 @@ class DroneStatusSheet extends StatelessWidget {
 /// Las acciones que aplican al estado: no se ofrece mandar a mantenimiento
 /// un dron que ya está ahí, ni marcar disponible uno que ya lo está.
 class _ActionList extends StatelessWidget {
-  const _ActionList({required this.status, required this.actions});
+  const _ActionList({required this.drone, required this.actions});
 
-  final DroneStatus status;
+  final Drone drone;
   final DroneActions actions;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final status = drone.status;
+    final cold = drone.coldCompartment;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -104,6 +108,17 @@ class _ActionList extends StatelessWidget {
             subtitle: 'Sin fecha de regreso.',
             onPressed: actions.putOutOfService,
           ),
+        _ActionTile(
+          icon: Icons.ac_unit_rounded,
+          tone: colors.primary,
+          title: cold
+              ? 'Quitar el compartimento de frío'
+              : 'Instalar el compartimento de frío',
+          subtitle: cold
+              ? 'Recupera 1 kg de carga útil.'
+              : 'Para insumos refrigerados. Resta 1 kg de carga útil.',
+          onPressed: actions.toggleColdCompartment,
+        ),
         _ActionTile(
           icon: Icons.history_rounded,
           tone: colors.onSurfaceVariant,

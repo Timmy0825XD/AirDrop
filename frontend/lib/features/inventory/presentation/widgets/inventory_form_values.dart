@@ -6,7 +6,7 @@ import '../../../../core/validators.dart';
 import '../../data/inventory_models.dart';
 
 /// Los campos del formulario de inventario que pueden tener error.
-enum InventoryInput { name, lot, quantity, expirationDate }
+enum InventoryInput { name, lot, quantity, unitWeight, expirationDate }
 
 /// Los campos del formulario de inventario en un solo objeto.
 ///
@@ -20,11 +20,23 @@ class InventoryFormValues {
   final lot = TextEditingController();
   final expirationDate = TextEditingController();
 
+  /// RF-11: gramos por unidad, de 1 a 20000.
+  final unitWeight = TextEditingController();
+
   SaleType saleType = SaleType.overTheCounter;
   bool requiresColdChain = false;
 
+  /// Mercancía peligrosa: se guarda, pero no viaja por dron.
+  bool dangerousGoods = false;
+
   void dispose() {
-    for (final controller in [name, quantity, lot, expirationDate]) {
+    for (final controller in [
+      name,
+      quantity,
+      lot,
+      expirationDate,
+      unitWeight,
+    ]) {
       controller.dispose();
     }
   }
@@ -47,6 +59,13 @@ class InventoryFormValues {
                 ? 'La cantidad debe ser mayor que cero.'
                 : 'La cantidad no puede ser negativa.')
           : null,
+      // Un lote viejo sin peso se puede editar sin ponerlo.
+      InventoryInput.unitWeight:
+          original != null &&
+              original.unitWeightG == null &&
+              unitWeight.text.trim().isEmpty
+          ? null
+          : unitWeightError(unitWeight.text),
       InventoryInput.expirationDate: date.isEmpty
           ? 'Elige la fecha de vencimiento.'
           : !FieldLimits.isoDateRegex.hasMatch(date)
@@ -59,6 +78,19 @@ class InventoryFormValues {
       for (final entry in errors.entries)
         if (entry.value != null) entry.key: entry.value!,
     };
+  }
+
+  /// El peso por unidad con los mensajes de `CreateInventoryItemDto`.
+  static String? unitWeightError(String text) {
+    final grams = int.tryParse(text.trim());
+    if (grams == null) {
+      return 'El peso por unidad debe ser un entero en gramos.';
+    }
+    if (grams < 1) return 'El peso por unidad debe ser mayor que cero.';
+    if (grams > FieldLimits.unitWeightGMax) {
+      return 'El peso por unidad no puede superar 20 kg.';
+    }
+    return null;
   }
 
   /// AAAA-MM-DD estrictamente después de hoy (fecha local), como
@@ -78,6 +110,8 @@ class InventoryFormValues {
     expirationDate.text = item.expirationDate;
     saleType = item.saleType;
     requiresColdChain = item.requiresColdChain;
+    unitWeight.text = item.unitWeightG == null ? '' : '${item.unitWeightG}';
+    dangerousGoods = item.dangerousGoods;
   }
 
   /// Body de `POST /inventory`. El lote baja a mayúsculas igual que el
@@ -90,6 +124,8 @@ class InventoryFormValues {
       expirationDate: expirationDate.text.trim(),
       requiresColdChain: requiresColdChain,
       saleType: saleType,
+      unitWeightG: int.parse(unitWeight.text.trim()),
+      dangerousGoods: dangerousGoods,
     );
   }
 
@@ -101,6 +137,7 @@ class InventoryFormValues {
     final expiration = expirationDate.text.trim();
     final lotText = lot.text.trim().toUpperCase();
     final nameText = name.text.trim();
+    final weight = int.tryParse(unitWeight.text.trim());
     return UpdateInventoryItemRequest(
       name: nameText == item.name ? null : nameText,
       quantity: quantityValue == item.quantity ? null : quantityValue,
@@ -110,6 +147,10 @@ class InventoryFormValues {
           ? null
           : requiresColdChain,
       saleType: saleType == item.saleType ? null : saleType,
+      unitWeightG: weight == item.unitWeightG ? null : weight,
+      dangerousGoods: dangerousGoods == item.dangerousGoods
+          ? null
+          : dangerousGoods,
     );
   }
 }

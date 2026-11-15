@@ -22,12 +22,17 @@ void main() {
   testWidgets('el interruptor de cadena de frío se mueve al tocarlo', (
     tester,
   ) async {
+    // Alto de sobra: el formulario entero cabe sin deslizar.
+    tester.view.physicalSize = const Size(400, 1600);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       const ProviderScope(child: MaterialApp(home: InventoryFormScreen())),
     );
     await tester.pumpAndSettle();
 
-    final toggle = find.byType(Switch);
+    // El primero es la cadena de frío; el segundo, mercancía peligrosa.
+    final toggle = find.byType(Switch).first;
     await tester.ensureVisible(toggle);
     expect(tester.widget<Switch>(toggle).value, isFalse);
 
@@ -43,7 +48,8 @@ void main() {
     values
       ..name.text = 'Suero oral'
       ..lot.text = 'suo-2026'
-      ..quantity.text = '5';
+      ..quantity.text = '5'
+      ..unitWeight.text = '30';
 
     expect(values.validate(), {
       InventoryInput.expirationDate: 'Elige la fecha de vencimiento.',

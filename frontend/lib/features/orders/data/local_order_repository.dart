@@ -798,7 +798,7 @@ DateTime _tomorrowAt(int hour) =>
 const _localAssignment = OrderAssignment(
   droneId: 'local-drone',
   identifier: 'D-01',
-  modelName: 'Wingcopter 198',
+  modelName: 'Garza',
   altitudeM: 100,
   distanceKm: 4.2,
   coordinates: [

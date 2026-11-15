@@ -4,8 +4,9 @@
 /// modelos de dron y `toPublicDrone` para los drones.
 ///
 /// Los modelos de dron **no** se crean desde la app: vienen sembrados en la
-/// base (`DroneModelSeedService`, Wingcopter 198) y la pantalla solo los
-/// lista para elegir uno en el alta.
+/// base (`DroneModelSeedService`): los tres tipos de RF-49 (Colibrí, Garza
+/// y Cóndor). La pantalla solo los lista para elegir uno en el alta y
+/// muestra el `name`; nunca un fabricante.
 library;
 
 import '../../tracking/data/telemetry_models.dart' show FlightPhase;
@@ -68,6 +69,27 @@ enum DroneStatus {
 
 /// Modelo de dron. `FleetService.toPublicModel`: `id`, `code`, `name`,
 /// `maxSpeedKmh`, `maxPayloadKg` y `maxRangeKm`.
+/// RF-49: los tres tipos de dron. Un tipo que la app no conozca cae en
+/// [unknown]; el nombre que se muestra es siempre el de Nest.
+enum DroneKind {
+  rapid('rapid'),
+  balanced('balanced'),
+  cargo('cargo'),
+  unknown('unknown');
+
+  const DroneKind(this.apiValue);
+
+  final String apiValue;
+
+  static DroneKind fromJson(Object? value) => values.firstWhere(
+    (kind) => kind.apiValue == value,
+    orElse: () => DroneKind.unknown,
+  );
+}
+
+/// Lo que pesa el compartimento de frío: se descuenta de la carga útil.
+const double coldCompartmentKg = 1;
+
 class DroneModel {
   const DroneModel({
     required this.id,
@@ -76,6 +98,10 @@ class DroneModel {
     required this.maxSpeedKmh,
     required this.maxPayloadKg,
     required this.maxRangeKm,
+    this.kind = DroneKind.unknown,
+    this.ceilingM,
+    this.windSustainedMs,
+    this.windGustMs,
   });
 
   factory DroneModel.fromJson(Map<String, dynamic> json) {
@@ -86,6 +112,10 @@ class DroneModel {
       maxSpeedKmh: _asDouble(json['maxSpeedKmh']),
       maxPayloadKg: _asDouble(json['maxPayloadKg']),
       maxRangeKm: _asDouble(json['maxRangeKm']),
+      kind: DroneKind.fromJson(json['kind']),
+      ceilingM: _asDoubleOrNull(json['ceilingM']),
+      windSustainedMs: _asDoubleOrNull(json['windSustainedMs']),
+      windGustMs: _asDoubleOrNull(json['windGustMs']),
     );
   }
 
@@ -98,6 +128,18 @@ class DroneModel {
   final double maxSpeedKmh;
   final double maxPayloadKg;
   final double maxRangeKm;
+
+  final DroneKind kind;
+
+  /// Techo en metros sobre el nivel del mar y viento que aguanta (sostenido
+  /// y en ráfaga, m/s); `null` si Nest no los manda.
+  final double? ceilingM;
+  final double? windSustainedMs;
+  final double? windGustMs;
+
+  /// La carga útil con o sin el compartimento de frío (resta 1 kg).
+  double payloadKg({required bool coldCompartment}) =>
+      coldCompartment ? maxPayloadKg - coldCompartmentKg : maxPayloadKg;
 }
 
 /// Dron. `FleetService.toPublicDrone`: `id`, `identifier`,
@@ -124,6 +166,7 @@ class Drone {
     this.maintenanceCycles,
     this.maintenanceDue = false,
     this.maintenanceOverdue = false,
+    this.coldCompartment = false,
   });
 
   factory Drone.fromJson(Map<String, dynamic> json) {
@@ -147,6 +190,7 @@ class Drone {
       maintenanceCycles: (json['maintenanceCycles'] as num?)?.toInt(),
       maintenanceDue: json['maintenanceDue'] == true,
       maintenanceOverdue: json['maintenanceOverdue'] == true,
+      coldCompartment: json['coldCompartment'] == true,
     );
   }
 
@@ -190,6 +234,9 @@ class Drone {
   /// La fase del vuelo; `null` sin telemetría o en tierra.
   final FlightPhase? phase;
 
+  /// RF-49: tiene instalado el compartimento de frío (resta 1 kg de carga).
+  final bool coldCompartment;
+
   /// Motivo y fecha solo se muestran si vienen y el dron no está
   /// disponible: al volver a `available`, Nest los limpia.
   bool get hasMaintenanceData =>
@@ -205,6 +252,7 @@ class CreateDroneRequest {
     required this.identifier,
     required this.droneModelId,
     required this.hubId,
+    this.coldCompartment = false,
   });
 
   Map<String, dynamic> toJson() {
@@ -212,12 +260,16 @@ class CreateDroneRequest {
       'identifier': identifier,
       'droneModelId': droneModelId,
       'hubId': hubId,
+      if (coldCompartment) 'coldCompartment': true,
     };
   }
 
   final String identifier;
   final String droneModelId;
   final String hubId;
+
+  /// Nace con el compartimento de frío instalado.
+  final bool coldCompartment;
 }
 
 /// Body de `PATCH /fleet/drones/:id/status`. `in_mission` no es un valor

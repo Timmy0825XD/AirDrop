@@ -29,6 +29,7 @@ class LocalInventoryRepository implements InventoryRepository {
       expirationDate: '2027-06-30',
       requiresColdChain: false,
       saleType: SaleType.overTheCounter,
+      unitWeightG: 30,
       createdAt: DateTime.utc(2026, 9, 1, 12),
     ),
     InventoryItem(
@@ -40,6 +41,7 @@ class LocalInventoryRepository implements InventoryRepository {
       expirationDate: '2026-12-31',
       requiresColdChain: true,
       saleType: SaleType.prescription,
+      unitWeightG: 60,
       createdAt: DateTime.utc(2026, 9, 1, 12),
     ),
     InventoryItem(
@@ -51,6 +53,7 @@ class LocalInventoryRepository implements InventoryRepository {
       expirationDate: '2027-01-15',
       requiresColdChain: false,
       saleType: SaleType.prescription,
+      unitWeightG: 520,
       createdAt: DateTime.utc(2026, 9, 1, 12),
     ),
   ];
@@ -73,6 +76,8 @@ class LocalInventoryRepository implements InventoryRepository {
       expirationDate: request.expirationDate,
       requiresColdChain: request.requiresColdChain,
       saleType: request.saleType,
+      unitWeightG: request.unitWeightG,
+      dangerousGoods: request.dangerousGoods,
       createdAt: DateTime.now(),
     );
     _items.insert(0, item);
@@ -101,6 +106,8 @@ class LocalInventoryRepository implements InventoryRepository {
       expirationDate: request.expirationDate ?? current.expirationDate,
       requiresColdChain: request.requiresColdChain ?? current.requiresColdChain,
       saleType: request.saleType ?? current.saleType,
+      unitWeightG: request.unitWeightG ?? current.unitWeightG,
+      dangerousGoods: request.dangerousGoods ?? current.dangerousGoods,
       createdAt: current.createdAt,
     );
     return _items[index];

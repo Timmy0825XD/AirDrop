@@ -24,6 +24,10 @@ abstract class FleetRepository {
   /// existir (`404 El modelo de dron no existe.`).
   Future<Drone> create(CreateDroneRequest request);
 
+  /// `PATCH /fleet/drones/:id/cold-compartment` — poner o quitar el
+  /// compartimento de frío (RF-49). Con el dron en misión responde 409.
+  Future<Drone> setColdCompartment(String id, {required bool installed});
+
   /// `PATCH /fleet/drones/:id/status` — cambiar estado. Nunca lleva
   /// `in_mission` y falla con `409` si el dron ya está en misión.
   Future<Drone> updateStatus(String id, UpdateDroneStatusRequest request);

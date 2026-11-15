@@ -172,7 +172,7 @@ enum FlightAlertKind {
   failure('failure'),
   coldChain('cold_chain'),
 
-  /// El viento pasa del límite del Wingcopter donde va el dron.
+  /// El viento pasa del límite del tipo de dron donde va.
   windLimit('wind_limit'),
   other('other');
 

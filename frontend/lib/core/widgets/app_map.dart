@@ -38,7 +38,7 @@ class AppMap extends StatefulWidget {
 
   /// Lo más lejos y lo más cerca que deja ir la cámara. Sin límite, alejar
   /// o acercar de más rompe el cálculo de tiles de flutter_map y la app se
-  /// queda congelada. 9 muestra unos 120 km (el alcance del Wingcopter);
+  /// queda congelada. 9 muestra unos 120 km (el alcance del Colibrí);
   /// 18 es nivel de calle, donde todavía hay tiles de OpenStreetMap.
   static const minZoom = 9.0;
   static const maxZoom = 18.0;
@@ -330,8 +330,9 @@ class _Attribution extends StatelessWidget {
         ),
         child: Text(
           mapbox ? '© Mapbox © OpenStreetMap' : '© OpenStreetMap',
-          style: Theme.of(context).textTheme.labelMedium
-              ?.copyWith(fontSize: 10),
+          style: Theme.of(
+            context,
+          ).textTheme.labelMedium?.copyWith(fontSize: 10),
         ),
       ),
     );

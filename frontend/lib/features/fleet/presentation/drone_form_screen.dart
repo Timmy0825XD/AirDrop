@@ -14,6 +14,7 @@ import '../../home/presentation/widgets/section_header.dart';
 import '../../hubs/data/hub_models.dart';
 import '../data/fleet_models.dart';
 import '../data/fleet_providers.dart';
+import 'widgets/drone_form/cold_compartment_switch.dart';
 import 'widgets/drone_form_values.dart';
 import 'widgets/drone_model_field.dart';
 import '../../../core/widgets/skeleton.dart';
@@ -97,7 +98,7 @@ class _DroneFormScreenState extends ConsumerState<DroneFormScreen> {
   }
 
   Widget _form(Widget header, Hub hub, List<DroneModel> models) {
-    // Con un solo modelo sembrado (Wingcopter 198) no hay nada que elegir.
+    // Con un solo modelo no hay nada que elegir.
     if (models.length == 1) _values.droneModelId ??= models.single.id;
     return SectionFormPage(
       header: header,
@@ -115,12 +116,18 @@ class _DroneFormScreenState extends ConsumerState<DroneFormScreen> {
           DroneModelField(
             models: models,
             selectedId: _values.droneModelId,
+            coldCompartment: _values.coldCompartment,
             errorText: _modelError,
             shakeCount: _shakeCount,
             onChanged: (id) => setState(() {
               _values.droneModelId = id;
               _modelError = null;
             }),
+          ),
+          const SizedBox(height: 16),
+          ColdCompartmentSwitch(
+            value: _values.coldCompartment,
+            onChanged: (on) => setState(() => _values.coldCompartment = on),
           ),
         ],
       ),

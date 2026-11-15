@@ -46,6 +46,16 @@ class InventoryFormSheet extends StatelessWidget {
         const SizedBox(height: 16),
         _LotAndQuantity(sheet: this),
         const SizedBox(height: 16),
+        AuthField(
+          label: 'Peso por unidad (g)',
+          hint: 'Ej.: 30',
+          controller: values.unitWeight,
+          keyboardType: TextInputType.number,
+          maxLength: 5,
+          errorText: errors[InventoryInput.unitWeight],
+          shakeCount: shakeCount,
+        ),
+        const SizedBox(height: 16),
         AuthDateField(
           label: 'Vencimiento',
           value: date.isEmpty ? null : date,

@@ -452,7 +452,7 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `RequesterStats` / `NextDeliveryCard` | `home/presentation/widgets/requester` | Los números del solicitante (entregados con su anillo, o una frase si son 0, y los pedidos de las últimas 4 semanas en barras) y la próxima entrega programada (día y hora, plan o programada). Todo sale de sus pedidos. |
 | `NextUpCard` / `dispatcherNextUp` | `home/presentation/widgets/dispatcher` | "Para atender ahora" del despachador: la urgencia más vieja de la cola, el pedido que espera la carga y el próximo programado; cada una abre su pedido. |
 | `OrderJourney` | `orders/presentation/widgets/order_detail` | Arriba del detalle: el recorrido del pedido en cinco puntos (pedido, autorizado, carga, vuelo, entrega) con la ficha del dron sobre el actual y una equis si terminó mal. |
-| `EmergencyFacts` | `orders/presentation/widgets/requester_order` | Pedir urgencia: la nota gris sobre el deslizador (va primero en la cola, el despachador elige la central, sale un Wingcopter 198 por una ruta que evita las geovallas). No promete central ni tiempos antes de autorizar. El medicamento se elige con `CatalogChoices` (buscador); el radar y el carrusel se borraron en la Fase 21. |
+| `EmergencyFacts` | `orders/presentation/widgets/requester_order` | Pedir urgencia: la nota gris sobre el deslizador (va primero en la cola, el despachador elige la central, el dron sigue una ruta que evita las zonas restringidas). No promete central ni tiempos antes de autorizar. El medicamento se elige con `CatalogChoices` (buscador); el radar y el carrusel se borraron en la Fase 21. |
 | `AuthPickerField` / `showSearchPicker` / `PickerOption` | `auth/presentation/widgets` | Elegir de una lista que puede ser larga (medicamento, central de origen): un campo con la forma de `AuthField` que abre una hoja con buscador (sin mayúsculas ni tildes) y una lista perezosa. `offerOption` (`orders/presentation/widgets`) arma la opción de un insumo. No usar chips para listas que crecen con los datos. |
 | `AuthLocationField` / `pickLocation` | `auth/presentation/widgets` | Vista previa quieta del punto; al tocarla abre el mapa a pantalla completa con el pin fijo al centro (se levanta al arrastrar y cae con rebote) y "Usar esta ubicación" (nueva central; la urgencia y la entrega periódica eligen un punto de entrega con `DeliveryPointStep`). Con `gps: LocationGps(...)` suma "Usar mi ubicación" y la precisión del GPS (`location_gps_row.dart`, RU-02); el GPS lo lee `DeviceLocation` (`core/location`, `deviceLocationProvider`). |
 | `OrderFormScaffold` | `orders/presentation/widgets` | Formularios de pedido sobre `SectionFormPage`; mientras su lista (catálogo o centrales) carga, falla o viene vacía, lo dice. Por pasos, `steps` (el avance) y `onBack` (volver al paso anterior). |
@@ -554,6 +554,22 @@ nodo tiene drones (`Hub.hasFleet`): en una ESE no sale "Ver flota". Los
 409 de pasar a ESE una central con drones se muestran con el texto de
 Nest. `GET /orders/origin-hubs` ya solo lista nodos: los formularios del
 despachador dicen "Nodo de origen".
+
+## Flota de tres tipos e inventario con peso (RF-49, RF-11)
+
+- `GET /fleet/models` trae los tres tipos: **Colibrí, Garza y Cóndor**
+  (`DroneKind`: `rapid`, `balanced`, `cargo`; `unknown` con uno nuevo), con
+  techo y viento. La app muestra el `name` de Nest y **nunca** un
+  fabricante. El alta elige el tipo en `DroneModelField` ("Tipo de dron"),
+  que pinta sus cifras con `droneModelSpecs`.
+- Cada dron trae `coldCompartment`. Se elige al crear
+  (`ColdCompartmentSwitch`) y se cambia desde "Gestionar"
+  (`PATCH /fleet/drones/:id/cold-compartment`, `{ installed }`); en misión
+  Nest responde 409. Resta 1 kg de carga útil (`DroneModel.payloadKg`).
+- Un lote lleva `unitWeightG` (entero de 1 a 20000 g, **obligatorio al
+  crear**) y `dangerousGoods`. `InventoryFormValues.unitWeightError` usa los
+  mensajes de Nest; un lote viejo sin peso se edita sin ponerlo. Con
+  `dangerousGoods` la fila dice "No vuela" y el lote no sale en el catálogo.
 
 ## Contrato con el backend
 

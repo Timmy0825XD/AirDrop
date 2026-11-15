@@ -1648,7 +1648,7 @@ La guía de partida es `learning/35-front-pending-red-regional.md` (local).
 | 1 — Puntos de entrega | `feature/puntos-de-entrega` | RU-02, RF-45 | Hecho (2026-11-15) |
 | 2 — Política de datos | `feature/politica-de-datos` | RF-50, CU-46 | Hecho (2026-11-15) |
 | 3 — Centrales nodo y ESE | `feature/centrales-nodo-ese` | RF-06, RF-43 | Hecho (2026-11-15) |
-| 4 — Flota de tres tipos y peso del lote | `feature/flota-tres-tipos` | RF-49, RF-11 | Pendiente |
+| 4 — Flota de tres tipos y peso del lote | `feature/flota-tres-tipos` | RF-49, RF-11 | Hecho (2026-11-15) |
 | 5 — Manifiesto e identificación | `feature/manifiesto-e-identificacion` | RF-47, RF-48 | Pendiente |
 | 6 — Propósito de la fórmula y luz del día | `feature/formula-proposito-y-luz` | RF-51, RF-44 | Pendiente |
 
@@ -1689,6 +1689,17 @@ La guía de partida es `learning/35-front-pending-red-regional.md` (local).
 - En una ESE no sale "Ver flota".
 - Los formularios del despachador dicen "Nodo de origen".
 - `flutter analyze` sin issues y `flutter test` en verde (417).
+
+### Paso 4 — Flota de tres tipos y peso del lote (hecho, 2026-11-15)
+
+- El alta de dron elige entre Colibrí, Garza y Cóndor y muestra sus
+  cifras (velocidad, carga, alcance, techo y viento). La app ya no nombra
+  un fabricante en ningún texto ni en los datos locales.
+- Compartimento de frío: se elige al crear y se pone o se quita desde
+  "Gestionar". La carga útil que se muestra ya descuenta su kilo.
+- El lote pide "Peso por unidad (g)" (antes crear daba 400) y suma
+  "Mercancía peligrosa"; la fila dice "No vuela".
+- `flutter analyze` sin issues y `flutter test` en verde (421).
 
 ## Pendiente del backend
 

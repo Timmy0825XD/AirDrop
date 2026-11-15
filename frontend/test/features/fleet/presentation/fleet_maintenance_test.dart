@@ -30,6 +30,7 @@ Future<void> _pump(WidgetTester tester, Widget child) async {
 }
 
 final DroneActions _noop = (
+  toggleColdCompartment: () {},
   setAvailable: () {},
   sendToMaintenance: () {},
   putOutOfService: () {},
