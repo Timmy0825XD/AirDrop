@@ -55,6 +55,7 @@ lib/
     delivery/    # recibir el pedido con el código de un uso (sin rol receptor)
     analytics/   # métricas del administrador: KPI, demanda y ranking (`/analytics/*`)
     notifications/ # bandeja de avisos (`/notifications`), cualquier rol
+    onboarding/  # bienvenida del solicitante (`/welcome`, RF-53); solo presentation/
 ```
 
 No Clean Architecture de tres capas por feature “porque sí”. Suficiente:
@@ -85,6 +86,7 @@ controller de la feature.
 
 - Español de Colombia (RNF-15). Identificadores en inglés.
 - Contraste y tamaños legibles (RNF-10).
+- Lo que se guarda en el teléfono y no en la cuenta (si ya vio la bienvenida, los ajustes) pasa por `PrefsStore` (`core/prefs/app_prefs.dart`, `prefsStoreProvider`). Nunca datos de salud ni de la cuenta; el token sigue en el almacenamiento seguro.
 - La vibración sale solo de `AppHaptics` (`core/app_haptics.dart`); ninguna pantalla llama a `HapticFeedback`. Siempre acompaña un cambio visible, nunca es el único aviso.
 - Cada pantalla tiene sus cuatro estados (RNF-18): con datos; cargando con `SkeletonList` o `SkeletonDetail` (no un `CircularProgressIndicator` suelto; ese queda para botones, el mapa y el visor); vacío con `MessageView` (ícono, `title` opcional, mensaje y acción); y error con `MessageView.error`. La ilustración es `CorridorArt`.
 - Reutilizar widgets. Ningún widget supera **60 líneas**; si pasa, se descompone. Se mide la clase entera con `tools/ui_inventory.ps1` (escribe `docs/ui_inventory.md`); los `*_values.dart` guardan datos y validan, no pintan, y no entran en la regla.
