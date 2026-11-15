@@ -375,6 +375,22 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
   o regresa; no es el socket caído. El incidente `link_loss` se rotula
   "Perdió el enlace: espera 30 s".
 
+### Fórmula con propósito, luz del día y registro de accesos (RF-51, RF-44)
+
+- La fórmula se abre con `showPrescription(context, id, purpose: …)`:
+  `PrescriptionPurpose.authorize` mientras la central decide y `history`
+  después. Cada hoja viaja con `?purpose=`; la lista de hojas (`/files`) no
+  registra un acceso y va sin él. `orderPrescriptionProvider` se indexa
+  por `PrescriptionKey` (`orderId` y `purpose`).
+- `GET /airspace/daylight` (`OrderRepository.daylight`, `daylightProvider`):
+  el inicio del solicitante dice "Hoy se vuela de … a …" (`DaylightNote`)
+  y, de noche, que una urgencia va por la alternativa terrestre. Si no
+  carga, no sale. El motivo del pedido de noche ya lo pinta `FallbackCard`.
+- Las franjas de un plan van de 07:00 a 16:00 (`slotTimes`).
+- `/privacy/prescription-access` (`PrescriptionAccessScreen`, solo admin,
+  desde su inicio): quién abrió una fórmula, qué hoja, para qué y cuándo
+  (`GET /privacy/prescription-access`). No muestra la fórmula.
+
 ## Entrega (`features/delivery/`)
 
 - `GET /orders/:id/delivery-code` da `{ code, expiresAt }` desde que se
@@ -486,7 +502,7 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `PrescriptionPicker` / `PrescriptionAttachment` | `orders/presentation/widgets/requester_order`, `orders/data` | La fórmula (RU-25): "Tomar foto" (`image_picker`, 2400 px, calidad 85) y "Subir archivo" (PDF, JPG o PNG). Un PDF solo o hasta 3 fotos de 5 MB; un PDF reemplaza las fotos y una foto el PDF (`addPrescriptionFiles`). Va en `prescriptions` del body. |
 | `DeliveryPointStep` / `DeliveryPointTile` / `DeliveryPointsMap` / `GroundAlternativeCard` | `orders/presentation/widgets/requester_order` | El paso "Dónde" de la urgencia y de la entrega periódica (RU-02, RF-45): `GET /delivery-points` (`OrderRepository.coverage`, `RequesterOrderState.loadCoverage`). "Usar mi ubicación" propone el punto más cercano; se elige otro en la lista o tocando su pin en el mapa quieto. Con `urban` o `no_point` muestra el mensaje de Nest y dónde recoger el medicamento (`FallbackOptionTile`), y el botón de enviar no sale. Modelos en `orders/data/delivery_point_models.dart`; con datos locales, `local_delivery_points.dart`. |
 | `RequesterOrderValues` / `RequesterOrderState` | `orders/presentation/widgets/requester_order` | Valores, validación y estado compartidos por la urgencia y la entrega periódica del solicitante. **El punto de entrega es obligatorio** (`deliveryPointId`); el GPS es opcional, viaja como `requesterLocation` y solo sirve para proponer el más cercano. Ya no hay dirección ni coordenadas en el body (RF-45). |
-| `ScheduleDraft` / `ScheduleFields` / `SchedulePreviewState` / `SchedulePreviewCard` | `orders/presentation/widgets/plan_schedule` | El calendario de un plan (RU-30): semanal, mensual o fechas sueltas, inicio, fin (fecha **o** número de entregas), hora en punto de 07:00 a 17:00 y, con fórmula, su vigencia. La vista previa llama `POST /orders/plans/preview` medio segundo después del último cambio; con error de Nest el botón se apaga. Lo usan el plan del solicitante, el abastecimiento y "Cambiar calendario". |
+| `ScheduleDraft` / `ScheduleFields` / `SchedulePreviewState` / `SchedulePreviewCard` | `orders/presentation/widgets/plan_schedule` | El calendario de un plan (RU-30): semanal, mensual o fechas sueltas, inicio, fin (fecha **o** número de entregas), hora en punto de 07:00 a 16:00 y, con fórmula, su vigencia. La vista previa llama `POST /orders/plans/preview` medio segundo después del último cambio; con error de Nest el botón se apaga. Lo usan el plan del solicitante, el abastecimiento y "Cambiar calendario". |
 | `FallbackCard` / `AuthorizeOutcome` | `orders/presentation/widgets/order_detail` | HU-24: autorizar sin dron ya no da 409. `AuthorizeOutcome.of` lee `assignment` o `fallback` (otra central, convencional, reintento) o el rechazo por geovalla; `FallbackCard` muestra el motivo de Nest y las centrales alternativas. |
 | `StatusReasonBanner` | `orders/presentation/widgets/order_detail` | El `statusReason` de un pedido que sigue su curso (`Order.inProgress`): incidente en vuelo o central sin energía. Un pedido cerrado dice su motivo en el resumen; con fallback lo dice `FallbackCard`. |
 | `DecisionSection` (`HubTraceTile`, `OfferLadder`, `decisionSummary`) | `orders/presentation/widgets/order_detail/decision` | "¿Por qué este dron?" (`GET /orders/:id/decision`, solo despachador): la decisión en una línea y, al abrir, cada central con el veredicto de sus drones y la escalera de ofertas de la urgencia civil. Sin traza lo dice; con 404 no sale. |

@@ -229,7 +229,10 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
     });
   }
 
-  Future<void> _viewPrescription() => showPrescription(context, widget.orderId);
+  /// RF-51: mientras la central decide se abre para autorizar; después,
+  /// como histórico.
+  Future<void> _viewPrescription(PrescriptionPurpose purpose) =>
+      showPrescription(context, widget.orderId, purpose: purpose);
 
   @override
   Widget build(BuildContext context) {
@@ -355,7 +358,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
           prescriptionVerified: _prescriptionVerified,
           onVerifiedChanged: (v) => setState(() => _prescriptionVerified = v),
           onViewPrescription: can.canViewPrescription
-              ? _viewPrescription
+              ? () => _viewPrescription(PrescriptionPurpose.authorize)
               : null,
           blockedNote: outage ?? dispatchWindowNote(can.order, simClock.now()),
           busy: _busy,
@@ -376,7 +379,10 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
         ),
       ],
       if (can.canReviewPrescription)
-        PrescriptionRecordCard(busy: _busy, onView: _viewPrescription),
+        PrescriptionRecordCard(
+          busy: _busy,
+          onView: () => _viewPrescription(PrescriptionPurpose.history),
+        ),
       if (canReturnCheck(can))
         ReturnCheckSection(
           coldChainAlert: can.order.coldChainAlert,

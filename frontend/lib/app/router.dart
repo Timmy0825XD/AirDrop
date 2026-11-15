@@ -14,6 +14,7 @@ import '../features/auth/presentation/login_screen.dart';
 import '../features/auth/presentation/accept_policy_screen.dart';
 import '../features/auth/presentation/policy_gate.dart';
 import '../features/auth/presentation/policy_screen.dart';
+import '../features/auth/presentation/prescription_access_screen.dart';
 import '../features/auth/presentation/privacy_screen.dart';
 import '../features/auth/presentation/profile_screen.dart';
 import '../features/auth/presentation/register_screen.dart';
@@ -88,6 +89,7 @@ const _roleRoutes = <String, Set<UserRole>>{
   '/orders/emergency': {UserRole.requester},
   '/welcome': {UserRole.requester},
   '/privacy': {UserRole.requester},
+  '/privacy/prescription-access': {UserRole.admin},
   '/medications': {UserRole.requester},
   '/orders/plans/new': {UserRole.requester},
   '/orders/plans': {UserRole.requester, UserRole.dispatcher},
@@ -278,6 +280,10 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(path: '/settings', builder: (_, _) => const SettingsScreen()),
           GoRoute(path: '/privacy', builder: (_, _) => const PrivacyScreen()),
+          GoRoute(
+            path: '/privacy/prescription-access',
+            builder: (_, _) => const PrescriptionAccessScreen(),
+          ),
           GoRoute(
             path: '/unauthorized',
             builder: (_, _) => const PlaceholderScreen(

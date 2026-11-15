@@ -286,6 +286,18 @@ class LocalAuthRepository implements AuthRepository {
   }
 
   @override
+  Future<List<PrescriptionAccess>> prescriptionAccess() async => [
+    PrescriptionAccess(
+      orderId: 'a2222222-2222-4222-8222-222222222222',
+      userName: 'Diego Despacho',
+      role: UserRole.dispatcher,
+      purpose: 'authorize',
+      fileIndex: 0,
+      accessedAt: DateTime.now().toUtc().subtract(const Duration(minutes: 12)),
+    ),
+  ];
+
+  @override
   Future<void> revokeConsent(String password) async {
     final user = await _requirePassword(password);
     user.status = UserStatus.revoked;

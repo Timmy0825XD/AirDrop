@@ -58,7 +58,16 @@ abstract class OrderRepository {
   /// La fórmula, hoja por hoja (RF-27): `GET /orders/:id/prescription/files`
   /// y cada `GET /orders/:id/prescription/:index`. Solo el despachador de la
   /// central que decide o que la autorizó (histórico).
-  Future<List<PrescriptionFile>> prescriptionFiles(String orderId);
+  /// Con [purpose] cada hoja viaja con `?purpose=` (RF-51): la apertura
+  /// queda en el registro de accesos. Sin él, Nest lo deduce.
+  Future<List<PrescriptionFile>> prescriptionFiles(
+    String orderId, {
+    PrescriptionPurpose? purpose,
+  });
+
+  /// `GET /airspace/daylight` — salida y puesta del sol del día simulado y
+  /// si ahora se vuela (RF-44).
+  Future<Daylight> daylight();
 
   /// `GET /orders/:id/manifest` — el manifiesto de carga (RF-47), para el
   /// despachador de origen o de destino. Sin manifiesto (404) es `null`.

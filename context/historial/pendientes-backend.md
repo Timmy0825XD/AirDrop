@@ -273,7 +273,7 @@ Rediseño en tres ramas (detalle en `learning/28-rediseno-entregas-programadas.m
   `{ kind: 'weekly' | 'monthly' | 'dates', startDate?, endDate? | count?,
   daysOfWeek? (1=lunes…7=domingo), everyWeeks? (1–4), dayOfMonth?, dates?,
   time: 'HH:00' }`.
-  - La franja es de 1 hora, de 07:00 a 17:00.
+  - La franja es de 1 hora, de 07:00 a 16:00.
   - El plan dura como máximo 3 meses.
   - Las entregas que empezarían en menos de 2 horas no se agendan.
   - Bajo fórmula (plan civil) se pide `prescriptionValidUntil`, y el plan no

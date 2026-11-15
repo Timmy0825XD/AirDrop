@@ -73,7 +73,7 @@ class ScheduleFields extends StatelessWidget {
   }
 }
 
-/// La hora en punto de la franja (07:00 a 17:00).
+/// La hora en punto de la franja (07:00 a 16:00).
 class ScheduleTimeField extends StatelessWidget {
   const ScheduleTimeField({super.key, required this.form});
 

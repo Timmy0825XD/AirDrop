@@ -4,6 +4,62 @@ library;
 
 import 'auth_models.dart';
 
+/// Una apertura de una fórmula (RF-51): quién, para qué, qué hoja y cuándo.
+/// Ningún endpoint la edita.
+class PrescriptionAccess {
+  const PrescriptionAccess({
+    required this.orderId,
+    required this.fileIndex,
+    this.userName,
+    this.role,
+    this.purpose,
+    this.accessedAt,
+  });
+
+  factory PrescriptionAccess.fromJson(Map<String, dynamic> json) {
+    final role = json['role'];
+    return PrescriptionAccess(
+      orderId: json['orderId'] as String? ?? '',
+      userName: json['userName'] as String?,
+      role: role is String ? _roleOrNull(role) : null,
+      purpose: json['purpose'] as String?,
+      fileIndex: (json['fileIndex'] as num?)?.toInt() ?? 0,
+      accessedAt: DateTime.tryParse('${json['accessedAt']}'),
+    );
+  }
+
+  final String orderId;
+
+  /// `null` si la cuenta se suprimió.
+  final String? userName;
+  final UserRole? role;
+
+  /// `authorize`, `history` o `claim`.
+  final String? purpose;
+
+  /// La hoja que abrió, desde 0.
+  final int fileIndex;
+  final DateTime? accessedAt;
+
+  String get purposeLabel => switch (purpose) {
+    'authorize' => 'Autorizar',
+    'history' => 'Histórico',
+    'claim' => 'Reclamo',
+    _ => 'Sin propósito',
+  };
+
+  /// Los primeros 8 caracteres del pedido, para nombrarlo sin el uuid.
+  String get shortOrderId =>
+      orderId.length <= 8 ? orderId : orderId.substring(0, 8);
+
+  static UserRole? _roleOrNull(String value) {
+    for (final role in UserRole.values) {
+      if (role.apiValue == value) return role;
+    }
+    return null;
+  }
+}
+
 /// Un apartado de la política: título y párrafos.
 class PolicySection {
   const PolicySection({required this.title, required this.body});
