@@ -19,7 +19,7 @@ class WatchFlightButton extends StatelessWidget {
         minimumSize: const Size.fromHeight(48),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      icon: const Icon(Icons.map_outlined),
+      icon: const Icon(Icons.map_rounded),
       label: const Text('Ver vuelo'),
     );
   }

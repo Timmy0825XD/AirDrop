@@ -159,7 +159,7 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
         subtitle: 'Editar ítem',
         onBack: () => context.go('/inventory'),
       ),
-      body: MessageView(icon: Icons.inventory_2_outlined, message: text),
+      body: MessageView(icon: Icons.inventory_2_rounded, message: text),
     );
   }
 }

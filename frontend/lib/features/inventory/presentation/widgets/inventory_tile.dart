@@ -80,7 +80,7 @@ class _ItemIcon extends StatelessWidget {
     return ToneTile(
       tone: tone,
       child: Icon(
-        coldChain ? Icons.ac_unit_rounded : Icons.medication_outlined,
+        coldChain ? Icons.ac_unit_rounded : Icons.medication_rounded,
         color: tone,
         size: 22,
         semanticLabel: coldChain ? 'Cadena de frío' : null,

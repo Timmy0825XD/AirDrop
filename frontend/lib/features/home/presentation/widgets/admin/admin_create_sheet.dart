@@ -25,7 +25,7 @@ Future<void> showAdminCreateSheet(BuildContext context) {
             const SizedBox(height: 16),
             RiseIn(
               child: _CreateOption(
-                icon: Icons.home_work_outlined,
+                icon: Icons.home_work_rounded,
                 title: 'Nueva central',
                 subtitle: 'Nombre, contacto y punto en el mapa.',
                 onTap: () => _open(sheet, context, '/hubs/new'),
@@ -35,7 +35,7 @@ Future<void> showAdminCreateSheet(BuildContext context) {
             RiseIn(
               delay: RiseIn.stagger(1),
               child: _CreateOption(
-                icon: Icons.badge_outlined,
+                icon: Icons.badge_rounded,
                 title: 'Nueva cuenta',
                 subtitle: 'Despachador u operador de flota.',
                 onTap: () => _open(sheet, context, '/users/new'),

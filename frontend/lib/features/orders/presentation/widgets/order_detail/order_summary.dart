@@ -39,7 +39,7 @@ class OrderSummary extends StatelessWidget {
   Widget build(BuildContext context) {
     return DetailSection(
       title: 'Datos del pedido',
-      icon: Icons.medication_outlined,
+      icon: Icons.medication_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

@@ -29,7 +29,7 @@ class ProfileScreen extends ConsumerWidget {
     if (user == null) {
       return Scaffold(
         body: MessageView(
-          icon: Icons.person_off_outlined,
+          icon: Icons.person_off_rounded,
           message: 'Inicia sesión para ver tu perfil.',
           action: FilledButton(
             onPressed: () => context.go('/login'),

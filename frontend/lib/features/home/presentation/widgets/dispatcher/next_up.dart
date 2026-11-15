@@ -24,7 +24,7 @@ NextUpItem _urgencyItem(QueueEntry entry, DateTime now) {
   return NextUpItem(
     title: 'Atender la urgencia de ${entry.order.medicationName}',
     detail: '${queueWaitLabel(wait)} · ${destinationLabel(entry.order)}',
-    icon: Icons.emergency_outlined,
+    icon: Icons.emergency_rounded,
     tone: queueWaitTone(wait, unattended: entry.unattended),
     orderId: entry.order.id,
   );
@@ -37,7 +37,7 @@ NextUpItem _loadItem(Order order) {
     detail: drone == null
         ? 'El dron espera el insumo'
         : 'El dron $drone espera el insumo',
-    icon: Icons.inventory_2_outlined,
+    icon: Icons.inventory_2_rounded,
     tone: PillTone.attention,
     orderId: order.id,
   );
@@ -53,7 +53,7 @@ NextUpItem _scheduledItem(Order order) {
         : day != null
         ? capitalized(formatDay(day))
         : 'Sin fecha',
-    icon: Icons.event_note_outlined,
+    icon: Icons.event_note_rounded,
     tone: PillTone.neutral,
     orderId: order.id,
   );

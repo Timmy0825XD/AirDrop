@@ -1484,7 +1484,7 @@ el solicitante; los pasos 1 y 2 cambian los cuatro roles.
 | Paso | Rama | Historia | Estado |
 | --- | --- | --- | --- |
 | 0 — Alinear `context/` | `docs/rediseno-corredor` | — | Hecho |
-| 1 — Cimientos: superficies, acento, cifras, bordes, íconos | `style/corredor-cimientos` | HU-72 | Pendiente |
+| 1 — Cimientos: superficies, acento, cifras, bordes, íconos | `style/corredor-cimientos` | HU-72 | Hecho (2026-11-14) |
 | 2 — Carga, vacío y error | `feature/corredor-estados` | HU-73 | Pendiente |
 | 3 — Inicio, urgencia y seguimiento del solicitante | `feature/corredor-solicitante` | HU-76 | Pendiente |
 | 4 — Arranque, animaciones firma y vibración | `feature/corredor-movimiento` | HU-74 | Pendiente |
@@ -1493,6 +1493,25 @@ el solicitante; los pasos 1 y 2 cambian los cuatro roles.
 | 7 — Medicamentos disponibles | `feature/medicamentos-disponibles` | HU-78 | Pendiente |
 | 8 — Avisos del sistema, backend | `feature/push-dispositivos` | HU-79 | Pendiente |
 | 9 — Avisos del sistema, app | `feature/push-app` | HU-80 | Pendiente |
+
+### Paso 1 — Cimientos (hecho, 2026-11-14)
+
+- **Acento:** en claro pasa a petróleo `#0A4E58` (manual de marca); en
+  oscuro sigue `#5DBFB4`.
+- **Bordes:** `outline` es ahora el borde de un control y da 3:1 contra su
+  fondo (`#8C877D` / `#7F858C`); `outlineVariant` queda para las líneas que
+  solo separan. Los campos fuera del auth también toman el borde fuerte.
+- **Superficies:** la tarjeta (`GlassCard`) lleva filo en los dos modos y
+  el hundido en claro baja a `#ECE9E2`.
+- **Cifras:** `.figure` (IBM Plex Mono) en `CountUpText`, el código de
+  entrega, los KPI y la telemetría del vuelo.
+- **Íconos:** los 114 `_outlined` pasaron a `_rounded`.
+- **Arrastre:** `SlideToLaunch` se confirma también con dos toques ("Toca
+  otra vez para confirmar"), sin arrastrar (RNF-16).
+- El cambio de nombre de `GlassCard` y de los tokens `glass*` no se hizo
+  aquí: es un refactor aparte.
+- `flutter analyze` sin issues y `flutter test` en verde (368). Revisado
+  en web con datos locales, los cuatro roles, en claro y oscuro.
 
 ## Pendiente del backend
 

@@ -56,7 +56,7 @@ class OrderHistoryScreen extends ConsumerWidget {
             ),
           ),
       onRefresh: () => ref.invalidate(mineProvider),
-      emptyIcon: Icons.receipt_long_outlined,
+      emptyIcon: Icons.receipt_long_rounded,
       emptyText: onlyOpen
           ? 'No tienes pedidos en curso.'
           : 'Todavía no tienes pedidos.',

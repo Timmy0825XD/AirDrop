@@ -171,7 +171,7 @@ class _OrderDetailScreenState extends ConsumerState<OrderDetailScreen> {
       title: 'Omitir esta entrega',
       message: 'No se envía esta vez. Las demás entregas del plan siguen.',
       confirmLabel: 'Omitir',
-      icon: Icons.event_busy_outlined,
+      icon: Icons.event_busy_rounded,
       subject: Text(OccurrenceRules(order, simClock.now()).slotLabel),
     );
     if (!ok || !mounted) return;

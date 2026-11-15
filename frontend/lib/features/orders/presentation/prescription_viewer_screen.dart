@@ -90,7 +90,7 @@ class _PrescriptionViewerScreenState
           IconButton(
             tooltip: 'Qué revisar',
             onPressed: _showChecklist,
-            icon: const Icon(Icons.fact_check_outlined),
+            icon: const Icon(Icons.fact_check_rounded),
           ),
           IconButton(
             tooltip: 'Abrir con…',
@@ -102,7 +102,7 @@ class _PrescriptionViewerScreenState
       body: switch (files) {
         AsyncValue(:final value?) when value.isNotEmpty => _page(value),
         AsyncValue(:final value?) when value.isEmpty => const MessageView(
-          icon: Icons.receipt_long_outlined,
+          icon: Icons.receipt_long_rounded,
           message: 'Este pedido no tiene fórmula.',
         ),
         AsyncError(:final error) => MessageView(

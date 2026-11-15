@@ -343,7 +343,7 @@ class AuthPasswordToggle extends StatelessWidget {
         transitionBuilder: (child, animation) =>
             ScaleTransition(scale: animation, child: child),
         child: Icon(
-          visible ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+          visible ? Icons.visibility_off_rounded : Icons.visibility_rounded,
           key: ValueKey(visible),
           size: 20,
         ),

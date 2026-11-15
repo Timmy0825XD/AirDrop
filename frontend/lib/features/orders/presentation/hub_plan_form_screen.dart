@@ -80,7 +80,7 @@ class _HubPlanFormScreenState extends ConsumerState<HubPlanFormScreen>
       title: 'Abastecimiento',
       subtitle: 'Entregas periódicas desde otra central',
       source: ref.watch(originHubsProvider),
-      emptyIcon: Icons.domain_disabled_outlined,
+      emptyIcon: Icons.domain_disabled_rounded,
       emptyText: 'No hay otra central activa para pedirle.',
       fields: (origins) => [
         HubRequestFields(

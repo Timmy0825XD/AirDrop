@@ -16,7 +16,7 @@ List<MenuItem> _orderItems(MoreOpen open, DispatcherCounts? counts) => [
   MenuItem(
     title: 'Traslados entrantes',
     subtitle: 'Lo que otra central te envía',
-    icon: Icons.move_to_inbox_outlined,
+    icon: Icons.move_to_inbox_rounded,
     count: counts?.toReceive,
     urgent: true,
     onTap: open('/orders/incoming'),
@@ -24,7 +24,7 @@ List<MenuItem> _orderItems(MoreOpen open, DispatcherCounts? counts) => [
   MenuItem(
     title: 'Pendiente de carga',
     subtitle: 'El dron espera el insumo',
-    icon: Icons.inventory_2_outlined,
+    icon: Icons.inventory_2_rounded,
     count: counts?.pendingLoad,
     urgent: true,
     onTap: open('/orders/pending-load'),
@@ -32,14 +32,14 @@ List<MenuItem> _orderItems(MoreOpen open, DispatcherCounts? counts) => [
   MenuItem(
     title: 'Vuelos en curso',
     subtitle: 'Ida, entrega o regreso',
-    icon: Icons.near_me_outlined,
+    icon: Icons.near_me_rounded,
     count: counts?.inFlight,
     onTap: open('/orders/in-flight'),
   ),
   MenuItem(
     title: 'Programados',
     subtitle: 'Entregas por soltar',
-    icon: Icons.event_note_outlined,
+    icon: Icons.event_note_rounded,
     onTap: open('/orders/scheduled'),
   ),
   MenuItem(
@@ -59,12 +59,12 @@ List<MenuItem> _requestItems(BuildContext context, MoreOpen open) => [
   ),
   MenuItem(
     title: 'Nuevo abastecimiento',
-    icon: Icons.calendar_month_outlined,
+    icon: Icons.calendar_month_rounded,
     onTap: open('/orders/hub-plans/new'),
   ),
   MenuItem(
     title: 'Mis abastecimientos',
-    icon: Icons.event_repeat_outlined,
+    icon: Icons.event_repeat_rounded,
     onTap: () => context.push('/orders/plans'),
   ),
 ];
@@ -73,13 +73,13 @@ List<MenuItem> _requestItems(BuildContext context, MoreOpen open) => [
 List<MenuItem> _hubItems(BuildContext context, MoreOpen open) => [
   MenuItem(
     title: 'Mi central',
-    icon: Icons.home_work_outlined,
+    icon: Icons.home_work_rounded,
     onTap: open('/hubs/me', always: true),
   ),
   MenuItem(
     title: 'Cuarentena',
     subtitle: 'Insumos devueltos en revisión',
-    icon: Icons.health_and_safety_outlined,
+    icon: Icons.health_and_safety_rounded,
     onTap: open('/inventory/quarantine'),
   ),
   MenuItem(

@@ -26,7 +26,7 @@ class SchedulePreviewCard extends StatelessWidget {
     final p = preview;
     return DetailSection(
       title: 'Vista previa',
-      icon: Icons.event_note_outlined,
+      icon: Icons.event_note_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

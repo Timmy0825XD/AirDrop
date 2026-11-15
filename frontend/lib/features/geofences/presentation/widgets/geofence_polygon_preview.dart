@@ -47,7 +47,7 @@ class GeofencePolygonPreview extends StatelessWidget {
         const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: onDraw,
-          icon: const Icon(Icons.draw_outlined),
+          icon: const Icon(Icons.draw_rounded),
           label: Text(
             vertices.isEmpty ? 'Dibujar en el mapa' : 'Editar en el mapa',
           ),

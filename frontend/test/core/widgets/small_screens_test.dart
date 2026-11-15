@@ -16,9 +16,9 @@ final _bar = Align(
   alignment: Alignment.bottomCenter,
   child: AppTabBar(
     destinations: const [
-      NavDestination(icon: Icons.home_outlined, label: 'Inicio'),
-      NavDestination(icon: Icons.receipt_long_outlined, label: 'Pedidos'),
-      NavDestination(icon: Icons.event_repeat_outlined, label: 'Planes'),
+      NavDestination(icon: Icons.home_rounded, label: 'Inicio'),
+      NavDestination(icon: Icons.receipt_long_rounded, label: 'Pedidos'),
+      NavDestination(icon: Icons.event_repeat_rounded, label: 'Planes'),
       NavDestination(icon: Icons.person_outline, label: 'Perfil'),
     ],
     selected: 1,

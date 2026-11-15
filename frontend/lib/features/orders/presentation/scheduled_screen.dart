@@ -69,7 +69,7 @@ class ScheduledTile extends StatelessWidget {
         ? ''
         : ' · ${formatSlot(order.scheduledAt, order.windowEndsAt)}';
     return OrderRowCard(
-      icon: Icons.event_outlined,
+      icon: Icons.event_rounded,
       tone: Theme.of(context).colorScheme.primary,
       title: order.medicationName,
       accent:

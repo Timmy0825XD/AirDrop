@@ -53,7 +53,7 @@ class RoleTabs {
       };
 
   static const _home = NavDestination(
-    icon: Icons.space_dashboard_outlined,
+    icon: Icons.space_dashboard_rounded,
     label: 'Inicio',
   );
   static const _profile = NavDestination(
@@ -64,8 +64,8 @@ class RoleTabs {
   static RoleTabs _requester(BuildContext context) => RoleTabs(
     destinations: const [
       _home,
-      NavDestination(icon: Icons.receipt_long_outlined, label: 'Pedidos'),
-      NavDestination(icon: Icons.event_repeat_outlined, label: 'Planes'),
+      NavDestination(icon: Icons.receipt_long_rounded, label: 'Pedidos'),
+      NavDestination(icon: Icons.event_repeat_rounded, label: 'Planes'),
       _profile,
     ],
     paths: const ['/home', '/orders/mine', '/orders/plans', '/profile'],
@@ -85,8 +85,8 @@ class RoleTabs {
     return RoleTabs(
       destinations: const [
         _home,
-        NavDestination(icon: Icons.event_available_outlined, label: 'Agenda'),
-        NavDestination(icon: Icons.medication_outlined, label: 'Inventario'),
+        NavDestination(icon: Icons.event_available_rounded, label: 'Agenda'),
+        NavDestination(icon: Icons.medication_rounded, label: 'Inventario'),
         NavDestination(icon: Icons.grid_view_rounded, label: 'Más'),
       ],
       paths: const ['/home', '/orders/agenda', '/inventory', '/more'],
@@ -107,7 +107,7 @@ class RoleTabs {
       destinations: const [
         _home,
         NavDestination(icon: Icons.flight_rounded, label: 'Flota'),
-        NavDestination(icon: Icons.hexagon_outlined, label: 'Geovallas'),
+        NavDestination(icon: Icons.hexagon_rounded, label: 'Geovallas'),
         _profile,
       ],
       paths: const ['/home', '/fleet', '/geofences', '/profile'],
@@ -125,8 +125,8 @@ class RoleTabs {
   static RoleTabs _admin(BuildContext context) => RoleTabs(
     destinations: const [
       NavDestination(icon: Icons.insights_rounded, label: 'Resumen'),
-      NavDestination(icon: Icons.home_work_outlined, label: 'Centrales'),
-      NavDestination(icon: Icons.badge_outlined, label: 'Cuentas'),
+      NavDestination(icon: Icons.home_work_rounded, label: 'Centrales'),
+      NavDestination(icon: Icons.badge_rounded, label: 'Cuentas'),
       _profile,
     ],
     paths: const ['/home', '/hubs', '/users', '/profile'],

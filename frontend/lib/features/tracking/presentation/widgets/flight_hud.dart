@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../theme/app_palette.dart';
+import '../../../../theme/app_figures.dart';
 
 /// Lo que va dentro de la barra de vidrio del vuelo: la luz verde con "En
 /// vivo" (ámbar "Conectando" si el socket se cayó, o "Sin enlace" si el dron
@@ -26,10 +27,7 @@ class FlightLiveBar extends StatelessWidget {
     final theme = Theme.of(context);
     final palette = context.palette;
     final live = connected && !linkLost;
-    final mono = theme.textTheme.labelMedium?.copyWith(
-      fontFeatures: const [FontFeature.tabularFigures()],
-      letterSpacing: 0.6,
-    );
+    final mono = theme.textTheme.labelMedium?.figure;
     return Row(
       children: [
         _LiveDot(color: live ? palette.success : palette.warning),

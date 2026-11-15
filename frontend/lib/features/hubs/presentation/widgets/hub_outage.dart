@@ -27,6 +27,6 @@ class HubOutageBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WarningBanner(message: note, icon: Icons.power_off_outlined);
+    return WarningBanner(message: note, icon: Icons.power_off_rounded);
   }
 }

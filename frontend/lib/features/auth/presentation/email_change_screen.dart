@@ -131,7 +131,7 @@ class _EmailChangeScreenState extends ConsumerState<EmailChangeScreen>
             header,
             const Expanded(
               child: MessageView(
-                icon: Icons.mark_email_read_outlined,
+                icon: Icons.mark_email_read_rounded,
                 message: 'No tienes un cambio de correo pendiente.',
               ),
             ),

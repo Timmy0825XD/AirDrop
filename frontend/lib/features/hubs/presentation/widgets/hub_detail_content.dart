@@ -28,7 +28,7 @@ class HubDetailContent extends StatelessWidget {
       _HubMap(point: LatLng(hub.latitude, hub.longitude)),
       DetailSection(
         title: 'Contacto',
-        icon: Icons.call_outlined,
+        icon: Icons.call_rounded,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

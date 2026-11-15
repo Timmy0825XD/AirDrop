@@ -58,7 +58,7 @@ class _InventoryList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return switch (ref.watch(inventoryProvider)) {
       AsyncValue(hasValue: true, hasError: false, :final value?) when value.isEmpty => const MessageView(
-        icon: Icons.inventory_2_outlined,
+        icon: Icons.inventory_2_rounded,
         message: 'Aún no hay insumos en el inventario.',
       ),
       AsyncValue(hasValue: true, hasError: false, :final value?) => ListView.separated(

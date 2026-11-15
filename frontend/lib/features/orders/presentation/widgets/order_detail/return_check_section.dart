@@ -32,7 +32,7 @@ class ReturnCheckSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return DetailSection(
       title: 'Revisar el retorno',
-      icon: Icons.inventory_2_outlined,
+      icon: Icons.inventory_2_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

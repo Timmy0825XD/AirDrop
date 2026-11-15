@@ -19,7 +19,7 @@ class PrescriptionRecordCard extends StatelessWidget {
     final theme = Theme.of(context);
     return DetailSection(
       title: 'Fórmula médica',
-      icon: Icons.receipt_long_outlined,
+      icon: Icons.receipt_long_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -31,7 +31,7 @@ class PrescriptionRecordCard extends StatelessWidget {
           const SizedBox(height: 12),
           OutlinedButton.icon(
             onPressed: busy ? null : onView,
-            icon: const Icon(Icons.receipt_long_outlined, size: 18),
+            icon: const Icon(Icons.receipt_long_rounded, size: 18),
             label: const Text('Ver fórmula'),
           ),
         ],

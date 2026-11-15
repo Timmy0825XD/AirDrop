@@ -29,7 +29,7 @@ class MaintenancePeriodTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           ToneTile.icon(
-            icon: repair ? Icons.build_outlined : Icons.block_rounded,
+            icon: repair ? Icons.build_rounded : Icons.block_rounded,
             tone: repair ? colors.primary : colors.error,
           ),
           const SizedBox(width: 12),

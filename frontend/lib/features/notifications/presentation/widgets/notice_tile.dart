@@ -11,20 +11,20 @@ import '../../data/notice_models.dart';
   final palette = context.palette;
   final primary = Theme.of(context).colorScheme.primary;
   return switch (kind) {
-    NoticeKind.confirmDelivery => (Icons.event_available_outlined, primary),
-    NoticeKind.incomingSupply => (Icons.move_to_inbox_outlined, primary),
-    NoticeKind.dispatchSoon => (Icons.outbox_outlined, palette.warning),
-    NoticeKind.stockWarning => (Icons.inventory_2_outlined, palette.warning),
-    NoticeKind.deliverySkipped => (Icons.event_busy_outlined, palette.danger),
+    NoticeKind.confirmDelivery => (Icons.event_available_rounded, primary),
+    NoticeKind.incomingSupply => (Icons.move_to_inbox_rounded, primary),
+    NoticeKind.dispatchSoon => (Icons.outbox_rounded, palette.warning),
+    NoticeKind.stockWarning => (Icons.inventory_2_rounded, palette.warning),
+    NoticeKind.deliverySkipped => (Icons.event_busy_rounded, palette.danger),
     NoticeKind.departed => (Icons.flight_takeoff_rounded, palette.success),
-    NoticeKind.deliveryMissed => (Icons.timer_off_outlined, palette.danger),
-    NoticeKind.maintenanceDue => (Icons.build_outlined, palette.warning),
+    NoticeKind.deliveryMissed => (Icons.timer_off_rounded, palette.danger),
+    NoticeKind.maintenanceDue => (Icons.build_rounded, palette.warning),
     NoticeKind.maintenanceOverdue => (
-      Icons.build_circle_outlined,
+      Icons.build_circle_rounded,
       palette.danger,
     ),
-    NoticeKind.hubOutage => (Icons.power_off_outlined, palette.warning),
-    NoticeKind.hubPowerRestored => (Icons.power_outlined, palette.success),
+    NoticeKind.hubOutage => (Icons.power_off_rounded, palette.warning),
+    NoticeKind.hubPowerRestored => (Icons.power_rounded, palette.success),
     NoticeKind.other => (Icons.notifications_none_rounded, primary),
   };
 }

@@ -27,7 +27,7 @@ class OccurrenceSection extends StatelessWidget {
     final theme = Theme.of(context);
     return DetailSection(
       title: 'Tu entrega programada',
-      icon: Icons.event_available_outlined,
+      icon: Icons.event_available_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

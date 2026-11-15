@@ -20,7 +20,7 @@ class TopMedicationsCard extends StatelessWidget {
     final theme = Theme.of(context);
     return DetailSection(
       title: 'Lo más pedido',
-      icon: Icons.medication_outlined,
+      icon: Icons.medication_rounded,
       child: rows.isEmpty
           ? Text(
               'Sin pedidos en el periodo.',
@@ -94,7 +94,7 @@ class DemandZonesCard extends StatelessWidget {
     ];
     return DetailSection(
       title: 'Zonas de demanda',
-      icon: Icons.map_outlined,
+      icon: Icons.map_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

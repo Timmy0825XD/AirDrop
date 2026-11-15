@@ -151,7 +151,7 @@ class _PlanDetailScreenState extends ConsumerState<PlanDetailScreen> {
               ? null
               : () => context.push('/orders/plans/${plan.id}/schedule'),
           style: _buttonStyle(),
-          icon: const Icon(Icons.edit_calendar_outlined),
+          icon: const Icon(Icons.edit_calendar_rounded),
           label: const Text('Cambiar calendario'),
         ),
       if (plan.status == PlanStatus.active)

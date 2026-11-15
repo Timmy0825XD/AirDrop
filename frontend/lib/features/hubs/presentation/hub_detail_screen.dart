@@ -45,7 +45,7 @@ class HubDetailScreen extends ConsumerWidget {
                 ],
               ),
               AsyncValue(hasValue: true, hasError: false) => const MessageView(
-                icon: Icons.domain_disabled_outlined,
+                icon: Icons.domain_disabled_rounded,
                 message: 'No tienes una central asignada.',
               ),
               AsyncError(:final error) => MessageView(

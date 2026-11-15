@@ -168,7 +168,7 @@ class ClearSpotNote extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(Icons.park_outlined, size: 18, color: muted),
+        Icon(Icons.park_rounded, size: 18, color: muted),
         const SizedBox(width: 8),
         Expanded(
           child: Text(

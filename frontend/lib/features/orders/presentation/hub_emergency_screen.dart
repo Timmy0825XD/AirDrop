@@ -67,7 +67,7 @@ class _HubEmergencyScreenState extends ConsumerState<HubEmergencyScreen> {
       title: 'Urgencia a otra central',
       subtitle: 'Llega a tu central en el próximo vuelo',
       source: ref.watch(catalogProvider),
-      emptyIcon: Icons.medication_outlined,
+      emptyIcon: Icons.medication_rounded,
       emptyText: 'No hay medicamentos en el catálogo.',
       fields: (catalog) => [
         HubEmergencyFields(

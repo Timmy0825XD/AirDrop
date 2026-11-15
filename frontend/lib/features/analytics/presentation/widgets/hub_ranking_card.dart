@@ -16,7 +16,7 @@ class HubRankingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return DetailSection(
       title: '$rank. ${hub.name}',
-      icon: Icons.home_work_outlined,
+      icon: Icons.home_work_rounded,
       child: Column(
         children: [
           DetailLine(label: 'Misiones', value: '${hub.missions}'),

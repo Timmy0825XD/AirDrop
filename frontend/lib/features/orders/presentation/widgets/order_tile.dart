@@ -37,7 +37,7 @@ class OrderTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         OrderRowCard(
-          icon: urgent ? Icons.emergency_outlined : Icons.event_outlined,
+          icon: urgent ? Icons.emergency_rounded : Icons.event_rounded,
           tone: urgent ? colors.error : colors.primary,
           title: order.medicationName,
           accent: '${order.missionType.label} · ${order.quantity} und.',

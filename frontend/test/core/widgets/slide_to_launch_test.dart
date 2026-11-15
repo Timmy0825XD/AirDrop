@@ -52,4 +52,31 @@ void main() {
     expect(find.text('Desliza para despegar'), findsOneWidget);
     expect(find.byIcon(Icons.flight_takeoff_rounded), findsOneWidget);
   });
+
+  testWidgets('sin arrastrar: un toque pide confirmar y el segundo lanza', (
+    tester,
+  ) async {
+    var launched = 0;
+    await _pump(tester, () async => launched++);
+
+    await tester.tap(find.text('Desliza para despegar'));
+    await tester.pump();
+    expect(launched, 0);
+    expect(find.text(SlideToLaunch.confirmLabel), findsOneWidget);
+
+    await tester.tap(find.text(SlideToLaunch.confirmLabel));
+    await tester.pump(const Duration(seconds: 2));
+    expect(launched, 1);
+  });
+
+  testWidgets('un solo toque se desarma a los pocos segundos', (tester) async {
+    var launched = 0;
+    await _pump(tester, () async => launched++);
+
+    await tester.tap(find.text('Desliza para despegar'));
+    await tester.pump(const Duration(seconds: 5));
+
+    expect(launched, 0);
+    expect(find.text('Desliza para despegar'), findsOneWidget);
+  });
 }

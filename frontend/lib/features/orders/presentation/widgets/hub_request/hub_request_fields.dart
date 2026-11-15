@@ -78,7 +78,7 @@ class _OriginPicker extends StatelessWidget {
           PickerOption(
             value: hub.id,
             title: hub.name,
-            icon: Icons.home_work_outlined,
+            icon: Icons.home_work_rounded,
           ),
       ],
       isSelected: (id) => id == f.values.originHubId,

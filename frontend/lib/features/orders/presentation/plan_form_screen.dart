@@ -125,7 +125,7 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen>
         title: 'Entrega periódica',
         subtitle: 'Tu tratamiento, en los días y la hora que elijas',
         source: ref.watch(catalogProvider),
-        emptyIcon: Icons.medication_outlined,
+        emptyIcon: Icons.medication_rounded,
         emptyText: 'No hay medicamentos disponibles por ahora.',
         steps: FormSteps(labels: PlanFormScreen.steps, current: _step),
         onBack: _back,

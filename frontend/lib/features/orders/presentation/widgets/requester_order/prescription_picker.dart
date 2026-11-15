@@ -188,7 +188,7 @@ class _Thumbnail extends StatelessWidget {
               width: 56,
               height: 56,
               fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => icon(Icons.image_outlined),
+              errorBuilder: (_, _, _) => icon(Icons.image_rounded),
             ),
     );
   }
@@ -221,7 +221,7 @@ class PrescriptionButtons extends StatelessWidget {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: full ? null : onTakePhoto,
-                icon: const Icon(Icons.photo_camera_outlined),
+                icon: const Icon(Icons.photo_camera_rounded),
                 label: Text(photos == 0 ? 'Tomar foto' : 'Otra hoja'),
               ),
             ),
@@ -229,7 +229,7 @@ class PrescriptionButtons extends StatelessWidget {
             Expanded(
               child: OutlinedButton.icon(
                 onPressed: onPickFiles,
-                icon: const Icon(Icons.upload_file_outlined),
+                icon: const Icon(Icons.upload_file_rounded),
                 label: const Text('Subir archivo'),
               ),
             ),

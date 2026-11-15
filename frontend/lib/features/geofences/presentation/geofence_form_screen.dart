@@ -141,7 +141,7 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
         subtitle: 'Editar geovalla',
         onBack: () => SectionHeader.backOrHome(context),
       ),
-      body: MessageView(icon: Icons.polyline_outlined, message: text),
+      body: MessageView(icon: Icons.polyline_rounded, message: text),
     );
   }
 }

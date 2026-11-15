@@ -58,7 +58,7 @@ class _FleetBody extends ConsumerWidget {
       AsyncValue(hasValue: true, hasError: false, :final value?)
           when value.isEmpty =>
         const MessageView(
-          icon: Icons.domain_disabled_outlined,
+          icon: Icons.domain_disabled_rounded,
           message: 'No tienes centrales asignadas.',
         ),
       AsyncValue(hasValue: true, hasError: false, :final value?) => _FleetPane(

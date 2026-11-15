@@ -62,7 +62,7 @@ class _Step extends StatelessWidget {
           borderRadius: BorderRadius.circular(2),
           child: Container(
             height: 4,
-            color: colors.outline,
+            color: colors.outlineVariant,
             alignment: Alignment.centerLeft,
             child: AnimatedFractionallySizedBox(
               duration: const Duration(milliseconds: 500),

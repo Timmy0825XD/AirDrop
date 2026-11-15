@@ -20,11 +20,11 @@ class HubLabels {
   };
 
   static IconData icon(HubType type) => switch (type) {
-    HubType.hospital => Icons.local_hospital_outlined,
-    HubType.clinic => Icons.medical_services_outlined,
-    HubType.pharmacy => Icons.medication_outlined,
-    HubType.bloodBank => Icons.bloodtype_outlined,
-    HubType.vaccination => Icons.vaccines_outlined,
+    HubType.hospital => Icons.local_hospital_rounded,
+    HubType.clinic => Icons.medical_services_rounded,
+    HubType.pharmacy => Icons.medication_rounded,
+    HubType.bloodBank => Icons.bloodtype_rounded,
+    HubType.vaccination => Icons.vaccines_rounded,
   };
 
   static String status(HubStatus status) => switch (status) {

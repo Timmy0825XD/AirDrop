@@ -21,7 +21,7 @@ class ProfileDataCard extends StatelessWidget {
     final type = user.documentType;
     return DetailSection(
       title: 'Tus datos',
-      icon: Icons.badge_outlined,
+      icon: Icons.badge_rounded,
       child: Column(
         children: [
           _EditableLine(
@@ -76,7 +76,7 @@ class ProfilePendingEmailCard extends StatelessWidget {
     final theme = Theme.of(context);
     return DetailSection(
       title: 'Correo pendiente de confirmar',
-      icon: Icons.mark_email_unread_outlined,
+      icon: Icons.mark_email_unread_rounded,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -165,7 +165,7 @@ class ProfileHubsCard extends StatelessWidget {
     final list = names;
     return DetailSection(
       title: list != null && list.length > 1 ? 'Tus centrales' : 'Tu central',
-      icon: Icons.home_work_outlined,
+      icon: Icons.home_work_rounded,
       child: list == null
           ? const LinearProgressIndicator()
           : Column(

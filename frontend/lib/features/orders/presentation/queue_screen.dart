@@ -53,7 +53,7 @@ class QueueTile extends StatelessWidget {
     final toHub = order.destinationKind == DestinationKind.hub;
     final wait = queueWaitMinutes(order.createdAt, simClock.now());
     return OrderRowCard(
-      icon: toHub ? Icons.home_work_outlined : Icons.person_outline_rounded,
+      icon: toHub ? Icons.home_work_rounded : Icons.person_outline_rounded,
       tone: Theme.of(context).colorScheme.error,
       title: order.medicationName,
       accent: '${order.quantity} und. · ${destinationLabel(order)}',

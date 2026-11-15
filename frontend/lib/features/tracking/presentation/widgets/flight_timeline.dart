@@ -4,6 +4,7 @@ import '../../../../core/date_format.dart';
 import '../../../../theme/app_palette.dart';
 import '../../../orders/data/order_models.dart';
 import '../../data/telemetry_models.dart';
+import '../../../../theme/app_figures.dart';
 
 /// Un paso de la línea de tiempo del vuelo.
 typedef _Step = ({String title, String? note, DateTime? at, _StepState state});
@@ -121,9 +122,7 @@ class _StepRow extends StatelessWidget {
           if (at != null)
             Text(
               formatClock(at),
-              style: theme.textTheme.labelMedium?.copyWith(
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
+              style: theme.textTheme.labelMedium?.figure,
             ),
         ],
       ),

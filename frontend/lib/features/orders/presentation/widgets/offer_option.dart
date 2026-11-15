@@ -18,6 +18,6 @@ PickerOption<CatalogOffer> offerOption(CatalogOffer offer) {
     subtitle: details.join(' · '),
     icon: offer.requiresColdChain
         ? Icons.ac_unit_rounded
-        : Icons.medication_outlined,
+        : Icons.medication_rounded,
   );
 }
