@@ -1,3 +1,4 @@
+import { ManifestsModule } from '../manifests/manifests.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WeatherModule } from '../weather/weather.module';
@@ -23,6 +24,7 @@ import { ScheduledRetryService } from './scheduled-retry.service';
     SimulationModule,
     NotificationsModule,
     WeatherModule,
+    ManifestsModule,
   ],
   providers: [
     DecisionService,

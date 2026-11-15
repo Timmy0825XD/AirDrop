@@ -7,6 +7,7 @@ import type { WeatherCellJson } from '../weather/weather.service';
 import type { TemporaryGeofenceJson } from '../geofences/geofences.service';
 import type { IncidentJson } from '../simulation/flight-incidents.service';
 import type { HubOutageJson } from '../hubs/hub-outage.service';
+import type { UnidentifiedContactJson } from '../control/unidentified-contacts.service';
 import { OrderStatus } from '../common/enums/order-status.enum';
 import { FlightAlertKind, LiveFlight } from '../simulation/simulation.rules';
 import {
@@ -42,6 +43,12 @@ export type TelemetryEvent =
       type: 'hub-outage';
       action: 'started' | 'ended';
       outage: HubOutageJson;
+    }
+  /** RF-36 y RF-48: un dron no identificado aparece, se mueve o se va. */
+  | {
+      type: 'unidentified';
+      action: 'started' | 'moved' | 'ended';
+      contact: UnidentifiedContactJson;
     }
   /** RF-34: un incidente en vuelo nuevo, o un cambio en cómo va. */
   | { type: 'incident'; incident: IncidentJson }

@@ -1,3 +1,6 @@
+import { present as presentManifest } from '../manifests/manifests.service';
+import { ManifestsService } from '../manifests/manifests.service';
+import { radarManifest } from './radar.rules';
 import { AirspaceService } from '../airspace/airspace.service';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -55,6 +58,7 @@ export class RadarService {
     private readonly telemetry: TelemetryPublisher,
     private readonly routes: RoutePlannerService,
     private readonly airspace: AirspaceService,
+    private readonly manifests: ManifestsService,
   ) {}
 
   /** Todo lo que el mapa dibuja al abrir: centrales, vuelos, geovallas y zonas legales. */
@@ -167,17 +171,19 @@ export class RadarService {
     if (!drone) {
       throw new NotFoundException('Ese vuelo no existe.');
     }
-    const [[flight], outbound, back, previous, hubs] = await Promise.all([
-      this.flightsOf([drone], [order]),
-      this.routes.findOutboundMany([orderId]),
-      this.routes.findReturnMany([orderId]),
-      this.routes.findPrevious(orderId),
-      this.hubs.find({
-        where: {
-          id: In([order.originHubId, order.destinationHubId].filter(Boolean)),
-        },
-      }),
-    ]);
+    const [[flight], outbound, back, previous, hubs, manifest] =
+      await Promise.all([
+        this.flightsOf([drone], [order]),
+        this.routes.findOutboundMany([orderId]),
+        this.routes.findReturnMany([orderId]),
+        this.routes.findPrevious(orderId),
+        this.hubs.find({
+          where: {
+            id: In([order.originHubId, order.destinationHubId].filter(Boolean)),
+          },
+        }),
+        this.manifests.latest(orderId),
+      ]);
     return {
       flight: flight ?? null,
       route: outbound.get(orderId) ?? null,
@@ -187,6 +193,10 @@ export class RadarService {
       previousReturnRoute: previous[RouteLeg.RETURN] ?? null,
       originHub: this.hubName(hubs, order.originHubId),
       destinationHub: this.hubName(hubs, order.destinationHubId),
+      // RF-47: el manifiesto, sin el medicamento si va a una persona.
+      manifest: manifest
+        ? radarManifest(presentManifest(manifest), order.destinationKind)
+        : null,
     };
   }
 

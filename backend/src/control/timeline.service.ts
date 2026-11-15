@@ -128,6 +128,26 @@ export class TimelineService implements OnModuleInit {
     });
   }
 
+  /** RF-36: una alerta del sistema con posición (dron no identificado). */
+  async recordAlert(
+    title: string,
+    detail: string | null,
+    at: { position: Position; droneId?: string | null },
+  ): Promise<void> {
+    await this.record({
+      kind: 'alert',
+      severity: 'danger',
+      title,
+      detail,
+      orderId: null,
+      droneId: at.droneId ?? null,
+      hubId: null,
+      latitude: at.position.latitude,
+      longitude: at.position.longitude,
+      source: 'system',
+    });
+  }
+
   /** RF-38: un evento que sorteó el modo caos, con dónde cayó. */
   async recordChaos(
     title: string,

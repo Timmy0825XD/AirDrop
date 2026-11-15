@@ -1,3 +1,4 @@
+import { ManifestsModule } from '../manifests/manifests.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AirspaceModule } from '../airspace/airspace.module';
@@ -25,6 +26,7 @@ import { RadarService } from './radar.service';
     RoutingModule,
     TelemetryModule,
     AirspaceModule,
+    ManifestsModule,
   ],
   controllers: [RadarController],
   providers: [RadarService],

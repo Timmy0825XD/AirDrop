@@ -38,6 +38,8 @@ import { PendingAlertsService } from './pending-alerts.service';
 import { ScenarioResetService } from './scenario-reset.service';
 import { clampTimelineLimit } from './timeline.rules';
 import { TimelineService } from './timeline.service';
+import { UnidentifiedContactsService } from './unidentified-contacts.service';
+import { LaunchUnidentifiedDto } from './dto/launch-unidentified.dto';
 
 /** RU-32: consola de simulación de la web. Solo el administrador. */
 @ApiTags('Control')
@@ -56,6 +58,7 @@ export class ControlController {
     private readonly actors: SimActorsService,
     private readonly generator: OrderGeneratorService,
     private readonly chaos: ChaosService,
+    private readonly unidentified: UnidentifiedContactsService,
   ) {}
 
   @Get('clock')
@@ -189,6 +192,18 @@ export class ControlController {
       dto.radiusKm,
       dto.count,
     );
+  }
+
+  /** RF-36: los drones no identificados que cruzan ahora la región. */
+  @Get('unidentified')
+  getUnidentified() {
+    return this.unidentified.list();
+  }
+
+  /** RF-36, RF-48: lanza un dron no identificado. El sistema no actúa contra él. */
+  @Post('unidentified')
+  launchUnidentified(@Body() dto: LaunchUnidentifiedDto) {
+    return this.unidentified.launchFromConsole(dto);
   }
 
   /** RF-38: si el modo caos está encendido y con qué intensidad. */

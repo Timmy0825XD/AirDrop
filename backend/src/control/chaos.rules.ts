@@ -120,7 +120,7 @@ export const FAMILY_WEIGHTS: Record<ChaosFamily, number> = {
 export const SEVERE_SHARE = 0.1;
 
 export type EnvironmentKind =
-  'temporary_geofence' | 'surge' | 'no_show' | 'hub_outage';
+  'temporary_geofence' | 'surge' | 'no_show' | 'unidentified' | 'hub_outage';
 
 export type ChaosEvent =
   | { family: 'weather'; kind: WeatherKind }
@@ -231,6 +231,8 @@ export function environmentWeights(
       ['temporary_geofence', 40],
       ['surge', 30],
       ['no_show', 30],
+      // RF-36: un dron no identificado cruza la región.
+      ['unidentified', 20],
     ],
     ['hub_outage'],
     intensity === 'high',
@@ -371,6 +373,7 @@ const ENVIRONMENT_TITLE: Record<EnvironmentKind, string> = {
   temporary_geofence: 'zona restringida temporal',
   surge: 'pico de urgencias',
   no_show: 'nadie retirará un paquete',
+  unidentified: 'dron no identificado',
   hub_outage: 'central sin energía',
 };
 

@@ -1,3 +1,4 @@
+import { manifestsStub } from '../manifests/manifests.testing';
 import { FLAT_TERRAIN } from '../airspace/terrain.testing';
 import { BadRequestException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
@@ -47,7 +48,7 @@ function build(polygons: GeoJsonPolygon[] = []) {
     }),
     update: jest.fn().mockResolvedValue({ affected: 1 }),
     count: jest.fn().mockResolvedValue(0),
-    manager: {},
+    manager: { find: jest.fn().mockResolvedValue([]) },
   };
   const drones = { update: jest.fn().mockResolvedValue(undefined) };
   const missions = {
@@ -109,6 +110,7 @@ function build(polygons: GeoJsonPolygon[] = []) {
     grounded: jest.fn().mockResolvedValue(null),
     returnedHome: jest.fn().mockResolvedValue(undefined),
     lose: jest.fn().mockResolvedValue(false),
+    linkRecovered: jest.fn().mockResolvedValue(undefined),
   };
   const service = new FlightClockService(
     orders as never,
@@ -121,6 +123,7 @@ function build(polygons: GeoJsonPolygon[] = []) {
     { active: () => [] } as never,
     incidents as never,
     FLAT_TERRAIN,
+    manifestsStub() as never,
   );
   const aborted = jest.fn().mockResolvedValue(undefined);
   service.onMissionAborted(aborted);
@@ -154,6 +157,8 @@ function fly(
     hubId: 'hub-1',
     hub: HUB,
     identifier: 'WG-198-001',
+    typeName: 'Garza',
+    manifestNumber: 'MAN-2026-000001',
     quantity: 1,
     requiresColdChain: options.cold ?? false,
     corridor: straight,
@@ -235,6 +240,54 @@ describe('Viento sobre el límite de ida: vuelve a la central (RF-34, RF-35)', (
     // El dron nuevo no retoma el vuelo del que volvió.
     expect(built.telemetry.forgetFlight).toHaveBeenCalledWith(ORDER_ID);
     expect(built.aborted).toHaveBeenCalledWith(ORDER_ID);
+  });
+});
+
+describe('Punto seguro de la red (RF-34, paso 3)', () => {
+  const nearPoint = {
+    name: 'Puesto de salud cercano',
+    latitude: 10.46,
+    longitude: -73.245,
+  };
+  const farHub = { name: 'Nodo lejano', latitude: 10.9, longitude: -73.0 };
+
+  it('sin batería para volver, baja en el nodo, ESE o punto de entrega que alcance', async () => {
+    const built = build();
+    built.orders.manager.find
+      .mockResolvedValueOnce([farHub])
+      .mockResolvedValueOnce([nearPoint]);
+    const session = fly(built, { cruiseKm: 5, batteryPercent: 12 });
+    await built.service['handleIncident'](
+      session,
+      IncidentKind.BATTERY_CRITICAL,
+    );
+    expect(built.incidents.record).toHaveBeenCalledWith(
+      expect.objectContaining({
+        protocol: ContingencyProtocol.EMERGENCY_LANDING,
+      }),
+    );
+    expect(built.incidents.setLanding).toHaveBeenCalledWith(
+      'incident-1',
+      expect.objectContaining({ name: nearPoint.name }),
+    );
+    const corridor = session.corridor.coordinates.at(-1)!;
+    expect(corridor).toEqual([nearPoint.longitude, nearPoint.latitude]);
+  });
+
+  it('dos motores bajan donde van, aunque haya un punto seguro cerca', async () => {
+    const built = build();
+    built.orders.manager.find.mockResolvedValue([nearPoint]);
+    const session = fly(built, { cruiseKm: 5, batteryPercent: 90 });
+    await built.service['handleIncident'](
+      session,
+      IncidentKind.DUAL_MOTOR_FAILURE,
+    );
+    const [, landing] = built.incidents.setLanding.mock.calls[0] as [
+      string,
+      { latitude: number; longitude: number; name?: string },
+    ];
+    expect(landing.name).toBeUndefined();
+    expect(landing.longitude).toBeLessThan(-73.25);
   });
 });
 
@@ -502,8 +555,9 @@ describe('Catálogo de incidentes de la consola (RF-34, CU-38)', () => {
     }
   });
 
-  it('sin enlace vuelve solo a la central, marcado; el enlace vuelve al aterrizar', async () => {
+  it('sin enlace espera 30 s en el aire y, si no vuelve, regresa solo al nodo; el enlace vuelve al aterrizar', async () => {
     const built = build();
+    built.service['random'] = () => 0.9; // el enlace no vuelve
     fly(built, { cruiseKm: 3, batteryPercent: 90 });
     const incident = await built.service.launchIncident(
       DRONE_ID,
@@ -512,14 +566,48 @@ describe('Catálogo de incidentes de la consola (RF-34, CU-38)', () => {
     expect(incident.protocol).toBe(ContingencyProtocol.RETURN_TO_HUB);
     const session = built.service['active'].get(ORDER_ID)!;
     expect(session.progress.linkLost).toBe(true);
+    expect(session.progress.linkHold?.untilMs).toBeGreaterThan(Date.now());
+    // Mientras espera, no avanza ni da la vuelta.
+    await built.service['tick'](ORDER_ID);
+    expect(session.progress.cruiseKm).toBe(3);
+    expect(session.leg).toBe(RouteLeg.OUTBOUND);
+    // Pasaron los 30 s.
+    session.progress.linkHold!.untilMs = 0;
+    await built.service['tick'](ORDER_ID);
+    expect(session.leg).toBe(RouteLeg.RETURN);
+    expect(session.progress.linkHold).toBeNull();
     await untilLanded(built.service);
     const published = built.telemetry.publishFlight.mock.calls.map(
-      ([flight]) => flight as { linkLost?: boolean; phase: FlightPhase },
+      ([flight]) =>
+        flight as {
+          linkLost?: boolean;
+          phase: FlightPhase;
+          remoteId?: { status: string };
+        },
     );
     expect(published.some((flight) => flight.linkLost === true)).toBe(true);
+    expect(published[0].remoteId?.status).toBe('link_lost');
     const last = published.at(-1)!;
     expect(last.phase).toBe(FlightPhase.LANDED);
     expect(last.linkLost).toBe(false);
+  });
+
+  it('si el enlace vuelve durante la espera, sigue la misión (RF-34, C2)', async () => {
+    const built = build();
+    built.service['random'] = () => 0.1; // el enlace vuelve
+    fly(built, { cruiseKm: 3, batteryPercent: 90 });
+    const incident = await built.service.launchIncident(
+      DRONE_ID,
+      IncidentKind.LINK_LOSS,
+    );
+    expect(incident.protocol).toBe(ContingencyProtocol.CONTINUE);
+    const session = built.service['active'].get(ORDER_ID)!;
+    session.progress.linkHold!.untilMs = 0;
+    await built.service['tick'](ORDER_ID);
+    expect(session.progress.linkLost).toBe(false);
+    expect(session.leg).toBe(RouteLeg.OUTBOUND);
+    expect(session.progress.cruiseKm).toBeGreaterThan(3);
+    expect(built.incidents.linkRecovered).toHaveBeenCalledWith('incident-1');
   });
 
   it('falla de la refrigeración: sin carga fría no aplica; con ella sigue y la carga empieza a calentarse', async () => {

@@ -1,3 +1,4 @@
+import { UnidentifiedContactsService } from './unidentified-contacts.service';
 import { DeliveryPointsModule } from '../delivery-points/delivery-points.module';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -58,6 +59,7 @@ import { TimelineService } from './timeline.service';
     OrderGeneratorService,
     SimulatedReceiverService,
     ChaosService,
+    UnidentifiedContactsService,
   ],
 })
 export class ControlModule {}

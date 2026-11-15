@@ -378,6 +378,14 @@ export class TelemetryGateway
         });
         return;
       }
+      if (event.type === 'unidentified') {
+        // RF-36: solo la consola lo ve; el sistema no actúa contra él.
+        this.server?.to(RADAR_ROOM).emit('radar-unidentified', {
+          action: event.action,
+          contact: event.contact,
+        });
+        return;
+      }
       if (event.type === 'incident') {
         // RF-34 y CU-32: la consola y el mapa de la flota del operador. No
         // lleva qué medicamento iba (RNF-05).

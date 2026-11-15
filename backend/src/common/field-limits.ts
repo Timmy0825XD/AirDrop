@@ -20,6 +20,10 @@ export const FIELD_LIMITS = {
   municipality: 80,
   /** RF-43: código de una zona legal (`resguardo-kankuamo`). */
   airspaceZoneCode: 32,
+  /** RF-47: `MAN-2026-000123`. */
+  manifestNumber: 16,
+  /** RF-47: rango de frío exigido (`2–8 °C`). */
+  coldRange: 16,
   reason: 160,
   droneIdentifier: 32,
   droneModelName: 80,

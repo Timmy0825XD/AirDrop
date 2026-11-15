@@ -1,3 +1,4 @@
+import { manifestsStub } from '../manifests/manifests.testing';
 import { ALWAYS_DAY } from '../airspace/daylight.testing';
 import { FLAT_TERRAIN } from '../airspace/terrain.testing';
 import { ConflictException } from '@nestjs/common';
@@ -316,6 +317,7 @@ function build(state?: {
     flights as unknown as FlightClockService,
     notifications as unknown as NotificationsService,
     inbox as never,
+    manifestsStub() as never,
   );
   return {
     service,

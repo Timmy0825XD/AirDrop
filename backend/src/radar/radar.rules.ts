@@ -94,10 +94,29 @@ export function presentRadarFlight(
     batteryPercent: flight?.batteryPercent ?? null,
     temperatureC: flight?.temperatureC ?? null,
     etaSeconds: flight?.etaSeconds ?? null,
+    // RF-48: el radar distingue un vuelo propio por su identificación.
+    linkLost: flight?.linkLost === true,
+    remoteId: flight?.remoteId ?? null,
     alerts: {
       battery: alerts.battery,
       failure: alerts.failure,
       coldChain: order.coldChainAlertAt != null,
     },
+  };
+}
+
+/**
+ * RF-47 en el radar: el número, el dron, el peso y quién lo autorizó. El
+ * radar se proyecta: si la carga va a una persona, no dice el medicamento.
+ */
+export function radarManifest<
+  T extends { items: Array<{ medicationName: string }> },
+>(manifest: T, destinationKind: DestinationKind) {
+  if (destinationKind === DestinationKind.HUB) {
+    return manifest;
+  }
+  return {
+    ...manifest,
+    items: manifest.items.map((item) => ({ ...item, medicationName: null })),
   };
 }

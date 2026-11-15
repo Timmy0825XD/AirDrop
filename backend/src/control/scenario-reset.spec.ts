@@ -196,6 +196,7 @@ function build(hubs: Array<Partial<Hub>>) {
     receiver as never,
     chaos as never,
     points as never,
+    { clear: jest.fn().mockResolvedValue(undefined) } as never,
   );
   return {
     service,

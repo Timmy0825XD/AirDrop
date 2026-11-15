@@ -1,3 +1,4 @@
+import { ManifestsService } from '../manifests/manifests.service';
 import {
   BadRequestException,
   ConflictException,
@@ -110,6 +111,7 @@ export class DecisionService {
     private readonly flights: FlightClockService,
     private readonly notifications: NotificationsService,
     private readonly inbox: InboxService,
+    private readonly manifests: ManifestsService,
   ) {}
 
   async authorize(user: User, orderId: string, dto: AuthorizeOrderDto = {}) {
@@ -392,49 +394,60 @@ export class DecisionService {
 
   async confirmLoad(user: User, orderId: string) {
     const hub = await this.requireDispatcherHub(user);
-    return this.confirmLoadAt(hub, orderId);
+    return this.confirmLoadAt(hub, orderId, user);
   }
 
   /** RF-37: el despachador automático confirma la carga en su central. */
   async autoConfirmLoad(hubId: string, orderId: string) {
     const hub = await this.hubsService.requireActive(hubId);
-    return this.confirmLoadAt(hub, orderId);
+    return this.confirmLoadAt(hub, orderId, null);
   }
 
-  private async confirmLoadAt(hub: Hub, orderId: string) {
+  private async confirmLoadAt(
+    hub: Hub,
+    orderId: string,
+    confirmedBy: User | null,
+  ) {
     assertPowered(hub);
     if (!this.flights.isReady()) {
       throw new ServiceUnavailableException(TELEMETRY_UNAVAILABLE);
     }
-    const order = await this.dataSource.transaction(async (manager) => {
-      const current = await manager.findOne(Order, {
-        where: { id: orderId },
-        lock: { mode: 'pessimistic_write' },
-      });
-      if (!current) {
-        throw new NotFoundException('El pedido no existe.');
-      }
-      if (
-        current.status !== OrderStatus.PENDING_LOAD ||
-        current.loadConfirmedAt != null
-      ) {
-        throw new BadRequestException(ONLY_PENDING_LOAD_IS_CONFIRMED);
-      }
-      if (current.originHubId !== hub.id) {
-        throw new ForbiddenException(NOT_THE_LOADING_HUB);
-      }
-      assertDispatchWindow(current, simClock.now());
-      const corridor = await this.routes.findOutboundMany([orderId]);
-      if (!current.droneId || !corridor.has(orderId)) {
-        throw new BadRequestException(FLIGHT_NOT_READY);
-      }
-      await this.dischargeLot(manager, current);
-      current.loadConfirmedAt = simClock.now();
-      return manager.save(current);
-    });
+    const { order, manifest } = await this.dataSource.transaction(
+      async (manager) => {
+        const current = await manager.findOne(Order, {
+          where: { id: orderId },
+          lock: { mode: 'pessimistic_write' },
+        });
+        if (!current) {
+          throw new NotFoundException('El pedido no existe.');
+        }
+        if (
+          current.status !== OrderStatus.PENDING_LOAD ||
+          current.loadConfirmedAt != null
+        ) {
+          throw new BadRequestException(ONLY_PENDING_LOAD_IS_CONFIRMED);
+        }
+        if (current.originHubId !== hub.id) {
+          throw new ForbiddenException(NOT_THE_LOADING_HUB);
+        }
+        assertDispatchWindow(current, simClock.now());
+        const corridor = await this.routes.findOutboundMany([orderId]);
+        if (!current.droneId || !corridor.has(orderId)) {
+          throw new BadRequestException(FLIGHT_NOT_READY);
+        }
+        await this.dischargeLot(manager, current);
+        current.loadConfirmedAt = simClock.now();
+        const saved = await manager.save(current);
+        // RF-47: sin manifiesto no hay despegue; va en la misma transacción.
+        return {
+          order: saved,
+          manifest: await this.manifests.issue(manager, saved, confirmedBy),
+        };
+      },
+    );
     await this.flights.start(order.id);
     const [presented] = await this.attachAssignments([presentOrder(order)]);
-    return presented;
+    return { ...presented, manifestNumber: manifest.number };
   }
 
   async listPendingLoad(user: User) {
