@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { DRONE_BODY, DRONE_ROTOR_R, DRONE_ROTORS, DRONE_WINGS } from "@/lib/drone-shape";
 import {
   AlertIcon,
   FogIcon,
@@ -14,19 +13,18 @@ import {
 } from "./icons";
 import { IconButton } from "./ui";
 
-/** El dron del mapa, relleno, con el color de su estado. */
+/** El dron del mapa (el de la app) con el color de su estado. */
 function DroneSwatch({ color }: { color: string }) {
   return (
-    <svg viewBox="0 0 24 24" width={18} height={18} aria-hidden>
-      <g fill={color} stroke="var(--ground)" strokeWidth={0.8}>
-        <path d={DRONE_BODY} />
-        {DRONE_WINGS.map((wing) => (
-          <path key={wing} d={wing} />
-        ))}
-        {DRONE_ROTORS.map(([cx, cy]) => (
-          <circle key={cx} cx={cx} cy={cy} r={DRONE_ROTOR_R} />
-        ))}
+    <svg viewBox="0 0 34 34" width={20} height={20} aria-hidden>
+      <g fill="none" stroke={color} strokeWidth={2.4} strokeLinecap="round">
+        <path d="M11 11l12 12M23 11L11 23" />
+        <circle cx={9} cy={9} r={5.5} />
+        <circle cx={25} cy={9} r={5.5} />
+        <circle cx={9} cy={25} r={5.5} />
+        <circle cx={25} cy={25} r={5.5} />
       </g>
+      <rect x={12.5} y={12.5} width={9} height={9} rx={3} fill="var(--accent)" stroke={color} strokeWidth={2} />
     </svg>
   );
 }
@@ -86,8 +84,17 @@ export function Legend() {
             <Item mark={<DroneSwatch color="var(--warning)" />}>Dron de regreso</Item>
             <Item mark={<DroneSwatch color="var(--danger)" />}>Dron con alerta</Item>
             <Item mark={<HubIcon size={17} className="text-text" />}>Nodo (tiene drones)</Item>
-            <Item mark={<span className="size-3.5 rounded-full border-[1.5px] border-line-strong" />}>
+            <Item mark={<span className="size-3.5 rounded-full border-[1.5px] border-info" />}>
               ESE (solo recibe)
+            </Item>
+            <Item
+              mark={
+                <span className="grid size-5 place-items-center rounded-full border-[1.5px] border-accent text-[10px] font-bold text-text">
+                  4
+                </span>
+              }
+            >
+              Varios sitios juntos (acércate)
             </Item>
             <Item mark={<PinIcon size={17} className="text-success" />}>Punto de entrega</Item>
             <Item mark={<PowerOffIcon size={17} className="text-warning" />}>Sin energía</Item>
@@ -100,13 +107,10 @@ export function Legend() {
               Zona restringida
             </Item>
             <Item mark={<span className="size-3.5 rounded-[3px] border border-dashed border-warning" />}>
-              Zona temporal o coordinada
+              Zona temporal
             </Item>
-            <Item mark={<span className="size-3.5 rounded-[3px] border border-danger bg-danger/15" />}>
-              No se vuela (aeródromo, prohibida)
-            </Item>
-            <Item mark={<span className="size-3.5 rounded-[3px] border border-muted bg-muted/15" />}>
-              Zona urbana
+            <Item mark={<span className="size-3.5 rounded-full border border-danger bg-danger/15" />}>
+              No se vuela: aeropuerto, CAI, batallón, cárcel, planta, pista
             </Item>
             <Item mark={<WindIcon size={17} className="text-info" />}>Viento o lluvia</Item>
             <Item mark={<StormIcon size={17} className="text-danger" />}>Tormenta</Item>

@@ -19,9 +19,6 @@ export const AIRSPACE_KIND: Record<string, string> = {
   aerodrome: "Aeródromo",
   prohibited: "Prohibida",
   heliport: "Helipuerto",
-  coordinated: "Coordinada",
-  urban: "Urbana",
-  caution: "Precaución",
 };
 
 /** RF-48: el estado de la identificación remota. */

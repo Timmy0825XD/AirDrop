@@ -25,11 +25,13 @@ function HubMarkerView({ hub, dark, selected, onSelect }: Props) {
   // RF-06: el nodo (tiene drones) es un cuadro; la ESE (solo recibe), un círculo.
   const ese = hub.networkRole === "ese";
   const tile = selected
-    ? "border-accent text-accent shadow-[0_0_0_3px_rgb(122_167_255/0.25)]"
+    ? "border-accent text-accent shadow-[0_0_0_4px_color-mix(in_srgb,var(--accent)_25%,transparent)]"
     : dark
       ? "border-warning border-dashed text-warning"
       : active
-        ? "border-line-strong text-text group-hover:border-muted"
+        ? ese
+          ? "border-info text-info group-hover:border-text"
+          : "border-accent bg-accent! text-on-accent group-hover:brightness-110"
         : "border-line border-dashed text-faint";
   return (
     <Marker longitude={hub.longitude} latitude={hub.latitude} anchor="center">

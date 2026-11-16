@@ -1,7 +1,14 @@
 "use client";
 
+import { progressAlong } from "@/lib/geo";
 import { formatEta, label, ORDER_STATUS, PHASE } from "@/lib/labels";
-import type { ConsoleIncidentKind, FlightDetail, RadarFlight, Selection } from "@/lib/types";
+import type {
+  ConsoleIncidentKind,
+  FlightDetail,
+  RadarFlight,
+  Selection,
+  TimelineSection,
+} from "@/lib/types";
 import { ManifestSection, RemoteIdSection } from "./FlightIdentity";
 import { IncidentActions } from "./IncidentActions";
 import { AlertIcon, ChevronIcon, DroneIcon, HubIcon, LinkOffIcon, SnowflakeIcon } from "./icons";
@@ -13,19 +20,17 @@ const outOfRange = (t: number | null) => t != null && (t < 2 || t > 8);
 const hasAlert = (flight: RadarFlight) =>
   flight.alerts.battery || flight.alerts.failure || flight.alerts.coldChain;
 
-/** La batería: la cifra grande y una barra fina con el tono de su nivel. */
+/** La batería: tarjeta con la cifra y una barra fina con el tono de su nivel. */
 function Battery({ percent }: { percent: number | null }) {
   const value = percent ?? 0;
   const tone = value < 20 ? "text-danger" : value < 40 ? "text-warning" : "text-text";
   const bar = value < 20 ? "bg-danger" : value < 40 ? "bg-warning" : "bg-success";
   return (
-    <div className="col-span-2">
-      <div className="flex items-baseline justify-between">
-        <span className="text-[12px] text-muted">Batería</span>
-        <span className={`figures text-[28px] font-medium leading-none ${tone}`}>
-          {percent ?? "—"}
-          <span className="ml-0.5 font-sans text-[13px] font-normal text-muted">%</span>
-        </span>
+    <div className="min-w-0 rounded-xl border border-line px-3 py-2.5">
+      <div className="text-[12px] text-muted">Batería</div>
+      <div className={`figures mt-1.5 text-[20px] font-medium leading-none ${tone}`}>
+        {percent != null ? Math.round(percent) : "—"}
+        <span className="ml-1 font-sans text-[13px] font-normal text-muted">%</span>
       </div>
       <div className="mt-2.5 h-1.5 overflow-hidden rounded-full bg-raised">
         <div
@@ -34,6 +39,69 @@ function Battery({ percent }: { percent: number | null }) {
         />
       </div>
     </div>
+  );
+}
+
+/** Lo recorrido del tramo en curso, de la central al destino (o de vuelta). */
+function Progress({ detail, flight }: { detail: FlightDetail | null; flight: RadarFlight }) {
+  const returning = flight.leg === "return";
+  const path = (returning ? detail?.returnRoute : detail?.route)?.coordinates;
+  if (!path || path.length < 2 || flight.latitude == null || flight.longitude == null) return null;
+  const { doneKm, totalKm } = progressAlong(path, {
+    latitude: flight.latitude,
+    longitude: flight.longitude,
+  });
+  const percent = totalKm > 0 ? Math.min(100, (doneKm / totalKm) * 100) : 0;
+  const origin = detail?.originHub?.name ?? "Central";
+  const target =
+    detail?.destinationHub?.name ?? (flight.destinationKind === "person" ? "Punto de entrega" : "Destino");
+  const km = (value: number) => value.toLocaleString("es-CO", { maximumFractionDigits: 1 });
+  return (
+    <div className="px-5 pb-5">
+      <div className="mb-2 text-[12px] text-muted">Recorrido</div>
+      <div className="h-1.5 overflow-hidden rounded-full bg-raised">
+        <div
+          className={`h-full rounded-full transition-[width] duration-700 ease-out ${returning ? "bg-warning" : "bg-accent"}`}
+          style={{ width: `${percent}%` }}
+        />
+      </div>
+      <div className="mt-2 flex justify-between gap-2 text-[12px] text-muted">
+        <span className="truncate">{returning ? target : origin}</span>
+        <span className="figures shrink-0">
+          {km(doneKm)} de {km(totalKm)} km
+        </span>
+        <span className="truncate text-right">{returning ? origin : target}</span>
+      </div>
+    </div>
+  );
+}
+
+/** Por qué salió este dron: lo mismo que cuenta la línea de tiempo (RF-11, RF-39). */
+function Why({ sections }: { sections: TimelineSection[] }) {
+  return (
+    <details className="group px-5 py-4">
+      <summary className="press flex h-11 cursor-pointer list-none items-center justify-center gap-2 rounded-xl border border-line text-[14px] font-semibold hover:bg-hover">
+        Ver por qué salió este dron
+        <ChevronIcon size={14} className="rotate-90 text-muted transition-transform group-open:-rotate-90" />
+      </summary>
+      <div className="enter-up mt-4 space-y-3">
+        {sections.map((section) => (
+          <div key={section.title} className="space-y-1.5">
+            <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-accent-strong">
+              {section.title}
+            </p>
+            {section.lines.map((line, index) => (
+              <p
+                key={line}
+                className={`text-[13px] leading-[1.45] ${index === 0 ? "text-text" : "text-muted"}`}
+              >
+                {line}
+              </p>
+            ))}
+          </div>
+        ))}
+      </div>
+    </details>
   );
 }
 
@@ -80,7 +148,7 @@ function Route({ detail, flight }: { detail: FlightDetail | null; flight: RadarF
           <div className="truncate text-[14px] font-medium">{destination}</div>
         </li>
       </ol>
-      <div className="mt-5 grid grid-cols-2 gap-4">
+      <div className="mt-5 grid grid-cols-2 gap-2.5">
         <Stat label="Distancia" value={detail?.route?.distanceKm ?? "—"} unit="km" />
         <Stat label="Altitud de ruta" value={detail?.route?.altitudeM ?? "—"} unit="m" />
       </div>
@@ -113,6 +181,8 @@ type Props = {
   busy: boolean;
   incidentBlocked: string | null;
   onIncident: (droneId: string, kind: ConsoleIncidentKind) => void;
+  /** La explicación de la autorización, si la línea de tiempo la tiene. */
+  why: TimelineSection[] | null;
 };
 
 export function FlightPanel({
@@ -123,6 +193,7 @@ export function FlightPanel({
   busy,
   incidentBlocked,
   onIncident,
+  why,
 }: Props) {
   const flight = live ?? detail?.flight ?? null;
   const close = () => onSelect(null);
@@ -167,36 +238,44 @@ export function FlightPanel({
         </>
       }
     >
-      <div className="grid grid-cols-2 gap-x-4 gap-y-5 px-5 py-5">
+      <div className="px-5 pt-5">
+        <div
+          className={`flex items-center gap-2 rounded-xl px-3 py-2.5 text-[14px] font-semibold ${alert ? "bg-danger/12 text-danger" : "bg-selected text-text"}`}
+        >
+          <span
+            className={`size-2 rounded-full ${alert ? "bg-danger" : returning ? "bg-warning" : "bg-accent"}`}
+          />
+          {label(PHASE, flight.phase)}
+          {flight.etaSeconds != null && (
+            <span className="font-medium text-muted">· llega en {formatEta(flight.etaSeconds)}</span>
+          )}
+        </div>
+      </div>
+      <div className="grid grid-cols-2 gap-2.5 px-5 py-4">
         <Battery percent={flight.batteryPercent} />
-        <Stat label="Llega en" value={formatEta(flight.etaSeconds)} />
+        {flight.temperatureC != null ? (
+          <Stat
+            label="Carga"
+            value={flight.temperatureC.toFixed(1)}
+            unit={outOfRange(flight.temperatureC) ? "°C · fuera de 2–8" : "°C · en rango"}
+            tone={outOfRange(flight.temperatureC) ? "bad" : undefined}
+          />
+        ) : (
+          <Stat label="Carga" value={flight.quantity} unit="unidades" />
+        )}
+        <Stat
+          label="Altura"
+          value={flight.altitudeM != null ? Math.round(flight.altitudeM) : "—"}
+          unit="m sobre el terreno"
+        />
         <Stat
           label="Velocidad"
           value={flight.speedKmh != null ? Math.round(flight.speedKmh) : "—"}
           unit="km/h"
         />
-        <Stat
-          label="Sobre el terreno"
-          value={flight.altitudeM != null ? Math.round(flight.altitudeM) : "—"}
-          unit="m"
-        />
-        {flight.altitudeMslM != null && (
-          // RF-46: el techo legal se mide sobre el terreno; esta es la del mar.
-          <Stat label="Sobre el mar" value={Math.round(flight.altitudeMslM)} unit="m s. n. m." />
-        )}
-        <Stat
-          label="Fase"
-          value={<span className="font-sans text-[17px]">{label(PHASE, flight.phase)}</span>}
-        />
-        {flight.temperatureC != null && (
-          <Stat
-            label="Temperatura"
-            value={flight.temperatureC.toFixed(1)}
-            unit="°C"
-            tone={outOfRange(flight.temperatureC) ? "bad" : undefined}
-          />
-        )}
       </div>
+      <Progress detail={detail} flight={flight} />
+      {why && <Why sections={why} />}
 
       <Alerts flight={flight} />
 

@@ -115,28 +115,20 @@ export type Geofence = {
 
 export type HubNetworkRole = "node" | "ese";
 
-export type AirspaceZoneKind =
-  | "aerodrome"
-  | "prohibited"
-  | "heliport"
-  | "coordinated"
-  | "urban"
-  | "caution";
+/** RF-43 a escala de demo: aeródromo (1,5 km), prohibida y helipuerto. */
+export type AirspaceZoneKind = "aerodrome" | "prohibited" | "heliport";
 
 /** RF-43: una zona legal de la región (`snapshot.airspace`, `GET /airspace/zones`). */
 export type AirspaceZone = {
   code: string;
   kind: AirspaceZoneKind;
   name: string;
-  /** La norma: "RAC 100.315(a)(14): 9 km desde el ARP". */
+  /** La norma: "RAC 100.315(a)(14): 1,5 km desde el ARP (demo…)". */
   legalBasis: string;
   source: string;
-  /** `false` en las coordinadas y en las de precaución. */
+  /** Todas bloquean en la demo. */
   blocking: boolean;
   polygon: { type: "Polygon"; coordinates: number[][][] };
-  /** La entrada pactada de una zona coordinada. */
-  gateway: { latitude: number; longitude: number } | null;
-  sites: Array<{ name: string; latitude: number; longitude: number }>;
 };
 
 /** RF-45: un punto de entrega (`GET /delivery-points`). */
@@ -153,11 +145,6 @@ export type DeliveryPoint = {
   active: boolean;
   /** Activo y con su nodo activo. */
   available: boolean;
-  corridor: {
-    zoneCode: string;
-    zoneName: string;
-    gateway: { latitude: number; longitude: number } | null;
-  } | null;
 };
 
 export type Snapshot = {

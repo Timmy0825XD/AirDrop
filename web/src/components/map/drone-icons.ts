@@ -1,5 +1,4 @@
 import type { Map as MaplibreMap } from "maplibre-gl";
-import { DRONE_BODY, DRONE_ROTOR_R, DRONE_ROTORS, DRONE_WINGS } from "@/lib/drone-shape";
 import { COLORS } from "@/lib/theme";
 
 export const ICON_OUTBOUND = "drone-outbound";
@@ -10,8 +9,8 @@ export const ICON_WIND = "wind-arrow";
 export const PATTERN_HATCH = "hatch-magenta";
 
 const PIXEL_RATIO = 2;
-/** El dron mide 32 px en pantalla: se lee en la TV sin tapar las calles. */
-const DRONE_PX = 32;
+/** El dron mide 36 px en pantalla: se lee en la TV sin tapar las calles. */
+const DRONE_PX = 36;
 
 function canvas(width: number, height: number) {
   const element = document.createElement("canvas");
@@ -23,28 +22,49 @@ function canvas(width: number, height: number) {
 }
 
 /**
- * La silueta del dron (la de `drone-shape.ts`), rellena con el color de su
- * estado y con un contorno del fondo para separarla del mapa. Apunta al
- * norte; el mapa la gira con `icon-rotate`.
+ * El dron de la app (DroneGlyph de Flutter) en una cuadrícula de 34: brazos en
+ * X, cuatro rotores y el núcleo. El trazo lleva el color de su estado y el
+ * núcleo el acento; la muesca de adelante dice hacia dónde va. Apunta al
+ * norte; el mapa lo gira con `icon-rotate`. Un contorno del fondo lo separa
+ * de las calles.
  */
 function drawDrone(color: string): ImageData {
   const ctx = canvas(DRONE_PX, DRONE_PX);
-  ctx.scale(DRONE_PX / 24, DRONE_PX / 24);
-  const shapes = [
-    new Path2D(DRONE_BODY),
-    ...DRONE_WINGS.map((wing) => new Path2D(wing)),
-    ...DRONE_ROTORS.map(([cx, cy]) => {
-      const rotor = new Path2D();
-      rotor.arc(cx, cy, DRONE_ROTOR_R, 0, Math.PI * 2);
-      return rotor;
-    }),
-  ];
+  ctx.scale(DRONE_PX / 34, DRONE_PX / 34);
+  ctx.lineCap = "round";
   ctx.lineJoin = "round";
+  const frame = new Path2D();
+  frame.moveTo(11, 11);
+  frame.lineTo(23, 23);
+  frame.moveTo(23, 11);
+  frame.lineTo(11, 23);
+  for (const [cx, cy] of [
+    [9, 9],
+    [25, 9],
+    [9, 25],
+    [25, 25],
+  ]) {
+    frame.moveTo(cx + 5.5, cy);
+    frame.arc(cx, cy, 5.5, 0, Math.PI * 2);
+  }
+  const nose = new Path2D("M17 2.2 L20.2 6.4 H13.8 Z");
+  const body = new Path2D();
+  body.roundRect(12.5, 12.5, 9, 9, 3);
+  // Contorno del fondo, más ancho, debajo de todo.
   ctx.strokeStyle = COLORS.ink;
-  ctx.lineWidth = 1.6;
-  for (const shape of shapes) ctx.stroke(shape);
+  ctx.lineWidth = 5;
+  ctx.stroke(frame);
+  ctx.stroke(body);
+  ctx.stroke(nose);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.4;
+  ctx.stroke(frame);
   ctx.fillStyle = color;
-  for (const shape of shapes) ctx.fill(shape);
+  ctx.fill(nose);
+  ctx.fillStyle = COLORS.accent;
+  ctx.fill(body);
+  ctx.lineWidth = 2;
+  ctx.stroke(body);
   return ctx.getImageData(0, 0, DRONE_PX * PIXEL_RATIO, DRONE_PX * PIXEL_RATIO);
 }
 

@@ -202,7 +202,7 @@ function HubBody({
         </Section>
       ) : (
       <Section title="Flota">
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 gap-2.5">
           <Stat label="Libres" value={hub.fleet.available} tone="good" />
           <Stat label="En vuelo" value={hub.fleet.inMission} />
           <Stat label="Taller" value={hub.fleet.maintenance} tone={hub.fleet.maintenance ? "warn" : undefined} />
