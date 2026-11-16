@@ -31,7 +31,25 @@ export type PlannedCorridor = {
   altitudeM: number;
   distanceKm: number;
   coordinates: Array<[number, number]>;
+  /** RF-55: km donde el dron hace escala en el Nodo Valledupar. */
+  relayKm?: number | null;
 };
+
+/**
+ * RF-55: une dos tramos que se tocan en la escala. El corredor resultante
+ * sabe en qué km está la escala.
+ */
+export function joinAtRelay(
+  first: PlannedCorridor,
+  second: PlannedCorridor,
+): PlannedCorridor {
+  return {
+    altitudeM: first.altitudeM,
+    distanceKm: Math.round((first.distanceKm + second.distanceKm) * 100) / 100,
+    coordinates: [...first.coordinates, ...second.coordinates.slice(1)],
+    relayKm: first.distanceKm,
+  };
+}
 
 /**
  * RF-12: el corredor más corto de `origin` a `destination` que no entra en
@@ -246,7 +264,14 @@ function pointInRing(point: LngLat, ring: number[][]): boolean {
 
 /** Regreso por donde vino: mismo corredor, recorrido al revés. */
 export function reverseCorridor(corridor: PlannedCorridor): PlannedCorridor {
-  return { ...corridor, coordinates: [...corridor.coordinates].reverse() };
+  return {
+    ...corridor,
+    coordinates: [...corridor.coordinates].reverse(),
+    relayKm:
+      corridor.relayKm == null
+        ? corridor.relayKm
+        : Math.round((corridor.distanceKm - corridor.relayKm) * 100) / 100,
+  };
 }
 
 function toCorridor(path: LngLat[]): PlannedCorridor {

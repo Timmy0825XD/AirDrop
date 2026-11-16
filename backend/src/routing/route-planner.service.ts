@@ -12,7 +12,9 @@ import {
   DESTINATION_IN_GEOFENCE,
   LngLat,
   PlannedCorridor,
+  haversineKm,
   isInsideGeofence,
+  joinAtRelay,
   planCorridor,
   planReturnCorridor,
 } from './routing.rules';
@@ -21,6 +23,7 @@ type RouteRow = {
   orderId: string;
   altitudeM: number | string;
   distanceKm: number | string;
+  relayKm: number | string | null;
   path: string;
 };
 
@@ -44,14 +47,44 @@ export class RoutePlannerService {
     return planCorridor(origin, destination, obstacles);
   }
 
-  /** Regreso con las zonas vigentes; ver `planReturnCorridor`. */
+  /**
+   * RF-55: la ida con escala. Dos tramos (nodo → relevo, relevo → destino)
+   * en un solo corredor que sabe dónde está la escala.
+   */
+  planWithRelay(
+    origin: LngLat,
+    relay: LngLat,
+    destination: LngLat,
+    obstacles: GeoJsonPolygon[],
+  ): PlannedCorridor | null {
+    const first = planCorridor(origin, relay, obstacles);
+    const second = first ? planCorridor(relay, destination, obstacles) : null;
+    return first && second ? joinAtRelay(first, second) : null;
+  }
+
+  /**
+   * Regreso con las zonas vigentes; ver `planReturnCorridor`. Si la ida tuvo
+   * escala (RF-55), el regreso también para en el relevo.
+   */
   planReturn(
     from: LngLat,
     hub: LngLat,
     obstacles: GeoJsonPolygon[],
     outbound: PlannedCorridor | null,
   ): ReturnType<typeof planReturnCorridor> {
-    return planReturnCorridor(from, hub, obstacles, outbound);
+    const relay = outbound ? relayPoint(outbound) : null;
+    if (!relay) {
+      return planReturnCorridor(from, hub, obstacles, outbound);
+    }
+    const first = planReturnCorridor(from, relay, obstacles, null);
+    const second = planReturnCorridor(relay, hub, obstacles, null);
+    if (!first || !second) {
+      return planReturnCorridor(from, hub, obstacles, outbound);
+    }
+    return {
+      corridor: joinAtRelay(first.corridor, second.corridor),
+      crossesGeofence: first.crossesGeofence || second.crossesGeofence,
+    };
   }
 
   /** Un destino dentro de una geovalla o de una zona legal no tiene corredor. */
@@ -118,16 +151,24 @@ export class RoutePlannerService {
       coordinates: corridor.coordinates,
     });
     await manager.query(
-      `INSERT INTO mission_routes (id, "orderId", leg, "altitudeM", "distanceKm", path)
+      `INSERT INTO mission_routes (id, "orderId", leg, "altitudeM", "distanceKm", path, "relayKm")
        VALUES (
          gen_random_uuid(),
          $1,
          $2,
          $3,
          $4,
-         ST_SetSRID(ST_GeomFromGeoJSON($5), 4326)
+         ST_SetSRID(ST_GeomFromGeoJSON($5), 4326),
+         $6
        )`,
-      [orderId, leg, corridor.altitudeM, corridor.distanceKm, path],
+      [
+        orderId,
+        leg,
+        corridor.altitudeM,
+        corridor.distanceKm,
+        path,
+        corridor.relayKm ?? null,
+      ],
     );
   }
 
@@ -149,9 +190,10 @@ export class RoutePlannerService {
       `UPDATE mission_routes
        SET "previousPath" = path,
            path = ST_SetSRID(ST_GeomFromGeoJSON($3), 4326),
-           "distanceKm" = $4
+           "distanceKm" = $4,
+           "relayKm" = $5
        WHERE "orderId" = $1 AND leg = $2`,
-      [orderId, leg, path, corridor.distanceKm],
+      [orderId, leg, path, corridor.distanceKm, corridor.relayKm ?? null],
     );
   }
 
@@ -215,6 +257,7 @@ export class RoutePlannerService {
       `SELECT "orderId",
               "altitudeM"::float8 AS "altitudeM",
               "distanceKm"::float8 AS "distanceKm",
+              "relayKm"::float8 AS "relayKm",
               ST_AsGeoJSON(path) AS path
        FROM mission_routes
        WHERE "orderId" = ANY($1::uuid[]) AND leg = $2`,
@@ -228,8 +271,29 @@ export class RoutePlannerService {
         altitudeM: Number(row.altitudeM),
         distanceKm: Number(row.distanceKm),
         coordinates: parsed.coordinates,
+        relayKm: row.relayKm == null ? null : Number(row.relayKm),
       });
     }
     return routes;
   }
+}
+
+/** RF-55: el punto de la escala, el vértice del corredor en `relayKm`. */
+function relayPoint(corridor: PlannedCorridor): LngLat | null {
+  if (corridor.relayKm == null) {
+    return null;
+  }
+  let walked = 0;
+  for (let index = 1; index < corridor.coordinates.length; index += 1) {
+    const [lng0, lat0] = corridor.coordinates[index - 1];
+    const [lng1, lat1] = corridor.coordinates[index];
+    walked += haversineKm(
+      { longitude: lng0, latitude: lat0 },
+      { longitude: lng1, latitude: lat1 },
+    );
+    if (Math.abs(walked - corridor.relayKm) < 0.05) {
+      return { longitude: lng1, latitude: lat1 };
+    }
+  }
+  return null;
 }

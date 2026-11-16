@@ -17,9 +17,16 @@ import { batteryNow } from '../simulation/flight-energy.rules';
 import {
   DESCENT_MS,
   LANDING_MS,
+  RELAY_SWAP_MS,
   TAKEOFF_MS,
   TRANSITION_MS,
 } from '../simulation/simulation.rules';
+import {
+  CRITICAL_BATTERY_PERCENT,
+  legBatteryPercent,
+} from '../simulation/flight-energy.rules';
+import { NODES } from '../airspace/regional-network';
+import { HubStatus } from '../common/enums/hub-status.enum';
 import { reverseCorridor } from '../routing/routing.rules';
 import { corridorWeather, windLimitsOf } from '../weather/weather.rules';
 import { WeatherService } from '../weather/weather.service';
@@ -106,12 +113,13 @@ export class HubEvaluationService {
         ),
       ]),
     );
+    const destination = {
+      longitude: order.longitude as number,
+      latitude: order.latitude as number,
+    };
     const corridor = this.routes.plan(
       { longitude: hub.longitude, latitude: hub.latitude },
-      {
-        longitude: order.longitude as number,
-        latitude: order.latitude as number,
-      },
+      destination,
       polygons,
     );
     // RF-32: el clima del corredor de ida y del regreso por el mismo camino,
@@ -210,7 +218,7 @@ export class HubEvaluationService {
               ) <= 100,
           }
         : { etaMs: null, inRange: false };
-    return {
+    const direct: HubEvaluation = {
       lot,
       drones,
       modelsById,
@@ -219,6 +227,170 @@ export class HubEvaluationService {
       ...reach,
       batteryByDrone,
       energyKm,
+    };
+    if (choice.chosen) {
+      return direct;
+    }
+    // RF-55: si ningún dron llega en un solo tramo, se prueba la escala.
+    const relay = await this.relayHub(manager, hub);
+    if (!relay) {
+      return direct;
+    }
+    const withRelay = this.evaluateRelay({
+      hub,
+      relay,
+      destination,
+      order,
+      lot,
+      drones,
+      modelsById,
+      heldByDrone,
+      batteryByDrone,
+      polygons,
+      now,
+    });
+    return withRelay?.choice.chosen ? withRelay : direct;
+  }
+
+  /** RF-55: el Nodo Valledupar, activo y distinto de la central que evalúa. */
+  private async relayHub(
+    manager: EntityManager,
+    hub: Hub,
+  ): Promise<Hub | null> {
+    if (hub.name === NODES.valledupar.name) {
+      return null;
+    }
+    return manager.findOne(Hub, {
+      where: { name: NODES.valledupar.name, status: HubStatus.ACTIVE },
+    });
+  }
+
+  /**
+   * RF-55: la misión con escala. El tramo nodo → relevo sale con la batería
+   * que el dron tiene ahora; relevo → destino → relevo, con la batería nueva;
+   * el regreso relevo → nodo, con otra nueva. Cada uno cierra con la reserva.
+   */
+  private evaluateRelay(input: {
+    hub: Hub;
+    relay: Hub;
+    destination: { latitude: number; longitude: number };
+    order: Order;
+    lot: InventoryItem;
+    drones: Drone[];
+    modelsById: Map<string, DroneModel>;
+    heldByDrone: Map<string, Order>;
+    batteryByDrone: Map<string, number>;
+    polygons: GeoJsonPolygon[];
+    now: Date;
+  }): HubEvaluation | null {
+    const origin = {
+      latitude: input.hub.latitude,
+      longitude: input.hub.longitude,
+    };
+    const relayPoint = {
+      latitude: input.relay.latitude,
+      longitude: input.relay.longitude,
+    };
+    const toRelay = this.routes.plan(origin, relayPoint, input.polygons);
+    const fromRelay = toRelay
+      ? this.routes.plan(relayPoint, input.destination, input.polygons)
+      : null;
+    const corridor = this.routes.planWithRelay(
+      origin,
+      relayPoint,
+      input.destination,
+      input.polygons,
+    );
+    if (!toRelay || !fromRelay || !corridor) {
+      return null;
+    }
+    const cells = this.weather.active(input.now);
+    const perModel = new Map(
+      [...input.modelsById.values()].map((model) => {
+        const first = modelWeather(toRelay, cells, model);
+        const second = modelWeather(fromRelay, cells, model);
+        const firstTerrain = this.terrain.profile(toRelay, model);
+        const secondTerrain = this.missionTerrain(fromRelay, model);
+        // Lo que pide llegar al relevo con la batería de ahora.
+        const firstPercent =
+          legBatteryPercent(
+            first.energyKm ?? toRelay.distanceKm,
+            model.maxRangeKm,
+          ) +
+          firstTerrain.climbM * climbPercentPerM(model) +
+          CRITICAL_BATTERY_PERCENT;
+        const firstCruise = first.there?.cruiseMs ?? null;
+        const secondCruise = second.there?.cruiseMs ?? null;
+        const ms =
+          missionMs(toRelay, model, firstCruise) -
+          DEFAULT_DELIVERY_WAIT_MS +
+          missionMs(fromRelay, model, secondCruise) +
+          2 * RELAY_SWAP_MS;
+        return [
+          model.id,
+          {
+            flyable: first.flyable && second.flyable,
+            reason: first.reason ?? second.reason,
+            energyKm: second.energyKm,
+            terrain: {
+              climbM: secondTerrain.climbM,
+              peakMslM: Math.max(secondTerrain.peakMslM, firstTerrain.peakMslM),
+            },
+            firstPercent,
+            daylight: this.daylight.fits(input.now, origin, ms),
+            etaMs:
+              legMs(toRelay, model, firstCruise) +
+              RELAY_SWAP_MS +
+              legMs(fromRelay, model, secondCruise),
+          },
+        ] as const;
+      }),
+    );
+    const choice = this.eligibility.choose({
+      missionType: input.order.missionType,
+      quantity: input.order.quantity,
+      payloadKg: payloadKgOf(input.lot, input.order.quantity),
+      requiresCold: input.order.requiresColdChain,
+      weatherFlyable: true,
+      candidates: input.drones.flatMap((drone) => {
+        const model = input.modelsById.get(drone.droneModelId);
+        const plan = perModel.get(drone.droneModelId);
+        if (!model || !plan) {
+          return [];
+        }
+        const battery = input.batteryByDrone.get(drone.id) ?? 100;
+        return [
+          {
+            // Tras el cambio en el relevo vuela con batería llena; si no
+            // alcanza a llegar al relevo, queda sin batería y se descarta.
+            drone: toCandidate(
+              drone,
+              model,
+              input.heldByDrone.get(drone.id) ?? null,
+              battery >= plan.firstPercent ? 100 : 0,
+            ),
+            distanceKm: plan.energyKm,
+            weather: { flyable: plan.flyable, reason: plan.reason },
+            terrain: plan.terrain,
+            daylight: plan.daylight,
+          },
+        ];
+      }),
+    });
+    const chosen = input.drones.find(
+      (drone) => drone.id === choice.chosen?.droneId,
+    );
+    const plan = chosen ? perModel.get(chosen.droneModelId) : undefined;
+    return {
+      lot: input.lot,
+      drones: input.drones,
+      modelsById: input.modelsById,
+      corridor,
+      choice,
+      etaMs: plan?.etaMs ?? null,
+      inRange: plan != null,
+      batteryByDrone: input.batteryByDrone,
+      energyKm: plan?.energyKm ?? null,
     };
   }
 
@@ -348,6 +520,17 @@ function modelWeather(
     energyKm: Math.round(((there.energyKm + back.energyKm) / 2) * 100) / 100,
     there,
   };
+}
+
+/** Un tramo: despegue, crucero con el clima que haya, bajada y aterrizaje. */
+function legMs(
+  corridor: PlannedCorridor,
+  model: DroneModel,
+  cruiseMs: number | null,
+): number {
+  const cruise =
+    cruiseMs ?? (corridor.distanceKm / model.maxSpeedKmh) * 3_600_000;
+  return TAKEOFF_MS + TRANSITION_MS + cruise + DESCENT_MS + LANDING_MS;
 }
 
 /**

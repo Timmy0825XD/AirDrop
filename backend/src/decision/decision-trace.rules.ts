@@ -20,6 +20,8 @@ import { ChosenDrone, DiscardedDrone } from './decision.rules';
 export const HUB_SUSPENDED_NOTE = 'La central está suspendida.';
 export const NO_LOT_NOTE = 'No tiene un lote vigente con la cantidad.';
 export const NO_CORRIDOR_NOTE = 'No hay un corredor libre de geovallas.';
+export const RELAY_NOTE =
+  'Sin alcance directo: va con escala en el Nodo Valledupar y cambia la batería a la ida y a la vuelta (RF-55).';
 export const ONLY_STOCK_NOTE =
   'Solo se revisó el stock: ya intentó o es la central que pidió.';
 
@@ -153,6 +155,7 @@ export function presentDecision(order: {
 function noteFor(evaluation: EvaluationView): string | null {
   if (!evaluation.lot) return NO_LOT_NOTE;
   if (!evaluation.corridor) return NO_CORRIDOR_NOTE;
+  if (evaluation.corridor.relayKm != null) return RELAY_NOTE;
   return null;
 }
 

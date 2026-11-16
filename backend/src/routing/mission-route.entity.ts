@@ -54,6 +54,19 @@ export class MissionRoute {
   })
   previousPath: string | null;
 
+  /**
+   * RF-55: km del corredor donde está la escala en el Nodo Valledupar.
+   * `null` si el vuelo es directo.
+   */
+  @Column({
+    type: 'numeric',
+    precision: 6,
+    scale: 2,
+    nullable: true,
+    transformer: NUMERIC_TRANSFORMER,
+  })
+  relayKm: number | null;
+
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 }

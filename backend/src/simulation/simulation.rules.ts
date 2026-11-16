@@ -28,6 +28,11 @@ export const TAKEOFF_MS = 20_000;
 export const TRANSITION_MS = 10_000;
 export const DESCENT_MS = 15_000;
 export const LANDING_MS = 15_000;
+/** RF-55: cambio de batería en el Nodo Valledupar. */
+export const RELAY_SWAP_MS = 5 * 60_000;
+/** RF-55: la escala completa: bajar, aterrizar, cambiar batería, subir. */
+export const RELAY_STOP_MS =
+  DESCENT_MS + LANDING_MS + RELAY_SWAP_MS + TAKEOFF_MS + TRANSITION_MS;
 
 export {
   CRITICAL_BATTERY_PERCENT,
@@ -60,6 +65,8 @@ export enum FlightPhase {
   LANDED = 'landed',
   /** En destino, ya entregado: espera a que retiren el medicamento. */
   UNLOADING = 'unloading',
+  /** RF-55: en tierra en el Nodo Valledupar, cambiando la batería. */
+  RELAY = 'relay',
 }
 
 const PHASE_SEQUENCE: FlightPhase[] = [
@@ -99,6 +106,8 @@ export type FlightProgress = {
     protocol: ContingencyProtocol;
     incidentId: string;
   } | null;
+  /** RF-55: el tramo ya hizo su escala en el relevo. */
+  relayDone?: boolean;
   /** RF-34: multiplica el consumo del resto del vuelo (batería, motor, choque). */
   burnFactor?: number;
   /** RF-34: multiplica la velocidad en el aire (falla de un motor). */
@@ -244,6 +253,7 @@ export function advanceFlight(input: {
       // El crucero termina al llegar al final del corredor, no a una hora fija:
       // con viento en contra tarda más.
       const fromKm = progress.cruiseKm;
+      const relayKm = pendingRelayKm(progress, input.corridor);
       elapsed = cruiseStep(
         progress,
         elapsed,
@@ -251,8 +261,16 @@ export function advanceFlight(input: {
         input.model,
         cells,
         alerts,
+        relayKm ?? input.corridor.distanceKm,
       );
       burnClimb(progress, fromKm, input.terrain, input.model, alerts);
+      if (relayKm != null && progress.cruiseKm >= relayKm - CRUISE_END_KM) {
+        // RF-55: llegó al relevo: aterriza y cambia la batería.
+        progress.cruiseKm = relayKm;
+        progress.phase = FlightPhase.RELAY;
+        progress.phaseElapsedMs = 0;
+        continue;
+      }
       if (progress.cruiseKm >= input.corridor.distanceKm - CRUISE_END_KM) {
         progress.cruiseKm = input.corridor.distanceKm;
         finishPhase(progress, statusChanges, leg);
@@ -309,6 +327,16 @@ function burnClimb(
   }
 }
 
+/** RF-55: el km de la escala si el tramo la tiene y aún no la hizo. */
+function pendingRelayKm(
+  progress: FlightProgress,
+  corridor: PlannedCorridor,
+): number | null {
+  return corridor.relayKm != null && !progress.relayDone
+    ? corridor.relayKm
+    : null;
+}
+
 /** Margen para dar por terminado el crucero (unos centímetros). */
 const CRUISE_END_KM = 1e-6;
 
@@ -324,17 +352,18 @@ function cruiseStep(
   model: FlightModel,
   cells: WeatherCellView[],
   alerts: FlightAlertKind[],
+  endKm: number,
 ): number {
   const here = cruiseConditions(progress, corridor, model, cells);
   if (here.overLimit && !progress.windAlertSent) {
     progress.windAlertSent = true;
     alerts.push('wind_limit');
   }
-  const room = Math.max(0, corridor.distanceKm - progress.cruiseKm);
+  const room = Math.max(0, endKm - progress.cruiseKm);
   const msToEnd = (room / here.groundSpeedKmh) * 3_600_000;
   const step = Math.min(elapsedMs, msToEnd);
   progress.cruiseKm = Math.min(
-    corridor.distanceKm,
+    endKm,
     progress.cruiseKm + (here.groundSpeedKmh * step) / 3_600_000,
   );
   progress.phaseElapsedMs += step;
@@ -518,9 +547,11 @@ export function outboundDurationMs(
   corridor: PlannedCorridor,
   model: Pick<FlightModel, 'maxSpeedKmh'>,
 ): number {
-  return PHASE_SEQUENCE.reduce(
-    (total, phase) => total + phaseDurationMs(phase, corridor, model),
-    0,
+  return (
+    PHASE_SEQUENCE.reduce(
+      (total, phase) => total + phaseDurationMs(phase, corridor, model),
+      0,
+    ) + (corridor.relayKm != null ? RELAY_STOP_MS : 0)
   );
 }
 
@@ -530,6 +561,16 @@ function finishPhase(
   leg: RouteLeg,
 ): void {
   const finished = progress.phase;
+  if (finished === FlightPhase.RELAY) {
+    // RF-55: batería nueva; ya gastó el despegue y la transición.
+    progress.phase = FlightPhase.CRUISE;
+    progress.phaseElapsedMs = 0;
+    progress.relayDone = true;
+    progress.batteryPercent =
+      100 - TAKEOFF_BATTERY_PERCENT - TRANSITION_BATTERY_PERCENT;
+    progress.batteryAlertSent = false;
+    return;
+  }
   const index = PHASE_SEQUENCE.indexOf(finished);
   progress.phase = PHASE_SEQUENCE[index + 1] ?? FlightPhase.LANDED;
   progress.phaseElapsedMs = 0;
@@ -615,6 +656,8 @@ function phaseDurationMs(
       return DESCENT_MS;
     case FlightPhase.LANDING:
       return LANDING_MS;
+    case FlightPhase.RELAY:
+      return RELAY_STOP_MS;
     default:
       return 0;
   }
@@ -630,6 +673,9 @@ function phaseBatteryPercent(phase: FlightPhase): number {
       return DESCENT_BATTERY_PERCENT;
     case FlightPhase.LANDING:
       return LANDING_BATTERY_PERCENT;
+    case FlightPhase.RELAY:
+      // Bajar y aterrizar; al terminar se cambia la batería.
+      return DESCENT_BATTERY_PERCENT + LANDING_BATTERY_PERCENT;
     default:
       return 0;
   }
@@ -696,13 +742,19 @@ function poseOf(
       point = destination;
       speedKmh = model.maxSpeedKmh / 2;
       break;
+    case FlightPhase.RELAY:
+      point = pointAt(corridor.coordinates, progress.cruiseKm);
+      altitudeM = 0;
+      speedKmh = 0;
+      break;
     default:
       point = destination;
       altitudeM = 0;
       speedKmh = 0;
   }
   const groundKm =
-    progress.phase === FlightPhase.CRUISE
+    progress.phase === FlightPhase.CRUISE ||
+    progress.phase === FlightPhase.RELAY
       ? progress.cruiseKm
       : point === origin
         ? 0
@@ -728,6 +780,16 @@ function etaSeconds(
   if (progress.phase === FlightPhase.LANDED) {
     return null;
   }
+  if (progress.phase === FlightPhase.RELAY) {
+    // RF-55: lo que falta de la escala, el resto del crucero y el aterrizaje.
+    const room = Math.max(0, corridor.distanceKm - progress.cruiseKm);
+    const remainingMs =
+      Math.max(0, RELAY_STOP_MS - progress.phaseElapsedMs) +
+      (model.maxSpeedKmh > 0 ? (room / model.maxSpeedKmh) * 3_600_000 : 0) +
+      DESCENT_MS +
+      LANDING_MS;
+    return Math.ceil(remainingMs / 1000);
+  }
   const phases = PHASE_SEQUENCE.filter((phase) => phase !== FlightPhase.LANDED);
   const start = phases.indexOf(progress.phase);
   let remainingMs = 0;
@@ -745,9 +807,17 @@ function etaSeconds(
         cells,
       ).groundSpeedKmh;
       remainingMs += (room / ground) * 3_600_000;
+      if (pendingRelayKm(progress, corridor) != null) {
+        remainingMs += RELAY_STOP_MS;
+      }
       continue;
     }
-    const duration = phaseDurationMs(phases[index], corridor, model);
+    const duration =
+      phaseDurationMs(phases[index], corridor, model) +
+      (phases[index] === FlightPhase.CRUISE &&
+      pendingRelayKm(progress, corridor) != null
+        ? RELAY_STOP_MS
+        : 0);
     remainingMs +=
       phases[index] === progress.phase
         ? Math.max(0, duration - progress.phaseElapsedMs)
