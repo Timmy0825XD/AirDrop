@@ -9,6 +9,7 @@ import Map, {
   type MapRef,
 } from "react-map-gl/maplibre";
 import { setWorkerUrl, type StyleSpecification } from "maplibre-gl";
+import type { FeatureCollection, MultiPolygon, Polygon } from "geojson";
 import { circlePolygon } from "@/lib/geo";
 import { COLORS } from "@/lib/theme";
 import type {
@@ -39,7 +40,10 @@ import {
   type HubPlate,
 } from "./drone-icons";
 import { IncidentMarker, WeatherMarker, ZoneMarker } from "./EventMarkers";
+import { ClusterMarker } from "./ClusterMarker";
 import { HubMarker } from "./HubMarker";
+import { useSiteClusters } from "./use-site-clusters";
+import { fallbackStyle, loadVectorStyle } from "./vector-style";
 import { useDroneTracks } from "./use-drone-tracks";
 
 // El worker lo copia `scripts/copy-maplibre.mjs` a /public antes de dev y build.
@@ -61,61 +65,10 @@ export type EventDraft = {
   radiusKm: number;
 };
 
-/**
- * Mapa base oscuro de Esri (sin API key). Se puede cambiar con
- * `NEXT_PUBLIC_TILES_URL` (plantilla `{z}/{x}/{y}`) si el proveedor cambia.
- */
-const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas";
-/** El estilo del mapa con el tema vigente (claro u oscuro de Esri). */
-function styleOf(): StyleSpecification {
-  const light = COLORS.ground === "#f5f4f1";
-  const tone = light ? "Light" : "Dark";
-  const base =
-    process.env.NEXT_PUBLIC_TILES_URL ?? `${ESRI}/World_${tone}_Gray_Base/MapServer/tile/{z}/{y}/{x}`;
-  return {
-  version: 8,
-  sources: {
-    base: {
-      type: "raster",
-      tiles: [base],
-      tileSize: 256,
-      maxzoom: 16,
-      attribution: "Tiles © Esri — Esri, HERE, Garmin, © OpenStreetMap contributors",
-    },
-    labels: {
-      type: "raster",
-      tiles: [`${ESRI}/World_${tone}_Gray_Reference/MapServer/tile/{z}/{y}/{x}`],
-      tileSize: 256,
-      maxzoom: 16,
-    },
-  },
-  // El gris de Esri apagado sobre el grafito de la consola: el mapa es el
-  // fondo, lo vivo (drones, centrales, zonas) es lo que resalta.
-  layers: [
-    { id: "ground", type: "background", paint: { "background-color": COLORS.ground } },
-    {
-      id: "base",
-      type: "raster",
-      source: "base",
-      paint: {
-        "raster-opacity": light ? 0.85 : 0.6,
-        "raster-saturation": -1,
-        "raster-brightness-max": light ? 1 : 0.72,
-        "raster-contrast": 0.08,
-        "raster-fade-duration": 200,
-      },
-    },
-    {
-      id: "labels",
-      type: "raster",
-      source: "labels",
-      paint: { "raster-opacity": light ? 0.8 : 0.55, "raster-saturation": -1 },
-    },
-  ],
-  };
-}
+const EMPTY: FeatureCollection = { type: "FeatureCollection", features: [] };
 
-const EMPTY = { type: "FeatureCollection", features: [] } as const;
+/** Desde este zoom se ven las zonas chicas (CAI, batallón, pistas); antes, solo el aeropuerto. */
+const SMALL_ZONES_ZOOM = 11;
 
 const plateImage = (hubId: string) => `plate-${hubId}`;
 
@@ -204,7 +157,19 @@ export function RadarMap({
 }: Props) {
   const mapRef = useRef<MapRef>(null);
   // El tema se fija al montar: Dashboard vuelve a montar el mapa al cambiarlo.
-  const [mapStyle] = useState(styleOf);
+  const [mapStyle, setMapStyle] = useState<StyleSpecification | null>(null);
+  useEffect(() => {
+    const theme = COLORS.ground === "#f5f4f1" ? "light" : "dark";
+    let cancelled = false;
+    loadVectorStyle(theme)
+      .catch(() => fallbackStyle(theme))
+      .then((style) => {
+        if (!cancelled) setMapStyle(style);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   const [ready, setReady] = useState(false);
   const [hovering, setHovering] = useState(false);
   const fitted = useRef<"hubs" | "points" | null>(null);
@@ -279,6 +244,13 @@ export function RadarMap({
 
   // Al elegir una central, el mapa la lleva al centro del espacio libre.
   const selectedHubId = selection?.kind === "hub" ? selection.id : null;
+  const sites = useSiteClusters(
+    mapRef,
+    ready,
+    hubs,
+    points,
+    selectedHubId ?? (selection?.kind === "point" ? selection.id : null),
+  );
   useEffect(() => {
     const hub = hubs.find((row) => row.id === selectedHubId);
     if (!hub) return;
@@ -330,14 +302,14 @@ export function RadarMap({
     () => ({
       type: "FeatureCollection" as const,
       features: fontsReady
-        ? hubs.map((hub) => ({
+        ? hubs.filter((hub) => sites.visibleHubs.has(hub.id)).map((hub) => ({
             type: "Feature" as const,
             properties: { plate: plateImage(hub.id), hubId: hub.id },
             geometry: { type: "Point" as const, coordinates: [hub.longitude, hub.latitude] },
           }))
         : [],
     }),
-    [hubs, fontsReady],
+    [hubs, fontsReady, sites.visibleHubs],
   );
 
   const focusCollection = useMemo(
@@ -370,12 +342,12 @@ export function RadarMap({
 
   // RF-36: las del operador, rayadas en magenta; las temporales en ámbar, aparte.
   const geofenceCollection = useMemo(
-    () => ({
+    (): FeatureCollection => ({
       type: "FeatureCollection" as const,
       features: geofences.map((geofence) => ({
         type: "Feature" as const,
         properties: { name: geofence.name, temporary: Boolean(geofence.expiresAt) },
-        geometry: geofence.polygon,
+        geometry: geofence.polygon as Polygon | MultiPolygon,
       })),
     }),
     [geofences],
@@ -388,7 +360,7 @@ export function RadarMap({
       type: "FeatureCollection" as const,
       features: airspace.map((zone) => ({
         type: "Feature" as const,
-        properties: { code: zone.code, kind: zone.kind, blocking: zone.blocking },
+        properties: { code: zone.code, kind: zone.kind, small: zone.kind !== "aerodrome" },
         geometry: zone.polygon,
       })),
     }),
@@ -401,11 +373,7 @@ export function RadarMap({
       type: "FeatureCollection" as const,
       features: points.map((point) => ({
         type: "Feature" as const,
-        properties: {
-          id: point.id,
-          available: point.available,
-          corridor: point.corridor != null,
-        },
+        properties: { id: point.id, available: point.available },
         geometry: { type: "Point" as const, coordinates: [point.longitude, point.latitude] },
       })),
     }),
@@ -517,6 +485,9 @@ export function RadarMap({
   const selectedZoneCode = selection?.kind === "airspace" ? selection.id : "";
   const geofenceVisibility = showGeofences ? "visible" : "none";
 
+  // Mientras llega el estilo del mapa, el fondo del tema (sin parpadeo).
+  if (!mapStyle) return <div className="absolute inset-0 bg-ground" aria-hidden />;
+
   return (
     <>
       <Map
@@ -540,47 +511,36 @@ export function RadarMap({
             type="fill"
             layout={{ visibility: geofenceVisibility }}
             paint={{
-              "fill-color": [
-                "match",
-                ["get", "kind"],
-                "urban",
-                COLORS.urban,
-                "coordinated",
-                COLORS.coordinated,
-                "caution",
-                COLORS.coordinated,
-                COLORS.noFly,
-              ],
+              "fill-color": COLORS.noFly,
+              // De lejos, solo el aeropuerto; al acercarse aparecen los CAI y demás.
               "fill-opacity": [
-                "case",
-                ["==", ["get", "code"], selectedZoneCode],
-                0.2,
-                ["match", ["get", "kind"], "caution", 0.02, "coordinated", 0.05, 0.08],
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                SMALL_ZONES_ZOOM - 0.6,
+                ["case", ["get", "small"], 0, ["==", ["get", "code"], selectedZoneCode], 0.22, 0.1],
+                SMALL_ZONES_ZOOM,
+                ["case", ["==", ["get", "code"], selectedZoneCode], 0.32, 0.16],
               ],
             }}
           />
           <Layer
             id="airspace-line"
             type="line"
-            filter={["get", "blocking"]}
             layout={{ visibility: geofenceVisibility }}
             paint={{
-              "line-color": ["match", ["get", "kind"], "urban", COLORS.urban, COLORS.noFly],
+              "line-color": COLORS.noFly,
               "line-width": ["case", ["==", ["get", "code"], selectedZoneCode], 2.4, 1.3],
-              "line-opacity": 0.85,
-            }}
-          />
-          {/* Coordinada y precaución: se puede volar, con borde punteado. */}
-          <Layer
-            id="airspace-line-soft"
-            type="line"
-            filter={["!", ["get", "blocking"]]}
-            layout={{ visibility: geofenceVisibility }}
-            paint={{
-              "line-color": COLORS.coordinated,
-              "line-width": ["case", ["==", ["get", "code"], selectedZoneCode], 2.4, 1.3],
-              "line-opacity": 0.85,
-              "line-dasharray": [3, 2],
+              "line-opacity": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                SMALL_ZONES_ZOOM - 0.6,
+                ["case", ["get", "small"], 0, 0.85],
+                SMALL_ZONES_ZOOM,
+                0.85,
+              ],
+              "line-dasharray": ["case", ["get", "small"], ["literal", [1, 0]], ["literal", [3, 2]]],
             }}
           />
         </Source>
@@ -747,14 +707,16 @@ export function RadarMap({
               "circle-stroke-width": 1.8,
             }}
           />
+          {/* Los puntos que quedan en un globo no se dibujan sueltos. */}
           <Layer
             id="points"
             type="circle"
+            filter={["in", ["get", "id"], ["literal", [...sites.visiblePoints]]]}
             paint={{
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 5, 13, 7],
-              "circle-color": ["case", ["get", "available"], COLORS.point, COLORS.pointOff],
-              "circle-stroke-color": ["case", ["get", "corridor"], COLORS.coordinated, COLORS.ink],
-              "circle-stroke-width": ["case", ["get", "corridor"], 2, 1.5],
+              "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 6, 13, 8],
+              "circle-color": COLORS.panel,
+              "circle-stroke-color": ["case", ["get", "available"], COLORS.accent, COLORS.pointOff],
+              "circle-stroke-width": 2.4,
             }}
           />
         </Source>
@@ -915,7 +877,10 @@ export function RadarMap({
         {landings.map(({ incident, identifier }) => (
           <IncidentMarker key={incident.id} incident={incident} identifier={identifier} now={now} />
         ))}
-        {hubs.map((hub) => (
+        {sites.clusters.map((cluster) => (
+          <ClusterMarker key={cluster.id} cluster={cluster} onExpand={sites.expand} />
+        ))}
+        {hubs.filter((hub) => sites.visibleHubs.has(hub.id)).map((hub) => (
           <HubMarker
             key={hub.id}
             hub={hub}

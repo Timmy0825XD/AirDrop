@@ -13,12 +13,9 @@ import { Button, Note, PanelShell, Pill, Section, Stat } from "./ui";
 
 /** Qué significa cada tipo de zona para un vuelo. */
 const ZONE_EFFECT: Record<AirspaceZone["kind"], string> = {
-  aerodrome: "Dentro del anillo no se vuela: las rutas lo rodean y ninguna central puede quedar adentro.",
-  prohibited: "Zona prohibida con su margen: ninguna ruta la cruza.",
-  heliport: "Margen de un helipuerto: ninguna ruta lo cruza.",
-  urban: "Zona urbana: no se entrega con dron. Quien pide desde aquí ve la alternativa terrestre.",
-  coordinated: "Zona coordinada: solo se entra por el corredor pactado, hasta su punto de entrega.",
-  caution: "Precaución: se puede volar, con atención a la pista.",
+  aerodrome: "Anillo de 1,5 km alrededor del aeropuerto: no se vuela adentro y las rutas lo rodean.",
+  prohibited: "No se vuela encima (CAI, batallón, cárcel, planta o pista agrícola): las rutas la rodean.",
+  heliport: "Helipuerto: ninguna ruta lo cruza.",
 };
 
 /**
@@ -60,15 +57,6 @@ export function AirspacePanel({
         <p className="text-[14px] leading-relaxed text-text">{zone.legalBasis}</p>
         <p className="mt-3 text-[13px] text-muted">Fuente: {zone.source}</p>
       </Section>
-      {zone.sites.length > 0 && (
-        <Section title="Destinos pactados">
-          <ul className="space-y-1.5 text-[14px] text-muted">
-            {zone.sites.map((site) => (
-              <li key={site.name}>{site.name}</li>
-            ))}
-          </ul>
-        </Section>
-      )}
     </PanelShell>
   );
 }
@@ -114,7 +102,6 @@ export function PointPanel({
           <Pill tone={point.available ? "good" : "bad"}>
             {point.available ? "Disponible" : point.active ? "Su nodo no está activo" : "Inactivo"}
           </Pill>
-          {point.corridor && <Pill tone="warn">Corredor pactado</Pill>}
         </>
       }
     >
@@ -125,14 +112,6 @@ export function PointPanel({
           value={<span className="font-sans text-[15px]">{hubName ?? "Sin nodo"}</span>}
         />
       </div>
-      {point.corridor && (
-        <Section title="Corredor pactado">
-          <p className="text-[14px] leading-relaxed text-muted">
-            Está en {point.corridor.zoneName}: el dron entra solo por el corredor acordado con la
-            comunidad.
-          </p>
-        </Section>
-      )}
       <Section title="Estado">
         {blocked && <p className="mb-3 text-[13px] text-muted">{blocked}</p>}
         <div className="mb-3">

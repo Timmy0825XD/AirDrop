@@ -89,10 +89,8 @@ const points: DeliveryPoint[] = [
   demoPoint("badillo", "Puesto de salud de Badillo (demo)", "Valledupar", 10.6314, -73.1279, 200, 0),
   demoPoint("guacoche", "Puesto de salud de Guacoche (demo)", "Valledupar", 10.4964, -73.166, 130, 0),
   demoPoint("media-luna", "Puesto de salud de Media Luna (demo)", "San Diego", 10.2455, -73.1439, 407, 1),
-  {
-    ...demoPoint("atanquez", "Puesto de salud de Atánquez (demo)", "Valledupar", 10.6976, -73.3545, 793, 0),
-    corridor: { zoneCode: "demo-resguardo", zoneName: "Resguardo Kankuamo (demo)", gateway: null },
-  },
+  demoPoint("atanquez", "Puesto de salud de Atánquez (demo)", "Valledupar", 10.6976, -73.3545, 793, 0),
+  demoPoint("mayales", "Puesto de salud de Los Mayales (demo)", "Valledupar", 10.451, -73.24, 165, 0),
 ];
 
 function demoPoint(
@@ -115,33 +113,37 @@ function demoPoint(
     hubId: hubs[hub].id,
     active: true,
     available: true,
-    corridor: null,
   };
 }
 
-/** RF-43: las dos zonas que más se preguntan: el anillo del aeropuerto y la ciudad. */
+/** RF-43 a escala de demo: el anillo del aeropuerto y dos CAI de Valledupar. */
 const airspace: AirspaceZone[] = [
   {
     code: "demo-skvp",
     kind: "aerodrome",
     name: "Aeropuerto Alfonso López (demo)",
-    legalBasis: "RAC 100.315(a)(14): 9 km desde el punto de referencia del aeródromo",
+    legalBasis: "RAC 100.315(a)(14): 1,5 km desde el ARP (demo; la norma pide 9 km)",
     source: "Datos de demostración",
     blocking: true,
-    polygon: circlePolygon(10.43513, -73.2494, 9, 32),
-    gateway: null,
-    sites: [],
+    polygon: circlePolygon(10.43513, -73.2494, 1.5, 32),
   },
   {
-    code: "demo-urban",
-    kind: "urban",
-    name: "Casco urbano de Valledupar (demo)",
-    legalBasis: "RAC 100.220(b): en zona urbana solo se vuela con línea de vista",
+    code: "demo-cai-gobernacion",
+    kind: "prohibited",
+    name: "CAI Gobernación (demo)",
+    legalBasis: "RAC 100.315(a)(13): tamaño del visor de la Aerocivil (demo)",
     source: "Datos de demostración",
     blocking: true,
-    polygon: circlePolygon(10.4631, -73.2532, 4, 24),
-    gateway: null,
-    sites: [],
+    polygon: circlePolygon(10.4705, -73.2494, 0.1, 12),
+  },
+  {
+    code: "demo-cai-mayales",
+    kind: "prohibited",
+    name: "CAI Mayales (demo)",
+    legalBasis: "RAC 100.315(a)(13): tamaño del visor de la Aerocivil (demo)",
+    source: "Datos de demostración",
+    blocking: true,
+    polygon: circlePolygon(10.4535, -73.2428, 0.1, 12),
   },
 ];
 
