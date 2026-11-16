@@ -105,7 +105,7 @@ export function PointPanel({
         </>
       }
     >
-      <div className="grid grid-cols-2 gap-x-4 gap-y-5 px-5 py-5">
+      <div className="grid grid-cols-2 gap-2.5 px-5 py-4">
         <Stat label="Elevación" value={Math.round(point.elevationM)} unit="m" />
         <Stat
           label="Lo atiende"
@@ -172,7 +172,7 @@ export function ContactPanel({
         </>
       }
     >
-      <div className="grid grid-cols-2 gap-x-4 gap-y-5 px-5 py-5">
+      <div className="grid grid-cols-2 gap-2.5 px-5 py-4">
         <Stat label="Velocidad" value={Math.round(contact.speedKmh)} unit="km/h" />
         <Stat label="Quedan" value={minutesLeft(contact.endsAt, now)} unit="min" />
       </div>
