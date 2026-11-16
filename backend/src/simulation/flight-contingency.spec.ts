@@ -730,3 +730,69 @@ describe('El catálogo en la línea de tiempo y en la consola (RF-39, CU-38)', (
     await expect(errors('meteorito')).resolves.toBe(1);
   });
 });
+
+describe('Aterrizaje de emergencia sin vuelo que lo baje (RF-34)', () => {
+  const orphan = {
+    id: 'incident-orphan',
+    orderId: 'order-perdido',
+    droneId: 'drone-perdido',
+    hubId: 'hub-1',
+    leg: RouteLeg.OUTBOUND,
+    outcome: IncidentOutcome.LANDING,
+    latitude: 10.47,
+    longitude: -73.25,
+    landingLatitude: 10.471,
+    landingLongitude: -73.251,
+    batteryPercent: 12,
+  };
+
+  it('queda en tierra donde iba a bajar, sale el rescate y el pedido se vuelve a despachar', async () => {
+    const { service, incidents, drones, aborted } = build();
+    Object.assign(incidents, {
+      orphanLandings: jest.fn().mockResolvedValue([orphan]),
+    });
+    expect(await service.settleOrphanLandings()).toBe(1);
+    expect(drones.update).toHaveBeenCalledWith(
+      { id: 'drone-perdido' },
+      expect.objectContaining({
+        status: DroneStatus.GROUNDED,
+        batteryPercent: 12,
+      }),
+    );
+    expect(incidents.grounded).toHaveBeenCalledWith('incident-orphan', {
+      latitude: 10.471,
+      longitude: -73.251,
+    });
+    expect(aborted).toHaveBeenCalledWith('order-perdido');
+  });
+
+  it('de regreso, solo deja de mostrarlo en el aire', async () => {
+    const { service, incidents, telemetry, aborted } = build();
+    Object.assign(incidents, {
+      orphanLandings: jest.fn().mockResolvedValue([
+        {
+          ...orphan,
+          leg: RouteLeg.RETURN,
+          landingLatitude: null,
+          landingLongitude: null,
+        },
+      ]),
+    });
+    await service.settleOrphanLandings();
+    expect(incidents.grounded).toHaveBeenCalledWith('incident-orphan', {
+      latitude: 10.47,
+      longitude: -73.25,
+    });
+    expect(telemetry.forgetFlight).toHaveBeenCalledWith('order-perdido');
+    expect(aborted).not.toHaveBeenCalled();
+  });
+
+  it('un aterrizaje que el reloj sí está bajando no se toca', async () => {
+    const { service, incidents } = build();
+    const orphanLandings = jest.fn().mockResolvedValue([]);
+    Object.assign(incidents, { orphanLandings });
+    expect(await service.settleOrphanLandings()).toBe(0);
+    expect(orphanLandings).toHaveBeenCalledWith([]);
+    expect(incidents.grounded).not.toHaveBeenCalled();
+  });
+});

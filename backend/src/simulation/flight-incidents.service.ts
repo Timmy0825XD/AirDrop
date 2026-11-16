@@ -497,6 +497,18 @@ export class FlightIncidentsService implements OnModuleInit, OnModuleDestroy {
     return rows.map(presentIncident);
   }
 
+  /**
+   * RF-34: aterrizajes de emergencia que nadie está bajando. Pasa si el
+   * backend se reinició o el vuelo se perdió a mitad del descenso: sin el
+   * reloj, el incidente quedaría "aterrizando" para siempre en el mapa.
+   */
+  async orphanLandings(activeOrderIds: string[]): Promise<FlightIncident[]> {
+    const rows = await this.dataSource.getRepository(FlightIncident).find({
+      where: { outcome: IncidentOutcome.LANDING },
+    });
+    return rows.filter((row) => !activeOrderIds.includes(row.orderId));
+  }
+
   /** Aterrizajes de emergencia sin rescatar, por dron (alertas pendientes). */
   async openLandings(droneIds: string[]): Promise<Map<string, FlightIncident>> {
     const open = new Map<string, FlightIncident>();
