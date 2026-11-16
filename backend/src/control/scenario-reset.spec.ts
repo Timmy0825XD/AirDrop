@@ -182,6 +182,9 @@ function build(hubs: Array<Partial<Hub>>) {
     }),
   };
   const points = deliveryPointsStub();
+  const network = {
+    sync: jest.fn().mockResolvedValue({ removed: 0, created: 0 }),
+  };
   const service = new ScenarioResetService(
     dataSource as never,
     flights as never,
@@ -197,9 +200,11 @@ function build(hubs: Array<Partial<Hub>>) {
     chaos as never,
     points as never,
     { clear: jest.fn().mockResolvedValue(undefined) } as never,
+    network as never,
   );
   return {
     service,
+    network,
     points,
     actors,
     dispatcher,
@@ -234,6 +239,12 @@ describe('ScenarioResetService (RF-40, CU-41)', () => {
     );
     expect(flights.forget).not.toHaveBeenCalled();
     expect(dataSource.transaction).not.toHaveBeenCalled();
+  });
+
+  it('antes de reiniciar deja la red igual a la del plan', async () => {
+    const built = build([{ id: 'hub-1', name: plan.name }]);
+    await built.service.reset(admin);
+    expect(built.network.sync).toHaveBeenCalledWith(admin);
   });
 
   it('borra todo pedido de las centrales de la demo, también los que esperan en su cola', async () => {

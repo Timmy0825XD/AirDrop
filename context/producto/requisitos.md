@@ -559,6 +559,7 @@ Las últimas se guardan en Redis con un tope, para que una recarga no las pierda
 
 **Reiniciar el escenario:**
 
+- Deja la red igual a la del escenario: crea las centrales que faltan (con sus despachadores, sus drones y el operador asignado) y borra las que ya no están, con sus pedidos, drones, inventario y despachadores.
 - Borra los pedidos, manifiestos, incidentes, celdas de clima, restricciones temporales y eventos de la demostración. Las zonas legales y los puntos de entrega no se borran.
 - Deja la flota y el stock de demostración como en la semilla.
 - Apaga el modo caos.

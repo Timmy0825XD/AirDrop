@@ -32,6 +32,7 @@ import {
   registerRequester,
   TEST_PASSWORD,
 } from '../test/e2e-helpers';
+import { ScenarioNetworkService } from '../src/control/scenario-network.service';
 import {
   cleanScope,
   createApp,
@@ -78,6 +79,9 @@ async function seedDemoData(): Promise<void> {
         }),
       );
     }
+
+    // RF-40: las centrales de otras versiones del escenario se van.
+    await app.get(ScenarioNetworkService).removeStaleHubs();
 
     // RF-45: los puntos de entrega, enlazados con los nodos recién creados.
     const points = app.get(DeliveryPointsService);

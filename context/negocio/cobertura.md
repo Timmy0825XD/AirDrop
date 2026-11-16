@@ -27,7 +27,7 @@ Las coordenadas de municipios y corregimientos son las de GeoNames (consultadas 
 | Nodo Norte (Río Seco) | 10.6075 | −73.2237 | 235 m | 19,4 km | Corregimientos del norte y la Sierra |
 | Nodo Sur (La Paz – San Diego) | 10.3550 | −73.1400 | 170 m | 14,9 km | ESE La Paz, ESE San Diego, ESE Manaure, Media Luna |
 | Nodo Occidente (Valencia de Jesús) | 10.3000 | −73.4050 | 185 m | 22,7 km | Valle del Cesar occidental y Pueblo Bello |
-| Nodo Codazzi | 10.0550 | −73.2550 | 140 m | 42,3 km | ESE Codazzi y el sur |
+| Nodo Codazzi | 10.0420 | −73.2440 | 140 m | 43,6 km | ESE Codazzi y el sur (en el borde del casco urbano) |
 
 ### ESE (centrales sin drones)
 
@@ -39,7 +39,7 @@ Las coordenadas de municipios y corregimientos son las de GeoNames (consultadas 
 | San Diego | 10.3338 | −73.1805 | 180 m | Sur | 5,0 km |
 | Manaure Balcón del Cesar | 10.3928 | −73.0325 | 726 m | Sur | 12,5 km |
 | Pueblo Bello | 10.4171 | −73.5804 | 1.108 m | Occidente | 23,2 km |
-| Agustín Codazzi | 10.0367 | −73.2356 | 136 m | Codazzi | 2,9 km |
+| Agustín Codazzi | 10.0367 | −73.2356 | 136 m | Codazzi | 1,1 km |
 
 ### Puntos de entrega
 

@@ -99,18 +99,6 @@ export function regionalAirspace(): AirspaceZone[] {
       source: 'AIP Colombia AD 2 SKVP (AMDT 67)',
       polygon: circlePolygon(SKVP_ARP, AERODROME_RADIUS_KM, 32),
     },
-    {
-      code: 'skvp-helipad',
-      kind: AirspaceZoneKind.HELIPORT,
-      name: 'Helipunto junto a la pista de SKVP',
-      legalBasis: 'RAC 100.315(a)(15): 300 m (demo; la norma pide 3 km)',
-      source: OSM,
-      polygon: circlePolygon(
-        { latitude: 10.43261, longitude: -73.24885 },
-        HELIPORT_RADIUS_KM,
-        16,
-      ),
-    },
     // Valledupar: instalaciones grandes (polígonos de unos 400 × 300 m).
     facility('bat-la-popa', 'Batallón La Popa – Décima Brigada Blindada', [
       [-73.2755, 10.465],
@@ -152,24 +140,16 @@ export function regionalAirspace(): AirspaceZone[] {
       MILITARY_POST_RADIUS_KM,
       OSM,
     ),
-    // Valledupar: CAI y comando de policía.
+    // Valledupar: CAI. Uno pegado a otra zona o dentro del anillo del
+    // aeropuerto no se dibuja: ya está cubierto.
     police('cai-hurtado', 'CAI Hurtado', 10.501, -73.2681),
-    police('cai-pedregosa', 'CAI Pedregosa', 10.4855, -73.2572),
     police('cai-san-joaquin', 'CAI San Joaquín', 10.4764, -73.2558),
     police('cai-garupal', 'CAI Garupal', 10.4748, -73.2645),
     police('cai-el-carmen', 'CAI El Carmen', 10.4712, -73.2608),
     police('cai-gobernacion', 'CAI Gobernación', 10.4705, -73.2494),
     police('cai-primero-de-mayo', 'CAI Primero de Mayo', 10.4578, -73.2562),
     police('cai-mayales', 'CAI Mayales', 10.4535, -73.2428),
-    police('cai-mercabastos', 'CAI Mercabastos', 10.4432, -73.2465),
-    police('cai-sabanas', 'CAI Sabanas del Valle', 10.4368, -73.2412),
     police('cai-san-fernando', 'CAI San Fernando', 10.4405, -73.2355),
-    police(
-      'pol-comando-cesar',
-      'Comando Departamento de Policía Cesar',
-      10.4552,
-      -73.2435,
-    ),
     // Pueblos y corregimientos.
     police('pol-la-paz', 'Estación de policía de La Paz', 10.3854, -73.1722),
     police(
