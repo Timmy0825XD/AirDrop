@@ -89,7 +89,10 @@ void main() {
       final confirmed = await repo.confirmLoad(pending.id);
       expect(confirmed.loadConfirmedAt, isNotNull);
 
-      expect(() => repo.confirmLoad(pending.id), throwsA(isA<ApiException>()));
+      expect(
+        () => repo.confirmLoad(pending.id),
+        throwsA(isA<ApiException>()),
+      );
     });
   });
 }

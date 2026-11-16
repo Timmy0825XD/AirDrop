@@ -34,7 +34,8 @@ class OrderStatusChip extends StatelessWidget {
   /// El estado en palabras del solicitante. El regreso del dron no se le
   /// muestra, así que "de regreso" también es "No se entregó".
   static String requesterLabel(OrderStatus status) => switch (status) {
-    OrderStatus.received || OrderStatus.underReview => 'Esperando central',
+    OrderStatus.received ||
+    OrderStatus.underReview => 'Esperando central',
     OrderStatus.assigned || OrderStatus.pendingLoad => 'Preparando el envío',
     OrderStatus.inFlight => 'En camino',
     OrderStatus.delivered => 'Entregado',

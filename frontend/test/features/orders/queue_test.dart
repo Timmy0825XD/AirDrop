@@ -6,7 +6,9 @@ import 'package:frontend/features/orders/data/order_providers.dart';
 import 'package:frontend/features/orders/presentation/queue_screen.dart';
 
 void main() {
-  testWidgets('la cola dice hace cuánto espera cada urgencia', (tester) async {
+  testWidgets('la cola dice hace cuánto espera cada urgencia', (
+    tester,
+  ) async {
     final container = ProviderContainer(
       overrides: [
         orderRepositoryProvider.overrideWithValue(LocalOrderRepository()),

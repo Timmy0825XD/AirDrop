@@ -120,7 +120,10 @@ class _StepRow extends StatelessWidget {
             ),
           ),
           if (at != null)
-            Text(formatClock(at), style: theme.textTheme.labelMedium?.figure),
+            Text(
+              formatClock(at),
+              style: theme.textTheme.labelMedium?.figure,
+            ),
         ],
       ),
     );
