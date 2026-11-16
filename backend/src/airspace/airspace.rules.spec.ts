@@ -3,20 +3,18 @@ import { haversineKm, isInsideGeofence } from '../routing/routing.rules';
 import {
   blockingPolygons,
   circlePolygon,
-  coordinatedZones,
   destinationPoint,
-  gatewayPlan,
   isBlocking,
-  isPactedSite,
-  joinGatewayLegs,
   zoneAt,
 } from './airspace.rules';
-import { SKVP_ARP, regionalAirspace } from './regional-airspace';
+import {
+  AERODROME_RADIUS_KM,
+  SKVP_ARP,
+  regionalAirspace,
+} from './regional-airspace';
 import { DELIVERY_POINTS, ESES, NODES } from './regional-network';
 
 const zones = regionalAirspace();
-const blocking = zones.filter(isBlocking);
-const coordinated = coordinatedZones(zones);
 
 describe('Geometría de las zonas (RF-43)', () => {
   it('el círculo contiene todo su radio y nada mucho más allá', () => {
@@ -36,15 +34,10 @@ describe('Geometría de las zonas (RF-43)', () => {
     expect(haversineKm(SKVP_ARP, far)).toBeCloseTo(12, 2);
   });
 
-  it('una zona dentro del anillo del aeropuerto no se rodea dos veces', () => {
+  it('el helipunto, dentro del anillo del aeropuerto, no se rodea dos veces', () => {
     const polygons = blockingPolygons(zones);
-    expect(polygons.length).toBeLessThan(blocking.length);
-    // La subestación Valledupar (3,7 km del ARP + 2,3 km) cabe entera en el anillo.
-    const substation = zones.find((zone) => zone.code === 'sub-valledupar');
-    expect(polygons).not.toContain(substation?.polygon);
-    // La cárcel (6,7 km + 2,3 km) toca el borde: se rodea igual.
-    const prison = zones.find((zone) => zone.code === 'carcel-tramacua');
-    expect(polygons).toContain(prison?.polygon);
+    const helipad = zones.find((zone) => zone.code === 'skvp-helipad');
+    expect(polygons).not.toContain(helipad?.polygon);
     const aerodrome = zones.find(
       (zone) => zone.kind === AirspaceZoneKind.AERODROME,
     );
@@ -52,115 +45,59 @@ describe('Geometría de las zonas (RF-43)', () => {
   });
 });
 
-describe('La red regional respeta las zonas (cobertura.md)', () => {
-  it('cada nodo queda a más de 9 km del ARP y fuera de toda zona', () => {
-    for (const node of Object.values(NODES)) {
-      expect(haversineKm(node, SKVP_ARP)).toBeGreaterThan(9);
-      expect(zoneAt(node, [...blocking, ...coordinated])).toBeNull();
-    }
+describe('Escala de la demo (espacio-aereo.md)', () => {
+  it('todas las zonas bloquean', () => {
+    expect(zones.every(isBlocking)).toBe(true);
   });
 
-  it('ninguna ESE ni punto de entrega queda en una zona bloqueante', () => {
-    for (const site of [...Object.values(ESES), ...DELIVERY_POINTS]) {
-      expect(zoneAt(site, blocking)).toBeNull();
-    }
-  });
-
-  it('una ESE o un punto dentro de una zona coordinada es su sitio pactado', () => {
-    for (const site of [...Object.values(ESES), ...DELIVERY_POINTS]) {
-      const zone = zoneAt(site, coordinated);
-      if (zone) {
-        expect(zone.gateway).not.toBeNull();
-        expect(isPactedSite(site, zone)).toBe(true);
-      }
-    }
-  });
-
-  it('las entradas pactadas quedan fuera de toda zona', () => {
-    for (const zone of coordinated) {
-      if (zone.gateway) {
-        expect(zoneAt(zone.gateway, [...blocking, ...coordinated])).toBeNull();
-      }
-    }
-  });
-
-  it('las de precaución no bloquean', () => {
-    const caution = zones.filter(
-      (zone) => zone.kind === AirspaceZoneKind.CAUTION,
+  it('el aeropuerto tiene 1,5 km: el centro de Valledupar queda libre', () => {
+    expect(AERODROME_RADIUS_KM).toBe(1.5);
+    const plazaAlfonsoLopez = { latitude: 10.4775, longitude: -73.2436 };
+    expect(zoneAt(plazaAlfonsoLopez, zones)).toBeNull();
+    expect(zoneAt(destinationPoint(SKVP_ARP, 0, 1.4), zones)?.kind).toBe(
+      AirspaceZoneKind.AERODROME,
     );
-    expect(caution.length).toBeGreaterThan(0);
-    expect(caution.every((zone) => !isBlocking(zone))).toBe(true);
+  });
+
+  it('un CAI ocupa unos 100 m: a 150 m ya no hay zona', () => {
+    const cai = { latitude: 10.4705, longitude: -73.2494 };
+    expect(zoneAt(cai, zones)?.code).toBe('cai-gobernacion');
+    expect(zoneAt(destinationPoint(cai, 90, 0.15), zones)).toBeNull();
+  });
+
+  it('Valledupar tiene sus CAI y el comando de policía', () => {
+    const codes = zones.map((zone) => zone.code);
+    expect(codes.filter((code) => code.startsWith('cai-'))).toHaveLength(11);
+    expect(codes).toContain('pol-comando-cesar');
   });
 });
 
-describe('Entrada por la zona coordinada (RF-12)', () => {
-  const atanquez = DELIVERY_POINTS.find(
-    (point) => point.code === 'dp-atanquez',
-  )!;
-
-  it('a un sitio pactado se entra por la entrada de la zona', () => {
-    const plan = gatewayPlan(NODES.north, atanquez, coordinated, {
-      origin: true,
-      destination: false,
-    });
-    expect(plan).not.toBeNull();
-    expect(plan!.end).toEqual(
-      zones.find((zone) => zone.code === 'resguardo-kankuamo')!.gateway,
-    );
-    expect(plan!.tail).toEqual([atanquez]);
+describe('La red regional respeta las zonas (cobertura.md)', () => {
+  it('ningún nodo, ESE ni punto queda dentro de una zona', () => {
+    for (const site of [
+      ...Object.values(NODES),
+      ...Object.values(ESES),
+      ...DELIVERY_POINTS,
+    ]) {
+      expect({
+        site: site.code,
+        zone: zoneAt(site, zones)?.code ?? null,
+      }).toEqual({
+        site: site.code,
+        zone: null,
+      });
+    }
   });
 
-  it('a un punto cualquiera dentro de la zona no se llega', () => {
-    const random = { latitude: 10.7, longitude: -73.37 };
+  it('Valledupar tiene nodo, dos ESE y cuatro puntos', () => {
+    expect(NODES.valledupar.municipality).toBe('Valledupar');
     expect(
-      gatewayPlan(NODES.north, random, coordinated, {
-        origin: true,
-        destination: false,
-      }),
-    ).toBeNull();
-  });
-
-  it('una central dentro de la zona sí se acepta como pactada', () => {
-    const random = { latitude: 10.7, longitude: -73.37 };
+      Object.values(ESES).filter((ese) => ese.municipality === 'Valledupar'),
+    ).toHaveLength(2);
     expect(
-      gatewayPlan(NODES.north, random, coordinated, {
-        origin: true,
-        destination: true,
-      }),
-    ).not.toBeNull();
-  });
-
-  it('una zona sin entrada (Nabusímake) no tiene paso', () => {
-    const nabusimake = { latitude: 10.5844, longitude: -73.5929 };
-    expect(
-      gatewayPlan(NODES.west, nabusimake, coordinated, {
-        origin: true,
-        destination: true,
-      }),
-    ).toBeNull();
-  });
-
-  it('el corredor completo suma los tramos pactados', () => {
-    const plan = gatewayPlan(NODES.north, atanquez, coordinated, {
-      origin: true,
-      destination: false,
-    })!;
-    const core = {
-      altitudeM: 100,
-      distanceKm: haversineKm(NODES.north, plan.end),
-      coordinates: [
-        [NODES.north.longitude, NODES.north.latitude],
-        [plan.end.longitude, plan.end.latitude],
-      ] as Array<[number, number]>,
-    };
-    const joined = joinGatewayLegs(plan, core);
-    expect(joined.coordinates.at(-1)).toEqual([
-      atanquez.longitude,
-      atanquez.latitude,
-    ]);
-    expect(joined.distanceKm).toBeCloseTo(
-      haversineKm(NODES.north, plan.end) + haversineKm(plan.end, atanquez),
-      1,
-    );
+      DELIVERY_POINTS.filter(
+        (point) => point.nodeCode === NODES.valledupar.code,
+      ),
+    ).toHaveLength(4);
   });
 });

@@ -1,12 +1,9 @@
-import { AirspaceZoneKind } from '../common/enums/airspace-zone-kind.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { LngLat, haversineKm } from '../routing/routing.rules';
 
 export const DELIVERY_POINT_NOT_FOUND = 'El punto de entrega no existe.';
 export const DELIVERY_POINT_UNAVAILABLE =
   'Ese punto de entrega no está disponible ahora. Elige otro.';
-export const URBAN_NOT_SERVED =
-  'En la ciudad de Valledupar no se entrega con dron: está dentro del anillo del aeropuerto. Puedes recoger el medicamento en una central cercana.';
 export const NO_POINT_IN_REACH =
   'No hay un punto de entrega activo al alcance de un nodo. Puedes recoger el medicamento en una central cercana.';
 export const NO_POINT_IN_CIRCLE =
@@ -15,17 +12,9 @@ export const NO_POINT_IN_CIRCLE =
 /** RU-02: qué le dice la app al solicitante según dónde está. */
 export enum CoverageStatus {
   COVERED = 'covered',
-  /** Zona urbana o anillo del aeródromo: no se opera con dron. */
-  URBAN = 'urban',
   /** Ningún punto activo con su nodo activo. */
   NO_POINT = 'no_point',
 }
-
-/** Zonas donde vive gente a la que el dron no puede llegar (RAC 100.220(b)). */
-export const NOT_SERVED_KINDS = [
-  AirspaceZoneKind.URBAN,
-  AirspaceZoneKind.AERODROME,
-];
 
 type PointLike = LngLat & {
   active: boolean;
@@ -69,9 +58,6 @@ export function rankByDistance<T extends PointLike>(
 }
 
 export function coverageMessage(status: CoverageStatus): string | null {
-  if (status === CoverageStatus.URBAN) {
-    return URBAN_NOT_SERVED;
-  }
   if (status === CoverageStatus.NO_POINT) {
     return NO_POINT_IN_REACH;
   }

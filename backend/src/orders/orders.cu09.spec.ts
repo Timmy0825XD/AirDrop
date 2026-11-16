@@ -1,4 +1,4 @@
-import { URBAN_NOT_SERVED } from '../delivery-points/delivery-points.rules';
+import { DELIVERY_POINT_UNAVAILABLE } from '../delivery-points/delivery-points.rules';
 import {
   deliveryPointsStub,
   TEST_POINT,
@@ -258,29 +258,21 @@ describe('CU-09 Crear pedido de emergencia', () => {
     );
   });
 
-  it('CP-09-08 rechaza una ubicación en la ciudad de Valledupar (400)', async () => {
+  it('CP-09-08 rechaza un punto de entrega que no está disponible (400)', async () => {
     const { service, pedidos } = build();
     const puntos = service['deliveryPoints'] as unknown as {
       requireForOrder: jest.Mock;
     };
     puntos.requireForOrder.mockRejectedValue(
-      new BadRequestException(URBAN_NOT_SERVED),
+      new BadRequestException(DELIVERY_POINT_UNAVAILABLE),
     );
 
-    const intento = service.createEmergency(
-      solicitante,
-      conFormula({
-        requesterLocation: { latitude: 10.4631, longitude: -73.2532 },
-      }),
-    );
+    const intento = service.createEmergency(solicitante, conFormula());
 
     await expect(intento).rejects.toThrow(
-      new BadRequestException(URBAN_NOT_SERVED),
+      new BadRequestException(DELIVERY_POINT_UNAVAILABLE),
     );
-    expect(puntos.requireForOrder).toHaveBeenCalledWith(TEST_POINT.id, {
-      latitude: 10.4631,
-      longitude: -73.2532,
-    });
+    expect(puntos.requireForOrder).toHaveBeenCalledWith(TEST_POINT.id);
     expect(pedidos.save).not.toHaveBeenCalled();
   });
 

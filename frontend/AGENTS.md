@@ -587,7 +587,7 @@ Toda central trae `networkRole` (`HubNetworkRole`: `node` o `ese`; cae en
 acepta. El formulario lo elige con `HubNetworkChips` ("Tipo de red"); el
 listado y el detalle dicen "Nodo · Hospital" (`HubLabels.kind`). Solo un
 nodo tiene drones (`Hub.hasFleet`): en una ESE no sale "Ver flota". Los
-400 de ubicación (zona urbana, anillo de un aeródromo, zona prohibida) y el
+400 de ubicación (anillo de un aeródromo, helipuerto, zona prohibida) y el
 409 de pasar a ESE una central con drones se muestran con el texto de
 Nest. `GET /orders/origin-hubs` ya solo lista nodos: los formularios del
 despachador dicen "Nodo de origen".

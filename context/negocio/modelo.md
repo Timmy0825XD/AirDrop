@@ -1,6 +1,6 @@
 # Modelo de negocio
 
-AirDrop es una red regional de entrega de medicamentos con drones para el área rural de Valledupar y los municipios vecinos del Cesar. No reparte en la ciudad: la norma aérea no lo permite (ver [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md)), y en la ciudad sí hay farmacias y vías. El dron sirve donde el problema es real: corregimientos y veredas a horas por carretera, vías destapadas o cortadas por el invierno, y la Sierra Nevada.
+AirDrop es una red regional de entrega de medicamentos con drones para el área rural de Valledupar y los municipios vecinos del Cesar. Valledupar es el centro de la red: tiene su nodo, sus ESE y sus puntos, y su nodo sirve de relevo para llegar más lejos ([cobertura.md](cobertura.md)). Aun así, el dron sirve sobre todo donde el problema es real: corregimientos y veredas a horas por carretera, vías destapadas o cortadas por el invierno, y la Sierra Nevada.
 
 ## Problema que resuelve
 
@@ -16,7 +16,7 @@ El ciudadano no paga. El modelo es B2B y B2G:
 
 | Cliente | Qué compra | Cómo paga |
 | --- | --- | --- |
-| ESE e IPS municipales (La Paz, San Diego, Manaure, Pueblo Bello, Codazzi) | Reabastecimiento programado y urgente desde el nodo más cercano | **Suscripción mensual** por central, según las franjas de vuelo contratadas |
+| ESE e IPS (Valledupar, La Paz, San Diego, Manaure, Pueblo Bello, Codazzi) | Reabastecimiento programado y urgente desde el nodo más cercano | **Suscripción mensual** por central, según las franjas de vuelo contratadas |
 | EPS y gestores farmacéuticos | Dispensación a pacientes crónicos y de urgencia en un punto de entrega | **Tarifa por entrega** |
 | Secretaría de Salud del Cesar | Atención de urgencias en zona dispersa y apoyo a campañas | **Contrato anual** con una bolsa de vuelos de urgencia |
 
@@ -26,7 +26,7 @@ El software del simulador no cobra ni factura. Las tarifas son parte del relato 
 
 1. **Tiempo.** Un vuelo de 20 km dura unos 11 minutos en el Garza. Por carretera destapada, el mismo trayecto puede tomar una hora o más.
 2. **Trazabilidad.** Cada vuelo tiene manifiesto de carga, remisión, lote y registro de temperatura. Es lo que la norma de salud y la aeronáutica le piden a un operador real.
-3. **Cumplimiento por diseño.** El motor no despacha un vuelo que la norma no permite: de noche, en zona urbana, cerca del aeropuerto o de una base. Lo explica y ofrece la alternativa.
+3. **Cumplimiento por diseño.** El motor no despacha un vuelo que la norma no permite: de noche, cerca del aeropuerto, de una base, de una estación de policía o de una cárcel. Lo explica y ofrece la alternativa.
 
 ## Qué queda fuera del sistema
 

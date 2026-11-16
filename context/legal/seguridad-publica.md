@@ -12,8 +12,7 @@ Para una red de drones médicos, esto tiene dos consecuencias: un dron no identi
 
 | Medida | Para qué | Dónde |
 | --- | --- | --- |
-| 2 km de margen alrededor de bases, brigadas, cárceles e infraestructura crítica | Nunca acercarse a lo que se protege | [espacio-aereo.md](../operacion/espacio-aereo.md) |
-| Estación de policía municipal como zona coordinada | El dron llega solo por el corredor acordado con esa estación | [espacio-aereo.md](../operacion/espacio-aereo.md) |
+| Zona prohibida sobre cada base, brigada, cárcel, estación de policía, CAI e infraestructura crítica | Nunca sobrevolar lo que se protege | [espacio-aereo.md](../operacion/espacio-aereo.md) |
 | Manifiesto de carga numerado | Demostrar qué lleva cada vuelo y quién lo autorizó | [manifiesto.md](../operacion/manifiesto.md) |
 | Identificación remota de cada dron | Distinguir un vuelo de AirDrop de un contacto no identificado | [manifiesto.md](../operacion/manifiesto.md) |
 | Restricciones temporales desde la consola | Cerrar una zona por orden público, un operativo, un evento (Festival Vallenato) o una jornada electoral | Zona `TEMPORAL` |

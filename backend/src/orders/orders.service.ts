@@ -190,7 +190,6 @@ export class OrdersService {
     const formula = patientFormula(user, dto.saleType, dto);
     const point = await this.deliveryPoints.requireForOrder(
       dto.deliveryPointId,
-      dto.requesterLocation,
     );
     await this.assertDestinationAllowed(point);
     const offer = await this.requireOffer(dto.medicationName, dto.saleType);
@@ -278,7 +277,6 @@ export class OrdersService {
     const formula = patientFormula(user, dto.saleType, dto);
     const point = await this.deliveryPoints.requireForOrder(
       dto.deliveryPointId,
-      dto.requesterLocation,
     );
     await this.assertDestinationAllowed(point);
     const offer = await this.requireOffer(

@@ -1,98 +1,91 @@
 import { AirspaceZoneKind } from '../common/enums/airspace-zone-kind.enum';
 import { LngLat } from '../routing/routing.rules';
-import {
-  AirspaceZone,
-  PactedSite,
-  circlePolygon,
-  gatewayToward,
-} from './airspace.rules';
-import { DELIVERY_POINTS, ESES, NODES, NetworkSite } from './regional-network';
+import { AirspaceZone, circlePolygon } from './airspace.rules';
 
 /**
  * RF-43: las zonas legales de la demo (`context/operacion/espacio-aereo.md`).
- * Ubicaciones de OpenStreetMap (consulta de noviembre de 2026) y de la AIP
- * para el ARP. No son oficiales: una operación real las tomaría del visor de
- * la Aerocivil.
+ * Cada zona tiene el tamaño que muestra el visor de la Aerocivil, no el
+ * margen completo del RAC 100: es una simplificación declarada para que la
+ * red se pueda ver. Ubicaciones de OpenStreetMap (nov. 2026), de la AIP para
+ * el ARP y de la lista de CAI de Valledupar que reunió el equipo.
  */
 
 /** ARP de SKVP según la AIP AD 2: 10°26'06.47"N, 73°14'57.83"W. */
 export const SKVP_ARP: LngLat = { latitude: 10.43513, longitude: -73.2494 };
 
-export const AERODROME_RADIUS_KM = 9;
-export const HELIPORT_RADIUS_KM = 3;
-/** RAC 100.315(a)(13): 2 km desde el perímetro. */
-export const SECURITY_MARGIN_KM = 2;
-/** Sin perímetro oficial, se supone una instalación de 300 m de radio. */
-export const NOMINAL_PERIMETER_KM = 0.3;
+/** Anillo del aeropuerto en la demo (la norma pide 9 km). */
+export const AERODROME_RADIUS_KM = 1.5;
+/** Helipunto en la demo (la norma pide 3 km). */
+export const HELIPORT_RADIUS_KM = 0.3;
+/** Estación de policía o CAI: el círculo del visor. */
+export const POLICE_RADIUS_KM = 0.1;
+/** Fuerte o puesto militar menor. */
+export const MILITARY_POST_RADIUS_KM = 0.15;
+/** Pista agrícola: un círculo que cubre la pista. */
+export const AIRSTRIP_RADIUS_KM = 0.4;
 
-const SECURITY_RADIUS_KM = SECURITY_MARGIN_KM + NOMINAL_PERIMETER_KM;
 const OSM = 'OpenStreetMap (nov. 2026)';
+const POLICE_LIST = 'Lista de CAI y estaciones de la Policía (equipo AirDrop)';
+const VISOR = 'Ubicado en el poblado con el visor de la Aerocivil';
 const ART_13 = 'RAC 100.315(a)(13)';
+const DEMO_SCALE = 'tamaño del visor de la Aerocivil (demo)';
 
-function prohibited(code: string, name: string, center: LngLat): AirspaceZone {
+function circle(
+  code: string,
+  name: string,
+  center: LngLat,
+  radiusKm: number,
+  source: string,
+): AirspaceZone {
   return {
     code,
     kind: AirspaceZoneKind.PROHIBITED,
     name,
-    legalBasis: `${ART_13}: 2 km desde el perímetro`,
-    source: OSM,
-    polygon: circlePolygon(center, SECURITY_RADIUS_KM, 16),
-    gateway: null,
-    sites: [],
+    legalBasis: `${ART_13}: ${DEMO_SCALE}`,
+    source,
+    polygon: circlePolygon(center, radiusKm, radiusKm >= 0.3 ? 16 : 12),
   };
 }
 
-function policeStation(
+function police(
   code: string,
   name: string,
-  center: LngLat,
-  servedFrom: NetworkSite,
-  sites: PactedSite[],
+  latitude: number,
+  longitude: number,
+  source = POLICE_LIST,
+): AirspaceZone {
+  return circle(code, name, { latitude, longitude }, POLICE_RADIUS_KM, source);
+}
+
+function airstrip(
+  code: string,
+  name: string,
+  latitude: number,
+  longitude: number,
+): AirspaceZone {
+  return circle(
+    code,
+    `Pista agrícola ${name}`,
+    { latitude, longitude },
+    AIRSTRIP_RADIUS_KM,
+    OSM,
+  );
+}
+
+/** Polígono de una instalación, a partir de sus esquinas [lon, lat]. */
+function facility(
+  code: string,
+  name: string,
+  corners: Array<[number, number]>,
 ): AirspaceZone {
   return {
     code,
-    kind: AirspaceZoneKind.COORDINATED,
+    kind: AirspaceZoneKind.PROHIBITED,
     name,
-    legalBasis: `${ART_13}; desviación de la categoría específica (100.410(a)(10))`,
+    legalBasis: `${ART_13}: ${DEMO_SCALE}`,
     source: OSM,
-    polygon: circlePolygon(center, SECURITY_RADIUS_KM, 16),
-    gateway: gatewayToward(center, SECURITY_RADIUS_KM, servedFrom),
-    sites,
+    polygon: { type: 'Polygon', coordinates: [[...corners, corners[0]]] },
   };
-}
-
-function caution(code: string, name: string, center: LngLat): AirspaceZone {
-  return {
-    code,
-    kind: AirspaceZoneKind.CAUTION,
-    name,
-    legalBasis:
-      'Pista privada sin ARP en la AIP: se consulta en el visor de la Aerocivil',
-    source: OSM,
-    polygon: circlePolygon(center, 0.5, 8),
-    gateway: null,
-    sites: [],
-  };
-}
-
-function asSite(site: NetworkSite): PactedSite {
-  return {
-    name: site.name,
-    latitude: site.latitude,
-    longitude: site.longitude,
-  };
-}
-
-function point(code: string): PactedSite {
-  const found = DELIVERY_POINTS.find((entry) => entry.code === code);
-  if (!found) {
-    throw new Error(`No existe el punto ${code}`);
-  }
-  return asSite(found);
-}
-
-function ring(points: Array<[number, number]>): AirspaceZone['polygon'] {
-  return { type: 'Polygon', coordinates: [[...points, points[0]]] };
 }
 
 export function regionalAirspace(): AirspaceZone[] {
@@ -101,161 +94,166 @@ export function regionalAirspace(): AirspaceZone[] {
       code: 'skvp',
       kind: AirspaceZoneKind.AERODROME,
       name: 'Aeropuerto Alfonso López Pumarejo (SKVP)',
-      legalBasis: 'RAC 100.315(a)(14): 9 km desde el ARP',
+      legalBasis:
+        'RAC 100.315(a)(14): 1,5 km desde el ARP (demo; la norma pide 9 km)',
       source: 'AIP Colombia AD 2 SKVP (AMDT 67)',
       polygon: circlePolygon(SKVP_ARP, AERODROME_RADIUS_KM, 32),
-      gateway: null,
-      sites: [],
     },
     {
       code: 'skvp-helipad',
       kind: AirspaceZoneKind.HELIPORT,
       name: 'Helipunto junto a la pista de SKVP',
-      legalBasis: 'RAC 100.315(a)(15): 3 km desde el punto de referencia',
+      legalBasis: 'RAC 100.315(a)(15): 300 m (demo; la norma pide 3 km)',
       source: OSM,
       polygon: circlePolygon(
         { latitude: 10.43261, longitude: -73.24885 },
         HELIPORT_RADIUS_KM,
         16,
       ),
-      gateway: null,
-      sites: [],
     },
-    {
-      code: 'urban-valledupar',
-      kind: AirspaceZoneKind.URBAN,
-      name: 'Casco urbano de Valledupar',
-      legalBasis: 'RAC 100.220(b): en zona urbana solo VLOS',
-      source: 'Trazado aproximado del casco urbano',
-      polygon: ring([
-        [-73.3, 10.42],
-        [-73.215, 10.42],
-        [-73.205, 10.47],
-        [-73.225, 10.515],
-        [-73.285, 10.515],
-        [-73.31, 10.47],
-      ]),
-      gateway: null,
-      sites: [],
-    },
-    prohibited('bat-la-popa', 'Batallón La Popa – Décima Brigada Blindada', {
-      latitude: 10.46633,
-      longitude: -73.27341,
-    }),
-    prohibited('carcel-tramacua', 'Cárcel La Tramacúa (EPAMSCAS Valledupar)', {
-      latitude: 10.44922,
-      longitude: -73.30887,
-    }),
-    prohibited('militar-norte', 'Instalación militar al norte de Valledupar', {
-      latitude: 10.51728,
-      longitude: -73.24875,
-    }),
-    prohibited('sub-valledupar', 'Subestación Valledupar', {
-      latitude: 10.4587,
-      longitude: -73.2728,
-    }),
-    prohibited('sub-guatapuri', 'Subestación Guatapurí', {
-      latitude: 10.48672,
-      longitude: -73.25798,
-    }),
-    prohibited('planta-sur', 'Planta eléctrica al sur de Valledupar', {
-      latitude: 10.38182,
-      longitude: -73.1947,
-    }),
-    prohibited('planta-san-diego', 'Planta eléctrica cerca de San Diego', {
-      latitude: 10.3349,
-      longitude: -73.22822,
-    }),
-    prohibited('cerro-aguacil', 'Cerro El Aguacil (instalación militar)', {
-      latitude: 10.50739,
-      longitude: -73.55696,
-    }),
-    prohibited('bam-perija', 'Batallón de Alta Montaña (Serranía del Perijá)', {
-      latitude: 10.02971,
-      longitude: -73.04506,
-    }),
-    policeStation(
+    // Valledupar: instalaciones grandes (polígonos de unos 400 × 300 m).
+    facility('bat-la-popa', 'Batallón La Popa – Décima Brigada Blindada', [
+      [-73.2755, 10.465],
+      [-73.2718, 10.465],
+      [-73.2718, 10.4677],
+      [-73.2755, 10.4677],
+    ]),
+    facility('carcel-tramacua', 'Cárcel La Tramacúa (CPAMS Valledupar)', [
+      [-73.3103, 10.4481],
+      [-73.3075, 10.4481],
+      [-73.3075, 10.4503],
+      [-73.3103, 10.4503],
+    ]),
+    circle(
+      'militar-norte',
+      'Instalación militar al norte de Valledupar',
+      { latitude: 10.51728, longitude: -73.24875 },
+      MILITARY_POST_RADIUS_KM,
+      OSM,
+    ),
+    circle(
+      'sub-valledupar',
+      'Subestación Valledupar',
+      { latitude: 10.4587, longitude: -73.2728 },
+      POLICE_RADIUS_KM,
+      OSM,
+    ),
+    circle(
+      'sub-guatapuri',
+      'Subestación Guatapurí',
+      { latitude: 10.48672, longitude: -73.25798 },
+      POLICE_RADIUS_KM,
+      OSM,
+    ),
+    circle(
+      'planta-sur',
+      'Planta eléctrica al sur de Valledupar',
+      { latitude: 10.38182, longitude: -73.1947 },
+      MILITARY_POST_RADIUS_KM,
+      OSM,
+    ),
+    // Valledupar: CAI y comando de policía.
+    police('cai-hurtado', 'CAI Hurtado', 10.501, -73.2681),
+    police('cai-pedregosa', 'CAI Pedregosa', 10.4855, -73.2572),
+    police('cai-san-joaquin', 'CAI San Joaquín', 10.4764, -73.2558),
+    police('cai-garupal', 'CAI Garupal', 10.4748, -73.2645),
+    police('cai-el-carmen', 'CAI El Carmen', 10.4712, -73.2608),
+    police('cai-gobernacion', 'CAI Gobernación', 10.4705, -73.2494),
+    police('cai-primero-de-mayo', 'CAI Primero de Mayo', 10.4578, -73.2562),
+    police('cai-mayales', 'CAI Mayales', 10.4535, -73.2428),
+    police('cai-mercabastos', 'CAI Mercabastos', 10.4432, -73.2465),
+    police('cai-sabanas', 'CAI Sabanas del Valle', 10.4368, -73.2412),
+    police('cai-san-fernando', 'CAI San Fernando', 10.4405, -73.2355),
+    police(
+      'pol-comando-cesar',
+      'Comando Departamento de Policía Cesar',
+      10.4552,
+      -73.2435,
+    ),
+    // Pueblos y corregimientos.
+    police('pol-la-paz', 'Estación de policía de La Paz', 10.3854, -73.1722),
+    police(
       'pol-san-diego',
       'Estación de policía de San Diego',
-      { latitude: 10.32999, longitude: -73.18429 },
-      NODES.south,
-      [asSite(ESES.sanDiego)],
+      10.3364,
+      -73.1815,
     ),
-    policeStation(
-      'pol-manaure',
-      'Estación de policía de Manaure',
-      { latitude: 10.38873, longitude: -73.02976 },
-      NODES.south,
-      [asSite(ESES.manaure)],
-    ),
-    policeStation(
+    police('pol-manaure', 'Estación de policía de Manaure', 10.3916, -73.0322),
+    police(
       'pol-pueblo-bello',
       'Estación de policía de Pueblo Bello',
-      { latitude: 10.41559, longitude: -73.58651 },
-      NODES.west,
-      [asSite(ESES.puebloBello)],
+      10.4167,
+      -73.5833,
     ),
-    policeStation(
+    police(
       'pol-codazzi',
       'Estación de policía de Codazzi',
-      { latitude: 10.02734, longitude: -73.23679 },
-      NODES.codazzi,
-      [asSite(ESES.codazzi)],
+      10.02734,
+      -73.23679,
+      OSM,
     ),
-    {
-      code: 'resguardo-kankuamo',
-      kind: AirspaceZoneKind.COORDINATED,
-      name: 'Resguardo kankuamo (Atánquez, Guatapurí, Chemesquemena)',
-      legalBasis:
-        'Decreto 1500 de 2018 (Línea Negra). Incluye la estación de Atánquez y la instalación militar de Guatapurí (RAC 100.315(a)(13))',
-      source:
-        'Polígono ilustrativo; el oficial es de la Agencia Nacional de Tierras',
-      polygon: ring([
-        [-73.43, 10.665],
-        [-73.33, 10.665],
-        [-73.32, 10.72],
-        [-73.36, 10.765],
-        [-73.43, 10.755],
-      ]),
-      gateway: { latitude: 10.655, longitude: -73.33 },
-      sites: [point('dp-atanquez'), point('dp-guatapuri')],
-    },
-    {
-      code: 'resguardo-arhuaco',
-      kind: AirspaceZoneKind.COORDINATED,
-      name: 'Resguardo arhuaco (Nabusímake)',
-      legalBasis: 'Decreto 1500 de 2018 (Línea Negra)',
-      source:
-        'Polígono ilustrativo; el oficial es de la Agencia Nacional de Tierras',
-      polygon: ring([
-        [-73.64, 10.55],
-        [-73.55, 10.55],
-        [-73.55, 10.62],
-        [-73.64, 10.62],
-      ]),
-      // Sin punto pactado: Nabusímake queda fuera de la red (cobertura.md).
-      gateway: null,
-      sites: [],
-    },
-    caution('pista-madaci', 'Pista Madaci', {
-      latitude: 10.3276,
-      longitude: -73.37257,
-    }),
-    caution('pista-convencion', 'Pista Convención', {
-      latitude: 10.26407,
-      longitude: -73.41425,
-    }),
-    caution('pista-aguas-blancas', 'Pista Aguasblancas', {
-      latitude: 10.20756,
-      longitude: -73.47514,
-    }),
-    caution('pista-maria-angola', 'Pista María Angola', {
-      latitude: 10.18625,
-      longitude: -73.55403,
-    }),
-    caution('pista-codazzi-no', 'Pista Codazzi Noroeste', {
-      latitude: 10.133,
-      longitude: -73.22797,
-    }),
+    police(
+      'pol-atanquez',
+      'Estación de policía de Atánquez',
+      10.69706,
+      -73.352,
+      OSM,
+    ),
+    police(
+      'pol-valencia',
+      'Subestación de policía de Valencia de Jesús',
+      10.301,
+      -73.3915,
+      VISOR,
+    ),
+    police(
+      'pol-aguas-blancas',
+      'Subestación de policía de Aguas Blancas',
+      10.228,
+      -73.495,
+      VISOR,
+    ),
+    police(
+      'pol-mariangola',
+      'Subestación de policía de Mariangola',
+      10.187,
+      -73.589,
+      VISOR,
+    ),
+    police(
+      'pol-patillal',
+      'Subestación de policía de Patillal',
+      10.709,
+      -73.21,
+      VISOR,
+    ),
+    police(
+      'pol-badillo',
+      'Subestación de policía de Badillo',
+      10.634,
+      -73.126,
+      VISOR,
+    ),
+    circle(
+      'militar-guatapuri',
+      'Instalación militar de Guatapurí',
+      { latitude: 10.72705, longitude: -73.38933 },
+      MILITARY_POST_RADIUS_KM,
+      OSM,
+    ),
+    circle(
+      'bam-perija',
+      'Batallón de Alta Montaña (Serranía del Perijá)',
+      { latitude: 10.02971, longitude: -73.04506 },
+      MILITARY_POST_RADIUS_KM,
+      OSM,
+    ),
+    // Pistas agrícolas cerca de rutas reales.
+    airstrip('pista-codazzi', 'Codazzi', 10.11143, -73.2257),
+    airstrip('pista-las-flores', 'Las Flores', 10.1026, -73.23302),
+    airstrip('pista-ana-maria', 'Ana María', 10.0375, -73.28361),
+    airstrip('pista-aguas-blancas', 'Aguasblancas', 10.20756, -73.47514),
+    airstrip('pista-convencion', 'Convención', 10.26407, -73.41425),
+    airstrip('pista-madaci', 'Madaci', 10.3276, -73.37257),
   ];
 }

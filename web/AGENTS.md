@@ -16,7 +16,7 @@ Reglas de esta carpeta. Autoridad de negocio: [`../INDEX.md`](../INDEX.md) y [`.
 
 Una sola página para el **administrador**, pensada para verse en una TV. Tiene dos partes:
 
-- **Radar:** un mapa tipo Flightradar con la red regional: los nodos (con drones) y las ESE (solo reciben), los puntos de entrega (RF-45), las zonas legales (RF-43: el anillo del aeropuerto, el casco urbano, prohibidas, coordinadas y de precaución), los drones en vuelo y, al elegir uno, su ruta. Un panel lateral muestra el detalle de lo elegido: central, vuelo, zona legal (con su norma y su fuente) o punto de entrega.
+- **Radar:** un mapa tipo Flightradar con la red regional: los nodos (con drones) y las ESE (solo reciben), los puntos de entrega (RF-45), las zonas legales (RF-43: el anillo del aeropuerto, los helipuertos y las zonas prohibidas), los drones en vuelo y, al elegir uno, su ruta. Un panel lateral muestra el detalle de lo elegido: central, vuelo, zona legal (con su norma y su fuente) o punto de entrega.
 - **Consola de simulación** (RU-32, RF-31 a RF-40): reloj simulado (pausa, x1, x2, x4, x8), eventos sobre el mapa (clima, fallas, choques, entorno), interruptores de despachador automático y de modo caos, línea de tiempo, alertas pendientes y reinicio del escenario.
 
 Todo en la misma pantalla, con paneles plegables. Next.js (App Router) y Tailwind. Cómo correrlo y cómo está armado: [`README.md`](README.md).

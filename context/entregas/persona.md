@@ -4,18 +4,17 @@ Esto es dispensación: hay un paciente. La norma está en [../legal/salud.md](..
 
 ## El punto de entrega
 
-El dron no llega a la puerta de nadie. En zona urbana la norma solo permite volar con el dron a la vista y a 30 m de personas y edificios (RAC 100.220(b)). Por eso entrega en un **punto de entrega autorizado**:
+El dron no llega a la puerta de nadie. La norma pide que alguien vea el dron al aterrizar y que no haya personas ajenas a menos de 30 m (RAC 100.220(b), 100.320). Por eso entrega en un **punto de entrega autorizado**:
 
-- un puesto de salud o dronpuerto de un corregimiento o municipio ([../negocio/cobertura.md](../negocio/cobertura.md));
+- un puesto de salud o dronpuerto de un barrio de Valledupar, de un corregimiento o de un municipio ([../negocio/cobertura.md](../negocio/cobertura.md));
 - con un área despejada y un **observador** que mantiene el dron a la vista en la aproximación final y aleja a las personas a 30 m;
-- fuera de toda zona prohibida, o con corredor pactado si está en una zona coordinada ([../operacion/espacio-aereo.md](../operacion/espacio-aereo.md)).
+- fuera de toda zona prohibida ([../operacion/espacio-aereo.md](../operacion/espacio-aereo.md)).
 
 El punto no dispensa: custodia y entrega. La dispensación la hace el despachador del nodo antes de cargar.
 
 La app toma el GPS del solicitante y le **propone el punto activo más cercano**. Puede elegir otro de la lista o del mapa.
 
-- Si su ubicación está en la ciudad de Valledupar (zona urbana, dentro del anillo del aeropuerto), la app le dice que ahí no se opera con dron y le muestra la **alternativa terrestre** (RF-18): las centrales con el insumo, con dirección y contacto.
-- Si no hay un punto al alcance de ningún nodo, pasa lo mismo.
+- Si no hay un punto al alcance de ningún nodo, ni con relevo en Valledupar (RF-55), la app le muestra la **alternativa terrestre** (RF-18): las centrales con el insumo, con dirección y contacto.
 
 ## Pasos
 

@@ -1,5 +1,4 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { AirspaceService } from '../airspace/airspace.service';
 import { DELIVERY_POINTS } from '../airspace/regional-network';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
@@ -10,7 +9,6 @@ import {
   DELIVERY_POINT_NOT_FOUND,
   DELIVERY_POINT_UNAVAILABLE,
   NO_POINT_IN_REACH,
-  URBAN_NOT_SERVED,
   pointAddress,
 } from './delivery-points.rules';
 import { DeliveryPointsService } from './delivery-points.service';
@@ -38,7 +36,6 @@ function point(
     elevationM: site.elevationM,
     hubId: site.nodeCode === 'node-west' ? WEST_HUB : NORTH_HUB,
     active: true,
-    coordinatedZoneCode: null,
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
@@ -84,7 +81,6 @@ function build(
     points as never,
     hubRepo as never,
     items as never,
-    new AirspaceService(),
   );
   return { service, points };
 }
@@ -111,14 +107,20 @@ describe('DeliveryPointsService (RF-45, RU-02)', () => {
     expect(result.points[0].distanceKm).toBeLessThan(1);
   });
 
-  it('en la ciudad no propone punto: dice por qué y da la alternativa terrestre', async () => {
-    const { service } = build([point('dp-badillo')]);
+  it('en la ciudad también propone un punto: Valledupar tiene los suyos', async () => {
+    const { service } = build([point('dp-badillo'), point('dp-los-mayales')]);
+    const result = await service.coverage(requester, DOWNTOWN);
+    expect(result.coverage).toBe(CoverageStatus.COVERED);
+    expect(result.nearestPointId).toBe('id-dp-los-mayales');
+  });
+
+  it('sin punto disponible dice por qué y da la alternativa terrestre', async () => {
+    const { service } = build([point('dp-badillo', { active: false })]);
     const result = await service.coverage(requester, {
-      ...DOWNTOWN,
+      ...NEAR_BADILLO,
       medicationName: 'Acetaminofén 500 mg',
     });
-    expect(result.coverage).toBe(CoverageStatus.URBAN);
-    expect(result.message).toBe(URBAN_NOT_SERVED);
+    expect(result.coverage).toBe(CoverageStatus.NO_POINT);
     expect(result.nearestPointId).toBeNull();
     expect(result.alternatives[0].contactPhone).toBe('3001234567');
     expect(typeof result.alternatives[0].distanceKm).toBe('number');
@@ -150,7 +152,7 @@ describe('DeliveryPointsService (RF-45, RU-02)', () => {
     ]);
   });
 
-  it('un pedido no va a un punto inactivo, inexistente, ni desde la ciudad', async () => {
+  it('un pedido no va a un punto inactivo ni inexistente', async () => {
     const { service } = build([point('dp-badillo', { active: false })]);
     await expect(service.requireForOrder('id-dp-badillo')).rejects.toThrow(
       new BadRequestException(DELIVERY_POINT_UNAVAILABLE),
@@ -158,20 +160,6 @@ describe('DeliveryPointsService (RF-45, RU-02)', () => {
     await expect(service.requireForOrder('otro')).rejects.toThrow(
       new NotFoundException(DELIVERY_POINT_NOT_FOUND),
     );
-    await expect(
-      service.requireForOrder('id-dp-badillo', DOWNTOWN),
-    ).rejects.toThrow(new BadRequestException(URBAN_NOT_SERVED));
-  });
-
-  it('un punto en zona coordinada dice cuál es su corredor pactado', () => {
-    const { service } = build([]);
-    const view = service.present(
-      point('dp-atanquez', { coordinatedZoneCode: 'resguardo-kankuamo' }),
-    );
-    expect(view.corridor).toMatchObject({
-      zoneCode: 'resguardo-kankuamo',
-      gateway: { latitude: 10.655, longitude: -73.33 },
-    });
   });
 
   it('el pedido guarda el punto como dirección', () => {
