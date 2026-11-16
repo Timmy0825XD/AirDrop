@@ -208,7 +208,7 @@ export const hubPlans: DemoHubPlan[] = [
       staff('Fabián Oñate Romero', 'fabian.onate', '3005550302'),
     ],
     'AD-VUP',
-    // La ciudad y el relevo (RF-55): rápidos para la ciudad, un Cóndor para
+    // La ciudad: rápidos para los barrios, un Cóndor para
     // las ESE de Valledupar.
     drones(
       [RAPID, true],

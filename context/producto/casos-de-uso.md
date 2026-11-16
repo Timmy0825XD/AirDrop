@@ -52,7 +52,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
   4. Si el tipo de venta es bajo fórmula, adjunta un PDF o de 1 a 3 fotos a nombre del paciente.
   5. Toca "Usar mi ubicación". La app le propone el punto de entrega activo más cercano (RF-45); puede elegir otro en la lista o en el mapa.
   6. El pedido queda en `recibido`, con prioridad alta, y entra a la cola del nodo que llega antes. Si no la autoriza a tiempo, entra también a la del siguiente (RU-10).
-- **Si falla:** Bajo fórmula sin fórmula, sin el documento del paciente o con un archivo que no es PDF, JPG o PNG: no se crea. Sin permiso de ubicación: elige el punto en la lista. Ubicación sin un punto al alcance de un nodo, ni con relevo: no se crea y la app muestra la alternativa terrestre (RF-18). Control especial: no se crea y se explica que ese canal no existe aquí. Si ningún nodo con el insumo tiene un dron que alcance el punto, o es de noche: queda en traslado convencional (CU-31).
+- **Si falla:** Bajo fórmula sin fórmula, sin el documento del paciente o con un archivo que no es PDF, JPG o PNG: no se crea. Sin permiso de ubicación: elige el punto en la lista. Ubicación sin un punto al alcance de un nodo: no se crea y la app muestra la alternativa terrestre (RF-18). Control especial: no se crea y se explica que ese canal no existe aquí. Si ningún nodo con el insumo tiene un dron que alcance el punto, o es de noche: queda en traslado convencional (CU-31).
 - **Después:** Ningún dron está reservado. El motor de decisión no corre.
 - **Por qué:** RU-02 y RU-25. Crear el pedido no es autorizar la salida.
 
@@ -407,7 +407,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 
 - **Actor:** Sistema
 - **Antes:** Hay un dron reservado
-- **Pasos:** Traza el corredor de ida entre el nodo y el destino por el camino más corto que respeta las zonas legales y las geovallas con 150 m (RF-12, RF-43). Si la misión va con relevo, traza cada tramo por separado: nodo → Valledupar → destino, y al volver, por el mismo camino (RF-55). Sobre ese corredor pone el perfil de altura: 90 m sobre el terreno, entre 60 y 120 m AGL (RF-46). El regreso se calcula al salir de destino, con las zonas vigentes en ese momento.
+- **Pasos:** Traza el corredor de ida entre el nodo y el destino por el camino más corto que respeta las zonas legales y las geovallas con 150 m (RF-12, RF-43). Sobre ese corredor pone el perfil de altura: 90 m sobre el terreno, entre 60 y 120 m AGL (RF-46). El regreso se calcula al salir de destino, con las zonas vigentes en ese momento.
 - **Si falla:** Si ese dron no tiene camino, vuelve a CU-26 con otro.
 - **Después:** La simulación espera CU-22.
 - **Por qué:** RF-12.

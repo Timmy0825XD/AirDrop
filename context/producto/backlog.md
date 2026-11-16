@@ -169,7 +169,6 @@ Se agregó tras revisar la app terminada: funcionaba, pero se veía plana, sin m
 | HU-76 | Inicio, urgencia y seguimiento del solicitante con la ruta como motivo | Alta | 8 | 6 |
 | HU-77 | Ajustes: tema con vista previa, texto, contraste, movimiento y modo sencillo (RF-52) | Alta | 8 | 6 |
 | HU-78 | Medicamentos disponibles (RF-54) | Media | 5 | 6 |
-| HU-79 | Relevo en el Nodo Valledupar: escala con cambio de batería (RF-55) | Alta | 8 | 6 |
 
 **Suma del módulo 12: 45 SP.**
 

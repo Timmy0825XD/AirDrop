@@ -14,7 +14,7 @@ El punto no dispensa: custodia y entrega. La dispensación la hace el despachado
 
 La app toma el GPS del solicitante y le **propone el punto activo más cercano**. Puede elegir otro de la lista o del mapa.
 
-- Si no hay un punto al alcance de ningún nodo, ni con relevo en Valledupar (RF-55), la app le muestra la **alternativa terrestre** (RF-18): las centrales con el insumo, con dirección y contacto.
+- Si no hay un punto al alcance de ningún nodo, la app le muestra la **alternativa terrestre** (RF-18): las centrales con el insumo, con dirección y contacto.
 
 ## Pasos
 

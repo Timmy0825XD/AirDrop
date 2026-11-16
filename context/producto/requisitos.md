@@ -22,7 +22,7 @@ Tres pasos cortos, con prioridad alta:
 
 1. **Qué pasa:** el tamizaje de RF-41 (signos de alarma, para quién, qué siente, desde cuándo y qué tan fuerte) y una nota opcional.
 2. **Qué necesita:** el medicamento, sus alergias a medicamentos y, si es bajo fórmula, la fórmula (RU-25).
-3. **Dónde:** el punto de entrega (RF-45). La app toma el GPS ("Usar mi ubicación") y propone el punto activo más cercano. El solicitante puede elegir otro en la lista o en el mapa. Si ningún punto está al alcance de un nodo, ni siquiera con relevo (RF-55), la app se lo dice y muestra la alternativa terrestre (RF-18) en vez de crear el pedido.
+3. **Dónde:** el punto de entrega (RF-45). La app toma el GPS ("Usar mi ubicación") y propone el punto activo más cercano. El solicitante puede elegir otro en la lista o en el mapa. Si ningún punto está al alcance de un nodo, la app se lo dice y muestra la alternativa terrestre (RF-18) en vez de crear el pedido.
 
 **Por qué.** La urgencia civil no es un traslado entre centrales. El destino es la persona, pero el dron no llega a su puerta. Aterriza en un punto despejado, con observador, al que la persona va con su código. El GPS sirve para proponerle el punto más cercano, no como destino del vuelo. El despachador necesita saber qué tan grave es sin leer un texto libre, y el solicitante no puede tardar más de un minuto en pedir.
 
@@ -250,7 +250,6 @@ Al autorizar, el motor elige el dron en dos pasos. Las reglas completas están e
 - no tenga batería para ida, regreso y reserva, sobre el perfil real de la ruta;
 - tenga un techo de servicio menor que el punto más alto de la ruta más 90 m (RF-46);
 - no tenga un corredor legal (RF-12, RF-43), o el viento del corredor pase de su límite (RF-32);
-- no tenga batería para ida, regreso y reserva en un solo tramo, ni con escala en el Nodo Valledupar (RF-55);
 - no alcance a **aterrizar de regreso en el nodo antes de la puesta del sol** (RF-44).
 
 **Batería.** Se cuenta con la misma física del simulador:
@@ -316,7 +315,7 @@ Depende del servicio:
 | Urgencia de noche (RF-44) | No se encola: queda `reasignado` como **traslado convencional**, con el motivo, y quien pidió ve las centrales con el insumo |
 | Programado | Sigue en recibido y se reintenta solo cada 15 minutos mientras el siguiente intento caiga dentro de la franja. Si la franja cierra sin despegue, queda vencido, suelta el dron si ya estaba reservado y busca otra central como una urgencia. Esa central autoriza sin la franja original. |
 
-Un solicitante sin un punto de entrega al alcance de ningún nodo, ni con relevo (RF-55), no llega a crear el pedido: la app le muestra directamente la alternativa terrestre (RU-02).
+Un solicitante sin un punto de entrega al alcance de ningún nodo no llega a crear el pedido: la app le muestra directamente la alternativa terrestre (RU-02).
 
 Un pedido se reasigna **una sola vez**. Si la central que lo recibe tampoco puede, o si ninguna central sirve, queda `reasignado` como **traslado convencional**: es final, ningún dron despega y quien pidió ve hasta tres centrales con el insumo (nombre, dirección, contacto y distancia). La central que recibe un pedido reasignado verifica la fórmula otra vez, y puede autorizarlo o rechazarlo.
 
@@ -670,12 +669,6 @@ Lista del solicitante sobre el mismo catálogo que usa la urgencia (RF-09):
 - Un ítem de control especial no se puede pedir por este canal (RF-09) y la lista lo dice.
 
 **Por qué.** RU-33. La cantidad exacta es un dato de la central; al solicitante le basta saber si puede pedirlo.
-
-### RF-55 — Relevo en Valledupar
-
-Si ningún dron de los nodos que tienen el insumo alcanza el destino en un solo tramo, el motor prueba la misma misión con **una escala en el Nodo Valledupar**. Ahí el dron cambia la batería por una llena en 5 minutos simulados, sin bajar el paquete. La escala se hace a la ida y otra vez a la vuelta. Cada tramo cierra con su propia batería y su reserva del 20 %. Toda la misión, escalas incluidas, termina antes de la puesta del sol (RF-44). Si hay ruta directa, gana la directa. La decisión del pedido dice que hubo relevo y por qué. Las reglas completas están en [../negocio/cobertura.md](../negocio/cobertura.md#relevo-en-valledupar).
-
-**Por qué.** Valledupar está en el centro de la red. Una escala ahí deja llegar a destinos que ningún nodo alcanza solo, y así se rechazan menos pedidos.
 
 ## No funcionales
 

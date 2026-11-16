@@ -2,7 +2,7 @@
  * La red regional de `context/negocio/cobertura.md`. Coordenadas de
  * municipios y corregimientos: GeoNames (vía Open-Meteo). Los nodos y los
  * puntos de Valledupar son ficticios: fuera de toda zona de
- * `regional-airspace.ts`. El Nodo Valledupar es además el relevo (RF-55).
+ * `regional-airspace.ts`.
  */
 
 export type NetworkSite = {
