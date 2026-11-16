@@ -289,7 +289,7 @@ class _BaseTiles extends StatelessWidget {
         urlTemplate:
             'https://api.mapbox.com/styles/v1/$style/tiles/256/{z}/{x}/{y}@2x'
             '?access_token=$_token',
-        userAgentPackageName: 'com.example.frontend',
+        userAgentPackageName: 'co.airdrop.app',
         maxZoom: AppMap.maxZoom,
       );
     }
@@ -302,7 +302,7 @@ class _BaseTiles extends StatelessWidget {
       colorFilter: dark ? AppMapStyle.dark : AppMapStyle.light,
       child: TileLayer(
         urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        userAgentPackageName: 'com.example.frontend',
+        userAgentPackageName: 'co.airdrop.app',
         maxZoom: AppMap.maxZoom,
       ),
     );
