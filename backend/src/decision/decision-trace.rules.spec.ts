@@ -52,6 +52,7 @@ describe('traceEvaluatedHub', () => {
     expect(trace.drones).toEqual([
       {
         identifier: 'WC-01',
+        typeName: null,
         status: 'discarded',
         reason: DRONE_MAINTENANCE,
         preempts: false,
@@ -59,6 +60,7 @@ describe('traceEvaluatedHub', () => {
       },
       {
         identifier: 'WC-02',
+        typeName: null,
         status: 'chosen',
         reason: null,
         preempts: false,
@@ -66,6 +68,7 @@ describe('traceEvaluatedHub', () => {
       },
       {
         identifier: 'WC-03',
+        typeName: null,
         status: 'eligible',
         reason: null,
         preempts: false,

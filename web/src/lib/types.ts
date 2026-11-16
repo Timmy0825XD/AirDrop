@@ -286,6 +286,15 @@ export type TimelineKind =
   | "console";
 
 /** Evento `radar-timeline` y `GET /control/timeline` (RF-39). */
+export type TimelineCategory =
+  | "order"
+  | "flight"
+  | "incident"
+  | "environment"
+  | "console";
+
+export type TimelineSection = { title: string; lines: string[] };
+
 export type TimelineEntry = {
   id: string;
   at: string;
@@ -293,6 +302,10 @@ export type TimelineEntry = {
   severity: "info" | "success" | "warning" | "danger";
   title: string;
   detail: string | null;
+  /** Para los filtros; `console` es lo técnico y se oculta por defecto. */
+  category?: TimelineCategory;
+  /** Por qué decidió el sistema: "Por qué este nodo", "Por qué este dron". */
+  explanation?: TimelineSection[] | null;
   orderId: string | null;
   droneId: string | null;
   hubId: string | null;

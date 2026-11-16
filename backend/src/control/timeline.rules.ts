@@ -11,6 +11,11 @@ import { ContingencyProtocol } from '../common/enums/contingency-protocol.enum';
 import { IncidentKind } from '../common/enums/incident-kind.enum';
 import { IncidentOutcome } from '../common/enums/incident-outcome.enum';
 import { RouteLeg } from '../common/enums/route-leg.enum';
+import {
+  TimelineSection,
+  explainAssignment,
+  explainNoFlight,
+} from './timeline-explanation.rules';
 
 /**
  * RF-39: cada paso del flujo, contado para la TV. No lleva datos de personas
@@ -34,6 +39,13 @@ export type TimelineKind =
 
 export type TimelineSeverity = 'info' | 'success' | 'warning' | 'danger';
 
+/**
+ * Para los filtros de la consola. `console` es lo técnico (reloj, actores,
+ * reinicio): la web lo oculta por defecto.
+ */
+export type TimelineCategory =
+  'order' | 'flight' | 'incident' | 'environment' | 'console';
+
 export type TimelineEntry = {
   id: string;
   /** Hora simulada (RF-31), en ISO. */
@@ -42,6 +54,9 @@ export type TimelineEntry = {
   severity: TimelineSeverity;
   title: string;
   detail: string | null;
+  category: TimelineCategory;
+  /** Por qué decidió el sistema, en bloques cortos; `null` si no aplica. */
+  explanation: TimelineSection[] | null;
   orderId: string | null;
   droneId: string | null;
   hubId: string | null;
@@ -54,7 +69,29 @@ export type TimelineEntry = {
   source: 'system' | 'console' | 'chaos';
 };
 
-export type TimelineDraft = Omit<TimelineEntry, 'id' | 'at'>;
+export type TimelineDraft = Omit<
+  TimelineEntry,
+  'id' | 'at' | 'category' | 'explanation'
+> & {
+  category?: TimelineCategory;
+  explanation?: TimelineSection[] | null;
+};
+
+const CATEGORY_BY_KIND: Record<TimelineKind, TimelineCategory> = {
+  order: 'order',
+  queue: 'order',
+  decision: 'order',
+  fallback: 'order',
+  flight: 'flight',
+  delivery: 'flight',
+  alert: 'incident',
+  console: 'console',
+};
+
+/** La categoría del borrador, o la de su tipo. */
+export function categoryOf(draft: TimelineDraft): TimelineCategory {
+  return draft.category ?? CATEGORY_BY_KIND[draft.kind];
+}
 
 /** Lo que se sabe del pedido al contar un paso. Nada que identifique a nadie. */
 export type OrderFacts = {
@@ -171,6 +208,7 @@ export function statusDraft(
           ? `${origin} autorizó (despachador automático): sale ${drone}`
           : `${origin} autorizó: sale ${drone}`,
         detail: decisionSummary(order.decisionTrace),
+        explanation: explainAssignment(order.decisionTrace, order),
       };
     case OrderStatus.IN_FLIGHT:
       return {
@@ -225,6 +263,7 @@ export function statusDraft(
           order.fallbackKind === FallbackKind.CONVENTIONAL
             ? 'Ningún dron puede llegar: se ofrecen centrales con el insumo.'
             : decisionSummary(order.decisionTrace),
+        explanation: explainNoFlight(order.decisionTrace, order),
       };
     case OrderStatus.REJECTED:
       return {
@@ -323,6 +362,7 @@ export function weatherDraft(
   });
   const base = {
     kind: 'console' as const,
+    category: 'environment' as const,
     orderId: null,
     droneId: null,
     hubId: null,
@@ -395,6 +435,7 @@ export function geofenceDraft(
   const center = polygonCenter(fence.polygon);
   const base = {
     kind: 'console' as const,
+    category: 'environment' as const,
     orderId: null,
     droneId: null,
     hubId: null,
@@ -600,6 +641,7 @@ export function hubOutageDraft(
 ): TimelineDraft {
   const base = {
     kind: 'console' as const,
+    category: 'environment' as const,
     orderId: null,
     droneId: null,
     hubId: outage.hubId,

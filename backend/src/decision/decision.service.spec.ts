@@ -1061,6 +1061,7 @@ describe('DecisionService traza de la decisión', () => {
     expect(trace.hubs[0].drones).toEqual([
       {
         identifier: 'WC-01',
+        typeName: 'Wingcopter 198',
         status: 'discarded',
         reason: 'El dron está en mantenimiento.',
         preempts: false,
@@ -1068,6 +1069,7 @@ describe('DecisionService traza de la decisión', () => {
       },
       {
         identifier: 'WC-02',
+        typeName: 'Wingcopter 198',
         status: 'chosen',
         reason: null,
         preempts: false,

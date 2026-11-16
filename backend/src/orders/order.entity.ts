@@ -55,6 +55,8 @@ export type DispatchOffer = {
 /** Veredicto del motor sobre un dron de una central evaluada. */
 export type DroneVerdict = {
   identifier: string;
+  /** Colibrí, Garza o Cóndor (RF-49); falta en trazas de antes. */
+  typeName?: string | null;
   status: 'chosen' | 'eligible' | 'discarded';
   /** Motivo del descarte (los mensajes de `decision.rules.ts`). */
   reason: string | null;
