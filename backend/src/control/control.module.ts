@@ -1,3 +1,5 @@
+import { UsersModule } from '../users/users.module';
+import { ScenarioNetworkService } from './scenario-network.service';
 import { UnidentifiedContactsService } from './unidentified-contacts.service';
 import { DeliveryPointsModule } from '../delivery-points/delivery-points.module';
 import { Module } from '@nestjs/common';
@@ -45,10 +47,12 @@ import { TimelineService } from './timeline.service';
     DecisionModule,
     DeliveryModule,
     DeliveryPointsModule,
+    UsersModule,
   ],
   controllers: [ControlController],
   providers: [
     ClockControlService,
+    ScenarioNetworkService,
     ControlEnabledGuard,
     TimelineService,
     PendingAlertsService,

@@ -32,11 +32,13 @@ import { TimelineService } from './timeline.service';
 import { WeatherService } from '../weather/weather.service';
 import { GeofencesService } from '../geofences/geofences.service';
 import { DeliveryPointsService } from '../delivery-points/delivery-points.service';
+import { ScenarioNetworkService } from './scenario-network.service';
 
 /**
  * RF-40, CU-41: devuelve el escenario de `pnpm seed:demo` a su estado
- * inicial, sin crear ni borrar centrales ni cuentas (las sesiones abiertas
- * siguen sirviendo). Borra todo pedido de las centrales de la demo, también
+ * inicial. Primero la red queda igual a la del plan (`ScenarioNetworkService`:
+ * borra las centrales que ya no están y crea las que faltan); las cuentas de
+ * las centrales que siguen no se tocan (las sesiones abiertas siguen sirviendo). Borra todo pedido de las centrales de la demo, también
  * los de personas reales: si quedaran vivos, tendrían un dron y un stock que
  * el reinicio acaba de devolver.
  */
@@ -59,9 +61,12 @@ export class ScenarioResetService {
     private readonly chaos: ChaosService,
     private readonly deliveryPoints: DeliveryPointsService,
     private readonly unidentified: UnidentifiedContactsService,
+    private readonly network: ScenarioNetworkService,
   ) {}
 
   async reset(admin: User): Promise<ResetSummary> {
+    // RF-40: una base de otra versión queda con la red del plan.
+    await this.network.sync(admin);
     const hubs = await this.dataSource.getRepository(Hub).find({
       where: { name: In(hubPlans.map((plan) => plan.name)) },
     });

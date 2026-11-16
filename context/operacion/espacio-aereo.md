@@ -14,7 +14,7 @@ Esto es una **simplificación declarada**, no la norma. Una operación real apli
 | --- | --- | --- | --- | --- |
 | `AERODROMO` | El aeropuerto Alfonso López Pumarejo (SKVP) | Círculo de **1,5 km** desde el ARP | Prohibido entrar | RAC 100.315(a)(14) |
 | `PROHIBIDA` | Estación de policía o CAI, batallón o brigada, cárcel, subestación o planta eléctrica, pista agrícola | La del visor: círculo de **100 m** (policía), **150 m** (fuerte o puesto militar menor), **400 m** (pista agrícola), o el polígono de la instalación | Prohibido entrar. El dron la rodea | RAC 100.315(a)(13) |
-| `HELIPUERTO` | Helipuerto o helipunto | Círculo de **300 m** | Prohibido entrar | RAC 100.315(a)(15) |
+| `HELIPUERTO` | Helipuerto o helipunto fuera de un aeródromo | Círculo de **300 m** | Prohibido entrar. El helipunto de SKVP queda dentro del anillo del aeropuerto y no se dibuja aparte | RAC 100.315(a)(15) |
 | `TEMPORAL` | Restricción que crea el administrador desde la consola: orden público, evento, operativo o elecciones | La que se dibuje, con hora de inicio y de fin | Prohibido mientras dure. Si un vuelo en curso queda afectado, se desvía o vuelve | RAC 100.315(a)(1)–(5), 100.315(c) |
 
 No hay zona urbana que bloquee: el dron vuela sobre la ciudad y entrega en un punto con observador ([../entregas/persona.md](../entregas/persona.md)). Tampoco hay zonas coordinadas ni corredores pactados.
@@ -23,7 +23,7 @@ No hay zona urbana que bloquee: el dron vuela sobre la ciudad y entrega en un pu
 
 Fuentes:
 - Las grandes salen de OpenStreetMap (consulta de noviembre de 2026).
-- Los CAI de Valledupar y las estaciones de La Paz, San Diego, Manaure y Pueblo Bello vienen de una lista de direcciones de la Policía que reunió el equipo.
+- Los CAI de Valledupar y las estaciones de La Paz, San Diego, Manaure y Pueblo Bello vienen de una lista de direcciones de la Policía que reunió el equipo. Un CAI pegado a otra zona (a menos de 300 m) o dentro del anillo del aeropuerto no se dibuja: ya está cubierto. Por eso no están el CAI Pedregosa, el Comando Departamental, el CAI Mercabastos ni el CAI Sabanas del Valle.
 - Las subestaciones de los corregimientos se ubicaron en el centro del poblado, con las capturas del visor de la Aerocivil.
 
 ### Valledupar
@@ -31,7 +31,6 @@ Fuentes:
 | Instalación | Tipo | Forma | Lat | Lon |
 | --- | --- | --- | --- | --- |
 | Aeropuerto Alfonso López Pumarejo (ARP según la AIP) | `AERODROMO` | Círculo de 1,5 km | 10.43513 | −73.24940 |
-| Helipunto junto a la pista | `HELIPUERTO` | Círculo de 300 m | 10.43261 | −73.24885 |
 | Batallón La Popa – Décima Brigada Blindada | `PROHIBIDA` | Polígono de unos 400 × 300 m | 10.46633 | −73.27341 |
 | Cárcel La Tramacúa (CPAMS Valledupar) | `PROHIBIDA` | Polígono de unos 300 × 250 m | 10.44922 | −73.30887 |
 | Instalación militar al norte de la ciudad | `PROHIBIDA` | Círculo de 150 m | 10.51728 | −73.24875 |
@@ -39,17 +38,13 @@ Fuentes:
 | Subestación Guatapurí | `PROHIBIDA` | Círculo de 100 m | 10.48672 | −73.25798 |
 | Planta eléctrica al sur de la ciudad | `PROHIBIDA` | Círculo de 150 m | 10.38182 | −73.19470 |
 | CAI Hurtado | `PROHIBIDA` | Círculo de 100 m | 10.5010 | −73.2681 |
-| CAI Pedregosa | `PROHIBIDA` | Círculo de 100 m | 10.4855 | −73.2572 |
 | CAI San Joaquín | `PROHIBIDA` | Círculo de 100 m | 10.4764 | −73.2558 |
 | CAI Garupal | `PROHIBIDA` | Círculo de 100 m | 10.4748 | −73.2645 |
 | CAI El Carmen | `PROHIBIDA` | Círculo de 100 m | 10.4712 | −73.2608 |
 | CAI Gobernación | `PROHIBIDA` | Círculo de 100 m | 10.4705 | −73.2494 |
 | CAI Primero de Mayo | `PROHIBIDA` | Círculo de 100 m | 10.4578 | −73.2562 |
 | CAI Mayales | `PROHIBIDA` | Círculo de 100 m | 10.4535 | −73.2428 |
-| CAI Mercabastos | `PROHIBIDA` | Círculo de 100 m | 10.4432 | −73.2465 |
-| CAI Sabanas del Valle | `PROHIBIDA` | Círculo de 100 m | 10.4368 | −73.2412 |
 | CAI San Fernando | `PROHIBIDA` | Círculo de 100 m | 10.4405 | −73.2355 |
-| Comando Departamento de Policía Cesar | `PROHIBIDA` | Círculo de 100 m | 10.4552 | −73.2435 |
 
 ### Pueblos y corregimientos
 

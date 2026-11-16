@@ -34,10 +34,21 @@ describe('Geometría de las zonas (RF-43)', () => {
     expect(haversineKm(SKVP_ARP, far)).toBeCloseTo(12, 2);
   });
 
-  it('el helipunto, dentro del anillo del aeropuerto, no se rodea dos veces', () => {
-    const polygons = blockingPolygons(zones);
-    const helipad = zones.find((zone) => zone.code === 'skvp-helipad');
-    expect(polygons).not.toContain(helipad?.polygon);
+  it('una zona entera dentro del anillo del aeropuerto no se rodea dos veces', () => {
+    const inside = {
+      code: 'dentro',
+      kind: AirspaceZoneKind.HELIPORT,
+      name: 'Helipunto',
+      legalBasis: '',
+      source: '',
+      polygon: circlePolygon(
+        { latitude: 10.43261, longitude: -73.24885 },
+        0.3,
+        16,
+      ),
+    };
+    const polygons = blockingPolygons([...zones, inside]);
+    expect(polygons).not.toContain(inside.polygon);
     const aerodrome = zones.find(
       (zone) => zone.kind === AirspaceZoneKind.AERODROME,
     );
@@ -67,8 +78,34 @@ describe('Escala de la demo (espacio-aereo.md)', () => {
 
   it('Valledupar tiene sus CAI y el comando de policía', () => {
     const codes = zones.map((zone) => zone.code);
-    expect(codes.filter((code) => code.startsWith('cai-'))).toHaveLength(11);
-    expect(codes).toContain('pol-comando-cesar');
+    expect(codes.filter((code) => code.startsWith('cai-'))).toHaveLength(8);
+  });
+
+  it('no hay dos zonas a menos de 300 m ni un CAI dentro del aeropuerto', () => {
+    const centers = zones.map((zone) => {
+      const ring = zone.polygon.coordinates[0].slice(0, -1);
+      return {
+        code: zone.code,
+        latitude: ring.reduce((sum, [, lat]) => sum + lat, 0) / ring.length,
+        longitude: ring.reduce((sum, [lng]) => sum + lng, 0) / ring.length,
+      };
+    });
+    for (const [index, zone] of centers.entries()) {
+      for (const other of centers.slice(index + 1)) {
+        expect({
+          pair: `${zone.code}/${other.code}`,
+          near: haversineKm(zone, other) < 0.3,
+        }).toEqual({
+          pair: `${zone.code}/${other.code}`,
+          near: false,
+        });
+      }
+      if (zone.code.startsWith('cai-')) {
+        expect(haversineKm(zone, SKVP_ARP)).toBeGreaterThan(
+          AERODROME_RADIUS_KM,
+        );
+      }
+    }
   });
 });
 

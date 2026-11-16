@@ -52,8 +52,8 @@ export const NODES = {
     code: 'node-codazzi',
     name: 'Nodo Codazzi',
     municipality: 'Agustín Codazzi',
-    latitude: 10.055,
-    longitude: -73.255,
+    latitude: 10.042,
+    longitude: -73.244,
     elevationM: 140,
   },
 } satisfies Record<string, NetworkSite>;
