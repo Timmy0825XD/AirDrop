@@ -29,7 +29,7 @@ export function ClockControl({ clock, status, offMessage, busy, onChange }: Prop
   const paused = clock?.paused ?? false;
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-4 pl-2">
       <div className="flex items-baseline gap-2.5" aria-live="off">
         <span className="figures text-[20px] font-medium leading-none text-text sm:text-[24px]">
           {now == null ? "--:--:--" : formatTime(now)}

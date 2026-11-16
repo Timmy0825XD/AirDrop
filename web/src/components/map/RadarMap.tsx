@@ -66,22 +66,25 @@ export type EventDraft = {
  * `NEXT_PUBLIC_TILES_URL` (plantilla `{z}/{x}/{y}`) si el proveedor cambia.
  */
 const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas";
-const BASE_TILES =
-  process.env.NEXT_PUBLIC_TILES_URL ?? `${ESRI}/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}`;
-
-const STYLE: StyleSpecification = {
+/** El estilo del mapa con el tema vigente (claro u oscuro de Esri). */
+function styleOf(): StyleSpecification {
+  const light = COLORS.ground === "#f5f4f1";
+  const tone = light ? "Light" : "Dark";
+  const base =
+    process.env.NEXT_PUBLIC_TILES_URL ?? `${ESRI}/World_${tone}_Gray_Base/MapServer/tile/{z}/{y}/{x}`;
+  return {
   version: 8,
   sources: {
     base: {
       type: "raster",
-      tiles: [BASE_TILES],
+      tiles: [base],
       tileSize: 256,
       maxzoom: 16,
       attribution: "Tiles © Esri — Esri, HERE, Garmin, © OpenStreetMap contributors",
     },
     labels: {
       type: "raster",
-      tiles: [`${ESRI}/World_Dark_Gray_Reference/MapServer/tile/{z}/{y}/{x}`],
+      tiles: [`${ESRI}/World_${tone}_Gray_Reference/MapServer/tile/{z}/{y}/{x}`],
       tileSize: 256,
       maxzoom: 16,
     },
@@ -95,9 +98,9 @@ const STYLE: StyleSpecification = {
       type: "raster",
       source: "base",
       paint: {
-        "raster-opacity": 0.6,
+        "raster-opacity": light ? 0.85 : 0.6,
         "raster-saturation": -1,
-        "raster-brightness-max": 0.72,
+        "raster-brightness-max": light ? 1 : 0.72,
         "raster-contrast": 0.08,
         "raster-fade-duration": 200,
       },
@@ -106,10 +109,11 @@ const STYLE: StyleSpecification = {
       id: "labels",
       type: "raster",
       source: "labels",
-      paint: { "raster-opacity": 0.55, "raster-saturation": -1 },
+      paint: { "raster-opacity": light ? 0.8 : 0.55, "raster-saturation": -1 },
     },
   ],
-};
+  };
+}
 
 const EMPTY = { type: "FeatureCollection", features: [] } as const;
 
@@ -199,6 +203,8 @@ export function RadarMap({
   onPick,
 }: Props) {
   const mapRef = useRef<MapRef>(null);
+  // El tema se fija al montar: Dashboard vuelve a montar el mapa al cambiarlo.
+  const [mapStyle] = useState(styleOf);
   const [ready, setReady] = useState(false);
   const [hovering, setHovering] = useState(false);
   const fitted = useRef<"hubs" | "points" | null>(null);
@@ -516,7 +522,7 @@ export function RadarMap({
       <Map
         ref={mapRef}
         initialViewState={REGION}
-        mapStyle={STYLE}
+        mapStyle={mapStyle}
         minZoom={8}
         maxZoom={17}
         attributionControl={{ compact: true }}

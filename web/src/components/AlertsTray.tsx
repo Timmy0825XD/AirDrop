@@ -20,7 +20,7 @@ export function AlertsTray({ alerts, className, onPick }: Props) {
     <div
       role="region"
       aria-label="Alertas pendientes"
-      className={`pointer-events-none absolute top-3 z-20 flex justify-center ${className}`}
+      className={`pointer-events-none absolute z-20 flex justify-center ${className}`}
     >
       <div className="enter-up pointer-events-auto flex max-w-full items-center gap-1 overflow-x-auto rounded-xl border border-danger/45 bg-panel p-1 shadow-[0_10px_30px_-14px_var(--shadow)]">
         <span className="flex shrink-0 items-center gap-2 px-2.5 text-[13px] font-medium text-danger">

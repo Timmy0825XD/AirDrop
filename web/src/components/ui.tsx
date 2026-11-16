@@ -227,7 +227,7 @@ export function PanelShell({
   return (
     <aside
       aria-label={title}
-      className="enter-side absolute inset-x-2 bottom-2 top-2 z-20 flex flex-col overflow-hidden rounded-xl border border-line bg-panel shadow-[0_18px_50px_-20px_var(--shadow)] sm:inset-x-auto sm:right-3 sm:top-3 sm:bottom-3 sm:w-[400px]"
+      className="surface enter-side absolute inset-x-3 bottom-3 top-[84px] z-20 flex flex-col overflow-hidden rounded-[20px] sm:inset-x-auto sm:right-5 sm:top-[96px] sm:bottom-5 sm:w-[400px]"
     >
       <header className="flex items-start gap-3 px-5 pb-4 pt-5">
         {icon && <span className="mt-1 shrink-0 text-muted">{icon}</span>}

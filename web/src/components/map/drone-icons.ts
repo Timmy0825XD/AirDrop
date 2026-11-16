@@ -126,7 +126,7 @@ export const BLOCK_FONTS = () => [
 let sansFamily: string | null = null;
 function sans(): string {
   if (sansFamily) return sansFamily;
-  const declared = getComputedStyle(document.documentElement).getPropertyValue("--font-geist").trim();
+  const declared = getComputedStyle(document.documentElement).getPropertyValue("--font-figtree").trim();
   sansFamily = declared || "system-ui, sans-serif";
   return sansFamily;
 }
@@ -136,7 +136,7 @@ let monoFamily: string | null = null;
 function mono(): string {
   if (monoFamily) return monoFamily;
   const declared = getComputedStyle(document.documentElement)
-    .getPropertyValue("--font-geist-mono")
+    .getPropertyValue("--font-plex-mono")
     .trim();
   monoFamily = declared || "ui-monospace, monospace";
   return monoFamily;

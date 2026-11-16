@@ -1,5 +1,4 @@
 import type { ReactNode, SVGProps } from "react";
-import { DRONE_BODY, DRONE_ROTOR_R, DRONE_ROTORS, DRONE_WINGS } from "@/lib/drone-shape";
 
 /**
  * Íconos de la consola, dibujados a mano en una cuadrícula de 24 con un solo
@@ -28,20 +27,34 @@ function Icon({ size = 18, children, ...rest }: IconProps & { children: ReactNod
 }
 
 /**
- * Dron de entrega visto desde arriba, apuntando al norte: fuselaje, ala recta
- * con dos góndolas de rotor (despega en vertical) y cola en V.
+ * El dron de la app (DroneGlyph de Flutter) visto desde arriba: brazos en X,
+ * cuatro rotores y el núcleo, que lleva el acento.
  */
 export const DroneIcon = (p: IconProps) => (
   <Icon {...p}>
-    <path d={DRONE_BODY} />
-    {DRONE_WINGS.map((wing) => (
-      <path key={wing} d={wing} />
-    ))}
-    {DRONE_ROTORS.map(([cx, cy]) => (
-      <circle key={cx} cx={cx} cy={cy} r={DRONE_ROTOR_R} />
-    ))}
+    <path d="M7.8 7.8l8.4 8.4M16.2 7.8l-8.4 8.4" />
+    <circle cx="6.4" cy="6.4" r="3.9" />
+    <circle cx="17.6" cy="6.4" r="3.9" />
+    <circle cx="6.4" cy="17.6" r="3.9" />
+    <circle cx="17.6" cy="17.6" r="3.9" />
+    <rect x="8.8" y="8.8" width="6.4" height="6.4" rx="2.1" fill="var(--accent)" />
   </Icon>
 );
+
+/** Tema oscuro (luna) y claro (sol). */
+export const MoonIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <path d="M20 13.4A8 8 0 1 1 10.6 4a6.3 6.3 0 0 0 9.4 9.4z" />
+  </Icon>
+);
+
+export const SunIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
+  </Icon>
+);
+
 
 /** Central genérica: edificio con cruz médica. */
 export const HubIcon = (p: IconProps) => (

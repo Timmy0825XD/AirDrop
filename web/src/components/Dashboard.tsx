@@ -8,6 +8,7 @@ import type { PendingAlert, Selection, TimelineEntry } from "@/lib/types";
 import { useConsole } from "@/lib/use-console";
 import { usePolled } from "@/lib/use-polled";
 import { useRadar } from "@/lib/use-radar";
+import { useTheme } from "@/lib/use-theme";
 import { useDeliveryPoints } from "@/lib/use-region";
 import { AlertsTray } from "./AlertsTray";
 import { ActorsMenu } from "./ActorsMenu";
@@ -45,12 +46,14 @@ const startsOpen = () =>
   typeof window === "undefined" || window.matchMedia("(min-width: 1024px)").matches;
 
 /**
- * La consola en la TV: el mapa a pantalla completa, la barra con el reloj, la
- * línea de tiempo a la izquierda, las alertas arriba, el detalle a la derecha
- * y, abajo, la barra para lanzar eventos sobre el mapa (CU-38).
+ * La consola en la TV: el mapa a pantalla completa y, flotando encima como
+ * tarjetas, la barra con el reloj, la línea de tiempo a la izquierda, las
+ * alertas, el detalle a la derecha y, abajo, la barra para lanzar eventos
+ * sobre el mapa (CU-38).
  */
 export function Dashboard({ source, userName, onLogout }: Props) {
   const consola = useConsole(source);
+  const { theme, toggle: toggleTheme } = useTheme();
   const data = useRadar(source, onLogout, consola.listener);
   // RF-45: los puntos se recargan al reiniciar el escenario.
   const region = useDeliveryPoints(source, consola.state.lastReset);
@@ -260,8 +263,8 @@ export function Dashboard({ source, userName, onLogout }: Props) {
   const realBlocked = offReason ?? (source.demo ? DEMO_BLOCKED : null);
 
   const live = flightId ? data.flights.find((f) => f.orderId === flightId) : undefined;
-  // El riel ocupa su propia columna: el mapa no queda debajo de él.
-  const leftInset = 0;
+  // La línea de tiempo flota sobre el mapa: el mapa centra lo suyo a su derecha.
+  const leftInset = timelineOpen ? 420 : 0;
   const panelOpen = selection != null;
 
   // RF-34: drones caídos o aterrizando de emergencia, con su nombre de la bandeja.
@@ -322,9 +325,11 @@ export function Dashboard({ source, userName, onLogout }: Props) {
   return (
     <main
       data-panel={panelOpen ? "" : undefined}
-      className="flex h-dvh w-full flex-col overflow-hidden bg-ground"
+      className="relative h-dvh w-full overflow-hidden bg-ground"
     >
       <TopBar
+        theme={theme}
+        onToggleTheme={toggleTheme}
         connection={data.connection}
         demo={source.demo}
         userName={userName}
@@ -357,7 +362,7 @@ export function Dashboard({ source, userName, onLogout }: Props) {
         }
       />
 
-      <div className="relative flex min-h-0 flex-1">
+      <div className="absolute inset-0">
         <TimelinePanel
           open={timelineOpen}
           status={consola.state.status}
@@ -368,8 +373,9 @@ export function Dashboard({ source, userName, onLogout }: Props) {
           onPick={pickEntry}
         />
 
-        <div className="relative min-w-0 flex-1">
+        <div className="absolute inset-0">
           <RadarMap
+            key={theme}
             hubs={data.hubs}
             flights={data.flights}
             geofences={data.geofences}
@@ -393,7 +399,7 @@ export function Dashboard({ source, userName, onLogout }: Props) {
 
           <AlertsTray
             alerts={consola.state.alerts}
-            className={`left-3 right-3 ${panelOpen ? "sm:right-[424px]" : ""}`}
+            className={`left-3 right-3 top-[84px] sm:top-[96px] ${timelineOpen ? "lg:left-[440px]" : ""} ${panelOpen ? "sm:right-[440px]" : ""}`}
             onPick={pickAlert}
           />
 
@@ -414,7 +420,7 @@ export function Dashboard({ source, userName, onLogout }: Props) {
           {toast && (
             <p
               role="alert"
-              className="enter-up absolute left-1/2 top-16 z-50 flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-2.5 rounded-lg border border-danger/45 bg-panel px-4 py-2.5 text-[14px] text-danger shadow-[0_10px_30px_-14px_var(--shadow)]"
+              className="enter-up absolute left-1/2 top-[96px] z-50 flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-2.5 rounded-lg border border-danger/45 bg-panel px-4 py-2.5 text-[14px] text-danger shadow-[0_10px_30px_-14px_var(--shadow)]"
             >
               <AlertIcon size={17} className="shrink-0" />
               {toast}
@@ -423,7 +429,7 @@ export function Dashboard({ source, userName, onLogout }: Props) {
           {success && !toast && (
             <p
               role="status"
-              className="enter-up absolute left-1/2 top-16 z-30 flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-2.5 rounded-lg border border-success/40 bg-panel px-4 py-2.5 text-[14px] text-text shadow-[0_10px_30px_-14px_var(--shadow)]"
+              className="enter-up absolute left-1/2 top-[96px] z-30 flex max-w-[calc(100%-2rem)] -translate-x-1/2 items-center gap-2.5 rounded-lg border border-success/40 bg-panel px-4 py-2.5 text-[14px] text-text shadow-[0_10px_30px_-14px_var(--shadow)]"
             >
               <CheckIcon size={17} className="shrink-0 text-success" />
               {success}

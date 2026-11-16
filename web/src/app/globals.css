@@ -1,41 +1,44 @@
 @import "tailwindcss";
 
 /*
- * "Carta aeronáutica": la consola se proyecta en una TV, en una sala con
- * poca luz, así que es oscura. Paneles sólidos con líneas finas, sin vidrio
- * ni brillos. El color hace trabajos concretos: azul señal para lo elegido y
- * las acciones, magenta de carta para las zonas restringidas y el semáforo
- * solo para el estado.
+ * Los colores de la app (frontend/lib/theme/app_palette.dart): grafito y
+ * turquesa en oscuro, crema y petróleo en claro. La consola se proyecta en
+ * una TV, así que arranca en oscuro; el botón de tema guarda la elección.
+ * El color hace trabajos concretos: el acento para lo elegido y las
+ * acciones, el rojo para las zonas restringidas y el semáforo para el estado.
  */
-:root {
+:root,
+:root[data-theme="dark"] {
+  color-scheme: dark;
   /* Fondo y superficies, de la más honda a la más alta. */
-  --ground: #090c10;
-  --panel: #0f141a;
-  --raised: #151b23;
-  --hover: #1a212a;
-  --line: #222a34;
-  --line-strong: #323c48;
+  --ground: #17191b;
+  --panel: #222528;
+  --raised: #2a2e31;
+  --hover: #2f3337;
+  --line: #3a3f44;
+  --line-strong: #454a50;
 
   /* Texto. */
-  --text: #e7ecf1;
-  --muted: #8c99a6;
-  --faint: #5f6b78;
+  --text: #ecedee;
+  --muted: #a9aeb3;
+  --faint: #7d848a;
 
   /* Acción y selección. */
-  --accent: #7aa7ff;
-  --accent-strong: #9dbdff;
-  --on-accent: #07101f;
+  --accent: #5dbfb4;
+  --accent-strong: #7fd3c9;
+  --on-accent: #10201f;
+  --selected: #283033;
 
   /* Estado. */
-  --success: #4cc38a;
-  --warning: #f0b445;
-  --danger: #ff6b6b;
-  --info: #8ec5ff;
+  --success: #6fcf97;
+  --warning: #e8b45a;
+  --danger: #f0958e;
+  --info: #8fb4d6;
 
-  /* Carta: zonas restringidas. */
-  --magenta: #e05ad6;
+  /* Zonas restringidas. */
+  --magenta: #f0958e;
 
-  /* Marca (manual Dron-cruz): solo para el logo; no se usan en la interfaz. */
+  /* Marca (manual Dron-cruz): solo para el logo. */
   --brand-teal: #159aa4;
   --brand-petrol: #0a4e58;
   --brand-mist: #bdefed;
@@ -45,6 +48,34 @@
 
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --ground: #f5f4f1;
+  --panel: #ffffff;
+  --raised: #f7f6f2;
+  --hover: #f0eee8;
+  --line: #dad6cd;
+  --line-strong: #c9c4b9;
+
+  --text: #1b1d1f;
+  --muted: #5c6268;
+  --faint: #7a8086;
+
+  --accent: #0a4e58;
+  --accent-strong: #0d6470;
+  --on-accent: #ffffff;
+  --selected: #eef4f3;
+
+  --success: #177a45;
+  --warning: #8f5200;
+  --danger: #b3261e;
+  --info: #2f5f8a;
+
+  --magenta: #b3261e;
+
+  --shadow: rgb(27 29 31 / 0.14);
 }
 
 @theme inline {
@@ -65,8 +96,9 @@
   --color-danger: var(--danger);
   --color-info: var(--info);
   --color-magenta: var(--magenta);
-  --font-sans: var(--font-geist);
-  --font-mono: var(--font-geist-mono);
+  --color-selected: var(--selected);
+  --font-sans: var(--font-figtree);
+  --font-mono: var(--font-plex-mono);
 }
 
 html,
@@ -74,13 +106,13 @@ body {
   height: 100%;
   background: var(--ground);
   color: var(--text);
-  font-family: var(--font-geist), system-ui, sans-serif;
-  font-feature-settings: "ss01", "cv11";
+  font-family: var(--font-figtree), system-ui, sans-serif;
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 /* Lo que el navegador dibuja por su cuenta también es de la consola. */
 ::selection {
-  background: rgb(122 167 255 / 0.32);
+  background: color-mix(in srgb, var(--accent) 32%, transparent);
   color: var(--text);
 }
 :focus-visible {
@@ -97,16 +129,16 @@ input {
 
 /* Cifras de tablero: mono y del mismo ancho, para que no bailen al cambiar. */
 @utility figures {
-  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.01em;
 }
 
-/* Panel sólido sobre el mapa: borde fino y una sombra baja con desplazamiento. */
+/* Tarjeta flotante sobre el mapa, como las de la app: sólida, borde fino y sombra. */
 @utility surface {
   background: var(--panel);
   border: 1px solid var(--line);
-  box-shadow: 0 10px 30px -14px var(--shadow);
+  box-shadow: 0 12px 32px -12px var(--shadow);
 }
 
 /* Las centrales y los chips quedan sobre las capas del mapa. */
@@ -123,7 +155,7 @@ input {
 .maplibregl-ctrl-attrib a {
   color: var(--faint) !important;
 }
-.maplibregl-ctrl-attrib-button {
+:root:not([data-theme="light"]) .maplibregl-ctrl-attrib-button {
   filter: invert(0.7);
 }
 

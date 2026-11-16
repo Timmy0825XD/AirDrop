@@ -53,7 +53,7 @@ export function TimelinePanel({
   if (!open) {
     return (
       <>
-        <div className="hidden w-14 shrink-0 flex-col items-center gap-3 border-r border-line bg-panel py-3 md:flex">
+        <div className="surface absolute left-5 top-[96px] z-20 hidden flex-col items-center gap-3 rounded-2xl p-2 md:flex">
           <IconButton label="Abrir la línea de tiempo" onClick={onToggle}>
             <ListIcon size={18} />
           </IconButton>
@@ -64,7 +64,7 @@ export function TimelinePanel({
         <button
           type="button"
           onClick={onToggle}
-          className="press surface absolute left-3 top-3 z-20 flex h-10 items-center gap-2 rounded-lg px-3 text-[14px] font-medium md:hidden"
+          className="press surface absolute bottom-3 left-3 z-20 flex h-11 items-center gap-2 rounded-xl px-3 text-[14px] font-medium md:hidden"
         >
           <ListIcon size={16} className="text-muted" />
           Línea de tiempo
@@ -76,7 +76,7 @@ export function TimelinePanel({
   return (
     <aside
       aria-label="Estado y línea de tiempo"
-      className="absolute inset-0 z-30 flex flex-col bg-panel md:static md:z-auto md:w-[360px] md:shrink-0 md:border-r md:border-line"
+      className="surface enter-side absolute inset-x-3 bottom-3 top-[84px] z-30 flex flex-col overflow-hidden rounded-[20px] md:inset-x-auto md:bottom-5 md:left-5 md:top-[96px] md:z-20 md:w-[400px]"
     >
       <div className="grid grid-cols-3 divide-x divide-line border-b border-line">
         <Counter value={counters.hubs} label="Centrales" />
