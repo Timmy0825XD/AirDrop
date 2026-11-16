@@ -470,6 +470,11 @@ export function Dashboard({ source, userName, onLogout }: Props) {
           busy={consola.state.busy}
           incidentBlocked={realBlocked}
           onIncident={(droneId, kind) => void consola.launchIncident(droneId, kind)}
+          why={
+            consola.state.timeline.find(
+              (entry) => entry.orderId === selection.id && entry.explanation?.length,
+            )?.explanation ?? null
+          }
         />
       )}
       {selection?.kind === "airspace" && (

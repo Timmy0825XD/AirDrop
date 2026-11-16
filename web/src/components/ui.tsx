@@ -59,10 +59,10 @@ export function Stat({
   tone?: Tone;
 }) {
   return (
-    <div className="min-w-0">
+    <div className="min-w-0 rounded-xl border border-line px-3 py-2.5">
       <div className="truncate text-[12px] text-muted">{label}</div>
       <div
-        className={`figures mt-1 truncate text-[22px] font-medium leading-none ${tone ? TONE_TEXT[tone] : "text-text"}`}
+        className={`figures mt-1.5 truncate text-[20px] font-medium leading-none ${tone ? TONE_TEXT[tone] : "text-text"}`}
       >
         {value}
         {unit && <span className="ml-1 font-sans text-[13px] font-normal text-muted">{unit}</span>}

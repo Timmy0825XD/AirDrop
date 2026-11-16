@@ -64,7 +64,7 @@ export function EventPanel({
           </>
         }
       >
-        <div className="grid grid-cols-2 gap-x-4 gap-y-5 px-5 py-5">
+        <div className="grid grid-cols-2 gap-2.5 px-5 py-4">
           <Stat label="Radio" value={weather.radiusKm.toLocaleString("es-CO")} unit="km" />
           <Stat label="Quedan" value={minutesLeft(weather.endsAt, now)} unit="min" />
           {weather.kind === "wind" && weather.windSpeedMs != null && (

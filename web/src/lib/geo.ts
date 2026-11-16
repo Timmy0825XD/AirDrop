@@ -26,6 +26,35 @@ export function circlePolygon(
   return { type: "Polygon", coordinates: [ring] };
 }
 
+/**
+ * Cuánto lleva recorrido un dron de su corredor: los km hasta el vértice del
+ * camino más cercano a su posición, y el total. Basta para la barra del panel.
+ */
+export function progressAlong(
+  path: Array<[number, number]>,
+  at: { latitude: number; longitude: number },
+): { doneKm: number; totalKm: number } {
+  let total = 0;
+  let done = 0;
+  let best = Infinity;
+  for (let index = 0; index < path.length; index += 1) {
+    const point = { longitude: path[index][0], latitude: path[index][1] };
+    if (index > 0) {
+      const previous = { longitude: path[index - 1][0], latitude: path[index - 1][1] };
+      const segment = distanceKm(previous, point);
+      // Dentro del tramo: lo recorrido hasta su inicio más la parte hecha.
+      const toStart = distanceKm(previous, at);
+      const toEnd = distanceKm(at, point);
+      if (toStart + toEnd - segment < best) {
+        best = toStart + toEnd - segment;
+        done = total + Math.min(segment, toStart);
+      }
+      total += segment;
+    }
+  }
+  return { doneKm: done, totalKm: total };
+}
+
 /** Distancia en km entre dos puntos (haversine). */
 export function distanceKm(
   a: { latitude: number; longitude: number },
