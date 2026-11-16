@@ -89,12 +89,12 @@ export function Legend() {
             </Item>
             <Item
               mark={
-                <span className="grid size-5 place-items-center rounded-full border-[1.5px] border-accent text-[10px] font-bold text-text">
-                  4
+                <span className="grid h-5 w-7 place-items-center rounded-full border-[1.5px] border-accent text-[10px] font-bold text-text">
+                  6
                 </span>
               }
             >
-              Varios sitios juntos (acércate)
+              «6 sitios»: varios juntos; tócalo para acercar
             </Item>
             <Item mark={<PinIcon size={17} className="text-success" />}>Punto de entrega</Item>
             <Item mark={<PowerOffIcon size={17} className="text-warning" />}>Sin energía</Item>
