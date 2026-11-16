@@ -34,7 +34,6 @@ En esta raíz solo está este índice. El resto vive en carpetas. Cada carpeta r
 | Manifiesto de carga e identificación del dron | [operacion/manifiesto.md](operacion/manifiesto.md) |
 | Norma de drones (RAC 100) | [legal/aeronautica.md](legal/aeronautica.md) |
 | Drones, orden público y restricciones | [legal/seguridad-publica.md](legal/seguridad-publica.md) |
-| Resguardos, Línea Negra y parques | [legal/territorio.md](legal/territorio.md) |
 | Qué se simula, qué queda fuera y qué falta verificar | [legal/cumplimiento.md](legal/cumplimiento.md) |
 | Norma de medicamentos | [legal/salud.md](legal/salud.md) |
 | Datos, consentimiento y seguridad | [legal/datos.md](legal/datos.md) |

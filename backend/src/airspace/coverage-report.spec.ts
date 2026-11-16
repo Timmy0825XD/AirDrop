@@ -23,11 +23,8 @@ const nodes = Object.values(NODES);
 function reach(
   node: (typeof nodes)[number],
   target: { latitude: number; longitude: number },
-  isHub = false,
 ) {
-  const corridor = planner.plan(node, target, airspace.blockingPolygons(), {
-    destinationIsHub: isHub,
-  });
+  const corridor = planner.plan(node, target, airspace.blockingPolygons());
   if (!corridor) {
     return { km: null, verdict: {} as Record<string, boolean> };
   }
@@ -74,19 +71,15 @@ describe('Cobertura real de la red (cobertura.md, RF-46)', () => {
     expect(reachable(verdict)).toEqual(['Colibrí']);
   });
 
-  it('Chemesquemena y Villa Germania quedan fuera: ningún tipo vuelve', () => {
-    for (const [node, target] of [
-      [NODES.north, { latitude: 10.7132, longitude: -73.4007 }],
-      [NODES.west, { latitude: 10.2669, longitude: -73.7151 }],
-    ] as const) {
-      expect(reachable(reach(node, target, true).verdict)).toEqual([]);
-    }
+  it('Villa Germania queda fuera: ningún tipo vuelve', () => {
+    const villaGermania = { latitude: 10.2669, longitude: -73.7151 };
+    expect(reachable(reach(NODES.west, villaGermania).verdict)).toEqual([]);
   });
 
   it('la ESE de Pueblo Bello solo la alcanza el Colibrí', () => {
-    expect(
-      reachable(reach(NODES.west, ESES.puebloBello, true).verdict),
-    ).toEqual(['Colibrí']);
+    expect(reachable(reach(NODES.west, ESES.puebloBello).verdict)).toEqual([
+      'Colibrí',
+    ]);
   });
 
   it('las ESE cercanas a su nodo las alcanza el Cóndor', () => {
@@ -94,13 +87,15 @@ describe('Cobertura real de la red (cobertura.md, RF-46)', () => {
       [NODES.south, ESES.laPaz],
       [NODES.south, ESES.sanDiego],
       [NODES.codazzi, ESES.codazzi],
+      [NODES.valledupar, ESES.rosarioPumarejo],
+      [NODES.valledupar, ESES.arredondo],
     ] as const) {
-      expect(reachable(reach(node, ese, true).verdict)).toContain('Cóndor');
+      expect(reachable(reach(node, ese).verdict)).toContain('Cóndor');
     }
   });
 
-  it('Nabusímake no tiene paso: es resguardo sin punto pactado', () => {
+  it('Nabusímake (2.135 m) queda fuera: ningún tipo vuelve', () => {
     const nabusimake = { latitude: 10.5844, longitude: -73.5929 };
-    expect(reach(NODES.west, nabusimake).km).toBeNull();
+    expect(reachable(reach(NODES.west, nabusimake).verdict)).toEqual([]);
   });
 });

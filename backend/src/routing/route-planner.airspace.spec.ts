@@ -1,9 +1,8 @@
 import { BadRequestException } from '@nestjs/common';
 import { AirspaceService } from '../airspace/airspace.service';
 import { DELIVERY_POINTS, ESES, NODES } from '../airspace/regional-network';
-import { regionalAirspace } from '../airspace/regional-airspace';
 import { RoutePlannerService } from './route-planner.service';
-import { corridorCrossesGeofence, isInsideGeofence } from './routing.rules';
+import { corridorCrossesGeofence } from './routing.rules';
 
 /**
  * RF-12 y RF-43 con el espacio aéreo real de la demo: rutas entre los nodos
@@ -36,9 +35,11 @@ describe('RoutePlannerService con las zonas del RAC 100', () => {
     }
   });
 
-  it('cada ESE tiene corredor desde su nodo, entrando por la estación', () => {
+  it('cada ESE tiene corredor desde su nodo', () => {
     const { planner, airspace } = build();
     const pairs = [
+      [NODES.valledupar, ESES.rosarioPumarejo],
+      [NODES.valledupar, ESES.arredondo],
       [NODES.south, ESES.laPaz],
       [NODES.south, ESES.sanDiego],
       [NODES.south, ESES.manaure],
@@ -46,9 +47,7 @@ describe('RoutePlannerService con las zonas del RAC 100', () => {
       [NODES.codazzi, ESES.codazzi],
     ] as const;
     for (const [node, ese] of pairs) {
-      const corridor = planner.plan(node, ese, airspace.blockingPolygons(), {
-        destinationIsHub: true,
-      });
+      const corridor = planner.plan(node, ese, airspace.blockingPolygons());
       expect({ ese: ese.code, ok: corridor != null }).toEqual({
         ese: ese.code,
         ok: true,
@@ -68,68 +67,35 @@ describe('RoutePlannerService con las zonas del RAC 100', () => {
     }
   });
 
-  it('a Atánquez entra por la entrada pactada del resguardo', () => {
-    const { planner, airspace } = build();
-    const gateway = regionalAirspace().find(
-      (zone) => zone.code === 'resguardo-kankuamo',
-    )!.gateway!;
-    const corridor = planner.plan(
-      NODES.north,
-      point('dp-atanquez'),
-      airspace.blockingPolygons(),
-    )!;
-    expect(corridor.coordinates.at(-2)).toEqual([
-      gateway.longitude,
-      gateway.latitude,
-    ]);
-    // Antes de la entrada, ningún tramo pisa el resguardo.
-    const resguardo = regionalAirspace().find(
-      (zone) => zone.code === 'resguardo-kankuamo',
-    )!.polygon;
-    const beforeGateway = corridor.coordinates.slice(0, -1);
-    expect(
-      beforeGateway.some(([longitude, latitude]) =>
-        isInsideGeofence({ longitude, latitude }, [resguardo]),
-      ),
-    ).toBe(false);
-  });
-
-  it('el regreso desde Atánquez sale por la misma entrada', () => {
-    const { planner, airspace } = build();
-    const gateway = regionalAirspace().find(
-      (zone) => zone.code === 'resguardo-kankuamo',
-    )!.gateway!;
-    const back = planner.planReturn(
-      point('dp-atanquez'),
-      NODES.north,
-      airspace.blockingPolygons(),
-      null,
-    )!;
-    expect(back.corridor.coordinates[1]).toEqual([
-      gateway.longitude,
-      gateway.latitude,
-    ]);
-    expect(back.corridor.coordinates.at(-1)).toEqual([
-      NODES.north.longitude,
-      NODES.north.latitude,
-    ]);
-  });
-
-  it('un destino en la ciudad de Valledupar no se acepta', async () => {
+  it('un destino en la ciudad de Valledupar se acepta', async () => {
     const { planner } = build();
     await expect(
-      planner.assertDestinationAllowed({ latitude: 10.47, longitude: -73.25 }),
-    ).rejects.toBeInstanceOf(BadRequestException);
-  });
-
-  it('un punto cualquiera dentro del resguardo no se acepta; el pactado sí', async () => {
-    const { planner } = build();
-    await expect(
-      planner.assertDestinationAllowed({ latitude: 10.7, longitude: -73.37 }),
-    ).rejects.toBeInstanceOf(BadRequestException);
-    await expect(
-      planner.assertDestinationAllowed(point('dp-atanquez')),
+      planner.assertDestinationAllowed(point('dp-los-mayales')),
     ).resolves.toBeUndefined();
+  });
+
+  it('un destino sobre un CAI o en el anillo del aeropuerto no se acepta', async () => {
+    const { planner } = build();
+    await expect(
+      planner.assertDestinationAllowed({
+        latitude: 10.4705,
+        longitude: -73.2494,
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      planner.assertDestinationAllowed({ latitude: 10.44, longitude: -73.25 }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('cruzar la ciudad rodea los CAI sin desviarse mucho', () => {
+    const { planner, airspace } = build();
+    const corridor = planner.plan(
+      NODES.valledupar,
+      point('dp-la-nevada'),
+      airspace.blockingPolygons(),
+    )!;
+    expect(corridor).not.toBeNull();
+    expect(corridor.distanceKm).toBeLessThan(7.5);
   });
 
   it('planear la ruta más larga de la red tarda poco', () => {
@@ -140,9 +106,7 @@ describe('RoutePlannerService con las zonas del RAC 100', () => {
       point('dp-mariangola'),
       airspace.blockingPolygons(),
     );
-    planner.plan(NODES.north, ESES.laPaz, airspace.blockingPolygons(), {
-      destinationIsHub: true,
-    });
+    planner.plan(NODES.north, ESES.laPaz, airspace.blockingPolygons());
     expect(Date.now() - started).toBeLessThan(500);
   });
 });

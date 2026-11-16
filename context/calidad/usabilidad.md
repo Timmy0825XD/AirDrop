@@ -43,5 +43,5 @@ El concepto visual es **"Corredor"**: la línea de puntos que une la central con
 ## Lenguaje
 
 - Español de Colombia, frases cortas, sin términos técnicos de aviación en las pantallas del solicitante ("tu pedido va en camino", no "fase de crucero").
-- Cuando el sistema no puede volar (noche, zona urbana, fuera de alcance), dice por qué en una frase y muestra la alternativa (RU-06).
+- Cuando el sistema no puede volar (noche, fuera de alcance), dice por qué en una frase y muestra la alternativa (RU-06).
 - El tamizaje dice que es opcional y que no es un diagnóstico; ante un signo de alarma, el 123 va primero.

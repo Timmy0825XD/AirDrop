@@ -1,4 +1,3 @@
-import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
@@ -149,7 +148,6 @@ export class PlanAgendaService {
       { latitude: hub.latitude, longitude: hub.longitude },
       { latitude: order.latitude, longitude: order.longitude },
       polygons,
-      { destinationIsHub: order.destinationKind === DestinationKind.HUB },
     );
     if (!corridor) {
       return null;

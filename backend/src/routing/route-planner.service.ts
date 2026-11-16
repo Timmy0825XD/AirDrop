@@ -9,13 +9,6 @@ import {
 import { WeatherService } from '../weather/weather.service';
 import { AirspaceService } from '../airspace/airspace.service';
 import {
-  DESTINATION_IN_COORDINATED_ZONE,
-  gatewayPlan,
-  isPactedSite,
-  joinGatewayLegs,
-  zoneAt,
-} from '../airspace/airspace.rules';
-import {
   DESTINATION_IN_GEOFENCE,
   LngLat,
   PlannedCorridor,
@@ -40,69 +33,28 @@ export class RoutePlannerService {
   ) {}
 
   /**
-   * RF-12: el corredor de ida. Las zonas coordinadas se rodean como
-   * cualquier zona, salvo la del destino, a la que se entra por su entrada
-   * pactada. `destinationIsHub`: una central dentro de una zona coordinada
-   * es un sitio pactado por definición (es quien acordó el paso).
+   * RF-12: el corredor de ida. `loadPolygons` ya trae las zonas legales:
+   * aquí solo se busca el camino.
    */
   plan(
     origin: LngLat,
     destination: LngLat,
-    geofences: GeoJsonPolygon[],
-    options: { destinationIsHub?: boolean } = {},
+    obstacles: GeoJsonPolygon[],
   ): PlannedCorridor | null {
-    const coordinated = this.airspace.coordinatedZones();
-    const gateways = gatewayPlan(origin, destination, coordinated, {
-      origin: true,
-      destination: options.destinationIsHub ?? false,
-    });
-    if (!gateways) {
-      return null;
-    }
-    const obstacles = [
-      ...geofences,
-      ...coordinated.map((zone) => zone.polygon),
-    ];
-    const core = planCorridor(gateways.start, gateways.end, obstacles);
-    return core ? joinGatewayLegs(gateways, core) : null;
+    return planCorridor(origin, destination, obstacles);
   }
 
-  /**
-   * Regreso con las zonas vigentes; ver `planReturnCorridor`. Si el dron
-   * está dentro de una zona coordinada, sale por su entrada pactada.
-   */
+  /** Regreso con las zonas vigentes; ver `planReturnCorridor`. */
   planReturn(
     from: LngLat,
     hub: LngLat,
-    geofences: GeoJsonPolygon[],
+    obstacles: GeoJsonPolygon[],
     outbound: PlannedCorridor | null,
   ): ReturnType<typeof planReturnCorridor> {
-    const coordinated = this.airspace.coordinatedZones();
-    const zone = zoneAt(from, coordinated);
-    const obstacles = [
-      ...geofences,
-      ...coordinated.map((entry) => entry.polygon),
-    ];
-    if (!zone?.gateway) {
-      return planReturnCorridor(from, hub, obstacles, outbound);
-    }
-    const core = planReturnCorridor(zone.gateway, hub, obstacles, null);
-    if (!core) {
-      return null;
-    }
-    return {
-      corridor: joinGatewayLegs(
-        { start: zone.gateway, end: hub, head: [from], tail: [] },
-        core.corridor,
-      ),
-      crossesGeofence: core.crossesGeofence,
-    };
+    return planReturnCorridor(from, hub, obstacles, outbound);
   }
 
-  /**
-   * Un destino dentro de una geovalla o de una zona bloqueante no tiene
-   * corredor. Dentro de una zona coordinada, solo sus sitios pactados.
-   */
+  /** Un destino dentro de una geovalla o de una zona legal no tiene corredor. */
   async assertDestinationAllowed(
     destination: LngLat,
     manager: EntityManager = this.dataSource.manager,
@@ -115,16 +67,11 @@ export class RoutePlannerService {
     if (isInsideGeofence(destination, polygons)) {
       throw new BadRequestException(DESTINATION_IN_GEOFENCE);
     }
-    const zone = zoneAt(destination, this.airspace.coordinatedZones());
-    if (zone && !isPactedSite(destination, zone)) {
-      throw new BadRequestException(DESTINATION_IN_COORDINATED_ZONE);
-    }
   }
 
   /**
    * RF-12, RF-32 y RF-43: lo que una ruta no puede cruzar: geovallas,
-   * tormentas vigentes y zonas legales bloqueantes. Las coordinadas no van
-   * aquí: `plan` las rodea o entra por su entrada pactada.
+   * tormentas vigentes y zonas legales.
    */
   async loadPolygons(manager: EntityManager): Promise<GeoJsonPolygon[]> {
     return [

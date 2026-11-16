@@ -6,9 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, Repository } from 'typeorm';
-import { AirspaceService } from '../airspace/airspace.service';
 import { DELIVERY_POINTS, NODES } from '../airspace/regional-network';
-import { AirspaceZoneKind } from '../common/enums/airspace-zone-kind.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { rankHubsByDistance } from '../decision/fallback.rules';
@@ -22,8 +20,6 @@ import {
   CoverageStatus,
   DELIVERY_POINT_NOT_FOUND,
   DELIVERY_POINT_UNAVAILABLE,
-  NOT_SERVED_KINDS,
-  URBAN_NOT_SERVED,
   coverageMessage,
   isAvailable,
   rankByDistance,
@@ -56,7 +52,6 @@ export class DeliveryPointsService implements OnModuleInit {
     private readonly hubs: Repository<Hub>,
     @InjectRepository(InventoryItem)
     private readonly items: Repository<InventoryItem>,
-    private readonly airspace: AirspaceService,
   ) {}
 
   async onModuleInit(): Promise<void> {
@@ -80,7 +75,6 @@ export class DeliveryPointsService implements OnModuleInit {
     for (const site of DELIVERY_POINTS) {
       const node = nodeList.find((entry) => entry.code === site.nodeCode);
       const hub = nodes.find((row) => row.name === node?.name) ?? null;
-      const zone = this.airspace.restrictionAt(site);
       const values = {
         code: site.code,
         name: site.name,
@@ -89,8 +83,6 @@ export class DeliveryPointsService implements OnModuleInit {
         longitude: site.longitude,
         elevationM: site.elevationM,
         hubId: hub?.id ?? null,
-        coordinatedZoneCode:
-          zone?.kind === AirspaceZoneKind.COORDINATED ? zone.code : null,
       };
       const existing = await repo.findOne({ where: { code: site.code } });
       if (existing) {
@@ -131,7 +123,7 @@ export class DeliveryPointsService implements OnModuleInit {
       available: isAvailable(row, status),
       distanceKm: row.distanceKm,
     }));
-    const coverage = this.coverageStatus(from, ranked);
+    const coverage = this.coverageStatus(ranked);
     const nearest =
       coverage === CoverageStatus.COVERED && from
         ? (ranked.find((row) => row.available) ?? null)
@@ -161,16 +153,9 @@ export class DeliveryPointsService implements OnModuleInit {
 
   /**
    * El punto al que va un pedido: debe existir, estar activo y tener su nodo
-   * activo. Si llega el GPS del solicitante y cae en la ciudad, no se crea
-   * (RU-02).
+   * activo (RU-02).
    */
-  async requireForOrder(
-    id: string,
-    requesterLocation?: LngLat | null,
-  ): Promise<DeliveryPoint> {
-    if (requesterLocation && this.isNotServed(requesterLocation)) {
-      throw new BadRequestException(URBAN_NOT_SERVED);
-    }
+  async requireForOrder(id: string): Promise<DeliveryPoint> {
     const point = await this.points.findOne({ where: { id } });
     if (!point) {
       throw new NotFoundException(DELIVERY_POINT_NOT_FOUND);
@@ -190,11 +175,6 @@ export class DeliveryPointsService implements OnModuleInit {
   }
 
   present(point: DeliveryPoint) {
-    const zone = point.coordinatedZoneCode
-      ? this.airspace
-          .coordinatedZones()
-          .find((entry) => entry.code === point.coordinatedZoneCode)
-      : null;
     return {
       id: point.id,
       code: point.code,
@@ -205,24 +185,12 @@ export class DeliveryPointsService implements OnModuleInit {
       elevationM: point.elevationM,
       hubId: point.hubId,
       active: point.active,
-      // RF-45: en una zona coordinada solo se entra por el corredor pactado.
-      corridor: zone
-        ? { zoneCode: zone.code, zoneName: zone.name, gateway: zone.gateway }
-        : null,
     };
   }
 
-  private isNotServed(point: LngLat): boolean {
-    return this.airspace.zoneOfKindAt(point, NOT_SERVED_KINDS) != null;
-  }
-
   private coverageStatus(
-    from: LngLat | null,
     ranked: Array<{ available: boolean }>,
   ): CoverageStatus {
-    if (from && this.isNotServed(from)) {
-      return CoverageStatus.URBAN;
-    }
     return ranked.some((row) => row.available)
       ? CoverageStatus.COVERED
       : CoverageStatus.NO_POINT;

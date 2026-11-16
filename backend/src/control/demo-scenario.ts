@@ -200,6 +200,35 @@ function ese(
 
 export const hubPlans: DemoHubPlan[] = [
   node(
+    NODES.valledupar,
+    'Carrera 9 con calle 20, barrio Novalito, Valledupar',
+    '6055550300',
+    [
+      staff('Natalia Araújo Molina', 'natalia.araujo', '3005550301'),
+      staff('Fabián Oñate Romero', 'fabian.onate', '3005550302'),
+    ],
+    'AD-VUP',
+    // La ciudad y el relevo (RF-55): rápidos para la ciudad, un Cóndor para
+    // las ESE de Valledupar.
+    drones(
+      [RAPID, true],
+      [RAPID, false],
+      [BALANCED, true],
+      [BALANCED, false],
+      [CARGO, false],
+    ),
+    [],
+    [
+      item('Acetaminofén 500 mg', 200, 'ACE-V-2640', 450, OTC),
+      item('Ibuprofeno 400 mg', 120, 'IBU-V-2641', 400, OTC),
+      item('Amoxicilina 500 mg', 80, 'AMX-V-2642', 320, RX),
+      item('Losartán 50 mg', 90, 'LOS-V-2643', 410, RX),
+      item('Insulina glargina 100 UI', 40, 'INS-V-2644', 150, RX, true),
+      item('Salbutamol inhalador 100 mcg', 50, 'SAL-V-2645', 330, RX),
+      item('Suero oral', 200, 'SOR-V-2646', 300, OTC),
+    ],
+  ),
+  node(
     NODES.north,
     'Vía a Río Seco, corregimiento de Río Seco, Valledupar',
     '6055550301',
@@ -331,6 +360,23 @@ export const hubPlans: DemoHubPlan[] = [
     ],
   ),
   ese(
+    ESES.rosarioPumarejo,
+    'Calle 16 No. 17-141, Valledupar',
+    '6055550316',
+    staff('Rosa Elena Gutiérrez', 'rosa.gutierrez', '3175550356'),
+    [
+      item('Acetaminofén 500 mg', 30, 'ACE-RP-2647', 210, OTC),
+      item('Suero oral', 15, 'SOR-RP-2648', 190, OTC),
+    ],
+  ),
+  ese(
+    ESES.arredondo,
+    'Calle 29 con carrera 22, Primero de Mayo, Valledupar',
+    '6055550317',
+    staff('Iván Darío Castro', 'ivan.castro', '3175550357'),
+    [item('Acetaminofén 500 mg', 20, 'ACE-EA-2649', 200, OTC)],
+  ),
+  ese(
     ESES.laPaz,
     'Calle 4 No. 5-20, La Paz',
     '6055550311',
@@ -375,7 +421,7 @@ export const hubPlans: DemoHubPlan[] = [
 
 /**
  * Las geovallas del operador de la demo. Las zonas legales (aeropuerto,
- * bases, policía, resguardos) no van aquí: vienen con `airspace/` (RF-43).
+ * bases, policía, cárceles) no van aquí: vienen con `airspace/` (RF-43).
  */
 export const geofences = [
   {

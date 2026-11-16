@@ -1,8 +1,8 @@
 /**
  * La red regional de `context/negocio/cobertura.md`. Coordenadas de
- * municipios y corregimientos: GeoNames (vía Open-Meteo). Los nodos son
- * instalaciones ficticias de AirDrop: fuera del anillo de 9 km del ARP y a
- * más de 2 km de toda instalación de `regional-airspace.ts`.
+ * municipios y corregimientos: GeoNames (vía Open-Meteo). Los nodos y los
+ * puntos de Valledupar son ficticios: fuera de toda zona de
+ * `regional-airspace.ts`. El Nodo Valledupar es además el relevo (RF-55).
  */
 
 export type NetworkSite = {
@@ -16,6 +16,14 @@ export type NetworkSite = {
 };
 
 export const NODES = {
+  valledupar: {
+    code: 'node-valledupar',
+    name: 'Nodo Valledupar',
+    municipality: 'Valledupar',
+    latitude: 10.479,
+    longitude: -73.235,
+    elevationM: 170,
+  },
   north: {
     code: 'node-north',
     name: 'Nodo Norte (Río Seco)',
@@ -51,6 +59,22 @@ export const NODES = {
 } satisfies Record<string, NetworkSite>;
 
 export const ESES = {
+  rosarioPumarejo: {
+    code: 'ese-rosario-pumarejo',
+    name: 'ESE Hospital Rosario Pumarejo de López',
+    municipality: 'Valledupar',
+    latitude: 10.4772,
+    longitude: -73.2611,
+    elevationM: 170,
+  },
+  arredondo: {
+    code: 'ese-eduardo-arredondo',
+    name: 'ESE Hospital Eduardo Arredondo Daza',
+    municipality: 'Valledupar',
+    latitude: 10.456,
+    longitude: -73.2545,
+    elevationM: 165,
+  },
   laPaz: {
     code: 'ese-la-paz',
     name: 'ESE Hospital de La Paz',
@@ -99,6 +123,42 @@ export const ESES = {
  * llega y vuelve con la reserva (`context/negocio/cobertura.md`).
  */
 export const DELIVERY_POINTS: Array<NetworkSite & { nodeCode: string }> = [
+  site(
+    'dp-los-mayales',
+    'Puesto de salud de Los Mayales',
+    'Valledupar',
+    10.451,
+    -73.24,
+    165,
+    NODES.valledupar,
+  ),
+  site(
+    'dp-la-nevada',
+    'Puesto de salud de La Nevada',
+    'Valledupar',
+    10.495,
+    -73.287,
+    185,
+    NODES.valledupar,
+  ),
+  site(
+    'dp-primero-de-mayo',
+    'Puesto de salud de Primero de Mayo',
+    'Valledupar',
+    10.4555,
+    -73.259,
+    165,
+    NODES.valledupar,
+  ),
+  site(
+    'dp-villa-miriam',
+    'Puesto de salud de Villa Miriam',
+    'Valledupar',
+    10.456,
+    -73.23,
+    160,
+    NODES.valledupar,
+  ),
   site(
     'dp-patillal',
     'Puesto de salud de Patillal',

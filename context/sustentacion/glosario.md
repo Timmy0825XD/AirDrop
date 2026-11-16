@@ -30,9 +30,9 @@ Términos que deben usarse igual en código, UI y sustentación.
 | DroneModel | Plantilla de especificaciones de un tipo de dron: Colibrí, Garza o Cóndor. |
 | Compartimento de frío | Accesorio refrigerado de 2 a 8 °C que se instala en cualquier dron y le resta 1 kg de carga. |
 | Geovalla | Polígono prohibido o restringido para rutas que dibuja el operador. |
-| Zona legal | Zona del RAC 100 que trae el escenario: aeródromo, prohibida, helipuerto, coordinada, urbana, temporal o precaución. No se edita. |
-| Zona coordinada | Zona (estación de policía municipal, resguardo) donde solo se vuela por el corredor pactado hacia el punto pactado. |
-| ARP | Punto de referencia del aeródromo. Desde él se miden los 9 km. |
+| Zona legal | Zona del RAC 100 que trae el escenario: aeródromo, prohibida, helipuerto o temporal. Tienen el tamaño de la demo, no el margen completo del RAC 100. No se edita. |
+| Relevo | Escala en el Nodo Valledupar para cambiar la batería y llegar a un destino que ningún nodo alcanza solo (RF-55). |
+| ARP | Punto de referencia del aeródromo. Desde él se mide el anillo de 1,5 km de la demo. |
 | Corredor | Ruta en planta, con un perfil de altura que sigue el terreno entre 60 y 120 m AGL. |
 | AGL | Altura sobre el terreno (above ground level). El techo es de 120 m AGL. |
 | VMC | Condiciones meteorológicas visuales. Sin ellas (tormenta, niebla) no se vuela. |

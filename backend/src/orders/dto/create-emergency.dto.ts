@@ -78,8 +78,8 @@ export class CreateEmergencyDto {
   deliveryPointId: string;
 
   /**
-   * RU-02: dónde está el solicitante. Si llega y cae en la ciudad, el pedido
-   * no se crea. No se guarda.
+   * RU-02: dónde está el solicitante. Solo sirve para proponer el punto
+   * más cercano; no se guarda.
    */
   @IsOptional()
   @ValidateNested()

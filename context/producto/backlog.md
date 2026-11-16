@@ -140,12 +140,12 @@ Se agregó tras revisar el RAC 100, la Ley 1581 y la crítica del profesor a la 
 
 | ID | Historia | Pri | SP | Sprint |
 | --- | --- | --- | --- | --- |
-| HU-59 | Red regional: central nodo o ESE, puntos de entrega y escenario con 4 nodos, 5 ESE y 10 puntos (RF-06, RF-07, RF-45) | Alta | 8 | 6 |
-| HU-60 | Zonas legales del RAC 100 con sus márgenes y corredores pactados en zonas coordinadas (RF-43, RF-12) | Alta | 13 | 6 |
+| HU-59 | Red regional: central nodo o ESE, puntos de entrega y escenario con 5 nodos, 7 ESE y 14 puntos (RF-06, RF-07, RF-45) | Alta | 8 | 6 |
+| HU-60 | Zonas legales a escala de demo: aeródromo de 1,5 km y zonas prohibidas del tamaño del visor (RF-43, RF-12) | Alta | 13 | 6 |
 | HU-61 | Solo de día: salida y puesta del sol con la NOAA, urgencia nocturna a traslado convencional (RF-44) | Alta | 5 | 6 |
 | HU-62 | Malla de terreno SRTM, perfil a 90 m AGL y energía de ascenso (RF-46) | Alta | 13 | 6 |
 | HU-63 | Flota de tres tipos, compartimento de frío y selección por tipo de misión (RF-49, RF-11) | Alta | 8 | 6 |
-| HU-64 | Punto de entrega en la urgencia y en el plan; fuera de cobertura en zona urbana (RU-02, RU-30, RF-45) | Alta | 5 | 6 |
+| HU-64 | Punto de entrega en la urgencia y en el plan; fuera de cobertura sin punto al alcance (RU-02, RU-30, RF-45) | Alta | 5 | 6 |
 | HU-65 | Manifiesto de carga numerado (RF-47) | Alta | 5 | 6 |
 | HU-66 | Identificación remota en el radar y dron no identificado (RF-48, RF-36) | Media | 5 | 6 |
 | HU-67 | Niebla y límite de viento por tipo (RF-32) | Media | 3 | 6 |
@@ -169,6 +169,7 @@ Se agregó tras revisar la app terminada: funcionaba, pero se veía plana, sin m
 | HU-76 | Inicio, urgencia y seguimiento del solicitante con la ruta como motivo | Alta | 8 | 6 |
 | HU-77 | Ajustes: tema con vista previa, texto, contraste, movimiento y modo sencillo (RF-52) | Alta | 8 | 6 |
 | HU-78 | Medicamentos disponibles (RF-54) | Media | 5 | 6 |
+| HU-79 | Relevo en el Nodo Valledupar: escala con cambio de batería (RF-55) | Alta | 8 | 6 |
 
 **Suma del módulo 12: 45 SP.**
 

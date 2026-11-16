@@ -22,9 +22,9 @@ Tres pasos cortos, con prioridad alta:
 
 1. **Qué pasa:** el tamizaje de RF-41 (signos de alarma, para quién, qué siente, desde cuándo y qué tan fuerte) y una nota opcional.
 2. **Qué necesita:** el medicamento, sus alergias a medicamentos y, si es bajo fórmula, la fórmula (RU-25).
-3. **Dónde:** el punto de entrega (RF-45). La app toma el GPS ("Usar mi ubicación") y propone el punto activo más cercano. El solicitante puede elegir otro en la lista o en el mapa. Si está en zona urbana o ningún punto está al alcance de un nodo, la app se lo dice y muestra la alternativa terrestre (RF-18) en vez de crear el pedido.
+3. **Dónde:** el punto de entrega (RF-45). La app toma el GPS ("Usar mi ubicación") y propone el punto activo más cercano. El solicitante puede elegir otro en la lista o en el mapa. Si ningún punto está al alcance de un nodo, ni siquiera con relevo (RF-55), la app se lo dice y muestra la alternativa terrestre (RF-18) en vez de crear el pedido.
 
-**Por qué.** La urgencia civil no es un traslado entre centrales. El destino es la persona, pero el dron no puede llegar a su puerta: en zona urbana la norma solo permite volar con línea de vista (RAC 100.220(b)). Llega a un punto despejado, con observador, al que la persona va con su código. El GPS sirve para proponerle el punto más cercano, no como destino del vuelo. El despachador necesita saber qué tan grave es sin leer un texto libre, y el solicitante no puede tardar más de un minuto en pedir.
+**Por qué.** La urgencia civil no es un traslado entre centrales. El destino es la persona, pero el dron no llega a su puerta. Aterriza en un punto despejado, con observador, al que la persona va con su código. El GPS sirve para proponerle el punto más cercano, no como destino del vuelo. El despachador necesita saber qué tan grave es sin leer un texto libre, y el solicitante no puede tardar más de un minuto en pedir.
 
 ### RU-30 — Entrega periódica en mi punto de entrega
 
@@ -224,7 +224,7 @@ Código de 15 minutos al correo de la cuenta. Si el correo no existe, el mensaje
 
 ### RF-06 y RF-07 — Central
 
-El administrador la crea con nombre, **tipo de red** (nodo o ESE), tipo de servicio (hospital, clínica, farmacia, banco de sangre o vacunación), ubicación y contacto, y puede suspenderla. Solo un nodo tiene drones y despega. Un nodo no se puede ubicar dentro de una zona prohibida, del anillo de un aeródromo ni de la zona urbana (RF-43).
+El administrador la crea con nombre, **tipo de red** (nodo o ESE), tipo de servicio (hospital, clínica, farmacia, banco de sangre o vacunación), ubicación y contacto, y puede suspenderla. Solo un nodo tiene drones y despega. Un nodo no se puede ubicar dentro de una zona prohibida, del anillo de un aeródromo ni de un helipuerto (RF-43).
 
 ### RF-08 — Inventario
 
@@ -250,6 +250,7 @@ Al autorizar, el motor elige el dron en dos pasos. Las reglas completas están e
 - no tenga batería para ida, regreso y reserva, sobre el perfil real de la ruta;
 - tenga un techo de servicio menor que el punto más alto de la ruta más 90 m (RF-46);
 - no tenga un corredor legal (RF-12, RF-43), o el viento del corredor pase de su límite (RF-32);
+- no tenga batería para ida, regreso y reserva en un solo tramo, ni con escala en el Nodo Valledupar (RF-55);
 - no alcance a **aterrizar de regreso en el nodo antes de la puesta del sol** (RF-44).
 
 **Batería.** Se cuenta con la misma física del simulador:
@@ -277,8 +278,7 @@ Cada decisión queda explicada en el pedido: qué nodos miró el motor, si tení
 
 Corredor en planta, de ida y de retorno si hace falta, que respeta las zonas de RF-43 y las geovallas del operador. La altura la pone RF-46. Las reglas completas están en [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md).
 
-- **Fuera de una zona coordinada**, el corredor es el camino más corto que pasa a **150 m o más** del borde de toda zona bloqueante. Ya incluye el margen legal: 2 km en las prohibidas y 9 km en el aeródromo. Si la línea recta cumple, es la línea recta. Si no, el planificador infla cada zona con los 150 m y busca el camino más corto por sus esquinas (grafo de visibilidad con A*, un Dijkstra guiado hacia el destino). Así esquiva varias zonas seguidas o una cóncava.
-- **Dentro de una zona coordinada** (estación de policía, resguardo), el tramo es el **corredor pactado**, que es fijo, y solo lleva al punto pactado. Un destino dentro de una zona coordinada sin corredor pactado no es alcanzable.
+- El corredor es el camino más corto que pasa a **150 m o más** del borde de toda zona bloqueante. Las zonas tienen el tamaño de la demo ([../operacion/espacio-aereo.md](../operacion/espacio-aereo.md)). Si la línea recta cumple, es la línea recta. Si no, el planificador infla cada zona con los 150 m y busca el camino más corto por sus esquinas (grafo de visibilidad con A*, un Dijkstra guiado hacia el destino). Así esquiva varias zonas seguidas o una cóncava.
 - **Holgura.** No se exige al nodo ni al destino: un punto a 100 m de una geovalla del operador, pero fuera de ella, es válido.
 - **Sin camino o camino largo.** Si no hay camino, el dron no es elegible. Si el camino existe pero es largo, lo descarta la batería (RF-11).
 - **Zonas que aparecen.** Una restricción temporal, una tormenta o una celda de niebla vigentes (RF-32, RF-36) cuentan igual que una zona prohibida. Si una aparece con el dron en el aire y cruza el tramo que falta, la ruta cambia en vuelo (RF-33).
@@ -316,7 +316,7 @@ Depende del servicio:
 | Urgencia de noche (RF-44) | No se encola: queda `reasignado` como **traslado convencional**, con el motivo, y quien pidió ve las centrales con el insumo |
 | Programado | Sigue en recibido y se reintenta solo cada 15 minutos mientras el siguiente intento caiga dentro de la franja. Si la franja cierra sin despegue, queda vencido, suelta el dron si ya estaba reservado y busca otra central como una urgencia. Esa central autoriza sin la franja original. |
 
-Un solicitante en zona urbana, o sin un punto de entrega al alcance de ningún nodo, no llega a crear el pedido: la app le muestra directamente la alternativa terrestre (RU-02).
+Un solicitante sin un punto de entrega al alcance de ningún nodo, ni con relevo (RF-55), no llega a crear el pedido: la app le muestra directamente la alternativa terrestre (RU-02).
 
 Un pedido se reasigna **una sola vez**. Si la central que lo recibe tampoco puede, o si ninguna central sirve, queda `reasignado` como **traslado convencional**: es final, ningún dron despega y quien pidió ve hasta tres centrales con el insumo (nombre, dirección, contacto y distancia). La central que recibe un pedido reasignado verifica la fórmula otra vez, y puede autorizarlo o rechazarlo.
 
@@ -574,17 +574,14 @@ El escenario trae cargadas las zonas de [../operacion/espacio-aereo.md](../opera
 
 | Tipo | Regla |
 | --- | --- |
-| Aeródromo | Prohibido el anillo de 9 km desde el ARP |
-| Prohibida | Prohibido, con 2 km de margen |
-| Helipuerto | Prohibido el círculo de 3 km |
-| Coordinada | Solo por el corredor pactado y hacia el punto pactado |
-| Urbana | Prohibido |
+| Aeródromo | Prohibido el círculo de 1,5 km desde el ARP |
+| Prohibida | Prohibido el círculo o el polígono de la instalación: policía y CAI, batallón, cárcel, planta eléctrica, pista agrícola |
+| Helipuerto | Prohibido el círculo de 300 m |
 | Temporal | Prohibido mientras dure (RF-36) |
-| Precaución | Se muestra y no bloquea |
 
 El operador no las borra ni las mueve: son la norma, no una decisión de la central. Cada zona dice de dónde sale: el artículo y la fuente del dato.
 
-**Por qué.** El RAC 100.315 fija distancias que no dependen de quién opera. La geovalla de un aeropuerto como una franja sobre la pista, que era lo que había antes, es una de las críticas más fáciles de hacerle a un sistema de drones.
+**Por qué.** El RAC 100.315 fija distancias que no dependen de quién opera. Con los márgenes completos (9 km y 2 km), Valledupar entera quedaba prohibida y la demo no se podía ver. Por eso cada zona tiene el tamaño que muestra el visor de la Aerocivil, y eso se declara como simplificación ([../operacion/espacio-aereo.md](../operacion/espacio-aereo.md)).
 
 ### RF-44 — Solo de día
 
@@ -594,9 +591,9 @@ Un vuelo se despacha solo si el dron puede despegar después de la salida del so
 
 ### RF-45 — Punto de entrega
 
-Lugar fijo de la red, con nombre, ubicación, municipio, nodo que lo atiende, si está activo y, si está en una zona coordinada, su corredor pactado. Lo crea el escenario y el administrador puede activarlo o desactivarlo. El solicitante recibe el más cercano a su GPS y puede elegir otro. Una ubicación en zona urbana, o sin un punto al alcance, no crea el pedido (RU-02).
+Lugar fijo de la red, con nombre, ubicación, municipio, nodo que lo atiende y si está activo. Lo crea el escenario y el administrador puede activarlo o desactivarlo. El solicitante recibe el más cercano a su GPS y puede elegir otro. Hay puntos también en la ciudad de Valledupar. Una ubicación sin un punto al alcance no crea el pedido (RU-02).
 
-**Por qué.** En zona urbana solo se vuela con línea de vista y a 30 m de personas y edificios (RAC 100.220(b)). Un punto despejado con observador cumple eso; la puerta de una casa, no.
+**Por qué.** La norma pide entregar a 30 m de personas ajenas y que alguien vea el dron en la aproximación final (RAC 100.220(b), 100.320). Un punto despejado con observador cumple eso; la puerta de una casa, no.
 
 ### RF-46 — Altura y terreno
 
@@ -673,6 +670,12 @@ Lista del solicitante sobre el mismo catálogo que usa la urgencia (RF-09):
 - Un ítem de control especial no se puede pedir por este canal (RF-09) y la lista lo dice.
 
 **Por qué.** RU-33. La cantidad exacta es un dato de la central; al solicitante le basta saber si puede pedirlo.
+
+### RF-55 — Relevo en Valledupar
+
+Si ningún dron de los nodos que tienen el insumo alcanza el destino en un solo tramo, el motor prueba la misma misión con **una escala en el Nodo Valledupar**. Ahí el dron cambia la batería por una llena en 5 minutos simulados, sin bajar el paquete. La escala se hace a la ida y otra vez a la vuelta. Cada tramo cierra con su propia batería y su reserva del 20 %. Toda la misión, escalas incluidas, termina antes de la puesta del sol (RF-44). Si hay ruta directa, gana la directa. La decisión del pedido dice que hubo relevo y por qué. Las reglas completas están en [../negocio/cobertura.md](../negocio/cobertura.md#relevo-en-valledupar).
+
+**Por qué.** Valledupar está en el centro de la red. Una escala ahí deja llegar a destinos que ningún nodo alcanza solo, y así se rechazan menos pedidos.
 
 ## No funcionales
 

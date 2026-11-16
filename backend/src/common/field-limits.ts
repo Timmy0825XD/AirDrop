@@ -19,7 +19,6 @@ export const FIELD_LIMITS = {
   deliveryPointCode: 32,
   municipality: 80,
   /** RF-43: código de una zona legal (`resguardo-kankuamo`). */
-  airspaceZoneCode: 32,
   /** RF-47: `MAN-2026-000123`. */
   manifestNumber: 16,
   /** RF-47: rango de frío exigido (`2–8 °C`). */

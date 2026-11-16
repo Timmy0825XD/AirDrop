@@ -11,10 +11,10 @@ Qué obligación sale de cada norma y qué hace AirDrop con ella. AirDrop es un 
 | Obligación | Norma | Dónde |
 | --- | --- | --- |
 | Sin entregas nocturnas | RAC 100.220(a)(3) | [condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md) |
-| Solo VLOS en zona urbana; 30 m de personas | RAC 100.220(b), 100.320 | [espacio-aereo.md](../operacion/espacio-aereo.md), [../entregas/persona.md](../entregas/persona.md) |
-| 9 km del ARP del aeropuerto | RAC 100.315(a)(14) | [espacio-aereo.md](../operacion/espacio-aereo.md) |
-| 2 km de bases, cárceles e infraestructura crítica | RAC 100.315(a)(13) | [espacio-aereo.md](../operacion/espacio-aereo.md) |
-| 3 km de helipuertos | RAC 100.315(a)(15) | [espacio-aereo.md](../operacion/espacio-aereo.md) |
+| Observador en el punto de entrega; 30 m de personas (simplificado: se vuela sobre la ciudad) | RAC 100.220(b), 100.320 | [espacio-aereo.md](../operacion/espacio-aereo.md), [../entregas/persona.md](../entregas/persona.md) |
+| Anillo del aeropuerto (1,5 km en la demo; 9 km en la norma) | RAC 100.315(a)(14) | [espacio-aereo.md](../operacion/espacio-aereo.md) |
+| Bases, policía, cárceles e infraestructura crítica (tamaño del visor en la demo; 2 km en la norma) | RAC 100.315(a)(13) | [espacio-aereo.md](../operacion/espacio-aereo.md) |
+| Helipuertos (300 m en la demo; 3 km en la norma) | RAC 100.315(a)(15) | [espacio-aereo.md](../operacion/espacio-aereo.md) |
 | Zonas prohibidas, restringidas y temporales | RAC 100.315(a)(1)–(5), (c) | [espacio-aereo.md](../operacion/espacio-aereo.md) |
 | 122 m AGL como máximo | RAC 100.220(b), 100.445 | [condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md) (120 m) |
 | VMC y monitoreo meteorológico | RAC 100.440 | [condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md) |
@@ -29,7 +29,6 @@ Qué obligación sale de cada norma y qué hace AirDrop con ella. AirDrop es un 
 | Datos de salud opcionales | Ley 1581, art. 6; Decreto 1377, art. 6 | [datos.md](datos.md) |
 | Revocar y suprimir | Ley 1581, art. 8; Decreto 1377, art. 9 | [datos.md](datos.md) |
 | Seguridad y confidencialidad; registro de acceso | Ley 1581, art. 17 | [datos.md](datos.md) |
-| Respeto a resguardos | Decreto 1500 de 2018 | [territorio.md](territorio.md) |
 
 ## Queda fuera (se da por cumplido)
 
@@ -42,9 +41,8 @@ Qué obligación sale de cada norma y qué hace AirDrop con ella. AirDrop es un 
 | 250 h de pruebas de carga del modelo | RAC 100.440 |
 | Pólizas de responsabilidad civil, de la carga y de terceros | RAC 100.410, 100.440 |
 | Registro de los drones | Aerocivil |
-| Desviación autorizada para operar junto a estaciones de policía | RAC 100.410(a)(10) |
+| Márgenes completos del RAC 100 (9 km, 2 km, 3 km) y VLOS en zona urbana | RAC 100.220(b), 100.315 |
 | Habilitación del servicio farmacéutico y director técnico | Resolución 820 de 2026, Decreto 780 de 2016 |
-| Consulta previa y acuerdos con cabildos | Convenio 169 OIT, Ley 21 de 1991 |
 | Permiso de Parques Nacionales | Parques Nacionales Naturales |
 | Contratos de transmisión con los encargados de datos | Decreto 1377, art. 25 |
 | Registro Nacional de Bases de Datos | Ley 1581, art. 25 (no aplica por tamaño) |
@@ -58,6 +56,6 @@ Qué obligación sale de cada norma y qué hace AirDrop con ella. AirDrop es un 
 | Perímetros del Batallón La Popa, la Décima Brigada y la cárcel La Tramacúa | Décima Brigada, INPEC |
 | Lista de helipuertos de Valledupar | AIP / Aerocivil |
 | Estado de las pistas agrícolas privadas | Aerocivil |
-| Polígonos oficiales de los resguardos | Agencia Nacional de Tierras |
+| Ubicación exacta de los CAI y estaciones de policía | Policía Nacional, visor de la Aerocivil |
 | Plazo de conservación de los registros de dispensación | Secretaría de Salud del Cesar |
 | Estado del proyecto de ley de drones | Congreso (Gaceta) |

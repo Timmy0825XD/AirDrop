@@ -2,8 +2,8 @@
 
 ## Entorno geográfico
 
-- **MVP:** red regional de unos 45 km alrededor de Valledupar. Abarca los corregimientos del municipio, La Paz, San Diego, Manaure, Pueblo Bello y Agustín Codazzi: 4 nodos, 5 ESE y 10 puntos de entrega ([../negocio/cobertura.md](../negocio/cobertura.md)).
-- **La ciudad de Valledupar no recibe vuelos.** Casi toda está dentro del anillo de 9 km del aeropuerto y es zona urbana ([../operacion/espacio-aereo.md](../operacion/espacio-aereo.md)). Abastece a los nodos por carretera, fuera del sistema.
+- **MVP:** red regional de unos 45 km alrededor de Valledupar. Abarca la ciudad, los corregimientos del municipio, La Paz, San Diego, Manaure, Pueblo Bello y Agustín Codazzi: 5 nodos, 7 ESE y 14 puntos de entrega ([../negocio/cobertura.md](../negocio/cobertura.md)).
+- **Valledupar es el centro de la red.** Tiene nodo, ESE y puntos de entrega, y su nodo sirve de relevo para llegar más lejos (RF-55). Solo se veda el anillo de 1,5 km del aeropuerto y las zonas pequeñas de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md).
 - **Visión posterior:** otras regiones del Caribe con la misma red de nodos. Se reserva en el modelo de datos si es barato (la central ya tiene ubicación y tipo), pero **no** se entrega como producto multirregión.
 
 ## Incluido en el MVP
@@ -11,13 +11,13 @@
 - **Pedidos:** de **emergencia** (prioridad alta) y **programados** (calendario, franja y cantidad).
 - **Entrega según [`../entregas/`](../entregas/):** a una persona, en un **punto de entrega autorizado**; entre centrales, de un nodo a una ESE.
 - **Flota propia de tres tipos:** Colibrí, Garza y Cóndor, con compartimento de frío opcional y estados de disponibilidad ([../operacion/flota.md](../operacion/flota.md)).
-- **Espacio aéreo según el RAC 100:**
-  - aeródromo, zonas prohibidas con 2 km de margen, helipuertos, zonas coordinadas (policía municipal y resguardos), zona urbana y restricciones temporales;
+- **Espacio aéreo inspirado en el RAC 100, a escala de demo:**
+  - aeródromo (1,5 km), zonas prohibidas del tamaño del visor de la Aerocivil (policía y CAI, batallones, cárceles, plantas, pistas agrícolas), helipuertos y restricciones temporales;
   - las zonas legales vienen cargadas y el operador no las borra; el operador puede dibujar geovallas propias ([../operacion/espacio-aereo.md](../operacion/espacio-aereo.md)).
 - **Motor de decisión al autorizar:**
   - Filtra los drones por estado, carga, frío, batería sobre el perfil real, techo y corredor legal.
   - Elige por tipo de misión: la urgencia, el que llega antes; el programado, el que gasta menos.
-  - Rechaza lo que la norma no permite: de noche, zona urbana o destino fuera de alcance.
+  - Rechaza lo que la norma no permite: de noche o destino fuera de alcance, incluso con relevo en Valledupar.
   - La emergencia gana el recurso si hay competencia.
   - **No** asume que el insumo ya está a bordo ni inicia el vuelo.
 - **Carga.** El despachador ve la **referencia del dron asignado**, coloca el insumo sellado y **marca la carga**. Se emite el **manifiesto numerado** ([../operacion/manifiesto.md](../operacion/manifiesto.md)). Solo entonces arranca la simulación.
@@ -29,7 +29,7 @@
   - Panel de operador: posición, altitud sobre el terreno y sobre el nivel del mar, velocidad, batería, carga, temperatura de la carga, latencia y fase de vuelo.
 - **En destino:** el dron **espera 5 minutos** el código de entrega. Si no se ingresa, **regresa al nodo con el paquete**. El reingreso al inventario pasa por la cuarentena de [`../entregas/productos.md`](../entregas/productos.md).
 - **Cadena de frío** simulada y alerta si la temperatura sale de rango.
-- **Fallback:** alternativa terrestre si ningún dron es elegible, si es de noche (urgencia) o si el solicitante está en zona urbana.
+- **Fallback:** alternativa terrestre si ningún dron es elegible o si es de noche (urgencia).
 - **Dashboard epidemiológico** simple: qué se pide más y en qué municipio.
 - **Datos personales** ([../legal/datos.md](../legal/datos.md)): política de tratamiento versionada, datos de salud opcionales, revocar y suprimir la cuenta, y registro de acceso a fórmulas.
 - **Consola de simulación** en la web del administrador, proyectada en una TV (RU-32). Sirve para demostrar que el sistema responde bien ante situaciones realistas:

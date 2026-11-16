@@ -11,7 +11,6 @@ export const TEST_POINT: DeliveryPoint = {
   elevationM: 200,
   hubId: '00000000-0000-4000-8000-0000000000a1',
   active: true,
-  coordinatedZoneCode: null,
   createdAt: new Date('2026-11-01T00:00:00.000Z'),
   updatedAt: new Date('2026-11-01T00:00:00.000Z'),
 };

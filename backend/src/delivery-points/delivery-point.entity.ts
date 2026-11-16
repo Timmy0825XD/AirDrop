@@ -59,14 +59,6 @@ export class DeliveryPoint {
   @Column({ type: 'boolean', default: true })
   active: boolean;
 
-  /** RF-43: la zona coordinada donde está; su corredor es el pactado. */
-  @Column({
-    type: 'varchar',
-    length: FIELD_LIMITS.airspaceZoneCode,
-    nullable: true,
-  })
-  coordinatedZoneCode: string | null;
-
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 

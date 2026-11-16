@@ -66,14 +66,17 @@ describe('Tipo de red de la central (RF-06)', () => {
     expect(hubs.save).not.toHaveBeenCalled();
   });
 
-  it('no crea un nodo junto a una estación de policía (zona coordinada)', async () => {
+  it('no crea un nodo sobre una estación de policía', async () => {
     const { service } = build();
     await expect(
-      service.create(admin, dtoAt(HubNetworkRole.NODE, ESES.sanDiego)),
+      service.create(
+        admin,
+        dtoAt(HubNetworkRole.NODE, { latitude: 10.3364, longitude: -73.1815 }),
+      ),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('sí crea la ESE de San Diego dentro de la zona coordinada de su estación', async () => {
+  it('sí crea la ESE de San Diego, a 300 m de su estación', async () => {
     const { service } = build();
     const created = await service.create(
       admin,
