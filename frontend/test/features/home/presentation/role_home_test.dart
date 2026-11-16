@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/features/geofences/data/legal_zone_repository.dart';
 import 'package:frontend/app/providers.dart';
 import 'package:frontend/app/router.dart';
 import 'package:frontend/core/auth/token_store.dart';
@@ -538,6 +539,7 @@ Future<ProviderContainer> _authenticatedContainer({
         fleetRepositoryProvider.overrideWithValue(fleetRepository),
       if (geofenceRepository != null)
         geofenceRepositoryProvider.overrideWithValue(geofenceRepository),
+      legalZoneRepositoryProvider.overrideWithValue(LocalLegalZoneRepository()),
       if (userRepository != null)
         userRepositoryProvider.overrideWithValue(userRepository),
     ],

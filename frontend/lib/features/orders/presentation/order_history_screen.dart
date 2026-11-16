@@ -66,8 +66,7 @@ class OrderHistoryScreen extends ConsumerWidget {
           SegmentOption(true, 'En curso'),
         ],
         selected: onlyOpen,
-        onChanged: (open) =>
-            context.go(open ? openPath : '/orders/mine'),
+        onChanged: (open) => context.go(open ? openPath : '/orders/mine'),
       ),
       keyOf: (order) => order.id,
       itemBuilder: (context, order) => OrderTile(

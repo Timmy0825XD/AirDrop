@@ -39,7 +39,9 @@ class DeliveryCodeBadge extends StatelessWidget {
             fit: BoxFit.scaleDown,
             child: Text(
               code.split('').join(' '),
-              style: theme.textTheme.displaySmall?.copyWith(fontSize: 38).figure,
+              style: theme.textTheme.displaySmall
+                  ?.copyWith(fontSize: 38)
+                  .figure,
             ),
           ),
           const SizedBox(height: 8),

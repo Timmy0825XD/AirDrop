@@ -7,8 +7,9 @@ import 'package:frontend/features/auth/presentation/verify_otp_screen.dart';
 import 'package:frontend/theme/app_theme.dart';
 
 void main() {
-  testWidgets('Verificar se enciende solo con los 6 dígitos del código',
-      (WidgetTester tester) async {
+  testWidgets('Verificar se enciende solo con los 6 dígitos del código', (
+    WidgetTester tester,
+  ) async {
     tester.platformDispatcher.accessibilityFeaturesTestValue =
         const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);

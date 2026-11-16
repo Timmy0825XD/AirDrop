@@ -5,8 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/app/airdrop_app.dart';
 
 void main() {
-  testWidgets('Recuperar contraseña valida el correo antes de enviar',
-      (WidgetTester tester) async {
+  testWidgets('Recuperar contraseña valida el correo antes de enviar', (
+    WidgetTester tester,
+  ) async {
     tester.platformDispatcher.accessibilityFeaturesTestValue =
         const FakeAccessibilityFeatures(disableAnimations: true);
     addTearDown(tester.platformDispatcher.clearAccessibilityFeaturesTestValue);

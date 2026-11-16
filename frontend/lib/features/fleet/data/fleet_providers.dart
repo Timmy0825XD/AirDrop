@@ -174,7 +174,6 @@ final hubDronesProvider = FutureProvider.family<List<Drone>, String>((
   return ref.watch(fleetRepositoryProvider).listDrones(hubId);
 });
 
-
 /// Vuelos en curso de **todas** las centrales del operador, para que siga
 /// el mapa de cada dron en misión y el contador de la barra no se quede
 /// en una sola central. Se refresca cada 10 s en su pantalla y su inicio.

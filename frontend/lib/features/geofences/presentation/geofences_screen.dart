@@ -13,6 +13,7 @@ import '../data/geofence_models.dart';
 import '../data/geofence_providers.dart';
 import 'widgets/geofence_delete_confirm.dart';
 import 'widgets/geofence_tile.dart';
+import 'widgets/legal_zones_section.dart';
 import '../../../core/widgets/skeleton.dart';
 
 /// Las geovallas: zonas por donde el motor de rutas no deja pasar al dron.
@@ -52,26 +53,27 @@ class _GeofenceList extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return switch (ref.watch(geofencesProvider)) {
-      AsyncValue(hasValue: true, hasError: false, :final value?)
-          when value.isEmpty =>
-        const MessageView(
-          icon: Icons.polyline_rounded,
-          message: 'Aún no hay geovallas registradas.',
-        ),
+      // Arriba las del operador; abajo, las zonas legales (RF-43).
       AsyncValue(hasValue: true, hasError: false, :final value?) =>
         ListView.separated(
           padding: listPadding(context),
-          itemCount: value.length,
+          itemCount: value.length + 1,
           separatorBuilder: (_, _) => const SizedBox(height: 10),
-          itemBuilder: (context, i) => RiseIn(
-            key: ValueKey(value[i].id),
-            delay: RiseIn.stagger(i),
-            child: GeofenceTile(
-              geofence: value[i],
-              onTap: () => context.push('/geofences/${value[i].id}'),
-              onDelete: () => _deleteGeofence(context, ref, value[i]),
-            ),
-          ),
+          itemBuilder: (context, i) => i == value.length
+              ? LegalZonesSection(
+                  intro: value.isEmpty
+                      ? 'Aún no has creado geovallas. Usa "Nueva geovalla".'
+                      : null,
+                )
+              : RiseIn(
+                  key: ValueKey(value[i].id),
+                  delay: RiseIn.stagger(i),
+                  child: GeofenceTile(
+                    geofence: value[i],
+                    onTap: () => context.push('/geofences/${value[i].id}'),
+                    onDelete: () => _deleteGeofence(context, ref, value[i]),
+                  ),
+                ),
         ),
       AsyncError(:final error) => MessageView.error(
         message: ApiException.messageOf(error),

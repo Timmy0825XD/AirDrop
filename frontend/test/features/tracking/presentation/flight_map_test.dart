@@ -8,7 +8,9 @@ void main() {
     // flutter_map revienta con una línea vacía; el pedido aún sin
     // assignment llega con la ruta vacía.
     await tester.pumpWidget(
-      const MaterialApp(home: Scaffold(body: FlightMap(route: []))),
+      const MaterialApp(
+        home: Scaffold(body: FlightMap(route: [])),
+      ),
     );
 
     expect(tester.takeException(), isNull);
