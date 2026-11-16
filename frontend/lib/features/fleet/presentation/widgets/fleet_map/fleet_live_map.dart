@@ -4,6 +4,7 @@ import 'package:latlong2/latlong.dart';
 import '../../../../../core/widgets/app_map.dart';
 import '../../../data/fleet_flight.dart';
 import '../../../data/fleet_map_models.dart';
+import 'fleet_legal_zone_layer.dart';
 import 'fleet_map_layers.dart';
 
 /// El mapa en vivo del operador: sus centrales, las geovallas, el corredor
@@ -36,6 +37,7 @@ class FleetLiveMap extends StatelessWidget {
       fitPadding: EdgeInsets.fromLTRB(56, 150, 56, sheetHeight + 40),
       controlsPadding: EdgeInsets.only(right: 16, bottom: sheetHeight),
       layers: [
+        const FleetLegalZoneLayer(),
         FleetGeofenceLayer(geofences: map.geofences),
         FleetRoutesLayer(flights: map.flights),
         FleetHubsLayer(hubs: map.hubs),

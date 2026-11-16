@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/features/geofences/data/legal_zone_repository.dart';
 import 'package:frontend/features/geofences/data/geofence_models.dart';
 import 'package:frontend/features/geofences/data/geofence_providers.dart';
 import 'package:frontend/features/geofences/data/geofence_repository.dart';
@@ -51,7 +52,10 @@ Future<void> _pumpScreen(
   GeofenceRepository repository,
 ) async {
   final container = ProviderContainer(
-    overrides: [geofenceRepositoryProvider.overrideWithValue(repository)],
+    overrides: [
+      geofenceRepositoryProvider.overrideWithValue(repository),
+      legalZoneRepositoryProvider.overrideWithValue(LocalLegalZoneRepository()),
+    ],
   );
   addTearDown(container.dispose);
 
@@ -93,7 +97,25 @@ void main() {
   testWidgets('sin geovallas muestra el estado vacío', (tester) async {
     await _pumpScreen(tester, _FakeGeofenceRepository([]));
 
-    expect(find.text('Aún no hay geovallas registradas.'), findsOneWidget);
+    expect(
+      find.text('Aún no has creado geovallas. Usa "Nueva geovalla".'),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('debajo muestra las zonas legales, de solo lectura (RF-43)', (
+    tester,
+  ) async {
+    await _pumpScreen(tester, _FakeGeofenceRepository([_geofence()]));
+
+    expect(find.text('Zonas legales'), findsOneWidget);
+    expect(find.text('CAI Gobernación'), findsOneWidget);
+    expect(find.text('Norma · no se edita'), findsNWidgets(2));
+
+    await tester.tap(find.text('CAI Gobernación'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('RAC 100.315(a)(13)'), findsOneWidget);
+    expect(find.text('Eliminar'), findsNothing);
   });
 
   testWidgets('borrar pide confirmación y quita la fila', (tester) async {

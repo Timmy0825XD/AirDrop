@@ -6,6 +6,8 @@ import '../../../core/data/data_source_config.dart';
 import '../../auth/presentation/auth_controller.dart';
 import 'geofence_models.dart';
 import 'geofence_repository.dart';
+import 'legal_zone_models.dart';
+import 'legal_zone_repository.dart';
 import 'local_geofence_repository.dart';
 import 'remote_geofence_repository.dart';
 
@@ -21,6 +23,22 @@ final geofenceRepositoryProvider = Provider<GeofenceRepository>((ref) {
     DataSource.local => LocalGeofenceRepository(tokenStore: tokenStore),
     DataSource.remote => RemoteGeofenceRepository(apiClient: apiClient),
   };
+});
+
+/// RF-43: de dónde salen las zonas legales. Mismo interruptor de origen.
+final legalZoneRepositoryProvider = Provider<LegalZoneRepository>((ref) {
+  ref.watch(sessionUserIdProvider);
+  return switch (appDataSource) {
+    DataSource.local => LocalLegalZoneRepository(),
+    DataSource.remote => RemoteLegalZoneRepository(
+      apiClient: ref.watch(apiClientProvider),
+    ),
+  };
+});
+
+/// Las zonas legales, de solo lectura.
+final legalZonesProvider = FutureProvider<List<LegalZone>>((ref) {
+  return ref.watch(legalZoneRepositoryProvider).list();
 });
 
 /// Listado de geovallas. Cada mutación lo invalida, así la pantalla se
