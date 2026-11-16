@@ -27,7 +27,7 @@ export const ONLY_STOCK_NOTE =
 export type EvaluationView = {
   lot: object | null;
   drones: Array<{ id: string; identifier: string; droneModelId: string }>;
-  modelsById: Map<string, { maxRangeKm: number }>;
+  modelsById: Map<string, { maxRangeKm: number; name?: string }>;
   corridor: PlannedCorridor | null;
   choice: { chosen: ChosenDrone | null; discarded: DiscardedDrone[] };
   etaMs: number | null;
@@ -164,6 +164,7 @@ function droneVerdicts(evaluation: EvaluationView): DroneVerdict[] {
     if (chosen?.droneId === drone.id) {
       return {
         identifier: drone.identifier,
+        typeName: typeNameOf(evaluation, drone),
         status: 'chosen',
         reason: null,
         preempts: chosen.preemptsOrderId != null,
@@ -173,12 +174,20 @@ function droneVerdicts(evaluation: EvaluationView): DroneVerdict[] {
     const reason = reasons.get(drone.id);
     return {
       identifier: drone.identifier,
+      typeName: typeNameOf(evaluation, drone),
       status: reason ? 'discarded' : 'eligible',
       reason: reason ?? null,
       preempts: false,
       batteryPercent,
     };
   });
+}
+
+function typeNameOf(
+  evaluation: EvaluationView,
+  drone: { droneModelId: string },
+): string | null {
+  return evaluation.modelsById.get(drone.droneModelId)?.name ?? null;
 }
 
 function roundTo(value: number, digits: number): number {

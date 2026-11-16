@@ -23,6 +23,7 @@ import {
   TIMELINE_KEY,
   TIMELINE_MAX,
   TimelineDraft,
+  categoryOf,
   TimelineEntry,
   alertDraft,
   clockDraft,
@@ -161,6 +162,8 @@ export class TimelineService implements OnModuleInit {
   ): Promise<void> {
     await this.record({
       kind: 'console',
+      // Lo que sortea el caos (clima, fallas, apagones) es parte de la historia.
+      category: 'environment',
       severity: 'warning',
       title,
       detail,
@@ -364,6 +367,8 @@ export class TimelineService implements OnModuleInit {
   private async record(draft: TimelineDraft): Promise<void> {
     const entry: TimelineEntry = {
       ...draft,
+      category: categoryOf(draft),
+      explanation: draft.explanation ?? null,
       id: randomUUID(),
       at: simClock.now().toISOString(),
     };
