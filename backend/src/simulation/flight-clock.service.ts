@@ -85,6 +85,9 @@ import {
 } from './simulation.rules';
 import { simClock } from '../common/clock/sim-clock';
 
+/** Cada cuántos ticks (de 2 s) se buscan aterrizajes sin vuelo: ~1 min. */
+const ORPHAN_CHECK_EVERY_TICKS = 30;
+
 export const DRONE_NOT_FLYING =
   'Ese dron no está en vuelo: el evento no aplica.';
 export const NO_COLD_LOAD =
@@ -166,6 +169,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     [];
   private timer: NodeJS.Timeout | null = null;
   private ticking = false;
+  private tickCount = 0;
 
   constructor(
     @InjectRepository(Order)
@@ -208,6 +212,7 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     }
     await this.resume();
     await this.resumeWaiting();
+    await this.settleOrphanLandings();
     this.timer = setInterval(() => {
       void this.tickAll();
     }, TICK_MS);
@@ -684,6 +689,50 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     );
   }
 
+  /**
+   * RF-34: un aterrizaje de emergencia sin vuelo que lo baje (el backend se
+   * reinició a mitad del descenso) se da por terminado donde iba a bajar. Así
+   * sale el rescate y el mapa deja de mostrarlo "aterrizando".
+   */
+  async settleOrphanLandings(): Promise<number> {
+    const orphans = await this.incidents.orphanLandings([
+      ...this.active.keys(),
+    ]);
+    for (const incident of orphans) {
+      try {
+        const at = {
+          latitude: incident.landingLatitude ?? incident.latitude,
+          longitude: incident.landingLongitude ?? incident.longitude,
+        };
+        const landed = simClock.now();
+        await this.drones.update(
+          { id: incident.droneId },
+          {
+            status: DroneStatus.GROUNDED,
+            batteryPercent: incident.batteryPercent,
+            batteryUpdatedAt: landed,
+            lastFlightEndedAt: landed,
+          },
+        );
+        await this.incidents.grounded(incident.id, at);
+        if (incident.leg === RouteLeg.OUTBOUND) {
+          await this.notifyAborted(incident.orderId);
+        } else {
+          await this.telemetry.forgetFlight(incident.orderId);
+        }
+        this.logger.warn(
+          `Aterrizaje de emergencia de ${incident.droneId} sin vuelo activo: queda en tierra y sale el rescate.`,
+        );
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'aterrizaje';
+        this.logger.error(
+          `No se pudo cerrar el aterrizaje de ${incident.droneId}: ${message}`,
+        );
+      }
+    }
+    return orphans.length;
+  }
+
   /** En tierra fuera de base, por aterrizaje de emergencia o por choque. */
   private async groundDrone(
     session: FlightSession,
@@ -1117,6 +1166,11 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
       } catch (error) {
         const message = error instanceof Error ? error.message : 'espera';
         this.logger.error(`No se pudo vencer la espera: ${message}`);
+      }
+      // Cada minuto, más o menos: un aterrizaje que quedó sin vuelo se cierra.
+      this.tickCount += 1;
+      if (this.tickCount % ORPHAN_CHECK_EVERY_TICKS === 0) {
+        await this.settleOrphanLandings();
       }
     } finally {
       this.ticking = false;
