@@ -5,10 +5,10 @@ import type { MapRef } from "react-map-gl/maplibre";
 import Supercluster from "supercluster";
 import type { DeliveryPoint, HubSummary } from "@/lib/types";
 
-/** Distancia en px en que dos sitios se juntan: un ícono y su nombre no se pisan. */
-const CLUSTER_RADIUS_PX = 56;
-/** Desde este zoom se ve cada sitio por separado. */
-const CLUSTER_MAX_ZOOM = 13;
+/** Distancia en px en que dos sitios se juntan: solo cuando de verdad se encimarían. */
+const CLUSTER_RADIUS_PX = 38;
+/** Desde este zoom se ve cada sitio por separado (la región entera ya se lee). */
+const CLUSTER_MAX_ZOOM = 10;
 
 type SiteProps = { site: "hub" | "point"; id: string };
 

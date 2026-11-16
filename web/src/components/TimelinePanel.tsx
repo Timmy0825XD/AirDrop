@@ -112,23 +112,32 @@ export function TimelinePanel({ open, status, offMessage, entries, onToggle, onP
         </IconButton>
       </header>
 
-      <div role="group" aria-label="Filtrar por tipo" className="flex flex-wrap gap-1.5 px-5 pb-3">
-        {FILTERS.map((option) => {
-          const active = filter === option.id;
-          return (
-            <button
-              key={option.id}
-              type="button"
-              aria-pressed={active}
-              onClick={() => setFilter(option.id)}
-              className={`press h-8 rounded-full px-3 text-[12px] font-semibold ${
-                active ? "bg-accent text-on-accent" : "border border-line text-text hover:bg-hover"
-              }`}
-            >
-              {option.label}
-            </button>
-          );
-        })}
+      {/* Un selector segmentado, en una sola línea, como los de la app. */}
+      <div className="px-4 pb-3">
+        <div
+          role="group"
+          aria-label="Filtrar por tipo"
+          className="flex rounded-xl border border-line bg-raised p-1"
+        >
+          {FILTERS.map((option) => {
+            const active = filter === option.id;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => setFilter(option.id)}
+                className={`press h-8 min-w-0 flex-1 truncate rounded-lg px-1 text-[12px] font-semibold transition-colors ${
+                  active
+                    ? "bg-panel text-text shadow-[0_1px_4px_var(--shadow)]"
+                    : "text-muted hover:text-text"
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
       <div className="h-px bg-line" />
 
@@ -189,7 +198,7 @@ function EntryRow({
         aria-expanded={hasMore ? open : undefined}
         className="flex w-full items-center gap-3 rounded-[14px] px-2.5 py-2.5 text-left hover:bg-hover/60"
       >
-        <span className="figures w-10 shrink-0 text-[12px] text-muted">{formatTime(entry.at)}</span>
+        <span className="figures w-[62px] shrink-0 text-[12px] text-muted">{formatTime(entry.at)}</span>
         <span
           className={`size-2 shrink-0 rounded-full ${open && sections ? "bg-accent" : MARK[entry.severity]}`}
         />
@@ -208,7 +217,7 @@ function EntryRow({
       </button>
 
       {open && hasMore && (
-        <div className="enter-up space-y-3 pb-3.5 pl-[66px] pr-4">
+        <div className="enter-up space-y-3 pb-3.5 pl-[92px] pr-4">
           {sections
             ? sections.map((section) => (
                 <div key={section.title} className="space-y-1.5">

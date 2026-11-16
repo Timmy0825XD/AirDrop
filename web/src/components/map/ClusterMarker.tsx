@@ -9,9 +9,11 @@ type Props = {
   onExpand: (cluster: SiteCluster) => void;
 };
 
-/** Un globo con cuántos sitios hay juntos. Tocarlo acerca el mapa hasta separarlos. */
+/**
+ * Una píldora que dice cuántos sitios hay juntos ("6 sitios"), para que se
+ * entienda sin leyenda. Tocarla acerca el mapa hasta separarlos.
+ */
 function ClusterMarkerView({ cluster, onExpand }: Props) {
-  const size = cluster.count >= 10 ? "size-12 text-[15px]" : "size-10 text-[14px]";
   const label =
     cluster.hubs > 0
       ? `${cluster.count} sitios juntos, ${cluster.hubs} centrales. Acercar`
@@ -25,9 +27,11 @@ function ClusterMarkerView({ cluster, onExpand }: Props) {
           event.stopPropagation();
           onExpand(cluster);
         }}
-        className={`press grid place-items-center rounded-full border-2 border-accent bg-panel font-bold text-text shadow-[0_0_0_6px_color-mix(in_srgb,var(--accent)_18%,transparent)] hover:shadow-[0_0_0_9px_color-mix(in_srgb,var(--accent)_22%,transparent)] focus-visible:ring-2 focus-visible:ring-accent ${size}`}
+        title="Acercar para ver cada sitio"
+        className="press flex h-9 items-center gap-1.5 rounded-full border-2 border-accent bg-panel px-3 text-[13px] text-text shadow-[0_0_0_5px_color-mix(in_srgb,var(--accent)_16%,transparent)] hover:shadow-[0_0_0_8px_color-mix(in_srgb,var(--accent)_22%,transparent)] focus-visible:ring-2 focus-visible:ring-accent"
       >
-        <span className="figures">{cluster.count}</span>
+        <span className="figures text-[15px] font-bold">{cluster.count}</span>
+        <span className="font-medium text-muted">sitios</span>
       </button>
     </Marker>
   );
