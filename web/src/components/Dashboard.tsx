@@ -133,16 +133,23 @@ export function Dashboard({ source, userName, onLogout }: Props) {
 
   /** Lleva el mapa al punto y, si el pedido sigue volando, abre su vuelo. */
   const show = useCallback(
-    (point: { orderId: string | null; latitude: number | null; longitude: number | null }) => {
+    (point: {
+      orderId: string | null;
+      hubId?: string | null;
+      latitude: number | null;
+      longitude: number | null;
+    }) => {
       const live = point.orderId ? data.flights.find((f) => f.orderId === point.orderId) : undefined;
       if (live) setSelection({ kind: "flight", id: live.orderId });
-      const latitude = live?.latitude ?? point.latitude;
-      const longitude = live?.longitude ?? point.longitude;
+      // Sin posición del paso, la central que lo protagoniza (p. ej. la que autorizó).
+      const hub = point.hubId ? data.hubs.find((row) => row.id === point.hubId) : undefined;
+      const latitude = live?.latitude ?? point.latitude ?? hub?.latitude ?? null;
+      const longitude = live?.longitude ?? point.longitude ?? hub?.longitude ?? null;
       if (latitude != null && longitude != null) {
         setFocus({ latitude, longitude, key: Date.now() });
       }
     },
-    [data.flights],
+    [data.flights, data.hubs],
   );
 
   const pickEntry = useCallback((entry: TimelineEntry) => show(entry), [show]);
@@ -320,7 +327,6 @@ export function Dashboard({ source, userName, onLogout }: Props) {
       ? `Escenario reiniciado: ${consola.state.lastReset.orders} pedidos borrados y ${consola.state.lastReset.drones} drones en su central.`
       : null);
 
-  const available = data.hubs.reduce((sum, hub) => sum + hub.fleet.available, 0);
 
   return (
     <main
@@ -368,7 +374,6 @@ export function Dashboard({ source, userName, onLogout }: Props) {
           status={consola.state.status}
           offMessage={consola.state.offMessage}
           entries={consola.state.timeline}
-          counters={{ hubs: data.hubs.length, flights: data.flights.length, available }}
           onToggle={() => setTimelineOpen((value) => !value)}
           onPick={pickEntry}
         />
