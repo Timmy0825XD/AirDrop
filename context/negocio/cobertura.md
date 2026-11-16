@@ -1,6 +1,6 @@
 # Cobertura regional
 
-La demo cubre unos 45 km alrededor de Valledupar: la ciudad, los corregimientos del municipio, y La Paz, San Diego, Manaure, Pueblo Bello y Agustín Codazzi. Valledupar está en el centro de la red. Tiene su propio nodo, sus ESE y sus puntos de entrega, y además sirve de **relevo**: un dron que no alcanza su destino en un solo tramo hace escala ahí ([Relevo en Valledupar](#relevo-en-valledupar)). En la ciudad solo está vedado el anillo de 1,5 km del aeropuerto y las zonas pequeñas de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md).
+La demo cubre unos 45 km alrededor de Valledupar: la ciudad, los corregimientos del municipio, y La Paz, San Diego, Manaure, Pueblo Bello y Agustín Codazzi. Valledupar está en el centro de la red: tiene su propio nodo, sus ESE y sus puntos de entrega. En la ciudad solo está vedado el anillo de 1,5 km del aeropuerto y las zonas pequeñas de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md).
 
 ## Los tres tipos de sitio
 
@@ -23,7 +23,7 @@ Las coordenadas de municipios y corregimientos son las de GeoNames (consultadas 
 
 | Nodo | Lat | Lon | Elevación | Al ARP | Atiende |
 | --- | --- | --- | --- | --- | --- |
-| Nodo Valledupar | 10.4790 | −73.2350 | 170 m | 5,1 km | La ciudad, y relevo de toda la red |
+| Nodo Valledupar | 10.4790 | −73.2350 | 170 m | 5,1 km | La ciudad de Valledupar |
 | Nodo Norte (Río Seco) | 10.6075 | −73.2237 | 235 m | 19,4 km | Corregimientos del norte y la Sierra |
 | Nodo Sur (La Paz – San Diego) | 10.3550 | −73.1400 | 170 m | 14,9 km | ESE La Paz, ESE San Diego, ESE Manaure, Media Luna |
 | Nodo Occidente (Valencia de Jesús) | 10.3000 | −73.4050 | 185 m | 22,7 km | Valle del Cesar occidental y Pueblo Bello |
@@ -66,7 +66,7 @@ Las coordenadas de municipios y corregimientos son las de GeoNames (consultadas 
 | --- | --- | --- | --- |
 | Villa Germania (614 m, detrás de lomas) | Occidente | 34,1 km | 117 % |
 
-Chemesquemena (1.427 m, a 22,6 km del Nodo Norte) queda al límite: el Colibrí pide el 99 %. Con un margen tan justo no se ofrece como punto. Nabusímake (2.135 m) tampoco es punto de entrega: queda más lejos y más alto (130 %). Los tres sirven para explicar el límite de la red, incluso con relevo: ahí sigue la alternativa terrestre.
+Chemesquemena (1.427 m, a 22,6 km del Nodo Norte) queda al límite: el Colibrí pide el 99 %. Con un margen tan justo no se ofrece como punto. Nabusímake (2.135 m) tampoco es punto de entrega: queda más lejos y más alto (130 %). Los tres sirven para explicar el límite de la red: ahí sigue la alternativa terrestre.
 
 La ESE de Pueblo Bello (1.108 m, a 23 km del Nodo Occidente) solo la alcanza el Colibrí (87 %): su reabastecimiento va en entregas de hasta 2 kg.
 
@@ -83,27 +83,5 @@ Cada misión es de ida y vuelta por el mismo corredor (si nadie recibe, el dron 
 | Cóndor | 30 km | 10 km |
 
 El terreno y el viento lo reducen: subir cuesta energía ([../operacion/condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md)). El motor hace la cuenta real sobre el perfil de cada ruta; por eso un punto de montaña a 23 km puede quedar fuera aunque esté dentro del radio en plano. La tabla solo sirve para ubicar los nodos.
-
-## Relevo en Valledupar
-
-El insumo a veces está solo en un nodo que queda lejos del destino. Si ningún dron de los nodos que tienen el insumo alcanza el destino ida y vuelta en un solo tramo, el motor prueba la misma misión **con escala en el Nodo Valledupar**:
-
-1. El dron sale de su nodo con el paquete y vuela al Nodo Valledupar.
-2. Aterriza. En Valledupar le cambian la batería por una llena; esto toma **5 minutos** simulados. El paquete no se baja, y el manifiesto es el mismo.
-3. Sale de Valledupar hacia el destino y entrega.
-4. Vuelve a Valledupar, cambia la batería otra vez y regresa a su nodo. Si nadie recibió, el paquete hace el mismo camino de vuelta.
-
-Las reglas:
-
-- **Una sola escala**, y solo en el Nodo Valledupar.
-- **Cada tramo cierra con su propia batería**, con la reserva del 20 %:
-  - el nodo de origen → Valledupar;
-  - Valledupar → destino → Valledupar;
-  - Valledupar → nodo de origen.
-- Toda la misión, escalas incluidas, tiene que **terminar antes de la puesta del sol** (RF-44).
-- Si hay ruta directa, gana la directa. El relevo solo entra cuando la directa no existe.
-- En la decisión del pedido queda dicho que hubo relevo y por qué.
-
-El relevo no cambia el dron ni el paquete, solo la batería. Si con relevo tampoco alcanza, va la alternativa terrestre.
 
 Las ubicaciones exactas de los dronpuertos de una operación real se definirían con cada ESE, cada alcaldía y cada comunidad. En la demo son ilustrativas.

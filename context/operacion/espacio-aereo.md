@@ -89,4 +89,3 @@ OpenStreetMap no es una fuente oficial. Antes de una operación real habría que
 - El planificador busca el camino más corto que no toque ninguna zona prohibida, del aeródromo, de un helipuerto ni una zona temporal activa. Le deja **150 m** de holgura al borde.
 - En vuelo, el dron no se aparta más de **30 m** del corredor aprobado (RAC 100.445). Si el clima o una zona temporal obligan a salirse, eso es un desvío replanificado, no una deriva.
 - Un corredor es una línea en planta. La altura la fija [condiciones-de-vuelo.md](condiciones-de-vuelo.md).
-- Si ningún nodo alcanza el destino en un solo tramo, la ruta puede hacer **escala en el Nodo Valledupar** ([../negocio/cobertura.md](../negocio/cobertura.md#relevo-en-valledupar)).

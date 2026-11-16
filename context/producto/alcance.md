@@ -3,7 +3,7 @@
 ## Entorno geográfico
 
 - **MVP:** red regional de unos 45 km alrededor de Valledupar. Abarca la ciudad, los corregimientos del municipio, La Paz, San Diego, Manaure, Pueblo Bello y Agustín Codazzi: 5 nodos, 7 ESE y 14 puntos de entrega ([../negocio/cobertura.md](../negocio/cobertura.md)).
-- **Valledupar es el centro de la red.** Tiene nodo, ESE y puntos de entrega, y su nodo sirve de relevo para llegar más lejos (RF-55). Solo se veda el anillo de 1,5 km del aeropuerto y las zonas pequeñas de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md).
+- **Valledupar es el centro de la red.** Tiene nodo, ESE y puntos de entrega. Solo se veda el anillo de 1,5 km del aeropuerto y las zonas pequeñas de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md).
 - **Visión posterior:** otras regiones del Caribe con la misma red de nodos. Se reserva en el modelo de datos si es barato (la central ya tiene ubicación y tipo), pero **no** se entrega como producto multirregión.
 
 ## Incluido en el MVP
@@ -17,7 +17,7 @@
 - **Motor de decisión al autorizar:**
   - Filtra los drones por estado, carga, frío, batería sobre el perfil real, techo y corredor legal.
   - Elige por tipo de misión: la urgencia, el que llega antes; el programado, el que gasta menos.
-  - Rechaza lo que la norma no permite: de noche o destino fuera de alcance, incluso con relevo en Valledupar.
+  - Rechaza lo que la norma no permite: de noche o destino fuera de alcance.
   - La emergencia gana el recurso si hay competencia.
   - **No** asume que el insumo ya está a bordo ni inicia el vuelo.
 - **Carga.** El despachador ve la **referencia del dron asignado**, coloca el insumo sellado y **marca la carga**. Se emite el **manifiesto numerado** ([../operacion/manifiesto.md](../operacion/manifiesto.md)). Solo entonces arranca la simulación.

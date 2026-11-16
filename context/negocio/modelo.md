@@ -1,6 +1,6 @@
 # Modelo de negocio
 
-AirDrop es una red regional de entrega de medicamentos con drones para el área rural de Valledupar y los municipios vecinos del Cesar. Valledupar es el centro de la red: tiene su nodo, sus ESE y sus puntos, y su nodo sirve de relevo para llegar más lejos ([cobertura.md](cobertura.md)). Aun así, el dron sirve sobre todo donde el problema es real: corregimientos y veredas a horas por carretera, vías destapadas o cortadas por el invierno, y la Sierra Nevada.
+AirDrop es una red regional de entrega de medicamentos con drones para el área rural de Valledupar y los municipios vecinos del Cesar. Valledupar es el centro de la red: tiene su nodo, sus ESE y sus puntos ([cobertura.md](cobertura.md)). Aun así, el dron sirve sobre todo donde el problema es real: corregimientos y veredas a horas por carretera, vías destapadas o cortadas por el invierno, y la Sierra Nevada.
 
 ## Problema que resuelve
 
