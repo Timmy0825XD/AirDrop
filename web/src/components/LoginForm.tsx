@@ -25,7 +25,7 @@ function Field({
       <label htmlFor={id} className="text-[13px] font-medium text-muted">
         {label}
       </label>
-      <div className="mt-2 flex h-11 items-center rounded-lg border border-line bg-panel transition-[border-color,box-shadow] duration-150 focus-within:border-accent focus-within:shadow-[0_0_0_3px_rgb(122_167_255/0.18)] hover:border-line-strong">
+      <div className="mt-2 flex h-11 items-center rounded-lg border border-line bg-panel transition-[border-color,box-shadow] duration-150 focus-within:border-accent focus-within:shadow-[0_0_0_3px_color-mix(in_srgb,var(--accent)_18%,transparent)] hover:border-line-strong">
         {children}
         {trailing}
       </div>

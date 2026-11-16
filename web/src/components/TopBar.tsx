@@ -2,8 +2,9 @@
 
 import type { ReactNode } from "react";
 import type { Connection } from "@/lib/source";
+import type { Theme } from "@/lib/theme";
 import { Wordmark } from "./BrandMark";
-import { LogoutIcon, ResetIcon, ShieldIcon } from "./icons";
+import { LogoutIcon, MoonIcon, ResetIcon, ShieldIcon, SunIcon } from "./icons";
 import { IconButton, Pill, type Tone } from "./ui";
 
 const CONNECTION: Record<Connection, { text: string; tone: Tone; live: boolean }> = {
@@ -29,11 +30,14 @@ type Props = {
   /** Reiniciar el escenario (RF-40); `null` con la consola apagada. */
   onReset: (() => void) | null;
   busy: boolean;
+  theme: Theme;
+  onToggleTheme: () => void;
 };
 
 /**
- * La barra de la consola: quién es (marca), qué hora es en la simulación y
- * los mandos que se usan poco. Fina y sólida; lo vivo está en el mapa.
+ * La barra de la consola: tarjetas que flotan sobre el mapa, como en la app.
+ * A la izquierda quién es (marca), al centro la hora simulada y a la derecha
+ * los mandos. Entre tarjetas el mapa sigue visible.
  */
 export function TopBar({
   connection,
@@ -47,12 +51,13 @@ export function TopBar({
   daylight,
   onReset,
   busy,
+  theme,
+  onToggleTheme,
 }: Props) {
   const status = CONNECTION[connection];
   return (
-    <header className="relative z-30 flex h-16 shrink-0 items-center gap-3 border-b border-line bg-panel px-3 sm:gap-4 sm:px-5">
-      {/* En celular cada lado ocupa lo suyo; desde sm, la hora queda al centro. */}
-      <div className="flex min-w-0 items-center gap-3 sm:flex-1">
+    <header className="pointer-events-none absolute inset-x-3 top-3 z-30 flex items-center gap-2 sm:inset-x-5 sm:top-5 sm:gap-3">
+      <div className="surface pointer-events-auto flex h-14 min-w-0 shrink-0 items-center gap-3 rounded-2xl px-3">
         <span className="shrink-0">
           <Wordmark caption="Consola de simulación" />
         </span>
@@ -66,9 +71,14 @@ export function TopBar({
         )}
       </div>
 
-      {clock}
+      <div className="surface pointer-events-auto flex h-14 shrink-0 items-center gap-2 rounded-2xl px-2">
+        {clock}
+        {daylight}
+      </div>
 
-      <div className="ml-auto flex items-center justify-end gap-2 sm:ml-0 sm:flex-1">
+      <div className="flex-1" />
+
+      <div className="surface pointer-events-auto flex h-14 shrink-0 items-center justify-end gap-1.5 rounded-2xl px-2">
         <span role="status" className="mr-1 flex items-center gap-2 text-[13px] text-muted" title={status.text}>
           <span className={`relative flex size-2 ${status.tone === "good" ? "text-success" : status.tone === "bad" ? "text-danger" : "text-warning"}`}>
             {status.live && (
@@ -78,7 +88,6 @@ export function TopBar({
           </span>
           <span className="hidden lg:inline">{status.text}</span>
         </span>
-        {daylight}
         {actors}
         <span className="hidden md:block">
           <IconButton
@@ -97,6 +106,12 @@ export function TopBar({
             </IconButton>
           </span>
         )}
+        <IconButton
+          label={theme === "dark" ? "Cambiar a tema claro" : "Cambiar a tema oscuro"}
+          onClick={onToggleTheme}
+        >
+          {theme === "dark" ? <SunIcon size={18} /> : <MoonIcon size={18} />}
+        </IconButton>
         {!demo && (
           <IconButton label={userName ? `Salir (${userName})` : "Salir"} onClick={onLogout}>
             <LogoutIcon size={18} />

@@ -94,7 +94,7 @@ export function Legend() {
             <Item mark={<AlertIcon size={17} className="text-danger" />}>Espera rescate</Item>
             <Item
               mark={
-                <span className="size-3.5 rounded-[3px] border border-magenta bg-[repeating-linear-gradient(135deg,rgb(224_90_214/0.35)_0_2px,transparent_2px_5px)]" />
+                <span className="size-3.5 rounded-[3px] border border-magenta bg-[repeating-linear-gradient(135deg,color-mix(in_srgb,var(--magenta)_35%,transparent)_0_2px,transparent_2px_5px)]" />
               }
             >
               Zona restringida
