@@ -187,6 +187,9 @@ export class AuthService {
       // RF-50: revocar deja la cuenta inactiva.
       throw new ForbiddenException(CONSENT_REVOKED_LOGIN);
     }
+    if (user.status === UserStatus.DELETED) {
+      throw new ForbiddenException('Esta cuenta ya no está disponible.');
+    }
     Object.assign(user, clearLockState(user.status));
     await this.usersService.save(user);
     return this.tokenResponse(user);

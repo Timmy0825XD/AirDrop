@@ -93,7 +93,10 @@ export function nextFailedLoginState(
   if (failedLoginCount >= LOGIN_MAX_ATTEMPTS) {
     return {
       failedLoginCount,
-      status: UserStatus.LOCKED,
+      // El bloqueo temporal no sustituye una restricción de la cuenta:
+      // al vencer, solo una cuenta antes activa puede volver a ACTIVE.
+      status:
+        user.status === UserStatus.ACTIVE ? UserStatus.LOCKED : user.status,
       lockedUntil: new Date(now.getTime() + LOGIN_LOCK_MS),
     };
   }
