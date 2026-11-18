@@ -23,7 +23,7 @@ La persona puede además ajustar la app desde **Ajustes** (RF-52): tamaño del t
 
 ## Identidad y estados (RNF-18)
 
-El concepto visual es **"Corredor"**: la línea de puntos que une la central con el punto de entrega es el motivo de la app. Ordena la tarjeta del pedido, marca el avance y guía la bienvenida.
+El concepto visual es **"Corredor"**: la línea de puntos que une la central con el destino es el motivo de la app. Ordena la tarjeta del pedido, marca el avance y guía la bienvenida.
 
 - **Marca.** Los colores, el logo y la tipografía salen del manual de marca. El acento es uno solo. El degradado vive solo en la ficha del logo y el logo no se rota.
 - **Superficies.** Tres niveles (fondo, tarjeta y hundido) que se distinguen por borde o sombra suave, no solo por el tono.

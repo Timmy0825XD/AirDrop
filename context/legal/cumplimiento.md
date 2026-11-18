@@ -10,8 +10,8 @@ Qué obligación sale de cada norma y qué hace AirDrop con ella. AirDrop es un 
 
 | Obligación | Norma | Dónde |
 | --- | --- | --- |
-| Sin entregas nocturnas | RAC 100.220(a)(3) | [condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md) |
-| Observador en el punto de entrega; 30 m de personas (simplificado: se vuela sobre la ciudad) | RAC 100.220(b), 100.320 | [espacio-aereo.md](../operacion/espacio-aereo.md), [../entregas/persona.md](../entregas/persona.md) |
+| Sin entregas nocturnas (simplificado: se vuela a cualquier hora, RF-44) | RAC 100.220(a)(3) | [condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md) |
+| Observador en el destino; 30 m de personas (simplificado: no se verifica y se vuela sobre la ciudad, RF-45) | RAC 100.220(b), 100.320 | [espacio-aereo.md](../operacion/espacio-aereo.md), [../entregas/persona.md](../entregas/persona.md) |
 | Anillo del aeropuerto (1,5 km en la demo; 9 km en la norma) | RAC 100.315(a)(14) | [espacio-aereo.md](../operacion/espacio-aereo.md) |
 | Bases, policía, cárceles e infraestructura crítica (tamaño del visor en la demo; 2 km en la norma) | RAC 100.315(a)(13) | [espacio-aereo.md](../operacion/espacio-aereo.md) |
 | Helipuertos (300 m en la demo; 3 km en la norma) | RAC 100.315(a)(15) | [espacio-aereo.md](../operacion/espacio-aereo.md) |

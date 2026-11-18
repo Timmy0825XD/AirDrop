@@ -39,7 +39,7 @@ La arquitectura prevista multi-ciudad (varias centrales, varios drones) se **mod
 Los mismos nombres en backend (módulos Nest) y, en lo posible, en frontend (features):
 
 1. **Auth** — registro solo del solicitante, OTP, JWT, roles. Despachador y operador los crea el admin.
-2. **Hubs (centrales)** — nodos y ESE, alta y suspensión por el administrador, perfil, puntos de entrega.
+2. **Hubs (centrales)** — alta y suspensión por el administrador, perfil.
 3. **Inventory** — existencias, lote, vencimiento, cadena de frío y tipo de venta.
 4. **Fleet** — drones, `DroneModel` de los tres tipos, compartimento de frío, estados, mantenimiento.
 5. **Geofences** — polígonos PostGIS.
@@ -52,7 +52,7 @@ Los mismos nombres en backend (módulos Nest) y, en lo posible, en frontend (fea
 12. **Analytics** — dashboard epidemiológico y métricas admin (consultas SQL, no un data warehouse).
 13. **Weather** — celdas de clima simulado; responde si un punto o una ruta se puede volar y con qué viento.
 14. **Control** — consola de simulación: reloj, eventos, actores simulados, modo caos, línea de tiempo y reinicio. No tiene reglas propias: usa los servicios de los demás dominios.
-15. **Airspace** — zonas legales del RAC 100, corredores pactados, malla de terreno y luz del día.
+15. **Airspace** — zonas legales del RAC 100, corredores pactados y malla de terreno.
 
 No hace falta un “bounded context” formal ni eventos de dominio entre estos módulos: llamadas de servicio y, si hace falta, un `EventEmitter` de Nest **dentro del mismo proceso**.
 

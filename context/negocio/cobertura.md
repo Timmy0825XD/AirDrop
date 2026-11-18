@@ -1,37 +1,33 @@
 # Cobertura regional
 
-La demo cubre unos 45 km alrededor de Valledupar: la ciudad, los corregimientos del municipio, y La Paz, San Diego, Manaure, Pueblo Bello y Agustín Codazzi. Valledupar está en el centro de la red: tiene su propio nodo, sus ESE y sus puntos de entrega. En la ciudad solo está vedado el anillo de 1,5 km del aeropuerto y las zonas pequeñas de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md).
+La demo cubre unos 45 km alrededor de Valledupar: la ciudad, los corregimientos del municipio, y La Paz, San Diego, Manaure, Pueblo Bello y Agustín Codazzi. Valledupar está en el centro de la red: tiene varias centrales. En la ciudad solo está vedado el anillo de 1,5 km del aeropuerto y las zonas pequeñas de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md).
 
-## Los tres tipos de sitio
+## Centrales
 
-| Sitio | Qué tiene | Qué hace | Cuenta en el sistema |
-| --- | --- | --- | --- |
-| **Nodo** | Drones, inventario y despachador | Despega. Atiende a pacientes y reabastece a las ESE | Central de tipo `NODO` |
-| **ESE** | Inventario y despachador, sin drones | Pide el reabastecimiento y recibe traslados | Central de tipo `ESE` |
-| **Punto de entrega** | Dronpuerto o puesto de salud, con un observador | El paciente recoge su pedido con el código | No es una cuenta; es un lugar del seed |
+Toda central tiene drones, inventario y despachador: despega, atiende a pacientes y abastece a otras centrales. Su tipo (hospital, clínica, farmacia, banco de sangre o vacunación) solo describe el servicio.
 
-El abastecimiento de los nodos desde Valledupar va por carretera y queda fuera del sistema ([modelo.md](modelo.md)).
+El abastecimiento de las centrales desde mayoristas va por carretera y queda fuera del sistema ([modelo.md](modelo.md)).
 
 ## Ubicaciones
 
-Las coordenadas de municipios y corregimientos son las de GeoNames (consultadas con el geocodificador de Open-Meteo). Su elevación es la de ese mismo registro. Los nodos son instalaciones ficticias de AirDrop, ubicadas a propósito:
+Las coordenadas de municipios y corregimientos son las de GeoNames (consultadas con el geocodificador de Open-Meteo). Su elevación es la de ese mismo registro. Las cinco centrales sin hospital de referencia son instalaciones ficticias de AirDrop, ubicadas a propósito:
 
 - fuera de toda zona de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md), con 150 m de holgura;
-- cerca de las ESE que atiende el Cóndor.
+- cerca de las centrales que abastece el Cóndor.
 
-### Nodos
+### Centrales de la demo
 
-| Nodo | Lat | Lon | Elevación | Al ARP | Atiende |
+| Central | Lat | Lon | Elevación | Al ARP | Atiende |
 | --- | --- | --- | --- | --- | --- |
-| Nodo Valledupar | 10.4790 | −73.2350 | 170 m | 5,1 km | La ciudad de Valledupar |
-| Nodo Norte (Río Seco) | 10.6075 | −73.2237 | 235 m | 19,4 km | Corregimientos del norte y la Sierra |
-| Nodo Sur (La Paz – San Diego) | 10.3550 | −73.1400 | 170 m | 14,9 km | ESE La Paz, ESE San Diego, ESE Manaure, Media Luna |
-| Nodo Occidente (Valencia de Jesús) | 10.3000 | −73.4050 | 185 m | 22,7 km | Valle del Cesar occidental y Pueblo Bello |
-| Nodo Codazzi | 10.0420 | −73.2440 | 140 m | 43,6 km | ESE Codazzi y el sur (en el borde del casco urbano) |
+| Central Valledupar | 10.4790 | −73.2350 | 170 m | 5,1 km | La ciudad de Valledupar |
+| Central Norte (Río Seco) | 10.6075 | −73.2237 | 235 m | 19,4 km | Corregimientos del norte y la Sierra |
+| Central Sur (La Paz – San Diego) | 10.3550 | −73.1400 | 170 m | 14,9 km | ESE La Paz, ESE San Diego, ESE Manaure, Media Luna |
+| Central Occidente (Valencia de Jesús) | 10.3000 | −73.4050 | 185 m | 22,7 km | Valle del Cesar occidental y Pueblo Bello |
+| Central Codazzi | 10.0420 | −73.2440 | 140 m | 43,6 km | ESE Codazzi y el sur (en el borde del casco urbano) |
 
-### ESE (centrales sin drones)
+Las ESE (hospitales públicos de cada municipio) también son centrales con drones:
 
-| ESE | Lat | Lon | Elevación | Nodo | Distancia |
+| ESE | Lat | Lon | Elevación | Central más cercana | Distancia |
 | --- | --- | --- | --- | --- | --- |
 | Hospital Rosario Pumarejo de López (Valledupar) | 10.4772 | −73.2611 | 170 m | Valledupar | 2,8 km |
 | Hospital Eduardo Arredondo Daza (Valledupar) | 10.4560 | −73.2545 | 165 m | Valledupar | 3,3 km |
@@ -41,34 +37,15 @@ Las coordenadas de municipios y corregimientos son las de GeoNames (consultadas 
 | Pueblo Bello | 10.4171 | −73.5804 | 1.108 m | Occidente | 23,2 km |
 | Agustín Codazzi | 10.0367 | −73.2356 | 136 m | Codazzi | 1,1 km |
 
-### Puntos de entrega
-
-| Punto | Lat | Lon | Elevación | Nodo | Distancia | Nota |
-| --- | --- | --- | --- | --- | --- | --- |
-| Los Mayales (Valledupar) | 10.4510 | −73.2400 | 165 m | Valledupar | 3,1 km | Barrio |
-| La Nevada (Valledupar) | 10.4950 | −73.2870 | 185 m | Valledupar | 6,0 km | Barrio |
-| Primero de Mayo (Valledupar) | 10.4555 | −73.2590 | 165 m | Valledupar | 3,7 km | Barrio |
-| Villa Miriam (Valledupar) | 10.4560 | −73.2300 | 160 m | Valledupar | 2,6 km | Barrio |
-| Patillal | 10.7064 | −73.2123 | 513 m | Norte | 11,1 km | |
-| Badillo | 10.6314 | −73.1279 | 200 m | Norte | 10,8 km | |
-| Guacoche | 10.4964 | −73.1660 | 130 m | Norte | 13,9 km | |
-| Guacochito | 10.5154 | −73.1517 | 133 m | Norte | 12,9 km | |
-| Atánquez | 10.6976 | −73.3545 | 793 m | Norte | 17,5 km | |
-| Guatapurí | 10.7261 | −73.3925 | 1.277 m | Norte | 22,7 km | Con la subida, solo la alcanza el Colibrí |
-| Media Luna | 10.2455 | −73.1439 | 407 m | Sur | 12,2 km | |
-| Valencia de Jesús | 10.3017 | −73.3945 | 185 m | Occidente | 1,2 km | |
-| Aguas Blancas | 10.2253 | −73.4910 | 184 m | Occidente | 12,6 km | |
-| Mariangola | 10.1851 | −73.5871 | 124 m | Occidente | 23,7 km | |
-
 **Fuera de la red por el terreno.** Con la malla de elevación real (RF-46), la ida, el regreso y la reserva pasan del 100 % de la batería en todos los tipos:
 
-| Lugar | Nodo más cercano | Distancia | Batería que pide el mejor tipo (Colibrí) |
+| Lugar | Central más cercana | Distancia | Batería que pide el mejor tipo (Colibrí) |
 | --- | --- | --- | --- |
 | Villa Germania (614 m, detrás de lomas) | Occidente | 34,1 km | 117 % |
 
-Chemesquemena (1.427 m, a 22,6 km del Nodo Norte) queda al límite: el Colibrí pide el 99 %. Con un margen tan justo no se ofrece como punto. Nabusímake (2.135 m) tampoco es punto de entrega: queda más lejos y más alto (130 %). Los tres sirven para explicar el límite de la red: ahí sigue la alternativa terrestre.
+Chemesquemena (1.427 m, a 22,6 km de la Central Norte) queda al límite: el Colibrí pide el 99 %. Nabusímake (2.135 m) queda más lejos y más alto (130 %): fuera de alcance. Los tres sirven para explicar el límite de la red: ahí sigue la alternativa terrestre.
 
-La ESE de Pueblo Bello (1.108 m, a 23 km del Nodo Occidente) solo la alcanza el Colibrí (87 %): su reabastecimiento va en entregas de hasta 2 kg.
+La ESE de Pueblo Bello (1.108 m, a 23 km de la Central Occidente) tiene sus propios drones; desde otra central solo la alcanza el Colibrí (87 %).
 
 ## Alcance útil de cada tipo
 
@@ -82,6 +59,6 @@ Cada misión es de ida y vuelta por el mismo corredor (si nadie recibe, el dron 
 | Garza | 90 km | 29 km |
 | Cóndor | 30 km | 10 km |
 
-El terreno y el viento lo reducen: subir cuesta energía ([../operacion/condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md)). El motor hace la cuenta real sobre el perfil de cada ruta; por eso un punto de montaña a 23 km puede quedar fuera aunque esté dentro del radio en plano. La tabla solo sirve para ubicar los nodos.
+El terreno y el viento lo reducen: subir cuesta energía ([../operacion/condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md)). El motor hace la cuenta real sobre el perfil de cada ruta; por eso un punto de montaña a 23 km puede quedar fuera aunque esté dentro del radio en plano. La tabla solo sirve para ubicar las centrales.
 
 Las ubicaciones exactas de los dronpuertos de una operación real se definirían con cada ESE, cada alcaldía y cada comunidad. En la demo son ilustrativas.

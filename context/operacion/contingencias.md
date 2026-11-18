@@ -7,8 +7,8 @@ Qué hace un dron cuando algo sale mal en vuelo. Los incidentes son de RF-34. El
 | Respuesta | Qué hace el dron |
 | --- | --- |
 | **Seguir** | Continúa la misión con la condición nueva (más consumo, menos velocidad) |
-| **Regresar** | Vuelve al nodo por el corredor. Si lleva el paquete, el paquete vuelve y sigue la cuarentena ([../entregas/productos.md](../entregas/productos.md)) |
-| **Aterrizar en punto seguro** | Va al punto seguro más cercano al que le alcance la batería: un nodo, una ESE o un punto de entrega |
+| **Regresar** | Vuelve a la central por el corredor. Si lleva el paquete, el paquete vuelve y sigue la cuarentena ([../entregas/productos.md](../entregas/productos.md)) |
+| **Aterrizar en punto seguro** | Va al punto seguro más cercano al que le alcance la batería: una central |
 | **Aterrizaje inmediato** | Baja donde está, fuera de cualquier zona prohibida. El dron queda fuera de servicio hasta que el operador lo recupere |
 
 ## Incidentes y respuesta
@@ -36,7 +36,7 @@ El RAC 100.445 trata la pérdida o degradación del enlace de mando y control co
 
 1. **Espera 30 segundos** en vuelo estacionario o en círculo, a la misma altura, mientras intenta recuperar el enlace.
 2. Si lo recupera, sigue la misión y el incidente queda registrado. En la demo el enlace vuelve en la mitad de los casos.
-3. Si no, **regresa solo al nodo** por el corredor aprobado, a su altura de crucero.
+3. Si no, **regresa solo a la central** por el corredor aprobado, a su altura de crucero.
 4. Si la batería no alcanza para regresar, aterriza en el punto seguro más cercano.
 5. Mientras no hay enlace, el radar pinta el dron en su última posición conocida, con el estado "sin enlace", y estima su recorrido.
 
@@ -44,5 +44,5 @@ El RAC 100.445 trata la pérdida o degradación del enlace de mando y control co
 
 - **Operador de flota:** el incidente, la respuesta que tomó el dron y dónde quedó.
 - **Despachador:** si su pedido se retrasa, vuelve o se pierde.
-- **Solicitante:** un mensaje sin detalle técnico ("tu pedido regresó al nodo; te avisaremos del nuevo envío").
+- **Solicitante:** un mensaje sin detalle técnico ("tu pedido regresó a la central; te avisaremos del nuevo envío").
 - **Administrador:** todo, en el radar y en las métricas.

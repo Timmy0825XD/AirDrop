@@ -44,7 +44,7 @@ Objetivos ampliados: [`context/sustentacion/objetivos.md`](context/sustentacion/
 
 ## 4. Qué entra en el MVP (y qué no)
 
-**Sí (red regional de 5 nodos, 7 ESE y 14 puntos de entrega, [`context/negocio/`](context/negocio/)):** pedidos de emergencia y programados, a una persona en un punto de entrega o de un nodo a una ESE ([`context/entregas/`](context/entregas/)), flota simulada de tres tipos, zonas legales del RAC 100 a escala de demo y geovallas, motor de decisión al autorizar, confirmación de carga y manifiesto antes del despegue, vuelo solo de día, rutas por corredores con perfil de terreno ([`context/operacion/`](context/operacion/)), telemetría en vivo, espera de código de entrega (5 min) o retorno con el paquete, cadena de frío simulada, fallback, dashboard epidemiológico simple. Para demostrarlo: reloj simulado, clima simulado por zonas, incidentes en vuelo con protocolos autónomos, actores simulados y modo caos, manejados desde la consola web.
+**Sí (red regional de 12 centrales con drones, [`context/negocio/`](context/negocio/)):** pedidos de emergencia y programados, a una persona en su ubicación o de una central a otra ([`context/entregas/`](context/entregas/)), flota simulada de tres tipos, zonas legales del RAC 100 a escala de demo y geovallas, motor de decisión al autorizar, confirmación de carga y manifiesto antes del despegue, vuelo a cualquier hora, rutas por corredores con perfil de terreno ([`context/operacion/`](context/operacion/)), telemetría en vivo, espera de código de entrega (5 min) o retorno con el paquete, cadena de frío simulada, fallback, dashboard epidemiológico simple. Para demostrarlo: reloj simulado, clima simulado por zonas, incidentes en vuelo con protocolos autónomos, actores simulados y modo caos, manejados desde la consola web.
 
 **No:** dron real, clima real, navegación 3D, vuelos sobre la ciudad, multirregión, licencias y permisos de operación, integración hospitalaria, reemplazar la atención médica ni el traslado del paciente.
 
@@ -56,7 +56,7 @@ Alcance completo: [`context/producto/alcance.md`](context/producto/alcance.md).
 
 | Rol | Función |
 | --- | --- |
-| **Solicitante** | Persona civil. Única cuenta que se autoregistra. Pide urgencias y entregas periódicas en un punto de entrega. |
+| **Solicitante** | Persona civil. Única cuenta que se autoregistra. Pide urgencias y entregas periódicas a su ubicación. |
 | **Despachador** | Persona de **una** central, creada por el admin. Inventario, autoriza, carga y puede pedir abastecimiento a otra central. |
 | **Operador de flota** | Persona creada por el admin. Drones, geovallas, telemetría y mantenimiento de **una o varias** centrales. |
 | **Administrador** | Crea y suspende centrales y sus cuentas. Ve métricas. Maneja la consola de simulación. No despacha. |

@@ -5,13 +5,11 @@ Términos que deben usarse igual en código, UI y sustentación.
 | Término | Definición |
 | --- | --- |
 | AirDrop | Nombre del proyecto y de la app. Logística aérea médica **simulada**. |
-| Central (hub) | Lugar con inventario. No es un usuario. Es de tipo **nodo** (tiene drones y despega) o **ESE** (recibe reabastecimiento, sin drones). |
-| Nodo | Central con drones, ubicada fuera del anillo del aeropuerto y lejos de toda zona prohibida. |
-| ESE | Empresa Social del Estado: el hospital público de un municipio. En AirDrop, central sin drones. |
-| Punto de entrega | Puesto de salud o dronpuerto con observador, donde el paciente recoge su pedido con el código. No es una cuenta. |
-| Solicitante | Persona civil con documento. Única cuenta de registro público. Pide para un punto de entrega. |
-| Despachador | Profesional de la salud, o persona con capacitación certificada para aprobar solicitudes. Una central (nodo o ESE), creado por el admin. |
-| Operador de flota | Usuario creado por el admin. Flota, geovallas y telemetría de los nodos que tiene asignados (uno o varios). |
+| Central (hub) | Lugar con inventario y drones. No es un usuario. Despega, atiende a pacientes y abastece a otras centrales. |
+| ESE | Empresa Social del Estado: el hospital público de un municipio. En AirDrop, una central más. |
+| Solicitante | Persona civil con documento. Única cuenta de registro público. Pide para su ubicación. |
+| Despachador | Profesional de la salud, o persona con capacitación certificada para aprobar solicitudes. Una central, creado por el admin. |
+| Operador de flota | Usuario creado por el admin. Flota, geovallas y telemetría de las centrales que tiene asignadas (una o varias). |
 | Administrador | Crea y suspende centrales, despachadores y operadores. No despacha ni pide insumos. |
 | Tipo de venta | Libre, bajo fórmula médica o control especial. Lo define el ítem de inventario. |
 | Receta (imagen) | Foto de la prescripción. Obligatoria solo en venta bajo fórmula. El despachador verifica su contenido al autorizar. |
@@ -48,8 +46,8 @@ Términos que deben usarse igual en código, UI y sustentación.
 | Restricción temporal | Zona prohibida con motivo y vencimiento (orden público, evento, operativo) que lanza la consola o el modo caos. |
 | Cambio de ruta en vuelo | Corredor nuevo desde la posición del dron cuando una zona nueva cruza el tramo que falta. |
 | Incidente | Algo que le pasa a un dron en vuelo: falla, choque, pérdida de GPS o enlace, viento sobre el límite. |
-| Protocolo | Lo que el sistema decide ante un incidente: seguir, volver al nodo o aterrizar de emergencia. |
-| Aterrizaje de emergencia | Aterrizar en el punto seguro más cercano que alcance (nodo, ESE o punto de entrega) o, si ninguno, fuera de toda zona y tormenta. |
+| Protocolo | Lo que el sistema decide ante un incidente: seguir, volver a la central o aterrizar de emergencia. |
+| Aterrizaje de emergencia | Aterrizar en el punto seguro más cercano que alcance (una central) o, si ninguna, fuera de toda zona y tormenta. |
 | En tierra fuera de base | Estado del dron que aterrizó de emergencia, hasta que lo rescatan. |
 | Actor simulado | Despachador automático, generador de pedidos o receptor simulado. Usa los mismos servicios que una persona. |
 | Modo caos | Sorteo de eventos realistas, apagado por defecto. |
