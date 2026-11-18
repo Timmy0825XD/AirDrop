@@ -2,14 +2,14 @@
 
 ## Entorno geográfico
 
-- **MVP:** red regional de unos 45 km alrededor de Valledupar. Abarca la ciudad, los corregimientos del municipio, La Paz, San Diego, Manaure, Pueblo Bello y Agustín Codazzi: 5 nodos y 7 ESE ([../negocio/cobertura.md](../negocio/cobertura.md)).
-- **Valledupar es el centro de la red.** Tiene nodo y ESE. Solo se veda el anillo de 1,5 km del aeropuerto y las zonas pequeñas de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md).
-- **Visión posterior:** otras regiones del Caribe con la misma red de nodos. Se reserva en el modelo de datos si es barato (la central ya tiene ubicación y tipo), pero **no** se entrega como producto multirregión.
+- **MVP:** red regional de unos 45 km alrededor de Valledupar. Abarca la ciudad, los corregimientos del municipio, La Paz, San Diego, Manaure, Pueblo Bello y Agustín Codazzi: 12 centrales con drones ([../negocio/cobertura.md](../negocio/cobertura.md)).
+- **Valledupar es el centro de la red.** Tiene varias centrales. Solo se veda el anillo de 1,5 km del aeropuerto y las zonas pequeñas de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md).
+- **Visión posterior:** otras regiones del Caribe con la misma red de centrales. Se reserva en el modelo de datos si es barato (la central ya tiene ubicación y tipo), pero **no** se entrega como producto multirregión.
 
 ## Incluido en el MVP
 
 - **Pedidos:** de **emergencia** (prioridad alta) y **programados** (calendario, franja y cantidad).
-- **Entrega según [`../entregas/`](../entregas/):** a una persona, en **su ubicación** (GPS o pin); entre centrales, de un nodo a una ESE.
+- **Entrega según [`../entregas/`](../entregas/):** a una persona, en **su ubicación** (GPS o pin); entre centrales, de una a otra.
 - **Flota propia de tres tipos:** Colibrí, Garza y Cóndor, con compartimento de frío opcional y estados de disponibilidad ([../operacion/flota.md](../operacion/flota.md)).
 - **Espacio aéreo inspirado en el RAC 100, a escala de demo:**
   - aeródromo (1,5 km), zonas prohibidas del tamaño del visor de la Aerocivil (policía y CAI, batallones, cárceles, plantas, pistas agrícolas), helipuertos y restricciones temporales;
@@ -27,7 +27,7 @@
 - **Seguimiento:**
   - Telemetría en tiempo real en la app, con la identificación remota del dron.
   - Panel de operador: posición, altitud sobre el terreno y sobre el nivel del mar, velocidad, batería, carga, temperatura de la carga, latencia y fase de vuelo.
-- **En destino:** el dron **espera 5 minutos** el código de entrega. Si no se ingresa, **regresa al nodo con el paquete**. El reingreso al inventario pasa por la cuarentena de [`../entregas/productos.md`](../entregas/productos.md).
+- **En destino:** el dron **espera 5 minutos** el código de entrega. Si no se ingresa, **regresa a la central con el paquete**. El reingreso al inventario pasa por la cuarentena de [`../entregas/productos.md`](../entregas/productos.md).
 - **Cadena de frío** simulada y alerta si la temperatura sale de rango.
 - **Fallback:** alternativa terrestre si ningún dron es elegible.
 - **Dashboard epidemiológico** simple: qué se pide más y en qué municipio.
@@ -36,7 +36,7 @@
   - Reloj simulado único para todo el sistema, también para la app: pausa, x1, x2, x4 y x8 (RF-31). El día y la noche siguen ese reloj.
   - Clima simulado por zonas (viento, lluvia, tormenta y niebla) que el motor de decisión, las rutas y el vuelo sí tienen en cuenta (RF-32).
   - Cambio de ruta en pleno vuelo cuando una zona nueva cruza el tramo que falta (RF-33).
-  - Incidentes en vuelo, entre ellos la pérdida de enlace C2. Tienen protocolos autónomos: seguir, cambiar de ruta, volver al nodo o aterrizar en un punto seguro. Una urgencia abortada se vuelve a despachar (RF-34, RF-35).
+  - Incidentes en vuelo, entre ellos la pérdida de enlace C2. Tienen protocolos autónomos: seguir, cambiar de ruta, volver a la central o aterrizar en un punto seguro. Una urgencia abortada se vuelve a despachar (RF-34, RF-35).
   - Eventos de entorno: restricción temporal (orden público, evento, operativo), central sin energía, pico de urgencias, nadie retira el paquete y dron no identificado (RF-36).
   - Actores simulados (despachador automático, generador de pedidos, receptor) para una demo híbrida con personas reales usando la app (RF-37).
   - Modo caos realista, apagado por defecto (RF-38), línea de tiempo con alertas pendientes (RF-39) y reinicio del escenario (RF-40).
@@ -63,7 +63,7 @@
 | Licencias y permisos | No se simulan: certificado de explotador, piloto, pólizas, autorizaciones de vuelo, consulta previa ([../legal/cumplimiento.md](../legal/cumplimiento.md)) |
 | Zonas de la demo | Ubicadas con datos abiertos (OpenStreetMap, GeoNames), no oficiales |
 | Geografía acotada | Una sola región. Multirregión no desplegada |
-| Inventario manual | El despachador carga el stock; no hay integración con el sistema del hospital. El abastecimiento de los nodos no se simula |
+| Inventario manual | El despachador carga el stock; no hay integración con el sistema del hospital. El abastecimiento de las centrales no se simula |
 | Sin avisos del sistema | Con la app cerrada no llega una notificación al teléfono: los avisos quedan en la bandeja y llegan al correo (RU-05). Sin widgets, sin ingreso con huella, sin ubicación ni socket en segundo plano |
 | Personalización acotada | Tema, texto, contraste, movimiento y modo sencillo. No se elige color de acento, íconos ni fondo |
 | No es atención médica | Complementa el **insumo**, no el traslado ni la atención del paciente |

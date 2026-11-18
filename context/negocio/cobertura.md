@@ -1,36 +1,33 @@
 # Cobertura regional
 
-La demo cubre unos 45 km alrededor de Valledupar: la ciudad, los corregimientos del municipio, y La Paz, San Diego, Manaure, Pueblo Bello y Agustín Codazzi. Valledupar está en el centro de la red: tiene su propio nodo y sus ESE. En la ciudad solo está vedado el anillo de 1,5 km del aeropuerto y las zonas pequeñas de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md).
+La demo cubre unos 45 km alrededor de Valledupar: la ciudad, los corregimientos del municipio, y La Paz, San Diego, Manaure, Pueblo Bello y Agustín Codazzi. Valledupar está en el centro de la red: tiene varias centrales. En la ciudad solo está vedado el anillo de 1,5 km del aeropuerto y las zonas pequeñas de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md).
 
-## Los dos tipos de sitio
+## Centrales
 
-| Sitio | Qué tiene | Qué hace | Cuenta en el sistema |
-| --- | --- | --- | --- |
-| **Nodo** | Drones, inventario y despachador | Despega. Atiende a pacientes y reabastece a las ESE | Central de tipo `NODO` |
-| **ESE** | Inventario y despachador, sin drones | Pide el reabastecimiento y recibe traslados | Central de tipo `ESE` |
+Toda central tiene drones, inventario y despachador: despega, atiende a pacientes y abastece a otras centrales. Su tipo (hospital, clínica, farmacia, banco de sangre o vacunación) solo describe el servicio.
 
-El abastecimiento de los nodos desde Valledupar va por carretera y queda fuera del sistema ([modelo.md](modelo.md)).
+El abastecimiento de las centrales desde mayoristas va por carretera y queda fuera del sistema ([modelo.md](modelo.md)).
 
 ## Ubicaciones
 
-Las coordenadas de municipios y corregimientos son las de GeoNames (consultadas con el geocodificador de Open-Meteo). Su elevación es la de ese mismo registro. Los nodos son instalaciones ficticias de AirDrop, ubicadas a propósito:
+Las coordenadas de municipios y corregimientos son las de GeoNames (consultadas con el geocodificador de Open-Meteo). Su elevación es la de ese mismo registro. Las cinco centrales sin hospital de referencia son instalaciones ficticias de AirDrop, ubicadas a propósito:
 
 - fuera de toda zona de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md), con 150 m de holgura;
-- cerca de las ESE que atiende el Cóndor.
+- cerca de las centrales que abastece el Cóndor.
 
-### Nodos
+### Centrales de la demo
 
-| Nodo | Lat | Lon | Elevación | Al ARP | Atiende |
+| Central | Lat | Lon | Elevación | Al ARP | Atiende |
 | --- | --- | --- | --- | --- | --- |
-| Nodo Valledupar | 10.4790 | −73.2350 | 170 m | 5,1 km | La ciudad de Valledupar |
-| Nodo Norte (Río Seco) | 10.6075 | −73.2237 | 235 m | 19,4 km | Corregimientos del norte y la Sierra |
-| Nodo Sur (La Paz – San Diego) | 10.3550 | −73.1400 | 170 m | 14,9 km | ESE La Paz, ESE San Diego, ESE Manaure, Media Luna |
-| Nodo Occidente (Valencia de Jesús) | 10.3000 | −73.4050 | 185 m | 22,7 km | Valle del Cesar occidental y Pueblo Bello |
-| Nodo Codazzi | 10.0420 | −73.2440 | 140 m | 43,6 km | ESE Codazzi y el sur (en el borde del casco urbano) |
+| Central Valledupar | 10.4790 | −73.2350 | 170 m | 5,1 km | La ciudad de Valledupar |
+| Central Norte (Río Seco) | 10.6075 | −73.2237 | 235 m | 19,4 km | Corregimientos del norte y la Sierra |
+| Central Sur (La Paz – San Diego) | 10.3550 | −73.1400 | 170 m | 14,9 km | ESE La Paz, ESE San Diego, ESE Manaure, Media Luna |
+| Central Occidente (Valencia de Jesús) | 10.3000 | −73.4050 | 185 m | 22,7 km | Valle del Cesar occidental y Pueblo Bello |
+| Central Codazzi | 10.0420 | −73.2440 | 140 m | 43,6 km | ESE Codazzi y el sur (en el borde del casco urbano) |
 
-### ESE (centrales sin drones)
+Las ESE (hospitales públicos de cada municipio) también son centrales con drones:
 
-| ESE | Lat | Lon | Elevación | Nodo | Distancia |
+| ESE | Lat | Lon | Elevación | Central más cercana | Distancia |
 | --- | --- | --- | --- | --- | --- |
 | Hospital Rosario Pumarejo de López (Valledupar) | 10.4772 | −73.2611 | 170 m | Valledupar | 2,8 km |
 | Hospital Eduardo Arredondo Daza (Valledupar) | 10.4560 | −73.2545 | 165 m | Valledupar | 3,3 km |
@@ -42,13 +39,13 @@ Las coordenadas de municipios y corregimientos son las de GeoNames (consultadas 
 
 **Fuera de la red por el terreno.** Con la malla de elevación real (RF-46), la ida, el regreso y la reserva pasan del 100 % de la batería en todos los tipos:
 
-| Lugar | Nodo más cercano | Distancia | Batería que pide el mejor tipo (Colibrí) |
+| Lugar | Central más cercana | Distancia | Batería que pide el mejor tipo (Colibrí) |
 | --- | --- | --- | --- |
 | Villa Germania (614 m, detrás de lomas) | Occidente | 34,1 km | 117 % |
 
-Chemesquemena (1.427 m, a 22,6 km del Nodo Norte) queda al límite: el Colibrí pide el 99 %. Nabusímake (2.135 m) queda más lejos y más alto (130 %): fuera de alcance. Los tres sirven para explicar el límite de la red: ahí sigue la alternativa terrestre.
+Chemesquemena (1.427 m, a 22,6 km de la Central Norte) queda al límite: el Colibrí pide el 99 %. Nabusímake (2.135 m) queda más lejos y más alto (130 %): fuera de alcance. Los tres sirven para explicar el límite de la red: ahí sigue la alternativa terrestre.
 
-La ESE de Pueblo Bello (1.108 m, a 23 km del Nodo Occidente) solo la alcanza el Colibrí (87 %): su reabastecimiento va en entregas de hasta 2 kg.
+La ESE de Pueblo Bello (1.108 m, a 23 km de la Central Occidente) tiene sus propios drones; desde otra central solo la alcanza el Colibrí (87 %).
 
 ## Alcance útil de cada tipo
 
@@ -62,6 +59,6 @@ Cada misión es de ida y vuelta por el mismo corredor (si nadie recibe, el dron 
 | Garza | 90 km | 29 km |
 | Cóndor | 30 km | 10 km |
 
-El terreno y el viento lo reducen: subir cuesta energía ([../operacion/condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md)). El motor hace la cuenta real sobre el perfil de cada ruta; por eso un punto de montaña a 23 km puede quedar fuera aunque esté dentro del radio en plano. La tabla solo sirve para ubicar los nodos.
+El terreno y el viento lo reducen: subir cuesta energía ([../operacion/condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md)). El motor hace la cuenta real sobre el perfil de cada ruta; por eso un punto de montaña a 23 km puede quedar fuera aunque esté dentro del radio en plano. La tabla solo sirve para ubicar las centrales.
 
 Las ubicaciones exactas de los dronpuertos de una operación real se definirían con cada ESE, cada alcaldía y cada comunidad. En la demo son ilustrativas.

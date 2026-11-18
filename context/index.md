@@ -22,7 +22,7 @@ En esta raíz solo está este índice. El resto vive en carpetas. Cada carpeta r
 | Pregunta | Archivo |
 | --- | --- |
 | Clientes, quién paga y propuesta de valor | [negocio/modelo.md](negocio/modelo.md) |
-| Nodos, ESE y alcance | [negocio/cobertura.md](negocio/cobertura.md) |
+| Centrales y alcance | [negocio/cobertura.md](negocio/cobertura.md) |
 | Quién es cada rol y cómo entra | [app/roles.md](app/roles.md) |
 | Qué puede viajar, lote, frío y cuarentena | [entregas/productos.md](entregas/productos.md) |
 | Entrega a una persona | [entregas/persona.md](entregas/persona.md) |

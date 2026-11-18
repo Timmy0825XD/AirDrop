@@ -174,15 +174,16 @@ Se agregó tras revisar la app terminada: funcionaba, pero se veía plana, sin m
 
 ## Módulo 13 — Menos realismo (ajuste)
 
-Se agregó antes de la presentación para simplificar la demo. Reemplaza HU-61 y HU-64: se vuela a cualquier hora y el dron llega a la ubicación del solicitante, sin puntos fijos de entrega. Se declara como simplificación frente al RAC 100.220. Se cuenta aparte.
+Se agregó antes de la presentación para simplificar la demo. Reemplaza HU-61, HU-64 y la parte de nodos de HU-59: se vuela a cualquier hora, el dron llega a la ubicación del solicitante y toda central tiene drones. Se declara como simplificación frente al RAC 100.220. Se cuenta aparte.
 
 | ID | Historia | Pri | SP | Sprint |
 | --- | --- | --- | --- | --- |
 | HU-79 | Vuelo a cualquier hora: quitar la regla de luz del día de la decisión y del fallback (RF-44, CU-48) | Alta | 3 | 6 |
 | HU-80 | Destino en la ubicación del solicitante: urgencia y plan por GPS o pin, sin puntos de entrega (RU-02, RU-30, RF-45) | Alta | 8 | 6 |
-| HU-81 | Generador, pico de urgencias y caos con destinos al azar al alcance de un nodo (RF-36, RF-37, RF-38) | Media | 3 | 6 |
+| HU-81 | Generador, pico de urgencias y caos con destinos al azar al alcance de una central (RF-36, RF-37, RF-38) | Media | 3 | 6 |
+| HU-82 | Centrales como antes: sin nodo ni ESE, todas con drones; escenario de 12 centrales (RF-06, RF-07, RU-12, RU-16, RU-31) | Alta | 8 | 6 |
 
-**Suma del módulo 13: 14 SP.**
+**Suma del módulo 13: 22 SP.**
 
 ---
 

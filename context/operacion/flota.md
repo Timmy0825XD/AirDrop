@@ -8,7 +8,7 @@ AirDrop usa tres tipos de dron propios, pensados para escenarios distintos. Son 
 | --- | --- | --- | --- | --- | --- | --- |
 | `RAPID` | **Colibrí** | 2 kg | 140 km/h | 120 km | 3.500 m | Urgencias: antiveneno, insulina, adrenalina. Llega más lejos y antes |
 | `BALANCED` | **Garza** | 5 kg | 110 km/h | 90 km | 4.000 m | Dispensación a pacientes y vuelos a la Sierra |
-| `CARGO` | **Cóndor** | 15 kg | 60 km/h | 30 km | 2.500 m | Reabastecimiento de las ESE cercanas a su nodo |
+| `CARGO` | **Cóndor** | 15 kg | 60 km/h | 30 km | 2.500 m | Reabastecimiento de las centrales cercanas a la suya |
 
 El nombre viene de las aves de la región. El cóndor es símbolo de la Sierra Nevada.
 
@@ -49,6 +49,6 @@ Si empatan, gana el que lleva más tiempo en tierra, luego el de más batería y
 ## Ejemplos para la sustentación
 
 - **Antiveneno a Patillal (urgencia, 0,3 kg, frío).** Pasan el Colibrí y el Garza con frío. Gana el Colibrí porque llega antes.
-- **Reabastecer la ESE La Paz (programado, 12 kg).** Solo el Cóndor lleva 12 kg y La Paz está a 4,9 km de su nodo: gana el Cóndor.
+- **Reabastecer la ESE La Paz (programado, 12 kg).** Solo el Cóndor lleva 12 kg y La Paz está a 4,9 km de la Central Sur: gana el Cóndor.
 - **Dispensación en Guatapurí (1.277 m, 23 km).** Con la subida, el Garza pediría el 114 % de la batería; solo el Colibrí va y vuelve (97 %).
 - **Pedido a Villa Germania.** Ningún tipo pasa el filtro de batería con la subida del terreno: no son puntos de la red y va la alternativa terrestre ([../negocio/cobertura.md](../negocio/cobertura.md)).

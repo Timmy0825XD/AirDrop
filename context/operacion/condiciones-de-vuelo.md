@@ -65,9 +65,9 @@ Sale aproximadamente en 0,55 % de batería cada 100 m en el Colibrí, 0,65 % en 
 
 ## Misión típica
 
-1. Despegue vertical en el nodo hasta 90 m AGL.
+1. Despegue vertical en la central hasta 90 m AGL.
 2. Transición a crucero.
 3. Crucero por el corredor, siguiendo el terreno.
 4. Descenso vertical sobre el destino: la ubicación del solicitante o la central ([../entregas/persona.md](../entregas/persona.md)).
 5. Entrega o espera del código.
-6. Regreso al nodo por el mismo corredor.
+6. Regreso a la central por el mismo corredor.

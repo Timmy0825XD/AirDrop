@@ -11,7 +11,7 @@ Se genera cuando el despachador confirma la carga. No hay vuelo sin manifiesto, 
 | Número | Consecutivo por año, único: `MAN-2026-000123` |
 | Fecha y hora | Hora simulada de la confirmación |
 | Dron | Identificador y tipo |
-| Origen | Nodo |
+| Origen | Central |
 | Destino | Ubicación del solicitante o central |
 | Contenido | Medicamento, presentación, lote, vencimiento y cantidad por ítem |
 | Peso | Peso de la carga y, si lo lleva, del compartimento de frío |
