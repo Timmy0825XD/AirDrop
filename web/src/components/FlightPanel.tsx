@@ -54,7 +54,7 @@ function Progress({ detail, flight }: { detail: FlightDetail | null; flight: Rad
   const percent = totalKm > 0 ? Math.min(100, (doneKm / totalKm) * 100) : 0;
   const origin = detail?.originHub?.name ?? "Central";
   const target =
-    detail?.destinationHub?.name ?? (flight.destinationKind === "person" ? "Punto de entrega" : "Destino");
+    detail?.destinationHub?.name ?? (flight.destinationKind === "person" ? "Ubicación del solicitante" : "Destino");
   const km = (value: number) => value.toLocaleString("es-CO", { maximumFractionDigits: 1 });
   return (
     <div className="px-5 pb-5">

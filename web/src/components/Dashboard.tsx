@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { circlePolygon, distanceKm } from "@/lib/geo";
+import { circlePolygon } from "@/lib/geo";
 import { useSimNow } from "@/lib/sim-time";
 import type { RadarSource } from "@/lib/source";
 import type { PendingAlert, Selection, TimelineEntry } from "@/lib/types";
@@ -9,31 +9,25 @@ import { useConsole } from "@/lib/use-console";
 import { usePolled } from "@/lib/use-polled";
 import { useRadar } from "@/lib/use-radar";
 import { useTheme } from "@/lib/use-theme";
-import { useDeliveryPoints } from "@/lib/use-region";
 import { AlertsTray } from "./AlertsTray";
 import { ActorsMenu } from "./ActorsMenu";
 import { ClockControl } from "./ClockControl";
 import { EventComposer, EventDock, type EventLaunch, type EventTool } from "./EventDock";
-import { DaylightChip } from "./DaylightChip";
 import { EventPanel } from "./EventPanel";
 import { FlightPanel } from "./FlightPanel";
 import { AlertIcon, CheckIcon } from "./icons";
 import { HubPanel } from "./HubPanel";
 import { RadarMap, type EventDraft, type MapFocus } from "./map/RadarMap";
-import { AirspacePanel, ContactPanel, PointPanel } from "./RegionPanel";
+import { AirspacePanel, ContactPanel } from "./RegionPanel";
 import { ResetDialog } from "./ResetDialog";
 import { TimelinePanel } from "./TimelinePanel";
 import { TopBar } from "./TopBar";
 
 const FLIGHT_REFRESH_MS = 8_000;
-/** La luz del día cambia despacio: basta una lectura por minuto. */
-const DAYLIGHT_REFRESH_MS = 60_000;
 /** Cuánto se quedan los avisos de la consola. */
 const NOTICE_MS = 7_000;
 /** Incidentes, apagones y ráfagas en un ensayo no tienen backend. */
 const DEMO_BLOCKED = "En modo demostración no se lanzan incidentes ni apagones.";
-/** RF-36: el backend solo crea urgencias hacia puntos dentro del círculo. */
-const SURGE_NEEDS_POINT = "El pico necesita un punto de entrega disponible dentro del círculo.";
 
 type Props = {
   source: RadarSource;
@@ -55,8 +49,6 @@ export function Dashboard({ source, userName, onLogout }: Props) {
   const consola = useConsole(source);
   const { theme, toggle: toggleTheme } = useTheme();
   const data = useRadar(source, onLogout, consola.listener);
-  // RF-45: los puntos se recargan al reiniciar el escenario.
-  const region = useDeliveryPoints(source, consola.state.lastReset);
   const [selection, setSelection] = useState<Selection>(null);
   const [showGeofences, setShowGeofences] = useState(true);
   const [timelineOpen, setTimelineOpen] = useState(startsOpen);
@@ -77,11 +69,6 @@ export function Dashboard({ source, userName, onLogout }: Props) {
   const flightId = selection?.kind === "flight" ? selection.id : null;
   const loadFlight = useCallback(() => source.flight(flightId as string), [source, flightId]);
   const detail = usePolled(loadFlight, flightId, FLIGHT_REFRESH_MS);
-
-  // RF-44: se vuelve a leer al cambiar la velocidad del reloj o al reiniciar.
-  const loadDaylight = useCallback(() => source.daylight(), [source]);
-  const daylightKey = `day-${data.clock?.speed ?? 1}-${data.clock?.paused ?? false}-${consola.state.lastReset ? "r" : ""}`;
-  const daylight = usePolled(loadDaylight, daylightKey, DAYLIGHT_REFRESH_MS);
 
   // Solo el vuelo elegido dibuja su ruta (y la de antes, si cambió en el aire).
   const routes = useMemo(
@@ -124,12 +111,6 @@ export function Dashboard({ source, userName, onLogout }: Props) {
     const timer = setTimeout(dismissError, NOTICE_MS);
     return () => clearTimeout(timer);
   }, [lastReset, error, notice, dismissError]);
-  const { error: regionError, dismiss: dismissRegion } = region;
-  useEffect(() => {
-    if (!regionError) return;
-    const timer = setTimeout(dismissRegion, NOTICE_MS);
-    return () => clearTimeout(timer);
-  }, [regionError, dismissRegion]);
 
   /** Lleva el mapa al punto y, si el pedido sigue volando, abre su vuelo. */
   const show = useCallback(
@@ -171,39 +152,16 @@ export function Dashboard({ source, userName, onLogout }: Props) {
     if (next) setSelection(null);
   }, []);
 
-  const availablePoints = useMemo(
-    () => region.points.filter((point) => point.available),
-    [region.points],
-  );
-
   const pick = useCallback(
     (point: { latitude: number; longitude: number }) => {
       if (!tool || tool === "unidentified") return;
       setDraft((current) => {
         const radiusKm = current?.radiusKm ?? (tool === "zone" || tool === "surge" ? 1 : 3);
-        // RF-36: un pico sin punto de entrega adentro no crea nada: el centro
-        // se pega al punto disponible más cercano.
-        let center = point;
-        if (tool === "surge" && availablePoints.length) {
-          const nearest = availablePoints.reduce((best, row) =>
-            distanceKm(point, row) < distanceKm(point, best) ? row : best,
-          );
-          if (distanceKm(point, nearest) > radiusKm) {
-            center = { latitude: nearest.latitude, longitude: nearest.longitude };
-          }
-        }
-        return { kind: tool, ...center, radiusKm };
+        return { kind: tool, ...point, radiusKm };
       });
     },
-    [tool, availablePoints],
+    [tool],
   );
-
-  // Al achicar el radio el punto puede quedar afuera: se avisa y no se lanza.
-  const surgeBlocked =
-    draft?.kind === "surge" &&
-    !availablePoints.some((point) => distanceKm(draft, point) <= draft.radiusKm)
-      ? SURGE_NEEDS_POINT
-      : null;
 
   const launch = useCallback(
     async (event: EventLaunch) => {
@@ -297,10 +255,6 @@ export function Dashboard({ source, userName, onLogout }: Props) {
     selection?.kind === "airspace"
       ? (data.airspace.find((zone) => zone.code === selection.id) ?? null)
       : null;
-  const selectedPoint =
-    selection?.kind === "point"
-      ? (region.points.find((point) => point.id === selection.id) ?? null)
-      : null;
   const selectedContact =
     selection?.kind === "contact"
       ? (consola.state.contacts.find((contact) => contact.id === selection.id) ?? null)
@@ -320,7 +274,7 @@ export function Dashboard({ source, userName, onLogout }: Props) {
     if (ended) setSelection(null);
   }, [consola, selection]);
 
-  const toast = consola.state.error ?? region.error ?? data.message;
+  const toast = consola.state.error ?? data.message;
   const success =
     consola.state.notice ??
     (consola.state.lastReset
@@ -353,7 +307,6 @@ export function Dashboard({ source, userName, onLogout }: Props) {
             onChange={(change) => void consola.setClock(change)}
           />
         }
-        daylight={<DaylightChip day={daylight.data} />}
         actors={
           consoleOn ? (
             <ActorsMenu
@@ -385,7 +338,6 @@ export function Dashboard({ source, userName, onLogout }: Props) {
             flights={data.flights}
             geofences={data.geofences}
             airspace={data.airspace}
-            points={region.points}
             showGeofences={showGeofences}
             selection={selection}
             routes={routes}
@@ -415,7 +367,7 @@ export function Dashboard({ source, userName, onLogout }: Props) {
               tool={tool}
               center={draft ? { latitude: draft.latitude, longitude: draft.longitude } : null}
               busy={consola.state.busy}
-              blocked={surgeBlocked}
+              blocked={null}
               onDraft={setDraft}
               onLaunch={(event) => void launch(event)}
               onClose={closeTool}
@@ -442,7 +394,7 @@ export function Dashboard({ source, userName, onLogout }: Props) {
           )}
           {data.loaded && !data.flights.length && !selection && !tool && (
             <p className="pointer-events-none absolute bottom-[96px] left-1/2 z-10 w-max max-w-[calc(100%-2rem)] -translate-x-1/2 text-center text-[13px] text-muted [text-shadow:0_1px_8px_var(--ground)]">
-              No hay drones en vuelo. Toca un nodo para ver su flota.
+              No hay drones en vuelo. Toca una central para ver su flota.
             </p>
           )}
 
@@ -451,7 +403,6 @@ export function Dashboard({ source, userName, onLogout }: Props) {
           key={selection.id}
           source={source}
           hubId={selection.id}
-          networkRole={selectedHub?.networkRole ?? null}
           onSelect={setSelection}
           outageUntil={hubOutage}
           busy={consola.state.busy}
@@ -479,17 +430,6 @@ export function Dashboard({ source, userName, onLogout }: Props) {
       )}
       {selection?.kind === "airspace" && (
         <AirspacePanel key={selection.id} zone={selectedAirspace} onSelect={setSelection} />
-      )}
-      {selection?.kind === "point" && (
-        <PointPanel
-          key={selection.id}
-          point={selectedPoint}
-          hubName={data.hubs.find((hub) => hub.id === selectedPoint?.hubId)?.name ?? null}
-          busy={region.busy}
-          blocked={source.demo ? null : offReason}
-          onToggle={(id, active) => void region.setActive(id, active)}
-          onSelect={setSelection}
-        />
       )}
       {selection?.kind === "contact" && (
         <ContactPanel

@@ -8,12 +8,6 @@ export const HUB_TYPE: Record<string, string> = {
   vaccination: "Vacunación",
 };
 
-/** RF-06: el papel de la central en la red. */
-export const NETWORK_ROLE: Record<string, string> = {
-  node: "Nodo",
-  ese: "ESE",
-};
-
 /** RF-43: los tipos de zona legal. */
 export const AIRSPACE_KIND: Record<string, string> = {
   aerodrome: "Aeródromo",

@@ -14,8 +14,6 @@ export type HubSummary = {
   id: string;
   name: string;
   type: string;
-  /** RF-06: solo un nodo tiene drones; una ESE recibe traslados. */
-  networkRole?: HubNetworkRole;
   status: "active" | "suspended" | string;
   latitude: number;
   longitude: number;
@@ -78,7 +76,7 @@ export type RadarManifest = {
   issuedAt: string;
   drone: { id: string; identifier: string; kind: "rapid" | "balanced" | "cargo" };
   origin: { hubId: string; name: string };
-  /** El punto de entrega o la ESE. */
+  /** La ubicación del solicitante o la central. */
   destination: string;
   /** `medicationName` llega `null` en una entrega a una persona. */
   items: Array<{
@@ -95,15 +93,6 @@ export type RadarManifest = {
   voidReason: string | null;
 };
 
-/** RF-44: `GET /airspace/daylight`, con la hora simulada. */
-export type Daylight = {
-  date: string;
-  sunrise: string;
-  sunset: string;
-  now: string;
-  daylight: boolean;
-};
-
 export type Geofence = {
   id: string;
   name: string;
@@ -112,8 +101,6 @@ export type Geofence = {
   /** RF-36: con fecha, es temporal y vence sola. */
   expiresAt?: string | null;
 };
-
-export type HubNetworkRole = "node" | "ese";
 
 /** RF-43 a escala de demo: aeródromo (1,5 km), prohibida y helipuerto. */
 export type AirspaceZoneKind = "aerodrome" | "prohibited" | "heliport";
@@ -129,22 +116,6 @@ export type AirspaceZone = {
   /** Todas bloquean en la demo. */
   blocking: boolean;
   polygon: { type: "Polygon"; coordinates: number[][][] };
-};
-
-/** RF-45: un punto de entrega (`GET /delivery-points`). */
-export type DeliveryPoint = {
-  id: string;
-  code: string;
-  name: string;
-  municipality: string;
-  latitude: number;
-  longitude: number;
-  elevationM: number;
-  /** El nodo que lo atiende. */
-  hubId: string | null;
-  active: boolean;
-  /** Activo y con su nodo activo. */
-  available: boolean;
 };
 
 export type Snapshot = {
@@ -248,9 +219,8 @@ export type Selection =
   /** Una celda de clima o una geovalla temporal (RF-32, RF-36). */
   | { kind: "weather"; id: string }
   | { kind: "zone"; id: string }
-  /** Una zona legal (RF-43) o un punto de entrega (RF-45). */
+  /** Una zona legal (RF-43). */
   | { kind: "airspace"; id: string }
-  | { kind: "point"; id: string }
   /** Un dron no identificado (RF-36). */
   | { kind: "contact"; id: string }
   | null;
@@ -291,7 +261,7 @@ export type TimelineEntry = {
   detail: string | null;
   /** Para los filtros; `console` es lo técnico y se oculta por defecto. */
   category?: TimelineCategory;
-  /** Por qué decidió el sistema: "Por qué este nodo", "Por qué este dron". */
+  /** Por qué decidió el sistema: "Por qué esta central", "Por qué este dron". */
   explanation?: TimelineSection[] | null;
   orderId: string | null;
   droneId: string | null;
@@ -456,8 +426,6 @@ export type GeneratedOrder = {
   address: string;
   latitude: number;
   longitude: number;
-  /** RF-45: el punto de entrega al que va. */
-  deliveryPointId?: string;
 };
 
 /** RF-36 y RF-48: un dron sin identificación que cruza la región. */

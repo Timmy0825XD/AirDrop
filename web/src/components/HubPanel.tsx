@@ -7,13 +7,12 @@ import {
   label,
   DRONE_STATUS,
   HUB_TYPE,
-  NETWORK_ROLE,
   PHASE,
   QUEUE_STATUS,
   SALE_TYPE,
 } from "@/lib/labels";
 import type { RadarSource } from "@/lib/source";
-import type { HubDetail, HubDrone, HubNetworkRole, InventoryRow, Selection } from "@/lib/types";
+import type { HubDetail, HubDrone, InventoryRow, Selection } from "@/lib/types";
 import { usePolled } from "@/lib/use-polled";
 import {
   ChevronIcon,
@@ -183,24 +182,14 @@ function InventoryTable({ items }: { items: InventoryRow[] }) {
 
 function HubBody({
   hub,
-  ese,
   onSelect,
 }: {
   hub: HubDetail;
-  /** RF-06: una ESE no tiene drones; solo recibe traslados. */
-  ese: boolean;
   onSelect: (s: Selection) => void;
 }) {
   const queue = Object.entries(hub.queue);
   return (
     <>
-      {ese ? (
-        <Section title="Flota">
-          <p className="text-[13px] text-muted">
-            Una ESE no tiene drones: recibe los traslados que le manda un nodo.
-          </p>
-        </Section>
-      ) : (
       <Section title="Flota">
         <div className="grid grid-cols-2 gap-2.5">
           <Stat label="Libres" value={hub.fleet.available} tone="good" />
@@ -216,7 +205,6 @@ function HubBody({
           </ul>
         )}
       </Section>
-      )}
 
       <Section title="Pedidos en marcha">
         {queue.length ? (
@@ -257,8 +245,6 @@ function HubBody({
 type Props = {
   source: RadarSource;
   hubId: string;
-  /** RF-06: nodo o ESE (del snapshot; el detalle no lo trae). */
-  networkRole: HubNetworkRole | null;
   onSelect: (selection: Selection) => void;
   /** RF-36: sin energía hasta esta hora (del snapshot), o `null`. */
   outageUntil: string | null;
@@ -272,7 +258,6 @@ type Props = {
 export function HubPanel({
   source,
   hubId,
-  networkRole,
   onSelect,
   outageUntil,
   busy,
@@ -304,7 +289,6 @@ export function HubPanel({
       onClose={close}
       badge={
         <>
-          {networkRole && <Pill tone="info">{label(NETWORK_ROLE, networkRole)}</Pill>}
           <Pill tone="neutral" icon={<HubTypeIcon type={data.type} size={12} />}>
             {label(HUB_TYPE, data.type)}
           </Pill>
@@ -348,7 +332,7 @@ export function HubPanel({
         onStart={(minutes) => onStartOutage(hubId, minutes)}
         onEnd={() => onEndOutage(hubId)}
       />
-      <HubBody hub={data} ese={networkRole === "ese"} onSelect={onSelect} />
+      <HubBody hub={data} onSelect={onSelect} />
     </PanelShell>
   );
 }

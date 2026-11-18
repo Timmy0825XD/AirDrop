@@ -25,8 +25,6 @@ type Props = {
   clock: ReactNode;
   /** Los actores simulados y el caos (RF-37, RF-38), si la consola está encendida. */
   actors?: ReactNode;
-  /** RF-44: de qué hora a qué hora se vuela hoy. */
-  daylight?: ReactNode;
   /** Reiniciar el escenario (RF-40); `null` con la consola apagada. */
   onReset: (() => void) | null;
   busy: boolean;
@@ -48,7 +46,6 @@ export function TopBar({
   onLogout,
   clock,
   actors,
-  daylight,
   onReset,
   busy,
   theme,
@@ -73,7 +70,6 @@ export function TopBar({
 
       <div className="surface pointer-events-auto flex h-14 shrink-0 items-center gap-2 rounded-2xl px-2">
         {clock}
-        {daylight}
       </div>
 
       <div className="flex-1" />

@@ -4,12 +4,11 @@ import { AIRSPACE_KIND, label, minutesLeft } from "@/lib/labels";
 import { formatTime } from "@/lib/sim-time";
 import type {
   AirspaceZone,
-  DeliveryPoint,
   Selection,
   UnidentifiedContact,
 } from "@/lib/types";
-import { ClockIcon, PinIcon, ShieldIcon, UnknownIcon } from "./icons";
-import { Button, Note, PanelShell, Pill, Section, Stat } from "./ui";
+import { ClockIcon, ShieldIcon, UnknownIcon } from "./icons";
+import { Note, PanelShell, Pill, Section, Stat } from "./ui";
 
 /** Qué significa cada tipo de zona para un vuelo. */
 const ZONE_EFFECT: Record<AirspaceZone["kind"], string> = {
@@ -56,80 +55,6 @@ export function AirspacePanel({
       <Section title="Norma">
         <p className="text-[14px] leading-relaxed text-text">{zone.legalBasis}</p>
         <p className="mt-3 text-[13px] text-muted">Fuente: {zone.source}</p>
-      </Section>
-    </PanelShell>
-  );
-}
-
-/**
- * RF-45: el punto de entrega elegido. El interruptor lo activa o lo
- * desactiva, igual que el apagón de una central: no es un formulario.
- */
-export function PointPanel({
-  point,
-  hubName,
-  busy,
-  blocked,
-  onToggle,
-  onSelect,
-}: {
-  point: DeliveryPoint | null;
-  /** El nodo que lo atiende. */
-  hubName: string | null;
-  busy: boolean;
-  /** Por qué no se puede cambiar; `null` si se puede. */
-  blocked: string | null;
-  onToggle: (id: string, active: boolean) => void;
-  onSelect: (selection: Selection) => void;
-}) {
-  const close = () => onSelect(null);
-  if (!point) {
-    return (
-      <PanelShell title="Punto de entrega" onClose={close}>
-        <p className="px-5 py-10 text-center text-[14px] text-muted">Ese punto ya no existe.</p>
-      </PanelShell>
-    );
-  }
-  return (
-    <PanelShell
-      title={point.name}
-      subtitle={point.municipality}
-      icon={<PinIcon size={20} className={point.available ? "text-success" : "text-faint"} />}
-      onClose={close}
-      badge={
-        <>
-          <Pill tone="neutral">Punto de entrega</Pill>
-          <Pill tone={point.available ? "good" : "bad"}>
-            {point.available ? "Disponible" : point.active ? "Su nodo no está activo" : "Inactivo"}
-          </Pill>
-        </>
-      }
-    >
-      <div className="grid grid-cols-2 gap-2.5 px-5 py-4">
-        <Stat label="Elevación" value={Math.round(point.elevationM)} unit="m" />
-        <Stat
-          label="Lo atiende"
-          value={<span className="font-sans text-[15px]">{hubName ?? "Sin nodo"}</span>}
-        />
-      </div>
-      <Section title="Estado">
-        {blocked && <p className="mb-3 text-[13px] text-muted">{blocked}</p>}
-        <div className="mb-3">
-          <Note tone={point.active ? "neutral" : "warn"}>
-            {point.active
-              ? "Activo: los solicitantes cercanos lo ven y pueden pedir hacia él."
-              : "Inactivo: no sale en la lista de quien pide y las urgencias no llegan aquí."}
-          </Note>
-        </div>
-        <Button
-          tone={point.active ? "danger" : undefined}
-          busy={busy}
-          disabled={blocked != null}
-          className="w-full"
-          onClick={() => onToggle(point.id, !point.active)}
-        >
-          {point.active ? "Desactivar el punto" : "Activar el punto"}
-        </Button>
       </Section>
     </PanelShell>
   );

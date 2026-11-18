@@ -15,7 +15,6 @@ import { COLORS } from "@/lib/theme";
 import type {
   AirspaceZone,
   Corridor,
-  DeliveryPoint,
   Geofence,
   HubSummary,
   Incident,
@@ -93,8 +92,6 @@ type Props = {
   geofences: Geofence[];
   /** RF-43: las zonas legales de la región. */
   airspace: AirspaceZone[];
-  /** RF-45: los puntos de entrega. */
-  points: DeliveryPoint[];
   showGeofences: boolean;
   selection: Selection;
   routes: {
@@ -139,7 +136,6 @@ export function RadarMap({
   flights,
   geofences,
   airspace,
-  points,
   showGeofences,
   selection,
   routes,
@@ -172,7 +168,7 @@ export function RadarMap({
   }, []);
   const [ready, setReady] = useState(false);
   const [hovering, setHovering] = useState(false);
-  const fitted = useRef<"hubs" | "points" | null>(null);
+  const fitted = useRef(false);
 
   const { fontsReady } = useDroneTracks(mapRef, flights, ready);
   const darkHubs = useMemo(
@@ -204,15 +200,15 @@ export function RadarMap({
   }, []);
 
   /**
-   * Encuadra la red (centrales y puntos de entrega): al llegar la primera
+   * Encuadra la red de centrales: al llegar la primera
    * vez y con "Recentrar".
    */
   const fitHubs = useCallback(
     (duration: number) => {
       const map = mapRef.current;
       if (!map || !hubs.length) return;
-      const lngs = [...hubs, ...points].map((place) => place.longitude);
-      const lats = [...hubs, ...points].map((place) => place.latitude);
+      const lngs = hubs.map((place) => place.longitude);
+      const lats = hubs.map((place) => place.latitude);
       map.fitBounds(
         [
           [Math.min(...lngs), Math.min(...lats)],
@@ -230,27 +226,19 @@ export function RadarMap({
         },
       );
     },
-    [hubs, points, insetLeft, panelOpen],
+    [hubs, insetLeft, panelOpen],
   );
 
   useEffect(() => {
     if (!ready || !hubs.length) return;
-    // Se encuadra al llegar las centrales y otra vez al llegar los puntos.
-    const key = points.length ? "points" : "hubs";
-    if (fitted.current === key || fitted.current === "points") return;
-    fitted.current = key;
+    if (fitted.current) return;
+    fitted.current = true;
     fitHubs(0);
-  }, [ready, hubs, points, fitHubs]);
+  }, [ready, hubs, fitHubs]);
 
   // Al elegir una central, el mapa la lleva al centro del espacio libre.
   const selectedHubId = selection?.kind === "hub" ? selection.id : null;
-  const sites = useSiteClusters(
-    mapRef,
-    ready,
-    hubs,
-    points,
-    selectedHubId ?? (selection?.kind === "point" ? selection.id : null),
-  );
+  const sites = useSiteClusters(mapRef, ready, hubs, selectedHubId);
   useEffect(() => {
     const hub = hubs.find((row) => row.id === selectedHubId);
     if (!hub) return;
@@ -367,19 +355,6 @@ export function RadarMap({
     [airspace],
   );
 
-  // RF-45: los puntos de entrega; el inactivo o sin nodo, apagado.
-  const pointCollection = useMemo(
-    () => ({
-      type: "FeatureCollection" as const,
-      features: points.map((point) => ({
-        type: "Feature" as const,
-        properties: { id: point.id, available: point.available },
-        geometry: { type: "Point" as const, coordinates: [point.longitude, point.latitude] },
-      })),
-    }),
-    [points],
-  );
-
   const weatherCollection = useMemo(
     () => ({
       type: "FeatureCollection" as const,
@@ -460,13 +435,12 @@ export function RadarMap({
         onPick({ latitude: event.lngLat.lat, longitude: event.lngLat.lng });
         return;
       }
-      // Lo de más arriba gana: un dron, luego un punto y, debajo, la zona.
+      // Lo de más arriba gana: un dron y, debajo, la zona.
       const feature = event.features?.[0];
       const properties = feature?.properties ?? {};
       const layer = feature?.layer?.id;
       if (layer === "drones") onSelect({ kind: "flight", id: properties.orderId as string });
       else if (layer === "contacts") onSelect({ kind: "contact", id: properties.id as string });
-      else if (layer === "points") onSelect({ kind: "point", id: properties.id as string });
       else if (layer === "airspace-fill") {
         onSelect({ kind: "airspace", id: properties.code as string });
       } else onSelect(null);
@@ -480,7 +454,6 @@ export function RadarMap({
   const selectZone = useCallback((id: string) => onSelect({ kind: "zone", id }), [onSelect]);
 
   const selectedFlightId = selection?.kind === "flight" ? selection.id : "";
-  const selectedPointId = selection?.kind === "point" ? selection.id : "";
   const selectedContactId = selection?.kind === "contact" ? selection.id : "";
   const selectedZoneCode = selection?.kind === "airspace" ? selection.id : "";
   const geofenceVisibility = showGeofences ? "visible" : "none";
@@ -497,7 +470,7 @@ export function RadarMap({
         minZoom={8}
         maxZoom={17}
         attributionControl={{ compact: true }}
-        interactiveLayerIds={picking ? [] : ["drones", "contacts", "points", "airspace-fill"]}
+        interactiveLayerIds={picking ? [] : ["drones", "contacts", "airspace-fill"]}
         onClick={onClick}
         onLoad={onLoad}
         onMouseEnter={() => setHovering(true)}
@@ -690,33 +663,6 @@ export function RadarMap({
               "line-color": COLORS.returning,
               "line-width": 2.4,
               "line-dasharray": [2, 1.5],
-            }}
-          />
-        </Source>
-
-        {/* RF-45: los puntos de entrega. */}
-        <Source id="points" type="geojson" data={pointCollection}>
-          <Layer
-            id="point-halo"
-            type="circle"
-            filter={["==", ["get", "id"], selectedPointId]}
-            paint={{
-              "circle-radius": 14,
-              "circle-opacity": 0,
-              "circle-stroke-color": COLORS.accent,
-              "circle-stroke-width": 1.8,
-            }}
-          />
-          {/* Los puntos que quedan en un globo no se dibujan sueltos. */}
-          <Layer
-            id="points"
-            type="circle"
-            filter={["in", ["get", "id"], ["literal", [...sites.visiblePoints]]]}
-            paint={{
-              "circle-radius": ["interpolate", ["linear"], ["zoom"], 9, 6, 13, 8],
-              "circle-color": COLORS.panel,
-              "circle-stroke-color": ["case", ["get", "available"], COLORS.accent, COLORS.pointOff],
-              "circle-stroke-width": 2.4,
             }}
           />
         </Source>

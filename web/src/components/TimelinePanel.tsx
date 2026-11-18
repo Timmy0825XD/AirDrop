@@ -53,7 +53,7 @@ type Props = {
 
 /**
  * RF-39 para el público: cada paso con su hora y un título corto. Al tocar
- * uno se despliega en su lugar con la explicación ("Por qué este nodo",
+ * uno se despliega en su lugar con la explicación ("Por qué esta central",
  * "Por qué este dron") y el mapa vuela a donde pasó. Lo técnico de la
  * consola (reloj, actores, reinicio) no se cuenta.
  */
