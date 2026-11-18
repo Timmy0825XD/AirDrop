@@ -102,12 +102,12 @@ class _SourcePicker extends StatelessWidget {
       child: switch (form.sources!) {
         AsyncValue(hasValue: true, hasError: false, :final value?) =>
           AuthPickerField<OfferSource>(
-            label: 'Nodo de origen',
+            label: 'Central de origen',
             hint: value.isEmpty
-                ? 'Ningún nodo lo tiene ahora'
-                : 'Elige de qué nodo sale',
-            sheetTitle: '¿Qué nodo te lo manda?',
-            searchHint: 'Busca el nodo',
+                ? 'Ninguna otra central lo tiene ahora'
+                : 'Elige de qué central sale',
+            sheetTitle: '¿Qué central te lo manda?',
+            searchHint: 'Busca la central',
             errorText: form.errors[HubRequestInput.origin],
             shakeCount: form.shakeCount,
             empty: 'Ninguna otra central activa lo tiene con stock.',

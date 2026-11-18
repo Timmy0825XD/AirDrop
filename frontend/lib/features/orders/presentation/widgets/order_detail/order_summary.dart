@@ -95,15 +95,10 @@ class _SummaryLines extends StatelessWidget {
         DetailLine(
           label: 'Destino',
           value: forRequester && order.destinationKind == DestinationKind.person
-              ? 'Punto de entrega'
+              ? 'Tu ubicación'
               : destinationLabel(order),
         ),
-        DetailLine(
-          label: order.destinationKind == DestinationKind.person
-              ? 'Punto de entrega'
-              : 'Dirección',
-          value: order.address,
-        ),
+        DetailLine(label: 'Dirección', value: order.address),
         if (order.description != null)
           DetailLine(label: 'Descripción', value: order.description!),
         if (order.scheduledFor != null)

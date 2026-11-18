@@ -122,12 +122,7 @@ void main() {
         saleType: SaleType.prescription,
         requiresColdChain: false,
       )
-      ..point = const DeliveryPoint(
-        id: 'd1111111-1111-4111-8111-111111111111',
-        name: 'Puesto de salud de Badillo',
-        municipality: 'Valledupar',
-        location: LatLng(10.6314, -73.1279),
-      )
+      ..location = const LatLng(10.47, -73.25)
       ..prescriptions = [
         PrescriptionAttachment(
           bytes: Uint8List.fromList([0xff, 0xd8, 0xff]),

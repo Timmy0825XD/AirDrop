@@ -79,7 +79,7 @@ void main() {
   ) async {
     await _pump(
       tester,
-      const RouteLine(endLabel: 'Tu punto de entrega', hover: false),
+      const RouteLine(endLabel: 'Tu ubicación', hover: false),
     );
     expect(_droneLeft(tester), closeTo(0, 0.5));
     // No queda ninguna animación corriendo.

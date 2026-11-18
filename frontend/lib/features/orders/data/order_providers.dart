@@ -110,10 +110,6 @@ final orderPrescriptionProvider = FutureProvider.autoDispose
 /// Qué fórmula y para qué se abre (RF-51).
 typedef PrescriptionKey = ({String orderId, PrescriptionPurpose? purpose});
 
-/// Cuándo se vuela hoy (`GET /airspace/daylight`, RF-44).
-final daylightProvider = FutureProvider.autoDispose<Daylight>(
-  (ref) => ref.watch(orderRepositoryProvider).daylight(),
-);
 
 final planDetailProvider = FutureProvider.family<PlanDetail, String>((ref, id) {
   return ref.watch(orderRepositoryProvider).planDetail(id);

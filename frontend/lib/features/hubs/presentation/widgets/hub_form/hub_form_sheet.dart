@@ -63,7 +63,7 @@ class HubFormSheet extends StatelessWidget {
   }
 }
 
-/// El nombre de la central, su papel en la red y su tipo.
+/// El nombre de la central y su tipo.
 class _NameAndType extends StatelessWidget {
   const _NameAndType({
     required this.values,
@@ -89,14 +89,6 @@ class _NameAndType extends StatelessWidget {
           maxLength: FieldLimits.hubName,
           errorText: errorText,
           shakeCount: shakeCount,
-        ),
-        const SizedBox(height: 16),
-        HubNetworkChips(
-          selected: values.networkRole,
-          onChanged: (role) {
-            values.networkRole = role;
-            onChanged();
-          },
         ),
         const SizedBox(height: 16),
         HubTypeChips(

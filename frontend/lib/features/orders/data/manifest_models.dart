@@ -84,7 +84,7 @@ class CargoManifest {
   final String droneIdentifier;
   final String originName;
 
-  /// El punto de entrega o la central de destino.
+  /// La ubicación del solicitante o la central de destino.
   final String destination;
   final List<ManifestItem> items;
 

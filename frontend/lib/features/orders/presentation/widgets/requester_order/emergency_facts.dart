@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../../core/widgets/route_line.dart';
 
 /// Lo que se sabe antes de pedir, sobre el deslizador: la ruta que va a
-/// recorrer el pedido (de una central al punto de entrega) y quién decide.
+/// recorrer el pedido (de una central a tu ubicación) y quién decide.
 /// La urgencia va primero en la cola y la autoriza un despachador. No
 /// promete central, dron ni tiempos: eso lo decide el sistema al autorizar
 /// y la llegada se ve en el mapa cuando el dron despega.
@@ -22,7 +22,7 @@ class EmergencyFacts extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const RouteLine(endLabel: 'Tu punto de entrega', hover: false),
+          const RouteLine(endLabel: 'Tu ubicación', hover: false),
           const SizedBox(height: 10),
           Text(
             'Va primero en la cola. Un despachador revisa tu pedido y '

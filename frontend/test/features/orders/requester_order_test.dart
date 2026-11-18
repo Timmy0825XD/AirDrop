@@ -39,15 +39,8 @@ void _fillTriage(RequesterOrderValues values) {
     ..hasAllergies = false;
 }
 
-const _badillo = DeliveryPoint(
-  id: 'd1111111-1111-4111-8111-111111111111',
-  name: 'Puesto de salud de Badillo',
-  municipality: 'Valledupar',
-  location: LatLng(10.6314, -73.1279),
-);
-
 void main() {
-  test('sin punto de entrega no deja enviar (RF-45)', () {
+  test('sin el punto en el mapa no deja enviar: Nest no lo autorizaría', () {
     final values = RequesterOrderValues()
       ..offer = _rx
       ..prescriptions = [
@@ -58,39 +51,46 @@ void main() {
         ),
       ];
     addTearDown(values.dispose);
-    values.description.text = 'Infección';
+    values
+      ..description.text = 'Infección'
+      ..address.text = 'Calle 16 # 9-40';
 
     expect(values.validate(plan: false), {
-      RequesterInput.location: 'Elige un punto de entrega.',
+      RequesterInput.location:
+          'Usa tu ubicación o toca el mapa donde debe llegar el dron.',
     });
   });
 
-  test('el GPS es opcional: sin él solo viaja el punto (RU-02)', () {
+  test('la referencia es opcional y, vacía, no se manda (RU-02)', () {
     final values = RequesterOrderValues()
       ..offer = const CatalogOffer(
         name: 'Acetaminofén 500 mg',
         saleType: SaleType.overTheCounter,
         requiresColdChain: false,
       )
-      ..point = _badillo;
+      ..location = const LatLng(10.46, -73.25);
     addTearDown(values.dispose);
     values.description.text = 'Fiebre';
     _fillTriage(values);
 
     expect(values.validate(plan: false), isEmpty);
-    final body = values.emergency(_ana).toJson();
-    expect(body['deliveryPointId'], _badillo.id);
-    expect(body.containsKey('requesterLocation'), isFalse);
-    expect(body.containsKey('address'), isFalse);
-    expect(body.containsKey('latitude'), isFalse);
+    expect(values.emergency(_ana).toJson().containsKey('address'), isFalse);
+
+    values.address.text = '  Reja verde, patio de atrás ';
+    expect(
+      values.emergency(_ana).toJson()['address'],
+      'Reja verde, patio de atrás',
+    );
   });
 
   test('bajo fórmula pide la imagen', () {
     final values = RequesterOrderValues()
       ..offer = _rx
-      ..point = _badillo;
+      ..location = const LatLng(10.46, -73.25);
     addTearDown(values.dispose);
-    values.description.text = 'Infección';
+    values
+      ..description.text = 'Infección'
+      ..address.text = 'Calle 16 # 9-40';
 
     expect(
       values.validate(plan: false)[RequesterInput.prescription],
@@ -98,10 +98,9 @@ void main() {
     );
   });
 
-  test('la urgencia lleva el punto, el GPS redondeado y el documento', () {
+  test('la urgencia lleva el punto redondeado y el documento del titular', () {
     final values = RequesterOrderValues()
       ..offer = _rx
-      ..point = _badillo
       ..location = const LatLng(10.4631234567, -73.2532987654)
       ..prescriptions = [
         PrescriptionAttachment(
@@ -111,16 +110,15 @@ void main() {
         ),
       ];
     addTearDown(values.dispose);
-    values.description.text = ' Infección ';
+    values
+      ..description.text = ' Infección '
+      ..address.text = 'Calle 16 # 9-40';
     _fillTriage(values);
 
     final body = values.emergency(_ana);
 
-    expect(body.deliveryPointId, _badillo.id);
-    expect(body.toJson()['requesterLocation'], {
-      'latitude': 10.463123,
-      'longitude': -73.253299,
-    });
+    expect(body.latitude, 10.463123);
+    expect(body.longitude, -73.253299);
     expect(body.description, 'Infección');
     expect(body.patientDocumentType, DocumentType.citizenshipId);
     expect(body.patientDocumentNumber, '1065123456');
@@ -137,13 +135,15 @@ void main() {
         saleType: SaleType.overTheCounter,
         requiresColdChain: false,
       )
-      ..point = _badillo;
+      ..location = const LatLng(10.46, -73.25);
     values.schedule
       ..startDate = '2099-03-01'
       ..daysOfWeek.addAll({2, 4})
       ..time = '10:00';
     addTearDown(values.dispose);
-    values.quantity.text = '0';
+    values
+      ..address.text = 'Calle 16 # 9-40'
+      ..quantity.text = '0';
 
     expect(
       values.validate(plan: true)[RequesterInput.quantity],

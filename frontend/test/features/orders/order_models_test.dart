@@ -5,7 +5,6 @@ import 'package:frontend/features/auth/data/auth_models.dart';
 import 'package:frontend/features/inventory/data/inventory_models.dart';
 import 'package:frontend/features/orders/data/order_models.dart';
 import 'package:frontend/features/orders/data/prescription_attachment.dart';
-import 'package:latlong2/latlong.dart';
 
 void main() {
   test('Order.fromJson deja fechas String, droneId null y lee cola', () {
@@ -50,19 +49,14 @@ void main() {
   });
 
   test('CreateEmergencyRequest.toJson omite quantity y GPS vacío', () {
-    const point = 'd1111111-1111-4111-8111-111111111111';
     final request = CreateEmergencyRequest(
       medicationName: 'Acetaminofén',
       saleType: SaleType.overTheCounter,
       description: 'Fiebre alta',
-      deliveryPointId: point,
+      address: 'Calle 16',
     );
     final json = request.toJson();
     expect(json.containsKey('quantity'), isFalse);
-    // RF-45: el destino es el punto; ya no viajan dirección ni coordenadas.
-    expect(json['deliveryPointId'], point);
-    expect(json.containsKey('requesterLocation'), isFalse);
-    expect(json.containsKey('address'), isFalse);
     expect(json.containsKey('latitude'), isFalse);
     expect(json['saleType'], 'over_the_counter');
     expect(json.containsKey('prescriptions'), isFalse);
@@ -75,8 +69,9 @@ void main() {
         medicationName: 'Amoxicilina',
         saleType: SaleType.prescription,
         description: 'Infección',
-        deliveryPointId: 'd1111111-1111-4111-8111-111111111111',
-        requesterLocation: const LatLng(10.4631234567, -73.2532987654),
+        address: 'Calle 16',
+        latitude: 10.46314,
+        longitude: -73.25322,
         patientDocumentType: DocumentType.citizenshipId,
         patientDocumentNumber: '12345678',
         prescriptions: [
@@ -88,10 +83,7 @@ void main() {
         ],
       );
       final json = request.toJson();
-      expect(json['requesterLocation'], {
-        'latitude': 10.463123,
-        'longitude': -73.253299,
-      });
+      expect(json['latitude'], 10.46314);
       expect(json['patientDocumentType'], 'citizenship_id');
       expect(json['prescriptions'], [
         {'mime': 'application/pdf', 'base64': 'JVBERg=='},

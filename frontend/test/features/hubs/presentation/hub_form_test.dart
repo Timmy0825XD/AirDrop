@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/features/hubs/data/hub_models.dart';
 import 'package:frontend/features/hubs/presentation/widgets/hub_form_values.dart';
-import 'package:frontend/features/hubs/presentation/widgets/hub_labels.dart';
 import 'package:frontend/features/hubs/presentation/widgets/hub_tile.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -44,38 +43,12 @@ void main() {
       expect(values.request().toJson(), {
         'name': 'Hospital de Valencia de Jesús',
         'type': 'clinic',
-        'networkRole': 'node',
         'address': 'Calle 5 # 3-12',
         'latitude': 10.330123,
         'longitude': -73.380988,
         'contactPhone': '3004127788',
       });
     });
-  });
-
-  test('una ESE no tiene flota y el cambio de red viaja en el PATCH', () {
-    final ese = Hub.fromJson({
-      'id': 'h2',
-      'name': 'ESE Hospital de La Paz',
-      'type': 'hospital',
-      'networkRole': 'ese',
-      'address': 'Calle 7',
-      'latitude': 10.3844,
-      'longitude': -73.1733,
-      'contactPhone': '3156009921',
-      'status': 'active',
-    });
-    expect(ese.networkRole, HubNetworkRole.ese);
-    expect(ese.hasFleet, isFalse);
-    expect(HubLabels.kind(ese), 'ESE · Hospital');
-    // Un valor que la app no conoce no tumba la lista.
-    expect(HubNetworkRole.fromJson('relay'), HubNetworkRole.unknown);
-
-    final values = HubFormValues()..load(ese);
-    addTearDown(values.dispose);
-    expect(values.changes(ese), isEmpty);
-    values.networkRole = HubNetworkRole.node;
-    expect(values.changes(ese), {'networkRole': 'node'});
   });
 
   testWidgets('la tarjeta ofrece la acción contraria al estado', (

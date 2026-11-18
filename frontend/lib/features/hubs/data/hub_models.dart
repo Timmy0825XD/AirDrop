@@ -27,25 +27,6 @@ enum HubStatus {
   bool get isActive => this == HubStatus.active;
 }
 
-/// RF-06: el papel de la central en la red. Solo un **nodo** tiene drones
-/// y despega; una **ESE** (hospital o puesto de salud) recibe traslados.
-enum HubNetworkRole {
-  node('node'),
-  ese('ese'),
-
-  /// Un valor que Nest agregó y la app todavía no conoce.
-  unknown('unknown');
-
-  const HubNetworkRole(this.apiValue);
-
-  final String apiValue;
-
-  static HubNetworkRole fromJson(Object? value) => values.firstWhere(
-    (role) => role.apiValue == value,
-    orElse: () => HubNetworkRole.unknown,
-  );
-}
-
 /// Los cinco tipos que acepta `CreateHubDto` (`HubType` en Nest).
 enum HubType {
   hospital('hospital'),
@@ -77,7 +58,6 @@ class Hub {
     required this.longitude,
     required this.contactPhone,
     required this.status,
-    this.networkRole = HubNetworkRole.node,
     this.contactEmail,
     this.createdAt,
     this.powerOutageUntil,
@@ -94,7 +74,6 @@ class Hub {
       contactPhone: json['contactPhone'] as String,
       contactEmail: json['contactEmail'] as String?,
       status: HubStatus.fromJson(json['status'] as String),
-      networkRole: HubNetworkRole.fromJson(json['networkRole']),
       createdAt: DateTime.tryParse('${json['createdAt']}'),
       powerOutageUntil: DateTime.tryParse('${json['powerOutageUntil']}'),
     );
@@ -113,9 +92,6 @@ class Hub {
   final String contactPhone;
   final String? contactEmail;
   final HubStatus status;
-
-  /// Nodo (tiene drones) o ESE (solo recibe).
-  final HubNetworkRole networkRole;
   final DateTime? createdAt;
 
   /// RF-36: hasta cuándo está sin energía (la consola provoca el apagón);
@@ -124,9 +100,6 @@ class Hub {
   final DateTime? powerOutageUntil;
 
   bool get isActive => status.isActive;
-
-  /// Una ESE no tiene flota: no despega ni se le asignan drones.
-  bool get hasFleet => networkRole != HubNetworkRole.ese;
 
   /// Con energía a la hora [now] (la simulada), igual que `isPowered` en
   /// Nest. Sin energía no se autoriza ni se confirma carga (409).
@@ -140,7 +113,6 @@ class CreateHubRequest {
   const CreateHubRequest({
     required this.name,
     required this.type,
-    required this.networkRole,
     required this.address,
     required this.latitude,
     required this.longitude,
@@ -152,7 +124,6 @@ class CreateHubRequest {
     return {
       'name': name,
       'type': type.apiValue,
-      'networkRole': networkRole.apiValue,
       'address': address,
       'latitude': latitude,
       'longitude': longitude,
@@ -163,9 +134,6 @@ class CreateHubRequest {
 
   final String name;
   final HubType type;
-
-  /// Obligatorio en `POST /hubs`: nodo o ESE.
-  final HubNetworkRole networkRole;
   final String address;
   final double latitude;
   final double longitude;

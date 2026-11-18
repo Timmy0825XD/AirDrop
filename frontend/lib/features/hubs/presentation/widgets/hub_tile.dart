@@ -96,7 +96,7 @@ class _HubInfo extends StatelessWidget {
         ),
         const SizedBox(height: 3),
         Text(
-          HubLabels.kind(hub),
+          HubLabels.type(hub.type),
           style: theme.textTheme.bodySmall?.copyWith(
             color: theme.colorScheme.primary,
             fontWeight: FontWeight.w700,
