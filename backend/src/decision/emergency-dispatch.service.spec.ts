@@ -1,5 +1,3 @@
-import { NIGHT_EMERGENCY } from '../airspace/daylight.rules';
-import { ALWAYS_DAY } from '../airspace/daylight.testing';
 import { ForbiddenException } from '@nestjs/common';
 import { DestinationKind } from '../common/enums/destination-kind.enum';
 import { FallbackKind } from '../common/enums/fallback-kind.enum';
@@ -76,11 +74,7 @@ function dispatcherOf(hubId: string): User {
   } as unknown as User;
 }
 
-function build(
-  reach: Record<string, Reach>,
-  order = emergency(),
-  daylight = ALWAYS_DAY,
-) {
+function build(reach: Record<string, Reach>, order = emergency()) {
   const state = { order };
   const manager = {
     findOne: jest.fn(() => Promise.resolve(state.order)),
@@ -124,7 +118,6 @@ function build(
     routes as never,
     hubsService as never,
     notifications as never,
-    daylight,
   );
   return { service, state, notifications };
 }
@@ -156,20 +149,16 @@ describe('EmergencyDispatchService.start', () => {
     expect(notifications.queueChanged).toHaveBeenCalledWith('A', ORDER_ID);
   });
 
-  it('RF-44: de noche la urgencia no se ofrece: va directo a la alternativa terrestre', async () => {
-    const night = { ...ALWAYS_DAY, isDaylight: () => false } as never;
-    const { service, state, notifications } = build(
-      threeHubs,
-      emergency(),
-      night,
-    );
+  it('RF-44: de noche la urgencia se ofrece igual que de día', async () => {
+    // 23:00 en Colombia.
+    const night = new Date('2026-11-03T04:00:00.000Z');
+    const { service, state, notifications } = build(threeHubs);
 
-    await service.start(ORDER_ID, t0);
+    await service.start(ORDER_ID, night);
 
-    expect(state.order.status).toBe(OrderStatus.REASSIGNED);
-    expect(state.order.fallbackReason).toBe(NIGHT_EMERGENCY);
-    expect(state.order.dispatchOffers ?? []).toEqual([]);
-    expect(notifications.queueChanged).not.toHaveBeenCalled();
+    expect(state.order.status).not.toBe(OrderStatus.REASSIGNED);
+    expect(state.order.dispatchOffers![0].hubId).toBe('A');
+    expect(notifications.queueChanged).toHaveBeenCalledWith('A', ORDER_ID);
   });
 
   it('la central más cercana sin dron va después de una lista', async () => {

@@ -1,5 +1,3 @@
-import { NIGHT_EMERGENCY } from '../airspace/daylight.rules';
-import { DaylightService } from '../airspace/daylight.service';
 import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
 import {
   BadRequestException,
@@ -71,7 +69,6 @@ export class EmergencyDispatchService implements OnModuleInit, OnModuleDestroy {
     private readonly routes: RoutePlannerService,
     private readonly hubsService: HubsService,
     private readonly notifications: NotificationsService,
-    private readonly daylight: DaylightService,
   ) {}
 
   onModuleInit(): void {
@@ -102,18 +99,6 @@ export class EmergencyDispatchService implements OnModuleInit, OnModuleDestroy {
           current,
           today,
         );
-        // RF-44: de noche una urgencia no se encola: va la alternativa
-        // terrestre de una vez (RAC 100.220(a)(3)).
-        if (!this.daylight.isDaylight(now)) {
-          return this.toConventional(
-            manager,
-            current,
-            withStock,
-            NIGHT_EMERGENCY,
-            now,
-            [],
-          );
-        }
         if (!candidates.length) {
           return this.toConventional(
             manager,
@@ -366,8 +351,7 @@ export class EmergencyDispatchService implements OnModuleInit, OnModuleDestroy {
     changedHubIds: string[],
   ) {
     applyConventional(order, null, withStock, now);
-    // De noche el motivo va siempre: explica por qué no voló.
-    if (order.fallbackOptions?.length || reason === NIGHT_EMERGENCY) {
+    if (order.fallbackOptions?.length) {
       order.fallbackReason = reason;
     }
     order.nextEscalationAt = null;
