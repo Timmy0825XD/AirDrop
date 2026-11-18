@@ -5,7 +5,7 @@ import '../../../../core/widgets/app_sheet.dart';
 import '../../data/hub_models.dart';
 
 /// Lo que el administrador hace con una central al tocarla: editarla o ver
-/// su flota (solo un nodo la tiene, RF-06). Suspender y reactivar siguen en el botón de la tarjeta.
+/// su flota. Suspender y reactivar siguen en el botón de la tarjeta.
 Future<void> showHubActionsSheet(BuildContext context, Hub hub) {
   return showAppSheet<void>(
     context,
@@ -22,23 +22,22 @@ Future<void> showHubActionsSheet(BuildContext context, Hub hub) {
             leading: const Icon(Icons.edit_rounded),
             title: const Text('Editar central'),
             subtitle: const Text(
-              'Nombre, tipo de red, dirección, ubicación y contacto',
+              'Nombre, tipo, dirección, ubicación y contacto',
             ),
             onTap: () {
               Navigator.of(sheet).pop();
               context.go('/hubs/${hub.id}/edit');
             },
           ),
-          if (hub.hasFleet)
-            ListTile(
-              leading: const Icon(Icons.flight_rounded),
-              title: const Text('Ver flota'),
-              subtitle: const Text('Sus drones, solo lectura'),
-              onTap: () {
-                Navigator.of(sheet).pop();
-                context.push('/hubs/${hub.id}/fleet');
-              },
-            ),
+          ListTile(
+            leading: const Icon(Icons.flight_rounded),
+            title: const Text('Ver flota'),
+            subtitle: const Text('Sus drones, solo lectura'),
+            onTap: () {
+              Navigator.of(sheet).pop();
+              context.push('/hubs/${hub.id}/fleet');
+            },
+          ),
           const SizedBox(height: 8),
         ],
       ),

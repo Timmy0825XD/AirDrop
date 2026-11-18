@@ -1,5 +1,3 @@
-import 'package:latlong2/latlong.dart';
-
 import '../../../core/api_exception.dart';
 import '../../../core/network/api_client.dart';
 import 'agenda_models.dart';
@@ -22,22 +20,6 @@ class RemoteOrderRepository implements OrderRepository {
     return _asJsonList(
       data,
     ).map((row) => CatalogOffer.fromJson(_asMap(row))).toList();
-  }
-
-  @override
-  Future<CoverageResult> coverage({
-    LatLng? from,
-    String? medicationName,
-  }) async {
-    final data = await apiClient.getJson(
-      '/delivery-points',
-      query: {
-        if (from != null) 'latitude': from.latitude.toStringAsFixed(6),
-        if (from != null) 'longitude': from.longitude.toStringAsFixed(6),
-        'medicationName': ?medicationName,
-      },
-    );
-    return CoverageResult.fromJson(_asMap(data));
   }
 
   @override
@@ -136,12 +118,6 @@ class RemoteOrderRepository implements OrderRepository {
   Future<Order> findOne(String id) async {
     final data = await apiClient.getJson('/orders/$id');
     return Order.fromJson(_asMap(data));
-  }
-
-  @override
-  Future<Daylight> daylight() async {
-    final data = await apiClient.getJson('/airspace/daylight');
-    return Daylight.fromJson(_asMap(data));
   }
 
   @override

@@ -34,15 +34,15 @@ const welcomeSteps = [
     icon: Icons.flight_rounded,
     title: 'Sigue el vuelo en el mapa',
     body:
-        'El dron sale de una central y vuela hasta tu punto de entrega, no '
-        'hasta tu casa. Verás por dónde va y cuánto falta.',
+        'El dron sale de una central y vuela hasta el punto que marcaste. '
+        'Verás por dónde va y cuánto falta.',
   ),
   WelcomeStep(
     scene: CorridorScene.route,
     icon: Icons.lock_open_rounded,
     title: 'Recibe con tu código',
     body:
-        'Cuando el dron llega, tienes 5 minutos para dar tu código en el '
-        'punto de entrega. Si nadie lo recibe, el paquete vuelve a la central.',
+        'Cuando el dron llega, tienes 5 minutos para dar tu código. Si '
+        'nadie lo recibe, el paquete vuelve a la central.',
   ),
 ];

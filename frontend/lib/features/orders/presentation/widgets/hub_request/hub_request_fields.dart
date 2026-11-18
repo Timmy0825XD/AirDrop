@@ -67,10 +67,10 @@ class _OriginPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final f = fields;
     return AuthPickerField<String>(
-      label: 'Nodo de origen',
-      hint: 'Elige el nodo',
-      sheetTitle: '¿A qué nodo le pides?',
-      searchHint: 'Busca el nodo',
+      label: 'Central de origen',
+      hint: 'Elige la central',
+      sheetTitle: '¿A qué central le pides?',
+      searchHint: 'Busca la central',
       errorText: f.errors[HubRequestInput.origin],
       shakeCount: f.shakeCount,
       options: [

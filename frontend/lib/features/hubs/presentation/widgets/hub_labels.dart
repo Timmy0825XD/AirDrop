@@ -27,17 +27,6 @@ class HubLabels {
     HubType.vaccination => Icons.vaccines_rounded,
   };
 
-  /// "Nodo" o "ESE" (RF-06).
-  static String network(HubNetworkRole role) => switch (role) {
-    HubNetworkRole.node => 'Nodo',
-    HubNetworkRole.ese => 'ESE',
-    HubNetworkRole.unknown => 'Central',
-  };
-
-  /// "Nodo · Hospital": el papel en la red y el tipo, en una línea.
-  static String kind(Hub hub) =>
-      '${network(hub.networkRole)} · ${type(hub.type)}';
-
   static String status(HubStatus status) => switch (status) {
     HubStatus.active => 'Activa',
     HubStatus.suspended => 'Suspendida',

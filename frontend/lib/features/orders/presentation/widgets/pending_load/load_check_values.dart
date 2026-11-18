@@ -31,7 +31,7 @@ List<LoadCheckItem> loadChecklist(Order order) {
       icon: Icons.place_rounded,
       text: order.destinationKind == DestinationKind.hub
           ? 'A la central: ${order.address}'
-          : 'Al punto de entrega: ${order.address}',
+          : 'A domicilio: ${order.address}',
     ),
   ];
 }

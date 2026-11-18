@@ -12,7 +12,6 @@ import 'widgets/plan_schedule/schedule_fields.dart';
 import 'widgets/plan_schedule/schedule_preview_card.dart';
 import 'widgets/plan_schedule/schedule_preview_state.dart';
 import 'widgets/plan_schedule/schedule_values.dart';
-import 'widgets/requester_order/delivery_point_step.dart';
 import 'widgets/requester_order/requester_order_fields.dart';
 import 'widgets/requester_order/requester_order_state.dart';
 import 'widgets/requester_order/patient_fields.dart';
@@ -21,8 +20,8 @@ import 'widgets/requester_order/triage_values.dart';
 
 /// Entrega periódica del solicitante (`POST /orders/plans`) en tres pasos:
 /// **Qué** (para quién, el medicamento, la fórmula si la pide y cuánto), **Cuándo**
-/// (el calendario, RU-30, con su vista previa) y **Dónde** (el punto de
-/// entrega, RF-45). "Siguiente" valida solo el paso abierto; volver (el
+/// (el calendario, RU-30, con su vista previa) y **Dónde** (dirección y
+/// punto en el mapa). "Siguiente" valida solo el paso abierto; volver (el
 /// botón del encabezado o el atrás del teléfono) regresa al anterior sin
 /// perder lo escrito. Al crearla se abre el detalle del plan.
 class PlanFormScreen extends ConsumerStatefulWidget {
@@ -101,7 +100,6 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen>
     // Al llegar a "Cuándo" se pide la vista previa con lo que ya hay (la
     // fórmula del paso 1 cambia lo que exige el calendario).
     if (_step == 1) _scheduleChanged();
-    if (_last && coverage == null) loadCoverage();
   }
 
   Future<void> _send() => submit(
@@ -132,16 +130,13 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen>
         steps: FormSteps(labels: PlanFormScreen.steps, current: _step),
         onBack: _back,
         fields: _fields,
-        // Sin cobertura no se programa: se ve dónde recogerlo.
-        button: _last && !canOrder
-            ? const SizedBox.shrink()
-            : AuthMorphButton(
-                label: _last ? 'Programar entregas' : 'Siguiente',
-                loadingLabel: 'Programando las entregas',
-                isLoading: sending,
-                // En "Cuándo", con error de Nest en la vista previa no se sigue.
-                onPressed: _step == 1 && previewError != null ? null : _next,
-              ),
+        button: AuthMorphButton(
+          label: _last ? 'Programar entregas' : 'Siguiente',
+          loadingLabel: 'Programando las entregas',
+          isLoading: sending,
+          // En "Cuándo", con error de Nest en la vista previa no se sigue.
+          onPressed: _step == 1 && previewError != null ? null : _next,
+        ),
       ),
     );
   }
@@ -172,6 +167,6 @@ class _PlanFormScreenState extends ConsumerState<PlanFormScreen>
         loading: previewLoading,
       ),
     ],
-    _ => [DeliveryPointStep(form: form)],
+    _ => [DestinationFields(form: form)],
   };
 }

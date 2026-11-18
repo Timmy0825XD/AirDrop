@@ -1,17 +1,13 @@
 import 'dart:typed_data';
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/core/network/api_client.dart';
 import 'package:frontend/core/auth/token_store.dart';
-import 'package:frontend/core/widgets/warning_banner.dart';
 import 'package:frontend/features/auth/data/auth_models.dart';
 import 'package:frontend/features/auth/data/privacy_models.dart';
 import 'package:frontend/features/auth/presentation/prescription_access_screen.dart';
-import 'package:frontend/features/home/presentation/widgets/requester/daylight_note.dart';
 import 'package:frontend/features/orders/data/order_models.dart';
 import 'package:frontend/features/orders/data/remote_order_repository.dart';
-import 'package:frontend/theme/app_theme.dart';
 
 class _Store extends TokenStore {
   _Store() : super();
@@ -43,23 +39,8 @@ class _Api extends ApiClient {
   }
 }
 
-Daylight _day({required bool daylight}) => Daylight.fromJson({
-  'date': '2026-11-15',
-  'sunrise': '2026-11-15T10:58:00.000Z',
-  'sunset': '2026-11-15T22:32:00.000Z',
-  'now': '2026-11-15T15:00:00.000Z',
-  'daylight': daylight,
-});
-
-Future<void> _pump(WidgetTester tester, Widget child) => tester.pumpWidget(
-  MaterialApp(
-    theme: AppTheme.light,
-    home: Scaffold(body: child),
-  ),
-);
-
 void main() {
-  test('las franjas van de las 07:00 a las 16:00 (RF-44)', () {
+  test('las franjas van de las 07:00 a las 16:00 (RU-30)', () {
     expect(slotTimes.first, '07:00');
     expect(slotTimes.last, '16:00');
     expect(slotTimes, hasLength(10));
@@ -82,26 +63,6 @@ void main() {
       '/orders/o1/prescription/files',
       '/orders/o1/prescription/0',
     ]);
-  });
-
-  testWidgets('de día dice las horas de vuelo, en hora de Colombia', (
-    tester,
-  ) async {
-    await _pump(tester, DaylightNote(day: _day(daylight: true)));
-
-    // 10:58 y 22:32 UTC son las 5:58 y las 17:32 en Colombia.
-    final text = daylightHours(_day(daylight: true));
-    expect(text, startsWith('Hoy se vuela de 5:58'));
-    expect(text, contains('5:32'));
-    expect(find.text(text), findsOneWidget);
-    expect(find.byType(WarningBanner), findsNothing);
-  });
-
-  testWidgets('de noche avisa que la urgencia va por tierra', (tester) async {
-    await _pump(tester, DaylightNote(day: _day(daylight: false)));
-
-    expect(find.byType(WarningBanner), findsOneWidget);
-    expect(find.textContaining('alternativa terrestre'), findsOneWidget);
   });
 
   test('el registro de accesos dice la hoja, el propósito y el rol', () {

@@ -8,12 +8,12 @@ enum CorridorScene {
   /// Algo falló: la ruta sale de la central y se corta.
   broken,
 
-  /// La ruta completa, de la central al punto de entrega.
+  /// La ruta completa, de la central al destino.
   route,
 }
 
 /// La ilustración del concepto Corredor: la región vista desde arriba
-/// (tierra, río) y la ruta punteada entre la central y el punto de entrega.
+/// (tierra, río) y la ruta punteada entre la central y el destino.
 /// Va en los estados vacíos y de error y en la bienvenida. Es decoración:
 /// no muestra datos. Todos los colores salen del tema. Con [icon] lleva una
 /// ficha en el centro que dice de qué se trata.

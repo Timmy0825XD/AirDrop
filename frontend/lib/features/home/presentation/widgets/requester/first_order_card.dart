@@ -29,7 +29,7 @@ class FirstOrderCard extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              'El dron sale de una central y llega a tu punto de entrega. '
+              'El dron sale de una central y llega a donde estás. '
               'Lo recibes con un código.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(

@@ -20,9 +20,6 @@ class HubFormValues {
   final email = TextEditingController();
   HubType type = HubType.hospital;
 
-  /// RF-06: nodo (con drones) o ESE (solo recibe).
-  HubNetworkRole networkRole = HubNetworkRole.node;
-
   /// Dónde queda la central; `null` hasta que se toca el mapa.
   LatLng? location;
 
@@ -39,7 +36,6 @@ class HubFormValues {
     phone.text = hub.contactPhone;
     email.text = hub.contactEmail ?? '';
     type = hub.type;
-    networkRole = hub.networkRole;
     location = LatLng(hub.latitude, hub.longitude);
   }
 
@@ -54,8 +50,6 @@ class HubFormValues {
     return {
       if (next.name != original.name) 'name': next.name,
       if (next.type != original.type) 'type': next.type.apiValue,
-      if (next.networkRole != original.networkRole)
-        'networkRole': next.networkRole.apiValue,
       if (next.address != original.address) 'address': next.address,
       if (moved) ...{'latitude': next.latitude, 'longitude': next.longitude},
       if (next.contactPhone != original.contactPhone)
@@ -95,7 +89,6 @@ class HubFormValues {
     return CreateHubRequest(
       name: name.text.trim(),
       type: type,
-      networkRole: networkRole,
       address: address.text.trim(),
       latitude: double.parse(point.latitude.toStringAsFixed(6)),
       longitude: double.parse(point.longitude.toStringAsFixed(6)),

@@ -12,7 +12,6 @@ import '../../orders/data/order_models.dart';
 import '../../orders/data/order_providers.dart';
 import '../../orders/presentation/order_history_screen.dart';
 import '../../settings/data/app_settings.dart';
-import 'widgets/requester/daylight_note.dart';
 import 'widgets/home_grid.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_page.dart';
@@ -96,9 +95,6 @@ class RequesterHome extends ConsumerWidget {
               order: next,
               onTap: () => context.push('/orders/${next.id}'),
             ),
-          // RF-44: cuándo se vuela hoy. Si no carga, no sale.
-          if (ref.watch(daylightProvider).value case final day?)
-            DaylightNote(day: day),
           _RequesterGrid(simple: simple),
         ],
       ),

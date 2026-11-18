@@ -35,12 +35,7 @@ class PlanSummary extends StatelessWidget {
                 '${formatDay(plan.windowEndsOn, relative: false)}',
           ),
           DetailLine(label: 'Destino', value: plan.destinationKind.label),
-          DetailLine(
-            label: plan.destinationKind == DestinationKind.person
-                ? 'Punto de entrega'
-                : 'Dirección',
-            value: plan.address,
-          ),
+          DetailLine(label: 'Dirección', value: plan.address),
         ],
       ),
     );

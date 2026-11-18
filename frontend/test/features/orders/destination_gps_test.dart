@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/core/location/device_location.dart';
+import 'package:frontend/core/widgets/warning_banner.dart';
 import 'package:frontend/features/inventory/data/inventory_models.dart';
-import 'package:frontend/features/orders/data/local_order_repository.dart';
 import 'package:frontend/features/orders/data/order_models.dart';
 import 'package:frontend/features/orders/data/order_providers.dart';
 import 'package:frontend/features/orders/presentation/emergency_screen.dart';
@@ -46,8 +46,6 @@ Future<void> _pump(
           ],
         ),
         deviceLocationProvider.overrideWithValue(gps),
-        // Los puntos de entrega salen del repositorio local.
-        orderRepositoryProvider.overrideWithValue(LocalOrderRepository()),
       ],
       child: MaterialApp(theme: AppTheme.light, home: const EmergencyScreen()),
     ),
@@ -86,83 +84,55 @@ Future<void> _tapGps(WidgetTester tester) async {
 }
 
 void main() {
-  testWidgets('"Dónde" lista los puntos de entrega y no pide dirección', (
+  testWidgets('el punto es el destino: no hay campo de dirección obligatorio', (
     tester,
   ) async {
     await _pump(tester, _FakeLocation(() async => throw UnimplementedError()));
 
-    expect(find.text('Punto de entrega'), findsOneWidget);
-    expect(find.text('Puesto de salud de Badillo'), findsOneWidget);
-    expect(find.text('Puesto de salud de Media Luna'), findsOneWidget);
     expect(find.text('Dirección'), findsNothing);
-    expect(find.text('Referencia para encontrarte'), findsNothing);
-    // Sin GPS no se propone ninguno.
-    expect(find.byIcon(Icons.check_circle_rounded), findsNothing);
-    expect(find.textContaining('baja en el punto de entrega'), findsOneWidget);
+    expect(find.text('Referencia para encontrarte'), findsOneWidget);
+    expect(find.text('Opcional'), findsOneWidget);
+    expect(find.textContaining('lugar despejado'), findsOneWidget);
   });
 
-  testWidgets('"Usar mi ubicación" propone el punto más cercano', (
+  testWidgets('"Usar mi ubicación" pone el pin y dice la precisión', (
     tester,
   ) async {
     await _pump(
       tester,
       _FakeLocation(
         () async =>
-            const LocationFix(point: LatLng(10.63, -73.13), accuracyM: 12),
+            const LocationFix(point: LatLng(10.4702, -73.2551), accuracyM: 12),
       ),
     );
 
     await _tapGps(tester);
 
-    expect(find.textContaining('El más cercano'), findsOneWidget);
-    expect(find.text('Valledupar · 0,3 km · El más cercano'), findsOneWidget);
-    expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
+    expect(find.text('10.4702, -73.2551'), findsOneWidget);
+    expect(find.text('Punto tomado del GPS (±12 m)'), findsOneWidget);
+    expect(find.byType(WarningBanner), findsNothing);
   });
 
-  testWidgets('se puede elegir otro punto de la lista', (tester) async {
-    await _pump(
-      tester,
-      _FakeLocation(
-        () async =>
-            const LocationFix(point: LatLng(10.63, -73.13), accuracyM: 12),
-      ),
-    );
-    await _tapGps(tester);
-
-    await _tap(tester, find.text('Puesto de salud de Media Luna'));
-
-    final chosen = tester.widget<Semantics>(
-      find.ancestor(
-        of: find.text('Puesto de salud de Media Luna'),
-        matching: find.byWidgetPredicate(
-          (w) => w is Semantics && w.properties.selected == true,
-        ),
-      ),
-    );
-    expect(chosen.properties.label, contains('Media Luna'));
-    expect(find.byIcon(Icons.check_circle_rounded), findsOneWidget);
-  });
-
-  testWidgets('en la ciudad dice por qué no hay dron y no deja pedir', (
+  testWidgets('con un GPS impreciso pide afinar el pin en el mapa', (
     tester,
   ) async {
     await _pump(
       tester,
       _FakeLocation(
         () async =>
-            const LocationFix(point: LatLng(10.4766, -73.2434), accuracyM: 8),
+            const LocationFix(point: LatLng(10.4702, -73.2551), accuracyM: 120),
       ),
     );
-    expect(find.text('Desliza para pedir'), findsOneWidget);
 
     await _tapGps(tester);
 
     expect(
-      find.textContaining('En la ciudad de Valledupar no se entrega con dron'),
+      find.text(
+        'El GPS tiene un error de ±120 m. Toca el mapa y deja el pin en el '
+        'lugar exacto.',
+      ),
       findsOneWidget,
     );
-    expect(find.text('Puesto de salud de Badillo'), findsNothing);
-    expect(find.text('Desliza para pedir'), findsNothing);
   });
 
   testWidgets('sin permiso lo explica y abre los ajustes de la app', (
@@ -182,8 +152,7 @@ void main() {
       find.text('Le quitaste a AirDrop el permiso de ubicación.'),
       findsOneWidget,
     );
-    // Sin GPS se sigue pudiendo elegir en la lista.
-    expect(find.text('Puesto de salud de Badillo'), findsOneWidget);
+    expect(find.text('10.4702, -73.2551'), findsNothing);
     await tester.tap(find.text('Ajustes'));
     await tester.pumpAndSettle();
     expect(gps.opened, PhoneSetting.app);

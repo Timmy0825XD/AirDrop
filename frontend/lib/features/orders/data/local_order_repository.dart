@@ -1,11 +1,8 @@
 import 'dart:typed_data';
 
-import 'package:latlong2/latlong.dart';
-
 import '../../../core/api_exception.dart';
 import '../../inventory/data/inventory_models.dart' show SaleType;
 import 'agenda_models.dart';
-import 'local_delivery_points.dart';
 import 'local_plan_calendar.dart';
 import 'order_models.dart';
 import 'order_repository.dart';
@@ -171,12 +168,6 @@ class LocalOrderRepository implements OrderRepository {
   }
 
   @override
-  Future<CoverageResult> coverage({
-    LatLng? from,
-    String? medicationName,
-  }) async => localCoverage(from);
-
-  @override
   Future<List<OriginHub>> originHubs() async {
     return const [
       OriginHub(
@@ -202,9 +193,9 @@ class LocalOrderRepository implements OrderRepository {
       requiresColdChain: false,
       quantity: 1,
       description: request.description,
-      address: localPointAddress(request.deliveryPointId),
-      latitude: localPoint(request.deliveryPointId)?.location.latitude,
-      longitude: localPoint(request.deliveryPointId)?.location.longitude,
+      address: request.address ?? 'Punto marcado en el mapa',
+      latitude: request.latitude,
+      longitude: request.longitude,
       hasPrescription: request.saleType == SaleType.prescription,
       createdByUserId: 'local-requester',
       createdAt: DateTime.now().toUtc(),
@@ -255,7 +246,7 @@ class LocalOrderRepository implements OrderRepository {
       startDate: dates.firstOrNull ?? request.startDate ?? todayLocalIso(),
       windowEndsOn: dates.lastOrNull ?? '2026-11-29',
       destinationKind: DestinationKind.person,
-      address: localPointAddress(request.deliveryPointId),
+      address: request.address ?? 'Punto marcado en el mapa',
       hasPrescription: request.saleType == SaleType.prescription,
       renewalDue: false,
       createdAt: DateTime.now().toUtc(),
@@ -371,20 +362,6 @@ class LocalOrderRepository implements OrderRepository {
       (e) => e.id == id,
       orElse: () =>
           throw const ApiException('El pedido no existe.', statusCode: 404),
-    );
-  }
-
-  @override
-  Future<Daylight> daylight() async {
-    // Sin Nest: de 6 a 18, hora de Colombia (UTC-5), del día real.
-    final now = DateTime.now().toUtc();
-    final local = now.subtract(const Duration(hours: 5));
-    final sunrise = DateTime.utc(local.year, local.month, local.day, 11);
-    final sunset = DateTime.utc(local.year, local.month, local.day, 23);
-    return Daylight(
-      sunrise: sunrise,
-      sunset: sunset,
-      daylight: !now.isBefore(sunrise) && now.isBefore(sunset),
     );
   }
 

@@ -24,7 +24,7 @@ Reglas de negocio que no deben contradecirse:
 - La ruta debe evitar geovallas y trabajar a altitud/corredor fijo.
 - En destino se esperan 5 minutos por el código; sin código, el paquete vuelve a la central. El reingreso al inventario sigue la cuarentena de [`../context/entregas/productos.md`](../context/entregas/productos.md).
 - Si no hay dron elegible, se muestra fallback; no se rechaza ciegamente.
-- Una urgencia o un plan puede pedirlo un civil (destino: un punto de entrega) o el despachador de una central (destino: su central). Quien autoriza y carga es siempre el despachador del nodo que tiene el insumo.
+- Una urgencia o un plan puede pedirlo un civil (destino: su ubicación, GPS o pin) o el despachador de una central (destino: su central). Quien autoriza y carga es siempre el despachador del nodo que tiene el insumo.
 - El frontend no debe inventar hardware real, clima real, 3D, multirregión ni un rol receptor. No nombra un fabricante de dron: muestra el tipo (Colibrí, Garza, Cóndor).
 
 La autoridad completa de negocio está en [`../context/index.md`](../context/index.md). Este resumen sirve para no perder el contexto durante una sesión de implementación.
@@ -113,7 +113,7 @@ colores salen del tema. Piezas (en `widgets/` y `widgets/airspace/`;
 | Widget | Para qué |
 | --- | --- |
 | `AirspaceMap` | El mapa de la ciudad (tierra, parques, río, avenidas y calles; centrales como cuadro del acento con la cruz, rutas sólidas y drones como fichas claras). Lo mueven `network` (dibuja rutas y centrales), `traffic` (suelta los drones) y `dive` (la cámara se acerca en la salida). No se inclina. Con "reducir movimiento" queda quieto y sin drones. El dibujo vive en `AirspacePainter` (colores en `AppMapLook`, `theme/app_map_style.dart`) y los vuelos en `AirspaceTraffic`. |
-| `RouteLine` (`core/widgets`) | El motivo del concepto Corredor: la ruta de la central al punto de entrega, sólida en lo recorrido y en puntos en lo que falta, con `DroneMark` en su avance. La usan la misión del inicio y el resumen de la urgencia. Con `hover: false` el dron espera en la central. |
+| `RouteLine` (`core/widgets`) | El motivo del concepto Corredor: la ruta de la central al destino, sólida en lo recorrido y en puntos en lo que falta, con `DroneMark` en su avance. La usan la misión del inicio y el resumen de la urgencia. Con `hover: false` el dron espera en la central. |
 | `DroneMark` (`core/widgets`) | El dron de la marca como ficha: círculo claro con sombra y el dron de líneas con el núcleo del acento. Lo usan el mapa (`DroneMarker`), el recorrido del pedido y los inicios. `halo` dibuja un anillo fino del acento. No es el logo: gira con el rumbo. |
 | `LiveLogo` (`core/widgets`) | El logo arrancando: los rotores giran sobre su eje y se detienen. Solo en la entrada del login. |
 | `AirDropLogo` (`core/widgets`) | El logo Dron-cruz del manual de marca (`Airdrop_Products/_brand`): ficha con degradado, dron y cruz, con los colores fijos de la marca. Por debajo de 48 px dibuja la versión simple (ficha y cruz). |
@@ -375,17 +375,16 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
   o regresa; no es el socket caído. El incidente `link_loss` se rotula
   "Perdió el enlace: espera 30 s".
 
-### Fórmula con propósito, luz del día y registro de accesos (RF-51, RF-44)
+### Fórmula con propósito y registro de accesos (RF-51)
 
 - La fórmula se abre con `showPrescription(context, id, purpose: …)`:
   `PrescriptionPurpose.authorize` mientras la central decide y `history`
   después. Cada hoja viaja con `?purpose=`; la lista de hojas (`/files`) no
   registra un acceso y va sin él. `orderPrescriptionProvider` se indexa
   por `PrescriptionKey` (`orderId` y `purpose`).
-- `GET /airspace/daylight` (`OrderRepository.daylight`, `daylightProvider`):
-  el inicio del solicitante dice "Hoy se vuela de … a …" (`DaylightNote`)
-  y, de noche, que una urgencia va por la alternativa terrestre. Si no
-  carga, no sale. El motivo del pedido de noche ya lo pinta `FallbackCard`.
+- Se vuela a cualquier hora (RF-44): la app no muestra la salida ni la
+  puesta del sol. `PrescriptionPurpose` vive en
+  `orders/data/prescription_purpose.dart`.
 - Las franjas de un plan van de 07:00 a 16:00 (`slotTimes`).
 - `/privacy/prescription-access` (`PrescriptionAccessScreen`, solo admin,
   desde su inicio): quién abrió una fórmula, qué hoja, para qué y cuándo
@@ -491,7 +490,7 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `OrderJourney` | `orders/presentation/widgets/order_detail` | Arriba del detalle: el recorrido del pedido en cinco puntos (pedido, autorizado, carga, vuelo, entrega) con la ficha del dron sobre el actual y una equis si terminó mal. |
 | `EmergencyFacts` | `orders/presentation/widgets/requester_order` | Pedir urgencia: la nota gris sobre el deslizador (va primero en la cola, el despachador elige la central, el dron sigue una ruta que evita las zonas restringidas). No promete central ni tiempos antes de autorizar. El medicamento se elige con `CatalogChoices` (buscador); el radar y el carrusel se borraron en la Fase 21. |
 | `AuthPickerField` / `showSearchPicker` / `PickerOption` | `auth/presentation/widgets` | Elegir de una lista que puede ser larga (medicamento, central de origen): un campo con la forma de `AuthField` que abre una hoja con buscador (sin mayúsculas ni tildes) y una lista perezosa. `offerOption` (`orders/presentation/widgets`) arma la opción de un insumo. No usar chips para listas que crecen con los datos. |
-| `AuthLocationField` / `pickLocation` | `auth/presentation/widgets` | Vista previa quieta del punto; al tocarla abre el mapa a pantalla completa con el pin fijo al centro (se levanta al arrastrar y cae con rebote) y "Usar esta ubicación" (nueva central; la urgencia y la entrega periódica eligen un punto de entrega con `DeliveryPointStep`). Con `gps: LocationGps(...)` suma "Usar mi ubicación" y la precisión del GPS (`location_gps_row.dart`, RU-02); el GPS lo lee `DeviceLocation` (`core/location`, `deviceLocationProvider`). |
+| `AuthLocationField` / `pickLocation` | `auth/presentation/widgets` | Vista previa quieta del punto; al tocarla abre el mapa a pantalla completa con el pin fijo al centro (se levanta al arrastrar y cae con rebote) y "Usar esta ubicación" (nueva central, urgencia y entrega periódica: `DestinationFields`). Con `gps: LocationGps(...)` suma "Usar mi ubicación" y la precisión del GPS (`location_gps_row.dart`, RU-02); el GPS lo lee `DeviceLocation` (`core/location`, `deviceLocationProvider`). |
 | `OrderFormScaffold` | `orders/presentation/widgets` | Formularios de pedido sobre `SectionFormPage`; mientras su lista (catálogo o centrales) carga, falla o viene vacía, lo dice. Por pasos, `steps` (el avance) y `onBack` (volver al paso anterior). |
 | `FormSteps` | `orders/presentation/widgets` | El avance de un formulario por pasos: una barra por paso y "Paso 2 de 3 · Cuándo". La entrega periódica va en Qué · Cuándo · Dónde; "Siguiente" valida solo el paso abierto y el atrás del teléfono vuelve al anterior. |
 | `HubEmergencyFields` / `offerSourcesProvider` | `orders/presentation/widgets/hub_request` y `orders/data` | Urgencia a otra central con el medicamento primero: el catálogo general y después solo las centrales que lo tienen con stock (se cruzan los catálogos de las centrales de origen). El abastecimiento sigue con la central primero (`HubRequestFields`). |
@@ -500,8 +499,8 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `TriageDraft` / `TriageForm` (tamizaje) | `orders/presentation/widgets/requester_order` | La urgencia en 3 pasos (RU-02): "Qué pasa" (`RedFlagsField` con `AlarmCallCard` y el 123, `ForWhomField`/`DependentFields` para la persona a cargo, `PatientGroupField`, `SymptomFields`), "Qué necesitas" (medicamento, `AllergiesField` llenado con `PublicUser.allergies`, fórmula) y "Dónde". Preguntas en fichas con `ChipChoiceField`. Modelos y textos en `orders/data/triage_models.dart`. El despachador lo ve en `TriageCard` y la cola pinta en rojo la alarma. |
 | `PrescriptionViewerScreen` / `showPrescription` | `orders/presentation` | El visor de la fórmula del despachador (RF-27): cada hoja a pantalla completa (`PrescriptionImagePage`: zoom hasta 6×, doble toque, girar; `PrescriptionPdfPage`: `pdfrx`), barra de hojas, "Qué revisar" en una hoja aparte y "Abrir con…" (`TempFileShare`, `core/files`: copia temporal que se borra al cerrar). Las hojas las baja `orderPrescriptionProvider` (autoDispose). Lo abren la sección de autorizar y, ya autorizado, `PrescriptionRecordCard` (`canReviewPrescription`). |
 | `PrescriptionPicker` / `PrescriptionAttachment` | `orders/presentation/widgets/requester_order`, `orders/data` | La fórmula (RU-25): "Tomar foto" (`image_picker`, 2400 px, calidad 85) y "Subir archivo" (PDF, JPG o PNG). Un PDF solo o hasta 3 fotos de 5 MB; un PDF reemplaza las fotos y una foto el PDF (`addPrescriptionFiles`). Va en `prescriptions` del body. |
-| `DeliveryPointStep` / `DeliveryPointTile` / `DeliveryPointsMap` / `GroundAlternativeCard` | `orders/presentation/widgets/requester_order` | El paso "Dónde" de la urgencia y de la entrega periódica (RU-02, RF-45): `GET /delivery-points` (`OrderRepository.coverage`, `RequesterOrderState.loadCoverage`). "Usar mi ubicación" propone el punto más cercano; se elige otro en la lista o tocando su pin en el mapa quieto. Con `urban` o `no_point` muestra el mensaje de Nest y dónde recoger el medicamento (`FallbackOptionTile`), y el botón de enviar no sale. Modelos en `orders/data/delivery_point_models.dart`; con datos locales, `local_delivery_points.dart`. |
-| `RequesterOrderValues` / `RequesterOrderState` | `orders/presentation/widgets/requester_order` | Valores, validación y estado compartidos por la urgencia y la entrega periódica del solicitante. **El punto de entrega es obligatorio** (`deliveryPointId`); el GPS es opcional, viaja como `requesterLocation` y solo sirve para proponer el más cercano. Ya no hay dirección ni coordenadas en el body (RF-45). |
+| `DestinationFields` / `ClearSpotNote` | `orders/presentation/widgets/requester_order` | El paso "Dónde" de la urgencia y de la entrega periódica (RU-02, RF-45): `AuthLocationField` con "Usar mi ubicación" y el pin, y la referencia opcional. El punto es el destino. |
+| `RequesterOrderValues` / `RequesterOrderState` | `orders/presentation/widgets/requester_order` | Valores, validación y estado compartidos por la urgencia y la entrega periódica del solicitante. **El punto en el mapa es obligatorio** (RF-45): viaja como `latitude` y `longitude` con 6 decimales, y la referencia opcional como `address`. No hay puntos fijos de entrega. |
 | `ScheduleDraft` / `ScheduleFields` / `SchedulePreviewState` / `SchedulePreviewCard` | `orders/presentation/widgets/plan_schedule` | El calendario de un plan (RU-30): semanal, mensual o fechas sueltas, inicio, fin (fecha **o** número de entregas), hora en punto de 07:00 a 16:00 y, con fórmula, su vigencia. La vista previa llama `POST /orders/plans/preview` medio segundo después del último cambio; con error de Nest el botón se apaga. Lo usan el plan del solicitante, el abastecimiento y "Cambiar calendario". |
 | `FallbackCard` / `AuthorizeOutcome` | `orders/presentation/widgets/order_detail` | HU-24: autorizar sin dron ya no da 409. `AuthorizeOutcome.of` lee `assignment` o `fallback` (otra central, convencional, reintento) o el rechazo por geovalla; `FallbackCard` muestra el motivo de Nest y las centrales alternativas. |
 | `StatusReasonBanner` | `orders/presentation/widgets/order_detail` | El `statusReason` de un pedido que sigue su curso (`Order.inProgress`): incidente en vuelo o central sin energía. Un pedido cerrado dice su motivo en el resumen; con fallback lo dice `FallbackCard`. |
@@ -580,17 +579,12 @@ Reglas de los datos:
   envuelven en `AutoRefresh` (`lib/core/widgets/auto_refresh.dart`), que
   invalida su provider cada 10 s mientras la pantalla está abierta.
 
-## Centrales: nodo y ESE (RF-06)
+## Centrales (RF-06)
 
-Toda central trae `networkRole` (`HubNetworkRole`: `node` o `ese`; cae en
-`unknown` con un valor nuevo). `POST /hubs` lo exige y `PATCH /hubs/:id` lo
-acepta. El formulario lo elige con `HubNetworkChips` ("Tipo de red"); el
-listado y el detalle dicen "Nodo · Hospital" (`HubLabels.kind`). Solo un
-nodo tiene drones (`Hub.hasFleet`): en una ESE no sale "Ver flota". Los
-400 de ubicación (anillo de un aeródromo, helipuerto, zona prohibida) y el
-409 de pasar a ESE una central con drones se muestran con el texto de
-Nest. `GET /orders/origin-hubs` ya solo lista nodos: los formularios del
-despachador dicen "Nodo de origen".
+Toda central tiene drones: no hay nodo ni ESE. El formulario elige solo el
+tipo de servicio y toda central muestra "Ver flota". Los 400 de ubicación
+(anillo de un aeródromo, helipuerto, zona prohibida) se muestran con el
+texto de Nest. `GET /orders/origin-hubs` lista las demás centrales activas.
 
 ## Flota de tres tipos e inventario con peso (RF-49, RF-11)
 
