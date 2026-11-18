@@ -15,10 +15,10 @@ export type NetworkSite = {
   elevationM: number;
 };
 
-export const NODES = {
+export const MAIN_HUBS = {
   valledupar: {
     code: 'node-valledupar',
-    name: 'Nodo Valledupar',
+    name: 'Central Valledupar',
     municipality: 'Valledupar',
     latitude: 10.479,
     longitude: -73.235,
@@ -26,7 +26,7 @@ export const NODES = {
   },
   north: {
     code: 'node-north',
-    name: 'Nodo Norte (Río Seco)',
+    name: 'Central Norte (Río Seco)',
     municipality: 'Valledupar',
     latitude: 10.6075,
     longitude: -73.2237,
@@ -34,7 +34,7 @@ export const NODES = {
   },
   south: {
     code: 'node-south',
-    name: 'Nodo Sur (La Paz – San Diego)',
+    name: 'Central Sur (La Paz – San Diego)',
     municipality: 'La Paz',
     latitude: 10.355,
     longitude: -73.14,
@@ -42,7 +42,7 @@ export const NODES = {
   },
   west: {
     code: 'node-west',
-    name: 'Nodo Occidente (Valencia de Jesús)',
+    name: 'Central Occidente (Valencia de Jesús)',
     municipality: 'Valledupar',
     latitude: 10.3,
     longitude: -73.405,
@@ -50,7 +50,7 @@ export const NODES = {
   },
   codazzi: {
     code: 'node-codazzi',
-    name: 'Nodo Codazzi',
+    name: 'Central Codazzi',
     municipality: 'Agustín Codazzi',
     latitude: 10.042,
     longitude: -73.244,
@@ -123,7 +123,7 @@ export const ESES = {
  * la subida del terreno (RF-46) ningún tipo llega y vuelve con la reserva
  * (`context/negocio/cobertura.md`).
  */
-export const DEMO_PLACES: Array<NetworkSite & { nodeCode: string }> = [
+export const DEMO_PLACES: Array<NetworkSite & { hubCode: string }> = [
   site(
     'dp-los-mayales',
     'Puesto de salud de Los Mayales',
@@ -131,7 +131,7 @@ export const DEMO_PLACES: Array<NetworkSite & { nodeCode: string }> = [
     10.451,
     -73.24,
     165,
-    NODES.valledupar,
+    MAIN_HUBS.valledupar,
   ),
   site(
     'dp-la-nevada',
@@ -140,7 +140,7 @@ export const DEMO_PLACES: Array<NetworkSite & { nodeCode: string }> = [
     10.495,
     -73.287,
     185,
-    NODES.valledupar,
+    MAIN_HUBS.valledupar,
   ),
   site(
     'dp-primero-de-mayo',
@@ -149,7 +149,7 @@ export const DEMO_PLACES: Array<NetworkSite & { nodeCode: string }> = [
     10.4555,
     -73.259,
     165,
-    NODES.valledupar,
+    MAIN_HUBS.valledupar,
   ),
   site(
     'dp-villa-miriam',
@@ -158,7 +158,7 @@ export const DEMO_PLACES: Array<NetworkSite & { nodeCode: string }> = [
     10.456,
     -73.23,
     160,
-    NODES.valledupar,
+    MAIN_HUBS.valledupar,
   ),
   site(
     'dp-patillal',
@@ -167,7 +167,7 @@ export const DEMO_PLACES: Array<NetworkSite & { nodeCode: string }> = [
     10.7064,
     -73.2123,
     513,
-    NODES.north,
+    MAIN_HUBS.north,
   ),
   site(
     'dp-badillo',
@@ -176,7 +176,7 @@ export const DEMO_PLACES: Array<NetworkSite & { nodeCode: string }> = [
     10.6314,
     -73.1279,
     200,
-    NODES.north,
+    MAIN_HUBS.north,
   ),
   site(
     'dp-guacoche',
@@ -185,7 +185,7 @@ export const DEMO_PLACES: Array<NetworkSite & { nodeCode: string }> = [
     10.4964,
     -73.166,
     130,
-    NODES.north,
+    MAIN_HUBS.north,
   ),
   site(
     'dp-guacochito',
@@ -194,7 +194,7 @@ export const DEMO_PLACES: Array<NetworkSite & { nodeCode: string }> = [
     10.5154,
     -73.1517,
     133,
-    NODES.north,
+    MAIN_HUBS.north,
   ),
   site(
     'dp-atanquez',
@@ -203,7 +203,7 @@ export const DEMO_PLACES: Array<NetworkSite & { nodeCode: string }> = [
     10.6976,
     -73.3545,
     793,
-    NODES.north,
+    MAIN_HUBS.north,
   ),
   site(
     'dp-guatapuri',
@@ -212,7 +212,7 @@ export const DEMO_PLACES: Array<NetworkSite & { nodeCode: string }> = [
     10.7261,
     -73.3925,
     1277,
-    NODES.north,
+    MAIN_HUBS.north,
   ),
   site(
     'dp-media-luna',
@@ -221,7 +221,7 @@ export const DEMO_PLACES: Array<NetworkSite & { nodeCode: string }> = [
     10.2455,
     -73.1439,
     407,
-    NODES.south,
+    MAIN_HUBS.south,
   ),
   site(
     'dp-valencia',
@@ -230,7 +230,7 @@ export const DEMO_PLACES: Array<NetworkSite & { nodeCode: string }> = [
     10.3017,
     -73.3945,
     185,
-    NODES.west,
+    MAIN_HUBS.west,
   ),
   site(
     'dp-aguas-blancas',
@@ -239,7 +239,7 @@ export const DEMO_PLACES: Array<NetworkSite & { nodeCode: string }> = [
     10.2253,
     -73.491,
     184,
-    NODES.west,
+    MAIN_HUBS.west,
   ),
   site(
     'dp-mariangola',
@@ -248,7 +248,7 @@ export const DEMO_PLACES: Array<NetworkSite & { nodeCode: string }> = [
     10.1851,
     -73.5871,
     124,
-    NODES.west,
+    MAIN_HUBS.west,
   ),
 ];
 
@@ -260,7 +260,7 @@ function site(
   longitude: number,
   elevationM: number,
   node: NetworkSite,
-): NetworkSite & { nodeCode: string } {
+): NetworkSite & { hubCode: string } {
   return {
     code,
     name,
@@ -268,6 +268,6 @@ function site(
     latitude,
     longitude,
     elevationM,
-    nodeCode: node.code,
+    hubCode: node.code,
   };
 }

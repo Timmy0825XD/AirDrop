@@ -1,4 +1,3 @@
-import { assertNodeOrigin } from '../hubs/hubs.rules';
 import {
   ConflictException,
   ForbiddenException,
@@ -67,7 +66,7 @@ export class FleetService {
     if (!model) {
       throw new NotFoundException('El modelo de dron no existe.');
     }
-    assertNodeOrigin(await this.hubsService.requireActive(dto.hubId));
+    await this.hubsService.requireActive(dto.hubId);
     this.assertAssigned(user, dto.hubId);
     const duplicate = await this.drones.findOne({
       where: { identifier: dto.identifier },

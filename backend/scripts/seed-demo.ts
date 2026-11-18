@@ -68,7 +68,6 @@ async function seedDemoData(): Promise<void> {
         await createHub(app, adminToken, {
           name: plan.name,
           type: plan.type,
-          networkRole: plan.networkRole,
           address: plan.address,
           latitude: plan.latitude,
           longitude: plan.longitude,

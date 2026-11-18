@@ -8,7 +8,6 @@
  */
 import { DocumentType } from '../src/common/enums/document-type.enum';
 import { DroneStatus } from '../src/common/enums/drone-status.enum';
-import { HubNetworkRole } from '../src/common/enums/hub-network-role.enum';
 import { HubType } from '../src/common/enums/hub-type.enum';
 import { SaleType } from '../src/common/enums/sale-type.enum';
 import { UserRole } from '../src/common/enums/user-role.enum';
@@ -48,7 +47,6 @@ async function seedTestData(): Promise<void> {
     const hubA = await createHub(app, adminToken, {
       name: `${TEST_PREFIX}Hospital Rosario Pumarejo`,
       type: HubType.HOSPITAL,
-      networkRole: HubNetworkRole.NODE,
       address: 'Vía a Río Seco, Valledupar',
       latitude: 10.6075,
       longitude: -73.2237,
@@ -57,7 +55,6 @@ async function seedTestData(): Promise<void> {
     const hubB = await createHub(app, adminToken, {
       name: `${TEST_PREFIX}Clínica del Norte`,
       type: HubType.CLINIC,
-      networkRole: HubNetworkRole.NODE,
       address: 'Vía La Paz – San Diego, La Paz',
       latitude: 10.355,
       longitude: -73.14,

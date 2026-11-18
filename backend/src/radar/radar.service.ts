@@ -75,7 +75,6 @@ export class RadarService {
         id: hub.id,
         name: hub.name,
         type: hub.type,
-        networkRole: hub.networkRole,
         status: hub.status,
         latitude: hub.latitude,
         longitude: hub.longitude,

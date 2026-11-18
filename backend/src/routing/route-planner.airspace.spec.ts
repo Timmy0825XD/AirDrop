@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { AirspaceService } from '../airspace/airspace.service';
-import { DEMO_PLACES, ESES, NODES } from '../airspace/regional-network';
+import { DEMO_PLACES, ESES, MAIN_HUBS } from '../airspace/regional-network';
 import { RoutePlannerService } from './route-planner.service';
 import { corridorCrossesGeofence } from './routing.rules';
 
@@ -24,9 +24,9 @@ const point = (code: string) =>
 describe('RoutePlannerService con las zonas del RAC 100', () => {
   it('cada punto de entrega tiene corredor desde su nodo', () => {
     const { planner, airspace } = build();
-    const nodes = Object.values(NODES);
+    const nodes = Object.values(MAIN_HUBS);
     for (const target of DEMO_PLACES) {
-      const node = nodes.find((entry) => entry.code === target.nodeCode)!;
+      const node = nodes.find((entry) => entry.code === target.hubCode)!;
       const corridor = planner.plan(node, target, airspace.blockingPolygons());
       expect({ target: target.code, ok: corridor != null }).toEqual({
         target: target.code,
@@ -38,13 +38,13 @@ describe('RoutePlannerService con las zonas del RAC 100', () => {
   it('cada ESE tiene corredor desde su nodo', () => {
     const { planner, airspace } = build();
     const pairs = [
-      [NODES.valledupar, ESES.rosarioPumarejo],
-      [NODES.valledupar, ESES.arredondo],
-      [NODES.south, ESES.laPaz],
-      [NODES.south, ESES.sanDiego],
-      [NODES.south, ESES.manaure],
-      [NODES.west, ESES.puebloBello],
-      [NODES.codazzi, ESES.codazzi],
+      [MAIN_HUBS.valledupar, ESES.rosarioPumarejo],
+      [MAIN_HUBS.valledupar, ESES.arredondo],
+      [MAIN_HUBS.south, ESES.laPaz],
+      [MAIN_HUBS.south, ESES.sanDiego],
+      [MAIN_HUBS.south, ESES.manaure],
+      [MAIN_HUBS.west, ESES.puebloBello],
+      [MAIN_HUBS.codazzi, ESES.codazzi],
     ] as const;
     for (const [node, ese] of pairs) {
       const corridor = planner.plan(node, ese, airspace.blockingPolygons());
@@ -59,8 +59,8 @@ describe('RoutePlannerService con las zonas del RAC 100', () => {
     const { planner, airspace } = build();
     const blocking = airspace.blockingPolygons();
     for (const target of DEMO_PLACES) {
-      const node = Object.values(NODES).find(
-        (entry) => entry.code === target.nodeCode,
+      const node = Object.values(MAIN_HUBS).find(
+        (entry) => entry.code === target.hubCode,
       )!;
       const corridor = planner.plan(node, target, blocking)!;
       expect(corridorCrossesGeofence(corridor, blocking)).toBe(false);
@@ -90,7 +90,7 @@ describe('RoutePlannerService con las zonas del RAC 100', () => {
   it('cruzar la ciudad rodea los CAI sin desviarse mucho', () => {
     const { planner, airspace } = build();
     const corridor = planner.plan(
-      NODES.valledupar,
+      MAIN_HUBS.valledupar,
       point('dp-la-nevada'),
       airspace.blockingPolygons(),
     )!;
@@ -102,11 +102,11 @@ describe('RoutePlannerService con las zonas del RAC 100', () => {
     const { planner, airspace } = build();
     const started = Date.now();
     planner.plan(
-      NODES.west,
+      MAIN_HUBS.west,
       point('dp-mariangola'),
       airspace.blockingPolygons(),
     );
-    planner.plan(NODES.north, ESES.laPaz, airspace.blockingPolygons());
+    planner.plan(MAIN_HUBS.north, ESES.laPaz, airspace.blockingPolygons());
     expect(Date.now() - started).toBeLessThan(500);
   });
 });

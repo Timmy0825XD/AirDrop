@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DataSource, EntityManager, In, Not } from 'typeorm';
 import { DroneStatus } from '../common/enums/drone-status.enum';
-import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { Drone } from '../fleet/drone.entity';
@@ -166,7 +165,6 @@ export class ScenarioNetworkService {
         hubs.create({
           name: plan.name,
           type: plan.type,
-          networkRole: plan.networkRole,
           address: plan.address,
           latitude: plan.latitude,
           longitude: plan.longitude,
@@ -177,10 +175,8 @@ export class ScenarioNetworkService {
         }),
       );
       await this.createDispatchers(plan, hub);
-      if (plan.networkRole === HubNetworkRole.NODE) {
-        await this.createDrones(plan, hub);
-        await this.assignOperator(hub);
-      }
+      await this.createDrones(plan, hub);
+      await this.assignOperator(hub);
     }
     return missing.length;
   }

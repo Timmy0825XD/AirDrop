@@ -1,6 +1,5 @@
 import { mustAcceptPolicy } from '../privacy/privacy.rules';
 import { POLICY_VERSION } from '../privacy/privacy-policy';
-import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
 import {
   BadRequestException,
   ConflictException,
@@ -141,14 +140,6 @@ export class UsersService {
     }
     if (found.some((hub) => hub.status !== HubStatus.ACTIVE)) {
       throw new BadRequestException('Solo puedes asignar centrales activas.');
-    }
-    if (
-      dto.role === UserRole.FLEET_OPERATOR &&
-      found.some((hub) => hub.networkRole !== HubNetworkRole.NODE)
-    ) {
-      throw new BadRequestException(
-        'El operador de flota solo se asigna a nodos: una ESE no tiene drones.',
-      );
     }
     await this.assertContactAvailable(dto.email, dto.phone);
     const user = this.users.create({

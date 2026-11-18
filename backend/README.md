@@ -105,7 +105,7 @@ Nombre máximo 40, correo 50, celular **10 dígitos** colombianos. OTP de regist
 | GET | `/hubs/me` | despachador |
 | PATCH | `/hubs/:id/suspension` | admin |
 
-La central la crea el administrador y nace `active`; no hay estado de aprobación pendiente. Lleva `networkRole` (RF-06): `node` tiene drones y despega; `ese` recibe reabastecimiento y no tiene drones. Un nodo no se crea en zona urbana, en el anillo del aeropuerto ni en una zona prohibida o coordinada; una ESE puede quedar en una coordinada (es el sitio pactado). El origen de un traslado y la central de un dron son siempre un nodo, y el operador de flota solo se asigna a nodos.
+La central la crea el administrador y nace `active`; no hay estado de aprobación pendiente. Toda central tiene drones, despega y abastece a otra (RF-06); su `type` solo describe el servicio. Una central no se crea en el anillo del aeropuerto, en un helipuerto ni en una zona prohibida. El origen de un traslado es cualquier otra central activa, y el operador de flota se asigna a cualquier central.
 
 ### Inventario (HU-09)
 
@@ -148,7 +148,7 @@ Todas del operador de flota.
 | --- | --- | --- |
 | GET | `/airspace/zones` | cualquier sesión |
 
-Las zonas legales del RAC 100 viven en `src/airspace/regional-airspace.ts` (no en la base) y no se editan: aeródromo (anillo de 9 km de SKVP), prohibidas con 2 km de margen, helipuerto, urbana, coordinadas (policía municipal y resguardos, con entrada pactada) y de precaución (pistas privadas, no bloquean). El planificador rodea las bloqueantes y las coordinadas; a un sitio pactado entra por su entrada. El radar las trae en `airspace`. La red (nodos, ESE y puntos) está en `src/airspace/regional-network.ts`.
+Las zonas legales del RAC 100 viven en `src/airspace/regional-airspace.ts` (no en la base) y no se editan: aeródromo (anillo de 9 km de SKVP), prohibidas con 2 km de margen, helipuerto, urbana, coordinadas (policía municipal y resguardos, con entrada pactada) y de precaución (pistas privadas, no bloquean). El planificador rodea las bloqueantes y las coordinadas; a un sitio pactado entra por su entrada. El radar las trae en `airspace`. Las centrales de la demo (`MAIN_HUBS` y `ESES`) y los lugares adonde piden los solicitantes simulados (`DEMO_PLACES`) están en `src/airspace/regional-network.ts`.
 
 **Terreno (RF-46).** `src/airspace/terrain-grid.json` es una malla de 189×189 celdas de ~500 m con la elevación máxima de cada una, sacada de SRTM (mosaicos Terrain Tiles de AWS). Se regenera con `python scripts/build-terrain-grid.py <carpeta-cache>` (PIL y numpy) y `nest build` la copia a `dist`. El dron despega a 90 m AGL y en crucero mantiene la altitud entre 60 y 120 m AGL; sube antes de una ladera según su velocidad vertical. La decisión descarta un tipo si el punto más alto supera su techo o si la batería no alcanza ida, regreso, subida y reserva; el vuelo cobra cada metro ganado. La telemetría trae `altitudeM` (AGL) y `altitudeMslM`.
 
@@ -175,7 +175,7 @@ El usuario (login y `/auth/me`) trae `policyVersion` y `mustAcceptPolicy`; con `
 
 | Método | Ruta | Auth |
 | --- | --- | --- |
-| GET | `/orders/:id/manifest` | despachador de origen o destino, operador del nodo, administrador |
+| GET | `/orders/:id/manifest` | despachador de origen o destino, operador de la central, administrador |
 | GET | `/control/unidentified` | administrador (`CONTROL_ENABLED`) |
 | POST | `/control/unidentified` (`{ durationMin, from?, to? }`) | administrador (`CONTROL_ENABLED`) |
 

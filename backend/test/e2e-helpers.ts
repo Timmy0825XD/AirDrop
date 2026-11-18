@@ -4,7 +4,6 @@ import request from 'supertest';
 import { App } from 'supertest/types';
 import { DocumentType } from '../src/common/enums/document-type.enum';
 import { UserRole } from '../src/common/enums/user-role.enum';
-import { HubNetworkRole } from '../src/common/enums/hub-network-role.enum';
 import { HubType } from '../src/common/enums/hub-type.enum';
 
 export const TEST_PASSWORD = 'Password123';
@@ -84,7 +83,6 @@ export const hubPayload = {
   name: 'Hospital Rosario Pumarejo',
   type: HubType.HOSPITAL,
   // RF-06 y RF-43: un nodo fuera del anillo del aeropuerto (Nodo Norte).
-  networkRole: HubNetworkRole.NODE,
   address: 'Vía a Río Seco, Valledupar',
   latitude: 10.6075,
   longitude: -73.2237,
@@ -95,7 +93,6 @@ export const hubPayload = {
 export const clinicPayload = {
   name: 'Clínica Laura Daniela',
   type: HubType.CLINIC,
-  networkRole: HubNetworkRole.NODE,
   address: 'Vía La Paz – San Diego, La Paz',
   latitude: 10.355,
   longitude: -73.14,

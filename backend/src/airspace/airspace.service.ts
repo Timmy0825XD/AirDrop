@@ -1,11 +1,9 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
 import { GeoJsonPolygon } from '../geofences/geofences.rules';
 import { LngLat } from '../routing/routing.rules';
 import {
   AirspaceZone,
   HUB_IN_PROHIBITED_AIRSPACE,
-  NODE_IN_RESTRICTED_AIRSPACE,
   blockingPolygons,
   isBlocking,
   zoneAt,
@@ -36,20 +34,14 @@ export class AirspaceService {
     return zoneAt(point, this.zones.filter(isBlocking));
   }
 
-  /**
-   * RF-06 y RF-07: ninguna central queda dentro de una zona legal. Un nodo
-   * despega desde ahí; una ESE recibe vuelos.
-   */
-  assertHubLocation(role: HubNetworkRole, point: LngLat): void {
+  /** RF-06 y RF-07: ninguna central queda dentro de una zona legal. */
+  assertHubLocation(point: LngLat): void {
     const zone = this.restrictionAt(point);
-    if (!zone) {
-      return;
+    if (zone) {
+      throw new BadRequestException(
+        `${HUB_IN_PROHIBITED_AIRSPACE} (${zone.name})`,
+      );
     }
-    const message =
-      role === HubNetworkRole.NODE
-        ? NODE_IN_RESTRICTED_AIRSPACE
-        : HUB_IN_PROHIBITED_AIRSPACE;
-    throw new BadRequestException(`${message} (${zone.name})`);
   }
 
   /** Para el mapa: cada zona con su regla y su fuente. */

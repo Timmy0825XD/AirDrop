@@ -10,9 +10,6 @@ import { LngLat, isInsideGeofence } from '../routing/routing.rules';
 
 const EARTH_RADIUS_KM = 6371;
 
-export const NODE_IN_RESTRICTED_AIRSPACE =
-  'Un nodo no puede quedar en el anillo de un aeródromo, en un helipuerto ni en una zona prohibida (RF-43).';
-
 export const HUB_IN_PROHIBITED_AIRSPACE =
   'La central queda en una zona donde no se vuela: anillo de un aeródromo, helipuerto o zona prohibida (RF-43).';
 

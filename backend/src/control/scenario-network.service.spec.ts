@@ -1,4 +1,3 @@
-import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { Drone } from '../fleet/drone.entity';
 import { DroneModel } from '../fleet/drone-model.entity';
@@ -9,7 +8,7 @@ import { hubPlans, operator } from './demo-scenario';
 import { ScenarioNetworkService } from './scenario-network.service';
 
 const admin = { id: 'admin-1' } as User;
-const valledupar = hubPlans.find((plan) => plan.name === 'Nodo Valledupar')!;
+const valledupar = hubPlans.find((plan) => plan.name === 'Central Valledupar')!;
 
 /** Una base con todas las centrales del plan menos las que se piden, y unas viejas. */
 function build(options: { missing?: string[]; stale?: string[] } = {}) {
@@ -96,13 +95,12 @@ describe('La red del escenario queda igual a la del plan (RF-40)', () => {
     expect(sql.at(-1)).toContain('DELETE FROM hubs');
   });
 
-  it('crea el Nodo Valledupar que falta, con despachadores, drones y el operador', async () => {
+  it('crea la Central Valledupar que falta, con despachadores, drones y el operador', async () => {
     const { service, users, saved } = build({ missing: [valledupar.name] });
     expect((await service.sync(admin)).created).toBe(1);
     const hub = saved.find((entry) => entry.entity === Hub)!.row;
     expect(hub).toMatchObject({
-      name: 'Nodo Valledupar',
-      networkRole: HubNetworkRole.NODE,
+      name: 'Central Valledupar',
       createdByUserId: 'admin-1',
     });
     expect(users.createInstitutional).toHaveBeenCalledTimes(
@@ -122,15 +120,16 @@ describe('La red del escenario queda igual a la del plan (RF-40)', () => {
     );
   });
 
-  it('una ESE que falta se crea sin drones ni operador', async () => {
-    const ese = hubPlans.find(
-      (plan) => plan.networkRole === HubNetworkRole.ESE,
-    )!;
+  it('una ESE que falta se crea con sus drones y el operador, como toda central', async () => {
+    const ese = hubPlans.find((plan) => plan.name.startsWith('ESE '))!;
     const { service, saved } = build({ missing: [ese.name] });
     await service.sync(admin);
-    expect(saved.some((entry) => entry.entity === Drone)).toBe(false);
+    expect(
+      saved.filter((entry) => entry.entity === Drone).length,
+    ).toBe(ese.fleet.length);
+    expect(ese.fleet.length).toBeGreaterThan(0);
     expect(saved.some((entry) => entry.entity === UserHubAssignment)).toBe(
-      false,
+      true,
     );
   });
 });

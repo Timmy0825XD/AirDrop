@@ -1,5 +1,3 @@
-import { assertNodeOrigin } from '../hubs/hubs.rules';
-import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
 import {
   BadRequestException,
   ForbiddenException,
@@ -164,9 +162,9 @@ export class OrdersService {
 
   async listOriginHubs(user: User) {
     const mine = await this.requireDispatcherHub(user);
-    // RF-06: el origen de un traslado es siempre un nodo.
+    // RF-06: cualquier otra central activa puede ser el origen.
     const rows = await this.hubs.find({
-      where: { status: HubStatus.ACTIVE, networkRole: HubNetworkRole.NODE },
+      where: { status: HubStatus.ACTIVE },
       order: { name: 'ASC' },
     });
     // Las coordenadas dejan dibujar el traslado en el formulario (de dónde
@@ -228,7 +226,6 @@ export class OrdersService {
     const destination = await this.requireDispatcherHub(user);
     assertNoPatientFormula(dto);
     const origin = await this.hubsService.requireActive(dto.originHubId);
-    assertNodeOrigin(origin);
     if (origin.id === destination.id) {
       throw new BadRequestException(SAME_HUB_MESSAGE);
     }
@@ -304,7 +301,6 @@ export class OrdersService {
     const destination = await this.requireDispatcherHub(user);
     assertNoPatientFormula(dto);
     const origin = await this.hubsService.requireActive(dto.originHubId);
-    assertNodeOrigin(origin);
     if (origin.id === destination.id) {
       throw new BadRequestException(SAME_HUB_MESSAGE);
     }
