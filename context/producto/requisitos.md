@@ -22,7 +22,7 @@ Tres pasos cortos, con prioridad alta:
 
 1. **Qué pasa:** el tamizaje de RF-41 (signos de alarma, para quién, qué siente, desde cuándo y qué tan fuerte) y una nota opcional.
 2. **Qué necesita:** el medicamento, sus alergias a medicamentos y, si es bajo fórmula, la fórmula (RU-25).
-3. **Dónde:** el punto en el mapa (RF-45), con "Usar mi ubicación" (GPS) y el pin para afinarlo, y una referencia corta opcional para encontrarlo. El punto es el destino; no hay un segundo campo de dirección. Si el punto queda fuera del alcance de toda central, la app se lo dice y muestra la alternativa terrestre (RF-18) en vez de crear el pedido.
+3. **Dónde:** el punto en el mapa (RF-45), con "Usar mi ubicación" (GPS) y el pin para afinarlo, y una referencia corta opcional para encontrarlo. El punto es el destino; no hay un segundo campo de dirección. Un punto dentro de una geovalla o de una zona legal no crea el pedido. Si ninguna central alcanza el punto, la urgencia queda en traslado convencional (RF-18).
 
 **Por qué.** La urgencia civil no es un traslado entre centrales. El destino es la persona, y el despachador todavía no ha autorizado. El dron llega a una coordenada, no a una dirección escrita: el punto manda y la referencia solo ayuda a quien retira. El despachador necesita saber qué tan grave es sin leer un texto libre, y el solicitante no puede tardar más de un minuto en pedir.
 
@@ -313,7 +313,7 @@ Depende del servicio:
 | Urgencia entre centrales | Igual, con otra central de origen. Nunca la central que pidió. |
 | Programado | Sigue en recibido y se reintenta solo cada 15 minutos mientras el siguiente intento caiga dentro de la franja. Si la franja cierra sin despegue, queda vencido, suelta el dron si ya estaba reservado y busca otra central como una urgencia. Esa central autoriza sin la franja original. |
 
-Un solicitante cuya ubicación no está al alcance de ninguna central no llega a crear el pedido: la app le muestra directamente la alternativa terrestre (RU-02).
+Si ninguna central alcanza la ubicación del solicitante, la urgencia no se ofrece a nadie: queda de una vez en traslado convencional, con las centrales que tienen el insumo.
 
 Un pedido se reasigna **una sola vez**. Si la central que lo recibe tampoco puede, o si ninguna central sirve, queda `reasignado` como **traslado convencional**: es final, ningún dron despega y quien pidió ve hasta tres centrales con el insumo (nombre, dirección, contacto y distancia). La central que recibe un pedido reasignado verifica la fórmula otra vez, y puede autorizarlo o rechazarlo.
 
@@ -589,7 +589,7 @@ Un vuelo se despacha a cualquier hora del reloj simulado, de día o de noche. La
 
 ### RF-45 — Destino de la entrega
 
-El destino de una entrega a una persona es el punto que ella marca en el mapa (GPS o pin), con una referencia corta opcional. El de un abastecimiento es la central que lo pide. No hay puntos fijos de entrega. Un punto fuera del alcance de toda central no crea el pedido (RU-02); uno dentro de una zona bloqueante no tiene corredor y sigue RF-18.
+El destino de una entrega a una persona es el punto que ella marca en el mapa (GPS o pin), con una referencia corta opcional. El de un abastecimiento es la central que lo pide. No hay puntos fijos de entrega. Un punto dentro de una geovalla o de una zona legal no crea el pedido. Si ninguna central lo alcanza, sigue RF-18.
 
 **Por qué.** Simplificación declarada del MVP: el dron llega donde está la persona. La norma pide entregar a 30 m de personas ajenas y con observador en la aproximación final (RAC 100.220(b), 100.320); el MVP no lo verifica ([../legal/aeronautica.md](../legal/aeronautica.md)).
 

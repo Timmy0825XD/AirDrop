@@ -1,6 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { AirspaceService } from '../airspace/airspace.service';
-import { DELIVERY_POINTS, ESES, NODES } from '../airspace/regional-network';
+import { DEMO_PLACES, ESES, NODES } from '../airspace/regional-network';
 import { RoutePlannerService } from './route-planner.service';
 import { corridorCrossesGeofence } from './routing.rules';
 
@@ -19,13 +19,13 @@ function build() {
 }
 
 const point = (code: string) =>
-  DELIVERY_POINTS.find((entry) => entry.code === code)!;
+  DEMO_PLACES.find((entry) => entry.code === code)!;
 
 describe('RoutePlannerService con las zonas del RAC 100', () => {
   it('cada punto de entrega tiene corredor desde su nodo', () => {
     const { planner, airspace } = build();
     const nodes = Object.values(NODES);
-    for (const target of DELIVERY_POINTS) {
+    for (const target of DEMO_PLACES) {
       const node = nodes.find((entry) => entry.code === target.nodeCode)!;
       const corridor = planner.plan(node, target, airspace.blockingPolygons());
       expect({ target: target.code, ok: corridor != null }).toEqual({
@@ -58,7 +58,7 @@ describe('RoutePlannerService con las zonas del RAC 100', () => {
   it('ningún corredor cruza una zona bloqueante', () => {
     const { planner, airspace } = build();
     const blocking = airspace.blockingPolygons();
-    for (const target of DELIVERY_POINTS) {
+    for (const target of DEMO_PLACES) {
       const node = Object.values(NODES).find(
         (entry) => entry.code === target.nodeCode,
       )!;

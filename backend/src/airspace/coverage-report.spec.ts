@@ -3,7 +3,7 @@ import { missionWithClimbPercent } from '../decision/decision.rules';
 import { reverseCorridor } from '../routing/routing.rules';
 import { RoutePlannerService } from '../routing/route-planner.service';
 import { AirspaceService } from './airspace.service';
-import { DELIVERY_POINTS, ESES, NODES } from './regional-network';
+import { DEMO_PLACES, ESES, NODES } from './regional-network';
 import { climbPercentPerM } from './terrain.rules';
 import { TerrainService } from './terrain.service';
 
@@ -50,7 +50,7 @@ const reachable = (verdict: Record<string, boolean>) =>
 
 describe('Cobertura real de la red (cobertura.md, RF-46)', () => {
   it('cada punto de entrega lo alcanza al menos un tipo desde su nodo', () => {
-    for (const point of DELIVERY_POINTS) {
+    for (const point of DEMO_PLACES) {
       const node = nodes.find((entry) => entry.code === point.nodeCode)!;
       const { verdict } = reach(node, point);
       expect({
@@ -66,7 +66,7 @@ describe('Cobertura real de la red (cobertura.md, RF-46)', () => {
   it('Guatapurí (1.277 m) solo la alcanza el Colibrí, por la subida', () => {
     const { verdict } = reach(
       NODES.north,
-      DELIVERY_POINTS.find((point) => point.code === 'dp-guatapuri')!,
+      DEMO_PLACES.find((point) => point.code === 'dp-guatapuri')!,
     );
     expect(reachable(verdict)).toEqual(['Colibrí']);
   });

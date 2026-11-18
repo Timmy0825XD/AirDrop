@@ -13,7 +13,6 @@ const order = {
   droneId: 'drone-1',
   originHubId: 'hub-north',
   destinationHubId: null,
-  deliveryPointId: 'point-1',
   destinationKind: DestinationKind.PERSON,
   medicationName: 'Acetaminofén 500 mg',
   quantity: 1,
@@ -21,7 +20,7 @@ const order = {
   dispatchedLotExpiresOn: '2027-01-01',
   payloadKg: 0.03,
   requiresColdChain: false,
-  address: 'Puesto de salud de Badillo, Valledupar',
+  address: 'Puesto de salud de Badillo',
   patientFullName: 'No debe salir',
 } as unknown as Order;
 

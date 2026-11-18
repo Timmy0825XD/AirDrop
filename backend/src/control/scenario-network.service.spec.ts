@@ -92,10 +92,6 @@ describe('La red del escenario queda igual a la del plan (RF-40)', () => {
         true,
       );
     }
-    // Los puntos de entrega no se borran: quedan sin nodo hasta el reenlace.
-    expect(sql.some((text) => text.includes('UPDATE delivery_points'))).toBe(
-      true,
-    );
     // Lo último es la central: nada queda apuntando a ella.
     expect(sql.at(-1)).toContain('DELETE FROM hubs');
   });

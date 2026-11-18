@@ -6,8 +6,8 @@ Esto es dispensación: hay un paciente. La norma está en [../legal/salud.md](..
 
 El dron llega al **punto que marca el solicitante** en el mapa: su GPS ("Usar mi ubicación") o el pin, con una referencia corta opcional (RF-45). No hay puntos fijos de entrega.
 
-- Si el punto no está al alcance de ninguna central, la app le muestra la **alternativa terrestre** (RF-18): las centrales con el insumo, con dirección y contacto.
-- Si el punto cae dentro de una zona prohibida ([../operacion/espacio-aereo.md](../operacion/espacio-aereo.md)), no hay corredor y sigue RF-18.
+- Si ninguna central alcanza el punto, la urgencia queda en **traslado convencional** (RF-18): quien pidió ve las centrales con el insumo, con dirección y contacto.
+- Si el punto cae dentro de una geovalla o de una zona prohibida ([../operacion/espacio-aereo.md](../operacion/espacio-aereo.md)), el pedido no se crea.
 
 La dispensación la hace el despachador de la central antes de cargar.
 

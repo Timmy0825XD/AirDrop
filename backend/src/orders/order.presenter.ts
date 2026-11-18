@@ -21,7 +21,6 @@ export function presentOrder(order: Order) {
     createdByUserId: order.createdByUserId,
     destinationHubId: order.destinationHubId,
     originHubId: order.originHubId,
-    deliveryPointId: order.deliveryPointId ?? null,
     address: order.address,
     latitude: order.latitude,
     longitude: order.longitude,

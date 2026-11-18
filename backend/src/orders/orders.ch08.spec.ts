@@ -1,8 +1,4 @@
 import { PrivacyService } from '../privacy/privacy.service';
-import {
-  deliveryPointsStub,
-  TEST_POINT,
-} from '../delivery-points/delivery-points.testing';
 /**
  * Prueba de integración CH-08 (hilo Interfaz – Inventario – Pedidos – BD) de
  * la Segunda Parte. La caída de la base de datos se SIMULA: el repositorio de
@@ -55,7 +51,8 @@ const urgenciaV1 = {
   medicationName: 'Acetaminofén 500 mg',
   saleType: SaleType.OVER_THE_COUNTER,
   description: 'Fiebre alta persistente',
-  deliveryPointId: TEST_POINT.id,
+  latitude: 10.6314,
+  longitude: -73.1279,
 };
 
 const acetaminofen = {
@@ -98,7 +95,6 @@ describe('CH-08 — Interfaz – Inventario – Pedidos – BD (base de datos ca
       {} as never,
       { assertDestinationAllowed: () => Promise.resolve() } as never,
       { statusChanged: jest.fn().mockResolvedValue(undefined) } as never,
-      deliveryPointsStub() as never,
     );
     const decision = {
       attachAssignments: (rows: object[]) =>

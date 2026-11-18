@@ -147,24 +147,16 @@ Todas del operador de flota.
 | Método | Ruta | Auth |
 | --- | --- | --- |
 | GET | `/airspace/zones` | cualquier sesión |
-| GET | `/airspace/daylight` | cualquier sesión |
 
 Las zonas legales del RAC 100 viven en `src/airspace/regional-airspace.ts` (no en la base) y no se editan: aeródromo (anillo de 9 km de SKVP), prohibidas con 2 km de margen, helipuerto, urbana, coordinadas (policía municipal y resguardos, con entrada pactada) y de precaución (pistas privadas, no bloquean). El planificador rodea las bloqueantes y las coordinadas; a un sitio pactado entra por su entrada. El radar las trae en `airspace`. La red (nodos, ESE y puntos) está en `src/airspace/regional-network.ts`.
 
 **Terreno (RF-46).** `src/airspace/terrain-grid.json` es una malla de 189×189 celdas de ~500 m con la elevación máxima de cada una, sacada de SRTM (mosaicos Terrain Tiles de AWS). Se regenera con `python scripts/build-terrain-grid.py <carpeta-cache>` (PIL y numpy) y `nest build` la copia a `dist`. El dron despega a 90 m AGL y en crucero mantiene la altitud entre 60 y 120 m AGL; sube antes de una ladera según su velocidad vertical. La decisión descarta un tipo si el punto más alto supera su techo o si la batería no alcanza ida, regreso, subida y reserva; el vuelo cobra cada metro ganado. La telemetría trae `altitudeM` (AGL) y `altitudeMslM`.
 
-**Solo de día (RF-44).** `src/airspace/daylight.rules.ts` calcula la salida y la puesta del sol con las ecuaciones de la NOAA (sin API) para la fecha simulada. Un dron se descarta si su misión (ida, 5 min de espera y regreso, con su crucero) no termina antes de la puesta en su nodo. Una urgencia creada de noche no entra a ninguna cola: pasa de una vez a traslado convencional con el motivo. Las franjas de los programados van de 07:00 a 16:00 (la última cierra a las 17:00). `GET /airspace/daylight` devuelve la salida, la puesta y si ahora es de día.
+**A cualquier hora (RF-44).** No hay regla de luz del día: se vuela de día y de noche. Las franjas de los programados van de 07:00 a 16:00 (la última cierra a las 17:00) como horario de servicio.
 
-### Puntos de entrega (RF-45)
+### Destino de una persona (RF-45)
 
-| Método | Ruta | Auth |
-| --- | --- | --- |
-| GET | `/delivery-points?latitude=&longitude=&medicationName=` | cualquier sesión |
-| PATCH | `/delivery-points/:id` (`{ active }`) | administrador |
-
-Los puntos son lugares del escenario (`delivery_points`, tomados de `regional-network.ts`), no cuentas. Se crean al arrancar y `pnpm seed:demo` y el reinicio los enlazan con su nodo y los dejan activos. Con el GPS, `GET` los ordena por distancia y trae `nearestPointId` (el disponible más cercano). Un punto está disponible si está activo y su nodo también; el solicitante solo ve esos y el administrador ve todos, con `available`. Si el GPS cae en la ciudad (zona urbana o anillo de SKVP), `coverage` es `urban`; si no hay punto disponible, `no_point`. En los dos casos llega `message` y, con `medicationName`, `alternatives`: hasta tres centrales con el insumo para recogerlo por tierra (RF-18). Un punto en zona coordinada trae `corridor` (zona y entrada pactada).
-
-La urgencia y el plan del solicitante van a un punto: `deliveryPointId` reemplaza a `latitude`, `longitude` y `address`, que ahora salen del punto. `requesterLocation` (`{ latitude, longitude }`, opcional, no se guarda) hace que el pedido no se cree si el solicitante está en la ciudad. El pedido y el plan traen `deliveryPointId` (nulo entre centrales).
+La urgencia y el plan del solicitante llevan `latitude`, `longitude` (hasta 6 decimales) y `address` opcional, la referencia para encontrar el punto. Un punto dentro de una geovalla o de una zona legal responde 400. No hay puntos fijos de entrega.
 
 ### Datos personales (RF-50, RF-51)
 

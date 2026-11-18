@@ -148,7 +148,6 @@ function received(overrides: Partial<Order> = {}): Order {
     createdByUserId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     destinationHubId: null,
     originHubId: null,
-    deliveryPointId: null,
     address: 'Calle 20 # 8-15',
     latitude: 10.46,
     longitude: -73.25,

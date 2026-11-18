@@ -12,7 +12,7 @@ import {
   SKVP_ARP,
   regionalAirspace,
 } from './regional-airspace';
-import { DELIVERY_POINTS, ESES, NODES } from './regional-network';
+import { DEMO_PLACES, ESES, NODES } from './regional-network';
 
 const zones = regionalAirspace();
 
@@ -114,7 +114,7 @@ describe('La red regional respeta las zonas (cobertura.md)', () => {
     for (const site of [
       ...Object.values(NODES),
       ...Object.values(ESES),
-      ...DELIVERY_POINTS,
+      ...DEMO_PLACES,
     ]) {
       expect({
         site: site.code,
@@ -132,7 +132,7 @@ describe('La red regional respeta las zonas (cobertura.md)', () => {
       Object.values(ESES).filter((ese) => ese.municipality === 'Valledupar'),
     ).toHaveLength(2);
     expect(
-      DELIVERY_POINTS.filter(
+      DEMO_PLACES.filter(
         (point) => point.nodeCode === NODES.valledupar.code,
       ),
     ).toHaveLength(4);

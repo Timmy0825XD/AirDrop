@@ -52,7 +52,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
   4. Si el tipo de venta es bajo fórmula, adjunta un PDF o de 1 a 3 fotos a nombre del paciente.
   5. Toca "Usar mi ubicación" o mueve el pin en el mapa. Ese punto es el destino (RF-45); puede agregar una referencia corta.
   6. El pedido queda en `recibido`, con prioridad alta, y entra a la cola de la central que llega antes. Si no la autoriza a tiempo, entra también a la de la siguiente (RU-10).
-- **Si falla:** Bajo fórmula sin fórmula, sin el documento del paciente o con un archivo que no es PDF, JPG o PNG: no se crea. Sin permiso de ubicación: marca el punto con el pin. Ubicación fuera del alcance de toda central: no se crea y la app muestra la alternativa terrestre (RF-18). Control especial: no se crea y se explica que ese canal no existe aquí. Si ninguna central con el insumo tiene un dron que alcance el punto: queda en traslado convencional (CU-31).
+- **Si falla:** Bajo fórmula sin fórmula, sin el documento del paciente o con un archivo que no es PDF, JPG o PNG: no se crea. Sin permiso de ubicación: marca el punto con el pin. Punto dentro de una geovalla o de una zona legal: no se crea. Control especial: no se crea y se explica que ese canal no existe aquí. Si ninguna central alcanza el punto, o ninguna con el insumo tiene un dron que llegue: queda en traslado convencional (CU-31).
 - **Después:** Ningún dron está reservado. El motor de decisión no corre.
 - **Por qué:** RU-02 y RU-25. Crear el pedido no es autorizar la salida.
 
@@ -66,7 +66,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
   3. Marca su ubicación como en CU-04.
   4. La app muestra las fechas y horas que van a quedar (vista previa). Al confirmar, el sistema crea una entrega por fecha, cada una con su franja de 1 hora, en `recibido`, como pedido programado y no como urgencia.
   5. Puede cambiar el calendario o la hora: las entregas sin dron se rehacen. Puede cancelar el plan: las que siguen en `recibido` pasan a `cancelado` y las demás no cambian.
-- **Si falla:** Las mismas exclusiones de fórmula y de control especial que CU-04. No se crea si empieza antes de hoy, si dura más de 3 meses, si pasa de la vigencia de la fórmula, si la hora no es una franja válida (de 07:00 a 16:00), si no queda ninguna entrega a más de 2 horas o si su ubicación está fuera del alcance de toda central.
+- **Si falla:** Las mismas exclusiones de fórmula y de control especial que CU-04. No se crea si empieza antes de hoy, si dura más de 3 meses, si pasa de la vigencia de la fórmula, si la hora no es una franja válida (de 07:00 a 16:00), si no queda ninguna entrega a más de 2 horas o si su ubicación cae en una geovalla o en una zona legal.
 - **Después:** Hay un plan activo. Cada fecha espera autorización. No hay vuelo todavía.
 - **Por qué:** RU-30. El periódico civil no se pide desde la cuenta de una central.
 

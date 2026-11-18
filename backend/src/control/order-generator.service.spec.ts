@@ -1,12 +1,7 @@
-import {
-  deliveryPointsStub,
-  TEST_POINT,
-} from '../delivery-points/delivery-points.testing';
-import { NO_POINT_IN_CIRCLE } from '../delivery-points/delivery-points.rules';
 import { BadRequestException } from '@nestjs/common';
 import { SaleType } from '../common/enums/sale-type.enum';
 import { DESTINATION_IN_GEOFENCE } from '../routing/routing.rules';
-import { simulatedRequesters } from './demo-scenario';
+import { simulatedDestinations, simulatedRequesters } from './demo-scenario';
 import { OrderGeneratorService } from './order-generator.service';
 import { NO_SIMULATED_DESTINATION } from './sim-actors.rules';
 
@@ -32,7 +27,6 @@ function build(orderFlow = false) {
   const dispatch = { start: jest.fn().mockResolvedValue({}) };
   const timeline = { recordConsole: jest.fn().mockResolvedValue(undefined) };
   const actors = { view: () => ({ autoDispatcher: false, orderFlow }) };
-  const points = deliveryPointsStub();
   const service = new OrderGeneratorService(
     { get: () => 'true' } as never,
     actors as never,
@@ -40,10 +34,9 @@ function build(orderFlow = false) {
     dispatch as never,
     timeline as never,
     users as never,
-    points as never,
   );
   service.random = () => 0.5;
-  return { service, ordersService, dispatch, timeline, users, points };
+  return { service, ordersService, dispatch, timeline, users };
 }
 
 describe('OrderGeneratorService (RF-37)', () => {
@@ -59,17 +52,31 @@ describe('OrderGeneratorService (RF-37)', () => {
     expect(dto.saleType).toBe(SaleType.OVER_THE_COUNTER);
     expect(dispatch.start).toHaveBeenCalledWith('order-1');
     expect(result.orderId).toBe('order-1');
-    // RF-45: el destino es un punto de entrega activo, no un GPS suelto.
-    expect(dto).toMatchObject({ deliveryPointId: TEST_POINT.id });
-    expect(result.deliveryPointId).toBe(TEST_POINT.id);
+    // RF-45: el destino es una coordenada cerca de un lugar de la demo.
+    const near = simulatedDestinations.some(
+      (place) =>
+        Math.abs(place.latitude - result.latitude) < 0.01 &&
+        Math.abs(place.longitude - result.longitude) < 0.01,
+    );
+    expect(near).toBe(true);
+    expect(dto).toMatchObject({
+      latitude: result.latitude,
+      longitude: result.longitude,
+    });
   });
 
-  it('el pico solo pide a puntos activos dentro del círculo (RF-36)', async () => {
+  it('el pico pide a puntos dentro del círculo (RF-36)', async () => {
     const { service, ordersService } = build();
-    await expect(
-      service.surge({ latitude: 10.0, longitude: -73.0 }, 1, 3),
-    ).rejects.toThrow(NO_POINT_IN_CIRCLE);
-    expect(ordersService.createEmergency).not.toHaveBeenCalled();
+    const center = { latitude: 10.6314, longitude: -73.1279 };
+    await service.surge(center, 1, 2);
+    const calls = ordersService.createEmergency.mock.calls as Array<
+      [unknown, { latitude: number; longitude: number }]
+    >;
+    expect(calls).toHaveLength(2);
+    for (const [, dto] of calls) {
+      expect(Math.abs(dto.latitude - center.latitude)).toBeLessThan(0.01);
+      expect(Math.abs(dto.longitude - center.longitude)).toBeLessThan(0.01);
+    }
   });
 
   it('crea las cuentas simuladas que falten, marcadas como simuladas', async () => {
@@ -100,7 +107,7 @@ describe('OrderGeneratorService (RF-37)', () => {
       .mockRejectedValueOnce(new BadRequestException('Sin stock.'))
       .mockResolvedValueOnce({ id: 'b' });
     const result = await service.surge(
-      { latitude: TEST_POINT.latitude, longitude: TEST_POINT.longitude },
+      { latitude: 10.6314, longitude: -73.1279 },
       1,
       3,
     );

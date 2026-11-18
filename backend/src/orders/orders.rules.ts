@@ -66,6 +66,39 @@ export const PLAN_RENEWAL_NOTICE_DAYS = 7;
 /** RU-15: la urgencia en recibido avisa al pasar de 5 minutos. */
 export const UNATTENDED_EMERGENCY_MS = 5 * 60 * 1000;
 
+export const COORDINATES_TOGETHER =
+  'La ubicación lleva latitud y longitud juntas.';
+
+export const COORDINATES_PRECISION =
+  'Las coordenadas admiten hasta 6 decimales.';
+
+/** RU-02 y RF-45: el destino de una persona es una coordenada válida. */
+export function assertCoordinates(
+  latitude?: number | null,
+  longitude?: number | null,
+): { latitude: number | null; longitude: number | null } {
+  const hasLatitude = latitude !== undefined && latitude !== null;
+  const hasLongitude = longitude !== undefined && longitude !== null;
+  if (hasLatitude !== hasLongitude) {
+    throw new BadRequestException(COORDINATES_TOGETHER);
+  }
+  if (!hasLatitude || !hasLongitude) {
+    return { latitude: null, longitude: null };
+  }
+  if (!hasAtMostSixDecimals(latitude) || !hasAtMostSixDecimals(longitude)) {
+    throw new BadRequestException(COORDINATES_PRECISION);
+  }
+  return { latitude, longitude };
+}
+
+function hasAtMostSixDecimals(value: number): boolean {
+  if (!Number.isFinite(value)) {
+    return false;
+  }
+  const decimals = value.toString().split('.')[1];
+  return !decimals || decimals.length <= 6;
+}
+
 export function todayInColombia(now = simClock.now()): string {
   return new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Bogota',

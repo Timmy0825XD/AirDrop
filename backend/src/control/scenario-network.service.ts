@@ -130,10 +130,6 @@ export class ScenarioNetworkService {
       [hubIds],
     );
     await manager.query(
-      `UPDATE delivery_points SET "hubId" = NULL WHERE "hubId" = ANY($1::uuid[])`,
-      [hubIds],
-    );
-    await manager.query(
       `DELETE FROM user_hubs WHERE "hubId" = ANY($1::uuid[]) OR "userId" = ANY($2::uuid[])`,
       [hubIds, userIds],
     );

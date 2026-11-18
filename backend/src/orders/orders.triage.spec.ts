@@ -1,7 +1,3 @@
-import {
-  deliveryPointsStub,
-  TEST_POINT,
-} from '../delivery-points/delivery-points.testing';
 /**
  * Urgencia con tamizaje (RF-41) y paciente a cargo (RF-42). El almacenamiento
  * de la fórmula y las existencias se simulan, como en `orders.cu09.spec.ts`.
@@ -64,7 +60,8 @@ function dto(overrides: Partial<CreateEmergencyDto> = {}): CreateEmergencyDto {
     saleType: SaleType.OVER_THE_COUNTER,
     triage: fever,
     allergies: '',
-    deliveryPointId: TEST_POINT.id,
+    latitude: 10.6314,
+    longitude: -73.1279,
     ...overrides,
   };
 }
@@ -106,7 +103,6 @@ function build(saleType = SaleType.OVER_THE_COUNTER) {
     {} as never,
     { assertDestinationAllowed: () => Promise.resolve() } as never,
     { statusChanged: jest.fn().mockResolvedValue(undefined) } as never,
-    deliveryPointsStub() as never,
   );
   const saved = () => orders.save.mock.calls[0][0];
   return { service, saved, storage };
@@ -134,8 +130,9 @@ describe('Urgencia con tamizaje y paciente a cargo (RF-41, RF-42)', () => {
       symptomSeverity: SymptomSeverity.SEVERE,
       description: null,
       allergies: null,
-      address: 'Puesto de salud de Badillo, Valledupar',
-      deliveryPointId: TEST_POINT.id,
+      address: 'Punto marcado en el mapa',
+      latitude: 10.6314,
+      longitude: -73.1279,
       patientFullName: null,
     });
     expect(result.triage).toEqual({
@@ -236,7 +233,8 @@ describe('CreateEmergencyDto con tamizaje', () => {
   const base = {
     medicationName: 'Acetaminofén jarabe',
     saleType: SaleType.OVER_THE_COUNTER,
-    deliveryPointId: TEST_POINT.id,
+    latitude: 10.6314,
+    longitude: -73.1279,
   };
 
   it('con tamizaje, la nota y la referencia son opcionales', async () => {
@@ -256,13 +254,14 @@ describe('CreateEmergencyDto con tamizaje', () => {
     expect(found).toContain('Un signo de alarma no es válido.');
   });
 
-  it('el punto de entrega es obligatorio (RF-45)', async () => {
+  it('el punto en el mapa es obligatorio (RF-45)', async () => {
     const found = await errors({
       ...base,
-      deliveryPointId: undefined,
+      latitude: undefined,
+      longitude: undefined,
       triage: fever,
     });
-    expect(found).toContain('Elige un punto de entrega.');
+    expect(found).toContain('Marca en el mapa dónde debe llegar el dron.');
   });
 
   it('valida a la persona a cargo', async () => {

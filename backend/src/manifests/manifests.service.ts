@@ -7,7 +7,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, IsNull, Repository } from 'typeorm';
 import { simClock } from '../common/clock/sim-clock';
 import { UserRole } from '../common/enums/user-role.enum';
-import { DeliveryPoint } from '../delivery-points/delivery-point.entity';
 import { Drone } from '../fleet/drone.entity';
 import { Hub } from '../hubs/hub.entity';
 import { Order } from '../orders/order.entity';
@@ -151,14 +150,6 @@ export class ManifestsService {
     manager: EntityManager,
     order: Order,
   ): Promise<string> {
-    if (order.deliveryPointId) {
-      const point = await manager.findOne(DeliveryPoint, {
-        where: { id: order.deliveryPointId },
-      });
-      if (point) {
-        return point.name;
-      }
-    }
     if (order.destinationHubId) {
       const hub = await manager.findOne(Hub, {
         where: { id: order.destinationHubId },

@@ -118,11 +118,12 @@ export const ESES = {
 } satisfies Record<string, NetworkSite>;
 
 /**
- * RF-45: puntos de entrega, con el nodo que los atiende. Chemesquemena y
- * Villa Germania no están: con la subida del terreno (RF-46) ningún tipo
- * llega y vuelve con la reserva (`context/negocio/cobertura.md`).
+ * RF-37: lugares de la región adonde piden los solicitantes simulados, con
+ * la central que los alcanza. Chemesquemena y Villa Germania no están: con
+ * la subida del terreno (RF-46) ningún tipo llega y vuelve con la reserva
+ * (`context/negocio/cobertura.md`).
  */
-export const DELIVERY_POINTS: Array<NetworkSite & { nodeCode: string }> = [
+export const DEMO_PLACES: Array<NetworkSite & { nodeCode: string }> = [
   site(
     'dp-los-mayales',
     'Puesto de salud de Los Mayales',

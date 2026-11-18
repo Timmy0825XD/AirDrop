@@ -1,6 +1,6 @@
 import {
   ESES,
-  DELIVERY_POINTS,
+  DEMO_PLACES,
   NODES,
   NetworkSite,
 } from '../airspace/regional-network';
@@ -454,10 +454,10 @@ export const simulatedRequesters = [1, 2, 3, 4].map((number) => ({
 }));
 
 /**
- * RF-37: a dónde piden los solicitantes simulados: los puntos de entrega de
- * la red (RF-45).
+ * RF-37: a dónde piden los solicitantes simulados: lugares de la región que
+ * alguna central alcanza y que quedan fuera de las zonas legales.
  */
-export const simulatedDestinations = DELIVERY_POINTS.map((point) => ({
+export const simulatedDestinations = DEMO_PLACES.map((point) => ({
   address: point.name,
   latitude: point.latitude,
   longitude: point.longitude,
