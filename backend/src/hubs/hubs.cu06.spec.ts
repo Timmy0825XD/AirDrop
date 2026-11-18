@@ -1,4 +1,3 @@
-import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
 import { NO_AIRSPACE } from '../airspace/airspace.testing';
 /**
  * Pruebas unitarias del CU-06 (Crear central), casos CP-06-01 a CP-06-08 de
@@ -28,7 +27,6 @@ const valido: CreateHubDto = {
   longitude: -73.2532,
   contactPhone: '3001234567',
   contactEmail: 'contacto@rosario.co',
-  networkRole: HubNetworkRole.NODE,
 };
 
 function usuario(overrides: Partial<User> = {}): User {

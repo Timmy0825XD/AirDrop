@@ -1,8 +1,3 @@
-import { DELIVERY_POINT_UNAVAILABLE } from '../delivery-points/delivery-points.rules';
-import {
-  deliveryPointsStub,
-  TEST_POINT,
-} from '../delivery-points/delivery-points.testing';
 /**
  * Pruebas unitarias del CU-09 (Crear pedido de emergencia), casos CP-09-01 a
  * CP-09-12 de la Segunda Parte. El nombre de cada `it` empieza con el ID del
@@ -10,6 +5,7 @@ import {
  * fórmula y las existencias se simulan (mocks).
  */
 import { BadRequestException } from '@nestjs/common';
+import { COORDINATES_PRECISION } from './orders.rules';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
 import { DocumentType } from '../common/enums/document-type.enum';
@@ -81,7 +77,8 @@ function conFormula(
     medicationName: 'Insulina glargina',
     saleType: SaleType.PRESCRIPTION,
     description: 'Paciente diabético sin insulina',
-    deliveryPointId: TEST_POINT.id,
+    latitude: 10.6314,
+    longitude: -73.1279,
     patientDocumentType: DocumentType.CITIZENSHIP_ID,
     patientDocumentNumber: '1099000001',
     prescriptionMime: 'image/jpeg',
@@ -98,7 +95,8 @@ function libre(
     medicationName: 'Acetaminofén 500 mg',
     saleType: SaleType.OVER_THE_COUNTER,
     description: 'Fiebre alta persistente',
-    deliveryPointId: TEST_POINT.id,
+    latitude: 10.6314,
+    longitude: -73.1279,
     ...overrides,
   };
 }
@@ -150,7 +148,6 @@ function build(
     {} as never,
     { assertDestinationAllowed: () => Promise.resolve() } as never,
     { statusChanged: jest.fn().mockResolvedValue(undefined) } as never,
-    deliveryPointsStub() as never,
   );
   return { service, pedidos, imagenes, almacenamiento, buscarOferta };
 }
@@ -258,21 +255,17 @@ describe('CU-09 Crear pedido de emergencia', () => {
     );
   });
 
-  it('CP-09-08 rechaza un punto de entrega que no está disponible (400)', async () => {
+  it('CP-09-08 rechaza coordenadas con más de 6 decimales (400)', async () => {
     const { service, pedidos } = build();
-    const puntos = service['deliveryPoints'] as unknown as {
-      requireForOrder: jest.Mock;
-    };
-    puntos.requireForOrder.mockRejectedValue(
-      new BadRequestException(DELIVERY_POINT_UNAVAILABLE),
-    );
 
-    const intento = service.createEmergency(solicitante, conFormula());
+    const intento = service.createEmergency(
+      solicitante,
+      conFormula({ latitude: 10.6314159 }),
+    );
 
     await expect(intento).rejects.toThrow(
-      new BadRequestException(DELIVERY_POINT_UNAVAILABLE),
+      new BadRequestException(COORDINATES_PRECISION),
     );
-    expect(puntos.requireForOrder).toHaveBeenCalledWith(TEST_POINT.id);
     expect(pedidos.save).not.toHaveBeenCalled();
   });
 

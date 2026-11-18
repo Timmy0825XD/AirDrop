@@ -56,7 +56,6 @@ import {
   percentToLand,
   safeLandingPoint,
 } from './contingency.rules';
-import { DeliveryPoint } from '../delivery-points/delivery-point.entity';
 import { GeoJsonPolygon } from '../geofences/geofences.rules';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import {
@@ -544,14 +543,12 @@ export class FlightClockService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  /** RF-34: los puntos seguros de la red: centrales activas y puntos activos. */
+  /** RF-34: los puntos seguros de la red: las centrales activas. */
   private async safeSites(): Promise<SafeSite[]> {
-    const manager = this.orders.manager;
-    const [hubs, points] = await Promise.all([
-      manager.find(Hub, { where: { status: HubStatus.ACTIVE } }),
-      manager.find(DeliveryPoint, { where: { active: true } }),
-    ]);
-    return [...hubs, ...points].map((site) => ({
+    const hubs = await this.orders.manager.find(Hub, {
+      where: { status: HubStatus.ACTIVE },
+    });
+    return hubs.map((site) => ({
       name: site.name,
       latitude: site.latitude,
       longitude: site.longitude,

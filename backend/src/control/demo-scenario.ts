@@ -1,12 +1,11 @@
 import {
   ESES,
-  DELIVERY_POINTS,
-  NODES,
+  DEMO_PLACES,
+  MAIN_HUBS,
   NetworkSite,
 } from '../airspace/regional-network';
 import { DocumentType } from '../common/enums/document-type.enum';
 import { DroneKind } from '../common/enums/drone-kind.enum';
-import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
 import { HubType } from '../common/enums/hub-type.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
 
@@ -36,8 +35,6 @@ export type DemoDrone = { kind: DroneKind; cold: boolean };
 export type DemoHubPlan = {
   name: string;
   type: HubType;
-  /** RF-06: solo un nodo tiene drones. */
-  networkRole: HubNetworkRole;
   address: string;
   latitude: number;
   longitude: number;
@@ -145,7 +142,7 @@ function drones(...entries: Array<[DroneKind, boolean]>): DemoDrone[] {
 const OTC = SaleType.OVER_THE_COUNTER;
 const RX = SaleType.PRESCRIPTION;
 
-function node(
+function mainHub(
   site: NetworkSite,
   address: string,
   phone: string,
@@ -158,7 +155,6 @@ function node(
   return {
     name: site.name,
     type: HubType.PHARMACY,
-    networkRole: HubNetworkRole.NODE,
     address,
     latitude: site.latitude,
     longitude: site.longitude,
@@ -173,34 +169,39 @@ function node(
   };
 }
 
+/**
+ * RF-06: una ESE es una central más, con un Colibrí y una Garza para sus
+ * urgencias y su reabastecimiento.
+ */
 function ese(
   site: NetworkSite,
   address: string,
   phone: string,
   dispatcher: DemoPerson,
+  dronePrefix: string,
   stock: DemoStockItem[],
 ): DemoHubPlan {
+  const fleet = drones([RAPID, false], [BALANCED, true]);
   return {
     name: site.name,
     type: HubType.HOSPITAL,
-    networkRole: HubNetworkRole.ESE,
     address,
     latitude: site.latitude,
     longitude: site.longitude,
     contactPhone: phone,
     contactEmail: `${site.code}@airdrop.example`,
     dispatchers: [dispatcher],
-    dronePrefix: '',
-    droneCount: 0,
-    fleet: [],
+    dronePrefix,
+    droneCount: fleet.length,
+    fleet,
     droneNotes: [],
     stock,
   };
 }
 
 export const hubPlans: DemoHubPlan[] = [
-  node(
-    NODES.valledupar,
+  mainHub(
+    MAIN_HUBS.valledupar,
     'Carrera 9 con calle 20, barrio Novalito, Valledupar',
     '6055550300',
     [
@@ -228,8 +229,8 @@ export const hubPlans: DemoHubPlan[] = [
       item('Suero oral', 200, 'SOR-V-2646', 300, OTC),
     ],
   ),
-  node(
-    NODES.north,
+  mainHub(
+    MAIN_HUBS.north,
     'Vía a Río Seco, corregimiento de Río Seco, Valledupar',
     '6055550301',
     [
@@ -255,8 +256,8 @@ export const hubPlans: DemoHubPlan[] = [
       item('Morfina 10 mg/mL', 20, 'MOR-N-2606', 260, SaleType.SPECIAL_CONTROL),
     ],
   ),
-  node(
-    NODES.south,
+  mainHub(
+    MAIN_HUBS.south,
     'Vía La Paz – San Diego, La Paz',
     '6055550302',
     [
@@ -293,8 +294,8 @@ export const hubPlans: DemoHubPlan[] = [
       item('Suero oral', 400, 'SOR-S-2631', 300, OTC),
     ],
   ),
-  node(
-    NODES.west,
+  mainHub(
+    MAIN_HUBS.west,
     'Entrada a Valencia de Jesús, Valledupar',
     '6055550303',
     [
@@ -334,8 +335,8 @@ export const hubPlans: DemoHubPlan[] = [
       item('Suero antiofídico polivalente', 8, 'SAP-O-2618', 210, RX, true),
     ],
   ),
-  node(
-    NODES.codazzi,
+  mainHub(
+    MAIN_HUBS.codazzi,
     'Salida a Becerril, Agustín Codazzi',
     '6055550304',
     [
@@ -364,6 +365,7 @@ export const hubPlans: DemoHubPlan[] = [
     'Calle 16 No. 17-141, Valledupar',
     '6055550316',
     staff('Rosa Elena Gutiérrez', 'rosa.gutierrez', '3175550356'),
+    'AD-ERP',
     [
       item('Acetaminofén 500 mg', 30, 'ACE-RP-2647', 210, OTC),
       item('Suero oral', 15, 'SOR-RP-2648', 190, OTC),
@@ -374,6 +376,7 @@ export const hubPlans: DemoHubPlan[] = [
     'Calle 29 con carrera 22, Primero de Mayo, Valledupar',
     '6055550317',
     staff('Iván Darío Castro', 'ivan.castro', '3175550357'),
+    'AD-EEA',
     [item('Acetaminofén 500 mg', 20, 'ACE-EA-2649', 200, OTC)],
   ),
   ese(
@@ -381,6 +384,7 @@ export const hubPlans: DemoHubPlan[] = [
     'Calle 4 No. 5-20, La Paz',
     '6055550311',
     staff('Yolanda Ariza', 'yolanda.ariza', '3175550351'),
+    'AD-ELP',
     [
       item('Acetaminofén 500 mg', 20, 'ACE-LP-2624', 200, OTC),
       item('Suero oral', 10, 'SOR-LP-2625', 180, OTC),
@@ -391,6 +395,7 @@ export const hubPlans: DemoHubPlan[] = [
     'Carrera 6 No. 3-15, San Diego',
     '6055550312',
     staff('Ramiro Daza', 'ramiro.daza', '3175550352'),
+    'AD-ESD',
     [item('Acetaminofén 500 mg', 15, 'ACE-SD-2626', 190, OTC)],
   ),
   ese(
@@ -398,6 +403,7 @@ export const hubPlans: DemoHubPlan[] = [
     'Calle Principal, Manaure Balcón del Cesar',
     '6055550313',
     staff('Kelly Montero', 'kelly.montero', '3175550353'),
+    'AD-EMA',
     [item('Acetaminofén 500 mg', 10, 'ACE-MA-2627', 210, OTC)],
   ),
   ese(
@@ -405,6 +411,7 @@ export const hubPlans: DemoHubPlan[] = [
     'Calle 3 No. 4-10, Pueblo Bello',
     '6055550314',
     staff('Alba Torres Izquierdo', 'alba.torres', '3175550354'),
+    'AD-EPB',
     [
       item('Acetaminofén 500 mg', 12, 'ACE-PB-2628', 220, OTC),
       item('Suero oral', 6, 'SOR-PB-2629', 160, OTC),
@@ -415,6 +422,7 @@ export const hubPlans: DemoHubPlan[] = [
     'Carrera 17 No. 9-30, Agustín Codazzi',
     '6055550315',
     staff('Jesús Ovalle', 'jesus.ovalle', '3175550355'),
+    'AD-EAC',
     [item('Acetaminofén 500 mg', 25, 'ACE-AC-2630', 230, OTC)],
   ),
 ];
@@ -454,10 +462,10 @@ export const simulatedRequesters = [1, 2, 3, 4].map((number) => ({
 }));
 
 /**
- * RF-37: a dónde piden los solicitantes simulados: los puntos de entrega de
- * la red (RF-45).
+ * RF-37: a dónde piden los solicitantes simulados: lugares de la región que
+ * alguna central alcanza y que quedan fuera de las zonas legales.
  */
-export const simulatedDestinations = DELIVERY_POINTS.map((point) => ({
+export const simulatedDestinations = DEMO_PLACES.map((point) => ({
   address: point.name,
   latitude: point.latitude,
   longitude: point.longitude,

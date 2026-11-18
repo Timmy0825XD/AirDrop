@@ -1,5 +1,4 @@
 import { manifestsStub } from '../manifests/manifests.testing';
-import { ALWAYS_DAY } from '../airspace/daylight.testing';
 import { FLAT_TERRAIN } from '../airspace/terrain.testing';
 import { ConflictException } from '@nestjs/common';
 import {
@@ -149,7 +148,6 @@ function received(overrides: Partial<Order> = {}): Order {
     createdByUserId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
     destinationHubId: null,
     originHubId: null,
-    deliveryPointId: null,
     address: 'Calle 20 # 8-15',
     latitude: 10.46,
     longitude: -73.25,
@@ -302,7 +300,6 @@ function build(state?: {
     // Sin clima: el cielo despejado de antes de RF-32.
     { active: () => [] } as never,
     FLAT_TERRAIN,
-    ALWAYS_DAY,
   );
   const inbox = {
     notifyUser: jest.fn().mockResolvedValue(undefined),

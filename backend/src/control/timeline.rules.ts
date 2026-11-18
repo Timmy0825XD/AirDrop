@@ -534,7 +534,7 @@ export function incidentDraft(
         ...base,
         severity: 'danger',
         title: `${what}; espera 30 s en el aire`,
-        detail: `${battery} Si el enlace no vuelve, regresa solo al nodo.`,
+        detail: `${battery} Si el enlace no vuelve, regresa solo a la central.`,
       };
     }
     if (incident.outcome === IncidentOutcome.CONTINUED) {

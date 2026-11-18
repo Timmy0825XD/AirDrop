@@ -1,7 +1,3 @@
-import {
-  deliveryPointsStub,
-  TEST_POINT,
-} from '../delivery-points/delivery-points.testing';
 /**
  * Fórmula con varias hojas (RU-25) y quién la puede leer (RF-27): la central
  * que decide y, después, la que autorizó desde su histórico.
@@ -52,7 +48,8 @@ function dto(overrides: Partial<CreateEmergencyDto> = {}): CreateEmergencyDto {
     medicationName: 'Amoxicilina 500 mg',
     saleType: SaleType.PRESCRIPTION,
     description: 'Infección de garganta',
-    deliveryPointId: TEST_POINT.id,
+    latitude: 10.6314,
+    longitude: -73.1279,
     patientDocumentType: DocumentType.CITIZENSHIP_ID,
     patientDocumentNumber: '1099000001',
     ...overrides,
@@ -120,7 +117,6 @@ function build(order: Order | null = null) {
     {} as never,
     { assertDestinationAllowed: () => Promise.resolve() } as never,
     { statusChanged: jest.fn().mockResolvedValue(undefined) } as never,
-    deliveryPointsStub() as never,
   );
   return { service, orders, images, storage };
 }

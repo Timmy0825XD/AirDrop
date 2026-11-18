@@ -1,4 +1,3 @@
-import { NIGHT_NO_FLIGHT } from '../airspace/daylight.rules';
 import { DroneStatus } from '../common/enums/drone-status.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
 import { DRONE_TYPES } from '../fleet/drone-types';
@@ -183,29 +182,5 @@ describe('Selección por tipo de misión (RF-11, flota.md)', () => {
   it('el peso del pedido es unidades por gramos del lote', () => {
     expect(payloadKgOf({ unitWeightG: 60 }, 5)).toBe(0.3);
     expect(payloadKgOf({ unitWeightG: null }, 10)).toBe(1);
-  });
-});
-
-describe('Solo de día (RF-44)', () => {
-  it('un dron que no alcanza a volver antes de la puesta queda fuera', () => {
-    const result = chooseDrone({
-      missionType: MissionType.EMERGENCY,
-      quantity: 1,
-      payloadKg: 0.3,
-      weatherFlyable: true,
-      candidates: [
-        {
-          drone: candidate(colibri, 'colibri'),
-          distanceKm: 20,
-          daylight: true,
-        },
-        { drone: candidate(condor, 'condor'), distanceKm: 5, daylight: false },
-      ],
-    });
-    expect(result.chosen?.identifier).toBe('colibri');
-    expect(result.discarded[0]).toMatchObject({
-      identifier: 'condor',
-      reason: NIGHT_NO_FLIGHT,
-    });
   });
 });

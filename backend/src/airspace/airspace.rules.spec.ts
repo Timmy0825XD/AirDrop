@@ -12,7 +12,7 @@ import {
   SKVP_ARP,
   regionalAirspace,
 } from './regional-airspace';
-import { DELIVERY_POINTS, ESES, NODES } from './regional-network';
+import { DEMO_PLACES, ESES, MAIN_HUBS } from './regional-network';
 
 const zones = regionalAirspace();
 
@@ -112,9 +112,9 @@ describe('Escala de la demo (espacio-aereo.md)', () => {
 describe('La red regional respeta las zonas (cobertura.md)', () => {
   it('ningún nodo, ESE ni punto queda dentro de una zona', () => {
     for (const site of [
-      ...Object.values(NODES),
+      ...Object.values(MAIN_HUBS),
       ...Object.values(ESES),
-      ...DELIVERY_POINTS,
+      ...DEMO_PLACES,
     ]) {
       expect({
         site: site.code,
@@ -127,13 +127,13 @@ describe('La red regional respeta las zonas (cobertura.md)', () => {
   });
 
   it('Valledupar tiene nodo, dos ESE y cuatro puntos', () => {
-    expect(NODES.valledupar.municipality).toBe('Valledupar');
+    expect(MAIN_HUBS.valledupar.municipality).toBe('Valledupar');
     expect(
       Object.values(ESES).filter((ese) => ese.municipality === 'Valledupar'),
     ).toHaveLength(2);
     expect(
-      DELIVERY_POINTS.filter(
-        (point) => point.nodeCode === NODES.valledupar.code,
+      DEMO_PLACES.filter(
+        (point) => point.hubCode === MAIN_HUBS.valledupar.code,
       ),
     ).toHaveLength(4);
   });

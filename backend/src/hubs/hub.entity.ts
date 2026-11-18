@@ -8,7 +8,6 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { HubNetworkRole } from '../common/enums/hub-network-role.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { HubType } from '../common/enums/hub-type.enum';
 import { FIELD_LIMITS } from '../common/field-limits';
@@ -25,19 +24,6 @@ export class Hub {
 
   @Column({ type: 'enum', enum: HubType, enumName: 'hub_type' })
   type: HubType;
-
-  /**
-   * RF-06: nodo (drones, despega) o ESE (recibe, sin drones). Las filas de
-   * antes de la red regional quedan como nodo.
-   */
-  @Index()
-  @Column({
-    type: 'enum',
-    enum: HubNetworkRole,
-    enumName: 'hub_network_role',
-    default: HubNetworkRole.NODE,
-  })
-  networkRole: HubNetworkRole;
 
   @Column({ type: 'varchar', length: FIELD_LIMITS.address })
   address: string;

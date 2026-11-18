@@ -14,8 +14,6 @@
  * cuentas ni centrales.
  */
 import request from 'supertest';
-import { DataSource } from 'typeorm';
-import { DeliveryPointsService } from '../src/delivery-points/delivery-points.service';
 import { UserRole } from '../src/common/enums/user-role.enum';
 import {
   allEmails,
@@ -70,7 +68,6 @@ async function seedDemoData(): Promise<void> {
         await createHub(app, adminToken, {
           name: plan.name,
           type: plan.type,
-          networkRole: plan.networkRole,
           address: plan.address,
           latitude: plan.latitude,
           longitude: plan.longitude,
@@ -82,10 +79,6 @@ async function seedDemoData(): Promise<void> {
 
     // RF-40: las centrales de otras versiones del escenario se van.
     await app.get(ScenarioNetworkService).removeStaleHubs();
-
-    // RF-45: los puntos de entrega, enlazados con los nodos recién creados.
-    const points = app.get(DeliveryPointsService);
-    await points.syncScenario(app.get(DataSource).manager, true);
 
     const operatorSession = await createStaff(
       app,

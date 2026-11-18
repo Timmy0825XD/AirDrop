@@ -1,7 +1,3 @@
-import {
-  deliveryPointsStub,
-  TEST_POINT,
-} from '../delivery-points/delivery-points.testing';
 import { NO_AIRSPACE } from '../airspace/airspace.testing';
 import {
   BadRequestException,
@@ -129,7 +125,8 @@ function emergencyDto(
     medicationName: 'Acetaminofén 500 mg',
     saleType: SaleType.OVER_THE_COUNTER,
     description: 'Dolor fuerte desde anoche',
-    deliveryPointId: TEST_POINT.id,
+    latitude: 10.6314,
+    longitude: -73.1279,
     ...overrides,
   };
 }
@@ -211,7 +208,6 @@ function build(options?: {
     plans as never,
     routes,
     { statusChanged: jest.fn().mockResolvedValue(undefined) } as never,
-    deliveryPointsStub() as never,
   );
   return { service, orders, images, storage, stockForHub, plans, saved, hubs };
 }
@@ -272,25 +268,17 @@ describe('OrdersService emergencies', () => {
       ],
     };
     const { service, orders } = build({ geofences: [park] });
-    const points = service['deliveryPoints'] as unknown as {
-      requireForOrder: jest.Mock;
-    };
-    points.requireForOrder
-      .mockResolvedValueOnce({
-        ...TEST_POINT,
-        latitude: 10.47,
-        longitude: -73.26,
-      })
-      .mockResolvedValueOnce({
-        ...TEST_POINT,
-        latitude: 10.5,
-        longitude: -73.26,
-      });
     await expect(
-      service.createEmergency(requester(), emergencyDto()),
+      service.createEmergency(
+        requester(),
+        emergencyDto({ latitude: 10.47, longitude: -73.26 }),
+      ),
     ).rejects.toThrow(new BadRequestException(DESTINATION_IN_GEOFENCE));
     await expect(
-      service.createEmergency(requester(), emergencyDto()),
+      service.createEmergency(
+        requester(),
+        emergencyDto({ latitude: 10.5, longitude: -73.26 }),
+      ),
     ).resolves.toMatchObject({ status: OrderStatus.RECEIVED });
     expect(orders.save).toHaveBeenCalledTimes(1);
   });
@@ -789,7 +777,8 @@ describe('OrdersService plans', () => {
       quantity: 2,
       frequency: PlanFrequency.WEEKLY,
       startDate: start,
-      deliveryPointId: TEST_POINT.id,
+      latitude: 10.6314,
+      longitude: -73.1279,
       ...overrides,
     };
   }

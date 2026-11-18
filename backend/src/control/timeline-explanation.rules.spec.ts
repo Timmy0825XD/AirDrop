@@ -89,9 +89,9 @@ const trace: DecisionTrace = {
 };
 
 describe('Explicación de la decisión para la TV (RF-39, RF-11)', () => {
-  it('dice por qué este nodo, con la llegada y la otra central que podía', () => {
+  it('dice por qué esta central, con la llegada y la otra central que podía', () => {
     const [nodeSection] = explainAssignment(trace, urgency)!;
-    expect(nodeSection.title).toBe('Por qué este nodo');
+    expect(nodeSection.title).toBe('Por qué esta central');
     expect(nodeSection.lines).toEqual([
       'Nodo Norte (Río Seco) tiene el medicamento con lote vigente y está a 11,2 km: llega en 6 min.',
       'Nodo Valledupar también podía, pero tardaría 14 min.',

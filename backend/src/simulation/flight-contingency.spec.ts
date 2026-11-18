@@ -244,18 +244,16 @@ describe('Viento sobre el límite de ida: vuelve a la central (RF-34, RF-35)', (
 });
 
 describe('Punto seguro de la red (RF-34, paso 3)', () => {
-  const nearPoint = {
-    name: 'Puesto de salud cercano',
+  const nearHub = {
+    name: 'Central cercana',
     latitude: 10.46,
     longitude: -73.245,
   };
   const farHub = { name: 'Nodo lejano', latitude: 10.9, longitude: -73.0 };
 
-  it('sin batería para volver, baja en el nodo, ESE o punto de entrega que alcance', async () => {
+  it('sin batería para volver, baja en la central activa que alcance', async () => {
     const built = build();
-    built.orders.manager.find
-      .mockResolvedValueOnce([farHub])
-      .mockResolvedValueOnce([nearPoint]);
+    built.orders.manager.find.mockResolvedValueOnce([farHub, nearHub]);
     const session = fly(built, { cruiseKm: 5, batteryPercent: 12 });
     await built.service['handleIncident'](
       session,
@@ -268,15 +266,15 @@ describe('Punto seguro de la red (RF-34, paso 3)', () => {
     );
     expect(built.incidents.setLanding).toHaveBeenCalledWith(
       'incident-1',
-      expect.objectContaining({ name: nearPoint.name }),
+      expect.objectContaining({ name: nearHub.name }),
     );
     const corridor = session.corridor.coordinates.at(-1)!;
-    expect(corridor).toEqual([nearPoint.longitude, nearPoint.latitude]);
+    expect(corridor).toEqual([nearHub.longitude, nearHub.latitude]);
   });
 
   it('dos motores bajan donde van, aunque haya un punto seguro cerca', async () => {
     const built = build();
-    built.orders.manager.find.mockResolvedValue([nearPoint]);
+    built.orders.manager.find.mockResolvedValue([nearHub]);
     const session = fly(built, { cruiseKm: 5, batteryPercent: 90 });
     await built.service['handleIncident'](
       session,

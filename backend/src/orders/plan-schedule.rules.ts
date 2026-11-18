@@ -6,8 +6,8 @@ import { simClock } from '../common/clock/sim-clock';
 
 /**
  * RU-30: la primera franja empieza a las 07:00 y la última a las 16:00
- * (cierra a las 17:00). El sol se pone entre las 17:27 y las 18:17: un
- * despegue tardío que no alcance a volver de día lo bloquea RF-44.
+ * (cierra a las 17:00). Es horario de servicio: se vuela a cualquier hora
+ * (RF-44).
  */
 export const FIRST_SLOT_HOUR = 7;
 export const LAST_SLOT_HOUR = 16;

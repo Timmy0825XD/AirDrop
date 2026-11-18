@@ -78,7 +78,7 @@ function hubSection(
       );
     }
   }
-  return { title: 'Por qué este nodo', lines };
+  return { title: 'Por qué esta central', lines };
 }
 
 function droneSection(hub: HubTrace, order: DecisionFacts): TimelineSection {
