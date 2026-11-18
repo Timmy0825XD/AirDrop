@@ -9,7 +9,7 @@ La **central** es el lugar donde está el inventario. No es una cuenta ni un qui
 | **Nodo** | Drones, inventario y despachador | Despega. Atiende a pacientes y reabastece a las ESE |
 | **ESE** | Inventario y despachador, sin drones | Pide reabastecimiento y lo recibe |
 
-El **punto de entrega** (puesto de salud o dronpuerto de un corregimiento) tampoco es una cuenta: es el lugar donde el paciente recoge su pedido. Ver [../entregas/persona.md](../entregas/persona.md).
+El destino de una entrega a una persona es el punto que ella marca en el mapa, no una cuenta. Ver [../entregas/persona.md](../entregas/persona.md).
 
 ## Cuentas
 
@@ -29,7 +29,7 @@ Con eso no autoriza ni pilotea: lanza la situación, y la respuesta la deciden l
 
 Los solicitantes simulados del generador (RF-37) no son personas: son cuentas marcadas como simuladas, sin datos reales.
 
-No hay rol receptor. El código de un uso lo ingresa el solicitante en el punto de entrega o, si el destino es una central, el despachador que pidió el abastecimiento.
+No hay rol receptor. El código de un uso lo ingresa el solicitante donde pidió o, si el destino es una central, el despachador que pidió el abastecimiento.
 
 ## Registro del solicitante
 
@@ -41,8 +41,8 @@ En venta bajo fórmula, el documento de la fórmula es el del paciente del pedid
 
 | Pedido | Lo crea | Destino | Quién suelta el insumo | Detalle |
 | --- | --- | --- | --- | --- |
-| Urgencia civil | Solicitante | El punto de entrega que elige | Despachador del nodo que lo tiene | [../entregas/persona.md](../entregas/persona.md) |
-| Programado civil | Solicitante | Su punto de entrega, con frecuencia | Ese despachador, en cada fecha | [../entregas/persona.md](../entregas/persona.md) |
+| Urgencia civil | Solicitante | Su ubicación (GPS o pin) | Despachador del nodo que lo tiene | [../entregas/persona.md](../entregas/persona.md) |
+| Programado civil | Solicitante | Su ubicación, con frecuencia | Ese despachador, en cada fecha | [../entregas/persona.md](../entregas/persona.md) |
 | Urgencia entre centrales | Despachador de la central que lo necesita | Su central | Despachador del nodo que lo tiene | [../entregas/centrales.md](../entregas/centrales.md) |
 | Programado entre centrales | Despachador de la central que lo necesita | Su central | Despachador del nodo que lo tiene | [../entregas/centrales.md](../entregas/centrales.md) |
 

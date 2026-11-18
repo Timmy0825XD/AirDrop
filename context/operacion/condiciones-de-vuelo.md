@@ -2,20 +2,11 @@
 
 Cuándo y a qué altura vuela un dron. Las reglas de dónde puede volar están en [espacio-aereo.md](espacio-aereo.md); los tipos de dron, en [flota.md](flota.md).
 
-## Solo de día
+## A cualquier hora
 
-El RAC 100.220(a)(3) dice: "No se autorizarán, en ningún caso, operaciones nocturnas para actividades de transporte de carga (Drone Delivery)".
+Se vuela de día y de noche (RF-44). La hora del reloj simulado no descarta drones ni manda una urgencia a traslado convencional. Los programados siguen atados a su franja de 07:00 a 17:00 (RU-30), que es horario de servicio.
 
-- El RAC 100 no define la noche. Lo usual en aviación es tomarla desde el fin del crepúsculo civil vespertino hasta el inicio del matutino. AirDrop usa una ventana más estricta, **de la salida a la puesta del sol**, para que el despacho nunca dependa de la penumbra.
-- La salida y la puesta se calculan para la fecha simulada y la coordenada del nodo, con las ecuaciones solares de la NOAA. No usan una API. En Valledupar la salida varía entre las 5:33 y las 6:15 y la puesta entre las 17:27 y las 18:17, según la época (verificado contra api.sunrise-sunset.org).
-- Un vuelo solo se despacha si el dron puede **aterrizar de regreso en el nodo antes de la puesta del sol**, con el tiempo estimado de ida, la espera en destino y la vuelta.
-
-**Pedidos que caen de noche:**
-
-| Pedido | Qué hace el sistema |
-| --- | --- |
-| Programado | Queda en cola y sale en la primera franja con luz del día |
-| Urgencia | No se encola: pasa de una vez a **traslado convencional** (el fallback de RF-18), con el motivo "es de noche", y quien pidió ve las centrales con el insumo |
+**Simplificación.** El RAC 100.220(a)(3) dice: "No se autorizarán, en ningún caso, operaciones nocturnas para actividades de transporte de carga (Drone Delivery)". El MVP no lo aplica para que la demo se pueda presentar a cualquier hora ([../legal/aeronautica.md](../legal/aeronautica.md)).
 
 ## Condiciones meteorológicas visuales (VMC)
 
@@ -77,6 +68,6 @@ Sale aproximadamente en 0,55 % de batería cada 100 m en el Colibrí, 0,65 % en 
 1. Despegue vertical en el nodo hasta 90 m AGL.
 2. Transición a crucero.
 3. Crucero por el corredor, siguiendo el terreno.
-4. Descenso vertical sobre el punto de entrega. Es un punto a la vista de su observador y a 30 m de personas ajenas ([../entregas/persona.md](../entregas/persona.md)).
+4. Descenso vertical sobre el destino: la ubicación del solicitante o la central ([../entregas/persona.md](../entregas/persona.md)).
 5. Entrega o espera del código.
 6. Regreso al nodo por el mismo corredor.

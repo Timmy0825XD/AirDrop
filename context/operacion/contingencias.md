@@ -8,7 +8,7 @@ Qué hace un dron cuando algo sale mal en vuelo. Los incidentes son de RF-34. El
 | --- | --- |
 | **Seguir** | Continúa la misión con la condición nueva (más consumo, menos velocidad) |
 | **Regresar** | Vuelve al nodo por el corredor. Si lleva el paquete, el paquete vuelve y sigue la cuarentena ([../entregas/productos.md](../entregas/productos.md)) |
-| **Aterrizar en punto seguro** | Va al punto seguro más cercano al que le alcance la batería: un nodo, una ESE o un punto de entrega |
+| **Aterrizar en punto seguro** | Va al punto seguro más cercano al que le alcance la batería: un nodo o una ESE |
 | **Aterrizaje inmediato** | Baja donde está, fuera de cualquier zona prohibida. El dron queda fuera de servicio hasta que el operador lo recupere |
 
 ## Incidentes y respuesta

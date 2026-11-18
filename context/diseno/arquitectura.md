@@ -47,7 +47,6 @@ Dirección acordada en el documento base. El detalle de carpetas y convenciones 
 - Emergencia: asignación al autorizar; el dron queda reservado hasta la carga o el fallback.
 - Programado: calendario, posibilidad de agrupar entregas si el payload alcanza (sin convertir esto en un VRP académico; heurística simple).
 - Si una zona nueva (geovalla, restricción temporal, tormenta, niebla) cruza el tramo que falta, la ruta cambia en vuelo (RF-33).
-- No hay despegue de noche: la decisión consulta la salida y la puesta del sol (RF-44).
 - Ante un incidente, `contingency.rules.ts` elige el protocolo y el reloj lo ejecuta (RF-34). Una urgencia que no llega vuelve al motor de decisión (RF-35).
 
 ## 7. Cadena de frío
@@ -59,7 +58,7 @@ Dirección acordada en el documento base. El detalle de carpetas y convenciones 
 
 - Módulo `control/` en Nest y la web `web/`. Solo admin, y solo con `CONTROL_ENABLED`.
 - Clima simulado por celdas en `weather/` (RF-32). Lo leen la decisión, las rutas y el vuelo.
-- Espacio aéreo en `airspace/`: zonas legales del RAC 100, corredores pactados, malla de terreno y luz del día (RF-43, RF-44, RF-46). Es el sistema de gestión de vuelo con geocercas que pide el RAC 100.445.
+- Espacio aéreo en `airspace/`: zonas legales del RAC 100, corredores pactados, malla de terreno (RF-43, RF-46). Es el sistema de gestión de vuelo con geocercas que pide el RAC 100.445.
 - Actores simulados (despachador automático, generador, receptor) que llaman a los mismos servicios que una persona (RF-37). Modo caos apagado por defecto (RF-38).
 - La línea de tiempo y las alertas pendientes van por la sala `radar` del mismo socket (RF-39).
 

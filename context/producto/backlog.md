@@ -129,7 +129,7 @@ Se agregó después de probar la urgencia con personas: pedir debía ser más r�
 | HU-54 | Paciente a cargo: la urgencia o el plan para un hijo o un familiar (RF-42) | Alta | 5 | 6 |
 | HU-55 | Fórmula en PDF o hasta 3 fotos, con cámara (RU-25, RF-27) | Alta | 5 | 6 |
 | HU-56 | Visor de la fórmula con zoom, abrir con otra app y consulta desde el histórico (RF-27, CU-13) | Alta | 5 | 6 |
-| HU-57 | Ubicación por GPS (RU-02); desde HU-64 sirve para proponer el punto de entrega | Alta | 5 | 6 |
+| HU-57 | Ubicación por GPS (RU-02); es el destino de la urgencia y del plan | Alta | 5 | 6 |
 | HU-58 | Urgencia en 3 pasos y tamizaje en el detalle y la cola del despachador | Alta | 8 | 6 |
 
 **Suma del módulo 10: 36 SP.**
@@ -158,7 +158,7 @@ Se agregó tras revisar el RAC 100, la Ley 1581 y la crítica del profesor a la 
 
 ## Módulo 12 — Rediseño Corredor (ampliación)
 
-Se agregó tras revisar la app terminada: funcionaba, pero se veía plana, sin marca y sin estados intermedios. El concepto elegido es "Corredor": la ruta entre la central y el punto de entrega ordena la pantalla. Empieza por el solicitante; los cimientos cambian los cuatro roles. Se cuenta aparte.
+Se agregó tras revisar la app terminada: funcionaba, pero se veía plana, sin marca y sin estados intermedios. El concepto elegido es "Corredor": la ruta entre la central y el destino ordena la pantalla. Empieza por el solicitante; los cimientos cambian los cuatro roles. Se cuenta aparte.
 
 | ID | Historia | Pri | SP | Sprint |
 | --- | --- | --- | --- | --- |
@@ -171,6 +171,18 @@ Se agregó tras revisar la app terminada: funcionaba, pero se veía plana, sin m
 | HU-78 | Medicamentos disponibles (RF-54) | Media | 5 | 6 |
 
 **Suma del módulo 12: 45 SP.**
+
+## Módulo 13 — Menos realismo (ajuste)
+
+Se agregó antes de la presentación para simplificar la demo. Reemplaza HU-61 y HU-64: se vuela a cualquier hora y el dron llega a la ubicación del solicitante, sin puntos fijos de entrega. Se declara como simplificación frente al RAC 100.220. Se cuenta aparte.
+
+| ID | Historia | Pri | SP | Sprint |
+| --- | --- | --- | --- | --- |
+| HU-79 | Vuelo a cualquier hora: quitar la regla de luz del día de la decisión y del fallback (RF-44, CU-48) | Alta | 3 | 6 |
+| HU-80 | Destino en la ubicación del solicitante: urgencia y plan por GPS o pin, sin puntos de entrega (RU-02, RU-30, RF-45) | Alta | 8 | 6 |
+| HU-81 | Generador, pico de urgencias y caos con destinos al azar al alcance de un nodo (RF-36, RF-37, RF-38) | Media | 3 | 6 |
+
+**Suma del módulo 13: 14 SP.**
 
 ---
 

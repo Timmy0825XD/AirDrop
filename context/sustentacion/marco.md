@@ -10,7 +10,7 @@
 | **Geovalla** | Perímetro virtual sobre coordenadas reales: restringe o permite movimiento. Aquí: polígonos que el enrutador no puede cruzar. |
 | **DroneModel** | Configuración reutilizable (no cada dron suelto) con las specs de un tipo de dron. |
 | **Corredor con perfil de terreno** | Sustituto simple de pathfinding 3D: se rodean las zonas en planta y la altura sigue el terreno entre 60 y 120 m AGL. |
-| **Nodo y punto de entrega** | El modelo de Zipline: el dron sale de un centro de distribución y entrega en un sitio fijo y despejado, no en la puerta. |
+| **Nodo** | El modelo de Zipline: el dron sale de un centro de distribución. AirDrop lo simplifica: entrega donde está la persona. |
 
 ## Antecedentes
 

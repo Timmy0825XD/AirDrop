@@ -12,7 +12,7 @@ Se genera cuando el despachador confirma la carga. No hay vuelo sin manifiesto, 
 | Fecha y hora | Hora simulada de la confirmación |
 | Dron | Identificador y tipo |
 | Origen | Nodo |
-| Destino | Punto de entrega o ESE |
+| Destino | Ubicación del solicitante o central |
 | Contenido | Medicamento, presentación, lote, vencimiento y cantidad por ítem |
 | Peso | Peso de la carga y, si lo lleva, del compartimento de frío |
 | Frío | Si lo lleva, el rango exigido |

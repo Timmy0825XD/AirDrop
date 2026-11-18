@@ -27,7 +27,7 @@ AirDrop se **sustenta**. El código debe verse profesional y ser fácil de expli
 - Un módulo (Nest) o una feature (Flutter) por dominio de negocio: autenticación, centrales, inventario, flota, geovallas, espacio aéreo, pedidos, decisión, rutas, simulación/telemetría, entregas, métricas.
 - Servicios con una responsabilidad clara (p. ej. `EligibilityService` decide; `FlightSimulationService` mueve el dron; `TelemetryGateway` publica).
 - Reglas de negocio en código explícito (if/funciones con nombre), no en un “framework” interno.
-- Tests del camino feliz y de los bordes que importan: emergencia vs programado, dron no elegible → fallback, geovalla o zona legal bloquea ruta, **no hay vuelo sin confirmar carga**, no hay despegue de noche, el tipo de dron correcto gana según la misión, código a tiempo vs timeout de 5 min → retorno con paquete, incidente en vuelo → protocolo, reloj simulado acelerado o en pausa.
+- Tests del camino feliz y de los bordes que importan: emergencia vs programado, dron no elegible → fallback, geovalla o zona legal bloquea ruta, **no hay vuelo sin confirmar carga**, el tipo de dron correcto gana según la misión, código a tiempo vs timeout de 5 min → retorno con paquete, incidente en vuelo → protocolo, reloj simulado acelerado o en pausa.
 
 **No hacer**
 

@@ -2,14 +2,14 @@
 
 ## Entorno geográfico
 
-- **MVP:** red regional de unos 45 km alrededor de Valledupar. Abarca la ciudad, los corregimientos del municipio, La Paz, San Diego, Manaure, Pueblo Bello y Agustín Codazzi: 5 nodos, 7 ESE y 14 puntos de entrega ([../negocio/cobertura.md](../negocio/cobertura.md)).
-- **Valledupar es el centro de la red.** Tiene nodo, ESE y puntos de entrega. Solo se veda el anillo de 1,5 km del aeropuerto y las zonas pequeñas de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md).
+- **MVP:** red regional de unos 45 km alrededor de Valledupar. Abarca la ciudad, los corregimientos del municipio, La Paz, San Diego, Manaure, Pueblo Bello y Agustín Codazzi: 5 nodos y 7 ESE ([../negocio/cobertura.md](../negocio/cobertura.md)).
+- **Valledupar es el centro de la red.** Tiene nodo y ESE. Solo se veda el anillo de 1,5 km del aeropuerto y las zonas pequeñas de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md).
 - **Visión posterior:** otras regiones del Caribe con la misma red de nodos. Se reserva en el modelo de datos si es barato (la central ya tiene ubicación y tipo), pero **no** se entrega como producto multirregión.
 
 ## Incluido en el MVP
 
 - **Pedidos:** de **emergencia** (prioridad alta) y **programados** (calendario, franja y cantidad).
-- **Entrega según [`../entregas/`](../entregas/):** a una persona, en un **punto de entrega autorizado**; entre centrales, de un nodo a una ESE.
+- **Entrega según [`../entregas/`](../entregas/):** a una persona, en **su ubicación** (GPS o pin); entre centrales, de un nodo a una ESE.
 - **Flota propia de tres tipos:** Colibrí, Garza y Cóndor, con compartimento de frío opcional y estados de disponibilidad ([../operacion/flota.md](../operacion/flota.md)).
 - **Espacio aéreo inspirado en el RAC 100, a escala de demo:**
   - aeródromo (1,5 km), zonas prohibidas del tamaño del visor de la Aerocivil (policía y CAI, batallones, cárceles, plantas, pistas agrícolas), helipuertos y restricciones temporales;
@@ -17,19 +17,19 @@
 - **Motor de decisión al autorizar:**
   - Filtra los drones por estado, carga, frío, batería sobre el perfil real, techo y corredor legal.
   - Elige por tipo de misión: la urgencia, el que llega antes; el programado, el que gasta menos.
-  - Rechaza lo que la norma no permite: de noche o destino fuera de alcance.
+  - Rechaza lo que no se puede volar: destino fuera de alcance o sin corredor legal.
   - La emergencia gana el recurso si hay competencia.
   - **No** asume que el insumo ya está a bordo ni inicia el vuelo.
 - **Carga.** El despachador ve la **referencia del dron asignado**, coloca el insumo sellado y **marca la carga**. Se emite el **manifiesto numerado** ([../operacion/manifiesto.md](../operacion/manifiesto.md)). Solo entonces arranca la simulación.
 - **Vuelo:**
-  - Solo de día, de la salida a la puesta del sol, calculadas para la fecha simulada ([../operacion/condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md)).
+  - A cualquier hora del reloj simulado, de día o de noche (RF-44, simplificación declarada).
   - Rutas por corredores que evitan las zonas, con tolerancia de 30 m. Siguen el terreno entre 60 y 120 m sobre el suelo (90 m de referencia). El terreno sale de una malla SRTM.
 - **Seguimiento:**
   - Telemetría en tiempo real en la app, con la identificación remota del dron.
   - Panel de operador: posición, altitud sobre el terreno y sobre el nivel del mar, velocidad, batería, carga, temperatura de la carga, latencia y fase de vuelo.
 - **En destino:** el dron **espera 5 minutos** el código de entrega. Si no se ingresa, **regresa al nodo con el paquete**. El reingreso al inventario pasa por la cuarentena de [`../entregas/productos.md`](../entregas/productos.md).
 - **Cadena de frío** simulada y alerta si la temperatura sale de rango.
-- **Fallback:** alternativa terrestre si ningún dron es elegible o si es de noche (urgencia).
+- **Fallback:** alternativa terrestre si ningún dron es elegible.
 - **Dashboard epidemiológico** simple: qué se pide más y en qué municipio.
 - **Datos personales** ([../legal/datos.md](../legal/datos.md)): política de tratamiento versionada, datos de salud opcionales, revocar y suprimir la cuenta, y registro de acceso a fórmulas.
 - **Consola de simulación** en la web del administrador, proyectada en una TV (RU-32). Sirve para demostrar que el sistema responde bien ante situaciones realistas:
@@ -44,7 +44,7 @@
   - tamizaje opcional con signos de alarma y 123 (RF-41);
   - paciente a cargo (RF-42);
   - fórmula en PDF o hasta 3 fotos, con visor y consulta desde el histórico (RF-27);
-  - punto de entrega propuesto a partir del GPS (RU-02).
+  - destino tomado del GPS o del pin (RU-02).
 - **Experiencia de la app** (rediseño "Corredor", [../calidad/usabilidad.md](../calidad/usabilidad.md)):
   - bienvenida de tres pasos para el solicitante (RF-53);
   - ajustes de tema, texto, contraste, movimiento y modo sencillo, guardados en el teléfono (RF-52);

@@ -50,9 +50,9 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
   2. Dice si es para él o para una persona a su cargo; si es a cargo, sus datos y parentesco (RF-42).
   3. Elige el medicamento y confirma sus alergias.
   4. Si el tipo de venta es bajo fórmula, adjunta un PDF o de 1 a 3 fotos a nombre del paciente.
-  5. Toca "Usar mi ubicación". La app le propone el punto de entrega activo más cercano (RF-45); puede elegir otro en la lista o en el mapa.
+  5. Toca "Usar mi ubicación" o mueve el pin en el mapa. Ese punto es el destino (RF-45); puede agregar una referencia corta.
   6. El pedido queda en `recibido`, con prioridad alta, y entra a la cola del nodo que llega antes. Si no la autoriza a tiempo, entra también a la del siguiente (RU-10).
-- **Si falla:** Bajo fórmula sin fórmula, sin el documento del paciente o con un archivo que no es PDF, JPG o PNG: no se crea. Sin permiso de ubicación: elige el punto en la lista. Ubicación sin un punto al alcance de un nodo: no se crea y la app muestra la alternativa terrestre (RF-18). Control especial: no se crea y se explica que ese canal no existe aquí. Si ningún nodo con el insumo tiene un dron que alcance el punto, o es de noche: queda en traslado convencional (CU-31).
+- **Si falla:** Bajo fórmula sin fórmula, sin el documento del paciente o con un archivo que no es PDF, JPG o PNG: no se crea. Sin permiso de ubicación: marca el punto con el pin. Ubicación fuera del alcance de todo nodo: no se crea y la app muestra la alternativa terrestre (RF-18). Control especial: no se crea y se explica que ese canal no existe aquí. Si ningún nodo con el insumo tiene un dron que alcance el punto: queda en traslado convencional (CU-31).
 - **Después:** Ningún dron está reservado. El motor de decisión no corre.
 - **Por qué:** RU-02 y RU-25. Crear el pedido no es autorizar la salida.
 
@@ -63,10 +63,10 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Pasos:**
   1. Elige medicamento, cantidad, el calendario (días de la semana, un día del mes o fechas sueltas), cuándo termina (fecha o número de entregas) y la hora de la franja.
   2. Si es bajo fórmula, adjunta la fórmula igual que en CU-04 (para él o para una persona a su cargo) y escribe hasta cuándo vale.
-  3. Elige el punto de entrega como en CU-04.
+  3. Marca su ubicación como en CU-04.
   4. La app muestra las fechas y horas que van a quedar (vista previa). Al confirmar, el sistema crea una entrega por fecha, cada una con su franja de 1 hora, en `recibido`, como pedido programado y no como urgencia.
   5. Puede cambiar el calendario o la hora: las entregas sin dron se rehacen. Puede cancelar el plan: las que siguen en `recibido` pasan a `cancelado` y las demás no cambian.
-- **Si falla:** Las mismas exclusiones de fórmula y de control especial que CU-04. No se crea si empieza antes de hoy, si dura más de 3 meses, si pasa de la vigencia de la fórmula, si la hora no es una franja válida (de 07:00 a 16:00), si no queda ninguna entrega a más de 2 horas o si no hay un punto de entrega al alcance.
+- **Si falla:** Las mismas exclusiones de fórmula y de control especial que CU-04. No se crea si empieza antes de hoy, si dura más de 3 meses, si pasa de la vigencia de la fórmula, si la hora no es una franja válida (de 07:00 a 16:00), si no queda ninguna entrega a más de 2 horas o si su ubicación está fuera del alcance de todo nodo.
 - **Después:** Hay un plan activo. Cada fecha espera autorización. No hay vuelo todavía.
 - **Por qué:** RU-30. El periódico civil no se pide desde la cuenta de una central.
 
@@ -105,7 +105,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 
 ### CU-21 — Confirmar con el código
 
-- **Actores:** Solicitante, en el punto de entrega. Despachador de la central que pidió, si el destino es esa central.
+- **Actores:** Solicitante, en su ubicación. Despachador de la central que pidió, si el destino es esa central.
 - **Antes:** El dron está en `en espera de entrega` y el código sigue vigente
 - **Pasos:**
   1. Ingresa el código.
@@ -395,7 +395,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Antes:** Un despachador autorizó y el pedido espera asignación
 - **Pasos:**
   1. Toma los drones del nodo de origen.
-  2. Descarta los que no cumplan estado, carga (con el frío descontado), frío, batería sobre el perfil de la ruta (ida, regreso, ascenso y reserva del 20 %), techo, viento, corredor legal o luz del día (RF-11, RF-44, RF-46).
+  2. Descarta los que no cumplan estado, carga (con el frío descontado), frío, batería sobre el perfil de la ruta (ida, regreso, ascenso y reserva del 20 %), techo, viento, corredor legal (RF-11, RF-46).
   3. Si una emergencia y un programado compiten por el mismo dron, se queda la emergencia. Entre los que sirven, gana el de menor tiempo de llegada en una urgencia y el de menor energía en un programado (RF-11).
   4. Reserva el elegido y deja el pedido en `pendiente de carga`.
   5. Guarda en el pedido la traza: nodos evaluados y el veredicto de cada dron, con su motivo.
@@ -438,7 +438,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 ### CU-31 — Alternativa
 
 - **Actor:** Sistema
-- **Antes:** CU-26 no encontró dron en el momento de autorizar, o es de noche y el pedido es una urgencia (RF-44)
+- **Antes:** CU-26 no encontró dron en el momento de autorizar
 - **Pasos:** Muestra otra central con stock o avisa que toca un traslado convencional. El estado queda `reasignado`. Un programado primero espera un dron mientras el siguiente intento caiga dentro de su franja. Si la franja cierra sin despegue, la entrega queda vencida y aplica RF-18: pasa a `reasignado` (otra central o traslado convencional).
 - **Después:** Quien pidió ve la alternativa. Ningún dron despegó vacío.
 - **Por qué:** RU-06. El rechazo mudo no es una respuesta.
@@ -515,9 +515,9 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 ### CU-48 — Pedido que cae de noche
 
 - **Actor:** Sistema
-- **Antes:** Llega un pedido o una entrega programada, y la hora simulada está fuera de la luz del día o el vuelo no alcanzaría a volver antes de la puesta del sol
+- **Antes:** Llega un pedido o una entrega programada y la hora simulada es de noche
 - **Pasos:**
-  1. Programado: queda en su franja, que siempre cae de día. Si el reloj está de noche porque se aceleró, espera.
-  2. Urgencia: pasa a traslado convencional (CU-31) sin entrar a ninguna cola. Quien pidió ve el motivo y las centrales con el insumo.
-- **Después:** Ningún dron despega de noche.
-- **Por qué:** RF-44.
+  1. Urgencia: sigue el flujo normal (CU-04, CU-26). La hora no descarta drones.
+  2. Programado: sale en su franja (RU-30), como siempre.
+- **Después:** El vuelo sale si hay dron elegible, sin importar la hora.
+- **Por qué:** RF-44. Simplificación declarada del MVP frente al RAC 100.220(a)(3).
