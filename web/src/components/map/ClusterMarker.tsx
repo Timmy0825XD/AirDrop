@@ -14,10 +14,7 @@ type Props = {
  * entienda sin leyenda. Tocarla acerca el mapa hasta separarlos.
  */
 function ClusterMarkerView({ cluster, onExpand }: Props) {
-  const label =
-    cluster.hubs > 0
-      ? `${cluster.count} sitios juntos, ${cluster.hubs} centrales. Acercar`
-      : `${cluster.count} puntos de entrega juntos. Acercar`;
+  const label = `${cluster.count} centrales juntas. Acercar`;
   return (
     <Marker longitude={cluster.longitude} latitude={cluster.latitude} anchor="center">
       <button

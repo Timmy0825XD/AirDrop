@@ -55,7 +55,7 @@ const COPY: Record<EventTool, { title: string; hint: string }> = {
   },
   surge: {
     title: "Pico de urgencias",
-    hint: "Urgencias seguidas de solicitantes simulados hacia los puntos de entrega dentro del círculo. El motor las reparte entre los nodos.",
+    hint: "Urgencias seguidas de solicitantes simulados hacia puntos al azar dentro del círculo. El motor las reparte entre las centrales.",
   },
 };
 
@@ -141,7 +141,7 @@ export function EventComposer({
   tool: EventTool;
   center: { latitude: number; longitude: number } | null;
   busy: boolean;
-  /** Por qué no se puede lanzar ahí (el pico sin un punto de entrega). */
+  /** Por qué no se puede lanzar ahí. */
   blocked?: string | null;
   onDraft: (draft: EventDraft | null) => void;
   onLaunch: (launch: EventLaunch) => void;

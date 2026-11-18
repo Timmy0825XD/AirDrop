@@ -3,26 +3,24 @@
 import { useEffect, useMemo, useState, type RefObject } from "react";
 import type { MapRef } from "react-map-gl/maplibre";
 import Supercluster from "supercluster";
-import type { DeliveryPoint, HubSummary } from "@/lib/types";
+import type { HubSummary } from "@/lib/types";
 
 /** Distancia en px en que dos sitios se juntan: solo cuando de verdad se encimarían. */
 const CLUSTER_RADIUS_PX = 38;
 /** Desde este zoom se ve cada sitio por separado (la región entera ya se lee). */
 const CLUSTER_MAX_ZOOM = 10;
 
-type SiteProps = { site: "hub" | "point"; id: string };
+type SiteProps = { site: "hub"; id: string };
 
 export type SiteCluster = {
   id: number;
   longitude: number;
   latitude: number;
   count: number;
-  /** Cuántos son nodos o ESE: el globo lo dice. */
-  hubs: number;
 };
 
 /**
- * Al alejar, las centrales y los puntos que quedan cerca se juntan en un globo
+ * Al alejar, las centrales que quedan cerca se juntan en un globo
  * con su número, para que los íconos no se encimen. Tocar el globo acerca el
  * mapa hasta que se separan. Lo elegido nunca se agrupa: sigue visible.
  */
@@ -30,7 +28,6 @@ export function useSiteClusters(
   mapRef: RefObject<MapRef | null>,
   ready: boolean,
   hubs: HubSummary[],
-  points: DeliveryPoint[],
   keepVisible: string | null,
 ) {
   const index = useMemo(() => {
@@ -38,16 +35,13 @@ export function useSiteClusters(
       radius: CLUSTER_RADIUS_PX,
       maxZoom: CLUSTER_MAX_ZOOM,
     });
-    cluster.load([
-      ...hubs
+    cluster.load(
+      hubs
         .filter((hub) => hub.id !== keepVisible)
         .map((hub) => feature("hub", hub.id, hub.longitude, hub.latitude)),
-      ...points
-        .filter((point) => point.id !== keepVisible)
-        .map((point) => feature("point", point.id, point.longitude, point.latitude)),
-    ]);
+    );
     return cluster;
-  }, [hubs, points, keepVisible]);
+  }, [hubs, keepVisible]);
 
   const [view, setView] = useState<{ zoom: number; bounds: [number, number, number, number] } | null>(
     null,
@@ -72,29 +66,18 @@ export function useSiteClusters(
 
   return useMemo(() => {
     const visibleHubs = new Set<string>(keepVisible ? [keepVisible] : []);
-    const visiblePoints = new Set<string>(keepVisible ? [keepVisible] : []);
     const clusters: SiteCluster[] = [];
     if (!view) {
       for (const hub of hubs) visibleHubs.add(hub.id);
-      for (const point of points) visiblePoints.add(point.id);
-      return { clusters, visibleHubs, visiblePoints, expand: () => undefined };
+      return { clusters, visibleHubs, expand: () => undefined };
     }
     for (const entry of index.getClusters(view.bounds, view.zoom)) {
       const [longitude, latitude] = entry.geometry.coordinates;
       const props = entry.properties as SiteProps & Supercluster.ClusterProperties;
       if (props.cluster) {
-        const leaves = index.getLeaves(props.cluster_id, Infinity);
-        clusters.push({
-          id: props.cluster_id,
-          longitude,
-          latitude,
-          count: props.point_count,
-          hubs: leaves.filter((leaf) => leaf.properties.site === "hub").length,
-        });
-      } else if (props.site === "hub") {
-        visibleHubs.add(props.id);
+        clusters.push({ id: props.cluster_id, longitude, latitude, count: props.point_count });
       } else {
-        visiblePoints.add(props.id);
+        visibleHubs.add(props.id);
       }
     }
     /** Acerca el mapa hasta que el globo se abre. */
@@ -102,8 +85,8 @@ export function useSiteClusters(
       const zoom = Math.min(index.getClusterExpansionZoom(cluster.id), CLUSTER_MAX_ZOOM + 1);
       mapRef.current?.easeTo({ center: [cluster.longitude, cluster.latitude], zoom, duration: 600 });
     };
-    return { clusters, visibleHubs, visiblePoints, expand };
-  }, [index, view, hubs, points, keepVisible, mapRef]);
+    return { clusters, visibleHubs, expand };
+  }, [index, view, hubs, keepVisible, mapRef]);
 }
 
 function feature(site: SiteProps["site"], id: string, longitude: number, latitude: number) {

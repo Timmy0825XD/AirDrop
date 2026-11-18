@@ -6,7 +6,6 @@ import {
   FogIcon,
   HubIcon,
   LegendIcon,
-  PinIcon,
   PowerOffIcon,
   StormIcon,
   WindIcon,
@@ -83,10 +82,7 @@ export function Legend() {
             <Item mark={<DroneSwatch color="var(--text)" />}>Dron de ida</Item>
             <Item mark={<DroneSwatch color="var(--warning)" />}>Dron de regreso</Item>
             <Item mark={<DroneSwatch color="var(--danger)" />}>Dron con alerta</Item>
-            <Item mark={<HubIcon size={17} className="text-text" />}>Nodo (tiene drones)</Item>
-            <Item mark={<span className="size-3.5 rounded-full border-[1.5px] border-info" />}>
-              ESE (solo recibe)
-            </Item>
+            <Item mark={<HubIcon size={17} className="text-text" />}>Central (tiene drones)</Item>
             <Item
               mark={
                 <span className="grid h-5 w-7 place-items-center rounded-full border-[1.5px] border-accent text-[10px] font-bold text-text">
@@ -94,9 +90,8 @@ export function Legend() {
                 </span>
               }
             >
-              «6 sitios»: varios juntos; tócalo para acercar
+              «6 centrales»: varias juntas; tócalo para acercar
             </Item>
-            <Item mark={<PinIcon size={17} className="text-success" />}>Punto de entrega</Item>
             <Item mark={<PowerOffIcon size={17} className="text-warning" />}>Sin energía</Item>
             <Item mark={<AlertIcon size={17} className="text-danger" />}>Espera rescate</Item>
             <Item

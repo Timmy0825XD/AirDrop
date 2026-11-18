@@ -16,9 +16,6 @@ const DARK = {
   noFly: "#f0958e",
   urban: "#a9aeb3",
   coordinated: "#e8b45a",
-  /** RF-45: un punto de entrega disponible y uno que no. */
-  point: "#6fcf97",
-  pointOff: "#7d848a",
   /** RF-36: geovalla temporal (ámbar, vence sola). */
   zone: "#e8b45a",
   /** RF-32: viento y lluvia (cielo) y tormenta (rojo de peligro). */
@@ -51,8 +48,6 @@ const LIGHT: typeof DARK = {
   noFly: "#b3261e",
   urban: "#5c6268",
   coordinated: "#8f5200",
-  point: "#177a45",
-  pointOff: "#7a8086",
   zone: "#8f5200",
   wind: "#2f5f8a",
   rain: "#2f5f8a",
