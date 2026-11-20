@@ -186,6 +186,7 @@ function build(hubs: Array<Partial<Hub>>) {
     restore: jest.fn().mockResolvedValue(undefined),
   };
   const accounts = { restore: jest.fn().mockResolvedValue(36) };
+  const airspace = { reload: jest.fn().mockResolvedValue(undefined) };
   const service = new ScenarioResetService(
     dataSource as never,
     flights as never,
@@ -202,11 +203,13 @@ function build(hubs: Array<Partial<Hub>>) {
     { clear: jest.fn().mockResolvedValue(undefined) } as never,
     network as never,
     accounts as never,
+    airspace as never,
   );
   return {
     service,
     network,
     accounts,
+    airspace,
     actors,
     dispatcher,
     receiver,
@@ -292,6 +295,13 @@ describe('ScenarioResetService (RF-40, CU-41)', () => {
     expect(built.weather.clearAll).toHaveBeenCalled();
     // RF-40: las geovallas temporales se van dentro de la misma transacción.
     expect(built.geofences.clearTemporary).toHaveBeenCalledWith(built.manager);
+    // RF-43: las zonas legales vuelven a ser las de la semilla, también en memoria.
+    const sqls = built.manager.query.mock.calls.map(([sql]) => String(sql));
+    expect(sqls).toContain('DELETE FROM geofences');
+    expect(
+      sqls.filter((sql) => sql.includes('"legalBasis"')).length,
+    ).toBeGreaterThan(30);
+    expect(built.airspace.reload).toHaveBeenCalledTimes(1);
     expect(built.publisher.publish).toHaveBeenCalledWith({
       type: 'scenario-reset',
     });

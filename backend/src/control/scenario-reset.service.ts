@@ -30,6 +30,13 @@ import { SimActorsService } from './sim-actors.service';
 import { SimulatedReceiverService } from './simulated-receiver.service';
 import { TimelineService } from './timeline.service';
 import { WeatherService } from '../weather/weather.service';
+import {
+  AirspaceService,
+  insertLegalZones,
+} from '../airspace/airspace.service';
+import { regionalAirspace } from '../airspace/regional-airspace';
+import { geometryParams } from '../geofences/geofence.presenter';
+import { toGeofenceGeometry } from '../geofences/geofence-shape.rules';
 import { GeofencesService } from '../geofences/geofences.service';
 import { ScenarioNetworkService } from './scenario-network.service';
 import { ScenarioAccountsService } from './scenario-accounts.service';
@@ -62,6 +69,7 @@ export class ScenarioResetService {
     private readonly unidentified: UnidentifiedContactsService,
     private readonly network: ScenarioNetworkService,
     private readonly accounts: ScenarioAccountsService,
+    private readonly airspace: AirspaceService,
   ) {}
 
   async reset(admin: User): Promise<ResetSummary> {
@@ -117,6 +125,8 @@ export class ScenarioResetService {
       'Escenario reiniciado',
       resetDetail(summary),
     );
+    // Las zonas legales en memoria vuelven a ser las de la semilla.
+    await this.airspace.reload();
     this.logger.log(`Escenario reiniciado: ${resetDetail(summary)}`);
     return summary;
   }
@@ -259,23 +269,33 @@ export class ScenarioResetService {
     );
   }
 
-  /** Solo quedan las geovallas de la semilla, con su forma. */
+  /**
+   * RF-40 y RF-43: solo quedan las geovallas de la semilla. Las zonas legales
+   * vuelven a ser las de `regional-airspace.ts` (activas, sin historial) y las
+   * operativas, las de `demo-scenario.ts`.
+   */
   private async resetGeofences(manager: EntityManager, admin: User) {
     const owner = await manager.findOne(User, {
       where: { email: operator.email },
     });
-    // Las zonas legales (RF-43) no son de la semilla de la operación.
-    await manager.query(
-      `DELETE FROM geofences WHERE class IN ('operational', 'temporary')`,
-    );
+    await manager.query(`DELETE FROM geofences`);
+    await insertLegalZones(manager, regionalAirspace());
     for (const fence of geofences) {
+      const geometry = toGeofenceGeometry(fence);
       await manager.query(
-        `INSERT INTO geofences (id, name, reason, polygon, "createdByUserId")
-         VALUES (gen_random_uuid(), $1, $2, ST_SetSRID(ST_GeomFromGeoJSON($3), 4326), $4)`,
+        `INSERT INTO geofences (
+           id, class, shape, name, reason, category,
+           "centerLatitude", "centerLongitude", "radiusM", polygon, "createdByUserId"
+         ) VALUES (
+           gen_random_uuid(), 'operational', $1, $2, $3, $4, $5, $6, $7,
+           ST_SetSRID(ST_GeomFromGeoJSON($8), 4326), $9
+         )`,
         [
+          geometry.shape,
           fence.name,
           fence.reason,
-          JSON.stringify(fence.polygon),
+          fence.category,
+          ...geometryParams(geometry),
           owner?.id ?? admin.id,
         ],
       );
