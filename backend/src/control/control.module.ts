@@ -1,4 +1,5 @@
 import { UsersModule } from '../users/users.module';
+import { ScenarioAccountsService } from './scenario-accounts.service';
 import { ScenarioNetworkService } from './scenario-network.service';
 import { UnidentifiedContactsService } from './unidentified-contacts.service';
 import { Module } from '@nestjs/common';
@@ -51,6 +52,7 @@ import { TimelineService } from './timeline.service';
   providers: [
     ClockControlService,
     ScenarioNetworkService,
+    ScenarioAccountsService,
     ControlEnabledGuard,
     TimelineService,
     PendingAlertsService,

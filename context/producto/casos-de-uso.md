@@ -369,7 +369,7 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 - **Actores:** Administrador, desde la consola de simulación
 - **Antes:** Lo mismo que CU-37
 - **Pasos:** Pide reiniciar y lo confirma.
-- **Después:** Queda el escenario de la semilla, sin pedidos ni eventos de la demostración, con el modo caos apagado y el reloj en la hora real a x1 (RF-40). Las cuentas de personas reales siguen.
+- **Después:** La base queda exactamente como la deja la semilla: sus centrales, drones, cuentas, stock y geovallas, sin pedidos ni eventos, con el modo caos apagado y el reloj en la hora real a x1 (RF-40). Toda cuenta, central, dron o geovalla que no sea del escenario se borra; solo se salvan los administradores.
 - **Por qué:** RF-40. Cada presentación empieza igual.
 
 ### CU-42 — Seguir el flujo

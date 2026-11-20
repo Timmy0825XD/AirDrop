@@ -62,6 +62,8 @@ export function stockRows(plan: DemoHubPlan, hubId: string, today: string) {
 
 export type ResetSummary = {
   orders: number;
+  /** Cuentas del escenario, con sus datos y su contraseña. */
+  accounts: number;
   drones: number;
   inventoryItems: number;
   geofences: number;
@@ -73,5 +75,5 @@ export function resetDetail(summary: ResetSummary): string {
   const temporary = summary.temporaryGeofences
     ? ` ${summary.temporaryGeofences} ${summary.temporaryGeofences === 1 ? 'geovalla temporal quitada' : 'geovallas temporales quitadas'}.`
     : '';
-  return `${summary.orders} pedidos borrados; ${summary.drones} drones en su central; ${summary.inventoryItems} lotes y ${summary.geofences} geovallas como en la semilla.${temporary}`;
+  return `${summary.orders} pedidos borrados; ${summary.accounts} cuentas y ${summary.drones} drones como en la semilla; ${summary.inventoryItems} lotes y ${summary.geofences} geovallas como en la semilla.${temporary}`;
 }

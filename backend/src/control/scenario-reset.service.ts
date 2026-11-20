@@ -32,14 +32,15 @@ import { TimelineService } from './timeline.service';
 import { WeatherService } from '../weather/weather.service';
 import { GeofencesService } from '../geofences/geofences.service';
 import { ScenarioNetworkService } from './scenario-network.service';
+import { ScenarioAccountsService } from './scenario-accounts.service';
 
 /**
- * RF-40, CU-41: devuelve el escenario de `pnpm seed:demo` a su estado
- * inicial. Primero la red queda igual a la del plan (`ScenarioNetworkService`:
- * borra las centrales que ya no están y crea las que faltan); las cuentas de
- * las centrales que siguen no se tocan (las sesiones abiertas siguen sirviendo). Borra todo pedido de las centrales de la demo, también
- * los de personas reales: si quedaran vivos, tendrían un dron y un stock que
- * el reinicio acaba de devolver.
+ * RF-40, CU-41: deja la base exactamente como la deja `pnpm seed:demo`: las
+ * centrales del plan con sus datos y su flota (`ScenarioNetworkService`), las
+ * cuentas del escenario con sus datos y su contraseña
+ * (`ScenarioAccountsService`), el stock y las geovallas de la semilla, y
+ * ningún pedido. Borra toda cuenta, central, dron o geovalla que no sea del
+ * escenario; solo se salvan los administradores y las zonas legales.
  */
 @Injectable()
 export class ScenarioResetService {
@@ -60,6 +61,7 @@ export class ScenarioResetService {
     private readonly chaos: ChaosService,
     private readonly unidentified: UnidentifiedContactsService,
     private readonly network: ScenarioNetworkService,
+    private readonly accounts: ScenarioAccountsService,
   ) {}
 
   async reset(admin: User): Promise<ResetSummary> {
@@ -84,27 +86,23 @@ export class ScenarioResetService {
     await this.weather.clearAll();
     // RF-36: sin drones no identificados en el aire.
     await this.unidentified.clear();
-    const hubIds = hubs.map((hub) => hub.id);
-    const orders = await this.scopedOrders(hubIds);
-    const orderIds = orders.map((order) => order.id);
+    const orderIds = (await this.allOrders()).map((order) => order.id);
     await this.flights.forget(orderIds);
 
     const summary = await this.dataSource.transaction(async (manager) => {
-      await this.deleteOrders(manager, orderIds, orders, hubIds);
+      await this.deleteActivity(manager);
+      // RF-40: cada central con sus datos, activa y con energía (RF-36), y
+      // con su flota exacta.
+      await this.network.restore(manager);
+      const accounts = await this.accounts.restore(manager, admin);
       const inventoryItems = await this.resetStock(manager, hubs);
       const drones = await this.resetFleet(manager, hubs, admin);
-      await manager.update(
-        Hub,
-        { id: In(hubIds) },
-        // RF-40: con energía otra vez (RF-36).
-        { status: HubStatus.ACTIVE, powerOutageUntil: null },
-      );
-      // RF-40: sin geovallas temporales; las del operador no se tocan.
       const temporaryGeofences =
         await this.geofenceService.clearTemporary(manager);
       const fences = await this.resetGeofences(manager, admin);
       return {
         orders: orderIds.length,
+        accounts,
         drones,
         inventoryItems,
         geofences: fences,
@@ -123,70 +121,34 @@ export class ScenarioResetService {
     return summary;
   }
 
-  /**
-   * Pedidos que salen, llegan o están ofrecidos (RU-10) a una central de la
-   * demo, o que pidió un solicitante simulado (RF-37). Una urgencia en cola
-   * todavía no tiene central de origen: su
-   * central está en `dispatchOffers`.
-   */
-  private scopedOrders(
-    hubIds: string[],
-  ): Promise<Array<{ id: string; planId: string | null }>> {
-    return this.dataSource.query(
-      `SELECT id, "planId" FROM orders
-       WHERE "originHubId" = ANY($1::uuid[])
-          OR "destinationHubId" = ANY($1::uuid[])
-          OR "createdByUserId" IN (SELECT id FROM users WHERE simulated)
-          OR EXISTS (
-            SELECT 1
-            FROM jsonb_array_elements(COALESCE("dispatchOffers", '[]'::jsonb)) AS offer
-            WHERE offer->>'hubId' = ANY($2::text[])
-          )`,
-      [hubIds, hubIds],
-    );
+  /** RF-40: todos los pedidos; la base queda como la deja la semilla. */
+  private allOrders(): Promise<Array<{ id: string }>> {
+    return this.dataSource.query(`SELECT id FROM orders`);
   }
 
-  private async deleteOrders(
-    manager: EntityManager,
-    orderIds: string[],
-    orders: Array<{ planId: string | null }>,
-    hubIds: string[],
-  ): Promise<void> {
-    const planIds = [...new Set(orders.flatMap((order) => order.planId ?? []))];
-    if (orderIds.length) {
-      for (const table of [
-        'delivery_codes',
-        'prescription_images',
-        'mission_routes',
-        'missions',
-        'flight_incidents',
-        'notifications',
-        // RF-40: los manifiestos de la demostración.
-        'cargo_manifests',
-      ]) {
-        await manager.query(
-          `DELETE FROM ${table} WHERE "orderId" = ANY($1::uuid[])`,
-          [orderIds],
-        );
-      }
+  /**
+   * Todo lo que deja una demostración: pedidos, planes, rutas, misiones,
+   * incidentes, manifiestos, cuarentenas, avisos, códigos y el historial de
+   * taller (el reinicio vuelve a abrir el de los drones con nota).
+   */
+  private async deleteActivity(manager: EntityManager): Promise<void> {
+    for (const table of [
+      'delivery_codes',
+      'prescription_images',
+      'prescription_access_logs',
+      'mission_routes',
+      'missions',
+      'flight_incidents',
+      'notifications',
+      'cargo_manifests',
+      'quarantine_records',
+      'orders',
+      'delivery_plans',
+      'one_time_codes',
+      'drone_maintenances',
+    ]) {
+      await manager.query(`DELETE FROM ${table}`);
     }
-    await manager.query(
-      `DELETE FROM quarantine_records
-       WHERE "orderId" = ANY($1::uuid[]) OR "hubId" = ANY($2::uuid[])`,
-      [orderIds, hubIds],
-    );
-    if (orderIds.length) {
-      await manager.query(`DELETE FROM orders WHERE id = ANY($1::uuid[])`, [
-        orderIds,
-      ]);
-    }
-    await manager.query(
-      `DELETE FROM delivery_plans
-       WHERE id = ANY($1::uuid[])
-          OR "originHubId" = ANY($2::uuid[])
-          OR "destinationHubId" = ANY($2::uuid[])`,
-      [planIds, hubIds],
-    );
   }
 
   /** Lotes de la semilla: los que entraron por traslados también se van. */
@@ -297,15 +259,13 @@ export class ScenarioResetService {
     );
   }
 
-  /** Las geovallas de la semilla vuelven a su forma; las demás no se tocan. */
+  /** Solo quedan las geovallas de la semilla, con su forma. */
   private async resetGeofences(manager: EntityManager, admin: User) {
     const owner = await manager.findOne(User, {
       where: { email: operator.email },
     });
+    await manager.query(`DELETE FROM geofences`);
     for (const fence of geofences) {
-      await manager.query(`DELETE FROM geofences WHERE name = $1`, [
-        fence.name,
-      ]);
       await manager.query(
         `INSERT INTO geofences (id, name, reason, polygon, "createdByUserId")
          VALUES (gen_random_uuid(), $1, $2, ST_SetSRID(ST_GeomFromGeoJSON($3), 4326), $4)`,

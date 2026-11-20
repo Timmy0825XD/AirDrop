@@ -133,3 +133,61 @@ describe('La red del escenario queda igual a la del plan (RF-40)', () => {
     );
   });
 });
+
+describe('ScenarioNetworkService.restore (RF-40)', () => {
+  it('borra el dron que no es del plan, crea el que falta y devuelve la central a sus datos', async () => {
+    const plan = hubPlans[0];
+    const hubs = hubPlans.map((entry, index) => ({
+      id: `hub-${index}`,
+      name: entry.name,
+    }));
+    const models = [
+      { id: 'm-rapid', kind: 'rapid' },
+      { id: 'm-balanced', kind: 'balanced' },
+      { id: 'm-cargo', kind: 'cargo' },
+    ];
+    const drones = [
+      // Del plan, pero lo movieron a otra central.
+      { id: 'd1', identifier: `${plan.dronePrefix}-01`, hubId: 'hub-5' },
+      // Lo agregaron en la demo.
+      { id: 'extra', identifier: 'AD-NUEVO-01', hubId: 'hub-0' },
+    ];
+    const manager = {
+      find: jest.fn((entity: unknown) =>
+        Promise.resolve(
+          entity === Hub ? hubs : entity === Drone ? drones : models,
+        ),
+      ),
+      query: jest.fn().mockResolvedValue([]),
+      update: jest.fn().mockResolvedValue(undefined),
+      save: jest.fn().mockResolvedValue(undefined),
+      create: jest.fn((_entity: unknown, row: object) => row),
+    };
+    const service = new ScenarioNetworkService({} as never, {} as never);
+    await service.restore(manager as never);
+
+    expect(manager.query).toHaveBeenCalledWith(
+      expect.stringContaining('DELETE FROM drones'),
+      [['extra']],
+    );
+    expect(manager.update).toHaveBeenCalledWith(
+      Drone,
+      { id: 'd1' },
+      expect.objectContaining({ hubId: 'hub-0', droneModelId: 'm-rapid' }),
+    );
+    const created = (
+      manager.save.mock.calls as Array<[unknown, object]>
+    ).filter(([entity]) => entity === Drone);
+    // 72 del plan menos el que ya existía.
+    expect(created).toHaveLength(hubPlans.length * 6 - 1);
+    expect(manager.update).toHaveBeenCalledWith(
+      Hub,
+      { id: 'hub-0' },
+      expect.objectContaining({
+        address: plan.address,
+        latitude: plan.latitude,
+        powerOutageUntil: null,
+      }),
+    );
+  });
+});

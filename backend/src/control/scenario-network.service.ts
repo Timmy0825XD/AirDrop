@@ -54,6 +54,84 @@ export class ScenarioNetworkService {
     return { removed, created };
   }
 
+  /**
+   * RF-40: cada central del plan vuelve a sus datos y a su flota exacta: los
+   * drones que no son del plan se borran, los que faltan se crean y los que
+   * se movieron vuelven a su central. Corre dentro de la transacción del
+   * reinicio, después de borrar los pedidos.
+   */
+  async restore(manager: EntityManager): Promise<void> {
+    const hubs = await manager.find(Hub, {
+      where: { name: In(hubPlans.map((plan) => plan.name)) },
+    });
+    const models = await manager.find(DroneModel);
+    const planned = new Map<
+      string,
+      { hubId: string; modelId: string; cold: boolean }
+    >();
+    for (const plan of hubPlans) {
+      const hub = hubs.find((entry) => entry.name === plan.name);
+      if (!hub) {
+        continue;
+      }
+      await manager.update(
+        Hub,
+        { id: hub.id },
+        {
+          type: plan.type,
+          address: plan.address,
+          latitude: plan.latitude,
+          longitude: plan.longitude,
+          contactPhone: plan.contactPhone,
+          contactEmail: plan.contactEmail,
+          status: HubStatus.ACTIVE,
+          powerOutageUntil: null,
+        },
+      );
+      plan.fleet.forEach((spec, index) => {
+        const model = models.find((row) => row.kind === spec.kind);
+        if (model) {
+          planned.set(`${plan.dronePrefix}-0${index + 1}`, {
+            hubId: hub.id,
+            modelId: model.id,
+            cold: spec.cold,
+          });
+        }
+      });
+    }
+    const drones = await manager.find(Drone);
+    const extra = drones
+      .filter((drone) => !planned.has(drone.identifier))
+      .map((drone) => drone.id);
+    if (extra.length) {
+      await manager.query(`DELETE FROM drones WHERE id = ANY($1::uuid[])`, [
+        extra,
+      ]);
+    }
+    for (const [identifier, spec] of planned) {
+      const drone = drones.find((row) => row.identifier === identifier);
+      const fields = {
+        hubId: spec.hubId,
+        droneModelId: spec.modelId,
+        coldCompartment: spec.cold,
+      };
+      if (drone) {
+        await manager.update(Drone, { id: drone.id }, fields);
+      } else {
+        await manager.save(
+          Drone,
+          manager.create(Drone, {
+            identifier,
+            ...fields,
+            status: DroneStatus.AVAILABLE,
+            maintenanceReason: null,
+            maintenanceUntil: null,
+          }),
+        );
+      }
+    }
+  }
+
   /** Las centrales que no están en el plan, con todo lo que cuelga de ellas. */
   removeStaleHubs(): Promise<number> {
     return this.dataSource.transaction((manager) => this.removeStale(manager));
