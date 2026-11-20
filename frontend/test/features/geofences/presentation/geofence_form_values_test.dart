@@ -1,133 +1,65 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/features/geofences/data/geofence_models.dart';
+import 'package:frontend/features/geofences/data/local_geofence_repository.dart';
 import 'package:frontend/features/geofences/presentation/widgets/geofence_form_values.dart';
+import 'package:frontend/features/geofences/presentation/widgets/geometry_draft.dart';
+import 'package:frontend/features/geofences/presentation/widgets/legal_zone_form_values.dart';
 
-Geofence _geofence() => Geofence(
-  id: 'e2222222-2222-4222-8222-222222222222',
-  name: 'Zona Restricción Hospital General',
-  reason: 'Vertiginoso: sin vuelo a baja altura sobre el hospital',
-  polygon: GeoJsonPolygon.fromVertices([
-    [-73.26, 10.46],
-    [-73.24, 10.46],
-    [-73.25, 10.48],
-  ]),
-);
+Geofence get _operational => localGeofenceFixtures.first;
 
-/// Lo que devuelve el modo dibujar con tres toques.
-void _fillThree(GeofenceFormValues values) {
-  values.vertices = [
-    [-73.26, 10.46],
-    [-73.24, 10.46],
-    [-73.25, 10.48],
-  ];
-}
+Geofence get _legal => localGeofenceFixtures.last;
 
 void main() {
-  test('arranca sin vértices: se dibujan en el mapa', () {
+  test('vacío, pide nombre, motivo, categoría y forma', () {
     final values = GeofenceFormValues();
     addTearDown(values.dispose);
-
-    expect(values.vertices, isEmpty);
-  });
-
-  group('request (POST /geofences)', () {
-    test('arma el body con el anillo cerrado y sin hubId', () {
-      final values = GeofenceFormValues();
-      addTearDown(values.dispose);
-      values
-        ..name.text = '  Zona Norte  '
-        ..reason.text = '  Vuelo restringido  ';
-      _fillThree(values);
-
-      final body = values.request();
-
-      expect(body.toJson(), {
-        'name': 'Zona Norte',
-        'reason': 'Vuelo restringido',
-        'polygon': {
-          'type': 'Polygon',
-          'coordinates': [
-            [
-              [-73.26, 10.46],
-              [-73.24, 10.46],
-              [-73.25, 10.48],
-              [-73.26, 10.46],
-            ],
-          ],
-        },
-      });
-      expect(body.toJson(), isNot(contains('hubId')));
-    });
-
-    test('un cuarto vértice también cierra el anillo', () {
-      final values = GeofenceFormValues();
-      addTearDown(values.dispose);
-      _fillThree(values);
-      values.vertices.add([-73.2, 10.5]);
-
-      final ring = values.request().polygon.ring;
-
-      expect(ring, hasLength(5));
-      expect(ring.first, ring.last);
+    expect(values.validate().keys, {
+      GeofenceInput.name,
+      GeofenceInput.reason,
+      GeofenceInput.category,
+      GeofenceInput.shape,
     });
   });
 
-  group('diff (PATCH /geofences/:id)', () {
-    test('sin cambios queda vacío: la pantalla no envía el PATCH', () {
-      final values = GeofenceFormValues()..load(_geofence());
-
-      final request = values.diff(_geofence());
-
-      expect(request.isEmpty, isTrue);
-      expect(request.toJson(), isEmpty);
-    });
-
-    test('solo incluye los campos que cambiaron', () {
-      final values = GeofenceFormValues()..load(_geofence());
-      values.reason.text = '  Corredor ampliado  ';
-
-      final request = values.diff(_geofence());
-
-      expect(request.isEmpty, isFalse);
-      expect(request.toJson(), {'reason': 'Corredor ampliado'});
-    });
-
-    test('mover un vértice cambia solo el polígono', () {
-      final values = GeofenceFormValues()..load(_geofence());
-      values.vertices = [
-        [-73.26, 10.46],
-        [-73.23, 10.46],
-        [-73.25, 10.48],
-      ];
-
-      final request = values.diff(_geofence());
-
-      expect(request.name, isNull);
-      expect(request.reason, isNull);
-      expect(request.polygon, isNotNull);
-      expect(request.polygon!.ring.first, [
-        -73.26,
-        10.46,
-      ], reason: 'el cierre sigue siendo el primer punto');
-    });
+  test('un círculo pide centro y radio entre 50 m y 5 km', () {
+    final draft = GeometryDraft()..shape = GeofenceShape.circle;
+    expect(draft.validate(), 'Toca el mapa para poner el centro.');
+    draft
+      ..center = const GeoPoint(latitude: 10.47, longitude: -73.25)
+      ..radiusM = 40;
+    expect(draft.validate(), 'El radio debe estar entre 50 m y 5 km.');
+    draft.radiusM = 5000;
+    expect(draft.validate(), isNull);
   });
 
-  test('load rellena el formulario sin repetir el cierre', () {
-    final values = GeofenceFormValues();
+  test('al editar sin tocar nada, no hay cambios', () {
+    final values = GeofenceFormValues()..load(_operational);
     addTearDown(values.dispose);
+    expect(values.diff(_operational).isEmpty, isTrue);
+  });
 
-    values.load(_geofence());
+  test('pasar a círculo envía solo la forma nueva', () {
+    final values = GeofenceFormValues()..load(_operational);
+    addTearDown(values.dispose);
+    values.geometry
+      ..shape = GeofenceShape.circle
+      ..center = const GeoPoint(latitude: 10.25, longitude: -73.48);
+    final diff = values.diff(_operational);
+    expect(diff.toJson().keys, {'shape', 'center', 'radiusM'});
+  });
 
-    expect(values.name.text, 'Zona Restricción Hospital General');
-    expect(
-      values.reason.text,
-      'Vertiginoso: sin vuelo a baja altura sobre el hospital',
-    );
-    expect(
-      values.vertices,
-      hasLength(3),
-      reason: 'el anillo de 4 cierra con el primero, que no se edita',
-    );
-    expect(values.vertices.first, [-73.26, 10.46]);
+  test('la zona legal pide el motivo al editar, no el código', () {
+    final values = LegalZoneFormValues()..load(_legal);
+    addTearDown(values.dispose);
+    final errors = values.validate(editing: true);
+    expect(errors.keys, {LegalZoneInput.reason});
+    values.changeReason.text = 'Ajuste';
+    expect(values.diff(_legal).hasChanges, isFalse);
+  });
+
+  test('formatRadius', () {
+    expect(formatRadius(200), '200 m');
+    expect(formatRadius(1500), '1,5 km');
+    expect(formatRadius(5000), '5 km');
   });
 }

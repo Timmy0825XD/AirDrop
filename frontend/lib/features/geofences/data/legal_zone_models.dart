@@ -1,8 +1,8 @@
 import 'geofence_models.dart';
 
-/// RF-43: una zona legal de la región (`GET /airspace/zones`). Viene con el
-/// escenario: el operador la ve en su lista y en el mapa, pero no la crea,
-/// no la edita ni la borra (es la norma, no una decisión de la central).
+/// RF-43: una zona legal activa para dibujar en el mapa de flota
+/// (`GET /airspace/zones`). La ficha completa y su gestión (RU-36) van por
+/// el catálogo de geovallas (`Geofence`).
 class LegalZone {
   const LegalZone({
     required this.code,

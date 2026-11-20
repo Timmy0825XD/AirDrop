@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:frontend/features/geofences/data/legal_zone_repository.dart';
 import 'package:frontend/features/geofences/data/geofence_models.dart';
 import 'package:frontend/features/geofences/data/geofence_providers.dart';
 import 'package:frontend/features/geofences/data/geofence_repository.dart';
+import 'package:frontend/features/geofences/data/local_geofence_repository.dart';
 import 'package:frontend/features/geofences/presentation/geofences_screen.dart';
 import 'package:go_router/go_router.dart';
 
@@ -30,6 +30,26 @@ class _FakeGeofenceRepository implements GeofenceRepository {
   Future<void> remove(String id) async {
     rows.removeWhere((row) => row.id == id);
   }
+
+  @override
+  Future<List<GeofenceChange>> changes(String id) async => const [];
+
+  @override
+  Future<Geofence> createLegal(CreateLegalZoneRequest request) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Geofence> updateLegal(
+    String id,
+    UpdateLegalZoneRequest request,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Geofence> setLegalActive(
+    String id, {
+    required bool active,
+    required String reason,
+  }) async => throw UnimplementedError();
 }
 
 Geofence _geofence({
@@ -38,24 +58,30 @@ Geofence _geofence({
   String reason = 'Pasillo aéreo para traslados programados',
 }) => Geofence(
   id: id,
+  geofenceClass: GeofenceClass.operational,
+  shape: GeofenceShape.polygon,
   name: name,
   reason: reason,
-  polygon: GeoJsonPolygon.fromVertices([
-    [-73.26, 10.46],
-    [-73.24, 10.46],
-    [-73.25, 10.48],
+  category: OperationalCategory.other,
+  polygon: const GeoJsonPolygon([
+    [
+      [-73.26, 10.46],
+      [-73.24, 10.46],
+      [-73.25, 10.48],
+      [-73.26, 10.46],
+    ],
   ]),
 );
+
+/// La zona legal de la maqueta: CAI Gobernación.
+Geofence get _legal => localGeofenceFixtures.last;
 
 Future<void> _pumpScreen(
   WidgetTester tester,
   GeofenceRepository repository,
 ) async {
   final container = ProviderContainer(
-    overrides: [
-      geofenceRepositoryProvider.overrideWithValue(repository),
-      legalZoneRepositoryProvider.overrideWithValue(LocalLegalZoneRepository()),
-    ],
+    overrides: [geofenceRepositoryProvider.overrideWithValue(repository)],
   );
   addTearDown(container.dispose);
 
@@ -69,52 +95,34 @@ Future<void> _pumpScreen(
 }
 
 void main() {
-  testWidgets('lista el nombre y el motivo de cada geovalla', (tester) async {
-    await _pumpScreen(
-      tester,
-      _FakeGeofenceRepository([
-        _geofence(),
-        _geofence(
-          id: 'e2222222-2222-4222-8222-222222222222',
-          name: 'Zona Restricción Hospital General',
-          reason: 'Vertiginoso: sin vuelo a baja altura sobre el hospital',
-        ),
-      ]),
-    );
+  testWidgets('lista cada geovalla con su clase y su forma', (tester) async {
+    await _pumpScreen(tester, _FakeGeofenceRepository([_geofence(), _legal]));
 
     expect(find.text('Corredor Aéreo Ambulancia'), findsOneWidget);
-    expect(
-      find.text('Pasillo aéreo para traslados programados'),
-      findsOneWidget,
-    );
-    expect(find.text('Zona Restricción Hospital General'), findsOneWidget);
-    expect(
-      find.text('Vertiginoso: sin vuelo a baja altura sobre el hospital'),
-      findsOneWidget,
-    );
+    expect(find.text('Operativa · Polígono de 3 vértices'), findsOneWidget);
+    expect(find.text('Prohibida · Círculo de 100 m'), findsOneWidget);
+    expect(find.text('Norma · activa'), findsOneWidget);
   });
 
-  testWidgets('sin geovallas muestra el estado vacío', (tester) async {
-    await _pumpScreen(tester, _FakeGeofenceRepository([]));
+  testWidgets('el filtro deja solo las legales', (tester) async {
+    await _pumpScreen(tester, _FakeGeofenceRepository([_geofence(), _legal]));
 
-    expect(
-      find.text('Aún no has creado geovallas. Usa "Nueva geovalla".'),
-      findsOneWidget,
-    );
+    await tester.tap(find.text('Legales'));
+    await tester.pumpAndSettle();
+    expect(find.text('Corredor Aéreo Ambulancia'), findsNothing);
+    expect(find.text('CAI Gobernación'), findsOneWidget);
   });
 
-  testWidgets('debajo muestra las zonas legales, de solo lectura (RF-43)', (
+  testWidgets('el operador abre la ficha de una zona legal sin acciones', (
     tester,
   ) async {
-    await _pumpScreen(tester, _FakeGeofenceRepository([_geofence()]));
-
-    expect(find.text('Zonas legales'), findsOneWidget);
-    expect(find.text('CAI Gobernación'), findsOneWidget);
-    expect(find.text('Norma · no se edita'), findsNWidgets(2));
+    await _pumpScreen(tester, _FakeGeofenceRepository([_legal]));
 
     await tester.tap(find.text('CAI Gobernación'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('RAC 100.315(a)(13)'), findsOneWidget);
+    expect(find.textContaining('RAC 100.315(a)'), findsOneWidget);
+    expect(find.text('Historial'), findsOneWidget);
+    expect(find.text('Desactivar'), findsNothing);
     expect(find.text('Eliminar'), findsNothing);
   });
 
