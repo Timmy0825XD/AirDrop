@@ -16,6 +16,9 @@ Esto es una **simplificación declarada**, no la norma. Una operación real apli
 | `PROHIBIDA` | Estación de policía o CAI, batallón o brigada, cárcel, subestación o planta eléctrica, pista agrícola | La del visor: círculo de **100 m** (policía), **400 m** (pista agrícola), el polígono de la instalación o, si solo se conoce su área, un círculo de esa superficie | Prohibido entrar. El dron la rodea | RAC 100.315(a)(13) |
 | `HELIPUERTO` | Helipuerto o helipunto fuera de un aeródromo | Círculo de **300 m** | Prohibido entrar. El helipunto de SKVP queda dentro del anillo del aeropuerto y no se dibuja aparte | RAC 100.315(a)(15) |
 | `TEMPORAL` | Restricción que crea el administrador desde la consola: orden público, evento, operativo o elecciones | La que se dibuje, con hora de inicio y de fin | Prohibido mientras dure. Si un vuelo en curso queda afectado, se desvía o vuelve | RAC 100.315(a)(1)–(5), 100.315(c) |
+| `OPERATIVA` | Restricción propia de la operación que dibuja el operador de flota: obra, aglomeración, interferencia, riesgo en tierra u otra | Círculo o vértices, con vigencia opcional | Prohibido mientras esté vigente | Más restrictiva que la norma, nunca menos |
+
+Todas son geovallas de la misma tabla, con su clase y su forma (RF-21). Las tres primeras son las zonas legales: vienen en la semilla y el administrador mantiene su copia en la app (RU-36), con un historial de cambios. Una zona legal desactivada no bloquea rutas, pero no se borra.
 
 No hay zona urbana que bloquee: el dron vuela sobre la ciudad y entrega en un punto con observador ([../entregas/persona.md](../entregas/persona.md)). Tampoco hay zonas coordinadas ni corredores pactados.
 
