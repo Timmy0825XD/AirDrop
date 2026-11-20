@@ -26,7 +26,7 @@ Términos que deben usarse igual en código, UI y sustentación.
 | Motor de simulación | Reloj que mueve drones y genera telemetría **después** de confirmar la carga. |
 | DroneModel | Plantilla de especificaciones de un tipo de dron: Colibrí, Garza o Cóndor. |
 | Compartimento de frío | Accesorio refrigerado de 2 a 8 °C que se instala en cualquier dron y le resta 1 kg de carga. |
-| Geovalla | Polígono prohibido o restringido para rutas que dibuja el operador. |
+| Geovalla | Zona que una ruta no puede cruzar. Tiene clase (legal, operativa o temporal) y forma (círculo o vértices). Las legales las mantiene el admin; las operativas, el operador. |
 | Zona legal | Zona del RAC 100 que trae el escenario: aeródromo, prohibida, helipuerto o temporal. Tienen el tamaño de la demo, no el margen completo del RAC 100. No se edita. |
 | ARP | Punto de referencia del aeródromo. Desde él se mide el anillo de 1,5 km de la demo. |
 | Corredor | Ruta en planta, con un perfil de altura que sigue el terreno entre 60 y 120 m AGL. |

@@ -280,7 +280,8 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
 ### CU-18 — Geovallas
 
 - **Actores:** Operador
-- **Pasos:** Dibuja un polígono, le pone nombre y motivo. Puede editarlo o borrarlo. Las rutas que se calculen después no lo cruzan. Ve también las zonas legales (RF-43), pero no puede editarlas.
+- **Pasos:** Ve todas las geovallas y abre la ficha de cualquiera. Para una operativa elige círculo (centro y radio) o vértices, le pone nombre, motivo, categoría y, si quiere, vigencia. Puede editarla o borrarla. Las rutas que se calculen después no la cruzan. Las zonas legales (RF-43) las ve con su base legal, su fuente y su historial, pero no las edita.
+- **Si falla:** Radio fuera de 50 m a 5 km, menos de 3 o más de 50 vértices, lados que se cruzan o una geovalla que cubre una central: no se guarda.
 - **Después:** Si un dron en el aire tiene esa geovalla en el tramo que le falta, cambia de ruta (CU-43).
 - **Por qué:** RU-19 y RF-33. Seguir el corredor viejo haría cruzar la geovalla a un dron que ya va volando.
 
@@ -310,6 +311,18 @@ Cada ficha dice quién actúa, qué tiene que ser cierto antes, los pasos, qué 
   2. Desde el detalle puede suspenderla. Suspendida, no despacha ni pide.
 - **Después:** No queda una solicitud “pendiente de aprobación” de un despachador, porque el despachador no crea centrales.
 - **Por qué:** RU-26.
+
+### CU-52 — Zonas legales
+
+- **Actores:** Administrador
+- **Antes:** Sesión de administrador
+- **Pasos:**
+  1. Ve todas las geovallas y abre la ficha de una zona legal, con su historial.
+  2. Crea una con nombre, código, clase (aeródromo, prohibida o helipuerto), círculo o vértices, base legal y fuente.
+  3. Edita su forma o sus datos, o la desactiva o reactiva. Cada cambio pide un motivo.
+- **Si falla:** Sin base legal, sin fuente o sin motivo: no se guarda. Código repetido, forma fuera de los límites de RF-21 o una zona que cubre una central: no se guarda.
+- **Después:** Las rutas nuevas respetan las zonas activas. Si una zona activada o editada cruza un vuelo en el aire, cambia de ruta (CU-43).
+- **Por qué:** RU-36. Las zonas las publica la Aerocivil; la empresa solo mantiene su copia, y quién la cambió debe quedar a la vista.
 
 ### CU-24 — Crear cuentas institucionales
 

@@ -162,7 +162,7 @@ Posición, altitud sobre el terreno y sobre el nivel del mar, velocidad, baterí
 
 ### RU-19 — Geovallas
 
-Dibujar, editar y borrar polígonos. Las geovallas son de la operación, no de quien las dibujó: todo operador de flota las ve y las gestiona. Toda ruta nueva las respeta. Las zonas legales (RF-43) se ven en el mismo mapa, pero no las puede borrar ni mover.
+El operador de flota ve todas las geovallas (legales y operativas) en un mapa, cada una con su ficha completa. Dibuja, edita y borra las **operativas** como círculo (centro y radio) o como polígono de vértices. Las operativas son de la operación, no de quien las dibujó: todo operador las gestiona. Las zonas legales (RF-43) las gestiona el administrador. Toda ruta nueva respeta las dos.
 
 ### RU-20 y RU-21 — Alertas de vuelo
 
@@ -191,6 +191,10 @@ Crea despachadores (una central, correo institucional) y operadores (una o varia
 ### RU-28 — Métricas
 
 Número de misiones, tiempo promedio e incidencias, incluidos los retornos sin entrega.
+
+### RU-36 — Zonas legales
+
+El administrador mantiene en la app la copia de las zonas legales (RF-43): crea una con nombre, código, clase, forma, base legal y fuente; corrige su forma o sus datos, y la desactiva si la autoridad la levanta. Cada cambio pide un motivo y queda en el historial. No se borra.
 
 ### RU-32 — Consola de simulación
 
@@ -329,7 +333,18 @@ Alta y estado de drones de los tres tipos de [../operacion/flota.md](../operacio
 
 ### RF-21 — Geovallas
 
-Las del operador: crear, editar y borrar. Una ruta que las cruza, o que pasa a menos de 150 m de su borde, no es válida. Las zonas legales (RF-43) no son geovallas del operador: vienen con el escenario y no se editan desde la app.
+Toda geovalla tiene una **clase** y una **forma**:
+
+| Clase | La gestiona | Datos | Se quita |
+| --- | --- | --- | --- |
+| Aeródromo, prohibida, helipuerto (legales, RF-43) | Administrador | Nombre, código, base legal y fuente | Solo se desactiva, con motivo; se puede reactivar |
+| Operativa | Cualquier operador de flota | Nombre, motivo, categoría (obra, aglomeración, interferencia, riesgo en tierra u otra) y vigencia opcional | Se borra |
+| Temporal (RF-36) | Consola web | Motivo y vencimiento | Vence o la levanta la consola. El operador no la ve en su lista |
+
+- **Forma.** Un círculo guarda centro y radio, de 50 m a 5 km. Un polígono tiene de 3 a 50 vértices y sus lados no se cruzan.
+- **Límites.** Una geovalla no puede cubrir una central. Una operativa con vigencia desaparece sola al vencer.
+- **Rutas.** Una ruta que cruza una geovalla activa, o que pasa a menos de 150 m de su borde, no es válida. Si una geovalla nueva o editada cruza un vuelo en el aire, corre RF-33.
+- **Historial.** Cada cambio a una zona legal guarda quién, cuándo, qué cambió y el motivo, y se ve en su ficha.
 
 ### RF-22 — Historial
 
@@ -505,7 +520,7 @@ El pedido no tiene un estado nuevo: la misión fallida guarda el incidente y el 
 
 Los lanza la consola (RU-32) o el modo caos (RF-38), cada uno con una duración en hora simulada:
 
-- **Restricción temporal:** un polígono con motivo (orden público, evento como el Festival Vallenato, operativo o jornada electoral) y vencimiento, de 5 a 240 minutos simulados. Mientras dure cuenta como geovalla (RF-12, RF-21): no puede cubrir una central y puede cambiar rutas en vuelo (RF-33). Al vencer desaparece sola y la línea de tiempo lo cuenta. La consola puede levantarla antes, pero no toca las geovallas del operador, que no vencen.
+- **Restricción temporal:** un polígono con motivo (orden público, evento como el Festival Vallenato, operativo o jornada electoral) y vencimiento, de 5 a 240 minutos simulados. Mientras dure cuenta como geovalla (RF-12, RF-21): no puede cubrir una central y puede cambiar rutas en vuelo (RF-33). Al vencer desaparece sola y la línea de tiempo lo cuenta. La consola puede levantarla antes, pero no toca las geovallas operativas ni las legales.
 - **Central sin energía:** de 5 a 240 minutos simulados. Mientras dure, no autoriza ni confirma cargas y sus drones no son elegibles. Sus urgencias pasan a la siguiente central como si hubiera declinado (RU-10); lo que ya había autorizado sin cargar suelta el dron y el lote. Sus programados se reintentan dentro de la franja (RF-18); los que nadie ha autorizado esperan en su cola. Los drones en el aire que vuelven a ella aterrizan igual. Sus despachadores reciben un aviso al empezar y otro al volver la energía. No cambia el estado de la central, que es del administrador.
 - **Pico de urgencias:** el generador de RF-37 crea de 2 a 15 urgencias seguidas (las elige el administrador) hacia puntos al azar dentro de un círculo del mapa, al alcance de una central y fuera de toda zona bloqueante. Si el círculo no tiene ninguno así, no crea ninguna.
 - **Nadie retira el paquete:** en un pedido del receptor simulado, el código no se ingresa y corre RF-30.
@@ -570,7 +585,7 @@ Deja la base **exactamente** como la deja la semilla del escenario ([../negocio/
 
 ### RF-43 — Zonas legales
 
-El escenario trae cargadas las zonas de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md), cada una con su forma, su margen y su regla:
+El escenario trae cargadas las zonas de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md), cada una con su forma, su margen y su regla. Son geovallas de clase legal (RF-21): el administrador las mantiene al día desde la app y el reinicio del escenario las deja como en la semilla.
 
 | Tipo | Regla |
 | --- | --- |

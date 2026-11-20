@@ -18,6 +18,7 @@ El destino de una entrega a una persona es el punto que ella marca en el mapa, n
 El administrador:
 
 - crea la central, puede suspenderla, crea a los despachadores y a los operadores, y ve las métricas;
+- mantiene las zonas legales (RU-36): las crea, corrige y desactiva con motivo. Las geovallas operativas son del operador de flota;
 - en la web maneja la consola de simulación (RU-32): reloj, eventos, restricciones temporales, actores simulados, modo caos y reinicio.
 
 Con eso no autoriza ni pilotea: lanza la situación, y la respuesta la deciden las reglas del sistema. Cuando el despachador automático está encendido, el que autoriza es ese actor simulado, en nombre de la central (RF-37).

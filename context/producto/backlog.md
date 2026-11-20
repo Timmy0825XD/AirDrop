@@ -185,6 +185,22 @@ Se agregó antes de la presentación para simplificar la demo. Reemplaza HU-61, 
 
 **Suma del módulo 13: 22 SP.**
 
+## Módulo 14 — Geovallas por clase (ajuste)
+
+Se agregó para que el operador vea todas las geovallas con su ficha y dibuje círculos o vértices. Las zonas legales pasan del código a la base de datos y las mantiene el administrador. Amplía HU-14. Se cuenta aparte.
+
+| ID | Historia | Pri | SP | Sprint |
+| --- | --- | --- | --- | --- |
+| HU-83 | Una geovalla con clase y forma; zonas legales en la base de datos (RF-21, RF-43) | Alta | 8 | 6 |
+| HU-84 | Círculo y vértices con límites; no cubrir una central (RF-21) | Alta | 5 | 6 |
+| HU-85 | Permisos: el operador gestiona las operativas y el administrador las legales (RU-19, RU-36) | Alta | 5 | 6 |
+| HU-86 | Historial de cambios de las zonas legales (RU-36, CU-52) | Media | 3 | 6 |
+| HU-87 | Vigencia de las geovallas operativas (RF-21) | Media | 3 | 6 |
+| HU-88 | Reinicio del escenario con las zonas legales de la semilla (RF-40) | Media | 2 | 6 |
+| HU-89 | Radar y app: dibujar por clase, ficha, círculo y vértices (CU-18, CU-52) | Alta | 13 | 6 |
+
+**Suma del módulo 14: 39 SP.**
+
 ---
 
 ## Incrementos
