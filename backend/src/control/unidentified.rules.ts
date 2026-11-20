@@ -29,17 +29,12 @@ function kmPerLng(latitude: number): number {
 
 /** Dónde va, en línea recta y a velocidad constante. */
 export function contactPosition(
-  contact: Pick<
-    UnidentifiedContact,
-    'from' | 'to' | 'startedAtMs' | 'endsAtMs'
-  >,
+  contact: Pick<UnidentifiedContact, 'from' | 'to' | 'startedAtMs' | 'endsAtMs'>,
   nowMs: number,
 ): LngLat {
   const span = contact.endsAtMs - contact.startedAtMs;
   const t =
-    span <= 0
-      ? 1
-      : Math.max(0, Math.min(1, (nowMs - contact.startedAtMs) / span));
+    span <= 0 ? 1 : Math.max(0, Math.min(1, (nowMs - contact.startedAtMs) / span));
   return {
     latitude: round6(
       contact.from.latitude + (contact.to.latitude - contact.from.latitude) * t,

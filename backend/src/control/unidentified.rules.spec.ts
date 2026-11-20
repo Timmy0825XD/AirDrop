@@ -33,10 +33,7 @@ describe('Dron no identificado (RF-36)', () => {
       ],
     };
     expect(
-      distanceToPathKm(
-        { latitude: 10.4, longitude: -73.2 },
-        corridor.coordinates,
-      ),
+      distanceToPathKm({ latitude: 10.4, longitude: -73.2 }, corridor.coordinates),
     ).toBeCloseTo(0, 5);
     expect(
       nearCorridor({ latitude: 10.4, longitude: -73.195 }, [corridor]),
