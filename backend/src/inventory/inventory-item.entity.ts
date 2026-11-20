@@ -7,6 +7,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  type Relation,
 } from 'typeorm';
 import { SaleType } from '../common/enums/sale-type.enum';
 import { FIELD_LIMITS } from '../common/field-limits';
@@ -23,7 +24,7 @@ export class InventoryItem {
 
   @ManyToOne(() => Hub, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'hubId' })
-  hub: Hub;
+  hub: Relation<Hub>;
 
   @Column({ type: 'varchar', length: FIELD_LIMITS.medicationName })
   name: string;

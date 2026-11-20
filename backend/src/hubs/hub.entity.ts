@@ -7,6 +7,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  type Relation,
 } from 'typeorm';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { HubType } from '../common/enums/hub-type.enum';
@@ -73,7 +74,7 @@ export class Hub {
 
   @ManyToOne(() => User, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'createdByUserId' })
-  createdBy: User;
+  createdBy: Relation<User>;
 
   @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
