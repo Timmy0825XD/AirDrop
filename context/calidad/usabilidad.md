@@ -4,7 +4,7 @@ Quien pide es una persona de zona rural, a veces mayor, con un teléfono de gama
 
 ## Accesibilidad (RNF-16)
 
-Meta: **WCAG 2.2 AA** en las pantallas del solicitante. Cuando WCAG, Material Design 3 y las guías de Apple difieren, se toma el valor más exigente. La Ley 1618 de 2013 obliga a garantizar accesibilidad. La Resolución 1519 de 2020 de MinTIC la exige al sector público, y las ESE lo son.
+Meta: **WCAG 2.2 AA** en las pantallas del solicitante. Cuando WCAG, Material Design 3 y las guías de Apple difieren, se toma el valor más exigente. La Ley 1618 de 2013 obliga a garantizar accesibilidad. La Resolución 1519 de 2020 de MinTIC la exige al sector público, y los hospitales públicos lo son.
 
 | Criterio | Cómo se cumple |
 | --- | --- |

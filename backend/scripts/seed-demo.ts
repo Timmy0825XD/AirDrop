@@ -85,8 +85,8 @@ async function seedDemoData(): Promise<void> {
       adminToken,
       operator,
       UserRole.FLEET_OPERATOR,
-      // RF-06: el operador cuida la flota de los nodos; una ESE no tiene drones.
-      hubIds.filter((_, index) => hubPlans[index].droneCount > 0),
+      // RF-06: el operador cuida la flota de todas las centrales.
+      hubIds,
     );
 
     const models = await request(app.getHttpServer())
@@ -126,7 +126,7 @@ async function seedDemoData(): Promise<void> {
           unitWeightG: item.unitWeightG,
         });
       }
-      for (let number = 1; number <= plan.droneCount; number += 1) {
+      for (let number = 1; number <= plan.fleet.length; number += 1) {
         const spec = plan.fleet[number - 1];
         const droneId = await createDrone(app, operatorSession.token, {
           identifier: `${plan.dronePrefix}-0${number}`,
@@ -166,14 +166,13 @@ async function seedDemoData(): Promise<void> {
       await registerRequester(app, person);
     }
 
-    const nodes = hubPlans.filter((plan) => plan.droneCount > 0).length;
-    const drones = hubPlans.reduce((sum, plan) => sum + plan.droneCount, 0);
+    const drones = hubPlans.reduce((sum, plan) => sum + plan.fleet.length, 0);
     const dispatchers = hubPlans.reduce(
       (sum, plan) => sum + plan.dispatchers.length,
       0,
     );
     console.log(
-      `Demo lista: ${nodes} nodos, ${hubPlans.length - nodes} ESE, ${drones} drones, ${dispatchers} despachadores, 1 operador, ${requesters.length} solicitantes y ${geofences.length} geovallas, con los puntos de entrega de la red.`,
+      `Demo lista: ${hubPlans.length} centrales, ${drones} drones, ${dispatchers} despachadores, 1 operador, ${requesters.length} solicitantes y ${geofences.length} geovallas.`,
     );
     console.log(`Contraseña de todas las cuentas: ${TEST_PASSWORD}`);
   } finally {

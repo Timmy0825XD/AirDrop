@@ -60,7 +60,7 @@ export class CargoManifest {
   @Column({ type: 'varchar', length: FIELD_LIMITS.hubName })
   originName: string;
 
-  /** Punto de entrega o ESE. */
+  /** La central o el lugar donde se entrega. */
   @Column({ type: 'varchar', length: FIELD_LIMITS.hubName })
   destinationName: string;
 

@@ -34,12 +34,14 @@ function manager(lastSequence: number | null) {
             coldCompartment: false,
             droneModel: { kind: DroneKind.BALANCED },
           }
-        : { id: 'hub-north', name: 'Nodo Norte (Río Seco)' },
+        : { id: 'hub-north', name: 'Puesto de Salud de Río Seco' },
     ),
   );
   return {
     findOneOrFail,
-    findOne: jest.fn().mockResolvedValue({ name: 'Puesto de salud de Badillo' }),
+    findOne: jest
+      .fn()
+      .mockResolvedValue({ name: 'Puesto de salud de Badillo' }),
     update: jest.fn().mockResolvedValue({ affected: 1 }),
     query: jest.fn((sql: string) =>
       Promise.resolve(sql.includes('MAX') ? [{ last: lastSequence }] : []),
@@ -88,7 +90,7 @@ describe('ManifestsService (RF-47)', () => {
     expect(issued).toMatchObject({
       droneIdentifier: 'AD-NOR-01',
       droneKind: DroneKind.BALANCED,
-      originName: 'Nodo Norte (Río Seco)',
+      originName: 'Puesto de Salud de Río Seco',
       destinationName: 'Puesto de salud de Badillo',
       authorizedByName: 'Despachadora Norte',
     });
@@ -102,10 +104,15 @@ describe('ManifestsService (RF-47)', () => {
     expect(issued.authorizedByUserId).toBeNull();
   });
 
-  it('lo ven el despachador de origen, el operador de su nodo y el admin; el solicitante no', async () => {
-    const rows = [{ number: 'MAN-2026-000002', issuedAt: new Date(), items: [] }];
+  it('lo ven el despachador de origen, el operador de su central y el admin; el solicitante no', async () => {
+    const rows = [
+      { number: 'MAN-2026-000002', issuedAt: new Date(), items: [] },
+    ];
     await expect(
-      service(rows).forOrder(user(UserRole.DISPATCHER, ['hub-north']), 'order-1'),
+      service(rows).forOrder(
+        user(UserRole.DISPATCHER, ['hub-north']),
+        'order-1',
+      ),
     ).resolves.toMatchObject({ number: 'MAN-2026-000002', previous: [] });
     await expect(
       service(rows).forOrder(

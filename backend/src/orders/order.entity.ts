@@ -152,7 +152,7 @@ export class Order {
   @Column({ type: 'uuid', nullable: true })
   originHubId: string | null;
 
-  /** RF-45: el punto de entrega de un pedido a una persona; nulo entre centrales. */
+  /** El lugar donde se entrega a una persona; nulo entre centrales. */
   @Column({ type: 'varchar', length: FIELD_LIMITS.address })
   address: string;
 

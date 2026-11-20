@@ -8,7 +8,7 @@ import { hubPlans, operator } from './demo-scenario';
 import { ScenarioNetworkService } from './scenario-network.service';
 
 const admin = { id: 'admin-1' } as User;
-const valledupar = hubPlans.find((plan) => plan.name === 'Central Valledupar')!;
+const valledupar = hubPlans[0];
 
 /** Una base con todas las centrales del plan menos las que se piden, y unas viejas. */
 function build(options: { missing?: string[]; stale?: string[] } = {}) {
@@ -100,7 +100,7 @@ describe('La red del escenario queda igual a la del plan (RF-40)', () => {
     expect((await service.sync(admin)).created).toBe(1);
     const hub = saved.find((entry) => entry.entity === Hub)!.row;
     expect(hub).toMatchObject({
-      name: 'Central Valledupar',
+      name: valledupar.name,
       createdByUserId: 'admin-1',
     });
     expect(users.createInstitutional).toHaveBeenCalledTimes(
@@ -120,14 +120,14 @@ describe('La red del escenario queda igual a la del plan (RF-40)', () => {
     );
   });
 
-  it('una ESE que falta se crea con sus drones y el operador, como toda central', async () => {
-    const ese = hubPlans.find((plan) => plan.name.startsWith('ESE '))!;
-    const { service, saved } = build({ missing: [ese.name] });
+  it('toda central tiene dos drones de cada tipo', async () => {
+    const last = hubPlans[hubPlans.length - 1];
+    const { service, saved } = build({ missing: [last.name] });
     await service.sync(admin);
-    expect(
-      saved.filter((entry) => entry.entity === Drone).length,
-    ).toBe(ese.fleet.length);
-    expect(ese.fleet.length).toBeGreaterThan(0);
+    expect(saved.filter((entry) => entry.entity === Drone).length).toBe(6);
+    for (const plan of hubPlans) {
+      expect(plan.dispatchers).toHaveLength(2);
+    }
     expect(saved.some((entry) => entry.entity === UserHubAssignment)).toBe(
       true,
     );

@@ -20,7 +20,7 @@ type DecisionFacts = {
   medicationName: string;
 };
 
-/** La explicación de una autorización: por qué este nodo y por qué este dron. */
+/** La explicación de una autorización: por qué esta central y por qué este dron. */
 export function explainAssignment(
   trace: DecisionTrace | null,
   order: DecisionFacts,

@@ -317,8 +317,8 @@ const SAFE_POINT_CANDIDATES = 6;
 export type SafeSite = LngLat & { name: string };
 
 /**
- * RF-34, paso 3 de "según alcance": el punto seguro de la red (nodo, ESE o
- * punto de entrega) más cercano por corredor al que la batería alcanza con
+ * RF-34, paso 3 de "según alcance": el punto seguro de la red (una central
+ * activa) más cercano por corredor al que la batería alcanza con
  * el margen de aterrizaje. `null` si ninguno: baja en `safeLandingPoint`.
  */
 export function nearestSafeSite(input: {

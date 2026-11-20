@@ -49,6 +49,6 @@ Si empatan, gana el que lleva más tiempo en tierra, luego el de más batería y
 ## Ejemplos para la sustentación
 
 - **Antiveneno a Patillal (urgencia, 0,3 kg, frío).** Pasan el Colibrí y el Garza con frío. Gana el Colibrí porque llega antes.
-- **Reabastecer la ESE La Paz (programado, 12 kg).** Solo el Cóndor lleva 12 kg y La Paz está a 4,9 km de la Central Sur: gana el Cóndor.
+- **Reabastecer el hospital de San Diego desde La Paz (programado, 12 kg).** Solo el Cóndor lleva 12 kg y San Diego está a 5,7 km: gana el Cóndor.
 - **Dispensación en Guatapurí (1.277 m, 23 km).** Con la subida, el Garza pediría el 114 % de la batería; solo el Colibrí va y vuelve (97 %).
 - **Pedido a Villa Germania.** Ningún tipo pasa el filtro de batería con la subida del terreno: no son puntos de la red y va la alternativa terrestre ([../negocio/cobertura.md](../negocio/cobertura.md)).

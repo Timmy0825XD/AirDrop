@@ -249,7 +249,7 @@ describe('Punto seguro de la red (RF-34, paso 3)', () => {
     latitude: 10.46,
     longitude: -73.245,
   };
-  const farHub = { name: 'Nodo lejano', latitude: 10.9, longitude: -73.0 };
+  const farHub = { name: 'Central lejana', latitude: 10.9, longitude: -73.0 };
 
   it('sin batería para volver, baja en la central activa que alcance', async () => {
     const built = build();
@@ -553,7 +553,7 @@ describe('Catálogo de incidentes de la consola (RF-34, CU-38)', () => {
     }
   });
 
-  it('sin enlace espera 30 s en el aire y, si no vuelve, regresa solo al nodo; el enlace vuelve al aterrizar', async () => {
+  it('sin enlace espera 30 s en el aire y, si no vuelve, regresa solo a la central; el enlace vuelve al aterrizar', async () => {
     const built = build();
     built.service['random'] = () => 0.9; // el enlace no vuelve
     fly(built, { cruiseKm: 3, batteryPercent: 90 });

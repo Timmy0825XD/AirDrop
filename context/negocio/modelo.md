@@ -6,7 +6,7 @@ AirDrop es una red regional de entrega de medicamentos con drones para el área 
 
 | Para quién | Problema hoy | Lo que hace AirDrop |
 | --- | --- | --- |
-| ESE e IPS municipales | Se quedan sin un medicamento o insumo y el reabastecimiento por carretera tarda horas o días | Traslado programado o urgente desde otra central, con remisión, lote y cadena de frío |
+| Hospitales e IPS municipales | Se quedan sin un medicamento o insumo y el reabastecimiento por carretera tarda horas o días | Traslado programado o urgente desde otra central, con remisión, lote y cadena de frío |
 | Paciente rural | Viaja horas a la cabecera o a Valledupar para reclamar un medicamento, o no lo recibe a tiempo en una urgencia (accidente ofídico, crisis diabética) | Recibe el medicamento donde está, con su código |
 | Secretaría de Salud del Cesar | No tiene un canal rápido para urgencias y campañas en zona dispersa | Red con trazabilidad completa: quién pidió, quién autorizó, qué voló y por dónde |
 
@@ -16,7 +16,7 @@ El ciudadano no paga. El modelo es B2B y B2G:
 
 | Cliente | Qué compra | Cómo paga |
 | --- | --- | --- |
-| ESE e IPS (Valledupar, La Paz, San Diego, Manaure, Pueblo Bello, Codazzi) | Reabastecimiento programado y urgente desde la central más cercana | **Suscripción mensual** por central, según las franjas de vuelo contratadas |
+| Hospitales e IPS (Valledupar, La Paz, San Diego, Manaure, Pueblo Bello, Codazzi) | Reabastecimiento programado y urgente desde la central más cercana | **Suscripción mensual** por central, según las franjas de vuelo contratadas |
 | EPS y gestores farmacéuticos | Dispensación a pacientes crónicos y de urgencia en su ubicación | **Tarifa por entrega** |
 | Secretaría de Salud del Cesar | Atención de urgencias en zona dispersa y apoyo a campañas | **Contrato anual** con una bolsa de vuelos de urgencia |
 

@@ -3,7 +3,7 @@ import { missionWithClimbPercent } from '../decision/decision.rules';
 import { reverseCorridor } from '../routing/routing.rules';
 import { RoutePlannerService } from '../routing/route-planner.service';
 import { AirspaceService } from './airspace.service';
-import { DEMO_PLACES, ESES, MAIN_HUBS } from './regional-network';
+import { DEMO_PLACES, HUB_SITES } from './regional-network';
 import { climbPercentPerM } from './terrain.rules';
 import { TerrainService } from './terrain.service';
 
@@ -18,13 +18,13 @@ const planner = new RoutePlannerService(
   { stormPolygons: () => [] } as never,
   airspace,
 );
-const nodes = Object.values(MAIN_HUBS);
+const hubs = Object.values(HUB_SITES);
 
 function reach(
-  node: (typeof nodes)[number],
+  hub: (typeof hubs)[number],
   target: { latitude: number; longitude: number },
 ) {
-  const corridor = planner.plan(node, target, airspace.blockingPolygons());
+  const corridor = planner.plan(hub, target, airspace.blockingPolygons());
   if (!corridor) {
     return { km: null, verdict: {} as Record<string, boolean> };
   }
@@ -49,10 +49,10 @@ const reachable = (verdict: Record<string, boolean>) =>
     .map(([name]) => name);
 
 describe('Cobertura real de la red (cobertura.md, RF-46)', () => {
-  it('cada punto de entrega lo alcanza al menos un tipo desde su nodo', () => {
+  it('cada lugar de la demo lo alcanza al menos un tipo desde su central', () => {
     for (const point of DEMO_PLACES) {
-      const node = nodes.find((entry) => entry.code === point.hubCode)!;
-      const { verdict } = reach(node, point);
+      const hub = hubs.find((entry) => entry.code === point.hubCode)!;
+      const { verdict } = reach(hub, point);
       expect({
         point: point.code,
         types: reachable(verdict).length > 0,
@@ -65,7 +65,7 @@ describe('Cobertura real de la red (cobertura.md, RF-46)', () => {
 
   it('Guatapurí (1.277 m) solo la alcanza el Colibrí, por la subida', () => {
     const { verdict } = reach(
-      MAIN_HUBS.north,
+      HUB_SITES.rioSeco,
       DEMO_PLACES.find((point) => point.code === 'dp-guatapuri')!,
     );
     expect(reachable(verdict)).toEqual(['Colibrí']);
@@ -73,29 +73,32 @@ describe('Cobertura real de la red (cobertura.md, RF-46)', () => {
 
   it('Villa Germania queda fuera: ningún tipo vuelve', () => {
     const villaGermania = { latitude: 10.2669, longitude: -73.7151 };
-    expect(reachable(reach(MAIN_HUBS.west, villaGermania).verdict)).toEqual([]);
+    expect(reachable(reach(HUB_SITES.valencia, villaGermania).verdict)).toEqual(
+      [],
+    );
   });
 
-  it('la ESE de Pueblo Bello solo la alcanza el Colibrí', () => {
-    expect(reachable(reach(MAIN_HUBS.west, ESES.puebloBello).verdict)).toEqual([
-      'Colibrí',
-    ]);
+  it('desde Valencia de Jesús, Pueblo Bello solo lo alcanza el Colibrí', () => {
+    expect(
+      reachable(reach(HUB_SITES.valencia, HUB_SITES.puebloBello).verdict),
+    ).toEqual(['Colibrí']);
   });
 
-  it('las ESE cercanas a su nodo las alcanza el Cóndor', () => {
-    for (const [node, ese] of [
-      [MAIN_HUBS.south, ESES.laPaz],
-      [MAIN_HUBS.south, ESES.sanDiego],
-      [MAIN_HUBS.codazzi, ESES.codazzi],
-      [MAIN_HUBS.valledupar, ESES.rosarioPumarejo],
-      [MAIN_HUBS.valledupar, ESES.arredondo],
+  it('las centrales vecinas se abastecen con el Cóndor', () => {
+    for (const [from, to] of [
+      [HUB_SITES.laPaz, HUB_SITES.sanDiego],
+      [HUB_SITES.laNevada, HUB_SITES.rosarioPumarejo],
+      [HUB_SITES.laNevada, HUB_SITES.elCarmen],
+      [HUB_SITES.arredondo, HUB_SITES.elCarmen],
     ] as const) {
-      expect(reachable(reach(node, ese).verdict)).toContain('Cóndor');
+      expect(reachable(reach(from, to).verdict)).toContain('Cóndor');
     }
   });
 
   it('Nabusímake (2.135 m) queda fuera: ningún tipo vuelve', () => {
     const nabusimake = { latitude: 10.5844, longitude: -73.5929 };
-    expect(reachable(reach(MAIN_HUBS.west, nabusimake).verdict)).toEqual([]);
+    expect(reachable(reach(HUB_SITES.valencia, nabusimake).verdict)).toEqual(
+      [],
+    );
   });
 });
