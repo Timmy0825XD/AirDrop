@@ -6,6 +6,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  type Relation,
 } from 'typeorm';
 import { OneTimeCode } from '../auth/one-time-code.entity';
 import { CHAR_TRANSFORMER } from '../common/column-transformers';
@@ -122,8 +123,8 @@ export class User {
   updatedAt: Date;
 
   @OneToMany(() => OneTimeCode, (code) => code.user)
-  oneTimeCodes: OneTimeCode[];
+  oneTimeCodes: Relation<OneTimeCode[]>;
 
   @OneToMany(() => UserHubAssignment, (assignment) => assignment.user)
-  hubAssignments: UserHubAssignment[];
+  hubAssignments: Relation<UserHubAssignment[]>;
 }

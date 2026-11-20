@@ -6,6 +6,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  type Relation,
 } from 'typeorm';
 import { DroneMaintenanceKind } from '../common/enums/drone-maintenance-kind.enum';
 import { FIELD_LIMITS } from '../common/field-limits';
@@ -28,7 +29,7 @@ export class DroneMaintenance {
 
   @ManyToOne(() => Drone, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'droneId' })
-  drone: Drone;
+  drone: Relation<Drone>;
 
   @Column({
     type: 'enum',

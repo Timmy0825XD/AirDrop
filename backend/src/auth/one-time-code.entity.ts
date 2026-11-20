@@ -6,6 +6,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  type Relation,
 } from 'typeorm';
 import { CHAR_TRANSFORMER } from '../common/column-transformers';
 import { OtpPurpose } from '../common/enums/otp-purpose.enum';
@@ -23,7 +24,7 @@ export class OneTimeCode {
 
   @ManyToOne(() => User, (user) => user.oneTimeCodes, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
-  user: User;
+  user: Relation<User>;
 
   @Column({ type: 'enum', enum: OtpPurpose, enumName: 'otp_purpose' })
   purpose: OtpPurpose;

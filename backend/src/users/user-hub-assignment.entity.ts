@@ -6,6 +6,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   Unique,
+  type Relation,
 } from 'typeorm';
 import { Hub } from '../hubs/hub.entity';
 import { User } from './user.entity';
@@ -26,9 +27,9 @@ export class UserHubAssignment {
 
   @ManyToOne(() => User, (user) => user.hubAssignments, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'userId' })
-  user: User;
+  user: Relation<User>;
 
   @ManyToOne(() => Hub, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'hubId' })
-  hub: Hub;
+  hub: Relation<Hub>;
 }

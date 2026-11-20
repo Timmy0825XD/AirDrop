@@ -7,6 +7,7 @@ import {
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  type Relation,
 } from 'typeorm';
 import { DroneStatus } from '../common/enums/drone-status.enum';
 import { FIELD_LIMITS } from '../common/field-limits';
@@ -28,7 +29,7 @@ export class Drone {
 
   @ManyToOne(() => DroneModel, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'droneModelId' })
-  droneModel: DroneModel;
+  droneModel: Relation<DroneModel>;
 
   @Index()
   @Column({ type: 'uuid' })
@@ -36,7 +37,7 @@ export class Drone {
 
   @ManyToOne(() => Hub, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'hubId' })
-  hub: Hub;
+  hub: Relation<Hub>;
 
   @Index()
   @Column({
