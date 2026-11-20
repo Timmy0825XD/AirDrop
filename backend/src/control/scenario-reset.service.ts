@@ -264,7 +264,10 @@ export class ScenarioResetService {
     const owner = await manager.findOne(User, {
       where: { email: operator.email },
     });
-    await manager.query(`DELETE FROM geofences`);
+    // Las zonas legales (RF-43) no son de la semilla de la operación.
+    await manager.query(
+      `DELETE FROM geofences WHERE class IN ('operational', 'temporary')`,
+    );
     for (const fence of geofences) {
       await manager.query(
         `INSERT INTO geofences (id, name, reason, polygon, "createdByUserId")

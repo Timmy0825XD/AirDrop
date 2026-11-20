@@ -24,10 +24,7 @@ async function addEnumValue(
   );
 }
 
-async function tableExists(
-  boot: DataSource,
-  name: string,
-): Promise<boolean> {
+async function tableExists(boot: DataSource, name: string): Promise<boolean> {
   const rows = (await boot.query(`SELECT to_regclass($1) AS name`, [
     `public.${name}`,
   ])) as Array<{ name: string | null }>;
@@ -165,9 +162,7 @@ async function migrateInventorySaleType(boot: DataSource): Promise<void> {
     );
   }
   if (!names.has('lot')) {
-    await boot.query(
-      `ALTER TABLE inventory_items ADD COLUMN lot varchar(20)`,
-    );
+    await boot.query(`ALTER TABLE inventory_items ADD COLUMN lot varchar(20)`);
     await boot.query(
       `UPDATE inventory_items SET lot = 'L-0001' WHERE lot IS NULL`,
     );
@@ -196,6 +191,51 @@ async function addGeofenceExpiry(boot: DataSource): Promise<void> {
   await boot.query(
     `ALTER TABLE geofences ADD COLUMN IF NOT EXISTS "expiresAt" timestamptz`,
   );
+}
+
+/**
+ * RF-21 y RF-43: toda geovalla tiene clase y forma, y las zonas legales viven
+ * en la misma tabla (sin `synchronize` en producción). Las que ya tenían
+ * vencimiento son temporales; el resto, operativas.
+ */
+async function addGeofenceClasses(boot: DataSource): Promise<void> {
+  if (!(await tableExists(boot, 'geofences'))) {
+    return;
+  }
+  await boot.query(`DO $$ BEGIN
+    CREATE TYPE geofence_class AS ENUM ('aerodrome', 'prohibited', 'heliport', 'operational', 'temporary');
+  EXCEPTION WHEN duplicate_object THEN NULL; END $$`);
+  await boot.query(`DO $$ BEGIN
+    CREATE TYPE geofence_shape AS ENUM ('circle', 'polygon');
+  EXCEPTION WHEN duplicate_object THEN NULL; END $$`);
+  await boot.query(`DO $$ BEGIN
+    CREATE TYPE operational_category AS ENUM ('works', 'crowd', 'interference', 'ground_risk', 'other');
+  EXCEPTION WHEN duplicate_object THEN NULL; END $$`);
+  const hadClass = (await boot.query(
+    `SELECT 1 FROM information_schema.columns
+     WHERE table_name = 'geofences' AND column_name = 'class'`,
+  )) as unknown[];
+  await boot.query(
+    `ALTER TABLE geofences
+       ADD COLUMN IF NOT EXISTS class geofence_class NOT NULL DEFAULT 'operational',
+       ADD COLUMN IF NOT EXISTS shape geofence_shape NOT NULL DEFAULT 'polygon',
+       ADD COLUMN IF NOT EXISTS category operational_category,
+       ADD COLUMN IF NOT EXISTS "centerLatitude" numeric(9,6),
+       ADD COLUMN IF NOT EXISTS "centerLongitude" numeric(9,6),
+       ADD COLUMN IF NOT EXISTS "radiusM" int,
+       ADD COLUMN IF NOT EXISTS code varchar(24),
+       ADD COLUMN IF NOT EXISTS "legalBasis" varchar(160),
+       ADD COLUMN IF NOT EXISTS source varchar(160),
+       ADD COLUMN IF NOT EXISTS active boolean NOT NULL DEFAULT true,
+       ADD COLUMN IF NOT EXISTS "updatedByUserId" uuid,
+       ALTER COLUMN reason DROP NOT NULL,
+       ALTER COLUMN "createdByUserId" DROP NOT NULL`,
+  );
+  if (!hadClass.length) {
+    await boot.query(
+      `UPDATE geofences SET class = 'temporary' WHERE "expiresAt" IS NOT NULL`,
+    );
+  }
 }
 
 /**
@@ -261,6 +301,7 @@ export async function alignSprintSchema(
     await migrateInventorySaleType(boot);
     await addRouteHistory(boot);
     await addGeofenceExpiry(boot);
+    await addGeofenceClasses(boot);
     await addEnumValue(boot, 'drone_status', 'grounded');
     await addEnumValue(boot, 'quarantine_reason', 'incident');
     await allowIncidentHistory(boot);

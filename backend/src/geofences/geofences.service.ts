@@ -9,6 +9,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { simClock } from '../common/clock/sim-clock';
+import { isLegalGeofenceClass } from '../common/enums/geofence-class.enum';
 import { Hub } from '../hubs/hub.entity';
 import { FlightClockService } from '../simulation/flight-clock.service';
 import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
@@ -150,7 +151,7 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
     const rows = (await this.geofences.query(
       `SELECT ${RETURNING}
        FROM geofences
-       WHERE "expiresAt" IS NOT NULL AND "expiresAt" > $1
+       WHERE class = 'temporary' AND "expiresAt" > $1
        ORDER BY "expiresAt" ASC`,
       [simClock.now()],
     )) as GeofenceRow[];
@@ -172,9 +173,10 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
     const now = simClock.now();
     const expiresAt = temporaryExpiry(now, input.durationMin);
     const rows = (await this.geofences.query(
-      `INSERT INTO geofences (id, name, reason, polygon, "createdByUserId", "createdAt", "expiresAt")
+      `INSERT INTO geofences (id, class, name, reason, polygon, "createdByUserId", "createdAt", "expiresAt")
        VALUES (
          gen_random_uuid(),
+         'temporary',
          $1,
          $2,
          ST_SetSRID(ST_GeomFromGeoJSON($3), 4326),
@@ -206,7 +208,7 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
   async endTemporary(id: string): Promise<TemporaryGeofenceJson> {
     const [rows] = (await this.geofences.query(
       `DELETE FROM geofences
-       WHERE id = $1 AND "expiresAt" IS NOT NULL AND "expiresAt" > $2
+       WHERE id = $1 AND class = 'temporary' AND "expiresAt" > $2
        RETURNING ${RETURNING}`,
       [id, simClock.now()],
     )) as [GeofenceRow[], number];
@@ -238,7 +240,7 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
    */
   async clearTemporary(manager: EntityManager): Promise<number> {
     const [, count] = (await manager.query(
-      `DELETE FROM geofences WHERE "expiresAt" IS NOT NULL`,
+      `DELETE FROM geofences WHERE class = 'temporary'`,
     )) as [unknown[], number];
     return count;
   }
@@ -254,9 +256,7 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
       );
     }
     await this.requireGeofence(id);
-    const polygon = dto.polygon
-      ? assertGeoJsonPolygon(dto.polygon)
-      : undefined;
+    const polygon = dto.polygon ? assertGeoJsonPolygon(dto.polygon) : undefined;
     if (polygon) {
       await this.assertCoversNoHub(polygon);
     }
@@ -318,9 +318,10 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
     assertCoversNoHub(polygon, hubs);
   }
 
+  /** Una zona legal no se toca desde aquí: la mantiene el administrador. */
   private async requireGeofence(id: string) {
     const row = await this.geofences.findOne({ where: { id } });
-    if (!row) {
+    if (!row || isLegalGeofenceClass(row.class)) {
       throw new NotFoundException('La geovalla no existe.');
     }
     return row;

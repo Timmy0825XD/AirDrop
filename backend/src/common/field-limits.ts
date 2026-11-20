@@ -16,7 +16,10 @@ export const FIELD_LIMITS = {
   geofenceName: 80,
   address: 160,
   municipality: 80,
-  /** RF-43: código de una zona legal (`resguardo-kankuamo`). */
+  /** RF-43: código de una zona legal (`cai-primero-de-mayo`). */
+  geofenceCode: 24,
+  /** RF-43: base legal o fuente de una zona legal. */
+  legalReference: 160,
   /** RF-47: `MAN-2026-000123`. */
   manifestNumber: 16,
   /** RF-47: rango de frío exigido (`2–8 °C`). */

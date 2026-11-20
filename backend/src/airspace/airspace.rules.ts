@@ -21,7 +21,11 @@ export type AirspaceZone = {
   legalBasis: string;
   /** De dónde sale el dato (OSM, AIP, GeoNames…). */
   source: string;
+  /** RF-21: si es un círculo, su centro y su radio; el polígono lo envuelve. */
+  circle?: { center: LngLat; radiusM: number };
   polygon: GeoJsonPolygon;
+  /** Fila de `geofences`, cuando la zona ya está en la base. */
+  id?: string;
 };
 
 /** Las que un corredor no cruza nunca: todas las de la demo. */

@@ -116,12 +116,12 @@ describe('Geovalla temporal: cuándo rige (RF-36)', () => {
     );
   });
 
-  it('el filtro SQL deja pasar las del operador y las vigentes', () => {
+  it('el filtro SQL deja pasar las operativas y las vigentes, no las legales', () => {
     expect(activeGeofenceSql('$1')).toBe(
-      '("expiresAt" IS NULL OR "expiresAt" > $1)',
+      `(class IN ('operational', 'temporary') AND ("expiresAt" IS NULL OR "expiresAt" > $1))`,
     );
     expect(activeGeofenceSql('$3', 'g')).toBe(
-      '(g."expiresAt" IS NULL OR g."expiresAt" > $3)',
+      `(g.class IN ('operational', 'temporary') AND (g."expiresAt" IS NULL OR g."expiresAt" > $3))`,
     );
   });
 
@@ -202,7 +202,7 @@ describe('La consola lanza una geovalla temporal (RF-36, CU-38)', () => {
       new NotFoundException(TEMPORARY_GEOFENCE_NOT_FOUND),
     );
     const sql = String(geofences.query.mock.calls[0][0]);
-    expect(sql).toContain('"expiresAt" IS NOT NULL');
+    expect(sql).toContain(`class = 'temporary'`);
   });
 
   it('al vencer desaparece sola y se cuenta una vez por geovalla', async () => {

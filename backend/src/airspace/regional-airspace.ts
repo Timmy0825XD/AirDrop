@@ -41,6 +41,7 @@ function circle(
     name,
     legalBasis: `${ART_13}: ${DEMO_SCALE}`,
     source,
+    circle: { center, radiusM: Math.round(radiusKm * 1000) },
     polygon: circlePolygon(center, radiusKm, radiusKm >= 0.3 ? 16 : 12),
   };
 }
@@ -95,6 +96,7 @@ export function regionalAirspace(): AirspaceZone[] {
       legalBasis:
         'RAC 100.315(a)(14): 1,5 km desde el ARP (demo; la norma pide 9 km)',
       source: 'AIP Colombia AD 2 SKVP (AMDT 67)',
+      circle: { center: SKVP_ARP, radiusM: AERODROME_RADIUS_KM * 1000 },
       polygon: circlePolygon(SKVP_ARP, AERODROME_RADIUS_KM, 32),
     },
     // Valledupar: instalaciones grandes, con las esquinas de su terreno.
