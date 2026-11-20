@@ -6,8 +6,8 @@ import { AirspaceZone, circlePolygon } from './airspace.rules';
  * RF-43: las zonas legales de la demo (`context/operacion/espacio-aereo.md`).
  * Cada zona tiene el tamaño que muestra el visor de la Aerocivil, no el
  * margen completo del RAC 100: es una simplificación declarada para que la
- * red se pueda ver. Ubicaciones de OpenStreetMap (nov. 2026), de la AIP para
- * el ARP y de la lista de CAI de Valledupar que reunió el equipo.
+ * red se pueda ver. Ubicaciones de la AIP para el ARP, de OpenStreetMap para
+ * las pistas y, para el resto, de la lista que reunió el equipo (nov. 2026).
  */
 
 /** ARP de SKVP según la AIP AD 2: 10°26'06.47"N, 73°14'57.83"W. */
@@ -19,14 +19,12 @@ export const AERODROME_RADIUS_KM = 1.5;
 export const HELIPORT_RADIUS_KM = 0.3;
 /** Estación de policía o CAI: el círculo del visor. */
 export const POLICE_RADIUS_KM = 0.1;
-/** Fuerte o puesto militar menor. */
-export const MILITARY_POST_RADIUS_KM = 0.15;
 /** Pista agrícola: un círculo que cubre la pista. */
 export const AIRSTRIP_RADIUS_KM = 0.4;
 
 const OSM = 'OpenStreetMap (nov. 2026)';
 const POLICE_LIST = 'Lista de CAI y estaciones de la Policía (equipo AirDrop)';
-const VISOR = 'Ubicado en el poblado con el visor de la Aerocivil';
+const TEAM_LIST = 'Ubicación reunida por el equipo AirDrop (nov. 2026)';
 const ART_13 = 'RAC 100.315(a)(13)';
 const DEMO_SCALE = 'tamaño del visor de la Aerocivil (demo)';
 
@@ -83,7 +81,7 @@ function facility(
     kind: AirspaceZoneKind.PROHIBITED,
     name,
     legalBasis: `${ART_13}: ${DEMO_SCALE}`,
-    source: OSM,
+    source: TEAM_LIST,
     polygon: { type: 'Polygon', coordinates: [[...corners, corners[0]]] },
   };
 }
@@ -99,134 +97,121 @@ export function regionalAirspace(): AirspaceZone[] {
       source: 'AIP Colombia AD 2 SKVP (AMDT 67)',
       polygon: circlePolygon(SKVP_ARP, AERODROME_RADIUS_KM, 32),
     },
-    // Valledupar: instalaciones grandes (polígonos de unos 400 × 300 m).
+    // Valledupar: instalaciones grandes, con las esquinas de su terreno.
     facility('bat-la-popa', 'Batallón La Popa – Décima Brigada Blindada', [
-      [-73.2755, 10.465],
-      [-73.2718, 10.465],
-      [-73.2718, 10.4677],
-      [-73.2755, 10.4677],
+      [-73.281, 10.4715],
+      [-73.2685, 10.471],
+      [-73.269, 10.4605],
+      [-73.2815, 10.461],
     ]),
     facility('carcel-tramacua', 'Cárcel La Tramacúa (CPAMS Valledupar)', [
-      [-73.3103, 10.4481],
-      [-73.3075, 10.4481],
-      [-73.3075, 10.4503],
-      [-73.3103, 10.4503],
+      [-73.3055, 10.4656],
+      [-73.3016, 10.4654],
+      [-73.3018, 10.462],
+      [-73.3056, 10.4622],
     ]),
+    // Con solo el área: un círculo de la misma superficie.
     circle(
-      'militar-norte',
-      'Instalación militar al norte de Valledupar',
-      { latitude: 10.51728, longitude: -73.24875 },
-      MILITARY_POST_RADIUS_KM,
-      OSM,
+      'bat-ingenieros-10',
+      'Batallón de Ingenieros N.° 10 General Manuel Alberto Murillo',
+      { latitude: 10.5285, longitude: -73.2495 },
+      0.33,
+      TEAM_LIST,
     ),
     circle(
       'sub-valledupar',
-      'Subestación Valledupar',
-      { latitude: 10.4587, longitude: -73.2728 },
-      POLICE_RADIUS_KM,
-      OSM,
+      'Subestación Valledupar (220/110 kV)',
+      { latitude: 10.4435, longitude: -73.2685 },
+      0.12,
+      TEAM_LIST,
     ),
     circle(
       'sub-guatapuri',
-      'Subestación Guatapurí',
+      'Subestación Guatapurí (110 kV)',
       { latitude: 10.48672, longitude: -73.25798 },
-      POLICE_RADIUS_KM,
-      OSM,
+      0.06,
+      TEAM_LIST,
     ),
     circle(
-      'planta-sur',
-      'Planta eléctrica al sur de Valledupar',
-      { latitude: 10.38182, longitude: -73.1947 },
-      MILITARY_POST_RADIUS_KM,
-      OSM,
+      'solar-la-mesa',
+      'Granjas solares del sector La Mesa',
+      { latitude: 10.438, longitude: -73.325 },
+      0.5,
+      TEAM_LIST,
     ),
-    // Valledupar: CAI. Uno pegado a otra zona o dentro del anillo del
-    // aeropuerto no se dibuja: ya está cubierto.
-    police('cai-hurtado', 'CAI Hurtado', 10.501, -73.2681),
-    police('cai-san-joaquin', 'CAI San Joaquín', 10.4764, -73.2558),
-    police('cai-garupal', 'CAI Garupal', 10.4748, -73.2645),
-    police('cai-el-carmen', 'CAI El Carmen', 10.4712, -73.2608),
-    police('cai-gobernacion', 'CAI Gobernación', 10.4705, -73.2494),
-    police('cai-primero-de-mayo', 'CAI Primero de Mayo', 10.4578, -73.2562),
-    police('cai-mayales', 'CAI Mayales', 10.4535, -73.2428),
-    police('cai-san-fernando', 'CAI San Fernando', 10.4405, -73.2355),
-    // Pueblos y corregimientos.
-    police('pol-la-paz', 'Estación de policía de La Paz', 10.3854, -73.1722),
+    // Valledupar: CAI. El de San Fernando cae dentro del anillo del
+    // aeropuerto: ya está cubierto.
+    police('cai-hurtado', 'CAI Hurtado', 10.5038, -73.2682),
+    police('cai-san-joaquin', 'CAI San Joaquín', 10.4712, -73.2575),
+    police('cai-garupal', 'CAI Garupal', 10.4785, -73.2688),
+    police('cai-el-carmen', 'CAI El Carmen', 10.4715, -73.2435),
+    police('cai-gobernacion', 'CAI Gobernación', 10.4762, -73.2465),
+    police('cai-primero-de-mayo', 'CAI Primero de Mayo', 10.4618, -73.253),
+    police('cai-mayales', 'CAI Mayales', 10.4535, -73.2415),
+    // Municipios.
+    police('pol-la-paz', 'Estación de policía de La Paz', 10.3845, -73.1722),
     police(
       'pol-san-diego',
       'Estación de policía de San Diego',
       10.3364,
       -73.1815,
     ),
-    police('pol-manaure', 'Estación de policía de Manaure', 10.3916, -73.0322),
+    police('pol-manaure', 'Estación de policía de Manaure', 10.3918, -73.0332),
     police(
       'pol-pueblo-bello',
       'Estación de policía de Pueblo Bello',
-      10.4167,
-      -73.5833,
+      10.4162,
+      -73.5855,
     ),
     police(
       'pol-codazzi',
-      'Estación de policía de Codazzi',
-      10.02734,
-      -73.23679,
-      OSM,
+      'Estación de policía de Agustín Codazzi',
+      10.0385,
+      -73.2375,
     ),
     police(
       'pol-atanquez',
       'Estación de policía de Atánquez',
-      10.69706,
-      -73.352,
-      OSM,
+      10.7015,
+      -73.3485,
     ),
+    // Corregimientos de Valledupar.
     police(
       'pol-valencia',
       'Subestación de policía de Valencia de Jesús',
-      10.301,
-      -73.3915,
-      VISOR,
+      10.3125,
+      -73.4018,
     ),
     police(
       'pol-aguas-blancas',
       'Subestación de policía de Aguas Blancas',
-      10.228,
-      -73.495,
-      VISOR,
+      10.2445,
+      -73.4852,
     ),
     police(
       'pol-mariangola',
       'Subestación de policía de Mariangola',
-      10.187,
-      -73.589,
-      VISOR,
+      10.1812,
+      -73.5625,
     ),
     police(
       'pol-patillal',
       'Subestación de policía de Patillal',
-      10.709,
-      -73.21,
-      VISOR,
+      10.6655,
+      -73.1492,
     ),
     police(
       'pol-badillo',
       'Subestación de policía de Badillo',
-      10.634,
-      -73.126,
-      VISOR,
+      10.6318,
+      -73.1115,
     ),
     circle(
-      'militar-guatapuri',
-      'Instalación militar de Guatapurí',
-      { latitude: 10.72705, longitude: -73.38933 },
-      MILITARY_POST_RADIUS_KM,
-      OSM,
-    ),
-    circle(
-      'bam-perija',
-      'Batallón de Alta Montaña (Serranía del Perijá)',
-      { latitude: 10.02971, longitude: -73.04506 },
-      MILITARY_POST_RADIUS_KM,
-      OSM,
+      'bam-7-perija',
+      'Batallón de Alta Montaña N.° 7 Mayor Raúl Guillermo Mahecha',
+      { latitude: 9.985, longitude: -73.065 },
+      0.28,
+      TEAM_LIST,
     ),
     // Pistas agrícolas cerca de rutas reales.
     airstrip('pista-codazzi', 'Codazzi', 10.11143, -73.2257),

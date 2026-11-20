@@ -222,7 +222,7 @@ export class ScenarioNetworkService {
     }
   }
 
-  /** El operador de la demo cuida también el nodo nuevo. */
+  /** El operador de la demo cuida también la central nueva. */
   private async assignOperator(hub: Hub): Promise<void> {
     const person = await this.dataSource
       .getRepository(User)

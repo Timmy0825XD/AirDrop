@@ -4,6 +4,6 @@ export enum DroneKind {
   RAPID = 'rapid',
   /** Garza: dispensación y Sierra; el techo más alto. */
   BALANCED = 'balanced',
-  /** Cóndor: reabastece ESE cercanas a su nodo. */
+  /** Cóndor: reabastece centrales cercanas. */
   CARGO = 'cargo',
 }

@@ -47,7 +47,7 @@ export type DashboardFlight = {
   coldChainAlert: boolean;
   /** Volvió con el paquete (código vencido, bloqueado o traslado rechazado). */
   returnedWithPackage: boolean;
-  /** Punto de entrega; solo cuenta en zonas de 3 vuelos o más. */
+  /** Lugar de entrega; solo cuenta en zonas de 3 vuelos o más. */
   latitude: number | null;
   longitude: number | null;
 };

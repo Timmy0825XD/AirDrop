@@ -54,7 +54,7 @@ describe('Selección por tipo de misión (RF-11, flota.md)', () => {
     expect(result.chosen?.identifier).toBe('colibri');
   });
 
-  it('reabastecer la ESE La Paz (programado, 12 kg): solo el Cóndor la lleva', () => {
+  it('reabastecer el hospital de La Paz (programado, 12 kg): solo el Cóndor la lleva', () => {
     const result = chooseDrone({
       missionType: MissionType.SCHEDULED,
       quantity: 400,

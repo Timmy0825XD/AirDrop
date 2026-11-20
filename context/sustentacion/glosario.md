@@ -6,7 +6,6 @@ Términos que deben usarse igual en código, UI y sustentación.
 | --- | --- |
 | AirDrop | Nombre del proyecto y de la app. Logística aérea médica **simulada**. |
 | Central (hub) | Lugar con inventario y drones. No es un usuario. Despega, atiende a pacientes y abastece a otras centrales. |
-| ESE | Empresa Social del Estado: el hospital público de un municipio. En AirDrop, una central más. |
 | Solicitante | Persona civil con documento. Única cuenta de registro público. Pide para su ubicación. |
 | Despachador | Profesional de la salud, o persona con capacitación certificada para aprobar solicitudes. Una central, creado por el admin. |
 | Operador de flota | Usuario creado por el admin. Flota, geovallas y telemetría de las centrales que tiene asignadas (una o varias). |

@@ -15,7 +15,7 @@ const urgency = {
 function hub(overrides: Partial<HubTrace>): HubTrace {
   return {
     hubId: 'hub',
-    name: 'Nodo',
+    name: 'Central',
     lot: true,
     corridorKm: 11,
     etaMin: 6,
@@ -29,7 +29,7 @@ function hub(overrides: Partial<HubTrace>): HubTrace {
 
 const north = hub({
   hubId: 'north',
-  name: 'Nodo Norte (Río Seco)',
+  name: 'Central Norte (Río Seco)',
   corridorKm: 11.2,
   etaMin: 6.1,
   drones: [
@@ -62,7 +62,7 @@ const north = hub({
 
 const valledupar = hub({
   hubId: 'vup',
-  name: 'Nodo Valledupar',
+  name: 'Central Valledupar',
   corridorKm: 25,
   etaMin: 14.2,
   drones: [
@@ -84,7 +84,7 @@ const trace: DecisionTrace = {
   hubs: [
     north,
     valledupar,
-    hub({ hubId: 'west', name: 'Nodo Occidente', lot: false }),
+    hub({ hubId: 'west', name: 'Central Occidente', lot: false }),
   ],
 };
 
@@ -93,9 +93,9 @@ describe('Explicación de la decisión para la TV (RF-39, RF-11)', () => {
     const [nodeSection] = explainAssignment(trace, urgency)!;
     expect(nodeSection.title).toBe('Por qué esta central');
     expect(nodeSection.lines).toEqual([
-      'Nodo Norte (Río Seco) tiene el medicamento con lote vigente y está a 11,2 km: llega en 6 min.',
-      'Nodo Valledupar también podía, pero tardaría 14 min.',
-      'Nodo Occidente no tiene el medicamento con lote vigente.',
+      'Central Norte (Río Seco) tiene el medicamento con lote vigente y está a 11,2 km: llega en 6 min.',
+      'Central Valledupar también podía, pero tardaría 14 min.',
+      'Central Occidente no tiene el medicamento con lote vigente.',
     ]);
   });
 
@@ -135,8 +135,8 @@ describe('Explicación de la decisión para la TV (RF-39, RF-11)', () => {
       outcome: 'conventional',
       reason: 'Ningún dron puede llegar',
       hubs: [
-        hub({ name: 'Nodo Norte', inRange: false }),
-        hub({ name: 'Nodo Codazzi', corridorKm: null }),
+        hub({ name: 'Central Norte', inRange: false }),
+        hub({ name: 'Central Codazzi', corridorKm: null }),
       ],
     };
     expect(explainNoFlight(blocked, urgency)).toEqual([
@@ -144,8 +144,8 @@ describe('Explicación de la decisión para la TV (RF-39, RF-11)', () => {
         title: 'Por qué no salió un dron',
         lines: [
           'Ningún dron puede llegar.',
-          'Nodo Norte queda lejos: sus drones no alcanzan a ir y volver.',
-          'Nodo Codazzi no tiene una ruta libre de zonas restringidas.',
+          'Central Norte queda lejos: sus drones no alcanzan a ir y volver.',
+          'Central Codazzi no tiene una ruta libre de zonas restringidas.',
         ],
       },
     ]);

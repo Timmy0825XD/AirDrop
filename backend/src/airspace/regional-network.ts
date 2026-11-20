@@ -1,8 +1,9 @@
 /**
  * La red regional de `context/negocio/cobertura.md`. Coordenadas de
- * municipios y corregimientos: GeoNames (vía Open-Meteo). Los nodos y los
- * puntos de Valledupar son ficticios: fuera de toda zona de
- * `regional-airspace.ts`.
+ * las centrales: la sede real de cada hospital o puesto de salud, fuera de
+ * toda zona de `regional-airspace.ts`. En Manaure y Pueblo Bello el hospital
+ * queda pegado a la estación de policía: su dronpuerto está a 200 m de ella. Lugares de la demo: GeoNames (vía
+ * Open-Meteo).
  */
 
 export type NetworkSite = {
@@ -15,106 +16,119 @@ export type NetworkSite = {
   elevationM: number;
 };
 
-export const MAIN_HUBS = {
-  valledupar: {
-    code: 'node-valledupar',
-    name: 'Central Valledupar',
-    municipality: 'Valledupar',
-    latitude: 10.479,
-    longitude: -73.235,
-    elevationM: 170,
-  },
-  north: {
-    code: 'node-north',
-    name: 'Central Norte (Río Seco)',
-    municipality: 'Valledupar',
-    latitude: 10.6075,
-    longitude: -73.2237,
-    elevationM: 235,
-  },
-  south: {
-    code: 'node-south',
-    name: 'Central Sur (La Paz – San Diego)',
-    municipality: 'La Paz',
-    latitude: 10.355,
-    longitude: -73.14,
-    elevationM: 170,
-  },
-  west: {
-    code: 'node-west',
-    name: 'Central Occidente (Valencia de Jesús)',
-    municipality: 'Valledupar',
-    latitude: 10.3,
-    longitude: -73.405,
-    elevationM: 185,
-  },
-  codazzi: {
-    code: 'node-codazzi',
-    name: 'Central Codazzi',
-    municipality: 'Agustín Codazzi',
-    latitude: 10.042,
-    longitude: -73.244,
-    elevationM: 140,
-  },
-} satisfies Record<string, NetworkSite>;
+function hub(
+  code: string,
+  name: string,
+  municipality: string,
+  latitude: number,
+  longitude: number,
+  elevationM: number,
+): NetworkSite {
+  return { code, name, municipality, latitude, longitude, elevationM };
+}
 
-export const ESES = {
-  rosarioPumarejo: {
-    code: 'ese-rosario-pumarejo',
-    name: 'ESE Hospital Rosario Pumarejo de López',
-    municipality: 'Valledupar',
-    latitude: 10.4772,
-    longitude: -73.2611,
-    elevationM: 170,
-  },
-  arredondo: {
-    code: 'ese-eduardo-arredondo',
-    name: 'ESE Hospital Eduardo Arredondo Daza',
-    municipality: 'Valledupar',
-    latitude: 10.456,
-    longitude: -73.2545,
-    elevationM: 165,
-  },
-  laPaz: {
-    code: 'ese-la-paz',
-    name: 'ESE Hospital de La Paz',
-    municipality: 'La Paz',
-    latitude: 10.3844,
-    longitude: -73.1733,
-    elevationM: 152,
-  },
-  sanDiego: {
-    code: 'ese-san-diego',
-    name: 'ESE Hospital de San Diego',
-    municipality: 'San Diego',
-    latitude: 10.3338,
-    longitude: -73.1805,
-    elevationM: 180,
-  },
-  manaure: {
-    code: 'ese-manaure',
-    name: 'ESE Hospital de Manaure',
-    municipality: 'Manaure Balcón del Cesar',
-    latitude: 10.3928,
-    longitude: -73.0325,
-    elevationM: 726,
-  },
-  puebloBello: {
-    code: 'ese-pueblo-bello',
-    name: 'ESE Hospital de Pueblo Bello',
-    municipality: 'Pueblo Bello',
-    latitude: 10.4171,
-    longitude: -73.5804,
-    elevationM: 1108,
-  },
-  codazzi: {
-    code: 'ese-codazzi',
-    name: 'ESE Hospital de Agustín Codazzi',
-    municipality: 'Agustín Codazzi',
-    latitude: 10.0367,
-    longitude: -73.2356,
-    elevationM: 136,
-  },
+/**
+ * Las 12 centrales de la demo: cuatro en Valledupar, una en cada municipio
+ * y una en cada corregimiento. Todas despegan, atienden a personas y
+ * abastecen a otras centrales.
+ */
+export const HUB_SITES = {
+  rosarioPumarejo: hub(
+    'hub-rosario-pumarejo',
+    'Hospital Rosario Pumarejo de López',
+    'Valledupar',
+    10.4682,
+    -73.2558,
+    170,
+  ),
+  arredondo: hub(
+    'hub-eduardo-arredondo',
+    'Hospital Eduardo Arredondo Daza',
+    'Valledupar',
+    10.4485,
+    -73.2589,
+    165,
+  ),
+  laNevada: hub(
+    'hub-la-nevada',
+    'Centro de Salud La Nevada',
+    'Valledupar',
+    10.4831,
+    -73.2836,
+    170,
+  ),
+  elCarmen: hub(
+    'hub-el-carmen',
+    'Centro de Salud El Carmen',
+    'Valledupar',
+    10.4714,
+    -73.2415,
+    160,
+  ),
+  laPaz: hub(
+    'hub-la-paz',
+    'Hospital Marino Zuleta Ramírez',
+    'La Paz',
+    10.3861,
+    -73.1731,
+    152,
+  ),
+  sanDiego: hub(
+    'hub-san-diego',
+    'Hospital El Socorro',
+    'San Diego',
+    10.3325,
+    -73.1808,
+    180,
+  ),
+  manaure: hub(
+    'hub-manaure',
+    'Hospital José Antonio Socarrás Sánchez',
+    'Manaure Balcón del Cesar',
+    10.3905,
+    -73.0345,
+    726,
+  ),
+  puebloBello: hub(
+    'hub-pueblo-bello',
+    'Hospital Camilo Villazón Pumarejo',
+    'Pueblo Bello',
+    10.4149,
+    -73.5842,
+    1108,
+  ),
+  codazzi: hub(
+    'hub-codazzi',
+    'Hospital Agustín Codazzi',
+    'Agustín Codazzi',
+    10.0367,
+    -73.2369,
+    136,
+  ),
+  rioSeco: hub(
+    'hub-rio-seco',
+    'Puesto de Salud de Río Seco',
+    'Valledupar',
+    10.6047,
+    -73.2228,
+    235,
+  ),
+  valencia: hub(
+    'hub-valencia-de-jesus',
+    'Puesto de Salud de Valencia de Jesús',
+    'Valledupar',
+    10.3,
+    -73.4,
+    185,
+  ),
+  mediaLuna: hub(
+    'hub-media-luna',
+    'Puesto de Salud de Media Luna',
+    'San Diego',
+    10.2439,
+    -73.1414,
+    407,
+  ),
 } satisfies Record<string, NetworkSite>;
 
 /**
@@ -131,7 +145,7 @@ export const DEMO_PLACES: Array<NetworkSite & { hubCode: string }> = [
     10.451,
     -73.24,
     165,
-    MAIN_HUBS.valledupar,
+    HUB_SITES.arredondo,
   ),
   site(
     'dp-la-nevada',
@@ -140,7 +154,7 @@ export const DEMO_PLACES: Array<NetworkSite & { hubCode: string }> = [
     10.495,
     -73.287,
     185,
-    MAIN_HUBS.valledupar,
+    HUB_SITES.laNevada,
   ),
   site(
     'dp-primero-de-mayo',
@@ -149,7 +163,7 @@ export const DEMO_PLACES: Array<NetworkSite & { hubCode: string }> = [
     10.4555,
     -73.259,
     165,
-    MAIN_HUBS.valledupar,
+    HUB_SITES.arredondo,
   ),
   site(
     'dp-villa-miriam',
@@ -158,7 +172,7 @@ export const DEMO_PLACES: Array<NetworkSite & { hubCode: string }> = [
     10.456,
     -73.23,
     160,
-    MAIN_HUBS.valledupar,
+    HUB_SITES.elCarmen,
   ),
   site(
     'dp-patillal',
@@ -167,7 +181,7 @@ export const DEMO_PLACES: Array<NetworkSite & { hubCode: string }> = [
     10.7064,
     -73.2123,
     513,
-    MAIN_HUBS.north,
+    HUB_SITES.rioSeco,
   ),
   site(
     'dp-badillo',
@@ -176,7 +190,7 @@ export const DEMO_PLACES: Array<NetworkSite & { hubCode: string }> = [
     10.6314,
     -73.1279,
     200,
-    MAIN_HUBS.north,
+    HUB_SITES.rioSeco,
   ),
   site(
     'dp-guacoche',
@@ -185,7 +199,7 @@ export const DEMO_PLACES: Array<NetworkSite & { hubCode: string }> = [
     10.4964,
     -73.166,
     130,
-    MAIN_HUBS.north,
+    HUB_SITES.rioSeco,
   ),
   site(
     'dp-guacochito',
@@ -194,7 +208,7 @@ export const DEMO_PLACES: Array<NetworkSite & { hubCode: string }> = [
     10.5154,
     -73.1517,
     133,
-    MAIN_HUBS.north,
+    HUB_SITES.rioSeco,
   ),
   site(
     'dp-atanquez',
@@ -203,7 +217,7 @@ export const DEMO_PLACES: Array<NetworkSite & { hubCode: string }> = [
     10.6976,
     -73.3545,
     793,
-    MAIN_HUBS.north,
+    HUB_SITES.rioSeco,
   ),
   site(
     'dp-guatapuri',
@@ -212,25 +226,7 @@ export const DEMO_PLACES: Array<NetworkSite & { hubCode: string }> = [
     10.7261,
     -73.3925,
     1277,
-    MAIN_HUBS.north,
-  ),
-  site(
-    'dp-media-luna',
-    'Puesto de salud de Media Luna',
-    'San Diego',
-    10.2455,
-    -73.1439,
-    407,
-    MAIN_HUBS.south,
-  ),
-  site(
-    'dp-valencia',
-    'Puesto de salud de Valencia de Jesús',
-    'Valledupar',
-    10.3017,
-    -73.3945,
-    185,
-    MAIN_HUBS.west,
+    HUB_SITES.rioSeco,
   ),
   site(
     'dp-aguas-blancas',
@@ -239,7 +235,7 @@ export const DEMO_PLACES: Array<NetworkSite & { hubCode: string }> = [
     10.2253,
     -73.491,
     184,
-    MAIN_HUBS.west,
+    HUB_SITES.valencia,
   ),
   site(
     'dp-mariangola',
@@ -248,7 +244,7 @@ export const DEMO_PLACES: Array<NetworkSite & { hubCode: string }> = [
     10.1851,
     -73.5871,
     124,
-    MAIN_HUBS.west,
+    HUB_SITES.valencia,
   ),
 ];
 
@@ -259,7 +255,7 @@ function site(
   latitude: number,
   longitude: number,
   elevationM: number,
-  node: NetworkSite,
+  hub: NetworkSite,
 ): NetworkSite & { hubCode: string } {
   return {
     code,
@@ -268,6 +264,6 @@ function site(
     latitude,
     longitude,
     elevationM,
-    hubCode: node.code,
+    hubCode: hub.code,
   };
 }

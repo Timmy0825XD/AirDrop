@@ -10,42 +10,38 @@ El abastecimiento de las centrales desde mayoristas va por carretera y queda fue
 
 ## Ubicaciones
 
-Las coordenadas de municipios y corregimientos son las de GeoNames (consultadas con el geocodificador de Open-Meteo). Su elevación es la de ese mismo registro. Las cinco centrales sin hospital de referencia son instalaciones ficticias de AirDrop, ubicadas a propósito:
+La demo tiene 12 centrales: cuatro en Valledupar, un hospital en cada municipio y un puesto de salud en cada corregimiento. Cada una tiene dos despachadores y dos drones de cada tipo (dos Colibrí, dos Garza y dos Cóndor). Una urgencia o una entrega programada sale de la central que la atiende y llega al lugar donde la pidió la persona.
 
-- fuera de toda zona de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md), con 150 m de holgura;
-- cerca de las centrales que abastece el Cóndor.
+Cada central está en la sede real de su hospital o puesto de salud (en Manaure y Pueblo Bello, su dronpuerto a 200 m de la estación de policía), y todas quedan fuera de las zonas de [../operacion/espacio-aereo.md](../operacion/espacio-aereo.md). Las cuatro de Valledupar cubren el centro, el sur, el noroccidente y el oriente de la ciudad, a entre 1,6 y 4,8 km una de otra; el Centro de Salud Los Mayales no se usa porque queda dentro de la zona de un CAI. Los lugares adonde piden los solicitantes simulados usan las coordenadas de GeoNames (consultadas con el geocodificador de Open-Meteo).
 
 ### Centrales de la demo
 
-| Central | Lat | Lon | Elevación | Al ARP | Atiende |
+| Central | Tipo | Lugar | Lat | Lon | Al ARP |
 | --- | --- | --- | --- | --- | --- |
-| Central Valledupar | 10.4790 | −73.2350 | 170 m | 5,1 km | La ciudad de Valledupar |
-| Central Norte (Río Seco) | 10.6075 | −73.2237 | 235 m | 19,4 km | Corregimientos del norte y la Sierra |
-| Central Sur (La Paz – San Diego) | 10.3550 | −73.1400 | 170 m | 14,9 km | ESE La Paz, ESE San Diego, ESE Manaure, Media Luna |
-| Central Occidente (Valencia de Jesús) | 10.3000 | −73.4050 | 185 m | 22,7 km | Valle del Cesar occidental y Pueblo Bello |
-| Central Codazzi | 10.0420 | −73.2440 | 140 m | 43,6 km | ESE Codazzi y el sur (en el borde del casco urbano) |
+| Hospital Rosario Pumarejo de López | Hospital | Valledupar (centro) | 10.4682 | −73.2558 | 3,7 km |
+| Hospital Eduardo Arredondo Daza | Hospital | Valledupar (sur, San Martín) | 10.4485 | −73.2589 | 1,8 km |
+| Centro de Salud La Nevada | Clínica | Valledupar (noroccidente) | 10.4831 | −73.2836 | 6,5 km |
+| Centro de Salud El Carmen | Clínica | Valledupar (oriente) | 10.4714 | −73.2415 | 4,1 km |
+| Hospital Marino Zuleta Ramírez | Hospital | La Paz | 10.3861 | −73.1731 | 10,0 km |
+| Hospital El Socorro | Hospital | San Diego | 10.3325 | −73.1808 | 13,7 km |
+| Hospital José Antonio Socarrás Sánchez | Hospital | Manaure Balcón del Cesar | 10.3905 | −73.0345 | 24,1 km |
+| Hospital Camilo Villazón Pumarejo | Hospital | Pueblo Bello | 10.4149 | −73.5842 | 36,8 km |
+| Hospital Agustín Codazzi | Hospital | Agustín Codazzi | 10.0367 | −73.2369 | 44,3 km |
+| Puesto de Salud de Río Seco | Vacunación | Río Seco (Valledupar) | 10.6047 | −73.2228 | 19,1 km |
+| Puesto de Salud de Valencia de Jesús | Clínica | Valencia de Jesús (Valledupar) | 10.3000 | −73.4000 | 22,3 km |
+| Puesto de Salud de Media Luna | Clínica | Media Luna (San Diego) | 10.2439 | −73.1414 | 24,3 km |
 
-Las ESE (hospitales públicos de cada municipio) también son centrales con drones:
-
-| ESE | Lat | Lon | Elevación | Central más cercana | Distancia |
-| --- | --- | --- | --- | --- | --- |
-| Hospital Rosario Pumarejo de López (Valledupar) | 10.4772 | −73.2611 | 170 m | Valledupar | 2,8 km |
-| Hospital Eduardo Arredondo Daza (Valledupar) | 10.4560 | −73.2545 | 165 m | Valledupar | 3,3 km |
-| La Paz | 10.3844 | −73.1733 | 152 m | Sur | 4,9 km |
-| San Diego | 10.3338 | −73.1805 | 180 m | Sur | 5,0 km |
-| Manaure Balcón del Cesar | 10.3928 | −73.0325 | 726 m | Sur | 12,5 km |
-| Pueblo Bello | 10.4171 | −73.5804 | 1.108 m | Occidente | 23,2 km |
-| Agustín Codazzi | 10.0367 | −73.2356 | 136 m | Codazzi | 1,1 km |
+El inventario cambia según el tipo: los hospitales tienen sueros, antibióticos inyectables y medicamentos de control especial; los centros de salud, crónicos (hipertensión, diabetes) y antibióticos orales; el puesto de vacunación, vacunas en frío; y los puestos rurales, suero antiofídico. Hay a propósito un lote por vencer, un producto con poco stock y dos lotes del mismo producto (FEFO), para la demo.
 
 **Fuera de la red por el terreno.** Con la malla de elevación real (RF-46), la ida, el regreso y la reserva pasan del 100 % de la batería en todos los tipos:
 
 | Lugar | Central más cercana | Distancia | Batería que pide el mejor tipo (Colibrí) |
 | --- | --- | --- | --- |
-| Villa Germania (614 m, detrás de lomas) | Occidente | 34,1 km | 117 % |
+| Villa Germania (614 m, detrás de lomas) | Valencia de Jesús | 34,1 km | 117 % |
 
-Chemesquemena (1.427 m, a 22,6 km de la Central Norte) queda al límite: el Colibrí pide el 99 %. Nabusímake (2.135 m) queda más lejos y más alto (130 %): fuera de alcance. Los tres sirven para explicar el límite de la red: ahí sigue la alternativa terrestre.
+Chemesquemena (1.427 m, a 22,6 km del puesto de Río Seco) queda al límite: el Colibrí pide el 99 %. Nabusímake (2.135 m) queda más lejos y más alto (130 %): fuera de alcance. Los tres sirven para explicar el límite de la red: ahí sigue la alternativa terrestre.
 
-La ESE de Pueblo Bello (1.108 m, a 23 km de la Central Occidente) tiene sus propios drones; desde otra central solo la alcanza el Colibrí (87 %).
+El hospital de Pueblo Bello (1.108 m, a 20 km de Valencia de Jesús) tiene sus propios drones; desde otra central solo lo alcanza el Colibrí (87 %).
 
 ## Alcance útil de cada tipo
 
@@ -61,4 +57,4 @@ Cada misión es de ida y vuelta por el mismo corredor (si nadie recibe, el dron 
 
 El terreno y el viento lo reducen: subir cuesta energía ([../operacion/condiciones-de-vuelo.md](../operacion/condiciones-de-vuelo.md)). El motor hace la cuenta real sobre el perfil de cada ruta; por eso un punto de montaña a 23 km puede quedar fuera aunque esté dentro del radio en plano. La tabla solo sirve para ubicar las centrales.
 
-Las ubicaciones exactas de los dronpuertos de una operación real se definirían con cada ESE, cada alcaldía y cada comunidad. En la demo son ilustrativas.
+Las ubicaciones exactas de los dronpuertos de una operación real se definirían con cada hospital, cada alcaldía y cada comunidad. En la demo son ilustrativas.

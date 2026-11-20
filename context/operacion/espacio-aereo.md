@@ -13,7 +13,7 @@ Esto es una **simplificación declarada**, no la norma. Una operación real apli
 | Tipo | Qué es | Forma en la demo | Efecto en la ruta | Norma de referencia |
 | --- | --- | --- | --- | --- |
 | `AERODROMO` | El aeropuerto Alfonso López Pumarejo (SKVP) | Círculo de **1,5 km** desde el ARP | Prohibido entrar | RAC 100.315(a)(14) |
-| `PROHIBIDA` | Estación de policía o CAI, batallón o brigada, cárcel, subestación o planta eléctrica, pista agrícola | La del visor: círculo de **100 m** (policía), **150 m** (fuerte o puesto militar menor), **400 m** (pista agrícola), o el polígono de la instalación | Prohibido entrar. El dron la rodea | RAC 100.315(a)(13) |
+| `PROHIBIDA` | Estación de policía o CAI, batallón o brigada, cárcel, subestación o planta eléctrica, pista agrícola | La del visor: círculo de **100 m** (policía), **400 m** (pista agrícola), el polígono de la instalación o, si solo se conoce su área, un círculo de esa superficie | Prohibido entrar. El dron la rodea | RAC 100.315(a)(13) |
 | `HELIPUERTO` | Helipuerto o helipunto fuera de un aeródromo | Círculo de **300 m** | Prohibido entrar. El helipunto de SKVP queda dentro del anillo del aeropuerto y no se dibuja aparte | RAC 100.315(a)(15) |
 | `TEMPORAL` | Restricción que crea el administrador desde la consola: orden público, evento, operativo o elecciones | La que se dibuje, con hora de inicio y de fin | Prohibido mientras dure. Si un vuelo en curso queda afectado, se desvía o vuelve | RAC 100.315(a)(1)–(5), 100.315(c) |
 
@@ -22,47 +22,48 @@ No hay zona urbana que bloquee: el dron vuela sobre la ciudad y entrega en un pu
 ## Instalaciones de la demo
 
 Fuentes:
-- Las grandes salen de OpenStreetMap (consulta de noviembre de 2026).
-- Los CAI de Valledupar y las estaciones de La Paz, San Diego, Manaure y Pueblo Bello vienen de una lista de direcciones de la Policía que reunió el equipo. Un CAI pegado a otra zona (a menos de 300 m) o dentro del anillo del aeropuerto no se dibuja: ya está cubierto. Por eso no están el CAI Pedregosa, el Comando Departamental, el CAI Mercabastos ni el CAI Sabanas del Valle.
-- Las subestaciones de los corregimientos se ubicaron en el centro del poblado, con las capturas del visor de la Aerocivil.
+- El aeropuerto, de la AIP. Las pistas agrícolas, de OpenStreetMap.
+- Todo lo demás (CAI, estaciones, batallones, cárcel, subestaciones y granjas solares), de una lista de ubicaciones que reunió el equipo en noviembre de 2026. Donde hay esquinas del terreno, la zona es ese polígono; donde solo hay área, es un círculo de la misma superficie.
+- Un CAI dentro del anillo del aeropuerto no se dibuja: ya está cubierto. Por eso no está el CAI San Fernando.
+- En Guatapurí no hay una instalación militar permanente (solo puestos temporales de alta montaña): no se dibuja.
 
 ### Valledupar
 
 | Instalación | Tipo | Forma | Lat | Lon |
 | --- | --- | --- | --- | --- |
 | Aeropuerto Alfonso López Pumarejo (ARP según la AIP) | `AERODROMO` | Círculo de 1,5 km | 10.43513 | −73.24940 |
-| Batallón La Popa – Décima Brigada Blindada | `PROHIBIDA` | Polígono de unos 400 × 300 m | 10.46633 | −73.27341 |
-| Cárcel La Tramacúa (CPAMS Valledupar) | `PROHIBIDA` | Polígono de unos 300 × 250 m | 10.44922 | −73.30887 |
-| Instalación militar al norte de la ciudad | `PROHIBIDA` | Círculo de 150 m | 10.51728 | −73.24875 |
-| Subestación Valledupar | `PROHIBIDA` | Círculo de 100 m | 10.45870 | −73.27280 |
-| Subestación Guatapurí | `PROHIBIDA` | Círculo de 100 m | 10.48672 | −73.25798 |
-| Planta eléctrica al sur de la ciudad | `PROHIBIDA` | Círculo de 150 m | 10.38182 | −73.19470 |
-| CAI Hurtado | `PROHIBIDA` | Círculo de 100 m | 10.5010 | −73.2681 |
-| CAI San Joaquín | `PROHIBIDA` | Círculo de 100 m | 10.4764 | −73.2558 |
-| CAI Garupal | `PROHIBIDA` | Círculo de 100 m | 10.4748 | −73.2645 |
-| CAI El Carmen | `PROHIBIDA` | Círculo de 100 m | 10.4712 | −73.2608 |
-| CAI Gobernación | `PROHIBIDA` | Círculo de 100 m | 10.4705 | −73.2494 |
-| CAI Primero de Mayo | `PROHIBIDA` | Círculo de 100 m | 10.4578 | −73.2562 |
-| CAI Mayales | `PROHIBIDA` | Círculo de 100 m | 10.4535 | −73.2428 |
-| CAI San Fernando | `PROHIBIDA` | Círculo de 100 m | 10.4405 | −73.2355 |
+| Batallón La Popa – Décima Brigada Blindada | `PROHIBIDA` | Polígono de unos 1,4 × 1,2 km | 10.4665 | −73.2740 |
+| Cárcel La Tramacúa (CPAMS Valledupar) | `PROHIBIDA` | Polígono de unos 390 × 380 m | 10.4638 | −73.3035 |
+| Batallón de Ingenieros N.° 10 General Manuel Alberto Murillo | `PROHIBIDA` | Círculo de 330 m | 10.5285 | −73.2495 |
+| Subestación Valledupar (220/110 kV) | `PROHIBIDA` | Círculo de 120 m | 10.4435 | −73.2685 |
+| Subestación Guatapurí (110 kV) | `PROHIBIDA` | Círculo de 60 m | 10.48672 | −73.25798 |
+| Granjas solares del sector La Mesa | `PROHIBIDA` | Círculo de 500 m | 10.4380 | −73.3250 |
+| CAI Hurtado | `PROHIBIDA` | Círculo de 100 m | 10.5038 | −73.2682 |
+| CAI San Joaquín | `PROHIBIDA` | Círculo de 100 m | 10.4712 | −73.2575 |
+| CAI Garupal | `PROHIBIDA` | Círculo de 100 m | 10.4785 | −73.2688 |
+| CAI El Carmen | `PROHIBIDA` | Círculo de 100 m | 10.4715 | −73.2435 |
+| CAI Gobernación | `PROHIBIDA` | Círculo de 100 m | 10.4762 | −73.2465 |
+| CAI Primero de Mayo | `PROHIBIDA` | Círculo de 100 m | 10.4618 | −73.2530 |
+| CAI Mayales | `PROHIBIDA` | Círculo de 100 m | 10.4535 | −73.2415 |
 
 ### Pueblos y corregimientos
 
 | Instalación | Tipo | Forma | Lat | Lon |
 | --- | --- | --- | --- | --- |
-| Estación de policía de La Paz | `PROHIBIDA` | Círculo de 100 m | 10.38540 | −73.17220 |
-| Estación de policía de San Diego | `PROHIBIDA` | Círculo de 100 m | 10.33640 | −73.18150 |
-| Estación de policía de Manaure | `PROHIBIDA` | Círculo de 100 m | 10.39160 | −73.03220 |
-| Estación de policía de Pueblo Bello | `PROHIBIDA` | Círculo de 100 m | 10.41670 | −73.58330 |
-| Estación de policía de Codazzi | `PROHIBIDA` | Círculo de 100 m | 10.02734 | −73.23679 |
-| Estación de policía de Atánquez | `PROHIBIDA` | Círculo de 100 m | 10.69706 | −73.35200 |
-| Subestación de policía de Valencia de Jesús | `PROHIBIDA` | Círculo de 100 m | 10.30100 | −73.39150 |
-| Subestación de policía de Aguas Blancas | `PROHIBIDA` | Círculo de 100 m | 10.22800 | −73.49500 |
-| Subestación de policía de Mariangola | `PROHIBIDA` | Círculo de 100 m | 10.18700 | −73.58900 |
-| Subestación de policía de Patillal | `PROHIBIDA` | Círculo de 100 m | 10.70900 | −73.21000 |
-| Subestación de policía de Badillo | `PROHIBIDA` | Círculo de 100 m | 10.63400 | −73.12600 |
-| Instalación militar de Guatapurí | `PROHIBIDA` | Círculo de 150 m | 10.72705 | −73.38933 |
-| Batallón de Alta Montaña (Serranía del Perijá) | `PROHIBIDA` | Círculo de 150 m | 10.02971 | −73.04506 |
+| Estación de policía de La Paz | `PROHIBIDA` | Círculo de 100 m | 10.3845 | −73.1722 |
+| Estación de policía de San Diego | `PROHIBIDA` | Círculo de 100 m | 10.3364 | −73.1815 |
+| Estación de policía de Manaure | `PROHIBIDA` | Círculo de 100 m | 10.3918 | −73.0332 |
+| Estación de policía de Pueblo Bello | `PROHIBIDA` | Círculo de 100 m | 10.4162 | −73.5855 |
+| Estación de policía de Agustín Codazzi | `PROHIBIDA` | Círculo de 100 m | 10.0385 | −73.2375 |
+| Estación de policía de Atánquez | `PROHIBIDA` | Círculo de 100 m | 10.7015 | −73.3485 |
+| Subestación de policía de Valencia de Jesús | `PROHIBIDA` | Círculo de 100 m | 10.3125 | −73.4018 |
+| Subestación de policía de Aguas Blancas | `PROHIBIDA` | Círculo de 100 m | 10.2445 | −73.4852 |
+| Subestación de policía de Mariangola | `PROHIBIDA` | Círculo de 100 m | 10.1812 | −73.5625 |
+| Subestación de policía de Patillal | `PROHIBIDA` | Círculo de 100 m | 10.6655 | −73.1492 |
+| Subestación de policía de Badillo | `PROHIBIDA` | Círculo de 100 m | 10.6318 | −73.1115 |
+| Batallón de Alta Montaña N.° 7 Mayor Raúl Guillermo Mahecha (Perijá) | `PROHIBIDA` | Círculo de 280 m | 9.9850 | −73.0650 |
+
+En Manaure y Pueblo Bello el hospital queda pegado a la estación de policía (16 m y 94 m). Su dronpuerto se ubica a 200 m de la estación, del lado opuesto: el hospital sigue siendo la central, pero el dron despega y aterriza fuera de la zona.
 
 ### Pistas agrícolas
 
@@ -77,7 +78,7 @@ OpenStreetMap trae unas 25 en el valle. Para no saturar el mapa, la demo usa las
 | Convención | 10.26407 | −73.41425 |
 | Madaci | 10.32760 | −73.37257 |
 
-OpenStreetMap no es una fuente oficial. Antes de una operación real habría que verificar los perímetros con la Aerocivil, la Policía, la Décima Brigada y el INPEC.
+Ni OpenStreetMap ni la lista del equipo son fuentes oficiales. Antes de una operación real habría que verificar los perímetros con la Aerocivil, la Policía, el Ejército y el INPEC.
 
 ## Corredores
 

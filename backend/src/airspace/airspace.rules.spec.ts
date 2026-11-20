@@ -12,7 +12,7 @@ import {
   SKVP_ARP,
   regionalAirspace,
 } from './regional-airspace';
-import { DEMO_PLACES, ESES, MAIN_HUBS } from './regional-network';
+import { DEMO_PLACES, HUB_SITES } from './regional-network';
 
 const zones = regionalAirspace();
 
@@ -71,14 +71,14 @@ describe('Escala de la demo (espacio-aereo.md)', () => {
   });
 
   it('un CAI ocupa unos 100 m: a 150 m ya no hay zona', () => {
-    const cai = { latitude: 10.4705, longitude: -73.2494 };
+    const cai = { latitude: 10.4762, longitude: -73.2465 };
     expect(zoneAt(cai, zones)?.code).toBe('cai-gobernacion');
     expect(zoneAt(destinationPoint(cai, 90, 0.15), zones)).toBeNull();
   });
 
   it('Valledupar tiene sus CAI y el comando de policía', () => {
     const codes = zones.map((zone) => zone.code);
-    expect(codes.filter((code) => code.startsWith('cai-'))).toHaveLength(8);
+    expect(codes.filter((code) => code.startsWith('cai-'))).toHaveLength(7);
   });
 
   it('no hay dos zonas a menos de 300 m ni un CAI dentro del aeropuerto', () => {
@@ -110,12 +110,8 @@ describe('Escala de la demo (espacio-aereo.md)', () => {
 });
 
 describe('La red regional respeta las zonas (cobertura.md)', () => {
-  it('ningún nodo, ESE ni punto queda dentro de una zona', () => {
-    for (const site of [
-      ...Object.values(MAIN_HUBS),
-      ...Object.values(ESES),
-      ...DEMO_PLACES,
-    ]) {
+  it('ninguna central ni lugar de la demo queda dentro de una zona', () => {
+    for (const site of [...Object.values(HUB_SITES), ...DEMO_PLACES]) {
       expect({
         site: site.code,
         zone: zoneAt(site, zones)?.code ?? null,
@@ -126,15 +122,25 @@ describe('La red regional respeta las zonas (cobertura.md)', () => {
     }
   });
 
-  it('Valledupar tiene nodo, dos ESE y cuatro puntos', () => {
-    expect(MAIN_HUBS.valledupar.municipality).toBe('Valledupar');
-    expect(
-      Object.values(ESES).filter((ese) => ese.municipality === 'Valledupar'),
-    ).toHaveLength(2);
-    expect(
-      DEMO_PLACES.filter(
-        (point) => point.hubCode === MAIN_HUBS.valledupar.code,
-      ),
-    ).toHaveLength(4);
+  it('hay 12 centrales: cuatro en Valledupar y una en cada otro lugar', () => {
+    const sites = Object.values(HUB_SITES);
+    expect(sites).toHaveLength(12);
+    const city = ['rosarioPumarejo', 'arredondo', 'laNevada', 'elCarmen'];
+    for (const key of city) {
+      expect(HUB_SITES[key as keyof typeof HUB_SITES].municipality).toBe(
+        'Valledupar',
+      );
+    }
+    for (const municipality of [
+      'La Paz',
+      'San Diego',
+      'Manaure Balcón del Cesar',
+      'Pueblo Bello',
+      'Agustín Codazzi',
+    ]) {
+      expect(sites.some((site) => site.municipality === municipality)).toBe(
+        true,
+      );
+    }
   });
 });

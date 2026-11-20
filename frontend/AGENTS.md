@@ -8,7 +8,7 @@ Una **sola** aplicación Flutter. Tras autenticarse, el usuario ve el flujo de *
 
 ## Contexto de negocio que el frontend no debe perder
 
-AirDrop simula una red regional de logística aérea médica para la zona rural de Valledupar y los municipios vecinos ([`../context/negocio/`](../context/negocio/)). El frontend representa cuatro roles: **solicitante** (persona civil, único registro público), **despachador** (una central, nodo o ESE, lo crea el admin), **operador de flota** (uno o varios nodos, lo crea el admin) y **administrador**. La central no es un rol. No existe un rol receptor: la entrega se confirma con un código de un uso. La definición vigente está en [`../context/app/roles.md`](../context/app/roles.md). El contrato de `/auth` de abajo ya refleja ese registro solo del solicitante.
+AirDrop simula una red regional de logística aérea médica para la zona rural de Valledupar y los municipios vecinos ([`../context/negocio/`](../context/negocio/)). El frontend representa cuatro roles: **solicitante** (persona civil, único registro público), **despachador** (una central, lo crea el admin), **operador de flota** (una o varias centrales, lo crea el admin) y **administrador**. La central no es un rol. No existe un rol receptor: la entrega se confirma con un código de un uso. La definición vigente está en [`../context/app/roles.md`](../context/app/roles.md). El contrato de `/auth` de abajo ya refleja ese registro solo del solicitante.
 
 Flujo central que las pantallas deben respetar:
 
@@ -24,7 +24,7 @@ Reglas de negocio que no deben contradecirse:
 - La ruta debe evitar geovallas y trabajar a altitud/corredor fijo.
 - En destino se esperan 5 minutos por el código; sin código, el paquete vuelve a la central. El reingreso al inventario sigue la cuarentena de [`../context/entregas/productos.md`](../context/entregas/productos.md).
 - Si no hay dron elegible, se muestra fallback; no se rechaza ciegamente.
-- Una urgencia o un plan puede pedirlo un civil (destino: su ubicación, GPS o pin) o el despachador de una central (destino: su central). Quien autoriza y carga es siempre el despachador del nodo que tiene el insumo.
+- Una urgencia o un plan puede pedirlo un civil (destino: su ubicación, GPS o pin) o el despachador de una central (destino: su central). Quien autoriza y carga es siempre el despachador de la central que tiene el insumo.
 - El frontend no debe inventar hardware real, clima real, 3D, multirregión ni un rol receptor. No nombra un fabricante de dron: muestra el tipo (Colibrí, Garza, Cóndor).
 
 La autoridad completa de negocio está en [`../context/index.md`](../context/index.md). Este resumen sirve para no perder el contexto durante una sesión de implementación.

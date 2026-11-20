@@ -1,12 +1,12 @@
 import { BadRequestException } from '@nestjs/common';
 import { AirspaceService } from '../airspace/airspace.service';
-import { DEMO_PLACES, ESES, MAIN_HUBS } from '../airspace/regional-network';
+import { DEMO_PLACES, HUB_SITES } from '../airspace/regional-network';
 import { RoutePlannerService } from './route-planner.service';
 import { corridorCrossesGeofence } from './routing.rules';
 
 /**
- * RF-12 y RF-43 con el espacio aéreo real de la demo: rutas entre los nodos
- * y los puntos de la red regional.
+ * RF-12 y RF-43 con el espacio aéreo real de la demo: rutas entre las
+ * centrales y los lugares de la red regional.
  */
 function build() {
   const airspace = new AirspaceService();
@@ -22,12 +22,12 @@ const point = (code: string) =>
   DEMO_PLACES.find((entry) => entry.code === code)!;
 
 describe('RoutePlannerService con las zonas del RAC 100', () => {
-  it('cada punto de entrega tiene corredor desde su nodo', () => {
+  it('cada lugar de la demo tiene corredor desde su central', () => {
     const { planner, airspace } = build();
-    const nodes = Object.values(MAIN_HUBS);
+    const hubs = Object.values(HUB_SITES);
     for (const target of DEMO_PLACES) {
-      const node = nodes.find((entry) => entry.code === target.hubCode)!;
-      const corridor = planner.plan(node, target, airspace.blockingPolygons());
+      const hub = hubs.find((entry) => entry.code === target.hubCode)!;
+      const corridor = planner.plan(hub, target, airspace.blockingPolygons());
       expect({ target: target.code, ok: corridor != null }).toEqual({
         target: target.code,
         ok: true,
@@ -35,21 +35,21 @@ describe('RoutePlannerService con las zonas del RAC 100', () => {
     }
   });
 
-  it('cada ESE tiene corredor desde su nodo', () => {
+  it('las centrales vecinas tienen corredor entre sí', () => {
     const { planner, airspace } = build();
     const pairs = [
-      [MAIN_HUBS.valledupar, ESES.rosarioPumarejo],
-      [MAIN_HUBS.valledupar, ESES.arredondo],
-      [MAIN_HUBS.south, ESES.laPaz],
-      [MAIN_HUBS.south, ESES.sanDiego],
-      [MAIN_HUBS.south, ESES.manaure],
-      [MAIN_HUBS.west, ESES.puebloBello],
-      [MAIN_HUBS.codazzi, ESES.codazzi],
+      [HUB_SITES.laNevada, HUB_SITES.rosarioPumarejo],
+      [HUB_SITES.rosarioPumarejo, HUB_SITES.arredondo],
+      [HUB_SITES.arredondo, HUB_SITES.elCarmen],
+      [HUB_SITES.laPaz, HUB_SITES.sanDiego],
+      [HUB_SITES.laPaz, HUB_SITES.manaure],
+      [HUB_SITES.valencia, HUB_SITES.puebloBello],
+      [HUB_SITES.mediaLuna, HUB_SITES.codazzi],
     ] as const;
-    for (const [node, ese] of pairs) {
-      const corridor = planner.plan(node, ese, airspace.blockingPolygons());
-      expect({ ese: ese.code, ok: corridor != null }).toEqual({
-        ese: ese.code,
+    for (const [from, to] of pairs) {
+      const corridor = planner.plan(from, to, airspace.blockingPolygons());
+      expect({ to: to.code, ok: corridor != null }).toEqual({
+        to: to.code,
         ok: true,
       });
     }
@@ -59,10 +59,10 @@ describe('RoutePlannerService con las zonas del RAC 100', () => {
     const { planner, airspace } = build();
     const blocking = airspace.blockingPolygons();
     for (const target of DEMO_PLACES) {
-      const node = Object.values(MAIN_HUBS).find(
+      const hub = Object.values(HUB_SITES).find(
         (entry) => entry.code === target.hubCode,
       )!;
-      const corridor = planner.plan(node, target, blocking)!;
+      const corridor = planner.plan(hub, target, blocking)!;
       expect(corridorCrossesGeofence(corridor, blocking)).toBe(false);
     }
   });
@@ -78,8 +78,8 @@ describe('RoutePlannerService con las zonas del RAC 100', () => {
     const { planner } = build();
     await expect(
       planner.assertDestinationAllowed({
-        latitude: 10.4705,
-        longitude: -73.2494,
+        latitude: 10.4762,
+        longitude: -73.2465,
       }),
     ).rejects.toBeInstanceOf(BadRequestException);
     await expect(
@@ -90,7 +90,7 @@ describe('RoutePlannerService con las zonas del RAC 100', () => {
   it('cruzar la ciudad rodea los CAI sin desviarse mucho', () => {
     const { planner, airspace } = build();
     const corridor = planner.plan(
-      MAIN_HUBS.valledupar,
+      HUB_SITES.laNevada,
       point('dp-la-nevada'),
       airspace.blockingPolygons(),
     )!;
@@ -102,11 +102,15 @@ describe('RoutePlannerService con las zonas del RAC 100', () => {
     const { planner, airspace } = build();
     const started = Date.now();
     planner.plan(
-      MAIN_HUBS.west,
+      HUB_SITES.valencia,
       point('dp-mariangola'),
       airspace.blockingPolygons(),
     );
-    planner.plan(MAIN_HUBS.north, ESES.laPaz, airspace.blockingPolygons());
+    planner.plan(
+      HUB_SITES.rioSeco,
+      HUB_SITES.laPaz,
+      airspace.blockingPolygons(),
+    );
     expect(Date.now() - started).toBeLessThan(500);
   });
 });
