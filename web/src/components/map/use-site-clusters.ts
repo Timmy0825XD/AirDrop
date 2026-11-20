@@ -5,8 +5,11 @@ import type { MapRef } from "react-map-gl/maplibre";
 import Supercluster from "supercluster";
 import type { HubSummary } from "@/lib/types";
 
-/** Distancia en px en que dos sitios se juntan: solo cuando de verdad se encimarían. */
-const CLUSTER_RADIUS_PX = 38;
+/**
+ * Distancia en px en que dos sitios se juntan. Cada central ocupa el ícono
+ * más su etiqueta (~200 px de ancho), así que con menos se encimarían.
+ */
+const CLUSTER_RADIUS_PX = 90;
 /** Desde este zoom se ve cada sitio por separado (la región entera ya se lee). */
 const CLUSTER_MAX_ZOOM = 10;
 
@@ -53,7 +56,9 @@ export function useSiteClusters(
     const read = () => {
       const bounds = map.getBounds();
       setView({
-        zoom: Math.round(map.getZoom()),
+        // Supercluster agrupa por zoom entero: redondear hacia arriba separaba
+        // sitios que en pantalla todavía se encimaban.
+        zoom: Math.floor(map.getZoom()),
         bounds: [bounds.getWest(), bounds.getSouth(), bounds.getEast(), bounds.getNorth()],
       });
     };
