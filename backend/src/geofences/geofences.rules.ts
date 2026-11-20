@@ -92,3 +92,21 @@ export function assertCoversNoHub(
     );
   }
 }
+
+export const VALID_UNTIL_IN_PAST =
+  'La vigencia debe terminar después de la hora actual.';
+
+/** RF-21: la vigencia de una operativa, en hora simulada, siempre a futuro. */
+export function validUntil(
+  value: string | null | undefined,
+  now: Date,
+): Date | null {
+  if (!value) {
+    return null;
+  }
+  const date = new Date(value);
+  if (date.getTime() <= now.getTime()) {
+    throw new BadRequestException(VALID_UNTIL_IN_PAST);
+  }
+  return date;
+}

@@ -9,6 +9,8 @@ import { RoutePlannerService } from '../routing/route-planner.service';
 import {
   GeoJsonPolygon,
   activeGeofenceSql,
+  validUntil,
+  VALID_UNTIL_IN_PAST,
   isGeofenceActive,
   temporaryExpiry,
 } from './geofences.rules';
@@ -59,6 +61,7 @@ const FENCE_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 function fenceRow(expiresAt: Date | null) {
   return {
     id: FENCE_ID,
+    class: 'temporary',
     name: 'Desfile aéreo',
     reason: 'Evento aéreo',
     polygon: JSON.stringify(plaza),
@@ -272,5 +275,31 @@ describe('La geovalla temporal en la línea de tiempo (RF-39)', () => {
       source: 'system',
       title: 'Terminó la geovalla temporal Desfile aéreo',
     });
+  });
+});
+
+describe('Vigencia de una geovalla operativa (RF-21)', () => {
+  const now = new Date('2026-11-20T12:00:00.000Z');
+
+  it('sin vigencia no vence; con una a futuro, vence a esa hora', () => {
+    expect(validUntil(undefined, now)).toBeNull();
+    expect(validUntil(null, now)).toBeNull();
+    expect(validUntil('2026-11-20T14:00:00.000Z', now)).toEqual(
+      new Date('2026-11-20T14:00:00.000Z'),
+    );
+  });
+
+  it('una vigencia que ya pasó se rechaza', () => {
+    expect(() => validUntil('2026-11-20T12:00:00.000Z', now)).toThrow(
+      VALID_UNTIL_IN_PAST,
+    );
+  });
+
+  it('al vencer una operativa no se cuenta como restricción temporal', async () => {
+    const { service, publisher } = build([
+      { ...fenceRow(NOW), class: 'operational' },
+    ]);
+    await expect(service.sweepExpired()).resolves.toBe(1);
+    expect(publisher.publish).not.toHaveBeenCalled();
   });
 });

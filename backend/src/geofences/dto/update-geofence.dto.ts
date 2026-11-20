@@ -1,5 +1,6 @@
 import { Transform } from 'class-transformer';
 import {
+  IsDateString,
   IsEnum,
   IsOptional,
   IsString,
@@ -39,4 +40,12 @@ export class UpdateGeofenceDto extends OptionalGeofenceShapeDto {
   @IsOptional()
   @IsEnum(OperationalCategory, { message: 'La categoría no es válida.' })
   category?: OperationalCategory;
+
+  /** `null` quita la vigencia: la geovalla deja de vencer. */
+  @IsOptional()
+  @IsDateString(
+    {},
+    { message: 'La vigencia debe ser una fecha y hora válida.' },
+  )
+  expiresAt?: string | null;
 }

@@ -1,5 +1,12 @@
 import { Transform } from 'class-transformer';
-import { IsEnum, IsString, MaxLength, MinLength } from 'class-validator';
+import {
+  IsDateString,
+  IsEnum,
+  IsOptional,
+  IsString,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { OperationalCategory } from '../../common/enums/operational-category.enum';
 import { FIELD_LIMITS } from '../../common/field-limits';
 import { GeofenceShapeDto } from './geofence-shape.dto';
@@ -27,4 +34,12 @@ export class CreateGeofenceDto extends GeofenceShapeDto {
 
   @IsEnum(OperationalCategory, { message: 'La categoría no es válida.' })
   category: OperationalCategory;
+
+  /** RF-21: vigencia opcional (hora simulada); sin ella, no vence. */
+  @IsOptional()
+  @IsDateString(
+    {},
+    { message: 'La vigencia debe ser una fecha y hora válida.' },
+  )
+  expiresAt?: string | null;
 }

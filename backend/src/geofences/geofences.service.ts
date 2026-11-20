@@ -37,6 +37,7 @@ import {
   assertGeoJsonPolygon,
   GeoJsonPolygon,
   temporaryExpiry,
+  validUntil,
 } from './geofences.rules';
 
 /** Una geovalla temporal tal como la ven la consola y el socket. */
@@ -113,15 +114,17 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
   /** RF-21: una geovalla operativa, en círculo o en vértices. */
   async create(user: User, dto: CreateGeofenceDto) {
     const geometry = toGeofenceGeometry(dto);
+    const expiresAt = validUntil(dto.expiresAt, simClock.now());
     await this.assertCoversNoHub(geometry.polygon);
     const rows: GeofenceRow[] = await this.geofences.query(
       `INSERT INTO geofences (
          id, class, shape, name, reason, category,
-         "centerLatitude", "centerLongitude", "radiusM", polygon, "createdByUserId"
+         "centerLatitude", "centerLongitude", "radiusM", polygon, "createdByUserId",
+         "expiresAt"
        )
        VALUES (
          gen_random_uuid(), 'operational', $1, $2, $3, $4, $5, $6, $7,
-         ST_SetSRID(ST_GeomFromGeoJSON($8), 4326), $9
+         ST_SetSRID(ST_GeomFromGeoJSON($8), 4326), $9, $10
        )
        RETURNING ${RETURNING}`,
       [
@@ -131,6 +134,7 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
         dto.category,
         ...geometryParams(geometry),
         user.id,
+        expiresAt,
       ],
     );
     await this.recheckFlights();
@@ -270,7 +274,9 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
        RETURNING ${RETURNING}`,
       [simClock.now()],
     )) as [GeofenceRow[], number];
-    for (const row of rows) {
+    // RF-36: la línea de tiempo cuenta las temporales; una operativa que
+    // vence (RF-21) solo deja de regir.
+    for (const row of rows.filter((r) => r.class === GeofenceClass.TEMPORARY)) {
       await this.announceEnded(presentTemporary(toPublicGeofence(row)));
     }
     return rows.length;
@@ -292,7 +298,8 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
       dto.name === undefined &&
       dto.reason === undefined &&
       dto.category === undefined &&
-      dto.shape === undefined
+      dto.shape === undefined &&
+      dto.expiresAt === undefined
     ) {
       throw new BadRequestException(
         'Debes enviar al menos un campo para actualizar.',
@@ -323,6 +330,7 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
            ELSE ST_SetSRID(ST_GeomFromGeoJSON($9), 4326)
          END,
          "updatedByUserId" = $10,
+         "expiresAt" = CASE WHEN $11::boolean THEN $12::timestamptz ELSE "expiresAt" END,
          "updatedAt" = NOW()
        WHERE id = $1
        RETURNING ${RETURNING}`,
@@ -334,6 +342,8 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
         geometry?.shape ?? null,
         ...(geometry ? geometryParams(geometry) : [null, null, null, null]),
         user.id,
+        dto.expiresAt !== undefined,
+        validUntil(dto.expiresAt, simClock.now()),
       ],
     )) as [GeofenceRow[], number];
     if (geometry) {
