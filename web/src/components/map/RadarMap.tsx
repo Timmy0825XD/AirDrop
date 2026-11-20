@@ -24,6 +24,7 @@ import type {
   WeatherCell,
   WeatherKind,
 } from "@/lib/types";
+import { isTemporaryGeofence } from "@/lib/types";
 import { MinusIcon, PlusIcon, RecenterIcon } from "../icons";
 import { Legend } from "../Legend";
 import { IconButton } from "../ui";
@@ -334,13 +335,13 @@ export function RadarMap({
       type: "FeatureCollection" as const,
       features: geofences.map((geofence) => ({
         type: "Feature" as const,
-        properties: { name: geofence.name, temporary: Boolean(geofence.expiresAt) },
+        properties: { name: geofence.name, temporary: isTemporaryGeofence(geofence) },
         geometry: geofence.polygon as Polygon | MultiPolygon,
       })),
     }),
     [geofences],
   );
-  const zones = useMemo(() => geofences.filter((geofence) => geofence.expiresAt), [geofences]);
+  const zones = useMemo(() => geofences.filter(isTemporaryGeofence), [geofences]);
 
   // RF-43: la carta legal. Va debajo de todo lo demás.
   const airspaceCollection = useMemo(
