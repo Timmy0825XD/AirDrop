@@ -1,3 +1,5 @@
+import { GeofenceShape } from '../common/enums/geofence-shape.enum';
+import { OperationalCategory } from '../common/enums/operational-category.enum';
 import {
   DEMO_PLACES,
   HUB_SITES,
@@ -555,26 +557,23 @@ export const hubPlans: DemoHubPlan[] = [
 ];
 
 /**
- * Las geovallas del operador de la demo. Las zonas legales (aeropuerto,
- * bases, policía, cárceles) no van aquí: vienen con `airspace/` (RF-43).
+ * Las geovallas operativas de la demo (RF-21), como las dibuja la app. Las
+ * zonas legales (aeropuerto, bases, policía, cárceles) no van aquí: las
+ * siembra `airspace/regional-airspace.ts` (RF-43).
  */
 export const geofences = [
   {
     name: 'Fumigación aérea de cultivos',
     reason:
       'Avioneta fumigando entre Valencia de Jesús y Mariangola: obliga a rodear.',
-    polygon: {
-      type: 'Polygon' as const,
-      coordinates: [
-        [
-          [-73.49, 10.244],
-          [-73.47, 10.244],
-          [-73.468, 10.262],
-          [-73.49, 10.262],
-          [-73.49, 10.244],
-        ],
-      ],
-    },
+    category: OperationalCategory.OTHER,
+    shape: GeofenceShape.POLYGON,
+    vertices: [
+      { latitude: 10.244, longitude: -73.49 },
+      { latitude: 10.244, longitude: -73.47 },
+      { latitude: 10.262, longitude: -73.468 },
+      { latitude: 10.262, longitude: -73.49 },
+    ],
   },
 ];
 

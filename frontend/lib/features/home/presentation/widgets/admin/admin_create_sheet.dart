@@ -7,7 +7,7 @@ import '../../../../../core/widgets/rise_in.dart';
 import '../../../../../core/widgets/tone_tile.dart';
 
 /// La hoja del botón central del administrador: crear una central o una
-/// cuenta institucional. Cada opción entra en cascada.
+/// cuenta institucional, o mantener las zonas legales (RU-36). Cada opción entra en cascada.
 Future<void> showAdminCreateSheet(BuildContext context) {
   return showAppSheet<void>(
     context,
@@ -39,6 +39,17 @@ Future<void> showAdminCreateSheet(BuildContext context) {
                 title: 'Nueva cuenta',
                 subtitle: 'Despachador u operador de flota.',
                 onTap: () => _open(sheet, context, '/users/new'),
+              ),
+            ),
+            const SizedBox(height: 10),
+            RiseIn(
+              delay: RiseIn.stagger(2),
+              child: _CreateOption(
+                icon: Icons.shield_outlined,
+                title: 'Zonas legales',
+                subtitle:
+                    'Aeropuerto, policía, helipuertos: su copia y su historial.',
+                onTap: () => _open(sheet, context, '/geofences'),
               ),
             ),
           ],

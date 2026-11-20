@@ -9,6 +9,8 @@ import { RoutePlannerService } from '../routing/route-planner.service';
 import {
   GeoJsonPolygon,
   activeGeofenceSql,
+  validUntil,
+  VALID_UNTIL_IN_PAST,
   isGeofenceActive,
   temporaryExpiry,
 } from './geofences.rules';
@@ -59,6 +61,7 @@ const FENCE_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
 function fenceRow(expiresAt: Date | null) {
   return {
     id: FENCE_ID,
+    class: 'temporary',
     name: 'Desfile aéreo',
     reason: 'Evento aéreo',
     polygon: JSON.stringify(plaza),
@@ -116,12 +119,12 @@ describe('Geovalla temporal: cuándo rige (RF-36)', () => {
     );
   });
 
-  it('el filtro SQL deja pasar las del operador y las vigentes', () => {
+  it('el filtro SQL deja pasar las operativas y las vigentes, no las legales', () => {
     expect(activeGeofenceSql('$1')).toBe(
-      '("expiresAt" IS NULL OR "expiresAt" > $1)',
+      `(class IN ('operational', 'temporary') AND ("expiresAt" IS NULL OR "expiresAt" > $1))`,
     );
     expect(activeGeofenceSql('$3', 'g')).toBe(
-      '(g."expiresAt" IS NULL OR g."expiresAt" > $3)',
+      `(g.class IN ('operational', 'temporary') AND (g."expiresAt" IS NULL OR g."expiresAt" > $3))`,
     );
   });
 
@@ -202,7 +205,7 @@ describe('La consola lanza una geovalla temporal (RF-36, CU-38)', () => {
       new NotFoundException(TEMPORARY_GEOFENCE_NOT_FOUND),
     );
     const sql = String(geofences.query.mock.calls[0][0]);
-    expect(sql).toContain('"expiresAt" IS NOT NULL');
+    expect(sql).toContain(`class = 'temporary'`);
   });
 
   it('al vencer desaparece sola y se cuenta una vez por geovalla', async () => {
@@ -272,5 +275,31 @@ describe('La geovalla temporal en la línea de tiempo (RF-39)', () => {
       source: 'system',
       title: 'Terminó la geovalla temporal Desfile aéreo',
     });
+  });
+});
+
+describe('Vigencia de una geovalla operativa (RF-21)', () => {
+  const now = new Date('2026-11-20T12:00:00.000Z');
+
+  it('sin vigencia no vence; con una a futuro, vence a esa hora', () => {
+    expect(validUntil(undefined, now)).toBeNull();
+    expect(validUntil(null, now)).toBeNull();
+    expect(validUntil('2026-11-20T14:00:00.000Z', now)).toEqual(
+      new Date('2026-11-20T14:00:00.000Z'),
+    );
+  });
+
+  it('una vigencia que ya pasó se rechaza', () => {
+    expect(() => validUntil('2026-11-20T12:00:00.000Z', now)).toThrow(
+      VALID_UNTIL_IN_PAST,
+    );
+  });
+
+  it('al vencer una operativa no se cuenta como restricción temporal', async () => {
+    const { service, publisher } = build([
+      { ...fenceRow(NOW), class: 'operational' },
+    ]);
+    await expect(service.sweepExpired()).resolves.toBe(1);
+    expect(publisher.publish).not.toHaveBeenCalled();
   });
 });

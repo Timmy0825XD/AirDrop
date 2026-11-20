@@ -138,9 +138,10 @@ export function useRadar(
         ...current,
         hubs: snapshot.hubs,
         geofences: snapshot.geofences,
-        // No cambian en ejecución: si ya están, se conserva la misma lista.
+        // RU-36: el admin puede editar o desactivar una zona; si no cambió
+        // nada, se conserva la misma lista para no redibujar el mapa.
         airspace:
-          snapshot.airspace && snapshot.airspace.length !== current.airspace.length
+          snapshot.airspace && JSON.stringify(snapshot.airspace) !== JSON.stringify(current.airspace)
             ? snapshot.airspace
             : current.airspace,
         flights: [...next.values()],

@@ -241,7 +241,7 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
 | Solicitante | Inicio · Pedidos (`/orders/mine`) · Planes (`/orders/plans`) · Perfil | Urgencia: pedir urgencia (`push /orders/emergency`) |
 | Despachador | Inicio · Agenda (`/orders/agenda`) · Inventario · Más (`/more`) | Urgencias: la cola (`go /orders/queue`, con contador) |
 | Operador de flota | Inicio · Flota · Geovallas · Perfil | Mapa: mapa en vivo (`go /fleet/flights`, con contador de drones en misión); "Nuevo dron" es el "+" del encabezado de Flota |
-| Administrador | Resumen · Centrales · Cuentas · Perfil | Crear: hoja para crear central o cuenta (`showAdminCreateSheet`) |
+| Administrador | Resumen · Centrales · Cuentas · Perfil | Crear: hoja para crear central o cuenta, o ir a las zonas legales (`/geofences`, `showAdminCreateSheet`) |
 
 - En un destino la barra se ve; en un detalle o formulario se desliza hacia abajo, igual que al bajar en una lista (`UserScrollNotification`). Al subir vuelve.
 - `RoleShell` suma el alto de la barra (`AppTabBar.height`, 64; la barra pinta además el área segura de abajo) a `padding` y `viewPadding` de `MediaQuery`: los botones flotantes quedan por encima solos. Las listas toman ese `padding` con `listPadding(context)` (ya no hay botones flotantes: crear va en el encabezado o en el "+" del centro) (`core/widgets/list_padding.dart`); un `EdgeInsets` fijo deja el final detrás de la barra.
@@ -426,15 +426,22 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
 
 ## Geovallas sobre el mapa (`features/geofences/`)
 
-- Los vértices se dibujan en `GeofenceDrawScreen` (`MapSheetScaffold`, con
-  `Navigator.push` desde el formulario): toque = vértice, tocar un vértice
-  lo quita, Deshacer y Borrar todo, "Listo" con 3 o más.
+- `/geofences` es el catálogo (RU-19) del operador y del admin: legales y
+  operativas, con el filtro Todas · Operativas · Legales. El operador crea y
+  edita operativas; el admin, zonas legales (RU-36). `GeofenceEditorScreen`
+  elige `GeofenceFormScreen` o `LegalZoneFormScreen` por rol y clase.
+- Tocar una geovalla que no gestionas abre su ficha
+  (`showGeofenceDetailSheet`): clase, forma, norma y fuente o motivo,
+  categoría y vigencia. Las legales traen su historial y, para el admin,
+  Editar y Desactivar/Reactivar, con el motivo en `showReasonPrompt`.
+- La forma vive en `GeometryDraft`: círculo (centro y radio de 50 m a 5 km)
+  o vértices (3 a 50, `[lng, lat]` sin el cierre). `GeofenceDrawScreen`
+  (`MapSheetScaffold`) escribe en el draft al tocar "Listo": en vértices,
+  cada toque pone uno; en círculo, el toque pone el centro y el deslizador
+  fija el radio.
 - El formulario solo muestra la vista previa quieta
-  (`GeofencePolygonPreview`, con un margen de encuadre chico: el del modo
-  dibujar no cabe en 200 px y dejaba el mapa en negro); dentro de su scroll, arrastrar un mapa
-  peleaba con el scroll.
-- `GeofenceFormValues.vertices` guarda `[lng, lat]` sin el cierre; el
-  anillo se cierra al armar el body (`GeoJsonPolygon.fromVertices`).
+  (`GeofencePolygonPreview`, con un margen de encuadre chico); dentro de su
+  scroll, arrastrar un mapa peleaba con el scroll.
 
 ## Pantallas de trabajo (desde la Fase 6)
 

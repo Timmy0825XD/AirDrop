@@ -12,7 +12,9 @@ export function assertGeoJsonPolygon(value: unknown): GeoJsonPolygon {
   }
   const polygon = value as GeoJsonPolygon;
   if (polygon.type !== 'Polygon' || !Array.isArray(polygon.coordinates)) {
-    throw new BadRequestException('El polígono debe ser GeoJSON de tipo Polygon.');
+    throw new BadRequestException(
+      'El polígono debe ser GeoJSON de tipo Polygon.',
+    );
   }
   const ring = polygon.coordinates[0];
   if (!Array.isArray(ring) || ring.length < 4) {
@@ -49,12 +51,14 @@ export function assertGeoJsonPolygon(value: unknown): GeoJsonPolygon {
 }
 
 /**
- * RF-36: una geovalla rige si no vence (del operador) o si su vencimiento
- * todavía no llega en la hora simulada. `$param` es esa hora.
+ * RF-36: las geovallas operativas y temporales que rigen a la hora simulada
+ * `param` (sin vencimiento, o que aún no vencen). Las zonas legales no
+ * entran: el planificador las toma de `AirspaceService`.
  */
 export function activeGeofenceSql(param: string, alias = ''): string {
-  const column = `${alias ? `${alias}.` : ''}"expiresAt"`;
-  return `(${column} IS NULL OR ${column} > ${param})`;
+  const prefix = alias ? `${alias}.` : '';
+  const expires = `${prefix}"expiresAt"`;
+  return `(${prefix}class IN ('operational', 'temporary') AND (${expires} IS NULL OR ${expires} > ${param}))`;
 }
 
 export function isGeofenceActive(
@@ -87,4 +91,22 @@ export function assertCoversNoHub(
         .join(', ')} queda dentro.`,
     );
   }
+}
+
+export const VALID_UNTIL_IN_PAST =
+  'La vigencia debe terminar después de la hora actual.';
+
+/** RF-21: la vigencia de una operativa, en hora simulada, siempre a futuro. */
+export function validUntil(
+  value: string | null | undefined,
+  now: Date,
+): Date | null {
+  if (!value) {
+    return null;
+  }
+  const date = new Date(value);
+  if (date.getTime() <= now.getTime()) {
+    throw new BadRequestException(VALID_UNTIL_IN_PAST);
+  }
+  return date;
 }

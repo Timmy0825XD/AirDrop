@@ -1,56 +1,77 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 
 import '../../../../core/widgets/app_map.dart';
+import '../../../../core/widgets/sliding_segmented.dart';
+import '../../data/geofence_models.dart';
+import 'geofence_circle_map.dart';
 import 'geofence_draw_bar.dart';
 import 'geofence_draw_map.dart';
+import 'geometry_draft.dart';
 
-/// El polígono dentro del formulario: el mapa quieto con lo dibujado, el
-/// texto de ayuda y el botón que abre el modo dibujar.
+/// RF-21: la forma dentro del formulario. Elegir círculo o vértices, ver lo
+/// dibujado en un mapa quieto y abrir el modo dibujar.
 class GeofencePolygonPreview extends StatelessWidget {
   const GeofencePolygonPreview({
     super.key,
-    required this.vertices,
+    required this.draft,
+    required this.onShape,
     required this.onDraw,
   });
 
-  /// `[longitud, latitud]`, sin el punto de cierre.
-  final List<List<double>> vertices;
+  final GeometryDraft draft;
+  final ValueChanged<GeofenceShape> onShape;
   final VoidCallback onDraw;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final missing = vertices.isNotEmpty && vertices.length < 3;
+    final circle = draft.shape == GeofenceShape.circle;
+    final center = draft.center;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Text('Área restringida', style: theme.textTheme.titleSmall),
-        const SizedBox(height: 4),
+        const SizedBox(height: 8),
+        SlidingSegmented<GeofenceShape>(
+          options: [
+            for (final shape in GeofenceShape.values)
+              SegmentOption(shape, shape.label),
+          ],
+          selected: draft.shape,
+          onChanged: onShape,
+        ),
+        const SizedBox(height: 8),
         Text(
-          drawHint(vertices.length),
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: missing
-                ? theme.colorScheme.error
-                : theme.colorScheme.onSurfaceVariant,
-          ),
+          circle
+              ? (center == null
+                    ? 'Toca "Dibujar" y pon el centro.'
+                    : 'Radio de ${formatRadius(draft.radiusM)}.')
+              : drawHint(draft.vertices.length),
+          style: theme.textTheme.bodySmall,
         ),
         const SizedBox(height: 12),
         ClipRRect(
           borderRadius: BorderRadius.circular(24),
           child: SizedBox(
             height: 200,
-            child: GeofenceDrawMap(
-              points: vertices.map(latLngFromGeoJson).toList(),
-            ),
+            child: circle
+                ? GeofenceCircleMap(
+                    center: center == null
+                        ? null
+                        : LatLng(center.latitude, center.longitude),
+                    radiusM: draft.radiusM,
+                  )
+                : GeofenceDrawMap(
+                    points: draft.vertices.map(latLngFromGeoJson).toList(),
+                  ),
           ),
         ),
         const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: onDraw,
           icon: const Icon(Icons.draw_rounded),
-          label: Text(
-            vertices.isEmpty ? 'Dibujar en el mapa' : 'Editar en el mapa',
-          ),
+          label: const Text('Dibujar en el mapa'),
         ),
       ],
     );

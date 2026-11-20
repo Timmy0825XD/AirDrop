@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/api_exception.dart';
+import '../../../../core/widgets/app_snack.dart';
+import '../../data/geofence_providers.dart';
 
 import '../../../../core/widgets/confirm_sheet.dart';
 import '../../data/geofence_models.dart';
@@ -30,9 +35,25 @@ Future<bool> confirmGeofenceDelete(
         children: [
           Text(geofence.name, style: theme.textTheme.titleMedium),
           const SizedBox(height: 4),
-          Text(geofence.reason, style: theme.textTheme.bodySmall),
+          Text(geofence.reason ?? '', style: theme.textTheme.bodySmall),
         ],
       ),
     ),
   );
+}
+
+/// Confirma y elimina una operativa. Los errores de Nest viajan tal cual.
+Future<void> deleteGeofence(
+  BuildContext context,
+  WidgetRef ref,
+  Geofence geofence,
+) async {
+  if (!await confirmGeofenceDelete(context, geofence: geofence)) return;
+  if (!context.mounted) return;
+  try {
+    await ref.read(deleteGeofenceProvider.notifier).delete(geofence.id);
+    if (context.mounted) showAppSnack(context, 'Geovalla eliminada.');
+  } on ApiException catch (error) {
+    if (context.mounted) showErrorSnack(context, error.message);
+  }
 }

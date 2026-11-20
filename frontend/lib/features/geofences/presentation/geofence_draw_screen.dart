@@ -3,34 +3,30 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../core/widgets/app_map.dart';
 import '../../../core/widgets/map_sheet.dart';
+import '../data/geofence_models.dart';
+import 'widgets/geofence_circle_map.dart';
 import 'widgets/geofence_draw_bar.dart';
 import 'widgets/geofence_draw_map.dart';
+import 'widgets/geofence_radius_bar.dart';
+import 'widgets/geometry_draft.dart';
 
-/// Modo dibujar (HU-14): el operador toca el mapa para poner los vértices
-/// de la geovalla. No abre socket ni llama a Nest; "Listo" devuelve los
-/// vértices `[longitud, latitud]` al formulario, que es el que guarda.
-///
-/// Se abre a pantalla completa con `Navigator.push` desde el formulario:
-/// dentro del scroll del formulario, arrastrar el mapa peleaba con el
-/// scroll.
+/// Modo dibujar (HU-14, RF-21): en vértices, cada toque pone uno; en
+/// círculo, el toque pone el centro y el deslizador fija el radio. "Listo"
+/// escribe en [draft]; salir sin tocarlo no cambia nada.
 class GeofenceDrawScreen extends StatefulWidget {
-  const GeofenceDrawScreen({super.key, this.initial = const []});
+  const GeofenceDrawScreen({super.key, required this.draft});
 
-  /// Vértices ya dibujados (al editar o al volver a abrir el modo).
-  final List<List<double>> initial;
+  final GeometryDraft draft;
 
-  /// Abre el modo dibujar y espera los vértices; `null` si el operador
-  /// sale sin tocar "Listo".
-  static Future<List<List<double>>?> open(
-    BuildContext context,
-    List<List<double>> initial,
-  ) {
-    return Navigator.of(context).push(
+  /// `true` si el usuario tocó "Listo".
+  static Future<bool> open(BuildContext context, GeometryDraft draft) async {
+    final done = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => GeofenceDrawScreen(initial: initial),
+        builder: (_) => GeofenceDrawScreen(draft: draft),
       ),
     );
+    return done ?? false;
   }
 
   @override
@@ -38,38 +34,66 @@ class GeofenceDrawScreen extends StatefulWidget {
 }
 
 class _GeofenceDrawScreenState extends State<GeofenceDrawScreen> {
-  late final _points = widget.initial.map(latLngFromGeoJson).toList();
+  late final _points = widget.draft.vertices.map(latLngFromGeoJson).toList();
+  late LatLng? _center = widget.draft.center == null
+      ? null
+      : LatLng(widget.draft.center!.latitude, widget.draft.center!.longitude);
+  late int _radius = widget.draft.radiusM;
 
-  void _add(LatLng point) => setState(() => _points.add(point));
+  bool get _circle => widget.draft.shape == GeofenceShape.circle;
 
-  void _remove(int index) => setState(() => _points.removeAt(index));
+  bool get _ready => _circle ? _center != null : _points.length >= 3;
 
   void _done() {
-    Navigator.of(context).pop([for (final p in _points) geoJsonFromLatLng(p)]);
+    final draft = widget.draft;
+    if (_circle) {
+      draft.center = GeoPoint(
+        latitude: _center!.latitude,
+        longitude: _center!.longitude,
+      );
+      draft.radiusM = _radius;
+    } else {
+      draft.vertices = [for (final p in _points) geoJsonFromLatLng(p)];
+    }
+    Navigator.of(context).pop(true);
   }
 
   @override
   Widget build(BuildContext context) {
     return MapSheetScaffold(
-      title: 'Dibujar geovalla',
-      onBack: () => Navigator.of(context).pop(),
+      title: _circle ? 'Dibujar círculo' : 'Dibujar geovalla',
+      onBack: () => Navigator.of(context).pop(false),
       sheetFraction: 0.24,
       trailing: TextButton(
-        onPressed: _points.length < 3 ? null : _done,
+        onPressed: _ready ? _done : null,
         child: const Text('Listo'),
       ),
-      map: (sheetHeight) => GeofenceDrawMap(
-        points: _points,
-        onAdd: _add,
-        onRemove: _remove,
-        sheetHeight: sheetHeight,
-      ),
+      map: (sheetHeight) => _circle
+          ? GeofenceCircleMap(
+              center: _center,
+              radiusM: _radius,
+              onCenter: (point) => setState(() => _center = point),
+              sheetHeight: sheetHeight,
+            )
+          : GeofenceDrawMap(
+              points: _points,
+              onAdd: (point) => setState(() => _points.add(point)),
+              onRemove: (index) => setState(() => _points.removeAt(index)),
+              sheetHeight: sheetHeight,
+            ),
       sheet: [
-        GeofenceDrawBar(
-          count: _points.length,
-          onUndo: () => _remove(_points.length - 1),
-          onClear: () => setState(_points.clear),
-        ),
+        if (_circle)
+          GeofenceRadiusBar(
+            hasCenter: _center != null,
+            radiusM: _radius,
+            onRadius: (value) => setState(() => _radius = value),
+          )
+        else
+          GeofenceDrawBar(
+            count: _points.length,
+            onUndo: () => setState(() => _points.removeLast()),
+            onClear: () => setState(_points.clear),
+          ),
       ],
     );
   }

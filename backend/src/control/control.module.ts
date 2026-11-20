@@ -7,6 +7,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { DecisionModule } from '../decision/decision.module';
 import { DeliveryModule } from '../delivery/delivery.module';
 import { Drone } from '../fleet/drone.entity';
+import { AirspaceModule } from '../airspace/airspace.module';
 import { GeofencesModule } from '../geofences/geofences.module';
 import { HubsModule } from '../hubs/hubs.module';
 import { Hub } from '../hubs/hub.entity';
@@ -42,6 +43,7 @@ import { TimelineService } from './timeline.service';
     SimulationModule,
     WeatherModule,
     GeofencesModule,
+    AirspaceModule,
     HubsModule,
     OrdersModule,
     DecisionModule,

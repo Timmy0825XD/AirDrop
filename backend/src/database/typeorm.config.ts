@@ -15,6 +15,7 @@ import { DeliveryPlan } from '../orders/delivery-plan.entity';
 import { Order } from '../orders/order.entity';
 import { PrescriptionImage } from '../orders/prescription-image.entity';
 import { Geofence } from '../geofences/geofence.entity';
+import { GeofenceChange } from '../geofences/geofence-change.entity';
 import { MissionRoute } from '../routing/mission-route.entity';
 import { Mission } from '../simulation/mission.entity';
 import { User } from '../users/user.entity';
@@ -48,6 +49,7 @@ export function typeOrmOptions(config: ConfigService): TypeOrmModuleOptions {
       QuarantineRecord,
       Notification,
       Geofence,
+      GeofenceChange,
       MissionRoute,
       Mission,
       Order,

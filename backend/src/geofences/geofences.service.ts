@@ -9,6 +9,13 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { simClock } from '../common/clock/sim-clock';
+import {
+  GeofenceClass,
+  LEGAL_GEOFENCE_CLASSES,
+} from '../common/enums/geofence-class.enum';
+import { GeofenceShape } from '../common/enums/geofence-shape.enum';
+import { OperationalCategory } from '../common/enums/operational-category.enum';
+import { LngLat } from '../routing/routing.rules';
 import { Hub } from '../hubs/hub.entity';
 import { FlightClockService } from '../simulation/flight-clock.service';
 import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
@@ -16,34 +23,22 @@ import { User } from '../users/user.entity';
 import { CreateGeofenceDto } from './dto/create-geofence.dto';
 import { UpdateGeofenceDto } from './dto/update-geofence.dto';
 import { Geofence } from './geofence.entity';
+import { toGeofenceGeometry } from './geofence-shape.rules';
+import {
+  GEOFENCE_COLUMNS,
+  GeofenceRow,
+  PublicGeofence,
+  geometryParams,
+  toPublicGeofence,
+} from './geofence.presenter';
 import {
   activeGeofenceSql,
   assertCoversNoHub,
   assertGeoJsonPolygon,
   GeoJsonPolygon,
   temporaryExpiry,
+  validUntil,
 } from './geofences.rules';
-
-type GeofenceRow = {
-  id: string;
-  name: string;
-  reason: string;
-  polygon: string;
-  createdByUserId: string;
-  createdAt: Date;
-  expiresAt: Date | null;
-};
-
-export type PublicGeofence = {
-  id: string;
-  name: string;
-  reason: string;
-  polygon: GeoJsonPolygon;
-  createdByUserId: string;
-  createdAt: Date;
-  /** RF-36: con fecha es temporal; `null`, del operador. */
-  expiresAt: Date | null;
-};
 
 /** Una geovalla temporal tal como la ven la consola y el socket. */
 export type TemporaryGeofenceJson = {
@@ -62,10 +57,12 @@ export type NewTemporaryGeofence = {
   durationMin: number;
 };
 
+export type GeofenceFilter = { class?: GeofenceClass; active?: boolean };
+
 export const TEMPORARY_GEOFENCE_NOT_FOUND =
   'Esa geovalla temporal no existe o ya venció.';
 
-const RETURNING = `id, name, reason, ST_AsGeoJSON(polygon) AS polygon, "createdByUserId", "createdAt", "expiresAt"`;
+const RETURNING = GEOFENCE_COLUMNS;
 
 /** Cada cuánto (en hora simulada) se borran las geovallas temporales vencidas. */
 const EXPIRY_SWEEP_MS = 15_000;
@@ -105,7 +102,7 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
    * en el aire que la tengan en el tramo que les falta. Si falla, la geovalla
    * queda guardada igual.
    */
-  private async recheckFlights(): Promise<void> {
+  async recheckFlights(): Promise<void> {
     try {
       await this.flights.recheckRoutes();
     } catch (error) {
@@ -114,26 +111,76 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /** RF-21: una geovalla operativa, en círculo o en vértices. */
   async create(user: User, dto: CreateGeofenceDto) {
-    const polygon = assertGeoJsonPolygon(dto.polygon);
-    await this.assertCoversNoHub(polygon);
-    const rows = (await this.geofences.query(
-      `INSERT INTO geofences (id, name, reason, polygon, "createdByUserId")
+    const geometry = toGeofenceGeometry(dto);
+    const expiresAt = validUntil(dto.expiresAt, simClock.now());
+    await this.assertCoversNoHub(geometry.polygon);
+    const rows: GeofenceRow[] = await this.geofences.query(
+      `INSERT INTO geofences (
+         id, class, shape, name, reason, category,
+         "centerLatitude", "centerLongitude", "radiusM", polygon, "createdByUserId",
+         "expiresAt"
+       )
        VALUES (
-         gen_random_uuid(),
-         $1,
-         $2,
-         ST_SetSRID(ST_GeomFromGeoJSON($3), 4326),
-         $4
+         gen_random_uuid(), 'operational', $1, $2, $3, $4, $5, $6, $7,
+         ST_SetSRID(ST_GeomFromGeoJSON($8), 4326), $9, $10
        )
        RETURNING ${RETURNING}`,
-      [dto.name.trim(), dto.reason.trim(), JSON.stringify(polygon), user.id],
-    )) as GeofenceRow[];
+      [
+        geometry.shape,
+        dto.name.trim(),
+        dto.reason.trim(),
+        dto.category,
+        ...geometryParams(geometry),
+        user.id,
+        expiresAt,
+      ],
+    );
     await this.recheckFlights();
-    return this.toPublicGeofence(rows[0]);
+    return toPublicGeofence(rows[0]);
   }
 
-  /** Las del operador y las temporales vigentes (RF-36), con `expiresAt`. */
+  /**
+   * RU-19: lo que ven el operador y el admin. Todas las legales (también las
+   * desactivadas, con `active`) y las operativas vigentes. Las temporales son
+   * de la consola y no salen aquí.
+   */
+  async catalog(filter: GeofenceFilter = {}): Promise<PublicGeofence[]> {
+    const rows: GeofenceRow[] = await this.geofences.query(
+      `SELECT ${RETURNING}
+       FROM geofences
+       WHERE (
+         class = ANY($1)
+         OR (class = 'operational' AND ("expiresAt" IS NULL OR "expiresAt" > $2))
+       )
+         AND ($3::geofence_class IS NULL OR class = $3)
+         AND ($4::boolean IS NULL OR active = $4)
+       ORDER BY class ASC, name ASC`,
+      [
+        LEGAL_GEOFENCE_CLASSES,
+        simClock.now(),
+        filter.class ?? null,
+        filter.active ?? null,
+      ],
+    );
+    return rows.map((row) => toPublicGeofence(row));
+  }
+
+  /** La ficha completa de una geovalla del catálogo. */
+  async findOne(id: string): Promise<PublicGeofence> {
+    const rows: GeofenceRow[] = await this.geofences.query(
+      `SELECT ${RETURNING} FROM geofences
+       WHERE id = $1 AND class <> 'temporary'`,
+      [id],
+    );
+    if (!rows.length) {
+      throw new NotFoundException('La geovalla no existe.');
+    }
+    return toPublicGeofence(rows[0]);
+  }
+
+  /** Las operativas y temporales vigentes (RF-36): lo que dibuja el mapa de flota. */
   async list(): Promise<PublicGeofence[]> {
     const rows = (await this.geofences.query(
       `SELECT ${RETURNING}
@@ -142,7 +189,7 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
        ORDER BY name ASC`,
       [simClock.now()],
     )) as GeofenceRow[];
-    return rows.map((row) => this.toPublicGeofence(row));
+    return rows.map((row) => toPublicGeofence(row));
   }
 
   /** RF-36: las geovallas temporales que rigen ahora, la que vence antes primero. */
@@ -150,11 +197,11 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
     const rows = (await this.geofences.query(
       `SELECT ${RETURNING}
        FROM geofences
-       WHERE "expiresAt" IS NOT NULL AND "expiresAt" > $1
+       WHERE class = 'temporary' AND "expiresAt" > $1
        ORDER BY "expiresAt" ASC`,
       [simClock.now()],
     )) as GeofenceRow[];
-    return rows.map((row) => presentTemporary(this.toPublicGeofence(row)));
+    return rows.map((row) => presentTemporary(toPublicGeofence(row)));
   }
 
   /**
@@ -172,9 +219,10 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
     const now = simClock.now();
     const expiresAt = temporaryExpiry(now, input.durationMin);
     const rows = (await this.geofences.query(
-      `INSERT INTO geofences (id, name, reason, polygon, "createdByUserId", "createdAt", "expiresAt")
+      `INSERT INTO geofences (id, class, name, reason, polygon, "createdByUserId", "createdAt", "expiresAt")
        VALUES (
          gen_random_uuid(),
+         'temporary',
          $1,
          $2,
          ST_SetSRID(ST_GeomFromGeoJSON($3), 4326),
@@ -192,7 +240,7 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
         expiresAt,
       ],
     )) as GeofenceRow[];
-    const fence = presentTemporary(this.toPublicGeofence(rows[0]));
+    const fence = presentTemporary(toPublicGeofence(rows[0]));
     await this.publisher.publish({
       type: 'geofence',
       action: 'created',
@@ -206,14 +254,14 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
   async endTemporary(id: string): Promise<TemporaryGeofenceJson> {
     const [rows] = (await this.geofences.query(
       `DELETE FROM geofences
-       WHERE id = $1 AND "expiresAt" IS NOT NULL AND "expiresAt" > $2
+       WHERE id = $1 AND class = 'temporary' AND "expiresAt" > $2
        RETURNING ${RETURNING}`,
       [id, simClock.now()],
     )) as [GeofenceRow[], number];
     if (!rows.length) {
       throw new NotFoundException(TEMPORARY_GEOFENCE_NOT_FOUND);
     }
-    const fence = presentTemporary(this.toPublicGeofence(rows[0]));
+    const fence = presentTemporary(toPublicGeofence(rows[0]));
     await this.announceEnded(fence);
     return fence;
   }
@@ -226,8 +274,10 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
        RETURNING ${RETURNING}`,
       [simClock.now()],
     )) as [GeofenceRow[], number];
-    for (const row of rows) {
-      await this.announceEnded(presentTemporary(this.toPublicGeofence(row)));
+    // RF-36: la línea de tiempo cuenta las temporales; una operativa que
+    // vence (RF-21) solo deja de regir.
+    for (const row of rows.filter((r) => r.class === GeofenceClass.TEMPORARY)) {
+      await this.announceEnded(presentTemporary(toPublicGeofence(row)));
     }
     return rows.length;
   }
@@ -238,27 +288,29 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
    */
   async clearTemporary(manager: EntityManager): Promise<number> {
     const [, count] = (await manager.query(
-      `DELETE FROM geofences WHERE "expiresAt" IS NOT NULL`,
+      `DELETE FROM geofences WHERE class = 'temporary'`,
     )) as [unknown[], number];
     return count;
   }
 
-  async update(id: string, dto: UpdateGeofenceDto) {
+  async update(user: User, id: string, dto: UpdateGeofenceDto) {
     if (
       dto.name === undefined &&
       dto.reason === undefined &&
-      dto.polygon === undefined
+      dto.category === undefined &&
+      dto.shape === undefined &&
+      dto.expiresAt === undefined
     ) {
       throw new BadRequestException(
         'Debes enviar al menos un campo para actualizar.',
       );
     }
     await this.requireGeofence(id);
-    const polygon = dto.polygon
-      ? assertGeoJsonPolygon(dto.polygon)
-      : undefined;
-    if (polygon) {
-      await this.assertCoversNoHub(polygon);
+    const geometry = dto.shape
+      ? toGeofenceGeometry({ ...dto, shape: dto.shape })
+      : null;
+    if (geometry) {
+      await this.assertCoversNoHub(geometry.polygon);
     }
     // En UPDATE, TypeORM devuelve `[rows, rowCount]` (PostgresQueryRunner)
     // y no las filas: sin desestructurar, `rows[0]` es el arreglo completo
@@ -268,10 +320,17 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
        SET
          name = COALESCE($2, name),
          reason = COALESCE($3, reason),
+         category = COALESCE($4::operational_category, category),
+         shape = CASE WHEN $5::text IS NULL THEN shape ELSE $5::geofence_shape END,
+         "centerLatitude" = CASE WHEN $5::text IS NULL THEN "centerLatitude" ELSE $6 END,
+         "centerLongitude" = CASE WHEN $5::text IS NULL THEN "centerLongitude" ELSE $7 END,
+         "radiusM" = CASE WHEN $5::text IS NULL THEN "radiusM" ELSE $8 END,
          polygon = CASE
-           WHEN $4::text IS NULL THEN polygon
-           ELSE ST_SetSRID(ST_GeomFromGeoJSON($4), 4326)
+           WHEN $5::text IS NULL THEN polygon
+           ELSE ST_SetSRID(ST_GeomFromGeoJSON($9), 4326)
          END,
+         "updatedByUserId" = $10,
+         "expiresAt" = CASE WHEN $11::boolean THEN $12::timestamptz ELSE "expiresAt" END,
          "updatedAt" = NOW()
        WHERE id = $1
        RETURNING ${RETURNING}`,
@@ -279,13 +338,18 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
         id,
         dto.name?.trim() ?? null,
         dto.reason?.trim() ?? null,
-        polygon ? JSON.stringify(polygon) : null,
+        dto.category ?? null,
+        geometry?.shape ?? null,
+        ...(geometry ? geometryParams(geometry) : [null, null, null, null]),
+        user.id,
+        dto.expiresAt !== undefined,
+        validUntil(dto.expiresAt, simClock.now()),
       ],
     )) as [GeofenceRow[], number];
-    if (polygon) {
+    if (geometry) {
       await this.recheckFlights();
     }
-    return this.toPublicGeofence(rows[0]);
+    return toPublicGeofence(rows[0]);
   }
 
   async remove(id: string) {
@@ -296,9 +360,7 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
     )) as [GeofenceRow[], number];
     if (rows[0]?.expiresAt) {
       // Una temporal que quita el operador: el radar deja de dibujarla.
-      await this.announceEnded(
-        presentTemporary(this.toPublicGeofence(rows[0])),
-      );
+      await this.announceEnded(presentTemporary(toPublicGeofence(rows[0])));
     }
   }
 
@@ -311,31 +373,23 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
   }
 
   /** Todas las centrales, también las suspendidas: pueden reactivarse. */
-  private async assertCoversNoHub(polygon: GeoJsonPolygon): Promise<void> {
+  async assertCoversNoHub(polygon: GeoJsonPolygon): Promise<void> {
     const hubs = await this.hubs.find({
       select: { id: true, name: true, latitude: true, longitude: true },
     });
     assertCoversNoHub(polygon, hubs);
   }
 
+  /**
+   * El operador solo edita operativas: las legales las mantiene el
+   * administrador (RU-36) y las temporales, la consola (RF-36).
+   */
   private async requireGeofence(id: string) {
     const row = await this.geofences.findOne({ where: { id } });
-    if (!row) {
+    if (!row || row.class !== GeofenceClass.OPERATIONAL) {
       throw new NotFoundException('La geovalla no existe.');
     }
     return row;
-  }
-
-  private toPublicGeofence(row: GeofenceRow): PublicGeofence {
-    return {
-      id: row.id,
-      name: row.name,
-      reason: row.reason,
-      polygon: JSON.parse(row.polygon) as GeoJsonPolygon,
-      createdByUserId: row.createdByUserId,
-      createdAt: row.createdAt,
-      expiresAt: row.expiresAt ? new Date(row.expiresAt) : null,
-    };
   }
 }
 
@@ -344,7 +398,7 @@ export function presentTemporary(fence: PublicGeofence): TemporaryGeofenceJson {
   return {
     id: fence.id,
     name: fence.name,
-    reason: fence.reason,
+    reason: fence.reason ?? '',
     polygon: fence.polygon,
     createdAt: new Date(fence.createdAt).toISOString(),
     expiresAt: (fence.expiresAt ?? simClock.now()).toISOString(),

@@ -93,20 +93,35 @@ export type RadarManifest = {
   voidReason: string | null;
 };
 
+/** RF-21: la clase de una geovalla del radar (las legales van en `airspace`). */
+export type GeofenceClass = "operational" | "temporary";
+
+export type OperationalCategory = "works" | "crowd" | "interference" | "ground_risk" | "other";
+
 export type Geofence = {
   id: string;
+  /** Sin clase (modo demo o un backend viejo), se infiere de `expiresAt`. */
+  class?: GeofenceClass;
+  category?: OperationalCategory | null;
   name: string;
-  reason: string;
+  reason: string | null;
   polygon: { type: "Polygon" | "MultiPolygon"; coordinates: unknown };
-  /** RF-36: con fecha, es temporal y vence sola. */
+  /** RF-36: vencimiento de una temporal; RF-21: vigencia de una operativa. */
   expiresAt?: string | null;
 };
+
+/** RF-36: solo las temporales son de la consola; una operativa puede tener vigencia. */
+export function isTemporaryGeofence(geofence: Geofence): boolean {
+  return geofence.class ? geofence.class === "temporary" : Boolean(geofence.expiresAt);
+}
 
 /** RF-43 a escala de demo: aeródromo (1,5 km), prohibida y helipuerto. */
 export type AirspaceZoneKind = "aerodrome" | "prohibited" | "heliport";
 
 /** RF-43: una zona legal de la región (`snapshot.airspace`, `GET /airspace/zones`). */
 export type AirspaceZone = {
+  /** Fila en la base: el admin la mantiene (RU-36). */
+  id?: string | null;
   code: string;
   kind: AirspaceZoneKind;
   name: string;
@@ -122,7 +137,7 @@ export type Snapshot = {
   hubs: HubSummary[];
   flights: RadarFlight[];
   geofences: Geofence[];
-  /** RF-43: las zonas legales. No cambian en ejecución. */
+  /** RF-43: las zonas legales activas. El admin puede cambiarlas (RU-36). */
   airspace?: AirspaceZone[];
 };
 
