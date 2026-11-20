@@ -1,7 +1,6 @@
 import { ConflictException } from '@nestjs/common';
 import { simClock } from '../common/clock/sim-clock';
 import { DroneStatus } from '../common/enums/drone-status.enum';
-import { HubStatus } from '../common/enums/hub-status.enum';
 import { Drone } from '../fleet/drone.entity';
 import { Hub } from '../hubs/hub.entity';
 import { InventoryItem } from '../inventory/inventory-item.entity';
@@ -73,13 +72,14 @@ describe('reinicio del escenario: reglas (RF-40)', () => {
     expect(
       resetDetail({
         orders: 4,
+        accounts: 36,
         drones: 15,
         inventoryItems: 18,
         geofences: 3,
         temporaryGeofences: 0,
       }),
     ).toBe(
-      '4 pedidos borrados; 15 drones en su central; 18 lotes y 3 geovallas como en la semilla.',
+      '4 pedidos borrados; 36 cuentas y 15 drones como en la semilla; 18 lotes y 3 geovallas como en la semilla.',
     );
   });
 
@@ -87,13 +87,14 @@ describe('reinicio del escenario: reglas (RF-40)', () => {
     expect(
       resetDetail({
         orders: 0,
+        accounts: 36,
         drones: 15,
         inventoryItems: 18,
         geofences: 3,
         temporaryGeofences: 2,
       }),
     ).toBe(
-      '0 pedidos borrados; 15 drones en su central; 18 lotes y 3 geovallas como en la semilla. 2 geovallas temporales quitadas.',
+      '0 pedidos borrados; 36 cuentas y 15 drones como en la semilla; 18 lotes y 3 geovallas como en la semilla. 2 geovallas temporales quitadas.',
     );
   });
 });
@@ -182,7 +183,9 @@ function build(hubs: Array<Partial<Hub>>) {
   };
   const network = {
     sync: jest.fn().mockResolvedValue({ removed: 0, created: 0 }),
+    restore: jest.fn().mockResolvedValue(undefined),
   };
+  const accounts = { restore: jest.fn().mockResolvedValue(36) };
   const service = new ScenarioResetService(
     dataSource as never,
     flights as never,
@@ -198,10 +201,12 @@ function build(hubs: Array<Partial<Hub>>) {
     chaos as never,
     { clear: jest.fn().mockResolvedValue(undefined) } as never,
     network as never,
+    accounts as never,
   );
   return {
     service,
     network,
+    accounts,
     actors,
     dispatcher,
     receiver,
@@ -243,19 +248,12 @@ describe('ScenarioResetService (RF-40, CU-41)', () => {
     expect(built.network.sync).toHaveBeenCalledWith(admin);
   });
 
-  it('borra todo pedido de las centrales de la demo, también los que esperan en su cola', async () => {
+  it('borra todos los pedidos y todo lo que dejó la demostración', async () => {
     const built = build([{ id: 'hub-1', name: plan.name }]);
     const summary = await built.service.reset(admin);
 
-    const [sql, params] = built.dataSource.query.mock.calls[0] as [
-      string,
-      unknown[],
-    ];
-    expect(sql).toContain('"originHubId"');
-    expect(sql).toContain('dispatchOffers');
-    // RF-37: también lo que pidieron los solicitantes simulados.
-    expect(sql).toContain('simulated');
-    expect(params).toEqual([['hub-1'], ['hub-1']]);
+    const [sql] = built.dataSource.query.mock.calls[0] as [string];
+    expect(sql.trim()).toBe('SELECT id FROM orders');
     expect(built.flights.forget).toHaveBeenCalledWith(['o1', 'o2']);
     expect(built.calls).toEqual(
       expect.arrayContaining([
@@ -264,6 +262,9 @@ describe('ScenarioResetService (RF-40, CU-41)', () => {
         'DELETE FROM notifications',
         'DELETE FROM orders',
         'DELETE FROM delivery_plans',
+        'DELETE FROM drone_maintenances',
+        // RF-40: solo quedan las geovallas de la semilla.
+        'DELETE FROM geofences',
       ]),
     );
     expect(built.redis.remove).toHaveBeenCalledWith([
@@ -327,10 +328,8 @@ describe('ScenarioResetService (RF-40, CU-41)', () => {
     const calls = built.manager.save.mock.calls as Array<[unknown, unknown[]]>;
     const savedStock = calls.find(([entity]) => entity === InventoryItem)?.[1];
     expect(savedStock).toHaveLength(plan.stock.length);
-    expect(built.manager.update).toHaveBeenCalledWith(Hub, expect.anything(), {
-      status: HubStatus.ACTIVE,
-      // RF-36: el reinicio también devuelve la energía.
-      powerOutageUntil: null,
-    });
+    // RF-40: las centrales, su flota y las cuentas, exactas.
+    expect(built.network.restore).toHaveBeenCalledWith(built.manager);
+    expect(built.accounts.restore).toHaveBeenCalledWith(built.manager, admin);
   });
 });

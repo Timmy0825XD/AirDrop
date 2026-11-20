@@ -557,13 +557,15 @@ Las últimas se guardan en Redis con un tope, para que una recarga no las pierda
 
 **Reiniciar el escenario:**
 
-- Deja la red igual a la del escenario: crea las centrales que faltan (con sus despachadores, sus drones y el operador asignado) y borra las que ya no están, con sus pedidos, drones, inventario y despachadores.
-- Borra los pedidos, manifiestos, incidentes, celdas de clima, restricciones temporales y eventos de la demostración. Las zonas legales no se borran.
-- Deja la flota y el stock de demostración como en la semilla.
-- Apaga el modo caos.
-- Devuelve el reloj a la hora real, a x1.
+Deja la base **exactamente** como la deja la semilla del escenario ([../negocio/cobertura.md](../negocio/cobertura.md)):
 
-Las cuentas de las personas reales no se borran.
+- Las 12 centrales con sus datos, activas y con energía. Crea las que faltan y borra las que no son del escenario.
+- La flota exacta de cada central: borra los drones que no son del escenario, crea los que faltan, devuelve a su central los que se movieron y les pone la batería llena y el estado de la semilla.
+- Las cuentas del escenario con sus datos, activas, con la contraseña de la semilla y en sus centrales. Borra toda otra cuenta, también las que se registraron durante la demostración. Solo se salvan los administradores.
+- El stock y las geovallas de la semilla. Borra toda otra geovalla. Las zonas legales no se borran.
+- Borra todos los pedidos, planes, manifiestos, incidentes, cuarentenas, avisos, celdas de clima y eventos.
+- Apaga el modo caos y los actores simulados.
+- Devuelve el reloj a la hora real, a x1.
 
 
 ### RF-43 — Zonas legales
