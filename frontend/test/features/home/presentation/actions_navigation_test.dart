@@ -6,12 +6,18 @@ import 'package:frontend/features/home/presentation/widgets/home_header.dart';
 
 Geofence _fence({DateTime? expiresAt}) => Geofence(
   id: 'e1111111-1111-4111-8111-111111111111',
+  geofenceClass: GeofenceClass.operational,
+  shape: GeofenceShape.polygon,
   name: 'Incendio en el norte',
   reason: 'Humo sobre la ruta',
-  polygon: GeoJsonPolygon.fromVertices([
-    [-73.26, 10.46],
-    [-73.24, 10.46],
-    [-73.25, 10.48],
+  category: OperationalCategory.groundRisk,
+  polygon: const GeoJsonPolygon([
+    [
+      [-73.26, 10.46],
+      [-73.24, 10.46],
+      [-73.25, 10.48],
+      [-73.26, 10.46],
+    ],
   ]),
   expiresAt: expiresAt,
 );
@@ -41,32 +47,38 @@ void main() {
     expect(opened, 1);
   });
 
-  testWidgets('una geovalla de la consola dice cuándo vence y no se elimina', (
-    tester,
-  ) async {
-    Future<void> pump(Geofence fence) => tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: GeofenceTile(geofence: fence, onTap: () {}, onDelete: () {}),
-        ),
-      ),
-    );
+  testWidgets('una operativa con vigencia dice cuándo vence', (tester) async {
+    Future<void> pump(Geofence fence, {VoidCallback? onDelete}) =>
+        tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: GeofenceTile(
+                geofence: fence,
+                onTap: () {},
+                onDelete: onDelete,
+              ),
+            ),
+          ),
+        );
 
     // 20:30 UTC son las 3:30 p. m. en Colombia.
     await pump(_fence(expiresAt: DateTime.utc(2026, 11, 8, 20, 30)));
     await tester.pump(const Duration(milliseconds: 600));
-    expect(find.text('Temporal · vence 3:30 p. m.'), findsOneWidget);
+    expect(find.text('Vence 3:30 p. m.'), findsOneWidget);
     expect(find.byTooltip('Más acciones'), findsNothing);
 
-    await pump(_fence());
+    await pump(_fence(), onDelete: () {});
     await tester.pump(const Duration(milliseconds: 600));
-    expect(find.text('3 vértices'), findsOneWidget);
+    expect(find.text('Riesgo en tierra'), findsOneWidget);
+    expect(find.text('Operativa · Polígono de 3 vértices'), findsOneWidget);
     expect(find.byTooltip('Más acciones'), findsOneWidget);
   });
 
-  test('Nest manda expiresAt y la geovalla queda temporal', () {
+  test('la clase dice si es temporal, no el vencimiento', () {
     final fence = Geofence.fromJson({
       'id': 'e1111111-1111-4111-8111-111111111111',
+      'class': 'temporary',
+      'shape': 'polygon',
       'name': 'Incendio',
       'reason': 'Humo',
       'polygon': {

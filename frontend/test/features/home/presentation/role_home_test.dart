@@ -120,14 +120,20 @@ Hub _hub({required HubStatus status}) => Hub(
   status: status,
 );
 
-Geofence _geofence() => Geofence(
+Geofence _geofence() => const Geofence(
   id: 'e1111111-1111-4111-8111-111111111111',
+  geofenceClass: GeofenceClass.operational,
+  shape: GeofenceShape.polygon,
   name: 'Corredor Aéreo Ambulancia',
   reason: 'Pasillo aéreo para traslados programados',
-  polygon: GeoJsonPolygon.fromVertices([
-    [-73.26, 10.46],
-    [-73.24, 10.46],
-    [-73.25, 10.48],
+  category: OperationalCategory.other,
+  polygon: GeoJsonPolygon([
+    [
+      [-73.26, 10.46],
+      [-73.24, 10.46],
+      [-73.25, 10.48],
+      [-73.26, 10.46],
+    ],
   ]),
 );
 
@@ -176,6 +182,26 @@ class FakeGeofenceRepository implements GeofenceRepository {
 
   @override
   Future<void> remove(String id) async => throw UnimplementedError();
+
+  @override
+  Future<List<GeofenceChange>> changes(String id) async => const [];
+
+  @override
+  Future<Geofence> createLegal(CreateLegalZoneRequest request) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Geofence> updateLegal(
+    String id,
+    UpdateLegalZoneRequest request,
+  ) async => throw UnimplementedError();
+
+  @override
+  Future<Geofence> setLegalActive(
+    String id, {
+    required bool active,
+    required String reason,
+  }) async => throw UnimplementedError();
 }
 
 /// La flota de la maqueta: un solo dron disponible, para que la pantalla
@@ -503,7 +529,7 @@ void main() {
     expect(find.byType(GeofencesScreen), findsOneWidget);
     expect(find.text('Corredor Aéreo Ambulancia'), findsOneWidget);
     expect(
-      find.text('Pasillo aéreo para traslados programados'),
+      find.text('Operativa · Polígono de 3 vértices'),
       findsOneWidget,
     );
   });

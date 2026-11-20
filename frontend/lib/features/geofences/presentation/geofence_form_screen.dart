@@ -3,29 +3,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
-import '../../../core/widgets/message_view.dart';
 import '../../../core/widgets/auth_morph_button.dart';
 import '../../home/presentation/widgets/section_form_page.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../data/geofence_models.dart';
 import '../data/geofence_providers.dart';
-import 'geofence_draw_screen.dart';
 import 'widgets/geofence_form_sheet.dart';
 import 'widgets/geofence_form_values.dart';
-import '../../../core/widgets/skeleton.dart';
 
-/// Alta (`/geofences/new`) y edición (`/geofences/:id`) de geovallas.
-/// La edición arma el diff contra la geovalla original y, si no cambió
-/// nada, no envía el `PATCH` (Nest responde 400 con un cuerpo sin
-/// cambios).
-///
-/// No existe `GET /geofences/:id`: la fila sale del listado, igual que
-/// en inventario.
+/// Alta y edición de una geovalla operativa (RF-21, CU-18), del operador.
+/// La edición envía solo lo que cambió; sin cambios, no llama a Nest.
 class GeofenceFormScreen extends ConsumerStatefulWidget {
-  const GeofenceFormScreen({super.key, this.geofenceId});
+  const GeofenceFormScreen({super.key, this.original});
 
   /// `null` en el alta.
-  final String? geofenceId;
+  final Geofence? original;
 
   @override
   ConsumerState<GeofenceFormScreen> createState() => _GeofenceFormScreenState();
@@ -36,9 +28,13 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
   Map<GeofenceInput, String> _errors = const {};
   int _shakeCount = 0;
   bool _isLoading = false;
-  bool _prefilled = false;
 
-  bool get _isEdit => widget.geofenceId != null;
+  @override
+  void initState() {
+    super.initState();
+    final original = widget.original;
+    if (original != null) _values.load(original);
+  }
 
   @override
   void dispose() {
@@ -46,28 +42,16 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
     super.dispose();
   }
 
-  /// Rellena una sola vez: si el provider se refresca, no pisa lo que el
-  /// usuario esté escribiendo.
-  void _prefill(Geofence geofence) {
-    if (_prefilled) return;
-    _prefilled = true;
-    _values.load(geofence);
-  }
-
-  Future<void> _draw() async {
-    final vertices = await GeofenceDrawScreen.open(context, _values.vertices);
-    if (vertices == null || !mounted) return;
-    setState(() => _values.vertices = vertices);
-  }
-
-  Future<void> _submit(Geofence? original) async {
+  Future<void> _submit() async {
+    final original = widget.original;
     final errors = _values.validate();
     setState(() {
       _errors = errors;
       if (errors.isNotEmpty) _shakeCount++;
     });
     if (errors.isNotEmpty) return;
-    if (original != null && _values.diff(original).isEmpty) {
+    final diff = original == null ? null : _values.diff(original);
+    if (diff != null && diff.isEmpty) {
       showAppSnack(
         context,
         'No hay cambios para guardar.',
@@ -85,7 +69,7 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
       } else {
         await ref
             .read(updateGeofenceProvider.notifier)
-            .edit(original.id, _values.diff(original));
+            .edit(original.id, diff!);
       }
       if (!mounted) return;
       showAppSnack(
@@ -102,51 +86,27 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isEdit) return _form(null);
-    final state = ref.watch(geofencesProvider);
-    if (state case AsyncError(:final error)) {
-      return _message(ApiException.messageOf(error));
-    }
-    final rows = state.value;
-    if (rows == null) {
-      return const Scaffold(body: SkeletonDetail());
-    }
-    final geofence = rows.where((r) => r.id == widget.geofenceId).firstOrNull;
-    if (geofence == null) return _message('La geovalla no existe.');
-    _prefill(geofence);
-    return _form(geofence);
-  }
-
-  Widget _form(Geofence? original) {
+    final original = widget.original;
     return SectionFormPage(
       header: SectionHeader(
         title: original == null ? 'Nueva geovalla' : 'Editar geovalla',
-        subtitle: original?.name ?? 'Una zona por donde el dron no pasa',
+        subtitle:
+            original?.name ?? 'Una zona operativa por donde el dron no pasa',
         onBack: () => SectionHeader.backOrHome(context),
       ),
       card: GeofenceFormSheet(
         values: _values,
         errors: _errors,
         shakeCount: _shakeCount,
-        onDraw: _draw,
+        isEdit: original != null,
+        onChanged: () => setState(() {}),
       ),
       button: AuthMorphButton(
         label: original == null ? 'Crear geovalla' : 'Guardar cambios',
         loadingLabel: 'Guardando la geovalla',
         isLoading: _isLoading,
-        onPressed: () => _submit(original),
+        onPressed: _submit,
       ),
-    );
-  }
-
-  Widget _message(String text) {
-    return SectionStatePage(
-      header: SectionHeader(
-        title: 'Geovalla',
-        subtitle: 'Editar geovalla',
-        onBack: () => SectionHeader.backOrHome(context),
-      ),
-      body: MessageView(icon: Icons.polyline_rounded, message: text),
     );
   }
 }

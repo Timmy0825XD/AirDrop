@@ -25,7 +25,7 @@ import '../features/fleet/presentation/drone_form_screen.dart';
 import '../features/fleet/presentation/drone_maintenance_screen.dart';
 import '../features/fleet/presentation/fleet_map_screen.dart';
 import '../features/fleet/presentation/fleet_screen.dart';
-import '../features/geofences/presentation/geofence_form_screen.dart';
+import '../features/geofences/presentation/geofence_editor_screen.dart';
 import '../features/geofences/presentation/geofences_screen.dart';
 import '../features/home/presentation/dispatcher_more_screen.dart';
 import '../features/home/presentation/role_home.dart';
@@ -83,9 +83,9 @@ const _roleRoutes = <String, Set<UserRole>>{
   '/fleet/flights': {UserRole.fleetOperator},
   // CU-17: el historial de taller de un dron de sus centrales.
   '/fleet/:id/maintenance': {UserRole.fleetOperator},
-  '/geofences': {UserRole.fleetOperator},
-  '/geofences/new': {UserRole.fleetOperator},
-  '/geofences/:id': {UserRole.fleetOperator},
+  '/geofences': {UserRole.fleetOperator, UserRole.admin},
+  '/geofences/new': {UserRole.fleetOperator, UserRole.admin},
+  '/geofences/:id': {UserRole.fleetOperator, UserRole.admin},
   '/orders/emergency': {UserRole.requester},
   '/welcome': {UserRole.requester},
   '/privacy': {UserRole.requester},
@@ -361,12 +361,12 @@ final routerProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/geofences/new',
-            builder: (_, _) => const GeofenceFormScreen(),
+            builder: (_, _) => const GeofenceEditorScreen(),
           ),
           GoRoute(
             path: '/geofences/:id',
             builder: (_, state) =>
-                GeofenceFormScreen(geofenceId: state.pathParameters['id']),
+                GeofenceEditorScreen(geofenceId: state.pathParameters['id']),
           ),
           GoRoute(
             path: '/orders/emergency',

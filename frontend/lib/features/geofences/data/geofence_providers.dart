@@ -36,7 +36,7 @@ final legalZoneRepositoryProvider = Provider<LegalZoneRepository>((ref) {
   };
 });
 
-/// Las zonas legales, de solo lectura.
+/// Las zonas legales activas para el mapa de flota (`GET /airspace/zones`).
 final legalZonesProvider = FutureProvider<List<LegalZone>>((ref) {
   return ref.watch(legalZoneRepositoryProvider).list();
 });
@@ -102,4 +102,49 @@ class DeleteGeofenceNotifier extends AsyncNotifier<void> {
 final deleteGeofenceProvider =
     AsyncNotifierProvider<DeleteGeofenceNotifier, void>(
       DeleteGeofenceNotifier.new,
+    );
+
+/// RU-36: el historial de una zona legal.
+final geofenceChangesProvider =
+    FutureProvider.family<List<GeofenceChange>, String>((ref, id) {
+      return ref.watch(geofenceRepositoryProvider).changes(id);
+    });
+
+/// RU-36 y CU-52: el admin mantiene las zonas legales. Cada cambio refresca
+/// el catálogo, el historial y las zonas del mapa de flota.
+class LegalZoneAdminNotifier extends AsyncNotifier<void> {
+  @override
+  Future<void> build() async {}
+
+  Future<Geofence> create(CreateLegalZoneRequest request) =>
+      _run(() => ref.read(geofenceRepositoryProvider).createLegal(request));
+
+  Future<Geofence> edit(String id, UpdateLegalZoneRequest request) => _run(
+    () => ref.read(geofenceRepositoryProvider).updateLegal(id, request),
+    id: id,
+  );
+
+  Future<Geofence> setActive(
+    String id, {
+    required bool active,
+    required String reason,
+  }) => _run(
+    () => ref
+        .read(geofenceRepositoryProvider)
+        .setLegalActive(id, active: active, reason: reason),
+    id: id,
+  );
+
+  Future<Geofence> _run(Future<Geofence> Function() call, {String? id}) async {
+    final zone = await call();
+    ref.invalidate(geofencesProvider);
+    ref.invalidate(legalZonesProvider);
+    if (id != null) ref.invalidate(geofenceChangesProvider(id));
+    return zone;
+  }
+}
+
+final legalZoneAdminProvider =
+    AsyncNotifierProvider<LegalZoneAdminNotifier, void>(
+      LegalZoneAdminNotifier.new,
     );
