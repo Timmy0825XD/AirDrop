@@ -94,7 +94,9 @@ function build() {
       const saved = [row(polygon)];
       return Promise.resolve(sql.startsWith('UPDATE') ? [saved, 1] : saved);
     }),
-    findOne: jest.fn().mockResolvedValue({ id: row(plaza).id }),
+    findOne: jest
+      .fn()
+      .mockResolvedValue({ id: row(plaza).id, class: 'operational' }),
   };
   const hubs = { find: jest.fn().mockResolvedValue([rosario, clinica]) };
   const flights = { recheckRoutes: jest.fn().mockResolvedValue(undefined) };
