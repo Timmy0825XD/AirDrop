@@ -1,26 +1,15 @@
-import { Transform, Type } from 'class-transformer';
-import {
-  Equals,
-  IsArray,
-  IsString,
-  MaxLength,
-  MinLength,
-  ValidateNested,
-} from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsEnum, IsString, MaxLength, MinLength } from 'class-validator';
+import { OperationalCategory } from '../../common/enums/operational-category.enum';
 import { FIELD_LIMITS } from '../../common/field-limits';
+import { GeofenceShapeDto } from './geofence-shape.dto';
 
-export class GeoJsonPolygonDto {
-  @Equals('Polygon', { message: 'El polígono debe ser GeoJSON de tipo Polygon.' })
-  type: 'Polygon';
+const trim = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? value.trim() : value;
 
-  @IsArray({ message: 'El polígono debe incluir coordenadas.' })
-  coordinates: number[][][];
-}
-
-export class CreateGeofenceDto {
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+/** RF-21: una geovalla operativa, en círculo o en vértices. */
+export class CreateGeofenceDto extends GeofenceShapeDto {
+  @Transform(trim)
   @IsString({ message: 'El nombre es obligatorio.' })
   @MinLength(1, { message: 'El nombre es obligatorio.' })
   @MaxLength(FIELD_LIMITS.geofenceName, {
@@ -28,9 +17,7 @@ export class CreateGeofenceDto {
   })
   name: string;
 
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @Transform(trim)
   @IsString({ message: 'El motivo es obligatorio.' })
   @MinLength(1, { message: 'El motivo es obligatorio.' })
   @MaxLength(FIELD_LIMITS.reason, {
@@ -38,7 +25,6 @@ export class CreateGeofenceDto {
   })
   reason: string;
 
-  @ValidateNested()
-  @Type(() => GeoJsonPolygonDto)
-  polygon: GeoJsonPolygonDto;
+  @IsEnum(OperationalCategory, { message: 'La categoría no es válida.' })
+  category: OperationalCategory;
 }

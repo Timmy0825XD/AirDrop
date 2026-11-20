@@ -41,10 +41,11 @@ export class GeofencesController {
 
   @Patch(':id')
   update(
+    @CurrentUser() user: User,
     @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
     @Body() dto: UpdateGeofenceDto,
   ) {
-    return this.geofencesService.update(id, dto);
+    return this.geofencesService.update(user, id, dto);
   }
 
   @Delete(':id')

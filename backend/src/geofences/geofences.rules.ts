@@ -51,12 +51,9 @@ export function assertGeoJsonPolygon(value: unknown): GeoJsonPolygon {
 }
 
 /**
- * RF-36: una geovalla rige si no vence (del operador) o si su vencimiento
- * todavía no llega en la hora simulada. `$param` es esa hora.
- */
-/**
- * Las geovallas operativas y temporales que rigen a la hora `param`. Las
- * zonas legales no entran: el planificador las toma de `AirspaceService`.
+ * RF-36: las geovallas operativas y temporales que rigen a la hora simulada
+ * `param` (sin vencimiento, o que aún no vencen). Las zonas legales no
+ * entran: el planificador las toma de `AirspaceService`.
  */
 export function activeGeofenceSql(param: string, alias = ''): string {
   const prefix = alias ? `${alias}.` : '';

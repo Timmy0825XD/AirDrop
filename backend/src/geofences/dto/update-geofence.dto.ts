@@ -1,20 +1,25 @@
-import { Transform, Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import {
+  IsEnum,
   IsOptional,
   IsString,
   MaxLength,
   MinLength,
-  ValidateNested,
 } from 'class-validator';
+import { OperationalCategory } from '../../common/enums/operational-category.enum';
 import { FIELD_LIMITS } from '../../common/field-limits';
-import { GeoJsonPolygonDto } from './create-geofence.dto';
+import { OptionalGeofenceShapeDto } from './geofence-shape.dto';
 
-export class UpdateGeofenceDto {
-  // Puede no venir (se conserva), pero si viene no va en blanco.
+const trim = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? value.trim() : value;
+
+/**
+ * Lo que no viene se conserva. Para cambiar la forma se envía `shape` con
+ * su geometría completa (centro y radio, o los vértices).
+ */
+export class UpdateGeofenceDto extends OptionalGeofenceShapeDto {
   @IsOptional()
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @Transform(trim)
   @IsString({ message: 'El nombre no es válido.' })
   @MinLength(1, { message: 'El nombre no puede quedar vacío.' })
   @MaxLength(FIELD_LIMITS.geofenceName, {
@@ -23,9 +28,7 @@ export class UpdateGeofenceDto {
   name?: string;
 
   @IsOptional()
-  @Transform(({ value }: { value: unknown }) =>
-    typeof value === 'string' ? value.trim() : value,
-  )
+  @Transform(trim)
   @IsString({ message: 'El motivo no es válido.' })
   @MinLength(1, { message: 'El motivo no puede quedar vacío.' })
   @MaxLength(FIELD_LIMITS.reason, {
@@ -34,7 +37,6 @@ export class UpdateGeofenceDto {
   reason?: string;
 
   @IsOptional()
-  @ValidateNested()
-  @Type(() => GeoJsonPolygonDto)
-  polygon?: GeoJsonPolygonDto;
+  @IsEnum(OperationalCategory, { message: 'La categoría no es válida.' })
+  category?: OperationalCategory;
 }

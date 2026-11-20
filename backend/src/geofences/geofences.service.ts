@@ -9,7 +9,13 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import { simClock } from '../common/clock/sim-clock';
-import { isLegalGeofenceClass } from '../common/enums/geofence-class.enum';
+import {
+  GeofenceClass,
+  isLegalGeofenceClass,
+} from '../common/enums/geofence-class.enum';
+import { GeofenceShape } from '../common/enums/geofence-shape.enum';
+import { OperationalCategory } from '../common/enums/operational-category.enum';
+import { LngLat } from '../routing/routing.rules';
 import { Hub } from '../hubs/hub.entity';
 import { FlightClockService } from '../simulation/flight-clock.service';
 import { TelemetryPublisher } from '../telemetry/telemetry.publisher';
@@ -17,6 +23,7 @@ import { User } from '../users/user.entity';
 import { CreateGeofenceDto } from './dto/create-geofence.dto';
 import { UpdateGeofenceDto } from './dto/update-geofence.dto';
 import { Geofence } from './geofence.entity';
+import { GeofenceGeometry, toGeofenceGeometry } from './geofence-shape.rules';
 import {
   activeGeofenceSql,
   assertCoversNoHub,
@@ -27,20 +34,35 @@ import {
 
 type GeofenceRow = {
   id: string;
+  class: GeofenceClass;
+  shape: GeofenceShape;
   name: string;
   reason: string;
+  category: OperationalCategory | null;
+  centerLatitude: string | null;
+  centerLongitude: string | null;
+  radiusM: number | null;
   polygon: string;
   createdByUserId: string;
+  updatedByUserId: string | null;
   createdAt: Date;
   expiresAt: Date | null;
 };
 
 export type PublicGeofence = {
   id: string;
+  class: GeofenceClass;
+  /** RF-21: círculo (con `center` y `radiusM`) o polígono de vértices. */
+  shape: GeofenceShape;
   name: string;
   reason: string;
+  category: OperationalCategory | null;
+  center: LngLat | null;
+  radiusM: number | null;
+  /** Siempre: es lo que rodean las rutas (el círculo, ya en polígono). */
   polygon: GeoJsonPolygon;
   createdByUserId: string;
+  updatedByUserId: string | null;
   createdAt: Date;
   /** RF-36: con fecha es temporal; `null`, del operador. */
   expiresAt: Date | null;
@@ -66,7 +88,7 @@ export type NewTemporaryGeofence = {
 export const TEMPORARY_GEOFENCE_NOT_FOUND =
   'Esa geovalla temporal no existe o ya venció.';
 
-const RETURNING = `id, name, reason, ST_AsGeoJSON(polygon) AS polygon, "createdByUserId", "createdAt", "expiresAt"`;
+const RETURNING = `id, class, shape, name, reason, category, "centerLatitude", "centerLongitude", "radiusM", ST_AsGeoJSON(polygon) AS polygon, "createdByUserId", "updatedByUserId", "createdAt", "expiresAt"`;
 
 /** Cada cuánto (en hora simulada) se borran las geovallas temporales vencidas. */
 const EXPIRY_SWEEP_MS = 15_000;
@@ -115,21 +137,29 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  /** RF-21: una geovalla operativa, en círculo o en vértices. */
   async create(user: User, dto: CreateGeofenceDto) {
-    const polygon = assertGeoJsonPolygon(dto.polygon);
-    await this.assertCoversNoHub(polygon);
-    const rows = (await this.geofences.query(
-      `INSERT INTO geofences (id, name, reason, polygon, "createdByUserId")
+    const geometry = toGeofenceGeometry(dto);
+    await this.assertCoversNoHub(geometry.polygon);
+    const rows: GeofenceRow[] = await this.geofences.query(
+      `INSERT INTO geofences (
+         id, class, shape, name, reason, category,
+         "centerLatitude", "centerLongitude", "radiusM", polygon, "createdByUserId"
+       )
        VALUES (
-         gen_random_uuid(),
-         $1,
-         $2,
-         ST_SetSRID(ST_GeomFromGeoJSON($3), 4326),
-         $4
+         gen_random_uuid(), 'operational', $1, $2, $3, $4, $5, $6, $7,
+         ST_SetSRID(ST_GeomFromGeoJSON($8), 4326), $9
        )
        RETURNING ${RETURNING}`,
-      [dto.name.trim(), dto.reason.trim(), JSON.stringify(polygon), user.id],
-    )) as GeofenceRow[];
+      [
+        geometry.shape,
+        dto.name.trim(),
+        dto.reason.trim(),
+        dto.category,
+        ...geometryParams(geometry),
+        user.id,
+      ],
+    );
     await this.recheckFlights();
     return this.toPublicGeofence(rows[0]);
   }
@@ -245,20 +275,23 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
     return count;
   }
 
-  async update(id: string, dto: UpdateGeofenceDto) {
+  async update(user: User, id: string, dto: UpdateGeofenceDto) {
     if (
       dto.name === undefined &&
       dto.reason === undefined &&
-      dto.polygon === undefined
+      dto.category === undefined &&
+      dto.shape === undefined
     ) {
       throw new BadRequestException(
         'Debes enviar al menos un campo para actualizar.',
       );
     }
     await this.requireGeofence(id);
-    const polygon = dto.polygon ? assertGeoJsonPolygon(dto.polygon) : undefined;
-    if (polygon) {
-      await this.assertCoversNoHub(polygon);
+    const geometry = dto.shape
+      ? toGeofenceGeometry({ ...dto, shape: dto.shape })
+      : null;
+    if (geometry) {
+      await this.assertCoversNoHub(geometry.polygon);
     }
     // En UPDATE, TypeORM devuelve `[rows, rowCount]` (PostgresQueryRunner)
     // y no las filas: sin desestructurar, `rows[0]` es el arreglo completo
@@ -268,10 +301,16 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
        SET
          name = COALESCE($2, name),
          reason = COALESCE($3, reason),
+         category = COALESCE($4::operational_category, category),
+         shape = CASE WHEN $5::text IS NULL THEN shape ELSE $5::geofence_shape END,
+         "centerLatitude" = CASE WHEN $5::text IS NULL THEN "centerLatitude" ELSE $6 END,
+         "centerLongitude" = CASE WHEN $5::text IS NULL THEN "centerLongitude" ELSE $7 END,
+         "radiusM" = CASE WHEN $5::text IS NULL THEN "radiusM" ELSE $8 END,
          polygon = CASE
-           WHEN $4::text IS NULL THEN polygon
-           ELSE ST_SetSRID(ST_GeomFromGeoJSON($4), 4326)
+           WHEN $5::text IS NULL THEN polygon
+           ELSE ST_SetSRID(ST_GeomFromGeoJSON($9), 4326)
          END,
+         "updatedByUserId" = $10,
          "updatedAt" = NOW()
        WHERE id = $1
        RETURNING ${RETURNING}`,
@@ -279,10 +318,13 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
         id,
         dto.name?.trim() ?? null,
         dto.reason?.trim() ?? null,
-        polygon ? JSON.stringify(polygon) : null,
+        dto.category ?? null,
+        geometry?.shape ?? null,
+        ...(geometry ? geometryParams(geometry) : [null, null, null, null]),
+        user.id,
       ],
     )) as [GeofenceRow[], number];
-    if (polygon) {
+    if (geometry) {
       await this.recheckFlights();
     }
     return this.toPublicGeofence(rows[0]);
@@ -330,10 +372,22 @@ export class GeofencesService implements OnModuleInit, OnModuleDestroy {
   private toPublicGeofence(row: GeofenceRow): PublicGeofence {
     return {
       id: row.id,
+      class: row.class,
+      shape: row.shape,
       name: row.name,
       reason: row.reason,
+      category: row.category,
+      center:
+        row.centerLatitude !== null && row.centerLongitude !== null
+          ? {
+              latitude: Number(row.centerLatitude),
+              longitude: Number(row.centerLongitude),
+            }
+          : null,
+      radiusM: row.radiusM,
       polygon: JSON.parse(row.polygon) as GeoJsonPolygon,
       createdByUserId: row.createdByUserId,
+      updatedByUserId: row.updatedByUserId,
       createdAt: row.createdAt,
       expiresAt: row.expiresAt ? new Date(row.expiresAt) : null,
     };
@@ -350,4 +404,14 @@ export function presentTemporary(fence: PublicGeofence): TemporaryGeofenceJson {
     createdAt: new Date(fence.createdAt).toISOString(),
     expiresAt: (fence.expiresAt ?? simClock.now()).toISOString(),
   };
+}
+
+/** `centerLatitude`, `centerLongitude`, `radiusM` y el polígono, en ese orden. */
+function geometryParams(geometry: GeofenceGeometry) {
+  return [
+    geometry.center?.latitude ?? null,
+    geometry.center?.longitude ?? null,
+    geometry.radiusM,
+    JSON.stringify(geometry.polygon),
+  ];
 }

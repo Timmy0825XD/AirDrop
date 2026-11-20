@@ -4,6 +4,8 @@ import { validate } from 'class-validator';
 import { User } from '../users/user.entity';
 import { CreateGeofenceDto } from './dto/create-geofence.dto';
 import { UpdateGeofenceDto } from './dto/update-geofence.dto';
+import { GeofenceShape } from '../common/enums/geofence-shape.enum';
+import { OperationalCategory } from '../common/enums/operational-category.enum';
 import { GeoJsonPolygon, assertCoversNoHub } from './geofences.rules';
 import { GeofencesService } from './geofences.service';
 
@@ -53,11 +55,31 @@ const COVERS_ROSARIO =
 
 const operator = { id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee' } as User;
 
+/** El polígono como lo dibuja la app: vértices sin cerrar. */
+const shapeOf = (polygon: GeoJsonPolygon) => ({
+  shape: GeofenceShape.POLYGON,
+  vertices: polygon.coordinates[0]
+    .slice(0, -1)
+    .map(([longitude, latitude]) => ({ latitude, longitude })),
+});
+
+const fields = {
+  reason: 'Evento',
+  category: OperationalCategory.CROWD,
+};
+
 const row = (polygon: GeoJsonPolygon) => ({
   id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+  class: 'operational',
+  shape: 'polygon',
   name: 'Zona',
   reason: 'Evento',
+  category: 'crowd',
+  centerLatitude: null,
+  centerLongitude: null,
+  radiusM: null,
   polygon: JSON.stringify(polygon),
+  updatedByUserId: null,
   createdByUserId: operator.id,
   createdAt: new Date('2026-11-05T15:00:00.000Z'),
   expiresAt: null,
@@ -67,7 +89,7 @@ function build() {
   const geofences = {
     query: jest.fn((sql: string, params: unknown[]) => {
       const polygon = JSON.parse(
-        String(sql.startsWith('INSERT') ? params[2] : params[3]),
+        String(sql.startsWith('INSERT') ? params[7] : params[8]),
       ) as GeoJsonPolygon;
       const saved = [row(polygon)];
       return Promise.resolve(sql.startsWith('UPDATE') ? [saved, 1] : saved);
@@ -103,17 +125,17 @@ describe('Una geovalla cambia la ruta de los drones en el aire (RF-33)', () => {
     const { service, flights } = build();
     await service.create(operatorUser, {
       name: 'Evento',
-      reason: 'Concierto',
-      polygon: plaza,
-    } as never);
+      ...fields,
+      ...shapeOf(plaza),
+    });
     expect(flights.recheckRoutes).toHaveBeenCalledTimes(1);
   });
 
   it('editar solo el nombre no revisa nada; mover el polígono sí', async () => {
     const { service, flights } = build();
-    await service.update(row(plaza).id, { name: 'Otro nombre' } as never);
+    await service.update(operator, row(plaza).id, { name: 'Otro nombre' });
     expect(flights.recheckRoutes).not.toHaveBeenCalled();
-    await service.update(row(plaza).id, { polygon: plaza } as never);
+    await service.update(operator, row(plaza).id, shapeOf(plaza));
     expect(flights.recheckRoutes).toHaveBeenCalledTimes(1);
   });
 
@@ -123,9 +145,9 @@ describe('Una geovalla cambia la ruta de los drones en el aire (RF-33)', () => {
     await expect(
       service.create(operatorUser, {
         name: 'Evento',
-        reason: 'Concierto',
-        polygon: plaza,
-      } as never),
+        ...fields,
+        ...shapeOf(plaza),
+      }),
     ).resolves.toMatchObject({ name: expect.any(String) });
   });
 });
@@ -151,8 +173,8 @@ describe('Una geovalla no cubre una central', () => {
     const { service, geofences } = build();
     const attempt = service.create(operator, {
       name: 'Sobre el hospital',
-      reason: 'Evento',
-      polygon: overRosario,
+      ...fields,
+      ...shapeOf(overRosario),
     });
     await expect(attempt).rejects.toBeInstanceOf(BadRequestException);
     await expect(attempt).rejects.toThrow(COVERS_ROSARIO);
@@ -163,28 +185,32 @@ describe('Una geovalla no cubre una central', () => {
     const { service, geofences } = build();
     await service.create(operator, {
       name: 'Plaza Alfonso López',
-      reason: 'Evento',
-      polygon: plaza,
+      ...fields,
+      ...shapeOf(plaza),
     });
     expect(geofences.query).toHaveBeenCalledTimes(1);
   });
 
   it('mover una geovalla encima de una central responde 400 y no guarda', async () => {
     const { service, geofences } = build();
-    const attempt = service.update(row(plaza).id, { polygon: overRosario });
+    const attempt = service.update(
+      operator,
+      row(plaza).id,
+      shapeOf(overRosario),
+    );
     await expect(attempt).rejects.toThrow(COVERS_ROSARIO);
     expect(geofences.query).not.toHaveBeenCalled();
   });
 
   it('cambiar solo el nombre no revisa las centrales', async () => {
     const { service, geofences } = build();
-    await service.update(row(plaza).id, { name: 'Plaza' });
+    await service.update(operator, row(plaza).id, { name: 'Plaza' });
     expect(geofences.query).toHaveBeenCalledTimes(1);
   });
 });
 
-describe('Nombre y motivo de la geovalla', () => {
-  const body = { name: 'Zona', reason: 'Evento', polygon: plaza };
+describe('Datos de la geovalla operativa', () => {
+  const body = { name: 'Zona', ...fields, ...shapeOf(plaza) };
 
   it.each([
     ['name', '', 'El nombre es obligatorio.'],
@@ -206,7 +232,30 @@ describe('Nombre y motivo de la geovalla', () => {
     );
   });
 
+  it('sin categoría o con una que no existe se rechaza', async () => {
+    expect(
+      await errors(CreateGeofenceDto, { ...body, category: undefined }),
+    ).toContain('La categoría no es válida.');
+    expect(
+      await errors(CreateGeofenceDto, { ...body, category: 'fiesta' }),
+    ).toContain('La categoría no es válida.');
+  });
+
+  it('un círculo pide radio entre 50 m y 5 km', async () => {
+    const circle = {
+      ...body,
+      shape: GeofenceShape.CIRCLE,
+      center: { latitude: 10.47, longitude: -73.25 },
+    };
+    expect(
+      await errors(CreateGeofenceDto, { ...circle, radiusM: 40 }),
+    ).toContain('El radio debe estar entre 50 m y 5 km.');
+    expect(
+      await errors(CreateGeofenceDto, { ...circle, radiusM: 300 }),
+    ).toEqual([]);
+  });
+
   it('al editar, omitir el nombre y el motivo sigue valiendo', async () => {
-    expect(await errors(UpdateGeofenceDto, { polygon: plaza })).toEqual([]);
+    expect(await errors(UpdateGeofenceDto, shapeOf(plaza))).toEqual([]);
   });
 });
