@@ -6,6 +6,9 @@ import 'package:go_router/go_router.dart';
 import '../core/widgets/app_max_width.dart';
 import '../core/widgets/app_tab_bar.dart';
 import '../core/widgets/nav_scope.dart';
+import '../core/widgets/sim_clock_badge.dart';
+import '../core/widgets/requester_tab_bar.dart';
+import '../features/auth/data/auth_models.dart';
 import '../features/auth/presentation/auth_controller.dart';
 import '../features/tracking/data/tracking_providers.dart';
 import 'role_tabs.dart';
@@ -55,48 +58,65 @@ class _RoleShellState extends ConsumerState<RoleShell> {
     final selected = tabs.indexOf(widget.location);
     final onTab = tabs.isTab(widget.location);
     final media = MediaQuery.of(context);
-    final inset = onTab ? AppTabBar.height : 0.0;
-    return NavScope(
-      isTabRoot: onTab,
-      child: AppMaxWidth(
-        child: Stack(
-          children: [
-            NotificationListener<UserScrollNotification>(
-              onNotification: _onScroll,
-              // La pantalla deja libre el alto de la barra al final.
-              child: MediaQuery(
-                // El scaffold ubica los botones flotantes con viewPadding. El
-                // ancho es el de la columna (`AppMaxWidth`), no el de la
-                // ventana.
-                data: media.copyWith(
-                  size: Size(
-                    media.size.width.clamp(0, AppMaxWidth.defaultMaxWidth),
-                    media.size.height,
+    final requester = role == UserRole.requester;
+    final inset = !onTab
+        ? 0.0
+        : requester
+        ? RequesterTabBar.reservedHeight(context)
+        : AppTabBar.height;
+    return SimClockVisibility(
+      showIndicator: role != UserRole.requester,
+      child: NavScope(
+        isTabRoot: onTab,
+        child: AppMaxWidth(
+          child: Stack(
+            children: [
+              NotificationListener<UserScrollNotification>(
+                onNotification: _onScroll,
+                // La pantalla deja libre el alto de la barra al final.
+                child: MediaQuery(
+                  // El scaffold ubica los botones flotantes con viewPadding. El
+                  // ancho es el de la columna (`AppMaxWidth`), no el de la
+                  // ventana.
+                  data: media.copyWith(
+                    size: Size(
+                      media.size.width.clamp(0, AppMaxWidth.defaultMaxWidth),
+                      media.size.height,
+                    ),
+                    padding: media.padding.copyWith(
+                      bottom: media.padding.bottom + inset,
+                    ),
+                    viewPadding: media.viewPadding.copyWith(
+                      bottom: media.viewPadding.bottom + inset,
+                    ),
                   ),
-                  padding: media.padding.copyWith(
-                    bottom: media.padding.bottom + inset,
-                  ),
-                  viewPadding: media.viewPadding.copyWith(
-                    bottom: media.viewPadding.bottom + inset,
-                  ),
+                  child: widget.child,
                 ),
-                child: widget.child,
               ),
-            ),
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
-              child: AppTabBar(
-                destinations: tabs.destinations,
-                selected: selected,
-                onSelect: (i) => context.go(tabs.paths[i]),
-                center: tabs.center,
-                centerActive: tabs.isCenter(widget.location),
-                collapsed: !onTab || _scrolledAway,
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: requester
+                    ? (onTab
+                          ? RequesterTabBar(
+                              destinations: tabs.destinations,
+                              selected: selected,
+                              onSelect: (i) => context.go(tabs.paths[i]),
+                              center: tabs.center,
+                            )
+                          : const SizedBox.shrink())
+                    : AppTabBar(
+                        destinations: tabs.destinations,
+                        selected: selected,
+                        onSelect: (i) => context.go(tabs.paths[i]),
+                        center: tabs.center,
+                        centerActive: tabs.isCenter(widget.location),
+                        collapsed: !onTab || _scrolledAway,
+                      ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

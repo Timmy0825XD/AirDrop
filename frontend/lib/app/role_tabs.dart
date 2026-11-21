@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/widgets/app_tab_bar.dart';
+import '../theme/app_icons.dart';
 import '../features/auth/data/auth_models.dart';
 import '../features/home/presentation/widgets/admin/admin_create_sheet.dart';
 import '../features/fleet/data/fleet_providers.dart';
@@ -72,23 +73,23 @@ class RoleTabs {
   /// Pedir urgencia pasa a ser el botón grande del inicio.
   static const _simpleRequester = RoleTabs(
     destinations: [
-      _home,
-      NavDestination(icon: Icons.receipt_long_rounded, label: 'Pedidos'),
-      _profile,
+      NavDestination(icon: AppIcons.home, label: 'Inicio'),
+      NavDestination(icon: AppIcons.orders, label: 'Pedidos'),
+      NavDestination(icon: AppIcons.profile, label: 'Perfil'),
     ],
     paths: ['/home', '/orders/mine', '/profile'],
   );
 
   static RoleTabs _requester(BuildContext context) => RoleTabs(
     destinations: const [
-      _home,
-      NavDestination(icon: Icons.receipt_long_rounded, label: 'Pedidos'),
-      NavDestination(icon: Icons.event_repeat_rounded, label: 'Planes'),
-      _profile,
+      NavDestination(icon: AppIcons.home, label: 'Inicio'),
+      NavDestination(icon: AppIcons.orders, label: 'Pedidos'),
+      NavDestination(icon: AppIcons.plans, label: 'Planes'),
+      NavDestination(icon: AppIcons.profile, label: 'Perfil'),
     ],
     paths: const ['/home', '/orders/mine', '/orders/plans', '/profile'],
     center: NavCenterAction(
-      icon: Icons.bolt_rounded,
+      icon: AppIcons.urgency,
       label: 'Pedir urgencia',
       tabLabel: 'Urgencia',
       onPressed: () => context.push('/orders/emergency'),

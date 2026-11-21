@@ -28,9 +28,11 @@ class OrderTray<T> extends StatelessWidget {
     required this.keyOf,
     required this.itemBuilder,
     this.bottom,
+    this.titleMaxLines = 1,
   });
 
   final String title;
+  final int titleMaxLines;
 
   /// El subtítulo mientras la lista carga o si falló.
   final String idleSubtitle;
@@ -50,6 +52,7 @@ class OrderTray<T> extends StatelessWidget {
     final count = rows.value?.length;
     return SectionStatePage(
       header: SectionHeader(
+        titleMaxLines: titleMaxLines,
         title: title,
         subtitle: count == null ? idleSubtitle : countLabel(count),
         onBack: () => context.go('/home'),

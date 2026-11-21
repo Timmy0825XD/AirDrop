@@ -34,6 +34,7 @@ mixin SchedulePreviewState<T extends ConsumerStatefulWidget>
   /// Pide la vista previa cuando el calendario está completo.
   void schedulePreview(ScheduleDraft draft, {required bool needsPrescription}) {
     _timer?.cancel();
+    final request = ++_request;
     final incomplete = draft
         .validate(needsPrescription: needsPrescription)
         .isNotEmpty;
@@ -45,12 +46,14 @@ mixin SchedulePreviewState<T extends ConsumerStatefulWidget>
       });
       return;
     }
-    setState(() => previewLoading = true);
-    _timer = Timer(_debounce, () => _fetch(draft));
+    setState(() {
+      previewLoading = true;
+      previewError = null;
+    });
+    _timer = Timer(_debounce, () => _fetch(draft, request));
   }
 
-  Future<void> _fetch(ScheduleDraft draft) async {
-    final request = ++_request;
+  Future<void> _fetch(ScheduleDraft draft, int request) async {
     try {
       final result = await ref
           .read(orderRepositoryProvider)

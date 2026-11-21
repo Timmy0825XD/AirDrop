@@ -18,9 +18,11 @@ class SectionHeader extends StatelessWidget {
     required this.onBack,
     this.bottom,
     this.trailing,
+    this.titleMaxLines = 1,
   });
 
   final String title;
+  final int titleMaxLines;
   final String subtitle;
   final VoidCallback onBack;
   final Widget? bottom;
@@ -70,7 +72,11 @@ class _TitleRow extends StatelessWidget {
           const SizedBox(width: 12),
         ],
         Expanded(
-          child: _Titles(title: header.title, subtitle: header.subtitle),
+          child: _Titles(
+            title: header.title,
+            subtitle: header.subtitle,
+            maxLines: header.titleMaxLines,
+          ),
         ),
         ?header.trailing,
       ],
@@ -79,10 +85,15 @@ class _TitleRow extends StatelessWidget {
 }
 
 class _Titles extends StatelessWidget {
-  const _Titles({required this.title, required this.subtitle});
+  const _Titles({
+    required this.title,
+    required this.subtitle,
+    required this.maxLines,
+  });
 
   final String title;
   final String subtitle;
+  final int maxLines;
 
   @override
   Widget build(BuildContext context) {
@@ -92,7 +103,7 @@ class _Titles extends StatelessWidget {
       children: [
         Text(
           title,
-          maxLines: 1,
+          maxLines: maxLines,
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.headlineMedium?.copyWith(
             fontSize: 26,

@@ -65,18 +65,20 @@ class ProfilePendingEmailCard extends StatelessWidget {
     required this.pendingEmail,
     required this.onEnterCode,
     required this.onCancel,
+    this.icon = Icons.mark_email_unread_rounded,
   });
 
   final String pendingEmail;
   final VoidCallback onEnterCode;
   final VoidCallback onCancel;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return DetailSection(
       title: 'Correo pendiente de confirmar',
-      icon: Icons.mark_email_unread_rounded,
+      icon: icon,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

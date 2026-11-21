@@ -14,6 +14,7 @@ class SimClockBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (!SimClockVisibility.of(context)) return const SizedBox.shrink();
     return ValueListenableBuilder<ClockView?>(
       valueListenable: simClock.view,
       builder: (context, clock, _) {
@@ -30,4 +31,24 @@ class SimClockBadge extends StatelessWidget {
       },
     );
   }
+}
+
+/// Oculta el indicador técnico a quien recibe el pedido; el reloj sigue sincronizado.
+class SimClockVisibility extends InheritedWidget {
+  const SimClockVisibility({
+    super.key,
+    required this.showIndicator,
+    required super.child,
+  });
+  final bool showIndicator;
+
+  static bool of(BuildContext context) =>
+      context
+          .dependOnInheritedWidgetOfExactType<SimClockVisibility>()
+          ?.showIndicator ??
+      true;
+
+  @override
+  bool updateShouldNotify(SimClockVisibility oldWidget) =>
+      showIndicator != oldWidget.showIndicator;
 }

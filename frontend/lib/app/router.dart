@@ -401,7 +401,7 @@ final routerProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/orders/mine',
             builder: (_, state) => OrderHistoryScreen(
-              onlyOpen: state.uri.queryParameters['filtro'] == 'en-curso',
+              onlyOpen: state.uri.queryParameters['filtro'] != 'historial',
             ),
           ),
           GoRoute(

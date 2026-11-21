@@ -2,39 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/field_limits.dart';
+import '../../../core/app_haptics.dart';
 import '../../../core/widgets/app_snack.dart';
-import '../../../core/widgets/auth_field.dart';
 import '../../../core/widgets/auth_morph_button.dart';
-import '../../../core/widgets/slide_to_launch.dart';
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
-import 'widgets/form_steps.dart';
-import 'widgets/order_form_scaffold.dart';
-import 'widgets/requester_order/emergency_facts.dart';
-import 'widgets/requester_order/patient_fields.dart';
-import 'widgets/requester_order/requester_order_fields.dart';
+import 'widgets/emergency/emergency_destination.dart';
+import 'widgets/emergency/emergency_layout.dart';
+import 'widgets/emergency/emergency_medicine.dart';
+import 'widgets/emergency/emergency_situation.dart';
 import 'widgets/requester_order/requester_order_state.dart';
 import 'widgets/requester_order/requester_order_values.dart';
 import 'widgets/requester_order/triage_fields.dart';
 
-/// Urgencia del solicitante (`POST /orders/emergencies`, RU-02) en tres
-/// pasos cortos:
-/// 1. **Qué pasa:** signos de alarma (con el 123), para quién, qué siente,
-///    desde cuándo y qué tan fuerte (RF-41, RF-42).
-/// 2. **Qué necesitas:** el medicamento, las alergias y la fórmula.
-/// 3. **Dónde:** el punto en el mapa.
-///
-/// "Siguiente" valida solo el paso abierto; volver regresa sin perder lo
-/// escrito. Al crearla se abre su detalle.
+/// La urgencia conserva su contrato; las opciones se eligen en hojas y se
+/// resumen en tres pasos: situación, medicamento y punto de entrega.
 class EmergencyScreen extends ConsumerStatefulWidget {
   const EmergencyScreen({super.key, this.initialOffer});
-
-  /// El medicamento ya elegido en la lista de disponibles (CU-49). Los
-  /// tres pasos se recorren igual: solo llega escogido.
   final CatalogOffer? initialOffer;
-
-  static const steps = ['Qué pasa', 'Qué necesitas', 'Dónde'];
+  static const steps = ['Situación', 'Medicamento', 'Entrega'];
 
   @override
   ConsumerState<EmergencyScreen> createState() => _EmergencyScreenState();
@@ -50,16 +36,18 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen>
     values.offer = widget.initialOffer;
   }
 
-  bool get _last => _step == EmergencyScreen.steps.length - 1;
-
   void _back() {
+    if (sending) return;
     if (_step == 0) return context.go('/home');
-    setState(() => _step--);
+    _edit(_step - 1);
   }
 
-  /// Los errores del paso abierto.
+  void _edit(int step) {
+    FocusScope.of(context).unfocus();
+    setState(() => _step = step);
+  }
+
   void _next() {
-    final triage = values.triage;
     final found = _step == 0
         ? const <RequesterInput, String>{}
         : {
@@ -69,101 +57,103 @@ class _EmergencyScreenState extends ConsumerState<EmergencyScreen>
                 e.key: e.value,
           };
     final situation = _step == 0
-        ? triage.validateSituation()
-        : triage.validateAllergies();
-    final ok = found.isEmpty && situation.isEmpty;
+        ? values.triage.validateSituation()
+        : values.triage.validateAllergies();
     setState(() {
       errors = found;
       triageErrors = situation;
-      if (ok) {
+      if (found.isEmpty && situation.isEmpty) {
         _step++;
       } else {
         shakeCount++;
       }
     });
-    if (ok) FocusScope.of(context).unfocus();
+    FocusScope.of(context).unfocus();
   }
 
-  Future<void> _send() => submit(
-    plan: false,
-    send: (user) async {
-      final order = await ref
-          .read(createEmergencyProvider.notifier)
-          .create(values.emergency(user));
-      if (!mounted) return;
-      showAppSnack(context, 'Urgencia enviada. Síguela en Mis pedidos.');
-      context.go('/orders/${order.id}');
-    },
-  );
-
-  @override
-  Widget build(BuildContext context) {
-    return PopScope(
-      canPop: _step == 0,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) setState(() => _step--);
+  Future<void> _send() async {
+    if (sending) return;
+    final situation = values.triage.validateSituation();
+    final allergies = values.triage.validateAllergies();
+    if (situation.isNotEmpty || allergies.isNotEmpty) {
+      setState(() {
+        triageErrors = situation.isNotEmpty ? situation : allergies;
+        _step = situation.isNotEmpty ? 0 : 1;
+      });
+      return;
+    }
+    AppHaptics.confirm();
+    await submit(
+      plan: false,
+      send: (user) async {
+        final order = await ref
+            .read(createEmergencyProvider.notifier)
+            .create(values.emergency(user));
+        if (!mounted) return;
+        showAppSnack(context, 'Urgencia enviada. Síguela en Mis pedidos.');
+        context.go('/orders/${order.id}');
       },
-      child: OrderFormScaffold<CatalogOffer>(
-        title: 'Pedir urgencia',
-        subtitle: 'Una unidad, a tu ubicación',
-        source: ref.watch(catalogProvider),
-        emptyIcon: Icons.medication_rounded,
-        emptyText: 'No hay medicamentos disponibles por ahora.',
-        steps: FormSteps(labels: EmergencyScreen.steps, current: _step),
-        onBack: _back,
-        fields: _fields,
-        button: _last
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const EmergencyFacts(),
-                  const SizedBox(height: 12),
-                  SlideToLaunch(
-                    label: 'Desliza para pedir',
-                    loadingLabel: 'Enviando la urgencia',
-                    loading: sending,
-                    onLaunch: _send,
-                  ),
-                ],
-              )
-            : AuthMorphButton(
-                label: 'Siguiente',
-                loadingLabel: 'Siguiente',
-                onPressed: _next,
-              ),
-      ),
     );
   }
 
-  List<Widget> _fields(List<CatalogOffer> offers) {
-    final triage = triageForm;
-    const gap = SizedBox(height: 20);
-    return switch (_step) {
-      0 => [
-        RedFlagsField(form: triage),
-        gap,
-        ForWhomField(form: triage),
-        gap,
-        PatientGroupField(form: triage),
-        gap,
-        SymptomFields(form: triage),
-        gap,
-        AuthField(
-          label: 'Algo más para el despachador',
-          trailing: const AuthFieldNote('Opcional'),
-          hint: 'Ej.: le dio fiebre de 39 °C en la noche',
-          controller: values.description,
-          maxLength: FieldLimits.orderDescription,
-          maxLines: 3,
-        ),
-      ],
-      1 => [
-        CatalogChoices(offers: offers, form: form),
-        gap,
-        AllergiesField(form: triage),
-        PrescriptionSlot(form: form),
-      ],
-      _ => [DestinationFields(form: form)],
+  @override
+  Widget build(BuildContext context) {
+    final catalog = ref.watch(catalogProvider);
+    final initialTriage = triageForm;
+    final triage = TriageForm(
+      draft: initialTriage.draft,
+      errors: triageErrors,
+      onChanged: () => setState(() => triageErrors = const {}),
+    );
+    final currentForm = form;
+    final content = switch (_step) {
+      0 => EmergencySituation(form: triage, note: values.description),
+      1 => EmergencyMedicine(
+        offers: catalog.value ?? const [],
+        form: currentForm,
+        triage: triage,
+      ),
+      _ => EmergencyDestination(form: currentForm, onEdit: _edit),
     };
+    return PopScope(
+      canPop: _step == 0 && !sending,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _back();
+      },
+      child: EmergencyLayout(
+        step: _step,
+        source: catalog,
+        onBack: _back,
+        content: AbsorbPointer(absorbing: sending, child: content),
+        button: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            AuthMorphButton(
+              label: _step == 2
+                  ? 'Solicitar urgencia'
+                  : _step == 1
+                  ? 'Elegir entrega'
+                  : 'Continuar',
+              loadingLabel: 'Enviando la urgencia',
+              isLoading: sending,
+              onPressed: sending
+                  ? null
+                  : _step == 2
+                  ? _send
+                  : _next,
+            ),
+            if (_step == 2)
+              Padding(
+                padding: const EdgeInsets.only(top: 12),
+                child: Text(
+                  'La central revisa antes de autorizar.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
