@@ -72,8 +72,9 @@ class FlightNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     final (message, isError) = _pickNotice(state, showReturn);
     return AnimatedSwitcher(
-      duration: AppMotion.of(context, AppMotion.bounce),
-      switchInCurve: AppMotion.bounceCurve,
+      duration: AppMotion.of(context, AppMotion.quick),
+      // Interval y la opacidad requieren valores entre 0 y 1, sin rebote.
+      switchInCurve: AppMotion.enterCurve,
       // El aviso nuevo crece desde un poco más chico: el cambio se nota.
       transitionBuilder: (child, animation) => FadeTransition(
         opacity: animation.drive(CurveTween(curve: const Interval(0, 0.6))),

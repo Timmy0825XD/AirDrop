@@ -26,6 +26,7 @@ class AuthLocationField extends StatelessWidget {
     this.emptyHint = 'Toca para elegir el punto en el mapa',
     this.pickerTitle = 'Elige el punto',
     this.gps,
+    this.previewHeight = 168,
   });
 
   final LatLng? location;
@@ -40,6 +41,7 @@ class AuthLocationField extends StatelessWidget {
 
   /// Sin él no hay botón de GPS.
   final LocationGps? gps;
+  final double previewHeight;
 
   Future<void> _pick(BuildContext context) async {
     final point = await pickLocation(
@@ -59,6 +61,7 @@ class AuthLocationField extends StatelessWidget {
         _LocationHeader(point: point),
         const SizedBox(height: 8),
         _MapPreview(
+          height: previewHeight,
           point: point,
           emptyHint: emptyHint,
           hasError: errorText != null,
@@ -74,6 +77,7 @@ class AuthLocationField extends StatelessWidget {
 /// La vista previa quieta del mapa; un toque abre el mapa grande.
 class _MapPreview extends StatelessWidget {
   const _MapPreview({
+    required this.height,
     required this.point,
     required this.emptyHint,
     required this.hasError,
@@ -81,6 +85,7 @@ class _MapPreview extends StatelessWidget {
   });
 
   final LatLng? point;
+  final double height;
   final String emptyHint;
   final bool hasError;
   final VoidCallback onTap;
@@ -96,7 +101,7 @@ class _MapPreview extends StatelessWidget {
         child: GestureDetector(
           onTap: onTap,
           child: Container(
-            height: 168,
+            height: height,
             clipBehavior: Clip.antiAlias,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(14),

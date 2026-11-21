@@ -3,11 +3,17 @@ import 'package:flutter/material.dart';
 /// La campana de los inicios con la insignia de avisos sin leer: un botón
 /// redondo de 44 px en la superficie del tema.
 class NoticeBell extends StatelessWidget {
-  const NoticeBell({super.key, required this.unread, required this.onTap});
+  const NoticeBell({
+    super.key,
+    required this.unread,
+    required this.onTap,
+    this.icon = Icons.notifications_none_rounded,
+  });
 
   /// `null` mientras se cuenta.
   final int? unread;
   final VoidCallback onTap;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +31,7 @@ class NoticeBell extends StatelessWidget {
         icon: Badge(
           isLabelVisible: count > 0,
           label: Text(count > 9 ? '9+' : '$count'),
-          child: const Icon(Icons.notifications_none_rounded, size: 22),
+          child: Icon(icon, size: 22),
         ),
       ),
     );

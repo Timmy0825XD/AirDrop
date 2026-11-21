@@ -48,6 +48,7 @@ class AppTabBar extends StatelessWidget {
     this.center,
     this.centerActive = false,
     this.collapsed = false,
+    this.highlightSelection = false,
   });
 
   /// Cuatro destinos: los dos primeros van a la izquierda del centro.
@@ -61,6 +62,7 @@ class AppTabBar extends StatelessWidget {
   /// La pantalla abierta es la del centro (la cola, el mapa en vivo).
   final bool centerActive;
   final bool collapsed;
+  final bool highlightSelection;
 
   /// Alto de la barra sin el área segura de abajo.
   static const double height = 64;
@@ -77,6 +79,7 @@ class AppTabBar extends StatelessWidget {
         icon: destinations[i].icon,
         label: destinations[i].label,
         active: i == selected,
+        highlight: highlightSelection,
         showLabel: !compact || i == selected,
         onTap: () => onSelect(i),
       ),
@@ -95,6 +98,7 @@ class AppTabBar extends StatelessWidget {
                 label: center.tabLabel,
                 semantics: center.label,
                 active: centerActive,
+                highlight: highlightSelection,
                 showLabel: !compact || centerActive,
                 badge: center.badge,
                 onTap: center.onPressed,
@@ -148,6 +152,7 @@ class _TabItem extends StatelessWidget {
     required this.onTap,
     this.semantics,
     this.badge,
+    this.highlight = false,
   });
 
   final IconData icon;
@@ -157,6 +162,7 @@ class _TabItem extends StatelessWidget {
   final VoidCallback onTap;
   final String? semantics;
   final int? badge;
+  final bool highlight;
 
   @override
   Widget build(BuildContext context) {
@@ -171,36 +177,67 @@ class _TabItem extends StatelessWidget {
       child: InkResponse(
         onTap: onTap,
         radius: 32,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(icon, size: 24, color: color),
-                if (count > 0)
-                  Positioned(left: 14, top: -6, child: _Badge(count)),
-              ],
-            ),
-            // Sin etiqueta el lector de pantalla igual lee la pestaña.
-            if (showLabel) ...[
-              const SizedBox(height: 4),
-              Text(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.fade,
-                softWrap: false,
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: color,
-                  fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                ),
+        child: _TabHighlight(
+          active: highlight && active,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(icon, size: 24, color: color),
+                  if (count > 0)
+                    Positioned(left: 14, top: -6, child: _Badge(count)),
+                ],
               ),
+              // Sin etiqueta el lector de pantalla igual lee la pestaña.
+              if (showLabel) ...[
+                const SizedBox(height: 4),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.fade,
+                  softWrap: false,
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: color,
+                    fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
   }
+}
+
+class _TabHighlight extends StatelessWidget {
+  const _TabHighlight({required this.active, required this.child});
+  final bool active;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Stack(
+    alignment: Alignment.center,
+    children: [
+      if (active)
+        Positioned.fill(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: Theme.of(
+                  context,
+                ).colorScheme.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+          ),
+        ),
+      child,
+    ],
+  );
 }
 
 /// El contador rojo; entra con un rebote corto cuando cambia.

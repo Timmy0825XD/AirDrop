@@ -63,17 +63,27 @@ Future<void> _tap(WidgetTester tester, Finder target) async {
 
 /// Llena "Qué pasa" y "Qué necesitas" (RF-41) para llegar a "Dónde".
 Future<void> _toWhere(WidgetTester tester) async {
+  await _tap(tester, find.text('Signos de alarma'));
   await _tap(tester, find.text('Ninguno'));
+  await _tap(tester, find.text('Confirmar selección (1)'));
+  await _tap(tester, find.text('Paciente'));
   await _tap(tester, find.text('Adulto mayor'));
+  await _tap(tester, find.text('Confirmar datos'));
+  await _tap(tester, find.text('Síntomas'));
   await _tap(tester, find.text('Fiebre'));
+  await _tap(tester, find.text('Confirmar selección (1)'));
+  await _tap(tester, find.text('Desde cuándo'));
   await _tap(tester, find.text('Desde hoy'));
+  await _tap(tester, find.text('Confirmar selección'));
+  await _tap(tester, find.text('Intensidad'));
   await _tap(tester, find.text('Leve'));
-  await _tap(tester, find.text('Siguiente'));
-  await _tap(tester, find.text('Elige el medicamento'));
+  await _tap(tester, find.text('Confirmar selección'));
+  await _tap(tester, find.text('Continuar'));
+  await _tap(tester, find.text('Buscar medicamento'));
   await _tap(tester, find.text('Acetaminofén 500 mg').last);
   await _tap(tester, find.text('No'));
-  await _tap(tester, find.text('Siguiente'));
-  expect(find.text('Paso 3 de 3 · Dónde'), findsOneWidget);
+  await _tap(tester, find.text('Elegir entrega'));
+  expect(find.text('Aquí te lo llevamos.'), findsOneWidget);
 }
 
 Future<void> _tapGps(WidgetTester tester) async {
@@ -92,7 +102,7 @@ void main() {
     expect(find.text('Dirección'), findsNothing);
     expect(find.text('Referencia para encontrarte'), findsOneWidget);
     expect(find.text('Opcional'), findsOneWidget);
-    expect(find.textContaining('lugar despejado'), findsOneWidget);
+    expect(find.textContaining('lugar despejado'), findsWidgets);
   });
 
   testWidgets('"Usar mi ubicación" pone el pin y dice la precisión', (

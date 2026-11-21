@@ -10,7 +10,11 @@ import '../../../auth/presentation/auth_controller.dart';
 /// Pide confirmar y cierra la sesión: vuelve al login. Solo está en el
 /// perfil, para no salir por un toque sin querer. El mensaje de error es el
 /// de Nest cuando viene.
-Future<void> signOut(BuildContext context, WidgetRef ref) async {
+Future<void> signOut(
+  BuildContext context,
+  WidgetRef ref, {
+  IconData icon = Icons.logout_rounded,
+}) async {
   final confirmed = await showConfirmSheet(
     context,
     title: '¿Cerrar sesión?',
@@ -18,7 +22,7 @@ Future<void> signOut(BuildContext context, WidgetRef ref) async {
         'Para volver a entrar necesitas tu correo y tu contraseña. Lo que '
         'está en curso sigue igual.',
     confirmLabel: 'Cerrar sesión',
-    icon: Icons.logout_rounded,
+    icon: icon,
     subject: const SizedBox.shrink(),
   );
   if (!confirmed || !context.mounted) return;
