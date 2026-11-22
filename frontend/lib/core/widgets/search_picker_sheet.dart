@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../theme/app_icons.dart';
 
 import 'app_sheet.dart';
 import 'message_view.dart';
@@ -47,17 +48,20 @@ Future<PickerOption<T>?> showSearchPicker<T>(
 }) {
   return showAppSheet<PickerOption<T>>(
     context,
-    builder: (_) => DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.72,
-      minChildSize: 0.4,
-      maxChildSize: 0.94,
-      builder: (context, scroll) => _PickerSheet<T>(
-        title: title,
-        options: options,
-        isSelected: isSelected,
-        searchHint: searchHint,
-        scroll: scroll,
+    builder: (sheet) => Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(sheet).bottom),
+      child: DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.72,
+        minChildSize: 0.4,
+        maxChildSize: 0.94,
+        builder: (context, scroll) => _PickerSheet<T>(
+          title: title,
+          options: options,
+          isSelected: isSelected,
+          searchHint: searchHint,
+          scroll: scroll,
+        ),
       ),
     ),
   );
@@ -88,38 +92,43 @@ class _PickerSheetState<T> extends State<_PickerSheet<T>> {
   @override
   Widget build(BuildContext context) {
     final shown = widget.options.where((o) => o.matches(_query)).toList();
-    return Column(
-      children: [
-        _SheetTop(
-          title: widget.title,
-          hint: widget.searchHint,
-          count: shown.length,
-          onQuery: (q) => setState(() => _query = q),
+    return CustomScrollView(
+      controller: widget.scroll,
+      slivers: [
+        SliverToBoxAdapter(
+          child: _SheetTop(
+            title: widget.title,
+            hint: widget.searchHint,
+            count: shown.length,
+            onQuery: (q) => setState(() => _query = q),
+          ),
         ),
-        Expanded(
-          child: shown.isEmpty
-              ? MessageView(
-                  icon: Icons.search_off_rounded,
-                  message: 'Nada coincide con "$_query".',
-                )
-              : ListView.builder(
-                  controller: widget.scroll,
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                  itemCount: shown.length,
-                  itemBuilder: (context, i) {
-                    final row = _OptionRow(
-                      option: shown[i],
-                      selected: widget.isSelected(shown[i].value),
-                      onTap: () => Navigator.of(context).pop(shown[i]),
-                    );
-                    // Solo las primeras entran en cascada: las que aparecen
-                    // al bajar llegan quietas, sin esperar.
-                    return i < 8
-                        ? RiseIn(delay: RiseIn.stagger(i), child: row)
-                        : row;
-                  },
-                ),
-        ),
+        if (shown.isEmpty)
+          SliverToBoxAdapter(
+            child: MessageView(
+              icon: AppIcons.search,
+              message: 'Nada coincide con "$_query".',
+            ),
+          )
+        else
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+            sliver: SliverList.builder(
+              itemCount: shown.length,
+              itemBuilder: (context, i) {
+                final row = _OptionRow(
+                  option: shown[i],
+                  selected: widget.isSelected(shown[i].value),
+                  onTap: () => Navigator.of(context).pop(shown[i]),
+                );
+                // Solo las primeras entran en cascada: las que aparecen
+                // al bajar llegan quietas, sin esperar.
+                return i < 8
+                    ? RiseIn(delay: RiseIn.stagger(i), child: row)
+                    : row;
+              },
+            ),
+          ),
       ],
     );
   }
@@ -154,7 +163,7 @@ class _SheetTop extends StatelessWidget {
             textInputAction: TextInputAction.search,
             decoration: InputDecoration(
               hintText: hint,
-              prefixIcon: const Icon(Icons.search_rounded),
+              prefixIcon: const Icon(AppIcons.search),
             ),
           ),
           const SizedBox(height: 10),
@@ -192,7 +201,7 @@ class _OptionRow<T> extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       selectedTileColor: primary.withValues(alpha: 0.12),
       leading: ToneTile.icon(
-        icon: option.icon ?? Icons.medication_rounded,
+        icon: option.icon ?? AppIcons.medication,
         tone: primary,
         size: 40,
       ),
@@ -200,9 +209,7 @@ class _OptionRow<T> extends StatelessWidget {
       subtitle: option.subtitle == null
           ? null
           : Text(option.subtitle!, style: theme.textTheme.bodySmall),
-      trailing: selected
-          ? Icon(Icons.check_circle_rounded, color: primary)
-          : null,
+      trailing: selected ? Icon(AppIcons.check, color: primary) : null,
     );
   }
 }

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/core/widgets/app_tab_bar.dart';
-import 'package:frontend/core/widgets/requester_tab_bar.dart';
+import 'package:frontend/core/widgets/floating_tab_bar.dart';
 import 'package:frontend/features/home/presentation/widgets/requester/requester_home_orders.dart';
 import 'package:frontend/features/home/presentation/widgets/requester/requester_home_plans.dart';
 import 'package:frontend/features/home/presentation/widgets/requester/requester_home_values.dart';
@@ -179,7 +179,7 @@ void main() {
   ) async {
     await _pump(
       tester,
-      RequesterTabBar(
+      FloatingTabBar(
         destinations: const [
           NavDestination(icon: Icons.home_rounded, label: 'Inicio'),
           NavDestination(icon: Icons.inventory_2_rounded, label: 'Pedidos'),

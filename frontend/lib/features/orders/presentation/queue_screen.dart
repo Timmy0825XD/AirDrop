@@ -2,80 +2,36 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/clock/sim_clock.dart';
-import '../../../core/widgets/status_pill.dart';
-import '../data/order_models.dart';
+import '../../../core/api_exception.dart';
+import '../../../core/widgets/auto_refresh.dart';
 import '../data/order_providers.dart';
-import 'order_format.dart';
-import 'widgets/order_row_card.dart';
-import 'widgets/order_tray.dart';
-import 'widgets/queue_wait.dart';
+import 'widgets/queue/queue_content.dart';
+import 'widgets/queue/queue_page.dart';
 
-/// Cola de urgencias (`GET /orders/queue`). Va en el orden de Nest, sin
-/// reordenar: la prioridad la decide el backend.
+/// La cola conserva el orden de Nest y el mismo provider que Inicio y el menú.
 class QueueScreen extends ConsumerWidget {
   const QueueScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return OrderTray<QueueEntry>(
-      title: 'Cola de urgencias',
-      idleSubtitle: 'Urgencias en recibido',
-      countLabel: (n) =>
-          n == 1 ? '1 urgencia por atender' : '$n urgencias por atender',
-      rows: ref.watch(queueProvider),
-      onRefresh: () => ref.invalidate(queueProvider),
-      emptyIcon: Icons.task_alt_rounded,
-      emptyText: 'No hay urgencias esperando. Todo al día.',
-      keyOf: (entry) => entry.order.id,
-      itemBuilder: (context, entry) => QueueTile(
-        entry: entry,
-        onTap: () => context.push('/orders/${entry.order.id}'),
+    final state = ref.watch(queueProvider);
+    void reload() => ref.invalidate(queueProvider);
+    return AutoRefresh(
+      onTick: reload,
+      child: QueuePage(
+        // El contenido presenta el error; el gesto termina también si falla la red.
+        onRefresh: () => ref
+            .refresh(queueProvider.future)
+            .then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+        onPendingLoad: () => context.push('/orders/pending-load'),
+        content: QueueContent(
+          entries: state.value,
+          loading: !state.hasValue && !state.hasError,
+          error: state.hasError ? ApiException.messageOf(state.error!) : null,
+          onRetry: reload,
+          onOpen: (id) => context.push('/orders/$id'),
+        ),
       ),
-    );
-  }
-}
-
-/// Una urgencia de la cola: qué y cuánto, a quién va, el stock de la
-/// central y hace cuánto espera ("Espera 6 min", ámbar a los 3 y rojo a
-/// los 5 o si Nest la marcó sin atender). "Viene de otra central" si otra
-/// central sin dron se la pasó (CU-31). Con un signo de alarma (RF-41) la
-/// pastilla va en rojo: Nest ya la puso primero.
-class QueueTile extends StatelessWidget {
-  const QueueTile({super.key, required this.entry, required this.onTap});
-
-  final QueueEntry entry;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final order = entry.order;
-    final toHub = order.destinationKind == DestinationKind.hub;
-    final wait = queueWaitMinutes(order.createdAt, simClock.now());
-    return OrderRowCard(
-      icon: toHub ? Icons.home_work_rounded : Icons.person_outline_rounded,
-      tone: Theme.of(context).colorScheme.error,
-      title: order.medicationName,
-      accent: '${order.quantity} und. · ${destinationLabel(order)}',
-      detail:
-          '${entry.availableQuantity} en stock · '
-          '${formatAgo(order.createdAt)}',
-      pill: order.reassignedToHub
-          ? const StatusPill(
-              label: 'Viene de otra central',
-              tone: PillTone.attention,
-            )
-          // RF-41: con un signo de alarma va primero y se marca en rojo.
-          : order.triage?.hasRedFlag == true
-          ? StatusPill(
-              label: 'Signo de alarma · ${queueWaitLabel(wait)}',
-              tone: PillTone.negative,
-            )
-          : StatusPill(
-              label: queueWaitLabel(wait),
-              tone: queueWaitTone(wait, unattended: entry.unattended),
-            ),
-      onTap: onTap,
     );
   }
 }

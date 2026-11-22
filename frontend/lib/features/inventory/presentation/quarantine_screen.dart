@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../theme/app_icons.dart';
 
 import '../../../core/widgets/status_pill.dart';
 import '../../../core/date_format.dart';
@@ -24,8 +25,10 @@ class QuarantineScreen extends ConsumerWidget {
       countLabel: (n) => n == 1 ? '1 lote en cuarentena' : '$n lotes',
       rows: ref.watch(quarantineProvider),
       onRefresh: () => ref.invalidate(quarantineProvider),
-      emptyIcon: Icons.verified_rounded,
-      emptyText: 'No hay lotes en cuarentena.',
+      emptyIcon: AppIcons.privacy,
+      emptyTitle: 'Sin lotes en cuarentena',
+      emptyText:
+          'Los insumos devueltos que no puedan volver al inventario aparecerán aquí.',
       keyOf: (row) => row.id,
       itemBuilder: (context, row) => QuarantineTile(
         record: row,
@@ -46,9 +49,9 @@ class QuarantineTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return OrderRowCard(
       icon: switch (record.reason) {
-        QuarantineReason.coldChain => Icons.ac_unit_rounded,
-        QuarantineReason.incident => Icons.report_problem_rounded,
-        _ => Icons.inventory_2_rounded,
+        QuarantineReason.coldChain => AppIcons.coldChain,
+        QuarantineReason.incident => AppIcons.warning,
+        _ => AppIcons.orders,
       },
       tone: context.palette.warning,
       title: record.medicationName,
@@ -58,6 +61,7 @@ class QuarantineTile extends StatelessWidget {
           'llegó ${formatDateTime(record.createdAt)}',
       pill: StatusPill(label: record.reason.label, tone: PillTone.attention),
       onTap: onTap,
+      actionLabel: 'Ver pedido',
     );
   }
 }

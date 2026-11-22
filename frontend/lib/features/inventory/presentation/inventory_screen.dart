@@ -4,103 +4,77 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
-import '../../../core/widgets/list_padding.dart';
-import '../../../core/widgets/message_view.dart';
-import '../../../core/widgets/rise_in.dart';
-import '../../../core/widgets/status_pill.dart';
-import '../../home/presentation/widgets/header_add_button.dart';
-import '../../home/presentation/widgets/section_header.dart';
 import '../data/inventory_models.dart';
 import '../data/inventory_providers.dart';
 import 'widgets/inventory_delete_confirm.dart';
-import 'widgets/inventory_tile.dart';
-import '../../../core/widgets/skeleton.dart';
+import 'widgets/inventory_list_content.dart';
+import 'widgets/inventory_list_header.dart';
+import 'widgets/inventory_list_page.dart';
+import 'widgets/inventory_list_values.dart';
 
-/// Los insumos de la central del despachador. El encabezado dice cuántos
-/// hay y cuántos están vencidos o por vencer. Cada mutación invalida
-/// `inventoryProvider`, así la lista se refresca sin reiniciar.
-class InventoryScreen extends ConsumerWidget {
+class InventoryScreen extends ConsumerStatefulWidget {
   const InventoryScreen({super.key});
+  @override
+  ConsumerState<InventoryScreen> createState() => _InventoryScreenState();
+}
+
+class _InventoryScreenState extends ConsumerState<InventoryScreen> {
+  final _search = TextEditingController();
+  InventoryFilter _filter = InventoryFilter.all;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final rows = ref.watch(inventoryProvider).value;
-    return Scaffold(
-      body: Column(
-        children: [
-          SectionHeader(
-            title: 'Inventario',
-            subtitle: rows == null ? 'Insumos de tu central' : _summary(rows),
-            onBack: () => context.go('/home'),
-            trailing: HeaderAddButton(
-              label: 'Nuevo ítem',
-              onPressed: () => context.go('/inventory/new'),
-            ),
-          ),
-          const Expanded(child: _InventoryList()),
-        ],
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final state = ref.watch(inventoryProvider);
+    void add() => context.push('/inventory/new');
+    return InventoryListPage(
+      onRefresh: () => ref
+          .refresh(inventoryProvider.future)
+          .then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+      onQuarantine: () => context.push('/inventory/quarantine'),
+      header: InventoryListHeader(
+        search: _search,
+        filter: _filter,
+        onAdd: add,
+        onQuery: (_) => setState(() {}),
+        onFilter: (value) => setState(() => _filter = value),
+      ),
+      content: InventoryListContent(
+        rows: state.value,
+        query: _search.text,
+        filter: _filter,
+        loading: !state.hasValue && !state.hasError,
+        error: state.hasError ? ApiException.messageOf(state.error!) : null,
+        onAdd: add,
+        onRetry: () => ref.invalidate(inventoryProvider),
+        onClear: () => setState(() {
+          _search.clear();
+          _filter = InventoryFilter.all;
+        }),
+        onEdit: (item) => context.push('/inventory/${item.id}'),
+        onDelete: (item) => _deleteItem(context, ref, item),
       ),
     );
   }
-
-  static String _summary(List<InventoryItem> rows) {
-    final warned = rows
-        .where((item) => InventoryTile.expiryOf(item).$2 != PillTone.positive)
-        .length;
-    final total = rows.length == 1 ? '1 ítem' : '${rows.length} ítems';
-    return warned == 0 ? total : '$total · $warned por revisar';
-  }
 }
 
-class _InventoryList extends ConsumerWidget {
-  const _InventoryList();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return switch (ref.watch(inventoryProvider)) {
-      AsyncValue(hasValue: true, hasError: false, :final value?)
-          when value.isEmpty =>
-        const MessageView(
-          icon: Icons.inventory_2_rounded,
-          message: 'Aún no hay insumos en el inventario.',
-        ),
-      AsyncValue(hasValue: true, hasError: false, :final value?) =>
-        ListView.separated(
-          padding: listPadding(context),
-          itemCount: value.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 10),
-          itemBuilder: (context, i) => RiseIn(
-            key: ValueKey(value[i].id),
-            delay: RiseIn.stagger(i),
-            child: InventoryTile(
-              item: value[i],
-              onTap: () => context.go('/inventory/${value[i].id}'),
-              onDelete: () => _deleteItem(context, ref, value[i]),
-            ),
-          ),
-        ),
-      AsyncError(:final error) => MessageView.error(
-        message: ApiException.messageOf(error),
-      ),
-      _ => const SkeletonList(),
-    };
-  }
-}
-
-/// Confirma y elimina el ítem. Los errores de Nest (404 del ítem ajeno,
-/// 403 de central suspendida) viajan tal cual a la UI.
 Future<void> _deleteItem(
   BuildContext context,
   WidgetRef ref,
   InventoryItem item,
 ) async {
-  if (!await confirmInventoryDelete(context, item: item)) return;
-  if (!context.mounted) return;
-
+  if (!await confirmInventoryDelete(context, item: item) || !context.mounted) {
+    return;
+  }
   try {
     await ref.read(deleteInventoryProvider.notifier).delete(item.id);
     if (context.mounted) {
-      showAppSnack(context, 'Ítem eliminado del inventario.');
+      showAppSnack(context, 'Insumo eliminado del inventario.');
     }
   } on ApiException catch (error) {
     if (context.mounted) showErrorSnack(context, error.message);

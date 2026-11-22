@@ -25,17 +25,19 @@ class RowMenuButton extends StatelessWidget {
     super.key,
     required this.actions,
     this.tooltip = 'Más acciones',
+    this.icon = Icons.more_vert_rounded,
   });
 
   final List<RowMenuAction> actions;
   final String tooltip;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return PopupMenuButton<int>(
       tooltip: tooltip,
-      icon: Icon(Icons.more_vert_rounded, color: colors.onSurfaceVariant),
+      icon: Icon(icon, color: colors.onSurfaceVariant),
       iconSize: 22,
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(minWidth: 180),

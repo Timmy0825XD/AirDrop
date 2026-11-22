@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../theme/app_icons.dart';
 
 import '../../../../../core/widgets/detail_section.dart';
 import '../../../../../core/widgets/error_banner.dart';
@@ -26,7 +27,7 @@ class SchedulePreviewCard extends StatelessWidget {
     final p = preview;
     return DetailSection(
       title: 'Vista previa',
-      icon: Icons.event_note_rounded,
+      icon: AppIcons.calendar,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

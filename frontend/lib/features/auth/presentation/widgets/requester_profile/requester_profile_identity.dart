@@ -58,7 +58,9 @@ class _IdentityDetails extends StatelessWidget {
       ),
       const SizedBox(height: 4),
       Text(
-        'Tu cuenta de AirDrop',
+        user.role == UserRole.dispatcher
+            ? 'Despachador'
+            : 'Tu cuenta de AirDrop',
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),

@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/field_limits.dart';
-import '../../../../../core/widgets/form_sheet_card.dart';
-import '../../../../auth/presentation/widgets/auth_date_field.dart';
 import '../../../../../core/widgets/auth_field.dart';
+import '../../../../../core/widgets/glass_card.dart';
+import '../../../../../theme/app_icons.dart';
+import '../../../../home/presentation/widgets/home_section_heading.dart';
 import '../inventory_form_values.dart';
 import 'inventory_kind_fields.dart';
+import 'inventory_stock_fields.dart';
 
-/// La tarjeta del formulario de inventario: nombre, lote, cantidad, el
-/// vencimiento en el calendario, el tipo de venta y la cadena de frío.
-/// Pinta [values] y los [errors] de la pantalla; cada vez que sube
-/// [shakeCount], los campos con error tiemblan.
 class InventoryFormSheet extends StatelessWidget {
   const InventoryFormSheet({
     super.key,
@@ -20,91 +18,66 @@ class InventoryFormSheet extends StatelessWidget {
     required this.onPickDate,
     required this.onChanged,
   });
-
   final InventoryFormValues values;
   final Map<InventoryInput, String> errors;
   final int shakeCount;
-  final VoidCallback onPickDate;
-
-  /// Avisa a la pantalla cuando cambian el tipo de venta o la cadena de
-  /// frío, para que se repinten.
-  final VoidCallback onChanged;
+  final VoidCallback onPickDate, onChanged;
 
   @override
-  Widget build(BuildContext context) {
-    final date = values.expirationDate.text;
-    return FormSheetCard(
-      children: [
-        AuthField(
-          label: 'Nombre del medicamento',
-          hint: 'Ej.: Acetaminofén 500 mg',
-          controller: values.name,
-          maxLength: FieldLimits.medicationName,
-          errorText: errors[InventoryInput.name],
-          shakeCount: shakeCount,
-        ),
-        const SizedBox(height: 16),
-        _LotAndQuantity(sheet: this),
-        const SizedBox(height: 16),
-        AuthField(
-          label: 'Peso por unidad (g)',
-          hint: 'Ej.: 30',
-          controller: values.unitWeight,
-          keyboardType: TextInputType.number,
-          maxLength: 5,
-          errorText: errors[InventoryInput.unitWeight],
-          shakeCount: shakeCount,
-        ),
-        const SizedBox(height: 16),
-        AuthDateField(
-          label: 'Vencimiento',
-          value: date.isEmpty ? null : date,
-          hint: 'Elige la fecha',
-          errorText: errors[InventoryInput.expirationDate],
-          shakeCount: shakeCount,
-          onTap: onPickDate,
-        ),
-        const SizedBox(height: 16),
-        InventoryKindFields(values: values, onChanged: onChanged),
-      ],
-    );
-  }
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      InventoryFormGroup(
+        title: 'Medicamento',
+        children: [
+          AuthField(
+            label: 'Nombre del medicamento',
+            hint: 'Ej.: Acetaminofén 500 mg',
+            controller: values.name,
+            icon: AppIcons.medication,
+            maxLength: FieldLimits.medicationName,
+            errorText: errors[InventoryInput.name],
+            shakeCount: shakeCount,
+          ),
+          const SizedBox(height: 18),
+          InventorySaleField(values: values, onChanged: onChanged),
+        ],
+      ),
+      const SizedBox(height: 24),
+      InventoryFormGroup(
+        title: 'Lote y existencias',
+        children: [InventoryStockFields(sheet: this)],
+      ),
+      const SizedBox(height: 24),
+      InventoryFormGroup(
+        title: 'Conservación y transporte',
+        children: [InventoryKindFields(values: values, onChanged: onChanged)],
+      ),
+    ],
+  );
 }
 
-/// Lote y cantidad lado a lado: los dos describen el empaque.
-class _LotAndQuantity extends StatelessWidget {
-  const _LotAndQuantity({required this.sheet});
-
-  final InventoryFormSheet sheet;
+class InventoryFormGroup extends StatelessWidget {
+  const InventoryFormGroup({
+    super.key,
+    required this.title,
+    required this.children,
+  });
+  final String title;
+  final List<Widget> children;
 
   @override
-  Widget build(BuildContext context) {
-    final s = sheet;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: AuthField(
-            label: 'Lote',
-            hint: 'Ej.: ACT-500-26',
-            controller: s.values.lot,
-            maxLength: FieldLimits.lotCode,
-            errorText: s.errors[InventoryInput.lot],
-            shakeCount: s.shakeCount,
-          ),
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      HomeSectionHeading(title: title),
+      GlassCard(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: children,
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: AuthField(
-            label: 'Cantidad',
-            hint: 'Ej.: 240',
-            controller: s.values.quantity,
-            keyboardType: TextInputType.number,
-            errorText: s.errors[InventoryInput.quantity],
-            shakeCount: s.shakeCount,
-          ),
-        ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
 }

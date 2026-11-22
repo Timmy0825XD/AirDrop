@@ -1780,6 +1780,75 @@ es `learning/36-front-pending-web-consola.md` (local).
 Con este paso la web ya usa los contratos del backend regional. Falta
 probar las dos (app y web) contra Nest.
 
+## Revisión visual por rol — Despachador (2026-11-21)
+
+En `fix/despachador`, Inicio y barra de navegación renovados con el mismo
+tema, iconos Lucide y componentes del solicitante. Estado vacío «Todo al
+día», carga y error diferenciados; tarjetas para urgencias, carga, recepción
+y próximo programado; resumen de la central y accesos a abastecimientos.
+Se conservan los avisos de suspensión y energía, el refresco, los vuelos
+y los flujos separados de autorización y confirmación de carga.
+
+Verificados los cinco destinos de la barra y la vuelta desde un detalle,
+las tareas simultáneas, los nombres largos y el texto al 200 % a 320 px.
+Pasaron 18 pruebas dirigidas y la comprobación de capturas; análisis de
+los archivos revisados sin incidencias. Pendiente continuar con las otras
+pantallas del despachador, en el orden que indique el usuario.
+
+Segundo paso: Agenda renovada con selector de días, calendario y retorno
+a hoy. Una tarjeta por franja, entregas separadas por líneas, stock,
+confirmación, vigencia de fórmula y hora límite de despegue visibles.
+Incluye estado vacío, carga, error con reintento, actualización manual y
+refresco cada 10 segundos. Se mantiene el acceso a los programados y al
+detalle de cada pedido. Pasaron 9 pruebas de Agenda, el análisis y la
+revisión de capturas con y sin entregas.
+
+Tercer paso: Urgencias renovada con la misma identidad de Inicio y Agenda.
+Cola en el orden de Nest; espera simulada, alarma, stock, reasignación,
+frío y fórmula visibles. Estado vacío «Todo al día», carga y error con
+reintento; los datos conocidos permanecen si falla una actualización.
+Mantiene el WebSocket, el refresco cada 10 segundos, la revisión del pedido
+y el acceso a carga pendiente. Pasaron 15 pruebas de cola, navegación,
+texto al 200 % a 320 px y actualización en vivo; análisis sin incidencias
+y capturas revisadas con y sin solicitudes.
+
+Cuarto paso: Inventario y formulario de alta/edición renovados con la misma
+identidad. Búsqueda por nombre o lote, filtros de vencimiento y tarjetas
+con existencias, lote, venta, frío y mercancía peligrosa. Vacío con
+ilustración y acción para añadir, carga, error con reintento y sin
+coincidencias diferenciados. Conserva eliminación con confirmación,
+actualización manual y acceso a Cuarentena. Formulario en tres grupos,
+con peso por unidad, calendario y avisos de conservación y transporte.
+Se mantienen los contratos y las validaciones existentes. Pasaron las
+26 pruebas de inventario, incluido guardar el alta y editar solo la
+cantidad a cero, filtros, acciones y texto al 200 % a 320 px. Análisis sin
+incidencias y capturas revisadas del listado, vacío y formulario.
+
+Quinto paso de la revisión del despachador: Más y sus cuatro grupos
+(Pedidos, Abastecimiento, Mi central y Cuenta), según las propuestas
+visuales aprobadas. Doce accesos directos, contadores y permisos de
+central conservados; se diferencia cargar la central de un error.
+Renovadas las cinco bandejas de Pedidos con tarjetas, estados vacíos,
+reintento y regreso a la pantalla de origen. Historial conserva páginas
+conocidas ante un error al cargar más. La revisión y el deslizador de
+carga siguen siendo obligatorios; el receptor no ve el mapa del origen.
+
+Urgencia y abastecimiento entre centrales comparten grupos de formulario,
+destino y calendario, con el mismo contrato, stock y vista previa de Nest.
+Mis abastecimientos muestra la siguiente ocurrencia real. Mi central
+permanece de consulta, con energía, mapa y contacto; Cuarentena conserva
+su consulta por pedido. Perfil y ajustes adaptados al despachador, con
+edición y correo pendiente; sin documento ni alergias. Privacidad abre
+la política pública y respeta las operaciones exclusivas del solicitante.
+El selector con buscador ahora desplaza también su encabezado para
+evitar desbordes con texto al 200 % y deja espacio al teclado.
+
+Verificadas 41 pruebas dirigidas de navegación, permisos, formularios,
+carga, historial, perfil y ajustes, incluyendo 320 px y texto al 200 %;
+capturas nativas de las 13 pantallas y análisis de los archivos revisados.
+El mapa usa el mismo componente: los tests de captura no descargan sus
+teselas; no sustituyen una prueba de red contra Nest y el proveedor del mapa.
+
 ## Pendiente del backend
 
 Vive en [`pendientes-backend.md`](pendientes-backend.md), para que la persona

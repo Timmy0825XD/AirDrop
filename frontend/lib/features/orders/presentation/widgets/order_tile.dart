@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-
+import '../../../../core/widgets/status_pill.dart';
+import '../../../../theme/app_icons.dart';
 import '../../../delivery/presentation/widgets/receive_order_button.dart';
 import '../../data/order_models.dart';
 import '../order_format.dart';
@@ -7,9 +8,6 @@ import 'order_row_card.dart';
 import 'order_status_chip.dart';
 import 'watch_flight_button.dart';
 
-/// Un pedido en una lista ("Mis pedidos", "Traslados entrantes"): qué es,
-/// cuándo, su estado y el dron si ya tiene uno. Debajo, "Recibir pedido"
-/// si [canReceive] y "Ver vuelo" si [canWatch] y hay vuelo que seguir.
 class OrderTile extends StatelessWidget {
   const OrderTile({
     super.key,
@@ -19,50 +17,47 @@ class OrderTile extends StatelessWidget {
     this.canReceive = false,
     this.forRequester = false,
   });
-
   final Order order;
   final VoidCallback onTap;
-  final bool canWatch;
-  final bool canReceive;
-
-  /// "Mis pedidos" del solicitante: el estado en sus palabras.
-  final bool forRequester;
-
+  final bool canWatch, canReceive, forRequester;
   @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final urgent = order.missionType == MissionType.emergency;
-    final drone = order.assignment?.identifier;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        OrderRowCard(
-          icon: urgent ? Icons.emergency_rounded : Icons.event_rounded,
-          tone: urgent ? colors.error : colors.primary,
-          title: order.medicationName,
-          accent: '${order.missionType.label} · ${order.quantity} und.',
-          detail: [
-            formatAgo(order.createdAt),
-            if (drone != null) 'Dron $drone',
-          ].join(' · '),
-          pill: OrderStatusChip(
-            status: order.status,
-            forRequester: forRequester,
-          ),
-          onTap: onTap,
+  Widget build(BuildContext context) => OrderRowCard(
+    icon: AppIcons.medication,
+    tone: Theme.of(context).colorScheme.primary,
+    title: order.medicationName,
+    accent:
+        '${unitsLabel(order.quantity)} · ${order.destinationKind == DestinationKind.hub ? 'Traslado entre centrales' : 'Para una persona'}',
+    detail: [
+      'Creado ${formatAgo(order.createdAt)}',
+      if (order.assignment case final a?) 'Dron ${a.identifier}',
+    ].join(' · '),
+    pill: canReceive
+        ? const StatusPill(
+            label: 'Listo para recibir',
+            tone: PillTone.attention,
+          )
+        : OrderStatusChip(status: order.status, forRequester: forRequester),
+    footer: canReceive
+        ? ReceiveOrderButton(
+            orderId: order.id,
+            landed: true,
+            icon: AppIcons.deliveryCode,
+          )
+        : canWatch && order.hasFlight && order.status != OrderStatus.returning
+        ? WatchFlightButton(orderId: order.id, icon: AppIcons.flight)
+        : null,
+    onTap: onTap,
+    children: [
+      if (order.requiresColdChain)
+        const Padding(
+          padding: EdgeInsets.only(top: 8),
+          child: Text('Cadena de frío'),
         ),
-        if (canReceive) ...[
-          const SizedBox(height: 8),
-          ReceiveOrderButton(orderId: order.id, landed: true),
-        ],
-        // El regreso del dron no se le muestra a quien pidió.
-        if (canWatch &&
-            order.hasFlight &&
-            order.status != OrderStatus.returning) ...[
-          const SizedBox(height: 8),
-          WatchFlightButton(orderId: order.id),
-        ],
-      ],
-    );
-  }
+      if (order.statusReason case final reason?)
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: Text(reason, style: Theme.of(context).textTheme.bodySmall),
+        ),
+    ],
+  );
 }

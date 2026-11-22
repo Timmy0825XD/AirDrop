@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
-import '../../../core/widgets/auth_morph_button.dart';
+import '../../../core/widgets/form_submit_button.dart';
+import '../../../core/widgets/form_section.dart';
+import '../../../theme/app_icons.dart';
+import 'widgets/hub_request/hub_request_destination.dart';
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
 import '../../hubs/data/hub_providers.dart';
@@ -65,23 +68,31 @@ class _HubEmergencyScreenState extends ConsumerState<HubEmergencyScreen> {
     final wanted = _values.wanted;
     return OrderFormScaffold<CatalogOffer>(
       title: 'Urgencia a otra central',
-      subtitle: 'Llega a tu central en el próximo vuelo',
+      subtitle: 'Pide un insumo para tu central.',
       source: ref.watch(catalogProvider),
-      emptyIcon: Icons.medication_rounded,
+      emptyIcon: AppIcons.medication,
+      onRetry: () => ref.invalidate(catalogProvider),
       emptyText: 'No hay medicamentos en el catálogo.',
       fields: (catalog) => [
-        HubEmergencyFields(
-          form: HubEmergencyForm(
-            catalog: catalog,
-            sources: wanted == null
-                ? null
-                : ref.watch(offerSourcesProvider(wanted)),
-            values: _values,
-            errors: _errors,
-            shakeCount: _shakeCount,
-            onChanged: () => setState(() {}),
-          ),
+        FormSection(
+          title: 'Qué necesitas',
+          children: [
+            HubEmergencyFields(
+              form: HubEmergencyForm(
+                catalog: catalog,
+                sources: wanted == null
+                    ? null
+                    : ref.watch(offerSourcesProvider(wanted)),
+                values: _values,
+                errors: _errors,
+                shakeCount: _shakeCount,
+                onChanged: () => setState(() {}),
+              ),
+            ),
+          ],
         ),
+        const SizedBox(height: 24),
+        HubRequestDestination(hub: ref.watch(myHubProvider).value),
         ?transferMapOf(
           origins: ref.watch(originHubsProvider).value,
           originHubId: _values.originHubId,
@@ -90,10 +101,10 @@ class _HubEmergencyScreenState extends ConsumerState<HubEmergencyScreen> {
         const SizedBox(height: 14),
         const HubTransferNote(),
       ],
-      button: AuthMorphButton(
-        label: 'Pedir urgencia',
+      button: FormSubmitButton(
+        label: 'Enviar solicitud',
         loadingLabel: 'Enviando la urgencia',
-        isLoading: _sending,
+        loading: _sending,
         onPressed: _submit,
       ),
     );

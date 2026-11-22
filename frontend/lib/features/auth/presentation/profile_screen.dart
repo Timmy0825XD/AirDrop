@@ -17,6 +17,7 @@ import 'widgets/profile/profile_session_state.dart';
 import 'widgets/requester_profile/requester_profile_details.dart';
 import 'widgets/requester_profile/requester_profile_page.dart';
 import 'widgets/requester_profile/requester_profile_values.dart';
+import 'widgets/dispatcher_profile/dispatcher_profile_page.dart';
 
 /// Datos reales de la cuenta y acciones de edición compartidas por los roles.
 class ProfileScreen extends ConsumerWidget {
@@ -37,6 +38,19 @@ class ProfileScreen extends ConsumerWidget {
     if (user.isRequester) {
       return RequesterProfilePage(
         user: user,
+        onOpen: (group) => _openDetails(context, ref, user, group),
+        onCancelEmail: () => _cancelEmail(context, ref),
+        onSignOut: () => signOut(context, ref, icon: AppIcons.signOut),
+      );
+    }
+    if (user.role == UserRole.dispatcher) {
+      final hub = ref.watch(myHubProvider);
+      return DispatcherProfilePage(
+        user: user,
+        hub: hub.value,
+        hubLoading: hub.isLoading && !hub.hasValue,
+        hubError: hub.hasError ? ApiException.messageOf(hub.error!) : null,
+        onRetryHub: () => ref.invalidate(myHubProvider),
         onOpen: (group) => _openDetails(context, ref, user, group),
         onCancelEmail: () => _cancelEmail(context, ref),
         onSignOut: () => signOut(context, ref, icon: AppIcons.signOut),

@@ -1,6 +1,7 @@
+import '../../../../../theme/app_icons.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../../core/widgets/choice_pill.dart';
+import 'schedule_chip.dart';
 import '../../../../auth/presentation/widgets/auth_choice_group.dart';
 import '../../../../auth/presentation/widgets/auth_date_field.dart';
 import '../../../data/order_models.dart';
@@ -46,7 +47,7 @@ class _WeeklyFields extends StatelessWidget {
             for (var day = 1; day <= 7; day++)
               Semantics(
                 label: weekdayName(day),
-                child: ChoicePill(
+                child: ScheduleChip(
                   label: _dayLetters[day - 1],
                   selected: draft.daysOfWeek.contains(day),
                   onTap: () {
@@ -62,7 +63,7 @@ class _WeeklyFields extends StatelessWidget {
           label: 'Se repite',
           children: [
             for (var weeks = 1; weeks <= 4; weeks++)
-              ChoicePill(
+              ScheduleChip(
                 label: weeks == 1 ? 'Cada semana' : 'Cada $weeks semanas',
                 selected: draft.everyWeeks == weeks,
                 filled: false,
@@ -95,7 +96,7 @@ class _MonthlyFields extends StatelessWidget {
           shakeCount: form.shakeCount,
           children: [
             for (var day = 1; day <= 31; day++)
-              ChoicePill(
+              ScheduleChip(
                 label: '$day',
                 selected: draft.dayOfMonth == day,
                 filled: false,
@@ -140,9 +141,9 @@ class _DatesFields extends StatelessWidget {
       shakeCount: form.shakeCount,
       children: [
         for (final date in dates)
-          ChoicePill(
+          ScheduleChip(
             label: formatDay(date),
-            icon: Icons.close_rounded,
+            icon: AppIcons.close,
             selected: true,
             filled: false,
             onTap: () {
@@ -151,9 +152,9 @@ class _DatesFields extends StatelessWidget {
             },
           ),
         if (dates.length < 30)
-          ChoicePill(
+          ScheduleChip(
             label: 'Agregar fecha',
-            icon: Icons.add_rounded,
+            icon: AppIcons.add,
             selected: false,
             onTap: () => _add(context),
           ),

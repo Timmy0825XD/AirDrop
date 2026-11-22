@@ -13,10 +13,12 @@ class ReceiveOrderButton extends StatelessWidget {
     super.key,
     required this.orderId,
     required this.landed,
+    this.icon,
   });
 
   final String orderId;
   final bool landed;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +28,7 @@ class ReceiveOrderButton extends StatelessWidget {
         minimumSize: const Size.fromHeight(48),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      icon: Icon(landed ? Icons.key_rounded : Icons.pin_rounded),
+      icon: Icon(icon ?? (landed ? Icons.key_rounded : Icons.pin_rounded)),
       label: Text(landed ? 'Recibir pedido' : 'Ver código de entrega'),
     );
   }

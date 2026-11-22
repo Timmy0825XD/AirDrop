@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../theme/app_icons.dart';
 
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
@@ -19,12 +20,14 @@ class InFlightScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return OrderTray<Order>(
       title: 'Vuelos en curso',
-      idleSubtitle: 'Lo que salió de tu central',
-      countLabel: (n) => n == 1 ? '1 dron en el aire' : '$n drones en el aire',
+      idleSubtitle: 'Sigue las salidas de tu central.',
+      countLabel: (n) => n == 1 ? '1 vuelo en curso' : '$n vuelos en curso',
       rows: ref.watch(inFlightProvider),
       onRefresh: () => ref.invalidate(inFlightProvider),
-      emptyIcon: Icons.flight_land_rounded,
-      emptyText: 'Ningún dron de tu central está volando ahora.',
+      emptyIcon: AppIcons.flight,
+      emptyTitle: 'Sin vuelos en curso',
+      emptyText:
+          'Los vuelos de tu central aparecerán aquí hasta que el dron regrese.',
       keyOf: (order) => order.id,
       itemBuilder: (context, order) => InFlightTile(
         order: order,

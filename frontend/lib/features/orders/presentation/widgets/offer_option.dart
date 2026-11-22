@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import '../../../../theme/app_icons.dart';
 
 import '../../../../core/widgets/search_picker_sheet.dart';
 import '../../data/order_models.dart';
@@ -16,8 +16,6 @@ PickerOption<CatalogOffer> offerOption(CatalogOffer offer) {
     value: offer,
     title: offer.name,
     subtitle: details.join(' · '),
-    icon: offer.requiresColdChain
-        ? Icons.ac_unit_rounded
-        : Icons.medication_rounded,
+    icon: offer.requiresColdChain ? AppIcons.coldChain : AppIcons.medication,
   );
 }

@@ -10,9 +10,9 @@ import '../../../../orders/data/order_models.dart';
 import '../../../../orders/data/order_providers.dart';
 import '../../../../orders/presentation/order_format.dart';
 import 'requester_empty_card.dart';
-import 'requester_home_links.dart';
+import '../home_link.dart';
 import 'requester_home_values.dart';
-import 'requester_section_heading.dart';
+import '../home_section_heading.dart';
 
 class RequesterHomePlans extends ConsumerWidget {
   const RequesterHomePlans({super.key, required this.orders});
@@ -22,7 +22,7 @@ class RequesterHomePlans extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      RequesterSectionHeading(
+      HomeSectionHeading(
         title: 'Mis entregas periódicas',
         onViewAll: () => context.push('/orders/plans'),
       ),
@@ -119,7 +119,7 @@ class _PlanLink extends StatelessWidget {
         ? scheduleLabel(plan)
         : '${delivery!.status == OrderStatus.awaitingConfirmation ? 'Por confirmar' : 'Próxima entrega'}'
               ' · ${capitalized(formatDateTime(delivery.scheduledAt!))}';
-    return RequesterHomeLink(
+    return HomeLink(
       icon: AppIcons.plans,
       title: plan.medicationName,
       subtitle: detail,

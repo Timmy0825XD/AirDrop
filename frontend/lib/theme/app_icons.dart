@@ -1,7 +1,7 @@
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:flutter/material.dart' show Icons;
 
-/// Íconos de contorno del solicitante, con un solo trazo en todas sus pantallas.
+/// Íconos de contorno compartidos por las pantallas que ya se rediseñaron.
 /// El logo y el dron de la marca mantienen sus dibujos propios.
 abstract final class AppIcons {
   static const home = LucideIcons.house;
@@ -37,4 +37,15 @@ abstract final class AppIcons {
   static const edit = LucideIcons.pencil;
   static const document = LucideIcons.clipboardList;
   static const coldChain = LucideIcons.snowflake;
+  static const more = LucideIcons.ellipsis;
+  static const incoming = LucideIcons.packageCheck;
+  static const transfer = LucideIcons.arrowLeftRight;
+  static const flight = LucideIcons.navigation;
+  static const lock = LucideIcons.lockKeyhole;
+  static const unavailable = LucideIcons.cloudOff;
+  static const warning = LucideIcons.triangleAlert;
+  static const trash = LucideIcons.trash2;
+  static const history = LucideIcons.history;
+  static const info = LucideIcons.info;
+  static const power = LucideIcons.power;
 }

@@ -36,7 +36,13 @@ class RequesterProfileInformation extends StatelessWidget {
 }
 
 class RequesterProfileExperience extends StatelessWidget {
-  const RequesterProfileExperience({super.key});
+  const RequesterProfileExperience({
+    super.key,
+    this.privacyTitle = 'Privacidad y mis datos',
+    this.privacySubtitle = 'Consentimiento y derechos',
+    this.privacyPath = '/privacy',
+  });
+  final String privacyTitle, privacySubtitle, privacyPath;
 
   @override
   Widget build(BuildContext context) => RequesterProfileGroup(
@@ -48,10 +54,10 @@ class RequesterProfileExperience extends StatelessWidget {
         onTap: () => context.push('/settings'),
       ),
       MenuItem(
-        title: 'Privacidad y mis datos',
-        subtitle: 'Consentimiento y derechos',
+        title: privacyTitle,
+        subtitle: privacySubtitle,
         icon: AppIcons.privacy,
-        onTap: () => context.push('/privacy'),
+        onTap: () => context.push(privacyPath),
       ),
     ],
   );

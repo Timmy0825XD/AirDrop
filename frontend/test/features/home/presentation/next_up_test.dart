@@ -32,7 +32,7 @@ Order _order(
 void main() {
   final now = DateTime.utc(2026, 11, 8, 15);
 
-  test('lo que te toca: la urgencia más vieja, la carga y el programado', () {
+  test('respeta la prioridad de Nest, seguida de la carga y el programado', () {
     final items = dispatcherNextUp(
       queue: [
         QueueEntry(
@@ -64,10 +64,11 @@ void main() {
       now: now,
     );
 
-    expect(items.map((i) => i.orderId), ['q1', 'p1', 's1']);
-    expect(items.first.title, 'Atender la urgencia de Insulina');
-    expect(items.first.detail, startsWith('Espera 6 min'));
-    expect(items[1].title, 'Cargar Acetaminofén');
+    expect(items.map((i) => i.orderId), ['q2', 'p1', 's1']);
+    expect(items.first.title, 'Ibuprofeno');
+    expect(items.first.label, 'Urgencia · Recién llegada');
+    expect(items[1].title, 'Acetaminofén');
+    expect(items[1].actionLabel, 'Preparar carga');
   });
 
   test('sin nada pendiente, la lista va vacía', () {

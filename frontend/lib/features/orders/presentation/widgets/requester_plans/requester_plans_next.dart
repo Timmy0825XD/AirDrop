@@ -15,12 +15,17 @@ class RequesterPlansNext extends StatelessWidget {
     required this.loading,
     required this.error,
     required this.onRetry,
+    this.deliveryBuilder,
+    this.noDeliveryMessage =
+        'Revisa el calendario de tus planes o crea una nueva entrega periódica.',
   });
   final List<DeliveryPlan> plans;
   final List<Order> orders;
   final bool loading;
   final String? error;
   final VoidCallback onRetry;
+  final Widget Function(RequesterPlanDelivery)? deliveryBuilder;
+  final String noDeliveryMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +38,10 @@ class RequesterPlansNext extends StatelessWidget {
       );
     }
     final next = nextRequesterPlanDelivery(plans, orders);
-    if (next != null) return RequesterNextDelivery(delivery: next);
+    if (next != null) {
+      return deliveryBuilder?.call(next) ??
+          RequesterNextDelivery(delivery: next);
+    }
     final allPaused =
         plans.any((p) => p.status == PlanStatus.active) &&
         plans
@@ -45,7 +53,7 @@ class RequesterPlansNext extends StatelessWidget {
           : 'Sin próximas entregas',
       message: allPaused
           ? 'Abre un plan para reanudar su calendario cuando lo necesites.'
-          : 'Revisa el calendario de tus planes o crea una nueva entrega periódica.',
+          : noDeliveryMessage,
     );
   }
 }

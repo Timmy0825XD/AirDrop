@@ -1,6 +1,7 @@
+import '../../../../../theme/app_icons.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../../core/widgets/choice_pill.dart';
+import 'schedule_chip.dart';
 import '../../../../auth/presentation/widgets/auth_choice_group.dart';
 import '../../../../auth/presentation/widgets/auth_date_field.dart';
 import '../../../data/order_models.dart';
@@ -46,7 +47,7 @@ class ScheduleFields extends StatelessWidget {
           label: 'Calendario',
           children: [
             for (final kind in ScheduleKind.values)
-              ChoicePill(
+              ScheduleChip(
                 label: kind.label,
                 selected: draft.kind == kind,
                 onTap: () {
@@ -89,7 +90,7 @@ class ScheduleTimeField extends StatelessWidget {
           label: 'Hora de la entrega',
           children: [
             for (final time in slotTimes)
-              ChoicePill(
+              ScheduleChip(
                 label: time,
                 selected: draft.time == time,
                 filled: false,
@@ -132,6 +133,8 @@ class _PrescriptionValidity extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AuthDateField(
+          icon: AppIcons.calendar,
+          trailingIcon: AppIcons.next,
           label: 'La fórmula vale hasta',
           value: form.draft.prescriptionValidUntil,
           hint: 'Elige la fecha',

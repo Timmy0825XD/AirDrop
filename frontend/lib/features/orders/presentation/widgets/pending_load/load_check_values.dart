@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../../theme/app_icons.dart';
 
 import '../../../../inventory/data/inventory_models.dart';
 import '../../../data/order_models.dart';
@@ -13,22 +14,23 @@ List<LoadCheckItem> loadChecklist(Order order) {
   final units = order.quantity == 1 ? '1 unidad' : '${order.quantity} unidades';
   final a = order.assignment;
   return [
-    (icon: Icons.medication_rounded, text: '${order.medicationName} · $units'),
+    (icon: AppIcons.medication, text: '${order.medicationName} · $units'),
     if (order.requiresColdChain)
-      (icon: Icons.ac_unit_rounded, text: 'Va en nevera, de 2 a 8 °C'),
-    if (order.saleType != SaleType.overTheCounter)
+      (icon: AppIcons.coldChain, text: 'Va en nevera, de 2 a 8 °C'),
+    if (order.saleType != SaleType.overTheCounter &&
+        order.destinationKind == DestinationKind.person)
       (
-        icon: Icons.description_rounded,
+        icon: AppIcons.document,
         text: '${order.saleType.label}: la fórmula se revisó al autorizar',
       ),
     (
-      icon: Icons.flight_rounded,
+      icon: AppIcons.flight,
       text: a == null
           ? 'Sin dron asignado'
           : 'Dron ${a.identifier} · ${formatKm(a.distanceKm)}',
     ),
     (
-      icon: Icons.place_rounded,
+      icon: AppIcons.destination,
       text: order.destinationKind == DestinationKind.hub
           ? 'A la central: ${order.address}'
           : 'A domicilio: ${order.address}',

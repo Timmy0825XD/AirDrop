@@ -1,20 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
 import '../../../../core/api_exception.dart';
 import '../../../../core/widgets/auto_refresh.dart';
-import '../../../../core/widgets/list_padding.dart';
-import '../../../../core/widgets/message_view.dart';
-import '../../../../core/widgets/rise_in.dart';
-import '../../../home/presentation/widgets/section_form_page.dart';
-import '../../../home/presentation/widgets/section_header.dart';
-import '../../../../core/widgets/skeleton.dart';
+import '../../../../core/widgets/content_page.dart';
+import 'tray_content.dart';
 
-/// El andamiaje de una bandeja del despachador (cola, programados,
-/// pendiente de carga, vuelos en curso): encabezado curvo con cuántas hay,
-/// la lista que entra en cascada, deslizar para recargar, el aviso de lista
-/// vacía o el error de Nest, y el refresco cada 10 s.
 class OrderTray<T> extends StatelessWidget {
   const OrderTray({
     super.key,
@@ -29,75 +20,73 @@ class OrderTray<T> extends StatelessWidget {
     required this.itemBuilder,
     this.bottom,
     this.titleMaxLines = 1,
+    this.emptyTitle = 'Todo al día',
+    this.emptyAction,
+    this.beforeList,
   });
-
-  final String title;
+  final String title, idleSubtitle, emptyTitle, emptyText;
   final int titleMaxLines;
-
-  /// El subtítulo mientras la lista carga o si falló.
-  final String idleSubtitle;
-  final String Function(int count) countLabel;
+  final String Function(int) countLabel;
   final AsyncValue<List<T>> rows;
   final VoidCallback onRefresh;
   final IconData emptyIcon;
-  final String emptyText;
-  final String Function(T row) keyOf;
-  final Widget Function(BuildContext context, T row) itemBuilder;
-
-  /// Un filtro bajo el encabezado (p. ej. "En curso / Todos").
-  final Widget? bottom;
-
+  final String Function(T) keyOf;
+  final Widget Function(BuildContext, T) itemBuilder;
+  final Widget? bottom, emptyAction, beforeList;
   @override
-  Widget build(BuildContext context) {
-    final count = rows.value?.length;
-    return SectionStatePage(
-      header: SectionHeader(
-        titleMaxLines: titleMaxLines,
-        title: title,
-        subtitle: count == null ? idleSubtitle : countLabel(count),
-        onBack: () => context.go('/home'),
-        bottom: bottom,
-      ),
-      body: AutoRefresh(
-        onTick: onRefresh,
-        child: switch (rows) {
-          AsyncValue(hasValue: true, hasError: false, :final value?) =>
-            _TrayList<T>(tray: this, items: value),
-          AsyncError(:final error) => MessageView.error(
-            message: ApiException.messageOf(error),
-          ),
-          _ => const SkeletonList(),
-        },
-      ),
-    );
-  }
+  Widget build(BuildContext context) => AutoRefresh(
+    onTick: onRefresh,
+    child: ContentPage(
+      title: title,
+      subtitle: idleSubtitle,
+      onBack: () => context.canPop() ? context.pop() : context.go('/more'),
+      onRefresh: () async => onRefresh(),
+      slivers: [_TraySlivers<T>(tray: this)],
+    ),
+  );
 }
 
-/// La lista de la bandeja: vacía dice por qué; si no, las filas entran en
-/// cascada y se puede deslizar para recargar.
-class _TrayList<T> extends StatelessWidget {
-  const _TrayList({required this.tray, required this.items});
-
+class _TraySlivers<T> extends StatelessWidget {
+  const _TraySlivers({required this.tray});
   final OrderTray<T> tray;
-  final List<T> items;
-
   @override
   Widget build(BuildContext context) {
-    if (items.isEmpty) {
-      return MessageView(icon: tray.emptyIcon, message: tray.emptyText);
-    }
-    return RefreshIndicator(
-      onRefresh: () async => tray.onRefresh(),
-      child: ListView.separated(
-        padding: listPadding(context),
-        itemCount: items.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 10),
-        itemBuilder: (context, i) => RiseIn(
-          key: ValueKey(tray.keyOf(items[i])),
-          delay: RiseIn.stagger(i),
-          child: tray.itemBuilder(context, items[i]),
+    final count = tray.rows.value?.length;
+    return SliverMainAxisGroup(
+      slivers: [
+        if (tray.bottom != null)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: tray.bottom,
+            ),
+          ),
+        if (tray.beforeList != null) SliverToBoxAdapter(child: tray.beforeList),
+        if (count != null && count > 0)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Text(
+                tray.countLabel(count),
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+            ),
+          ),
+        TrayContent<T>(
+          items: tray.rows.value,
+          loading: !tray.rows.hasValue && !tray.rows.hasError,
+          error: tray.rows.hasError
+              ? ApiException.messageOf(tray.rows.error!)
+              : null,
+          emptyIcon: tray.emptyIcon,
+          emptyTitle: tray.emptyTitle,
+          emptyText: tray.emptyText,
+          onRefresh: tray.onRefresh,
+          emptyAction: tray.emptyAction,
+          keyOf: tray.keyOf,
+          itemBuilder: tray.itemBuilder,
         ),
-      ),
+      ],
     );
   }
 }

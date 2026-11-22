@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../theme/app_icons.dart';
 
 import '../../../core/widgets/status_pill.dart';
 import '../data/order_models.dart';
@@ -19,12 +20,12 @@ class ScheduledScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return OrderTray<ScheduledEntry>(
       title: 'Programados',
-      idleSubtitle: 'Entregas de los planes',
+      idleSubtitle: 'Entregas por preparar.',
       countLabel: (n) =>
           n == 1 ? '1 entrega programada' : '$n entregas programadas',
       rows: ref.watch(scheduledProvider),
       onRefresh: () => ref.invalidate(scheduledProvider),
-      emptyIcon: Icons.event_available_rounded,
+      emptyIcon: AppIcons.calendar,
       emptyText: 'No hay entregas programadas en recibido.',
       keyOf: (entry) => entry.order.id,
       itemBuilder: (context, entry) => ScheduledTile(
@@ -69,7 +70,7 @@ class ScheduledTile extends StatelessWidget {
         ? ''
         : ' · ${formatSlot(order.scheduledAt, order.windowEndsAt)}';
     return OrderRowCard(
-      icon: Icons.event_rounded,
+      icon: AppIcons.calendar,
       tone: Theme.of(context).colorScheme.primary,
       title: order.medicationName,
       accent:
@@ -78,6 +79,7 @@ class ScheduledTile extends StatelessWidget {
       detail: '${entry.availableQuantity} en stock',
       pill: pillOf(order),
       onTap: onTap,
+      actionLabel: 'Revisar entrega',
     );
   }
 }

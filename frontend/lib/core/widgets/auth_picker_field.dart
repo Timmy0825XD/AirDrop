@@ -33,6 +33,8 @@ class AuthPickerField<T> extends StatelessWidget {
     this.errorText,
     this.shakeCount = 0,
     this.empty,
+    this.icon,
+    this.trailingIcon = Icons.unfold_more_rounded,
   });
 
   final String label;
@@ -45,6 +47,8 @@ class AuthPickerField<T> extends StatelessWidget {
   final String? errorText;
   final int shakeCount;
   final String? empty;
+  final IconData? icon;
+  final IconData trailingIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -85,6 +89,8 @@ class _LabeledPicker<T> extends StatelessWidget {
           '${field.label}: ${pick == null ? field.hint : '${pick.title}. Cambiar'}',
       excludeSemantics: true,
       child: _PickerBox(
+        icon: field.icon,
+        trailingIcon: field.trailingIcon,
         chosen: pick,
         hint: field.hint,
         hasError: field.errorText != null,
@@ -101,12 +107,16 @@ class _PickerBox extends StatelessWidget {
     required this.hint,
     required this.hasError,
     required this.onTap,
+    required this.icon,
+    required this.trailingIcon,
   });
 
   final PickerOption<Object?>? chosen;
   final String hint;
   final bool hasError;
   final VoidCallback onTap;
+  final IconData? icon;
+  final IconData trailingIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -130,17 +140,14 @@ class _PickerBox extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(16, 15, 12, 15),
               child: Row(
                 children: [
-                  if (pick?.icon case final icon?) ...[
-                    Icon(icon, size: 20, color: theme.colorScheme.primary),
+                  if (pick?.icon ?? icon case final leading?) ...[
+                    Icon(leading, size: 20, color: theme.colorScheme.primary),
                     const SizedBox(width: 10),
                   ],
                   Expanded(
                     child: _PickerText(chosen: pick, hint: hint),
                   ),
-                  Icon(
-                    Icons.unfold_more_rounded,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
+                  Icon(trailingIcon, color: theme.colorScheme.onSurfaceVariant),
                 ],
               ),
             ),

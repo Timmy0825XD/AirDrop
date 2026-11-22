@@ -1,132 +1,162 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-
+import '../../../../core/clock/sim_clock.dart';
 import '../../../../core/colombian_phone.dart';
 import '../../../../core/widgets/app_map.dart';
-import '../../../../core/widgets/detail_section.dart';
+import '../../../../core/widgets/form_section.dart';
+import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/phone_link.dart';
-import '../../../../core/widgets/rise_in.dart';
 import '../../../../core/widgets/status_pill.dart';
+import '../../../../theme/app_icons.dart';
 import '../../data/hub_models.dart';
 import 'hub_labels.dart';
-import 'hub_tile.dart';
-import '../../../../theme/app_palette.dart';
 
-/// "Mi central" en solo lectura: quién es, dónde queda en el mapa y cómo
-/// contactarla. Sin acciones: el despachador consulta su central, no la
-/// administra. Los bloques entran en cascada.
+/// Consulta de la central asignada; el despachador no administra sus datos.
 class HubDetailContent extends StatelessWidget {
   const HubDetailContent({super.key, required this.hub});
-
   final Hub hub;
-
   @override
-  Widget build(BuildContext context) {
-    final blocks = [
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
       _HubIdentity(hub: hub),
+      const SizedBox(height: 28),
+      Text('Ubicación', style: Theme.of(context).textTheme.titleLarge),
+      const SizedBox(height: 12),
       _HubMap(point: LatLng(hub.latitude, hub.longitude)),
-      DetailSection(
+      const SizedBox(height: 10),
+      Text(hub.address),
+      const SizedBox(height: 28),
+      FormSection(
         title: 'Contacto',
-        icon: Icons.call_rounded,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DetailLine(label: 'Dirección', value: hub.address),
-            DetailLine(
-              label: 'Teléfono',
-              value: formatColombianPhone(hub.contactPhone),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: PhoneLink(phone: hub.contactPhone),
-              ),
-            ),
-            DetailLine(
-              label: 'Correo',
-              value: hub.contactEmail ?? 'Sin correo registrado',
-            ),
-            DetailLine(
-              label: 'Coordenadas',
-              value:
-                  '${hub.latitude.toStringAsFixed(6)}, '
-                  '${hub.longitude.toStringAsFixed(6)}',
-            ),
-          ],
-        ),
-      ),
-    ];
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final (i, block) in blocks.indexed)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: RiseIn(delay: RiseIn.stagger(i), child: block),
-          ),
-      ],
-    );
-  }
-}
-
-/// El ícono del tipo, el nombre, el tipo y el estado.
-class _HubIdentity extends StatelessWidget {
-  const _HubIdentity({required this.hub});
-
-  final Hub hub;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: context.palette.glass,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: context.palette.glassBorder),
-      ),
-      child: Row(
         children: [
-          HubTypeTile(hub: hub),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(hub.name, style: theme.textTheme.titleMedium),
-                const SizedBox(height: 3),
-                Text(
-                  HubLabels.type(hub.type),
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colors.primary,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
+          _HubContact(
+            icon: AppIcons.contact,
+            label: 'Teléfono',
+            value: formatColombianPhone(hub.contactPhone),
+            action: TextButton.icon(
+              onPressed: () => callPhone(context, hub.contactPhone),
+              icon: const Icon(AppIcons.contact),
+              label: const Text('Llamar'),
             ),
           ),
-          StatusPill(
-            label: HubLabels.status(hub.status),
-            tone: HubLabels.tone(hub.status),
+          const Divider(height: 28),
+          _HubContact(
+            icon: AppIcons.mail,
+            label: 'Correo',
+            value: hub.contactEmail ?? 'Sin correo registrado',
+          ),
+          const Divider(height: 28),
+          _HubContact(
+            icon: AppIcons.destination,
+            label: 'Coordenadas',
+            value:
+                '${hub.latitude.toStringAsFixed(6)}, ${hub.longitude.toStringAsFixed(6)}',
           ),
         ],
       ),
-    );
-  }
+      const SizedBox(height: 16),
+      Text(
+        'Los datos de la central los administra el administrador.',
+        style: Theme.of(context).textTheme.bodySmall,
+      ),
+    ],
+  );
 }
 
-/// El mapa quieto con el pin de la central, en vez de latitud y longitud
-/// sueltas. Es el mismo `AppMap` del resto de la app.
+class _HubIdentity extends StatelessWidget {
+  const _HubIdentity({required this.hub});
+  final Hub hub;
+  @override
+  Widget build(BuildContext context) => GlassCard(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Icon(AppIcons.hub, size: 30),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                hub.name,
+                style: Theme.of(
+                  context,
+                ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Text(
+          HubLabels.type(hub.type),
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+        const SizedBox(height: 16),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            StatusPill(
+              label: HubLabels.status(hub.status),
+              tone: HubLabels.tone(hub.status),
+            ),
+            StatusPill(
+              label: hub.poweredAt(simClock.now())
+                  ? 'Con energía'
+                  : 'Sin energía',
+              tone: hub.poweredAt(simClock.now())
+                  ? PillTone.positive
+                  : PillTone.attention,
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+class _HubContact extends StatelessWidget {
+  const _HubContact({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.action,
+  });
+  final IconData icon;
+  final String label, value;
+  final Widget? action;
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Icon(icon, size: 24),
+      const SizedBox(width: 14),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(label, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 4),
+            Text(value),
+            if (action != null)
+              Align(alignment: Alignment.centerLeft, child: action),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
 class _HubMap extends StatelessWidget {
   const _HubMap({required this.point});
-
   final LatLng point;
-
   @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(24),
+  Widget build(BuildContext context) => Semantics(
+    label: 'Ubicación de la central en el mapa',
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(20),
       child: SizedBox(
         height: 200,
         child: AppMap(
@@ -142,9 +172,9 @@ class _HubMap extends StatelessWidget {
                   height: 42,
                   alignment: Alignment.topCenter,
                   child: Icon(
-                    Icons.location_on_rounded,
+                    AppIcons.destination,
                     size: 42,
-                    color: colors.primary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ],
@@ -152,6 +182,6 @@ class _HubMap extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }

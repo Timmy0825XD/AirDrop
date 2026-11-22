@@ -8,10 +8,12 @@ import '../../../../hubs/data/hub_models.dart';
 /// central está activa o todavía carga. Explica por qué los accesos están
 /// con candado.
 String? hubNoticeText(AsyncValue<Hub?> state) => switch (state) {
-  AsyncValue(hasValue: true, hasError: false, value: final hub?) when hub.isActive => null,
+  AsyncValue(hasValue: true, hasError: false, value: final hub?)
+      when hub.isActive =>
+    null,
   AsyncValue(hasValue: true, hasError: false, value: _?) =>
     'Tu central está suspendida. Mientras tanto solo puedes ver tu '
-        'central y tus planes.',
+        'central y tus abastecimientos.',
   AsyncValue(hasValue: true, hasError: false) =>
     'No tienes una central asignada. Pídele al administrador que te '
         'asigne una.',

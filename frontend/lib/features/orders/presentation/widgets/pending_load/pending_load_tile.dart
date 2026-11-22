@@ -1,13 +1,11 @@
 import 'package:flutter/material.dart';
-
-import '../../../../../core/widgets/press_scale.dart';
+import '../../../../../core/widgets/status_pill.dart';
+import '../../../../../theme/app_icons.dart';
 import '../../../data/order_models.dart';
 import '../../order_format.dart';
 import '../order_row_card.dart';
 import '../watch_flight_button.dart';
 
-/// Una fila de la bandeja "Pendiente de carga": qué insumo va, en qué dron
-/// y qué tan lejos, con el botón para revisar y confirmar la carga debajo.
 class PendingLoadTile extends StatelessWidget {
   const PendingLoadTile({
     super.key,
@@ -16,75 +14,57 @@ class PendingLoadTile extends StatelessWidget {
     required this.onConfirm,
     required this.onOpen,
   });
-
   final Order order;
-
-  /// Esta fila está esperando la respuesta de `confirm-load`.
   final bool confirming;
-  final VoidCallback onConfirm;
-  final VoidCallback onOpen;
+  final VoidCallback onConfirm, onOpen;
+  @override
+  Widget build(BuildContext context) => OrderRowCard(
+    icon: AppIcons.medication,
+    tone: Theme.of(context).colorScheme.primary,
+    title: order.medicationName,
+    accent: '${unitsLabel(order.quantity)} · ${destinationLabel(order)}',
+    detail: routeLine(order.assignment),
+    onTap: onOpen,
+    pill: StatusPill(
+      label: order.awaitsLoad ? 'Espera la carga' : 'Carga confirmada',
+      tone: order.awaitsLoad ? PillTone.attention : PillTone.positive,
+    ),
+    footer: _LoadAction(tile: this),
+    children: [
+      if (order.requiresColdChain)
+        const Padding(
+          padding: EdgeInsets.only(top: 10),
+          child: Text('Cadena de frío · 2 a 8 °C'),
+        ),
+    ],
+  );
+}
 
+class _LoadAction extends StatelessWidget {
+  const _LoadAction({required this.tile});
+  final PendingLoadTile tile;
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
+    if (!tile.order.awaitsLoad) {
+      return WatchFlightButton(orderId: tile.order.id, icon: AppIcons.flight);
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        OrderRowCard(
-          icon: Icons.inventory_rounded,
-          tone: colors.primary,
-          title: order.medicationName,
-          accent: '${order.quantity} und. · ${destinationLabel(order)}',
-          detail: routeLine(order.assignment),
-          onTap: onOpen,
+        FilledButton(
+          onPressed: tile.confirming ? null : tile.onConfirm,
+          child: Text(
+            tile.confirming ? 'Confirmando…' : 'Revisar y cargar',
+            textAlign: TextAlign.center,
+          ),
         ),
-        const SizedBox(height: 8),
-        _ConfirmButton(
-          order: order,
-          confirming: confirming,
-          onConfirm: onConfirm,
+        const SizedBox(height: 10),
+        Text(
+          'El vuelo inicia después de confirmar la carga.',
+          style: Theme.of(context).textTheme.bodySmall,
         ),
+        TextButton(onPressed: tile.onOpen, child: const Text('Ver pedido')),
       ],
-    );
-  }
-}
-
-/// Mientras falta la carga, "Revisar y cargar" (abre la revisión con el
-/// deslizador; el vuelo no sale de este toque). Ya confirmado, Nest lo deja
-/// en la bandeja hasta el primer tick del reloj (unos 2 s): ahí el botón
-/// pasa a "Ver vuelo".
-class _ConfirmButton extends StatelessWidget {
-  const _ConfirmButton({
-    required this.order,
-    required this.confirming,
-    required this.onConfirm,
-  });
-
-  final Order order;
-  final bool confirming;
-  final VoidCallback onConfirm;
-
-  @override
-  Widget build(BuildContext context) {
-    final child = !order.awaitsLoad
-        ? WatchFlightButton(orderId: order.id)
-        : FilledButton.icon(
-            onPressed: confirming ? null : onConfirm,
-            style: FilledButton.styleFrom(
-              minimumSize: const Size.fromHeight(48),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            icon: const Icon(Icons.fact_check_rounded),
-            label: Text(confirming ? 'Confirmando…' : 'Revisar y cargar'),
-          );
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 280),
-      switchInCurve: Curves.easeOutBack,
-      transitionBuilder: (child, animation) =>
-          ScaleTransition(scale: animation, child: child),
-      child: PressScale(key: ValueKey(order.awaitsLoad), child: child),
     );
   }
 }
