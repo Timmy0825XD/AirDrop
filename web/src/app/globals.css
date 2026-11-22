@@ -39,9 +39,10 @@
   --magenta: #f0958e;
 
   /* Marca (manual Dron-cruz): solo para el logo. */
-  --brand-teal: #159aa4;
-  --brand-petrol: #0a4e58;
-  --brand-mist: #bdefed;
+  --brand-pine: #1f3a3a;
+  --brand-slate: #0b1214;
+  --brand-obsidian: #070a0b;
+  --brand-jade: #5eead4;
   --brand-cross: #ffffff;
 
   --shadow: rgb(0 0 0 / 0.45);

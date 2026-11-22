@@ -2,8 +2,8 @@ import { useId } from "react";
 import { BRAND_ROTOR_TURN, BRAND_ROTORS, BRAND_WORDMARK } from "@/lib/brand-shape";
 
 /**
- * El ícono de AirDrop (Dron-cruz): la ficha con el degradado turquesa →
- * petróleo, el dron visto desde arriba y la cruz de salud encima. Por debajo
+ * El ícono de AirDrop (Obsidiana): la ficha con el degradado pino → pizarra →
+ * obsidiana, el dron jade visto desde arriba y la cruz de salud encima. Por debajo
  * de 48 px el manual de marca pide la versión simple (ficha y cruz), porque los
  * trazos del dron ya no se ven.
  */
@@ -14,14 +14,15 @@ export function BrandMark({ size = 32, className = "" }: { size?: number; classN
     <svg viewBox="0 0 1024 1024" width={size} height={size} aria-hidden className={`shrink-0 ${className}`}>
       <defs>
         <linearGradient id={gradient} x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" style={{ stopColor: "var(--brand-teal)" }} />
-          <stop offset="1" style={{ stopColor: "var(--brand-petrol)" }} />
+          <stop offset="0" style={{ stopColor: "var(--brand-pine)" }} />
+          <stop offset="0.6" style={{ stopColor: "var(--brand-slate)" }} />
+          <stop offset="1" style={{ stopColor: "var(--brand-obsidian)" }} />
         </linearGradient>
       </defs>
       <rect width="1024" height="1024" rx="229" fill={`url(#${gradient})`} />
       {full ? (
         <>
-          <g stroke="var(--brand-mist)" strokeWidth="20" strokeLinecap="round" fill="none">
+          <g stroke="var(--brand-jade)" strokeWidth="20" strokeLinecap="round" fill="none">
             {BRAND_ROTORS.map(([x, y]) => (
               <line key={`arm-${x}-${y}`} x1="512" y1="512" x2={x} y2={y} />
             ))}
@@ -36,7 +37,7 @@ export function BrandMark({ size = 32, className = "" }: { size?: number; classN
               />
             ))}
           </g>
-          <g fill="var(--brand-mist)">
+          <g fill="var(--brand-jade)">
             {BRAND_ROTORS.map(([x, y]) => (
               <circle key={`hub-${x}-${y}`} cx={x} cy={y} r="18" />
             ))}
