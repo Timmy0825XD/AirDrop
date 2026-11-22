@@ -2,8 +2,8 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
-/// El ícono de AirDrop (Dron-cruz): la ficha con el degradado turquesa →
-/// petróleo, el dron visto desde arriba y la cruz de salud encima.
+/// El ícono de AirDrop (Obsidiana): la ficha con el degradado pino →
+/// pizarra → obsidiana, el dron jade visto desde arriba y la cruz de salud encima.
 ///
 /// La geometría es la de `Airdrop_Products/_brand/logo/svg/airdrop-app-icon.svg`
 /// (lienzo de 1024). Por debajo de 48 px el manual pide la versión simple
@@ -33,9 +33,10 @@ class AirDropLogo extends StatelessWidget {
 
 /// Colores fijos del manual de marca: el logo no cambia con el tema.
 abstract final class _Brand {
-  static const teal = Color(0xFF159AA4);
-  static const petrol = Color(0xFF0A4E58);
-  static const mist = Color(0xFFBDEFED);
+  static const pine = Color(0xFF1F3A3A);
+  static const slate = Color(0xFF0B1214);
+  static const obsidian = Color(0xFF070A0B);
+  static const jade = Color(0xFF5EEAD4);
   static const cross = Color(0xFFFFFFFF);
 }
 
@@ -68,7 +69,8 @@ class _AirDropLogoPainter extends CustomPainter {
         ..shader = const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [_Brand.teal, _Brand.petrol],
+          colors: [_Brand.pine, _Brand.slate, _Brand.obsidian],
+          stops: [0, 0.6, 1],
         ).createShader(tile),
     );
 
@@ -82,7 +84,7 @@ class _AirDropLogoPainter extends CustomPainter {
     }
 
     final stroke = Paint()
-      ..color = _Brand.mist
+      ..color = _Brand.jade
       ..style = PaintingStyle.stroke
       ..strokeWidth = 20
       ..strokeCap = StrokeCap.round;
@@ -109,7 +111,7 @@ class _AirDropLogoPainter extends CustomPainter {
       }
     }
 
-    final hub = Paint()..color = _Brand.mist;
+    final hub = Paint()..color = _Brand.jade;
     for (final rotor in _rotors) {
       canvas.drawCircle(rotor, 18, hub);
     }
