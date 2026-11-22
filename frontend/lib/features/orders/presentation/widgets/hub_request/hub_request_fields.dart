@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../theme/app_icons.dart';
 
 import '../../../../../core/api_exception.dart';
 import '../../../../../core/widgets/auth_picker_field.dart';
@@ -67,6 +68,8 @@ class _OriginPicker extends StatelessWidget {
   Widget build(BuildContext context) {
     final f = fields;
     return AuthPickerField<String>(
+      icon: AppIcons.hub,
+      trailingIcon: AppIcons.next,
       label: 'Central de origen',
       hint: 'Elige la central',
       sheetTitle: '¿A qué central le pides?',
@@ -75,11 +78,7 @@ class _OriginPicker extends StatelessWidget {
       shakeCount: f.shakeCount,
       options: [
         for (final hub in f.origins)
-          PickerOption(
-            value: hub.id,
-            title: hub.name,
-            icon: Icons.home_work_rounded,
-          ),
+          PickerOption(value: hub.id, title: hub.name, icon: AppIcons.hub),
       ],
       isSelected: (id) => id == f.values.originHubId,
       onSelected: (id) {
@@ -138,6 +137,8 @@ class _OfferPicker extends StatelessWidget {
       child: switch (f.catalog!) {
         AsyncValue(hasValue: true, hasError: false, :final value?) =>
           AuthPickerField<CatalogOffer>(
+            icon: AppIcons.medication,
+            trailingIcon: AppIcons.next,
             label: 'Medicamento',
             hint: 'Elige el insumo',
             sheetTitle: 'Insumos de esa central',
@@ -174,7 +175,8 @@ class HubTransferNote extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Text(
-      'La fórmula de un paciente no va en un traslado entre centrales.',
+      'La central de origen revisa y autoriza el envío. '
+      'En estos traslados no viaja la fórmula de un paciente.',
       style: theme.textTheme.bodySmall?.copyWith(
         color: theme.colorScheme.onSurfaceVariant,
       ),

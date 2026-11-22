@@ -1,6 +1,7 @@
+import '../../../../../theme/app_icons.dart';
 import 'package:flutter/material.dart';
 
-import '../../../../../core/widgets/choice_pill.dart';
+import 'schedule_chip.dart';
 import '../../../../auth/presentation/widgets/auth_choice_group.dart';
 import '../../../../auth/presentation/widgets/auth_date_field.dart';
 import '../../../../../core/widgets/auth_field.dart';
@@ -29,6 +30,8 @@ class ScheduleRangeFields extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AuthDateField(
+          icon: AppIcons.calendar,
+          trailingIcon: AppIcons.next,
           label: 'Empieza',
           value: draft.startDate,
           hint: 'Elige la fecha',
@@ -62,7 +65,7 @@ class _ScheduleEndFields extends StatelessWidget {
               (ScheduleEnd.count, 'Tras un número de entregas'),
               (ScheduleEnd.until, 'En una fecha'),
             ])
-              ChoicePill(
+              ScheduleChip(
                 label: label,
                 selected: draft.end == end,
                 filled: false,
@@ -76,6 +79,8 @@ class _ScheduleEndFields extends StatelessWidget {
         const SizedBox(height: 12),
         if (draft.end == ScheduleEnd.until)
           AuthDateField(
+            icon: AppIcons.calendar,
+            trailingIcon: AppIcons.next,
             label: 'Fecha de fin',
             value: draft.endDate,
             hint: 'Elige la fecha',

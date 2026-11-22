@@ -32,7 +32,9 @@ void main() {
     await pumpScreen(tester);
 
     expect(
-      find.text('Ningún dron de tu central está volando ahora.'),
+      find.text(
+        'Los vuelos de tu central aparecerán aquí hasta que el dron regrese.',
+      ),
       findsOneWidget,
     );
   });
@@ -49,7 +51,7 @@ void main() {
     await pumpScreen(tester);
 
     expect(find.text('Vuelos en curso'), findsOneWidget);
-    expect(find.text('1 dron en el aire'), findsOneWidget);
+    expect(find.text('1 vuelo en curso'), findsOneWidget);
     expect(find.text(pending.medicationName), findsOneWidget);
     expect(find.text('Dron D-01 · 4,2 km · 100 m'), findsOneWidget);
     expect(find.text('En vuelo'), findsOneWidget);

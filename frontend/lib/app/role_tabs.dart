@@ -103,15 +103,15 @@ class RoleTabs {
     final queue = active ? ref.watch(queueProvider).value?.length : null;
     return RoleTabs(
       destinations: const [
-        _home,
-        NavDestination(icon: Icons.event_available_rounded, label: 'Agenda'),
-        NavDestination(icon: Icons.medication_rounded, label: 'Inventario'),
-        NavDestination(icon: Icons.grid_view_rounded, label: 'Más'),
+        NavDestination(icon: AppIcons.home, label: 'Inicio'),
+        NavDestination(icon: AppIcons.calendar, label: 'Agenda'),
+        NavDestination(icon: AppIcons.orders, label: 'Inventario'),
+        NavDestination(icon: AppIcons.more, label: 'Más'),
       ],
       paths: const ['/home', '/orders/agenda', '/inventory', '/more'],
       centerPath: '/orders/queue',
       center: NavCenterAction(
-        icon: Icons.bolt_rounded,
+        icon: AppIcons.urgency,
         label: 'Cola de urgencias',
         tabLabel: 'Urgencias',
         badge: queue,

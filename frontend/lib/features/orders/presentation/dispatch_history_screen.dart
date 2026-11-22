@@ -1,30 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
 import '../../../core/api_exception.dart';
-import '../../../core/widgets/message_view.dart';
-import '../../../core/widgets/rise_in.dart';
+import '../../../core/widgets/content_page.dart';
+import '../../../core/widgets/skeleton.dart';
 import '../../../core/widgets/sliding_segmented.dart';
-import '../../home/presentation/widgets/section_header.dart';
+import '../../../core/widgets/warning_banner.dart';
+import '../../../theme/app_icons.dart';
 import '../data/agenda_models.dart';
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
 import 'widgets/order_tile.dart';
-import '../../../core/widgets/skeleton.dart';
+import 'widgets/tray_content.dart';
 
-/// Lo cerrado que despachó la central (`/orders/history`, HU-36): de a 20,
-/// filtrado por estado, con "Cargar más".
 class DispatchHistoryScreen extends ConsumerStatefulWidget {
   const DispatchHistoryScreen({super.key});
-
   static const filters = [
     SegmentOption<OrderStatus?>(null, 'Todos'),
     SegmentOption<OrderStatus?>(OrderStatus.delivered, 'Entregados'),
     SegmentOption<OrderStatus?>(OrderStatus.returned, 'Devueltos'),
     SegmentOption<OrderStatus?>(OrderStatus.rejected, 'Rechazados'),
   ];
-
   @override
   ConsumerState<DispatchHistoryScreen> createState() =>
       _DispatchHistoryScreenState();
@@ -33,30 +29,33 @@ class DispatchHistoryScreen extends ConsumerStatefulWidget {
 class _DispatchHistoryScreenState extends ConsumerState<DispatchHistoryScreen> {
   OrderStatus? _status;
   int _pages = 1;
-
   List<HistoryQuery> get _queries => [
     for (var page = 1; page <= _pages; page++)
       HistoryQuery(status: _status, page: page),
   ];
+  void _reload() {
+    for (final query in _queries) {
+      ref.invalidate(historyProvider(query));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final pages = [for (final q in _queries) ref.watch(historyProvider(q))];
-    final first = pages.first;
-    final total = first.value?.total;
-    return Scaffold(
-      body: Column(
-        children: [
-          SectionHeader(
-            title: 'Histórico',
-            subtitle: total == null
-                ? 'Lo que despachó tu central'
-                : total == 1
-                ? '1 pedido cerrado'
-                : '$total pedidos cerrados',
-            onBack: () => SectionHeader.backOrHome(context),
-            bottom: SlidingSegmented<OrderStatus?>(
-              options: DispatchHistoryScreen.filters,
+    final first = pages.first, last = pages.last;
+    final items = first.hasValue
+        ? [for (final page in pages) ...?page.value?.items]
+        : null;
+    return ContentPage(
+      title: 'Historial',
+      subtitle: 'Lo que despachó tu central.',
+      onBack: () => context.canPop() ? context.pop() : context.go('/more'),
+      onRefresh: () async => _reload(),
+      slivers: [
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(bottom: 20),
+            child: _HistoryFilters(
               selected: _status,
               onChanged: (value) => setState(() {
                 _status = value;
@@ -64,64 +63,91 @@ class _DispatchHistoryScreenState extends ConsumerState<DispatchHistoryScreen> {
               }),
             ),
           ),
-          Expanded(
-            child: switch (first) {
-              AsyncError(:final error) => MessageView.error(
-                message: ApiException.messageOf(error),
-              ),
-              AsyncValue(hasValue: true) => _HistoryList(
-                pages: pages,
-                onMore: () => setState(() => _pages++),
-              ),
-              _ => const SkeletonList(),
-            },
+        ),
+        TrayContent<Order>(
+          items: items,
+          loading: !first.hasValue && !first.hasError,
+          error: first.hasError ? ApiException.messageOf(first.error!) : null,
+          emptyIcon: AppIcons.history,
+          emptyTitle: 'Sin pedidos con este filtro',
+          emptyText: 'Los pedidos que cierre tu central aparecerán aquí.',
+          onRefresh: _reload,
+          keyOf: (order) => order.id,
+          itemBuilder: (context, order) => OrderTile(
+            order: order,
+            canWatch: false,
+            onTap: () => context.push('/orders/${order.id}'),
           ),
-        ],
-      ),
+        ),
+        SliverToBoxAdapter(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: _HistoryFooter(
+              loading: pages.length > 1 && last.isLoading && !last.hasValue,
+              error: pages.length > 1 && last.hasError
+                  ? ApiException.messageOf(last.error!)
+                  : null,
+              hasMore: last.value?.hasMore ?? false,
+              onRetry: () => ref.invalidate(historyProvider(_queries.last)),
+              onMore: () => setState(() => _pages++),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
 
-class _HistoryList extends StatelessWidget {
-  const _HistoryList({required this.pages, required this.onMore});
+class _HistoryFilters extends StatelessWidget {
+  const _HistoryFilters({required this.selected, required this.onChanged});
+  final OrderStatus? selected;
+  final ValueChanged<OrderStatus?> onChanged;
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: 8,
+    runSpacing: 8,
+    children: [
+      for (final filter in DispatchHistoryScreen.filters)
+        ChoiceChip(
+          label: Text(filter.label),
+          selected: filter.value == selected,
+          showCheckmark: false,
+          selectedColor: Theme.of(context).colorScheme.primary,
+          labelStyle: TextStyle(
+            color: filter.value == selected
+                ? Theme.of(context).colorScheme.onPrimary
+                : Theme.of(context).colorScheme.onSurface,
+          ),
+          onSelected: (_) => onChanged(filter.value),
+        ),
+    ],
+  );
+}
 
-  final List<AsyncValue<HistoryPage>> pages;
-  final VoidCallback onMore;
-
+class _HistoryFooter extends StatelessWidget {
+  const _HistoryFooter({
+    required this.loading,
+    required this.error,
+    required this.hasMore,
+    required this.onRetry,
+    required this.onMore,
+  });
+  final bool loading, hasMore;
+  final String? error;
+  final VoidCallback onRetry, onMore;
   @override
   Widget build(BuildContext context) {
-    final items = [for (final page in pages) ...?page.value?.items];
-    if (items.isEmpty) {
-      return const MessageView(
-        icon: Icons.history_rounded,
-        message: 'No hay pedidos cerrados con este filtro.',
+    if (loading) return const Skeleton(height: 70, radius: 20);
+    if (error != null) {
+      return Column(
+        children: [
+          WarningBanner(message: error!),
+          TextButton(onPressed: onRetry, child: const Text('Reintentar')),
+        ],
       );
     }
-    final last = pages.last;
-    final loading = last.isLoading && !last.hasValue;
-    final more = last.value?.hasMore ?? false;
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 32),
-      itemCount: items.length + 1,
-      separatorBuilder: (_, _) => const SizedBox(height: 10),
-      itemBuilder: (context, i) {
-        if (i == items.length) {
-          if (loading) return const SkeletonList();
-          return more
-              ? OutlinedButton(
-                  onPressed: onMore,
-                  child: const Text('Cargar más'),
-                )
-              : const SizedBox.shrink();
-        }
-        return RiseIn(
-          delay: RiseIn.stagger(i % 20),
-          child: OrderTile(
-            order: items[i],
-            onTap: () => context.push('/orders/${items[i].id}'),
-          ),
-        );
-      },
-    );
+    return hasMore
+        ? OutlinedButton(onPressed: onMore, child: const Text('Cargar más'))
+        : const SizedBox.shrink();
   }
 }

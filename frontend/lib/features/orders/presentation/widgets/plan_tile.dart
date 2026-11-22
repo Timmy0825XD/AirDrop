@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../theme/app_icons.dart';
 
 import '../../../../core/widgets/status_pill.dart';
 import '../../data/order_models.dart';
@@ -28,7 +29,7 @@ class PlanTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OrderRowCard(
-      icon: Icons.event_repeat_rounded,
+      icon: AppIcons.plans,
       tone: Theme.of(context).colorScheme.primary,
       title: plan.medicationName,
       accent: '${scheduleLabel(plan)} · ${plan.quantity} und.',
@@ -38,6 +39,7 @@ class PlanTile extends StatelessWidget {
                 '${formatDay(plan.windowEndsOn, relative: false)}',
       pill: pillOf(plan),
       onTap: onTap,
+      actionLabel: 'Ver abastecimiento',
     );
   }
 }

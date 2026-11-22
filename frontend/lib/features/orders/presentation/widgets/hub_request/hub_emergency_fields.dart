@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../theme/app_icons.dart';
 
 import '../../../../../core/api_exception.dart';
 import '../../../../../core/widgets/auth_picker_field.dart';
@@ -50,6 +51,8 @@ class HubEmergencyFields extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         AuthPickerField<CatalogOffer>(
+          icon: AppIcons.medication,
+          trailingIcon: AppIcons.next,
           label: 'Medicamento',
           hint: 'Elige el medicamento',
           sheetTitle: '¿Qué necesita tu central?',
@@ -102,6 +105,8 @@ class _SourcePicker extends StatelessWidget {
       child: switch (form.sources!) {
         AsyncValue(hasValue: true, hasError: false, :final value?) =>
           AuthPickerField<OfferSource>(
+            icon: AppIcons.hub,
+            trailingIcon: AppIcons.next,
             label: 'Central de origen',
             hint: value.isEmpty
                 ? 'Ninguna otra central lo tiene ahora'
@@ -119,7 +124,7 @@ class _SourcePicker extends StatelessWidget {
                   subtitle:
                       '${source.offer.availableQuantity} en stock · '
                       '${source.hub.address}',
-                  icon: Icons.home_work_rounded,
+                  icon: AppIcons.hub,
                 ),
             ],
             isSelected: (source) => source.hub.id == values.originHubId,

@@ -31,7 +31,10 @@ class RequesterProfileDetails extends StatelessWidget {
           else
             for (final type
                 in group == ProfileDataGroup.personal
-                    ? [ProfileFieldType.fullName, ProfileFieldType.document]
+                    ? [
+                        ProfileFieldType.fullName,
+                        if (user.isRequester) ProfileFieldType.document,
+                      ]
                     : [ProfileFieldType.email, ProfileFieldType.phone])
               _EditableProfileValue(user: user, type: type),
         ],

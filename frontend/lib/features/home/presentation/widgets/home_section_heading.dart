@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
 
-class RequesterSectionHeading extends StatelessWidget {
-  const RequesterSectionHeading({
-    super.key,
-    required this.title,
-    this.onViewAll,
-  });
+class HomeSectionHeading extends StatelessWidget {
+  const HomeSectionHeading({super.key, required this.title, this.onViewAll});
   final String title;
   final VoidCallback? onViewAll;
 

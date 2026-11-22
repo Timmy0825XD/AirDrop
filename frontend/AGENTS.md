@@ -224,7 +224,7 @@ La fuente de verdad ejecutable está en `lib/theme/`: [`app_theme.dart`](lib/the
 | `droneShell` / `droneMetal` | grafito | grafito | Sin uso desde la Fase 21 (eran del dron en tres cuartos, `DroneArt`, que se borró) |
 
 - **Cifras protagonistas** (minutos, altura, batería, horas, el código de entrega): IBM Plex Mono con `.figure` ([`app_figures.dart`](lib/theme/app_figures.dart)) sobre cualquier estilo del tema. `CountUpText` ya la aplica. No se usa para texto.
-- **Íconos:** el Inicio, Mis pedidos y la barra del solicitante usan Lucide de contorno, centralizados en `lib/theme/app_icons.dart` (`AppIcons`), por elección del usuario. El rayo de urgencia es la excepción explícita: relleno (`Icons.bolt_rounded`). Al revisar sus siguientes pantallas se aplica esa misma familia. Las pantallas todavía no revisadas y los demás roles conservan `Icons.*_rounded`. No se usan `_outlined` ni `_sharp`; el logo y el dron mantienen sus dibujos de marca.
+- **Íconos:** las pantallas revisadas del solicitante y del despachador (Inicio, Agenda, Urgencias, Inventario y los grupos de Más) usan Lucide de contorno, centralizados en `lib/theme/app_icons.dart` (`AppIcons`), por elección del usuario. El rayo de urgencia es la excepción explícita: relleno (`Icons.bolt_rounded`). Al revisar sus siguientes pantallas se aplica esa misma familia. Las pantallas todavía no revisadas conservan `Icons.*_rounded`. No se usan `_outlined` ni `_sharp`; el logo y el dron mantienen sus dibujos de marca.
 - Tipografía de texto: **Figtree** (`google_fonts`). Títulos en negrita (w700). Cifras con `FontFeature.tabularFigures()` para que los contadores no bailen. Escala: `displayLarge` 64, `displayMedium` 48, `headlineLarge` 32 (auth a 28 con `authTitleStyle`), `headlineMedium` 24, `titleLarge` 20, cuerpo 15–16. `labelSmall` (13, seminegrita, gris) es el rótulo de una sección dentro de una tarjeta. **Nada va en mayúsculas**: rótulos, etiquetas y títulos se escriben normal ("Revisión del traslado", no "REVISIÓN DEL TRASLADO"); los labels de campo usan `authLabelStyle` y los títulos de grupo, `HomeLabel`.
 - Radios: campos 14; botones 16; tarjetas 20; hojas 28.
 - Superficies de formulario en [`app_surfaces.dart`](lib/theme/app_surfaces.dart): `AppSurfaces.sheet` (la superficie sólida con sombra suave) y `AppSurfaces.fields` (blancos con borde gris cálido en claro, gris hundido en oscuro; el ícono se enciende al enfocar). Las usan la hoja del auth y `FormSheetCard`.
@@ -233,6 +233,14 @@ La fuente de verdad ejecutable está en `lib/theme/`: [`app_theme.dart`](lib/the
 - Curvas: nunca `Curves.linear` ni `Curves.ease`. `AppMotion.enterCurve` (`fastOutSlowIn`), `AppMotion.bounceCurve` (`easeOutBack`) y `AppMotion.pageCurve` (`easeInOutCubic`). Se anima con `Transform`, `Opacity`, escalas y recortes. `AppMotion.of(context, d)` devuelve cero con "reducir movimiento"; un rebote que encoge no anima anchos (pasa de 0): se anima la escala.
 
 ## Navegación por rol (`lib/app/role_shell.dart`)
+
+Solicitante y despachador comparten `FloatingTabBar`
+(`core/widgets/floating_tab_bar.dart`): cinco accesos con etiquetas visibles,
+radio 28 y urgencia con rayo relleno. El despachador conserva el contador
+de la cola y marca Urgencias como destino seleccionado. El alto y el espacio
+reservado se calculan con las etiquetas y la escala de texto. Se muestra en
+los destinos de la barra y se oculta en detalles y formularios. Operador y
+administrador siguen usando `AppTabBar`, descrita abajo.
 
 Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la pantalla y, abajo, `AppTabBar` (`core/widgets/app_tab_bar.dart`), la barra de pestañas pegada abajo como en cualquier app: cinco pestañas del mismo tamaño, la del centro es la acción del rol (con su texto corto `tabLabel` y, si hay, el contador rojo). Desde la Fase 21 reemplaza a la barra flotante con botón central levantado. Los destinos y la acción de cada rol están en [`role_tabs.dart`](lib/app/role_tabs.dart):
 
@@ -251,6 +259,62 @@ Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la 
 - "Agenda" abre `GET /orders/agenda` (franjas del día, "despegar antes de"); los programados, el histórico (`/orders/history`) y la cuarentena (`/inventory/quarantine`) están en "Más".
 - Los cuatro inicios tienen la campana de avisos (`NoticeBell`) con los sin leer; abre `/notifications`.
 - Un inicio no repite lo que está en la barra (destinos ni botón central): solo lleva sus cifras y los accesos que la barra no tiene. La cifra principal puede abrir su lista (`HomeSpotlight.onTap`; "Pedidos en curso" → `/orders/mine?filtro=en-curso`).
+
+En el rediseño solicitado de solicitante y despachador se mantiene además
+el botón compacto de urgencias en Inicio. Ambos reutilizan `HomeBrandBar`,
+`HomeSectionHeading` y `HomeLink` para conservar la misma identidad.
+El Inicio del despachador muestra «Todo al día» únicamente después de
+cargar las bandejas vacías; un error ofrece reintentar y no oculta las
+tareas conocidas. La primera urgencia respeta el orden recibido de Nest.
+Preparar carga abre la revisión existente y recibir un traslado abre su
+código: ninguna acción del Inicio autoriza ni despega por sí sola.
+
+Agenda usa una sola lista para permitir texto grande: título, selector de
+días y tarjetas por franja. El calendario y «Volver a hoy» usan la fecha
+simulada de Colombia. Conserva las verificaciones de stock y fórmula y
+el límite de despegue de Nest; un traslado a una central no exige la
+confirmación que se pide a una persona. «Revisar entrega» abre el pedido.
+
+Urgencias usa `queueProvider` y conserva el orden de Nest. La espera viene
+del reloj simulado; la alarma y la reasignación se muestran por separado.
+La lista es perezosa y conserva los datos conocidos si falla una recarga,
+con un aviso y reintento. Su estado vacío ofrece actualizar y el pie abre
+los pedidos pendientes de carga. «Revisar solicitud» abre el detalle; no
+autoriza ni confirma una carga desde la cola.
+
+Inventario permite buscar por medicamento o lote y filtrar todos, por
+vencer o vencidos, sin cambiar el orden del repositorio. Sus tarjetas
+separan cantidad, lote, vencimiento y restricciones. El vacío ofrece añadir
+el primer insumo; carga, error y búsqueda sin coincidencias son estados
+distintos. Conserva eliminar con confirmación, actualizar y Cuarentena.
+El formulario de alta y edición agrupa medicamento, lote y existencias,
+y conservación y transporte. Mantiene `InventoryFormValues`, el peso por
+unidad, el calendario, las validaciones y el PATCH solo con cambios.
+Cantidad y peso se apilan en pantallas angostas o con texto grande.
+
+Más se organiza en cuatro grupos con accesos directos: Pedidos,
+Abastecimiento, Mi central y Cuenta (`ActionList`). Mantiene los contadores
+reales y los accesos con candado cuando la central no puede operar.
+Cuenta y Mis abastecimientos siguen disponibles; Información de la central
+se puede consultar aunque esté suspendida. Un fallo al cargar la central
+ofrece actualizarla sin inventar contadores.
+
+Las bandejas usan `ContentPage`, con encabezado y contenido en un único
+scroll, filas perezosas y refresco cada 10 s. Recibir abre el código y
+Revisar y cargar conserva la hoja y el deslizador antes del despegue.
+Los entrantes no ofrecen el mapa del origen. Historial filtra en Nest y
+conserva las páginas conocidas cuando falla una página adicional.
+
+Los formularios entre centrales agrupan pedido, destino y calendario;
+conservan stock, tipos de venta y vista previa de Nest. Mis abastecimientos
+muestra la siguiente ocurrencia real usando la selección compartida con
+Planes del solicitante. Mi central sigue en solo lectura, con mapa,
+estado de energía y contacto; Cuarentena permite consultar los pedidos.
+El perfil del despachador reutiliza identidad, grupos, edición y correo
+pendiente del solicitante, sin documento ni alergias. Su enlace de
+privacidad abre la política pública: revocar consentimiento y suprimir
+cuenta siguen reservados al solicitante. Ajustes conserva los controles
+de tema y accesibilidad, sin modo sencillo para el despachador.
 
 ## Telemetría y mapa (`features/tracking/`)
 
@@ -483,20 +547,20 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `MessageView` | `core/widgets` | Lista vacía o error de Nest, centrado. |
 | `RiseIn` (`RiseIn.stagger`) / `PressScale` / `CountUpText` | `core/widgets` | Entrada en cascada, hundirse al tocar y números que cuentan. Respetan "reducir movimiento". |
 | `HomePage` / `HomeHeader` / `HomeSpotlight` / `HomeGrid` / `HomeLabel` | `home/presentation/widgets` | Los inicios: lista en cascada; encabezado (en gris el rol y el contexto, debajo "Hola, Nombre" a 28; a la derecha la campana y las iniciales, que abren el perfil; el aviso de la simulación debajo); la cifra principal en una tarjeta con su estado en pastilla, el número grande y la etiqueta al lado; títulos de grupo (`HomeLabel`, 18 negrita); cuadrículas de dos columnas. Los accesos van en `MenuList` (`QuickTile` se borró en la Fase 21). |
-| `DispatcherMoreScreen` / `showAdminCreateSheet` | `home/presentation` | "Más" del despachador en tres listas (`MenuList`: Pedidos · Pedir a otra central · Mi central) y la hoja de la pestaña central del administrador. |
+| `DispatcherMoreScreen` / `showAdminCreateSheet` | `home/presentation` | "Más" del despachador en cuatro grupos con `ActionList` (Pedidos · Abastecimiento · Mi central · Cuenta) y la hoja de la pestaña central del administrador. |
 | `SectionHeader.backOrHome` | `home/presentation/widgets` | Volver con `pop` si se llegó con `push`; si no, al inicio. Los detalles y el mapa se abren con `push`. |
 | `DetailSection` / `DetailLine` | `core/widgets` | Tarjeta con ícono teñido y título (escrito normal), y filas "etiqueta … valor" (`child` reemplaza el texto del valor, p. ej. un `PhoneLink`). |
 | `PhoneLink` / `callPhone` | `core/widgets/phone_link.dart` | Teléfono con formato colombiano que se toca para llamar (`tel:+57…`, `url_launcher`), 48 px de alto; si el dispositivo no llama, avisa el número. |
 | `OrderStatusChip` (`forRequester`) | `orders/presentation/widgets` | El estado del pedido; con `forRequester` en palabras del solicitante ("Preparando el envío", "En camino", "No se entregó"). El despachador y el operador ven el técnico. |
 | `AuthDateField` + `pickIsoDate` / `AuthChoiceGroup` | `auth/presentation/widgets` | Fecha en calendario (guarda AAAA-MM-DD, muestra `sáb. 7 nov.`) y grupo de chips con label y error que tiembla, con la forma de `AuthField`. |
-| `OrderTray` / `OrderRowCard` | `orders/presentation/widgets` | Andamiaje de las bandejas (encabezado con conteo, lista en cascada, recarga, vacío, error y refresco cada 10 s) y su tarjeta: ícono teñido del color del pedido, título, línea de color, línea gris y pastilla. |
+| `OrderTray` / `OrderRowCard` | `orders/presentation/widgets` | Bandejas con `ContentPage`: encabezado, conteo, lista perezosa, recarga, vacío ilustrado, error con reintento y refresco cada 10 s. Tarjeta con estado, medicamento, cantidad, detalles y acción según la bandeja. |
 | `MissionCard` / `MissionRoute` / `LiveMission` | `home/presentation` | La misión en curso del inicio (solicitante con su pedido, despachador con el primer vuelo de su central): el estado con su punto verde, el medicamento y lo que va, "6 min" con "llega 9:52 a. m." (hora simulada) si hay telemetría, la ruta como barra con la ficha del dron en su punto real (en medio, subiendo y bajando, sin telemetría) y "Ver mapa". `LiveMission` abre el socket solo mientras se ve el inicio. |
 | `MedicationsScreen` / `MedicationList` / `MedicationTile` / `MedicationSheet` / `availabilityOf` | `orders/presentation` y `widgets/medications` | Medicamentos disponibles (`/medications`, RF-54, CU-49), solo solicitante, desde su inicio: el catálogo de la urgencia con nombre, tipo de venta, frío y la disponibilidad en palabras ("Pocas unidades" con 5 o menos); nunca cantidad, central, dron ni tiempo. Busca y filtra con `MedicationFilter`. "Pedir este medicamento" abre la urgencia con `extra: CatalogOffer` (`EmergencyScreen.initialOffer`). Sin conexión deja la última lista con su hora. |
 | `RequesterStats` / `NextDeliveryCard` | `home/presentation/widgets/requester` | Los números del solicitante (entregados con su anillo, o una frase si son 0, y los pedidos de las últimas 4 semanas en barras) y la próxima entrega programada (día y hora, plan o programada). Todo sale de sus pedidos. |
 | `NextUpCard` / `dispatcherNextUp` | `home/presentation/widgets/dispatcher` | "Para atender ahora" del despachador: la urgencia más vieja de la cola, el pedido que espera la carga y el próximo programado; cada una abre su pedido. |
 | `OrderJourney` | `orders/presentation/widgets/order_detail` | Arriba del detalle: el recorrido del pedido en cinco puntos (pedido, autorizado, carga, vuelo, entrega) con la ficha del dron sobre el actual y una equis si terminó mal. |
 | `EmergencyFacts` | `orders/presentation/widgets/requester_order` | Pedir urgencia: la nota gris sobre el deslizador (va primero en la cola, el despachador elige la central, el dron sigue una ruta que evita las zonas restringidas). No promete central ni tiempos antes de autorizar. El medicamento se elige con `CatalogChoices` (buscador); el radar y el carrusel se borraron en la Fase 21. |
-| `AuthPickerField` / `showSearchPicker` / `PickerOption` | `auth/presentation/widgets` | Elegir de una lista que puede ser larga (medicamento, central de origen): un campo con la forma de `AuthField` que abre una hoja con buscador (sin mayúsculas ni tildes) y una lista perezosa. `offerOption` (`orders/presentation/widgets`) arma la opción de un insumo. No usar chips para listas que crecen con los datos. |
+| `AuthPickerField` / `showSearchPicker` / `PickerOption` | `core/widgets` | Elegir de una lista que puede ser larga (medicamento, central de origen): campo con la forma de `AuthField` y hoja con buscador (sin mayúsculas ni tildes). Encabezado y opciones comparten scroll para admitir texto grande y teclado; la lista sigue siendo perezosa. `offerOption` (`orders/presentation/widgets`) arma la opción de un insumo. No usar chips para listas que crecen con los datos. |
 | `AuthLocationField` / `pickLocation` | `auth/presentation/widgets` | Vista previa quieta del punto; al tocarla abre el mapa a pantalla completa con el pin fijo al centro (se levanta al arrastrar y cae con rebote) y "Usar esta ubicación" (nueva central, urgencia y entrega periódica: `DestinationFields`). Con `gps: LocationGps(...)` suma "Usar mi ubicación" y la precisión del GPS (`location_gps_row.dart`, RU-02); el GPS lo lee `DeviceLocation` (`core/location`, `deviceLocationProvider`). |
 | `OrderFormScaffold` | `orders/presentation/widgets` | Formularios de pedido sobre `SectionFormPage`; mientras su lista (catálogo o centrales) carga, falla o viene vacía, lo dice. Por pasos, `steps` (el avance) y `onBack` (volver al paso anterior). |
 | `FormSteps` | `orders/presentation/widgets` | El avance de un formulario por pasos: una barra por paso y "Paso 2 de 3 · Cuándo". La entrega periódica va en Qué · Cuándo · Dónde; "Siguiente" valida solo el paso abierto y el atrás del teléfono vuelve al anterior. |

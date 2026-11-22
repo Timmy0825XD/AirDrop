@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
-import '../../../core/widgets/auth_morph_button.dart';
+import '../../../core/widgets/form_submit_button.dart';
+import '../../../core/widgets/form_section.dart';
+import '../../../theme/app_icons.dart';
+import 'widgets/hub_request/hub_request_destination.dart';
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
 import '../../hubs/data/hub_providers.dart';
@@ -77,35 +80,49 @@ class _HubPlanFormScreenState extends ConsumerState<HubPlanFormScreen>
     final origin = _values.originHubId;
     void changed() => setState(() {});
     return OrderFormScaffold<OriginHub>(
-      title: 'Abastecimiento',
-      subtitle: 'Entregas periódicas desde otra central',
+      title: 'Nuevo abastecimiento',
+      subtitle: 'Organiza las próximas entregas.',
       source: ref.watch(originHubsProvider),
-      emptyIcon: Icons.domain_disabled_rounded,
+      emptyIcon: AppIcons.hub,
+      onRetry: () => ref.invalidate(originHubsProvider),
       emptyText: 'No hay otra central activa para pedirle.',
       fields: (origins) => [
-        HubRequestFields(
-          origins: origins,
-          catalog: origin == null
-              ? null
-              : ref.watch(hubCatalogProvider(origin)),
-          values: _values,
-          errors: _errors,
-          shakeCount: _shakeCount,
-          onChanged: changed,
+        FormSection(
+          title: 'El pedido',
+          children: [
+            HubRequestFields(
+              origins: origins,
+              catalog: origin == null
+                  ? null
+                  : ref.watch(hubCatalogProvider(origin)),
+              values: _values,
+              errors: _errors,
+              shakeCount: _shakeCount,
+              onChanged: changed,
+            ),
+          ],
         ),
+        const SizedBox(height: 24),
+        HubRequestDestination(hub: ref.watch(myHubProvider).value),
         ?transferMapOf(
           origins: origins,
           originHubId: _values.originHubId,
           mine: ref.watch(myHubProvider).value,
         ),
         const SizedBox(height: 16),
-        ScheduleFields(
-          form: ScheduleForm(
-            draft: _draft,
-            errors: _scheduleErrors,
-            shakeCount: _shakeCount,
-            onChanged: () => schedulePreview(_draft, needsPrescription: false),
-          ),
+        FormSection(
+          title: 'Cuándo recibir',
+          children: [
+            ScheduleFields(
+              form: ScheduleForm(
+                draft: _draft,
+                errors: _scheduleErrors,
+                shakeCount: _shakeCount,
+                onChanged: () =>
+                    schedulePreview(_draft, needsPrescription: false),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
         SchedulePreviewCard(
@@ -116,10 +133,10 @@ class _HubPlanFormScreenState extends ConsumerState<HubPlanFormScreen>
         const SizedBox(height: 14),
         const HubTransferNote(),
       ],
-      button: AuthMorphButton(
-        label: 'Programar',
+      button: FormSubmitButton(
+        label: 'Programar abastecimiento',
         loadingLabel: 'Programando el abastecimiento',
-        isLoading: _sending,
+        loading: _sending,
         onPressed: previewError == null ? _submit : null,
       ),
     );

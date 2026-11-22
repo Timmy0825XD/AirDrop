@@ -7,12 +7,12 @@ import '../../../core/clock/sim_clock.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../../../core/widgets/message_view.dart';
 import '../../auth/presentation/widgets/auth_date_field.dart';
-import '../../../core/widgets/auth_morph_button.dart';
 import '../../home/presentation/widgets/section_form_page.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../data/inventory_models.dart';
 import '../data/inventory_providers.dart';
 import 'widgets/inventory_form/inventory_form_sheet.dart';
+import 'widgets/inventory_form/inventory_form_page.dart';
 import 'widgets/inventory_form_values.dart';
 import '../../../core/widgets/skeleton.dart';
 
@@ -62,7 +62,7 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
       first: DateUtils.dateOnly(now).add(const Duration(days: 1)),
       last: DateTime(now.year + 10, 12, 31),
     );
-    if (picked == null) return;
+    if (picked == null || !mounted) return;
     // Elegida la fecha, su aviso de error ya no aplica.
     setState(() {
       _values.expirationDate.text = picked;
@@ -92,7 +92,9 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
       if (!mounted) return;
       showAppSnack(
         context,
-        original == null ? 'Ítem agregado al inventario.' : 'Ítem actualizado.',
+        original == null
+            ? 'Insumo agregado al inventario.'
+            : 'Insumo actualizado.',
       );
       context.go('/inventory');
     } on ApiException catch (error) {
@@ -133,26 +135,23 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
   }
 
   Widget _form(InventoryItem? original) {
-    return SectionFormPage(
-      header: SectionHeader(
-        title: original == null ? 'Nuevo ítem' : 'Editar ítem',
-        subtitle: original == null
-            ? 'Entra al inventario de tu central'
-            : 'Lote ${original.lot}',
-        onBack: () => context.go('/inventory'),
-      ),
-      card: InventoryFormSheet(
+    return InventoryFormPage(
+      title: original == null ? 'Añadir insumo' : 'Editar insumo',
+      subtitle: original == null
+          ? 'Registra el medicamento y los datos de su lote.'
+          : 'Lote ${original.lot}',
+      onBack: () => context.canPop() ? context.pop() : context.go('/inventory'),
+      isSaving: _isLoading,
+      onSubmit: () => _submit(original),
+      submitLabel: original == null
+          ? 'Agregar al inventario'
+          : 'Guardar cambios',
+      fields: InventoryFormSheet(
         values: _values,
         errors: _errors,
         shakeCount: _shakeCount,
         onPickDate: _pickDate,
         onChanged: () => setState(() {}),
-      ),
-      button: AuthMorphButton(
-        label: original == null ? 'Agregar al inventario' : 'Guardar cambios',
-        loadingLabel: 'Guardando el ítem',
-        isLoading: _isLoading,
-        onPressed: () => _submit(original),
       ),
     );
   }

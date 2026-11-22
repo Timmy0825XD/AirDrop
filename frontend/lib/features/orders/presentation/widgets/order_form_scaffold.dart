@@ -1,20 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
 import '../../../../core/api_exception.dart';
-import '../../../../core/widgets/form_sheet_card.dart';
+import '../../../../core/widgets/content_page.dart';
+import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/message_view.dart';
-import '../../../home/presentation/widgets/section_form_page.dart';
-import '../../../home/presentation/widgets/section_header.dart';
 import '../../../../core/widgets/skeleton.dart';
 
-/// El armado de un formulario de pedido: encabezado curvo, la tarjeta del
-/// formulario sobre la curva y el botón. Los campos dependen de una lista
-/// que llega de Nest ([source]: el catálogo o las centrales de origen);
-/// mientras carga, si falla o si viene vacía, lo dice en vez del
-/// formulario. Lo usan las urgencias y los planes de los dos roles; la
-/// entrega periódica pasa además [steps] y [onBack] para ir por pasos.
 class OrderFormScaffold<T> extends StatelessWidget {
   const OrderFormScaffold({
     super.key,
@@ -25,52 +17,67 @@ class OrderFormScaffold<T> extends StatelessWidget {
     required this.emptyText,
     required this.fields,
     required this.button,
+    required this.onRetry,
     this.steps,
     this.onBack,
   });
-
-  final String title;
-  final String subtitle;
+  final String title, subtitle, emptyText;
   final AsyncValue<List<T>> source;
   final IconData emptyIcon;
-  final String emptyText;
-
-  /// Los campos de la tarjeta, ya con la lista cargada.
-  final List<Widget> Function(List<T> rows) fields;
+  final List<Widget> Function(List<T>) fields;
   final Widget button;
-
-  /// Por pasos: el avance (`FormSteps`) y volver al paso anterior.
   final Widget? steps;
   final VoidCallback? onBack;
+  final VoidCallback onRetry;
+  @override
+  Widget build(BuildContext context) => ContentPage(
+    title: title,
+    subtitle: subtitle,
+    onBack:
+        onBack ?? () => context.canPop() ? context.pop() : context.go('/more'),
+    slivers: [SliverToBoxAdapter(child: _OrderFormBody<T>(form: this))],
+  );
+}
 
-  /// Lo que va en vez del formulario mientras la lista no sirve; `null`
-  /// cuando ya llegó con algo.
-  Widget? _stateView() => switch (source) {
-    AsyncValue(hasValue: true, hasError: false, :final value?)
-        when value.isEmpty =>
-      MessageView(icon: emptyIcon, message: emptyText),
-    AsyncValue(hasValue: true, hasError: false) => null,
-    AsyncError(:final error) => MessageView.error(
-      message: ApiException.messageOf(error),
-    ),
-    _ => const SkeletonDetail(),
-  };
-
+class _OrderFormBody<T> extends StatelessWidget {
+  const _OrderFormBody({required this.form});
+  final OrderFormScaffold<T> form;
   @override
   Widget build(BuildContext context) {
-    final header = SectionHeader(
-      title: title,
-      subtitle: subtitle,
-      onBack: onBack ?? () => context.go('/home'),
-      bottom: steps,
-    );
-    if (_stateView() case final body?) {
-      return SectionStatePage(header: header, body: body);
+    if (form.source.hasError) {
+      return GlassCard(
+        child: MessageView.error(
+          message: ApiException.messageOf(form.source.error!),
+          action: TextButton(
+            onPressed: form.onRetry,
+            child: const Text('Reintentar'),
+          ),
+        ),
+      );
     }
-    return SectionFormPage(
-      header: header,
-      card: FormSheetCard(children: fields(source.value!)),
-      button: button,
+    final rows = form.source.value;
+    if (rows == null) return const SkeletonDetail();
+    if (rows.isEmpty) {
+      return GlassCard(
+        child: MessageView(
+          icon: form.emptyIcon,
+          title: 'Sin opciones disponibles',
+          message: form.emptyText,
+          action: TextButton(
+            onPressed: form.onRetry,
+            child: const Text('Actualizar'),
+          ),
+        ),
+      );
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (form.steps != null) ...[form.steps!, const SizedBox(height: 20)],
+        ...form.fields(rows),
+        const SizedBox(height: 24),
+        form.button,
+      ],
     );
   }
 }

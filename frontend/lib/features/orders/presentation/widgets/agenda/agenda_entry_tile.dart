@@ -1,72 +1,69 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/widgets/status_pill.dart';
+import '../../../../../theme/app_icons.dart';
 import '../../../data/agenda_models.dart';
 import '../../order_format.dart';
 import '../order_status_chip.dart';
+import 'agenda_entry_checks.dart';
+import 'agenda_departure.dart';
 
-/// Confirmada, stock y fórmula, en verde o rojo.
-List<Widget> agendaChecks(AgendaOrder entry) {
-  StatusPill check(String label, bool ok) => StatusPill(
-    label: label,
-    tone: ok ? PillTone.positive : PillTone.negative,
-  );
-  return [
-    check(entry.confirmed ? 'Confirmada' : 'Sin confirmar', entry.confirmed),
-    check(
-      entry.stockOk ? 'Stock' : 'Stock: ${entry.availableQuantity}',
-      entry.stockOk,
-    ),
-    if (entry.prescriptionValid case final valid?)
-      check(valid ? 'Fórmula vigente' : 'Fórmula vencida', valid),
-  ];
-}
-
-/// Una entrega de la franja: qué y cuánto, su estado, las tres
-/// verificaciones (confirmada, stock, fórmula) y la hora límite para
-/// despegar. La agenda no decide nada: solo informa.
+/// Revisa la entrega desde su pedido; esta ficha no autoriza ni confirma cargas.
 class AgendaEntryTile extends StatelessWidget {
   const AgendaEntryTile({super.key, required this.entry, required this.onTap});
-
   final AgendaOrder entry;
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final order = entry.order;
-    final depart = entry.departBefore;
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    '${order.medicationName} · ${order.quantity} und.',
-                    style: theme.textTheme.titleSmall,
-                  ),
-                ),
-                OrderStatusChip(status: order.status),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Wrap(spacing: 6, runSpacing: 6, children: agendaChecks(entry)),
-            const SizedBox(height: 6),
-            Text(
-              depart == null
-                  ? 'Sin ruta disponible'
-                  : 'Despegar antes de las ${formatClock(depart)}',
-              style: theme.textTheme.bodySmall,
-            ),
-          ],
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.fromLTRB(18, 16, 18, 4),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _EntryHeading(entry: entry),
+        const SizedBox(height: 14),
+        AgendaEntryChecks(entry: entry),
+        const SizedBox(height: 12),
+        AgendaDeparture(departBefore: entry.departBefore),
+        const SizedBox(height: 6),
+        TextButton(
+          onPressed: onTap,
+          child: const Row(
+            children: [
+              Expanded(child: Text('Revisar entrega')),
+              Icon(AppIcons.next, size: 20),
+            ],
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+class _EntryHeading extends StatelessWidget {
+  const _EntryHeading({required this.entry});
+  final AgendaOrder entry;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      OrderStatusChip(status: entry.order.status),
+      const SizedBox(height: 10),
+      Text(
+        entry.order.medicationName,
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        style: Theme.of(
+          context,
+        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+      ),
+      const SizedBox(height: 4),
+      Text(
+        '${unitsLabel(entry.order.quantity)} · ${destinationLabel(entry.order)}',
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
-    );
-  }
+    ],
+  );
 }

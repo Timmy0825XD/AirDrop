@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/menu_list.dart';
 import '../../../core/widgets/sliding_segmented.dart';
+import '../../../core/widgets/content_page.dart';
+import '../../home/presentation/widgets/home_section_heading.dart';
 import '../../auth/data/auth_models.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../home/presentation/widgets/home_grid.dart';
@@ -35,102 +37,165 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final control = ref.read(settingsProvider.notifier);
     final role = ref.watch(authControllerProvider).value?.user?.role;
     final requester = role == UserRole.requester;
-    return Scaffold(
-      body: ListView(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.paddingOf(context).bottom + 24,
-        ),
-        children: [
+    final dispatcher = role == UserRole.dispatcher;
+    return _SettingsPage(
+      dispatcher: dispatcher,
+      children: [
+        if (!dispatcher)
           SectionHeader(
             title: 'Ajustes',
             subtitle: 'Se guardan en este teléfono',
             onBack: () => SectionHeader.backOrHome(context),
           ),
-          _Block(
-            label: 'Tema',
-            child: ThemePicker(
-              applied: settings.themeMode,
-              picked: _picked ?? settings.themeMode,
-              onPick: (mode) => setState(() => _picked = mode),
-              onApply: () {
-                control.setThemeMode(_picked!);
-                setState(() => _picked = null);
-              },
-            ),
+        _Block(
+          inset: !dispatcher,
+          label: 'Tema',
+          child: ThemePicker(
+            applied: settings.themeMode,
+            picked: _picked ?? settings.themeMode,
+            onPick: (mode) => setState(() => _picked = mode),
+            onApply: () {
+              control.setThemeMode(_picked!);
+              setState(() => _picked = null);
+            },
           ),
-          _Block(
-            label: 'Tamaño del texto',
-            child: SlidingSegmented<TextSize>(
-              options: [
-                for (final size in TextSize.values)
-                  SegmentOption(size, size.label),
+        ),
+        _Block(
+          inset: !dispatcher,
+          label: 'Tamaño del texto',
+          child: dispatcher
+              ? _TextSizeChoice(
+                  selected: settings.textSize,
+                  onChanged: control.setTextSize,
+                )
+              : SlidingSegmented<TextSize>(
+                  options: [
+                    for (final size in TextSize.values)
+                      SegmentOption(size, size.label),
+                  ],
+                  selected: settings.textSize,
+                  onChanged: control.setTextSize,
+                ),
+        ),
+        _Block(
+          inset: !dispatcher,
+          label: 'Lectura y movimiento',
+          child: GlassCard(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+            child: Column(
+              children: [
+                SettingsSwitch(
+                  title: 'Alto contraste',
+                  subtitle: 'Texto y bordes más marcados',
+                  value: settings.highContrast,
+                  onChanged: control.setHighContrast,
+                ),
+                SettingsSwitch(
+                  title: 'Reducir movimiento',
+                  subtitle: 'Sin animaciones ni recorridos',
+                  value: settings.reduceMotion,
+                  onChanged: control.setReduceMotion,
+                ),
+                if (requester)
+                  SettingsSwitch(
+                    title: 'Modo sencillo',
+                    subtitle: 'Botones grandes y menos opciones',
+                    value: settings.simpleMode,
+                    onChanged: control.setSimpleMode,
+                  ),
               ],
-              selected: settings.textSize,
-              onChanged: control.setTextSize,
             ),
           ),
+        ),
+        if (requester)
           _Block(
-            label: 'Lectura y movimiento',
-            child: GlassCard(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-              child: Column(
-                children: [
-                  SettingsSwitch(
-                    title: 'Alto contraste',
-                    subtitle: 'Texto y bordes más marcados',
-                    value: settings.highContrast,
-                    onChanged: control.setHighContrast,
-                  ),
-                  SettingsSwitch(
-                    title: 'Reducir movimiento',
-                    subtitle: 'Sin animaciones ni recorridos',
-                    value: settings.reduceMotion,
-                    onChanged: control.setReduceMotion,
-                  ),
-                  if (requester)
-                    SettingsSwitch(
-                      title: 'Modo sencillo',
-                      subtitle: 'Botones grandes y menos opciones',
-                      value: settings.simpleMode,
-                      onChanged: control.setSimpleMode,
-                    ),
-                ],
-              ),
+            label: 'Ayuda',
+            child: MenuList(
+              items: [
+                MenuItem(
+                  title: 'Ver la bienvenida',
+                  subtitle: 'Cómo funciona AirDrop, en tres pasos',
+                  icon: Icons.help_outline_rounded,
+                  onTap: () => context.push('/welcome'),
+                ),
+              ],
             ),
           ),
-          if (requester)
-            _Block(
-              label: 'Ayuda',
-              child: MenuList(
-                items: [
-                  MenuItem(
-                    title: 'Ver la bienvenida',
-                    subtitle: 'Cómo funciona AirDrop, en tres pasos',
-                    icon: Icons.help_outline_rounded,
-                    onTap: () => context.push('/welcome'),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
+      ],
     );
   }
 }
 
 /// Un grupo de ajustes: el rótulo y su contenido, con el margen de la app.
 class _Block extends StatelessWidget {
-  const _Block({required this.label, required this.child});
+  const _Block({required this.label, required this.child, this.inset = true});
 
   final String label;
   final Widget child;
+  final bool inset;
 
   @override
   Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
+    padding: EdgeInsets.fromLTRB(
+      inset ? 16 : 0,
+      0,
+      inset ? 16 : 0,
+      inset ? 4 : 28,
+    ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [HomeLabel(label), child],
+      children: [
+        inset ? HomeLabel(label) : HomeSectionHeading(title: label),
+        child,
+      ],
     ),
+  );
+}
+
+class _SettingsPage extends StatelessWidget {
+  const _SettingsPage({required this.dispatcher, required this.children});
+  final bool dispatcher;
+  final List<Widget> children;
+  @override
+  Widget build(BuildContext context) => dispatcher
+      ? ContentPage(
+          title: 'Ajustes de la app',
+          subtitle: 'Se guardan en este teléfono.',
+          onBack: () => context.canPop() ? context.pop() : context.go('/more'),
+          slivers: [SliverToBoxAdapter(child: Column(children: children))],
+        )
+      : Scaffold(
+          body: ListView(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.paddingOf(context).bottom + 24,
+            ),
+            children: children,
+          ),
+        );
+}
+
+class _TextSizeChoice extends StatelessWidget {
+  const _TextSizeChoice({required this.selected, required this.onChanged});
+  final TextSize selected;
+  final ValueChanged<TextSize> onChanged;
+  @override
+  Widget build(BuildContext context) => Wrap(
+    spacing: 8,
+    runSpacing: 8,
+    children: [
+      for (final size in TextSize.values)
+        ChoiceChip(
+          label: Text(size.label),
+          selected: size == selected,
+          showCheckmark: false,
+          selectedColor: Theme.of(context).colorScheme.primary,
+          labelStyle: TextStyle(
+            color: size == selected
+                ? Theme.of(context).colorScheme.onPrimary
+                : Theme.of(context).colorScheme.onSurface,
+          ),
+          onSelected: (_) => onChanged(size),
+        ),
+    ],
   );
 }

@@ -10,7 +10,7 @@ import '../../../../orders/data/order_models.dart';
 import 'requester_current_order.dart';
 import 'requester_empty_card.dart';
 import 'requester_home_values.dart';
-import 'requester_section_heading.dart';
+import '../home_section_heading.dart';
 
 class RequesterHomeOrders extends StatelessWidget {
   const RequesterHomeOrders({
@@ -25,7 +25,7 @@ class RequesterHomeOrders extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      RequesterSectionHeading(
+      HomeSectionHeading(
         title: 'Tus pedidos',
         onViewAll: () => context.go('/orders/mine'),
       ),

@@ -17,6 +17,8 @@ class AuthDateField extends StatelessWidget {
     required this.onTap,
     this.errorText,
     this.shakeCount = 0,
+    this.icon = Icons.event_rounded,
+    this.trailingIcon = Icons.expand_more_rounded,
   });
 
   final String label;
@@ -25,6 +27,7 @@ class AuthDateField extends StatelessWidget {
   final VoidCallback onTap;
   final String? errorText;
   final int shakeCount;
+  final IconData icon, trailingIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +56,7 @@ class AuthDateField extends StatelessWidget {
   }
 }
 
-/// La caja de 56 px con el calendario, la fecha (o la ayuda) y la flecha.
+/// La caja del calendario crece cuando la fecha necesita más espacio.
 class _DateBox extends StatelessWidget {
   const _DateBox({required this.field, required this.error});
 
@@ -74,26 +77,29 @@ class _DateBox extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: field.onTap,
-        child: SizedBox(
-          height: 54,
-          child: Row(
-            children: [
-              const SizedBox(width: 14),
-              Icon(Icons.event_rounded, size: 20, color: colors.primary),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  value == null
-                      ? field.hint
-                      : formatDay(value, relative: false),
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    color: value == null ? colors.onSurfaceVariant : null,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 54),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            child: Row(
+              children: [
+                const SizedBox(width: 14),
+                Icon(field.icon, size: 20, color: colors.primary),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    value == null
+                        ? field.hint
+                        : formatDay(value, relative: false),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      color: value == null ? colors.onSurfaceVariant : null,
+                    ),
                   ),
                 ),
-              ),
-              Icon(Icons.expand_more_rounded, color: colors.onSurfaceVariant),
-              const SizedBox(width: 12),
-            ],
+                Icon(field.trailingIcon, color: colors.onSurfaceVariant),
+                const SizedBox(width: 12),
+              ],
+            ),
           ),
         ),
       ),

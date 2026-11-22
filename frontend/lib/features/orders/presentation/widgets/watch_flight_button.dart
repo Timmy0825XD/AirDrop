@@ -7,9 +7,14 @@ import 'package:go_router/go_router.dart';
 /// Va con `push`: el mapa queda encima de la pantalla de origen y "volver"
 /// regresa a ella. Con `go` el mapa quedaba solo y sin flecha de volver.
 class WatchFlightButton extends StatelessWidget {
-  const WatchFlightButton({super.key, required this.orderId});
+  const WatchFlightButton({
+    super.key,
+    required this.orderId,
+    this.icon = Icons.map_rounded,
+  });
 
   final String orderId;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +24,7 @@ class WatchFlightButton extends StatelessWidget {
         minimumSize: const Size.fromHeight(48),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
-      icon: const Icon(Icons.map_rounded),
+      icon: Icon(icon),
       label: const Text('Ver vuelo'),
     );
   }

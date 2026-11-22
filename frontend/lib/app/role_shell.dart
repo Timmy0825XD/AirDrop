@@ -7,7 +7,7 @@ import '../core/widgets/app_max_width.dart';
 import '../core/widgets/app_tab_bar.dart';
 import '../core/widgets/nav_scope.dart';
 import '../core/widgets/sim_clock_badge.dart';
-import '../core/widgets/requester_tab_bar.dart';
+import '../core/widgets/floating_tab_bar.dart';
 import '../features/auth/data/auth_models.dart';
 import '../features/auth/presentation/auth_controller.dart';
 import '../features/tracking/data/tracking_providers.dart';
@@ -58,11 +58,17 @@ class _RoleShellState extends ConsumerState<RoleShell> {
     final selected = tabs.indexOf(widget.location);
     final onTab = tabs.isTab(widget.location);
     final media = MediaQuery.of(context);
-    final requester = role == UserRole.requester;
+    final floating = role == UserRole.requester || role == UserRole.dispatcher;
     final inset = !onTab
         ? 0.0
-        : requester
-        ? RequesterTabBar.reservedHeight(context)
+        : floating
+        ? FloatingTabBar.reservedHeight(
+            context,
+            labels: [
+              for (final destination in tabs.destinations) destination.label,
+              if (tabs.center != null) tabs.center!.tabLabel,
+            ],
+          )
         : AppTabBar.height;
     return SimClockVisibility(
       showIndicator: role != UserRole.requester,
@@ -97,13 +103,14 @@ class _RoleShellState extends ConsumerState<RoleShell> {
                 left: 0,
                 right: 0,
                 bottom: 0,
-                child: requester
+                child: floating
                     ? (onTab
-                          ? RequesterTabBar(
+                          ? FloatingTabBar(
                               destinations: tabs.destinations,
                               selected: selected,
                               onSelect: (i) => context.go(tabs.paths[i]),
                               center: tabs.center,
+                              centerActive: tabs.isCenter(widget.location),
                             )
                           : const SizedBox.shrink())
                     : AppTabBar(

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../theme/app_icons.dart';
-import '../../../../home/presentation/widgets/requester/requester_home_links.dart';
+import '../../../../home/presentation/widgets/home_link.dart';
 import '../../../data/order_models.dart';
 import 'requester_plan_list.dart';
 import 'requester_plans_empty.dart';
@@ -29,7 +29,7 @@ class RequesterPlansContent extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        RequesterHomeLink(
+        HomeLink(
           icon: AppIcons.createPlan,
           title: 'Crear entrega periódica',
           onTap: () => context.push('/orders/plans/new'),

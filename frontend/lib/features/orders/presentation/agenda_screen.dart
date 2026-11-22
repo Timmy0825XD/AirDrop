@@ -3,23 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
-import '../../../core/clock/sim_clock.dart';
 import '../../../core/widgets/auto_refresh.dart';
-import '../../../core/widgets/list_padding.dart';
-import '../../../core/widgets/message_view.dart';
-import '../../../core/widgets/rise_in.dart';
 import '../../auth/presentation/widgets/auth_date_field.dart';
-import '../../home/presentation/widgets/section_header.dart';
-import '../data/agenda_models.dart';
 import '../data/order_providers.dart';
 import 'order_format.dart';
-import 'widgets/agenda/agenda_day_bar.dart';
-import 'widgets/agenda/agenda_slot_card.dart';
-import '../../../core/widgets/skeleton.dart';
+import 'widgets/agenda/agenda_content.dart';
+import 'widgets/agenda/agenda_page.dart';
 
-/// La agenda del día de la central (`/orders/agenda`, RU-30): una sección
-/// por franja con sus entregas, si alcanzan los drones y hasta qué hora se
-/// puede despegar. Se refresca cada 10 s.
+/// La agenda informa; la autorización y la carga siguen en el pedido.
 class AgendaScreen extends ConsumerStatefulWidget {
   const AgendaScreen({super.key});
 
@@ -31,7 +22,7 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
   String _date = todayIso();
 
   Future<void> _pick() async {
-    final today = DateUtils.dateOnly(simClock.now());
+    final today = colombiaToday();
     final picked = await pickIsoDate(
       context,
       current: _date,
@@ -41,80 +32,28 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
     if (picked != null && mounted) setState(() => _date = picked);
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final day = ref.watch(agendaProvider(_date));
-    final count = day.value?.deliveries;
-    return Scaffold(
-      body: Column(
-        children: [
-          SectionHeader(
-            title: 'Agenda',
-            subtitle: count == null
-                ? 'Entregas programadas por franja'
-                : count == 1
-                ? '1 entrega este día'
-                : '$count entregas este día',
-            onBack: () => SectionHeader.backOrHome(context),
-            trailing: TextButton(
-              onPressed: () => context.push('/orders/scheduled'),
-              child: const Text('Programados'),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-            child: AgendaDayBar(
-              date: _date,
-              onChanged: (date) => setState(() => _date = date),
-              onPick: _pick,
-            ),
-          ),
-          Expanded(
-            child: AutoRefresh(
-              onTick: () => ref.invalidate(agendaProvider(_date)),
-              child: switch (day) {
-                AsyncValue(hasValue: true, hasError: false, :final value?) =>
-                  _AgendaList(
-                    day: value,
-                    onOpen: (id) => context.push('/orders/$id'),
-                  ),
-                AsyncError(:final error) => MessageView.error(
-                  message: ApiException.messageOf(error),
-                ),
-                _ => const SkeletonList(),
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AgendaList extends StatelessWidget {
-  const _AgendaList({required this.day, required this.onOpen});
-
-  final AgendaDay day;
-  final ValueChanged<String> onOpen;
+  Future<void> _refresh() => ref
+      .refresh(agendaProvider(_date).future)
+      .then<void>((_) {}, onError: (Object _, StackTrace _) {});
 
   @override
   Widget build(BuildContext context) {
-    if (day.slots.isEmpty) {
-      return const MessageView(
-        icon: Icons.event_available_rounded,
-        message: 'No hay entregas programadas para este día.',
-      );
-    }
-    return ListView.separated(
-      padding: listPadding(context, top: 14),
-      itemCount: day.slots.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 12),
-      itemBuilder: (context, i) => RiseIn(
-        delay: RiseIn.stagger(i),
-        child: AgendaSlotCard(
-          slot: day.slots[i],
-          drones: day.drones,
-          onOpen: onOpen,
+    final state = ref.watch(agendaProvider(_date));
+    return AutoRefresh(
+      onTick: () => ref.invalidate(agendaProvider(_date)),
+      child: AgendaPage(
+        date: _date,
+        onDateChanged: (date) => setState(() => _date = date),
+        onPick: _pick,
+        onRefresh: _refresh,
+        onProgrammed: () => context.push('/orders/scheduled'),
+        content: AgendaContent(
+          day: state.value,
+          loading: !state.hasValue && !state.hasError,
+          error: state.hasError ? ApiException.messageOf(state.error!) : null,
+          onRetry: () => ref.invalidate(agendaProvider(_date)),
+          onPick: _pick,
+          onOpen: (id) => context.push('/orders/$id'),
         ),
       ),
     );

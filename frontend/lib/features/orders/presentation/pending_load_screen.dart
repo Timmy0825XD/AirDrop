@@ -2,6 +2,7 @@ import 'order_format.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../theme/app_icons.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
@@ -55,12 +56,12 @@ class _PendingLoadScreenState extends ConsumerState<PendingLoadScreen> {
   Widget build(BuildContext context) {
     return OrderTray<Order>(
       title: 'Pendiente de carga',
-      idleSubtitle: 'Drones reservados esperando el insumo',
+      idleSubtitle: 'Revisa el paquete antes de salir.',
       countLabel: (n) =>
           n == 1 ? '1 dron espera la carga' : '$n drones esperan la carga',
       rows: ref.watch(pendingLoadProvider),
       onRefresh: () => ref.invalidate(pendingLoadProvider),
-      emptyIcon: Icons.inventory_2_rounded,
+      emptyIcon: AppIcons.orders,
       emptyText: 'No hay drones esperando carga.',
       keyOf: (order) => order.id,
       itemBuilder: (context, order) => PendingLoadTile(
