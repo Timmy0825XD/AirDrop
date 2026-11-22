@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../core/widgets/glass_card.dart';
-import '../../../../core/widgets/message_view.dart';
 import '../../../../core/widgets/skeleton.dart';
-import '../../../../core/widgets/warning_banner.dart';
+import '../../../../core/widgets/work_error_card.dart';
+import '../../../home/presentation/widgets/operator/operator_empty_card.dart';
 
 class TrayContent<T> extends StatelessWidget {
   const TrayContent({
@@ -17,6 +16,8 @@ class TrayContent<T> extends StatelessWidget {
     required this.keyOf,
     required this.itemBuilder,
     this.emptyAction,
+    this.emptyBody,
+    this.groupOf,
   });
   final List<T>? items;
   final bool loading;
@@ -25,14 +26,19 @@ class TrayContent<T> extends StatelessWidget {
   final String emptyTitle, emptyText;
   final VoidCallback onRefresh;
   final String Function(T) keyOf;
+  final String? Function(T)? groupOf;
   final Widget Function(BuildContext, T) itemBuilder;
-  final Widget? emptyAction;
+  final Widget? emptyAction, emptyBody;
   @override
   Widget build(BuildContext context) {
     final known = items;
-    if (known == null && error != null) {
+    if (error != null && (known == null || known.isEmpty)) {
       return SliverToBoxAdapter(
-        child: _TrayError(message: error!, onRefresh: onRefresh),
+        child: WorkErrorCard(
+          title: 'No pudimos actualizar la bandeja',
+          message: error!,
+          onRetry: onRefresh,
+        ),
       );
     }
     if (known == null || loading) {
@@ -53,56 +59,62 @@ class _KnownTrayContent<T> extends StatelessWidget {
         SliverToBoxAdapter(
           child: Padding(
             padding: const EdgeInsets.only(bottom: 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                WarningBanner(message: view.error!),
-                TextButton(
-                  onPressed: view.onRefresh,
-                  child: const Text('Reintentar'),
-                ),
-              ],
-            ),
+            child: RefreshNotice(message: view.error!, onRetry: view.onRefresh),
           ),
         ),
       if (items.isEmpty)
         SliverToBoxAdapter(
-          child: GlassCard(
-            child: MessageView(
-              icon: view.emptyIcon,
-              title: view.emptyTitle,
-              message: view.emptyText,
-              action:
-                  view.emptyAction ??
-                  TextButton(
-                    onPressed: view.onRefresh,
-                    child: const Text('Actualizar'),
-                  ),
-            ),
-          ),
+          child:
+              view.emptyBody ??
+              OperatorEmptyCard(
+                title: view.emptyTitle,
+                message: view.emptyText,
+                action:
+                    view.emptyAction ??
+                    OutlinedButton(
+                      onPressed: view.onRefresh,
+                      child: const Text('Actualizar'),
+                    ),
+              ),
         )
       else
-        SliverList.separated(
-          itemCount: items.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 12),
-          itemBuilder: (context, i) => KeyedSubtree(
-            key: ValueKey(view.keyOf(items[i])),
-            child: view.itemBuilder(context, items[i]),
-          ),
-        ),
+        _TrayList<T>(view: view, items: items),
     ],
   );
 }
 
-class _TrayError extends StatelessWidget {
-  const _TrayError({required this.message, required this.onRefresh});
-  final String message;
-  final VoidCallback onRefresh;
+class _TrayList<T> extends StatelessWidget {
+  const _TrayList({required this.view, required this.items});
+  final TrayContent<T> view;
+  final List<T> items;
   @override
-  Widget build(BuildContext context) => GlassCard(
-    child: MessageView.error(
-      message: message,
-      action: TextButton(onPressed: onRefresh, child: const Text('Reintentar')),
-    ),
+  Widget build(BuildContext context) => SliverList.separated(
+    itemCount: items.length,
+    separatorBuilder: (_, _) => const SizedBox(height: 12),
+    itemBuilder: (context, i) {
+      final group = view.groupOf?.call(items[i]);
+      final showGroup =
+          group != null &&
+          (i == 0 || group != view.groupOf?.call(items[i - 1]));
+      return KeyedSubtree(
+        key: ValueKey(view.keyOf(items[i])),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (showGroup)
+              Padding(
+                padding: EdgeInsets.only(top: i == 0 ? 0 : 16, bottom: 12),
+                child: Text(
+                  group,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+            view.itemBuilder(context, items[i]),
+          ],
+        ),
+      );
+    },
   );
 }

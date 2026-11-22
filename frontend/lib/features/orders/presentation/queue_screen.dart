@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/auto_refresh.dart';
+import '../../home/presentation/widgets/home_brand_bar.dart';
+import '../../notifications/data/notice_providers.dart';
 import '../data/order_providers.dart';
 import 'widgets/queue/queue_content.dart';
 import 'widgets/queue/queue_page.dart';
@@ -19,6 +21,10 @@ class QueueScreen extends ConsumerWidget {
     return AutoRefresh(
       onTick: reload,
       child: QueuePage(
+        brand: HomeBrandBar(
+          onNotices: () => context.push('/notifications'),
+          unread: ref.watch(unreadCountProvider).value,
+        ),
         // El contenido presenta el error; el gesto termina también si falla la red.
         onRefresh: () => ref
             .refresh(queueProvider.future)

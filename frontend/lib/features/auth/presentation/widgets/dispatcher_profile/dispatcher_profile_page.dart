@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../../core/widgets/content_page.dart';
+import '../../../../../core/widgets/compact_form_header.dart';
 import '../../../../../core/widgets/menu_list.dart';
 import '../../../../../core/widgets/skeleton.dart';
+import '../../../../../core/widgets/work_error_card.dart';
 import '../../../../../theme/app_icons.dart';
 import '../../../../hubs/data/hub_models.dart';
 import '../../../../home/presentation/widgets/home_section_heading.dart';
@@ -35,11 +37,15 @@ class DispatcherProfilePage extends StatelessWidget {
   Widget build(BuildContext context) => ContentPage(
     title: 'Mi perfil',
     subtitle: 'Tu cuenta de AirDrop.',
-    onBack: () => context.canPop() ? context.pop() : context.go('/more'),
-    trailing: IconButton(
-      tooltip: 'Abrir ajustes',
-      icon: const Icon(AppIcons.settings),
-      onPressed: () => context.push('/settings'),
+    header: CompactFormHeader(
+      title: 'Mi perfil',
+      subtitle: 'Tu cuenta de AirDrop.',
+      onBack: () => context.canPop() ? context.pop() : context.go('/more'),
+      trailing: IconButton(
+        tooltip: 'Abrir ajustes',
+        icon: const Icon(AppIcons.settings),
+        onPressed: () => context.push('/settings'),
+      ),
     ),
     slivers: [SliverToBoxAdapter(child: _ProfileBody(page: this))],
   );
@@ -54,6 +60,7 @@ class _ProfileBody extends StatelessWidget {
     children: [
       RequesterProfileIdentity(
         user: page.user,
+        minInlineWidth: 260,
         onEdit: () => page.onOpen(ProfileDataGroup.personal),
       ),
       if (page.user.pendingEmail case final pending?) ...[
@@ -67,7 +74,11 @@ class _ProfileBody extends StatelessWidget {
       ],
       const SizedBox(height: 28),
       const HomeSectionHeading(title: 'Tu información'),
-      _DispatcherInformation(onOpen: page.onOpen),
+      RequesterProfileInformation(
+        onOpen: page.onOpen,
+        includeAllergies: false,
+        personalSubtitle: 'Nombre de la cuenta',
+      ),
       const SizedBox(height: 28),
       const HomeSectionHeading(title: 'Tu central'),
       _AssignedCentral(page: page),
@@ -94,53 +105,47 @@ class _ProfileBody extends StatelessWidget {
   );
 }
 
-class _DispatcherInformation extends StatelessWidget {
-  const _DispatcherInformation({required this.onOpen});
-  final ValueChanged<ProfileDataGroup> onOpen;
-  @override
-  Widget build(BuildContext context) => RequesterProfileGroup(
-    items: [
-      MenuItem(
-        title: 'Datos personales',
-        subtitle: 'Nombre de la cuenta',
-        icon: AppIcons.profile,
-        onTap: () => onOpen(ProfileDataGroup.personal),
-      ),
-      MenuItem(
-        title: 'Correo y celular',
-        subtitle: 'Datos de contacto',
-        icon: AppIcons.contact,
-        onTap: () => onOpen(ProfileDataGroup.contact),
-      ),
-    ],
-  );
-}
-
 class _AssignedCentral extends StatelessWidget {
   const _AssignedCentral({required this.page});
   final DispatcherProfilePage page;
   @override
   Widget build(BuildContext context) {
-    if (page.hubLoading) return const Skeleton(height: 88, radius: 20);
-    if (page.hubError != null) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(page.hubError!),
-          TextButton(
-            onPressed: page.onRetryHub,
-            child: const Text('Reintentar'),
-          ),
-        ],
+    final known = page.hub;
+    final hub = known != null && page.user.hubIds.contains(known.id)
+        ? known
+        : null;
+    if (hub == null && page.hubError != null) {
+      return WorkErrorCard(
+        title: 'No pudimos cargar tu central',
+        message: page.hubError!,
+        onRetry: page.onRetryHub,
       );
     }
-    return RequesterProfileGroup(
-      items: [
-        MenuItem(
-          title: page.hub?.name ?? 'Sin central asignada',
-          subtitle: page.hub?.address ?? 'Consulta con el administrador',
-          icon: AppIcons.hub,
-          onTap: () => context.push('/hubs/me'),
+    if (hub == null && page.hubLoading) {
+      return const Skeleton(height: 88, radius: 20);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (hub != null && page.hubError != null) ...[
+          RefreshNotice(message: page.hubError!, onRetry: page.onRetryHub),
+          const SizedBox(height: 12),
+        ],
+        RequesterProfileGroup(
+          items: [
+            MenuItem(
+              title: hub?.name ?? 'Sin central asignada',
+              subtitle: hub == null
+                  ? 'Consulta con el administrador'
+                  : 'Central asignada · ${hub.isActive
+                        ? 'Activa'
+                        : hub.status == HubStatus.suspended
+                        ? 'Suspendida'
+                        : 'Estado desconocido'}',
+              icon: AppIcons.hub,
+              onTap: hub == null ? null : () => context.push('/hubs/me'),
+            ),
+          ],
         ),
       ],
     );

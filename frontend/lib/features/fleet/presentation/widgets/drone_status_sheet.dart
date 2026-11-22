@@ -1,21 +1,12 @@
 import 'package:flutter/material.dart';
-
+import '../../../../core/widgets/action_list.dart';
 import '../../../../core/widgets/app_sheet.dart';
-import '../../../../core/widgets/press_scale.dart';
+import '../../../../core/widgets/drone_glyph.dart';
+import '../../../../core/widgets/menu_list.dart';
+import '../../../../theme/app_icons.dart';
 import '../../data/fleet_models.dart';
 import 'drone_status_chip.dart';
 
-/// Lo que se puede hacer con un dron desde "Gestionar". Cada una dispara
-/// **un** solo endpoint ("una sola vía por botón, nunca las dos"):
-///
-/// - [setAvailable] → `PATCH .../status` con `available` (cierra el periodo
-///   de taller; Nest limpia motivo y fecha).
-/// - [sendToMaintenance] → `POST .../maintenance`: temporal, con motivo y
-///   fecha estimada obligatorios.
-/// - [putOutOfService] → `PATCH .../status` con `out_of_service` y el
-///   motivo: indefinido, sin fecha.
-/// - [viewHistory] → el historial de taller.
-/// - [toggleColdCompartment] → `PATCH .../cold-compartment` (RF-49).
 typedef DroneActions = ({
   VoidCallback toggleColdCompartment,
   VoidCallback setAvailable,
@@ -24,18 +15,14 @@ typedef DroneActions = ({
   VoidCallback viewHistory,
 });
 
-/// Abre la hoja de acciones del dron. La hoja se cierra antes de invocar
-/// la acción, que es quien pide los datos y llama al repositorio.
 Future<void> showDroneStatusSheet(
   BuildContext context, {
   required Drone drone,
   required DroneActions actions,
-}) {
-  return showAppSheet<void>(
-    context,
-    builder: (_) => DroneStatusSheet(drone: drone, actions: actions),
-  );
-}
+}) => showAppSheet<void>(
+  context,
+  builder: (_) => DroneStatusSheet(drone: drone, actions: actions),
+);
 
 class DroneStatusSheet extends StatelessWidget {
   const DroneStatusSheet({
@@ -43,155 +30,129 @@ class DroneStatusSheet extends StatelessWidget {
     required this.drone,
     required this.actions,
   });
-
   final Drone drone;
   final DroneActions actions;
-
   @override
-  Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+  Widget build(BuildContext context) => SafeArea(
+    child: SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _SheetHeader(drone: drone),
+          const SizedBox(height: 24),
+          if (!drone.status.isOperable)
+            const Text(
+              'Este dron no admite cambios de estado ni de equipamiento.',
+            )
+          else ...[
+            Text(
+              'Estado y mantenimiento',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 12),
+            ActionList(items: _maintenanceActions(context, drone, actions)),
+            const SizedBox(height: 24),
+            Text('Equipamiento', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 12),
+            ActionList(
+              items: [
+                _sheetItem(
+                  context,
+                  AppIcons.coldChain,
+                  drone.coldCompartment
+                      ? 'Quitar el compartimento de frío'
+                      : 'Instalar el compartimento de frío',
+                  drone.coldCompartment
+                      ? 'Recupera 1 kg de carga útil.'
+                      : 'Para insumos refrigerados. Resta 1 kg de carga útil.',
+                  actions.toggleColdCompartment,
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
+}
+
+class _SheetHeader extends StatelessWidget {
+  const _SheetHeader({required this.drone});
+  final Drone drone;
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      DroneGlyph(color: Theme.of(context).colorScheme.onSurface, size: 32),
+      const SizedBox(width: 14),
+      Expanded(
         child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _SheetHeader(drone: drone),
-            const SizedBox(height: 16),
-            _ActionList(drone: drone, actions: actions),
+            Text(
+              drone.identifier,
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 8),
+            DroneStatusChip(status: drone.status),
           ],
         ),
       ),
-    );
-  }
+    ],
+  );
 }
 
-/// Las acciones que aplican al estado: no se ofrece mandar a mantenimiento
-/// un dron que ya está ahí, ni marcar disponible uno que ya lo está.
-class _ActionList extends StatelessWidget {
-  const _ActionList({required this.drone, required this.actions});
+List<MenuItem> _maintenanceActions(
+  BuildContext context,
+  Drone drone,
+  DroneActions actions,
+) => [
+  if (drone.status.isOutOfFleet && drone.status != DroneStatus.grounded)
+    _sheetItem(
+      context,
+      AppIcons.check,
+      'Marcar disponible',
+      'Vuelve a la flota y cierra el periodo de taller.',
+      actions.setAvailable,
+    ),
+  if (drone.status != DroneStatus.maintenance)
+    _sheetItem(
+      context,
+      AppIcons.maintenance,
+      'Enviar a mantenimiento',
+      'Temporal, con motivo y fecha estimada.',
+      actions.sendToMaintenance,
+    ),
+  if (drone.status != DroneStatus.outOfService)
+    _sheetItem(
+      context,
+      AppIcons.power,
+      'Dejar fuera de servicio',
+      'Sin fecha de regreso.',
+      actions.putOutOfService,
+    ),
+  _sheetItem(
+    context,
+    AppIcons.history,
+    'Ver historial de taller',
+    'Mantenimientos y salidas de la flota.',
+    actions.viewHistory,
+  ),
+];
 
-  final Drone drone;
-  final DroneActions actions;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final status = drone.status;
-    final cold = drone.coldCompartment;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (status.isOutOfFleet && status != DroneStatus.grounded)
-          _ActionTile(
-            icon: Icons.check_circle_outline_rounded,
-            tone: colors.tertiary,
-            title: 'Marcar disponible',
-            subtitle: 'Vuelve a la flota y cierra el periodo de taller.',
-            onPressed: actions.setAvailable,
-          ),
-        if (status != DroneStatus.maintenance)
-          _ActionTile(
-            icon: Icons.build_rounded,
-            tone: colors.primary,
-            title: 'Enviar a mantenimiento',
-            subtitle:
-                'Vuelve a la flota cuando lo marques disponible. '
-                'Lleva fecha estimada.',
-            onPressed: actions.sendToMaintenance,
-          ),
-        if (status != DroneStatus.outOfService)
-          _ActionTile(
-            icon: Icons.block_rounded,
-            tone: colors.error,
-            title: 'Dejar fuera de servicio',
-            subtitle: 'Sin fecha de regreso.',
-            onPressed: actions.putOutOfService,
-          ),
-        _ActionTile(
-          icon: Icons.ac_unit_rounded,
-          tone: colors.primary,
-          title: cold
-              ? 'Quitar el compartimento de frío'
-              : 'Instalar el compartimento de frío',
-          subtitle: cold
-              ? 'Recupera 1 kg de carga útil.'
-              : 'Para insumos refrigerados. Resta 1 kg de carga útil.',
-          onPressed: actions.toggleColdCompartment,
-        ),
-        _ActionTile(
-          icon: Icons.history_rounded,
-          tone: colors.onSurfaceVariant,
-          title: 'Ver historial de taller',
-          subtitle: 'Mantenimientos y salidas de la flota.',
-          onPressed: actions.viewHistory,
-        ),
-      ],
-    );
-  }
-}
-
-/// Identificador y estado actual, para no operar a ciegas.
-class _SheetHeader extends StatelessWidget {
-  const _SheetHeader({required this.drone});
-
-  final Drone drone;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            drone.identifier,
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-        ),
-        DroneStatusChip(status: drone.status),
-      ],
-    );
-  }
-}
-
-class _ActionTile extends StatelessWidget {
-  const _ActionTile({
-    required this.icon,
-    required this.tone,
-    required this.title,
-    required this.subtitle,
-    required this.onPressed,
-  });
-
-  final IconData icon;
-  final Color tone;
-  final String title;
-  final String subtitle;
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: PressScale(
-        child: Material(
-          color: theme.colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(18),
-          clipBehavior: Clip.antiAlias,
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-            leading: Icon(icon, color: tone),
-            title: Text(title, style: theme.textTheme.titleSmall),
-            subtitle: Text(subtitle, style: theme.textTheme.bodySmall),
-            onTap: () {
-              // Se cierra primero: los callbacks abren la hoja de motivo y
-              // fecha sobre la pantalla, no sobre esta.
-              Navigator.pop(context);
-              onPressed();
-            },
-          ),
-        ),
-      ),
-    );
-  }
-}
+MenuItem _sheetItem(
+  BuildContext context,
+  IconData icon,
+  String title,
+  String subtitle,
+  VoidCallback action,
+) => MenuItem(
+  icon: icon,
+  title: title,
+  subtitle: subtitle,
+  onTap: () {
+    Navigator.pop(context);
+    action();
+  },
+);

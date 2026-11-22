@@ -44,8 +44,10 @@ class _ProfileMenuRow extends StatelessWidget {
             color: Theme.of(context).colorScheme.outline,
           ),
           Expanded(child: _ProfileMenuTexts(item: item)),
-          const SizedBox(width: 8),
-          const Icon(AppIcons.next, size: 22),
+          if (item.onTap != null) ...[
+            const SizedBox(width: 8),
+            const Icon(AppIcons.next, size: 22),
+          ],
         ],
       ),
     ),

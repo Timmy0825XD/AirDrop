@@ -12,14 +12,22 @@ import 'schedule_fields.dart';
 /// Lo propio de cada tipo de calendario: los días de la semana, el día
 /// del mes o las fechas sueltas.
 class ScheduleKindFields extends StatelessWidget {
-  const ScheduleKindFields({super.key, required this.form});
+  const ScheduleKindFields({
+    super.key,
+    required this.form,
+    this.showWeeklyInterval = true,
+  });
 
   final ScheduleForm form;
+  final bool showWeeklyInterval;
 
   @override
   Widget build(BuildContext context) {
     return switch (form.draft.kind) {
-      ScheduleKind.weekly => _WeeklyFields(form: form),
+      ScheduleKind.weekly => _WeeklyFields(
+        form: form,
+        showInterval: showWeeklyInterval,
+      ),
       ScheduleKind.monthly => _MonthlyFields(form: form),
       ScheduleKind.dates => _DatesFields(form: form),
     };
@@ -29,9 +37,10 @@ class ScheduleKindFields extends StatelessWidget {
 const _dayLetters = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
 
 class _WeeklyFields extends StatelessWidget {
-  const _WeeklyFields({required this.form});
+  const _WeeklyFields({required this.form, required this.showInterval});
 
   final ScheduleForm form;
+  final bool showInterval;
 
   @override
   Widget build(BuildContext context) {
@@ -58,22 +67,23 @@ class _WeeklyFields extends StatelessWidget {
               ),
           ],
         ),
-        const SizedBox(height: 16),
-        AuthChoiceGroup(
-          label: 'Se repite',
-          children: [
-            for (var weeks = 1; weeks <= 4; weeks++)
-              ScheduleChip(
-                label: weeks == 1 ? 'Cada semana' : 'Cada $weeks semanas',
-                selected: draft.everyWeeks == weeks,
-                filled: false,
-                onTap: () {
-                  draft.everyWeeks = weeks;
-                  form.onChanged();
-                },
-              ),
-          ],
-        ),
+        if (showInterval) const SizedBox(height: 16),
+        if (showInterval)
+          AuthChoiceGroup(
+            label: 'Se repite',
+            children: [
+              for (var weeks = 1; weeks <= 4; weeks++)
+                ScheduleChip(
+                  label: weeks == 1 ? 'Cada semana' : 'Cada $weeks semanas',
+                  selected: draft.everyWeeks == weeks,
+                  filled: false,
+                  onTap: () {
+                    draft.everyWeeks = weeks;
+                    form.onChanged();
+                  },
+                ),
+            ],
+          ),
       ],
     );
   }

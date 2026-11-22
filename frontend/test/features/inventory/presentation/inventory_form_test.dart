@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frontend/core/clock/sim_clock.dart';
 import 'package:frontend/core/widgets/status_pill.dart';
 import 'package:frontend/features/inventory/data/inventory_models.dart';
 import 'package:frontend/features/inventory/presentation/inventory_form_screen.dart';
@@ -19,6 +20,18 @@ InventoryItem _item(String expiration) => InventoryItem(
 );
 
 void main() {
+  test(
+    'vencimiento e ingreso usan el día de Colombia cerca de medianoche UTC',
+    () {
+      simClock.apply(
+        ClockView(now: DateTime.utc(2026, 11, 22, 2), speed: 1, paused: true),
+      );
+      addTearDown(simClock.reset);
+      expect(InventoryTile.expiryOf(_item('2026-11-21')).$1, 'Por vencer');
+      expect(InventoryFormValues.isAfterToday('2026-11-22'), isTrue);
+      expect(InventoryFormValues.isAfterToday('2026-11-21'), isFalse);
+    },
+  );
   testWidgets('el interruptor de cadena de frío se mueve al tocarlo', (
     tester,
   ) async {

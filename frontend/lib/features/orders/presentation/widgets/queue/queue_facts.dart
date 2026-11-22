@@ -68,7 +68,7 @@ class QueueFact extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: tone,
               fontWeight: strong ? FontWeight.w700 : FontWeight.w400,
             ),

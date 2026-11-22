@@ -1,12 +1,8 @@
 import 'package:flutter/material.dart';
-
-import '../../theme/app_motion.dart';
 import '../../theme/app_palette.dart';
 import 'press_scale.dart';
 
-/// Chip redondo que se elige con un toque: tipo de central, centrales de
-/// una cuenta, filtros. Elegido, se pinta de marca ([filled]) o se tiñe
-/// con un borde de marca; el cambio se funde y se hunde al tocarlo.
+/// Filtro de la app con selección, foco de teclado y área táctil de 48 dp.
 class ChoicePill extends StatelessWidget {
   const ChoicePill({
     super.key,
@@ -17,117 +13,72 @@ class ChoicePill extends StatelessWidget {
     this.showCheck = false,
     this.filled = true,
   });
-
   final String label;
-  final bool selected;
+  final bool selected, showCheck, filled;
   final VoidCallback onTap;
   final IconData? icon;
-
-  /// Elegido, muestra un check antes del texto.
-  final bool showCheck;
-
-  /// `true`: elegido va relleno de marca. `false`: tinte suave y borde.
-  final bool filled;
-
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     final ink = !selected
         ? colors.onSurface
-        : (filled ? colors.onPrimary : colors.primary);
-    return Semantics(
-      button: true,
-      selected: selected,
-      child: PressScale(
-        scale: 0.95,
-        child: GestureDetector(
-          onTap: onTap,
-          child: _PillBox(
-            selected: selected,
-            filled: filled,
-            child: _PillFace(
-              label: label,
-              color: ink,
-              icon: showCheck && selected ? Icons.check_rounded : icon,
-            ),
-          ),
+        : filled
+        ? colors.onPrimary
+        : colors.primary;
+    return PressScale(
+      scale: 0.95,
+      child: ChoiceChip(
+        label: _PillFace(
+          label: label,
+          color: ink,
+          icon: showCheck && selected ? Icons.check_rounded : icon,
         ),
-      ),
-    );
-  }
-}
-
-/// El fondo y el borde del chip, que se funden al elegirlo.
-class _PillBox extends StatelessWidget {
-  const _PillBox({
-    required this.selected,
-    required this.filled,
-    required this.child,
-  });
-
-  final bool selected;
-  final bool filled;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final palette = context.palette;
-    final fill = !selected
-        ? palette.glass
-        : (filled ? colors.primary : colors.primary.withValues(alpha: 0.14));
-    return AnimatedContainer(
-      duration: AppMotion.of(context, AppMotion.quick),
-      curve: AppMotion.enterCurve,
-      height: 40,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        color: fill,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: selected ? colors.primary : palette.glassBorder,
+        selected: selected,
+        onSelected: (_) => onTap(),
+        showCheckmark: false,
+        elevation: 0,
+        pressElevation: 0,
+        materialTapTargetSize: MaterialTapTargetSize.padded,
+        visualDensity: VisualDensity.standard,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        labelPadding: EdgeInsets.zero,
+        shape: const StadiumBorder(),
+        backgroundColor: context.palette.glass,
+        selectedColor: filled
+            ? colors.primary
+            : colors.primary.withValues(alpha: 0.14),
+        side: BorderSide(
+          color: selected ? colors.primary : context.palette.glassBorder,
           width: 1.2,
         ),
       ),
-      child: child,
     );
   }
 }
 
 class _PillFace extends StatelessWidget {
   const _PillFace({required this.label, required this.color, this.icon});
-
   final String label;
   final Color color;
   final IconData? icon;
-
   @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AnimatedSize(
-          duration: const Duration(milliseconds: 200),
-          child: icon == null
-              ? const SizedBox.shrink()
-              : Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: Icon(icon, size: 16, color: color),
-                ),
-        ),
-        // En un teléfono angosto o con letra grande, se recorta en vez de
-        // desbordar (el chip tiene alto fijo).
-        Flexible(
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(
-              context,
-            ).textTheme.titleSmall?.copyWith(fontSize: 13, color: color),
-          ),
-        ),
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (icon != null) ...[
+        Icon(icon, size: 16, color: color),
+        const SizedBox(width: 6),
       ],
-    );
-  }
+      Flexible(
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(
+            context,
+          ).textTheme.titleSmall?.copyWith(fontSize: 13, color: color),
+        ),
+      ),
+    ],
+  );
 }

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/widgets/glass_card.dart';
-import '../../../../core/widgets/message_view.dart';
 import '../../../../core/widgets/skeleton.dart';
+import '../../../../core/widgets/work_error_card.dart';
 import '../../../../theme/app_icons.dart';
+import '../../../home/presentation/widgets/operator/operator_empty_card.dart';
 import '../../data/inventory_models.dart';
 import 'inventory_list_values.dart';
 import 'inventory_results.dart';
@@ -29,80 +29,83 @@ class InventoryListContent extends StatelessWidget {
   final InventoryFilter filter;
   final VoidCallback onAdd, onRetry, onClear;
   final ValueChanged<InventoryItem> onEdit, onDelete;
-
   @override
   Widget build(BuildContext context) {
-    if (error != null) {
+    final known = rows;
+    if (known == null || (known.isEmpty && error != null)) {
       return SliverToBoxAdapter(
-        child: _InventoryError(error: error!, onRetry: onRetry),
+        child: _InventoryLoadState(error: error, onRetry: onRetry),
       );
     }
-    if (loading || rows == null) {
-      return SliverToBoxAdapter(
-        child: Semantics(
-          label: 'Cargando inventario',
-          child: const Skeleton(height: 200, radius: 20),
-        ),
-      );
-    }
-    if (rows!.isEmpty) {
-      return SliverToBoxAdapter(child: _InventoryEmpty(onAdd: onAdd));
-    }
-    final results = inventoryResults(rows!, query, filter);
-    if (results.isEmpty) {
-      return SliverToBoxAdapter(child: _InventoryNoResults(onClear: onClear));
-    }
-    return InventoryResults(rows: results, onEdit: onEdit, onDelete: onDelete);
+    final shown = inventoryResults(known, query, filter);
+    return SliverMainAxisGroup(
+      slivers: [
+        if (error case final message?)
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: RefreshNotice(
+                message:
+                    'No pudimos actualizar el inventario. $message\nÚltimos datos disponibles.',
+                onRetry: onRetry,
+              ),
+            ),
+          ),
+        if (known.isEmpty || shown.isEmpty)
+          SliverToBoxAdapter(
+            child: _InventoryEmpty(
+              noStock: known.isEmpty,
+              onAdd: onAdd,
+              onClear: onClear,
+            ),
+          )
+        else
+          InventoryResults(rows: shown, onEdit: onEdit, onDelete: onDelete),
+      ],
+    );
   }
 }
 
-class _InventoryError extends StatelessWidget {
-  const _InventoryError({required this.error, required this.onRetry});
-  final String error;
+class _InventoryLoadState extends StatelessWidget {
+  const _InventoryLoadState({required this.error, required this.onRetry});
+  final String? error;
   final VoidCallback onRetry;
   @override
-  Widget build(BuildContext context) => GlassCard(
-    child: MessageView.error(
-      icon: AppIcons.unavailable,
-      title: 'No pudimos cargar el inventario',
-      message: error,
-      action: TextButton(onPressed: onRetry, child: const Text('Reintentar')),
-    ),
-  );
-}
-
-class _InventoryNoResults extends StatelessWidget {
-  const _InventoryNoResults({required this.onClear});
-  final VoidCallback onClear;
-  @override
-  Widget build(BuildContext context) => GlassCard(
-    child: MessageView(
-      icon: AppIcons.search,
-      title: 'Sin coincidencias',
-      message: 'Prueba con otro nombre, lote o filtro.',
-      action: TextButton(
-        onPressed: onClear,
-        child: const Text('Limpiar búsqueda y filtros'),
-      ),
-    ),
-  );
+  Widget build(BuildContext context) => error == null
+      ? Semantics(
+          label: 'Cargando inventario',
+          child: const Skeleton(height: 200, radius: 20),
+        )
+      : WorkErrorCard(
+          title: 'No pudimos cargar el inventario',
+          message: error!,
+          onRetry: onRetry,
+        );
 }
 
 class _InventoryEmpty extends StatelessWidget {
-  const _InventoryEmpty({required this.onAdd});
-  final VoidCallback onAdd;
-
+  const _InventoryEmpty({
+    required this.noStock,
+    required this.onAdd,
+    required this.onClear,
+  });
+  final bool noStock;
+  final VoidCallback onAdd, onClear;
   @override
-  Widget build(BuildContext context) => GlassCard(
-    child: MessageView(
-      icon: AppIcons.medication,
-      title: 'Empieza tu inventario',
-      message: 'Añade el primer insumo con su lote, cantidad y vencimiento.',
-      action: FilledButton.icon(
-        onPressed: onAdd,
-        icon: const Icon(AppIcons.add),
-        label: const Text('Añadir el primer insumo'),
-      ),
-    ),
+  Widget build(BuildContext context) => OperatorEmptyCard(
+    title: noStock ? 'Empieza tu inventario' : 'Sin coincidencias',
+    message: noStock
+        ? 'Añade el primer insumo con su lote, cantidad y vencimiento.'
+        : 'Prueba con otro nombre, lote o filtro.',
+    action: noStock
+        ? FilledButton.icon(
+            onPressed: onAdd,
+            icon: const Icon(AppIcons.add),
+            label: const Text('Añadir el primer insumo'),
+          )
+        : TextButton(
+            onPressed: onClear,
+            child: const Text('Limpiar búsqueda y filtros'),
+          ),
   );
 }

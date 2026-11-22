@@ -39,7 +39,7 @@ class InventoryStockFields extends StatelessWidget {
             : sheet.values.expirationDate.text,
         hint: 'Elige la fecha',
         icon: AppIcons.calendar,
-        trailingIcon: AppIcons.next,
+        trailingIcon: AppIcons.down,
         errorText: sheet.errors[InventoryInput.expirationDate],
         shakeCount: sheet.shakeCount,
         onTap: sheet.onPickDate,

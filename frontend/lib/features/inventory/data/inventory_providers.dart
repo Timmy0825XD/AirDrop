@@ -27,7 +27,16 @@ final inventoryRepositoryProvider = Provider<InventoryRepository>((ref) {
 
 /// Listado de los ítems de la central del despachador. Cada mutación lo
 /// invalida, así la pantalla se refresca sin reiniciar la app.
+final inventoryHubIdProvider = Provider<String?>(
+  (ref) => ref.watch(
+    authControllerProvider.select(
+      (state) => state.value?.user?.hubIds.firstOrNull,
+    ),
+  ),
+);
+
 final inventoryProvider = FutureProvider<List<InventoryItem>>((ref) {
+  ref.watch(inventoryHubIdProvider);
   return ref.watch(inventoryRepositoryProvider).list();
 });
 

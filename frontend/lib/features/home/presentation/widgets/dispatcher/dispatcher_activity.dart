@@ -13,41 +13,50 @@ class DispatcherActivity extends StatelessWidget {
   });
   final DispatcherCounts counts;
   final ValueChanged<String> onOpen;
-
   @override
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
       const HomeSectionHeading(title: 'Hoy en tu central'),
       GlassCard(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: _Counter(
-                label: 'Por cargar',
-                count: counts.pendingLoad,
-                icon: AppIcons.orders,
-                onTap: () => onOpen('/orders/pending-load'),
+            for (final (index, (label, count, icon, path)) in [
+              (
+                'Por cargar',
+                counts.pendingLoad,
+                AppIcons.orders,
+                '/orders/pending-load',
               ),
-            ),
-            Expanded(
-              child: _Counter(
-                label: 'En vuelo',
-                count: counts.inFlight,
-                icon: AppIcons.flight,
-                onTap: () => onOpen('/orders/in-flight'),
+              (
+                'En vuelo',
+                counts.inFlight,
+                AppIcons.flight,
+                '/orders/in-flight',
               ),
-            ),
-            Expanded(
-              child: _Counter(
-                label: 'Por recibir',
-                count: counts.toReceive,
-                icon: AppIcons.incoming,
-                onTap: () => onOpen('/orders/incoming'),
+              (
+                'Por recibir',
+                counts.toReceive,
+                AppIcons.incoming,
+                '/orders/incoming',
               ),
-            ),
+            ].indexed) ...[
+              if (index > 0)
+                Container(
+                  width: 1,
+                  height: 42,
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                ),
+              Expanded(
+                child: _Counter(
+                  label: label,
+                  count: count,
+                  icon: icon,
+                  onTap: () => onOpen(path),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -66,7 +75,6 @@ class _Counter extends StatelessWidget {
   final int? count;
   final IconData icon;
   final VoidCallback onTap;
-
   @override
   Widget build(BuildContext context) => Semantics(
     label: '$label: ${count ?? 'sin actualizar'}',
@@ -76,26 +84,31 @@ class _Counter extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: Column(
           children: [
-            Icon(
-              icon,
-              size: 21,
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 6,
+              children: [
+                Icon(icon, size: 21),
+                Text(
+                  count == null ? '—' : '$count',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontFeatures: const [FontFeature.tabularFigures()],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              count == null ? '—' : '$count',
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
-            ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 5),
             Text(
               label,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ],
         ),

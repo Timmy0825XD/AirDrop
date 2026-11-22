@@ -48,7 +48,7 @@ class _AgendaDays extends StatelessWidget {
   Widget build(BuildContext context) => LayoutBuilder(
     builder: (context, box) {
       final compact =
-          box.maxWidth < 300 || MediaQuery.textScalerOf(context).scale(1) > 1.3;
+          box.maxWidth < 260 || MediaQuery.textScalerOf(context).scale(1) > 1.3;
       final radius = compact ? 1 : 2;
       return Row(
         children: [
@@ -90,10 +90,7 @@ class _DayNavigation extends StatelessWidget {
         child: TextButton.icon(
           onPressed: onPick,
           icon: const Icon(AppIcons.calendar, size: 20),
-          label: Text(
-            capitalized(formatDay(date, relative: false)),
-            textAlign: TextAlign.center,
-          ),
+          label: Text('Elegir fecha', textAlign: TextAlign.center),
           style: TextButton.styleFrom(
             foregroundColor: Theme.of(context).colorScheme.onSurface,
             minimumSize: const Size(0, 48),
@@ -137,7 +134,7 @@ class _DayButton extends StatelessWidget {
           backgroundColor: selected ? colors.primary : colors.surface,
           foregroundColor: color,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(12),
             side: BorderSide(
               color: selected ? colors.primary : colors.outlineVariant,
             ),
@@ -147,6 +144,26 @@ class _DayButton extends StatelessWidget {
       ),
     );
   }
+}
+
+String agendaDateLabel(String date) {
+  final day = DateTime.parse(date);
+  const months = [
+    'enero',
+    'febrero',
+    'marzo',
+    'abril',
+    'mayo',
+    'junio',
+    'julio',
+    'agosto',
+    'septiembre',
+    'octubre',
+    'noviembre',
+    'diciembre',
+  ];
+  return '${capitalized(weekdayName(day.weekday))}, ${day.day} de ${months[day.month - 1]}'
+      '${day.year == colombiaToday().year ? '' : ' de ${day.year}'}';
 }
 
 class _DayLabel extends StatelessWidget {

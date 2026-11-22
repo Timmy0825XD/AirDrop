@@ -20,6 +20,7 @@ class OrderFormScaffold<T> extends StatelessWidget {
     required this.onRetry,
     this.steps,
     this.onBack,
+    this.header,
   });
   final String title, subtitle, emptyText;
   final AsyncValue<List<T>> source;
@@ -27,12 +28,14 @@ class OrderFormScaffold<T> extends StatelessWidget {
   final List<Widget> Function(List<T>) fields;
   final Widget button;
   final Widget? steps;
+  final Widget? header;
   final VoidCallback? onBack;
   final VoidCallback onRetry;
   @override
   Widget build(BuildContext context) => ContentPage(
     title: title,
     subtitle: subtitle,
+    header: header,
     onBack:
         onBack ?? () => context.canPop() ? context.pop() : context.go('/more'),
     slivers: [SliverToBoxAdapter(child: _OrderFormBody<T>(form: this))],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/widgets/app_sheet.dart';
 import '../../../../../core/widgets/detail_section.dart';
+import '../../../../../core/widgets/drone_glyph.dart';
 import '../../../data/fleet_flight.dart';
 
 /// La ficha de un dron en vuelo (RU-18): lo de la aeronave, nada del
@@ -14,19 +15,32 @@ Future<void> showDroneFacts(
   return showAppSheet<void>(
     context,
     builder: (sheet) => SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              flight.identifier,
-              style: Theme.of(sheet).textTheme.headlineMedium,
+            Row(
+              children: [
+                DroneGlyph(
+                  color: Theme.of(sheet).colorScheme.onSurface,
+                  size: 30,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    flight.identifier,
+                    style: Theme.of(sheet).textTheme.titleLarge,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
-            for (final (label, value) in droneFacts(flight))
+            for (final (label, value) in droneFacts(flight)) ...[
               DetailLine(label: label, value: value),
+              const Divider(height: 16),
+            ],
             const SizedBox(height: 14),
             FilledButton(
               onPressed: () {
@@ -50,10 +64,10 @@ List<(String, String)> droneFacts(FleetFlight f) {
       'Fase',
       f.linkLost
           ? 'Sin enlace · posición estimada'
-          : (f.phase?.label ?? 'Por despegar'),
+          : (f.phase?.label ?? f.orderStatus.label),
     ),
     ('Tramo', f.returning ? 'Regreso a la central' : 'Ida'),
-    if (f.etaSeconds case final s? when !f.returning)
+    if (f.etaSeconds case final s? when !f.returning && s >= 0)
       ('Llega en', '${(s / 60).ceil()} min'),
     if (f.batteryPercent case final b?) ('Batería', n(b, '%')),
     if (f.altitudeM case final a?) ('Altitud', n(a, 'm')),

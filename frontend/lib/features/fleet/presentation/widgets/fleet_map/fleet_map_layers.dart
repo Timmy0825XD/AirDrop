@@ -3,12 +3,13 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../../core/widgets/app_map.dart';
-import '../../../../../core/widgets/map_markers.dart';
+import '../../../../../theme/app_icons.dart';
 import '../../../../../theme/app_palette.dart';
 import '../../../../tracking/presentation/widgets/flight_map.dart'
     show closestRouteIndex, routeHeading;
 import '../../../data/fleet_flight.dart';
 import '../../../data/fleet_map_models.dart';
+import 'fleet_map_markers.dart';
 
 /// Las geovallas en rojo translúcido: el corredor no las cruza.
 class FleetGeofenceLayer extends StatelessWidget {
@@ -52,6 +53,7 @@ class FleetRoutesLayer extends StatelessWidget {
             Polyline(
               points: f.activeRoute.map(latLngFromGeoJson).toList(),
               strokeWidth: 3,
+              pattern: StrokePattern.dashed(segments: const [8, 6]),
               color: (f.returning ? info : primary).withValues(alpha: 0.75),
             ),
       ],
@@ -72,9 +74,9 @@ class FleetHubsLayer extends StatelessWidget {
         for (final hub in hubs)
           Marker(
             point: LatLng(hub.latitude, hub.longitude),
-            width: HubMarker.size,
-            height: HubMarker.size,
-            child: const HubMarker(),
+            width: FleetHubPin.width,
+            height: FleetHubPin.height,
+            child: FleetHubPin(hub: hub),
           ),
       ],
     );
@@ -108,20 +110,12 @@ class FleetDronesLayer extends StatelessWidget {
     final route = f.activeRoute.map(latLngFromGeoJson).toList();
     return Marker(
       point: at,
-      width: DroneMarker.size,
-      height: DroneMarker.size,
-      child: Semantics(
-        button: true,
-        label: 'Dron ${f.identifier}',
-        child: GestureDetector(
-          onTap: () => onDrone(f),
-          child: Opacity(
-            opacity: f.linkLost ? 0.45 : 1,
-            child: DroneMarker(
-              heading: routeHeading(route, closestRouteIndex(route, at)),
-            ),
-          ),
-        ),
+      width: FleetDronePin.width,
+      height: FleetDronePin.height,
+      child: FleetDronePin(
+        flight: f,
+        onTap: () => onDrone(f),
+        heading: routeHeading(route, closestRouteIndex(route, at)),
       ),
     );
   }
@@ -144,7 +138,10 @@ class FleetIncidentsLayer extends StatelessWidget {
               point: LatLng(i.latitude!, i.longitude!),
               width: 36,
               height: 36,
-              child: Icon(Icons.report_rounded, color: danger, size: 32),
+              child: Tooltip(
+                message: i.protocolLabel,
+                child: Icon(AppIcons.warning, color: danger, size: 30),
+              ),
             ),
       ],
     );

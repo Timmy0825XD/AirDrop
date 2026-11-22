@@ -1,47 +1,66 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/widgets/message_view.dart';
 import '../../../../../core/widgets/warning_banner.dart';
 import '../../../../../core/date_format.dart';
+import '../../../../../theme/app_icons.dart';
+import '../../../../home/presentation/widgets/operator/operator_empty_card.dart';
 import '../../../data/fleet_flight.dart';
 import '../../../data/fleet_map_models.dart';
 import '../fleet_flight_card.dart';
+import 'fleet_map_values.dart';
 
-/// Lo que va en la hoja del mapa, de arriba abajo: los incidentes
-/// abiertos, cada central con su flota y los drones en misión (tocar uno
-/// abre su vuelo).
+/// La hoja prioriza los vuelos; las centrales se consultan en sus pines.
 List<Widget> fleetMapSheet({
   required BuildContext context,
   required FleetMap map,
   required List<FleetIncident> incidents,
   required ValueChanged<FleetFlight> onFlight,
+  FleetMapValues? values,
+  String? problem,
+  VoidCallback? onRetry,
 }) {
-  final theme = Theme.of(context);
-  final muted = theme.textTheme.bodySmall?.copyWith(
-    color: theme.colorScheme.onSurfaceVariant,
-  );
+  final labels = values ?? FleetMapValues(map: map);
   return [
+    Text(
+      'Vuelos en curso · ${map.flights.length}',
+      style: Theme.of(
+        context,
+      ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+    ),
+    const SizedBox(height: 4),
+    if (problem != null) ...[
+      const SizedBox(height: 8),
+      WarningBanner(
+        message: 'No pudimos actualizar los vuelos.\n$problem',
+        icon: AppIcons.unavailable,
+      ),
+      Align(
+        alignment: Alignment.centerRight,
+        child: TextButton(onPressed: onRetry, child: const Text('Reintentar')),
+      ),
+    ],
     for (final i in incidents)
       Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: WarningBanner(message: incidentLine(i)),
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: WarningBanner(message: incidentLine(i), icon: AppIcons.warning),
       ),
-    for (final hub in map.hubs)
-      Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text('${hub.name} · ${hub.fleetLine}', style: muted),
-      ),
-    const SizedBox(height: 4),
     if (map.flights.isEmpty)
-      const MessageView(
-        icon: Icons.flight_land_rounded,
-        message: 'No hay drones en misión ahora.',
+      const Padding(
+        padding: EdgeInsets.only(top: 12),
+        child: OperatorEmptyCard(
+          title: 'Sin vuelos por ahora',
+          message: 'Aquí verás los drones en misión.',
+        ),
       ),
-    for (final f in map.flights)
-      Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: FleetFlightCard(flight: f, onTap: () => onFlight(f)),
+    for (var i = 0; i < map.flights.length; i++) ...[
+      if (i > 0) const Divider(height: 1),
+      FleetFlightCard(
+        flight: map.flights[i],
+        title: labels.titleOf(map.flights[i]),
+        routeLabel: labels.routeOf(map.flights[i]),
+        onTap: () => onFlight(map.flights[i]),
       ),
+    ],
   ];
 }
 

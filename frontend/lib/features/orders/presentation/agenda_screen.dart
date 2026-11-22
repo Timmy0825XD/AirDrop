@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/auto_refresh.dart';
 import '../../auth/presentation/widgets/auth_date_field.dart';
+import '../../home/presentation/widgets/home_brand_bar.dart';
+import '../../notifications/data/notice_providers.dart';
 import '../data/order_providers.dart';
 import 'order_format.dart';
 import 'widgets/agenda/agenda_content.dart';
@@ -42,13 +44,17 @@ class _AgendaScreenState extends ConsumerState<AgendaScreen> {
     return AutoRefresh(
       onTick: () => ref.invalidate(agendaProvider(_date)),
       child: AgendaPage(
+        brand: HomeBrandBar(
+          onNotices: () => context.push('/notifications'),
+          unread: ref.watch(unreadCountProvider).value,
+        ),
         date: _date,
         onDateChanged: (date) => setState(() => _date = date),
         onPick: _pick,
         onRefresh: _refresh,
         onProgrammed: () => context.push('/orders/scheduled'),
         content: AgendaContent(
-          day: state.value,
+          day: state.value?.date == _date ? state.value : null,
           loading: !state.hasValue && !state.hasError,
           error: state.hasError ? ApiException.messageOf(state.error!) : null,
           onRetry: () => ref.invalidate(agendaProvider(_date)),

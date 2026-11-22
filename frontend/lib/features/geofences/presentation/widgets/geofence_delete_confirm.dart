@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/api_exception.dart';
 import '../../../../core/widgets/app_snack.dart';
+import '../../../../theme/app_icons.dart';
 import '../../data/geofence_providers.dart';
 
 import '../../../../core/widgets/confirm_sheet.dart';
@@ -23,7 +24,7 @@ Future<bool> confirmGeofenceDelete(
     title: 'Eliminar geovalla',
     message: 'Los drones podrán volver a pasar por esta zona.',
     confirmLabel: 'Eliminar',
-    icon: Icons.delete_outline_rounded,
+    icon: AppIcons.trash,
     subject: Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),

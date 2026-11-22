@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../theme/app_icons.dart';
 
 import '../../../../../core/api_exception.dart';
-import '../../../../../core/widgets/auth_picker_field.dart';
+import 'hub_request_picker.dart';
 import '../../../../../core/widgets/search_picker_sheet.dart';
 import '../offer_option.dart';
 import '../../../../../core/widgets/auth_field.dart';
@@ -44,7 +44,10 @@ class HubRequestFields extends StatelessWidget {
           curve: Curves.fastOutSlowIn,
           alignment: Alignment.topCenter,
           child: catalog == null
-              ? const SizedBox(width: double.infinity)
+              ? const Padding(
+                  padding: EdgeInsets.only(top: 16),
+                  child: _HubOfferPlaceholder(),
+                )
               : _OfferPicker(fields: this),
         ),
         const SizedBox(height: 16),
@@ -52,6 +55,7 @@ class HubRequestFields extends StatelessWidget {
           values: values,
           errors: errors,
           shakeCount: shakeCount,
+          label: 'Cantidad por entrega',
         ),
       ],
     );
@@ -67,9 +71,8 @@ class _OriginPicker extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final f = fields;
-    return AuthPickerField<String>(
+    return HubRequestPicker<String>(
       icon: AppIcons.hub,
-      trailingIcon: AppIcons.next,
       label: 'Central de origen',
       hint: 'Elige la central',
       sheetTitle: '¿A qué central le pides?',
@@ -97,8 +100,10 @@ class HubQuantityField extends StatelessWidget {
     required this.values,
     required this.errors,
     required this.shakeCount,
+    this.label = 'Cantidad',
   });
 
+  final String label;
   final HubRequestValues values;
   final Map<HubRequestInput, String> errors;
   final int shakeCount;
@@ -107,7 +112,7 @@ class HubQuantityField extends StatelessWidget {
   Widget build(BuildContext context) {
     final stock = values.offer?.availableQuantity;
     return AuthField(
-      label: 'Cantidad',
+      label: label,
       hint: 'Ej.: 1',
       controller: values.quantity,
       keyboardType: TextInputType.number,
@@ -136,9 +141,8 @@ class _OfferPicker extends StatelessWidget {
       padding: const EdgeInsets.only(top: 16),
       child: switch (f.catalog!) {
         AsyncValue(hasValue: true, hasError: false, :final value?) =>
-          AuthPickerField<CatalogOffer>(
+          HubRequestPicker<CatalogOffer>(
             icon: AppIcons.medication,
-            trailingIcon: AppIcons.next,
             label: 'Medicamento',
             hint: 'Elige el insumo',
             sheetTitle: 'Insumos de esa central',
@@ -174,12 +178,37 @@ class HubTransferNote extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Text(
-      'La central de origen revisa y autoriza el envío. '
-      'En estos traslados no viaja la fórmula de un paciente.',
-      style: theme.textTheme.bodySmall?.copyWith(
-        color: theme.colorScheme.onSurfaceVariant,
-      ),
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(
+          AppIcons.info,
+          size: 20,
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            'La central de origen revisa y autoriza el envío.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
     );
   }
+}
+
+class _HubOfferPlaceholder extends StatelessWidget {
+  const _HubOfferPlaceholder();
+  @override
+  Widget build(BuildContext context) => HubRequestPicker<String>(
+    label: 'Medicamento',
+    hint: 'Elige primero la central',
+    icon: AppIcons.medication,
+    options: const [],
+    isSelected: (_) => false,
+    onSelected: (_) {},
+  );
 }

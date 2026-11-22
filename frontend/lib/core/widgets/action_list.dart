@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../theme/app_icons.dart';
+import '../../theme/app_palette.dart';
+import 'drone_glyph.dart';
 import 'glass_card.dart';
 import 'menu_list.dart';
-import 'status_pill.dart';
 
 class ActionList extends StatelessWidget {
   const ActionList({super.key, required this.items});
@@ -38,7 +39,12 @@ class _ActionRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
           child: Row(
             children: [
-              Icon(item.icon, size: 24),
+              item.icon == AppIcons.drone
+                  ? DroneGlyph(
+                      size: 28,
+                      color: Theme.of(context).colorScheme.onSurface,
+                    )
+                  : Icon(item.icon, size: 26),
               const SizedBox(width: 16),
               Expanded(child: _ActionTexts(item: item)),
               const SizedBox(width: 10),
@@ -58,10 +64,20 @@ class _ActionTexts extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(item.title, style: Theme.of(context).textTheme.titleMedium),
+      Text(
+        item.title,
+        style: Theme.of(
+          context,
+        ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+      ),
       if (item.subtitle != null) ...[
         const SizedBox(height: 4),
-        Text(item.subtitle!, style: Theme.of(context).textTheme.bodySmall),
+        Text(
+          item.subtitle!,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
+        ),
       ],
     ],
   );
@@ -78,10 +94,7 @@ class _ActionTrailing extends StatelessWidget {
         Semantics(
           label: '${item.count} pendientes',
           excludeSemantics: true,
-          child: StatusPill(
-            label: item.count! > 99 ? '99+' : '${item.count}',
-            tone: item.urgent ? PillTone.attention : PillTone.neutral,
-          ),
+          child: _ActionCount(item: item),
         ),
         const SizedBox(width: 6),
       ],
@@ -92,4 +105,29 @@ class _ActionTrailing extends StatelessWidget {
       ),
     ],
   );
+}
+
+class _ActionCount extends StatelessWidget {
+  const _ActionCount({required this.item});
+  final MenuItem item;
+  @override
+  Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+      decoration: BoxDecoration(
+        color: item.urgent
+            ? context.palette.warning
+            : colors.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(9),
+      ),
+      child: Text(
+        item.count! > 99 ? '99+' : '${item.count}',
+        style: Theme.of(context).textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+          color: item.urgent ? colors.surface : colors.onSurface,
+        ),
+      ),
+    );
+  }
 }

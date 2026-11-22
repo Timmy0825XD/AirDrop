@@ -8,9 +8,11 @@ class RequesterProfileIdentity extends StatelessWidget {
     super.key,
     required this.user,
     required this.onEdit,
+    this.minInlineWidth = 300,
   });
   final PublicUser user;
   final VoidCallback onEdit;
+  final double minInlineWidth;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
@@ -18,7 +20,8 @@ class RequesterProfileIdentity extends StatelessWidget {
       final details = _IdentityDetails(user: user, onEdit: onEdit);
       final avatar = _ProfileAvatar(name: user.fullName);
       final stacked =
-          box.maxWidth < 300 || MediaQuery.textScalerOf(context).scale(16) > 22;
+          box.maxWidth < minInlineWidth ||
+          MediaQuery.textScalerOf(context).scale(16) > 22;
       return stacked
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -58,9 +61,9 @@ class _IdentityDetails extends StatelessWidget {
       ),
       const SizedBox(height: 4),
       Text(
-        user.role == UserRole.dispatcher
-            ? 'Despachador'
-            : 'Tu cuenta de AirDrop',
+        user.isRequester
+            ? 'Tu cuenta de AirDrop'
+            : ProfileLabels.role(user.role),
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),

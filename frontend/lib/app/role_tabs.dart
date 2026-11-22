@@ -60,10 +60,6 @@ class RoleTabs {
         UserRole.admin => _admin(context),
       };
 
-  static const _home = NavDestination(
-    icon: Icons.space_dashboard_rounded,
-    label: 'Inicio',
-  );
   static const _profile = NavDestination(
     icon: Icons.person_outline_rounded,
     label: 'Perfil',
@@ -124,18 +120,21 @@ class RoleTabs {
     final flying = ref.watch(fleetFlightsProvider).value?.length;
     return RoleTabs(
       destinations: const [
-        _home,
-        NavDestination(icon: Icons.flight_rounded, label: 'Flota'),
-        NavDestination(icon: Icons.hexagon_rounded, label: 'Geovallas'),
-        _profile,
+        NavDestination(icon: AppIcons.home, label: 'Inicio'),
+        NavDestination(icon: AppIcons.drone, label: 'Flota'),
+        NavDestination(icon: AppIcons.geofences, label: 'Geovallas'),
+        NavDestination(icon: AppIcons.profile, label: 'Perfil'),
       ],
       paths: const ['/home', '/fleet', '/geofences', '/profile'],
       centerPath: '/fleet/flights',
       center: NavCenterAction(
-        icon: Icons.radar_rounded,
+        icon: AppIcons.radar,
         label: 'Mapa en vivo',
         tabLabel: 'Mapa',
         badge: flying,
+        badgeLabel: flying == null
+            ? null
+            : '$flying ${flying == 1 ? 'dron' : 'drones'} en misión',
         onPressed: () => context.go('/fleet/flights'),
       ),
     );

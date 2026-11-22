@@ -3,26 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/auto_refresh.dart';
-import '../../../core/widgets/status_pill.dart';
 import '../../analytics/data/analytics_models.dart';
 import '../../auth/data/auth_models.dart';
-import '../../fleet/data/fleet_models.dart';
 import '../../fleet/data/fleet_providers.dart';
-import 'widgets/operator/dashboard_period.dart';
-import 'widgets/operator/operator_dashboard.dart';
-import 'widgets/home_grid.dart';
-import 'widgets/home_header.dart';
-import 'widgets/home_page.dart';
-import 'widgets/home_spotlight.dart';
+import 'widgets/operator/operator_home_page.dart';
+import 'widgets/operator/operator_home_values.dart';
 import '../../notifications/data/notice_providers.dart';
 
-/// Inicio del operador de flota: sus centrales, los drones disponibles de
-/// **todas** ellas como cifra principal (el anillo dice qué parte de la
-/// flota está lista), el tablero de la flota (uso, salud e incidentes del
-/// periodo, `GET /fleet/dashboard`). Flota y Geovallas no se repiten: están
-/// en la barra. Los drones se refrescan
-/// cada 10 s: sin eso, un dron que despegaba o aterrizaba seguía en su
-/// estado viejo hasta recargar la app.
+/// La operación abarca todas las centrales; una revisión abre la del dron.
 class FleetOperatorHome extends ConsumerStatefulWidget {
   const FleetOperatorHome({super.key, required this.user});
 
@@ -33,69 +21,53 @@ class FleetOperatorHome extends ConsumerStatefulWidget {
 }
 
 class _FleetOperatorHomeState extends ConsumerState<FleetOperatorHome> {
-  /// El periodo del tablero, como en las métricas del administrador.
   int _days = 30;
+
+  void _refresh() {
+    ref.invalidate(assignedHubsProvider);
+    ref.invalidate(operatorDronesProvider);
+    ref.invalidate(fleetFlightsProvider);
+    ref.invalidate(unreadCountProvider);
+    ref.invalidate(fleetDashboardProvider(AnalyticsQuery.lastDays(_days)));
+    if (ref.read(fleetModelsProvider).hasError) {
+      ref.invalidate(fleetModelsProvider);
+    }
+  }
+
+  void _open(String path) {
+    if (['/fleet', '/fleet/flights', '/profile'].contains(path)) {
+      context.go(path);
+    } else {
+      context.push(path);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final user = widget.user;
-    final hub = ref.watch(effectiveHubProvider);
-    final hubs = ref.watch(assignedHubsProvider).value;
-    final drones = ref.watch(operatorDronesProvider).value;
-    final dashboard = ref.watch(
-      fleetDashboardProvider(AnalyticsQuery.lastDays(_days)),
+    final data = OperatorHomeValues(
+      hubs: ref.watch(assignedHubsProvider),
+      drones: ref.watch(operatorDronesProvider),
+      flights: ref.watch(fleetFlightsProvider),
+      dashboard: ref.watch(
+        fleetDashboardProvider(AnalyticsQuery.lastDays(_days)),
+      ),
+      models: ref.watch(fleetModelsProvider).value ?? const [],
     );
-    int? count(bool Function(DroneStatus s) test) =>
-        drones?.where((d) => test(d.status)).length;
-    final available = count((s) => s == DroneStatus.available);
-    final total = drones?.length ?? 0;
     return AutoRefresh(
-      onTick: () {
-        ref.invalidate(operatorDronesProvider);
-        ref.invalidate(fleetFlightsProvider);
-        ref.invalidate(unreadCountProvider);
-      },
-      child: HomePage(
-        children: [
-          HomeHeader(
-            roleLabel: 'Operador de flota',
-            fullName: user.fullName,
-            tagline: _tagline(hub?.name, hubs?.length),
-            onProfile: () => context.go('/profile'),
-            onNotices: () => context.push('/notifications'),
-            unreadNotices: ref.watch(unreadCountProvider).value,
-          ),
-          const SizedBox(height: 8),
-          HomeSpotlight(
-            value: available,
-            label: 'Drones\ndisponibles',
-            progress: total == 0 ? 0 : (available ?? 0) / total,
-            status: StatusPill(
-              label: (available ?? 0) > 0 ? 'Flota lista' : 'Sin drones libres',
-              tone: (available ?? 0) > 0
-                  ? PillTone.positive
-                  : PillTone.attention,
-            ),
-          ),
-          const HomeLabel('Tablero de la flota'),
-          DashboardPeriod(
-            days: _days,
-            onDays: (days) => setState(() => _days = days),
-          ),
-          const SizedBox(height: 12),
-          // Flota y Geovallas ya están en la barra: el inicio no las repite.
-          OperatorDashboard(
-            state: dashboard,
-            onOpenFleet: () => context.go('/fleet'),
-          ),
-        ],
+      onTick: _refresh,
+      child: OperatorHomePage(
+        data: data,
+        fullName: widget.user.fullName,
+        unread: ref.watch(unreadCountProvider).value,
+        days: _days,
+        onDays: (days) => setState(() => _days = days),
+        onOpen: _open,
+        onRetry: _refresh,
+        onDrone: (drone) {
+          ref.read(fleetHubProvider.notifier).select(drone.hubId);
+          _open('/fleet');
+        },
       ),
     );
-  }
-
-  static String _tagline(String? hubName, int? hubCount) {
-    if (hubCount == 0) return 'Sin centrales asignadas';
-    if (hubName == null) return 'Cargando tus centrales…';
-    return hubCount == 1 ? hubName : '$hubName y ${hubCount! - 1} más';
   }
 }

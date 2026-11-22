@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/api_exception.dart';
-import '../../../../../core/widgets/message_view.dart';
+import '../../../../../core/widgets/corridor_art.dart';
+import '../../../../../theme/app_icons.dart';
 import '../../../../fleet/data/fleet_dashboard_models.dart';
-import 'fleet_health_card.dart';
-import 'fleet_incidents_card.dart';
-import 'fleet_usage_card.dart';
+import '../home_status_card.dart';
+import 'operator_period_summary.dart';
 import '../../../../../core/widgets/skeleton.dart';
 
 /// El tablero de la flota en el inicio del operador (CU-20): uso, salud e
@@ -17,28 +17,38 @@ class OperatorDashboard extends StatelessWidget {
     super.key,
     required this.state,
     required this.onOpenFleet,
+    this.onRetry,
   });
 
   final AsyncValue<FleetDashboard> state;
   final VoidCallback onOpenFleet;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
-    return switch (state) {
-      AsyncValue(hasValue: true, hasError: false, :final value?) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          FleetUsageCard(dashboard: value),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (state.hasError) ...[
+          HomeStatusCard(
+            title: 'Métricas sin actualizar',
+            message: ApiException.messageOf(state.error!),
+            icon: AppIcons.unavailable,
+            scene: CorridorScene.broken,
+            action: onRetry == null
+                ? null
+                : TextButton(
+                    onPressed: onRetry,
+                    child: const Text('Actualizar métricas'),
+                  ),
+          ),
           const SizedBox(height: 12),
-          FleetHealthCard(dashboard: value, onOpenFleet: onOpenFleet),
-          const SizedBox(height: 12),
-          FleetIncidentsCard(dashboard: value),
         ],
-      ),
-      AsyncError(:final error) => MessageView.error(
-        message: ApiException.messageOf(error),
-      ),
-      _ => const Padding(padding: EdgeInsets.all(24), child: SkeletonList()),
-    };
+        if (state.value case final dashboard?)
+          OperatorPeriodSummary(dashboard: dashboard, onOpenFleet: onOpenFleet)
+        else if (!state.hasError)
+          const SkeletonList(),
+      ],
+    );
   }
 }

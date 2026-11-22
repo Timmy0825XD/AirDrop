@@ -3,12 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
-import '../../../core/widgets/auth_morph_button.dart';
-import '../../home/presentation/widgets/section_form_page.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../data/geofence_models.dart';
 import '../data/geofence_providers.dart';
-import 'widgets/geofence_form_sheet.dart';
+import 'widgets/geofence_form_page.dart';
 import 'widgets/geofence_form_values.dart';
 
 /// Alta y edición de una geovalla operativa (RF-21, CU-18), del operador.
@@ -43,6 +41,7 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
   }
 
   Future<void> _submit() async {
+    if (_isLoading) return;
     final original = widget.original;
     final errors = _values.validate();
     setState(() {
@@ -87,26 +86,15 @@ class _GeofenceFormScreenState extends ConsumerState<GeofenceFormScreen> {
   @override
   Widget build(BuildContext context) {
     final original = widget.original;
-    return SectionFormPage(
-      header: SectionHeader(
-        title: original == null ? 'Nueva geovalla' : 'Editar geovalla',
-        subtitle:
-            original?.name ?? 'Una zona operativa por donde el dron no pasa',
-        onBack: () => SectionHeader.backOrHome(context),
-      ),
-      card: GeofenceFormSheet(
-        values: _values,
-        errors: _errors,
-        shakeCount: _shakeCount,
-        isEdit: original != null,
-        onChanged: () => setState(() {}),
-      ),
-      button: AuthMorphButton(
-        label: original == null ? 'Crear geovalla' : 'Guardar cambios',
-        loadingLabel: 'Guardando la geovalla',
-        isLoading: _isLoading,
-        onPressed: _submit,
-      ),
+    return GeofenceFormPage(
+      values: _values,
+      errors: _errors,
+      shakeCount: _shakeCount,
+      isEdit: original != null,
+      loading: _isLoading,
+      onChanged: () => setState(() {}),
+      onBack: () => SectionHeader.backOrHome(context),
+      onSubmit: _submit,
     );
   }
 }

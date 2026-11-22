@@ -7,15 +7,22 @@ import 'requester_profile_group.dart';
 import 'requester_profile_values.dart';
 
 class RequesterProfileInformation extends StatelessWidget {
-  const RequesterProfileInformation({super.key, required this.onOpen});
+  const RequesterProfileInformation({
+    super.key,
+    required this.onOpen,
+    this.includeAllergies = true,
+    this.personalSubtitle = 'Nombre y documento',
+  });
   final ValueChanged<ProfileDataGroup> onOpen;
+  final bool includeAllergies;
+  final String personalSubtitle;
 
   @override
   Widget build(BuildContext context) => RequesterProfileGroup(
     items: [
       MenuItem(
         title: 'Datos personales',
-        subtitle: 'Nombre y documento',
+        subtitle: personalSubtitle,
         icon: AppIcons.profile,
         onTap: () => onOpen(ProfileDataGroup.personal),
       ),
@@ -25,12 +32,13 @@ class RequesterProfileInformation extends StatelessWidget {
         icon: AppIcons.contact,
         onTap: () => onOpen(ProfileDataGroup.contact),
       ),
-      MenuItem(
-        title: 'Alergias registradas',
-        subtitle: 'Consultar la información guardada',
-        icon: AppIcons.allergies,
-        onTap: () => onOpen(ProfileDataGroup.allergies),
-      ),
+      if (includeAllergies)
+        MenuItem(
+          title: 'Alergias registradas',
+          subtitle: 'Consultar la información guardada',
+          icon: AppIcons.allergies,
+          onTap: () => onOpen(ProfileDataGroup.allergies),
+        ),
     ],
   );
 }

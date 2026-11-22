@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/clock/sim_clock.dart';
-import '../../../../core/widgets/ring_gauge.dart';
+import '../../../../theme/app_icons.dart';
 import '../../../../core/widgets/status_pill.dart';
 import '../../data/fleet_models.dart';
 
@@ -16,7 +16,7 @@ String lastFlightLabel(DateTime? endedAt, DateTime now) {
   return 'Volvió hace ${hours ~/ 24} d';
 }
 
-/// La salud del dron en su fila (§15, CU-17): la batería en un anillo,
+/// La salud del dron en su fila (§15, CU-17): batería y compartimento de frío,
 /// cuándo volvió, los vuelos desde la revisión y, si toca, "Le toca
 /// revisión" (sigue volando) o "Mantenimiento vencido" (la fecha pasó).
 class DroneHealth extends StatelessWidget {
@@ -41,11 +41,15 @@ class DroneHealth extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         if (battery != null) _Battery(percent: battery),
-        Text(
-          '${lastFlightLabel(drone.lastFlightEndedAt, simClock.now())} · '
-          '$flights',
-          style: muted,
-        ),
+        _ColdFlag(installed: drone.coldCompartment),
+        if (drone.lastFlightEndedAt != null ||
+            drone.flightsSinceMaintenance > 0 ||
+            cycles != null)
+          Text(
+            '${lastFlightLabel(drone.lastFlightEndedAt, simClock.now())} · '
+            '$flights',
+            style: muted,
+          ),
         if (drone.maintenanceOverdue)
           const StatusPill(
             label: 'Mantenimiento vencido',
@@ -58,7 +62,7 @@ class DroneHealth extends StatelessWidget {
   }
 }
 
-/// La batería en un anillo pequeño con el porcentaje adentro.
+/// Lectura compacta de batería con el icono y el porcentaje a su lado.
 class _Battery extends StatelessWidget {
   const _Battery({required this.percent});
 
@@ -69,18 +73,43 @@ class _Battery extends StatelessWidget {
     return Semantics(
       label: 'Batería ${percent.round()} %',
       excludeSemantics: true,
-      child: RingGauge(
-        progress: percent / 100,
-        size: 32,
-        stroke: 3,
-        child: Text(
-          '${percent.round()}',
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            letterSpacing: 0,
-            fontFeatures: const [FontFeature.tabularFigures()],
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(AppIcons.battery, size: 18),
+          const SizedBox(width: 6),
+          Text(
+            '${percent.round()} %',
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              letterSpacing: 0,
+              fontFeatures: const [FontFeature.tabularFigures()],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
+}
+
+class _ColdFlag extends StatelessWidget {
+  const _ColdFlag({required this.installed});
+  final bool installed;
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Icon(
+        AppIcons.coldChain,
+        size: 17,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      ),
+      const SizedBox(width: 6),
+      Flexible(
+        child: Text(
+          installed ? 'Con frío' : 'Sin compartimento de frío',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ),
+    ],
+  );
 }

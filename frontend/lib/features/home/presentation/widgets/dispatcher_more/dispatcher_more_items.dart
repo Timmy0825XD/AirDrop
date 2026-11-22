@@ -12,8 +12,7 @@ List<MenuItem> dispatcherOrderItems(MoreOpen open, DispatcherCounts? counts) =>
         title: 'Traslados entrantes',
         subtitle: 'Lo que otras centrales te envían',
         icon: AppIcons.incoming,
-        count: counts?.toReceive,
-        urgent: true,
+        count: counts?.incoming,
         onTap: open('/orders/incoming'),
       ),
       MenuItem(
@@ -27,7 +26,7 @@ List<MenuItem> dispatcherOrderItems(MoreOpen open, DispatcherCounts? counts) =>
       MenuItem(
         title: 'Vuelos en curso',
         subtitle: 'Ida, entrega o regreso',
-        icon: AppIcons.flight,
+        icon: AppIcons.drone,
         count: counts?.inFlight,
         onTap: open('/orders/in-flight'),
       ),

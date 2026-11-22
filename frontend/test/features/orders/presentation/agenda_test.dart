@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/features/notifications/data/notice_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/core/clock/sim_clock.dart';
@@ -10,7 +11,6 @@ import 'package:frontend/features/orders/presentation/agenda_screen.dart';
 import 'package:frontend/features/orders/presentation/widgets/agenda/agenda_content.dart';
 import 'package:frontend/features/orders/presentation/widgets/agenda/agenda_day_bar.dart';
 import 'package:frontend/features/orders/presentation/widgets/agenda/agenda_page.dart';
-import 'package:frontend/features/orders/presentation/order_format.dart';
 import 'package:frontend/theme/app_palette.dart';
 
 AgendaOrder _entry(
@@ -109,6 +109,25 @@ void main() {
     ),
   );
   tearDown(simClock.reset);
+
+  testWidgets('un error al actualizar conserva la agenda del día y su acceso', (
+    tester,
+  ) async {
+    final opened = <String>[];
+    await _pump(
+      tester,
+      _content(
+        day: _day([_entry('known')]),
+        error: 'Sin conexión',
+        onOpen: opened.add,
+      ),
+    );
+    expect(find.textContaining('Últimos datos disponibles'), findsOneWidget);
+    await tester.ensureVisible(find.text('Revisar entrega'));
+    await tester.tap(find.text('Revisar entrega'));
+    expect(opened, ['known']);
+    expect(find.text('Un día sin entregas'), findsNothing);
+  });
 
   test('cambiar de día conserva el calendario al cruzar meses y años', () {
     expect(shiftIsoDate('2026-12-31', 1), '2027-01-01');
@@ -226,9 +245,7 @@ void main() {
       );
       await tester.tap(find.byTooltip('Día anterior'));
       await tester.tap(find.byTooltip('Día siguiente'));
-      await tester.tap(
-        find.text(capitalized(formatDay('2026-11-22', relative: false))),
-      );
+      await tester.tap(find.text('Elegir fecha'));
       await tester.tap(find.text('Volver a hoy'));
       expect(dates, ['2026-11-21', '2026-11-23', '2026-11-21']);
       expect(picked, 1);
@@ -243,6 +260,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            unreadCountProvider.overrideWith((ref) async => 0),
             agendaProvider.overrideWith((ref, date) async {
               requests.add(date);
               return AgendaDay(

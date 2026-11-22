@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/widgets/sliding_segmented.dart';
+import '../../../../../theme/app_icons.dart';
 
-/// Los periodos del tablero, los mismos de las métricas del administrador,
-/// en el filtro segmentado de la app.
+/// El selector compacto del diseño aprobado conserva los mismos periodos.
 class DashboardPeriod extends StatelessWidget {
   const DashboardPeriod({super.key, required this.days, required this.onDays});
 
@@ -12,14 +11,38 @@ class DashboardPeriod extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SlidingSegmented<int>(
-      options: const [
-        SegmentOption(7, '7 días'),
-        SegmentOption(30, '30 días'),
-        SegmentOption(90, '90 días'),
+    return PopupMenuButton<int>(
+      tooltip: 'Cambiar periodo',
+      initialValue: days,
+      onSelected: onDays,
+      itemBuilder: (_) => [
+        for (final value in [7, 30, 90])
+          PopupMenuItem(value: value, child: Text('Últimos $value días')),
       ],
-      selected: days,
-      onChanged: onDays,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 44),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Últimos $days días',
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            const SizedBox(width: 6),
+            const RotatedBox(
+              quarterTurns: 1,
+              child: Icon(AppIcons.next, size: 16),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

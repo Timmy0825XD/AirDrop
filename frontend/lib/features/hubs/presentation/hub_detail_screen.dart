@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/content_page.dart';
+import '../../../core/widgets/compact_form_header.dart';
 import '../../../core/widgets/glass_card.dart';
 import '../../../core/widgets/message_view.dart';
 import '../../../core/widgets/skeleton.dart';
@@ -52,6 +53,11 @@ class HubDetailScreen extends ConsumerWidget {
     return ContentPage(
       title: 'Mi central',
       subtitle: 'Información de tu central.',
+      header: CompactFormHeader(
+        title: 'Mi central',
+        subtitle: 'Información de tu central.',
+        onBack: () => context.canPop() ? context.pop() : context.go('/more'),
+      ),
       onBack: () => context.canPop() ? context.pop() : context.go('/more'),
       onRefresh: () async => retry(),
       slivers: [SliverToBoxAdapter(child: body)],

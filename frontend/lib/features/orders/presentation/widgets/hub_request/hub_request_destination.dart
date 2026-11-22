@@ -13,7 +13,7 @@ class HubRequestDestination extends StatelessWidget {
       Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(AppIcons.hub),
+          const Icon(AppIcons.destination, size: 30),
           const SizedBox(width: 12),
           Expanded(
             child: Column(

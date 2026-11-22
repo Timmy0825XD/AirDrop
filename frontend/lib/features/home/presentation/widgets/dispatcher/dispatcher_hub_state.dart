@@ -4,7 +4,7 @@ import '../../../../../core/widgets/corridor_art.dart';
 import '../../../../../core/widgets/skeleton.dart';
 import '../../../../../theme/app_icons.dart';
 import 'dispatcher_home_values.dart';
-import 'dispatcher_status_card.dart';
+import '../home_status_card.dart';
 import 'hub_notice.dart';
 
 class DispatcherHubState extends StatelessWidget {
@@ -25,7 +25,7 @@ class DispatcherHubState extends StatelessWidget {
       );
     }
     final failed = data.hubFailed;
-    return DispatcherStatusCard(
+    return HomeStatusCard(
       title: failed
           ? 'No pudimos consultar tu central'
           : data.hub.value == null

@@ -86,7 +86,7 @@ void main() {
   testWidgets('la fila marca la revisión y el vencido', (tester) async {
     await _pump(tester, DroneHealth(drone: _drone(DroneStatus.available)));
     expect(find.textContaining('42 / 50 vuelos'), findsOneWidget);
-    expect(find.text('86'), findsOneWidget);
+    expect(find.text('86 %'), findsOneWidget);
     expect(find.text('Le toca revisión'), findsNothing);
 
     await _pump(

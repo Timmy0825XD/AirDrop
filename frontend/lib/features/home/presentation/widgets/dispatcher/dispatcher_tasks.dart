@@ -5,7 +5,8 @@ import '../../../../../core/widgets/skeleton.dart';
 import '../../../../../theme/app_icons.dart';
 import '../home_section_heading.dart';
 import 'dispatcher_home_values.dart';
-import 'dispatcher_status_card.dart';
+import '../home_status_card.dart';
+import '../operator/operator_empty_card.dart';
 import 'dispatcher_task_card.dart';
 
 class DispatcherTasks extends StatelessWidget {
@@ -25,7 +26,7 @@ class DispatcherTasks extends StatelessWidget {
     children: [
       const HomeSectionHeading(title: 'Para atender ahora'),
       if (data.error case final error?)
-        DispatcherStatusCard(
+        HomeStatusCard(
           title: 'No pudimos actualizar tus pendientes',
           message: error,
           icon: AppIcons.unavailable,
@@ -41,11 +42,9 @@ class DispatcherTasks extends StatelessWidget {
           child: const Skeleton(height: 180, radius: 20),
         )
       else if (!data.loading && data.error == null && data.tasks.isEmpty)
-        const DispatcherStatusCard(
+        const OperatorEmptyCard(
           title: 'Todo al día',
-          message:
-              'No tienes urgencias, cargas ni traslados por recibir. '
-              'Aquí verás lo próximo por atender.',
+          message: 'No tienes urgencias, cargas ni traslados por recibir.',
         ),
       for (final (index, task) in data.tasks.indexed) ...[
         if (index > 0) const SizedBox(height: 12),

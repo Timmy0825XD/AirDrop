@@ -2,21 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api_exception.dart';
-import '../../../core/field_limits.dart';
 import '../../../core/validators.dart';
 import '../../../core/widgets/app_snack.dart';
-import '../../../core/widgets/form_sheet_card.dart';
-import '../../../core/widgets/message_view.dart';
-import '../../../core/widgets/auth_field.dart';
-import '../../../core/widgets/auth_morph_button.dart';
-import '../../home/presentation/widgets/section_form_page.dart';
+import '../../../core/widgets/content_page.dart';
+import '../../../theme/app_icons.dart';
+import '../../home/presentation/widgets/home_status_card.dart';
+import 'widgets/drone_form/drone_form_page.dart';
+import 'widgets/drone_form/drone_form_header.dart';
 import '../../home/presentation/widgets/section_header.dart';
 import '../../hubs/data/hub_models.dart';
 import '../data/fleet_models.dart';
 import '../data/fleet_providers.dart';
-import 'widgets/drone_form/cold_compartment_switch.dart';
 import 'widgets/drone_form_values.dart';
-import 'widgets/drone_model_field.dart';
 import '../../../core/widgets/skeleton.dart';
 
 /// Alta de dron (`/fleet/new`).
@@ -71,72 +68,73 @@ class _DroneFormScreenState extends ConsumerState<DroneFormScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final hubs = ref.watch(assignedHubsProvider);
     final hub = ref.watch(effectiveHubProvider);
     final models = ref.watch(fleetModelsProvider);
-    final header = SectionHeader(
-      title: 'Nuevo dron',
-      subtitle: hub == null ? 'Para tu central' : 'Para ${hub.name}',
-      onBack: () => SectionHeader.backOrHome(context),
-    );
-    final message = switch (models) {
-      _ when hub == null => 'No tienes centrales asignadas.',
-      AsyncValue(hasValue: true, hasError: false, :final value?)
-          when value.isEmpty =>
-        'No hay modelos de dron disponibles.',
-      AsyncError(:final error) => ApiException.messageOf(error),
-      _ => null,
-    };
-    if (message != null || models.value == null) {
-      return SectionStatePage(
-        header: header,
-        body: message == null
-            ? const SkeletonDetail()
-            : MessageView(icon: Icons.flight_rounded, message: message),
-      );
-    }
-    return _form(header, hub!, models.value!);
-  }
-
-  Widget _form(Widget header, Hub hub, List<DroneModel> models) {
-    // Con un solo modelo no hay nada que elegir.
-    if (models.length == 1) _values.droneModelId ??= models.single.id;
-    return SectionFormPage(
-      header: header,
-      card: FormSheetCard(
-        children: [
-          AuthField(
-            label: 'Identificador',
-            hint: 'Ej.: D-07',
-            controller: _values.identifier,
-            maxLength: FieldLimits.droneIdentifier,
-            errorText: _identifierError,
-            shakeCount: _shakeCount,
-          ),
-          const SizedBox(height: 16),
-          DroneModelField(
-            models: models,
-            selectedId: _values.droneModelId,
-            coldCompartment: _values.coldCompartment,
-            errorText: _modelError,
-            shakeCount: _shakeCount,
-            onChanged: (id) => setState(() {
-              _values.droneModelId = id;
-              _modelError = null;
-            }),
-          ),
-          const SizedBox(height: 16),
-          ColdCompartmentSwitch(
-            value: _values.coldCompartment,
-            onChanged: (on) => setState(() => _values.coldCompartment = on),
+    final waiting = !hubs.hasValue && !hubs.hasError;
+    final problem = hubs.hasError && hubs.value == null
+        ? ApiException.messageOf(hubs.error!)
+        : hub == null && !waiting
+        ? 'No tienes centrales asignadas.'
+        : models.hasError && models.value == null
+        ? ApiException.messageOf(models.error!)
+        : models.value?.isEmpty == true
+        ? 'No hay modelos de dron disponibles.'
+        : null;
+    if (waiting || hub == null || models.value == null || problem != null) {
+      return ContentPage(
+        header: DroneFormHeader(
+          hubName: hub?.name ?? 'Drones de tus centrales',
+          onBack: () => SectionHeader.backOrHome(context),
+        ),
+        title: 'Nuevo dron',
+        subtitle: hub?.name ?? 'Drones de tus centrales',
+        onBack: () => SectionHeader.backOrHome(context),
+        slivers: [
+          SliverToBoxAdapter(
+            child: problem == null
+                ? const SkeletonDetail()
+                : HomeStatusCard(
+                    title: 'No pudimos abrir el formulario',
+                    message: problem,
+                    icon: AppIcons.drone,
+                    action: TextButton(
+                      onPressed: () {
+                        ref.invalidate(assignedHubsProvider);
+                        ref.invalidate(fleetModelsProvider);
+                      },
+                      child: const Text('Reintentar'),
+                    ),
+                  ),
           ),
         ],
-      ),
-      button: AuthMorphButton(
-        label: 'Agregar dron',
-        loadingLabel: 'Agregando el dron',
-        isLoading: _isLoading,
-        onPressed: hub.isActive ? () => _submit(hub) : null,
-      ),
+      );
+    }
+    return _form(hub, models.value!);
+  }
+
+  Widget _form(Hub hub, List<DroneModel> models) {
+    if (models.length == 1) {
+      _values.droneModelId ??= models.single.id;
+    }
+    return DroneFormPage(
+      hubName: hub.name,
+      active: hub.isActive,
+      models: models,
+      identifier: _values.identifier,
+      selectedId: _values.droneModelId,
+      cold: _values.coldCompartment,
+      loading: _isLoading,
+      shakeCount: _shakeCount,
+      identifierError: _identifierError,
+      modelError: _modelError,
+      onModel: (id) => setState(() {
+        _values.droneModelId = id;
+        _modelError = null;
+      }),
+      onCold: (value) => setState(() => _values.coldCompartment = value),
+      onBack: () => SectionHeader.backOrHome(context),
+      onSubmit: hub.isActive ? () => _submit(hub) : null,
     );
   }
 }

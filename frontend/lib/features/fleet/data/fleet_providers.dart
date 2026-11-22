@@ -61,7 +61,7 @@ final fleetHubProvider = NotifierProvider<FleetHubNotifier, String?>(
 /// Riverpod. Si la central elegida desaparece de la lista, se vuelve a la
 /// primera.
 final effectiveHubProvider = Provider<Hub?>((ref) {
-  final hubs = ref.watch(assignedHubsProvider).asData?.value;
+  final hubs = ref.watch(assignedHubsProvider).value;
   if (hubs == null || hubs.isEmpty) return null;
 
   final selected = ref.watch(fleetHubProvider);
@@ -80,7 +80,7 @@ final fleetModelsProvider = FutureProvider<List<DroneModel>>((ref) {
 /// Drones de la central efectiva. Sin central no se consulta nada: mandar
 /// `GET /fleet/drones` sin `hubId` responde `400 La central no es válida.`
 final dronesProvider = FutureProvider<List<Drone>>((ref) {
-  final hubId = ref.watch(effectiveHubProvider)?.id;
+  final hubId = ref.watch(effectiveHubProvider.select((hub) => hub?.id));
   if (hubId == null) return const <Drone>[];
   return ref.watch(fleetRepositoryProvider).listDrones(hubId);
 });
@@ -106,6 +106,7 @@ class CreateDroneNotifier extends AsyncNotifier<Drone?> {
   Future<Drone> create(CreateDroneRequest request) async {
     final drone = await ref.read(fleetRepositoryProvider).create(request);
     ref.invalidate(dronesProvider);
+    ref.invalidate(operatorDronesProvider);
     state = AsyncData(drone);
     return drone;
   }
@@ -126,6 +127,8 @@ class UpdateDroneStatusNotifier extends AsyncNotifier<Drone?> {
         .read(fleetRepositoryProvider)
         .updateStatus(id, request);
     ref.invalidate(dronesProvider);
+    ref.invalidate(operatorDronesProvider);
+    ref.invalidate(fleetDashboardProvider);
     ref.invalidate(maintenanceHistoryProvider(id));
     state = AsyncData(drone);
     return drone;
@@ -148,6 +151,8 @@ class RegisterMaintenanceNotifier extends AsyncNotifier<Drone?> {
         .read(fleetRepositoryProvider)
         .registerMaintenance(id, request);
     ref.invalidate(dronesProvider);
+    ref.invalidate(operatorDronesProvider);
+    ref.invalidate(fleetDashboardProvider);
     ref.invalidate(maintenanceHistoryProvider(id));
     state = AsyncData(drone);
     return drone;
@@ -173,7 +178,6 @@ final hubDronesProvider = FutureProvider.family<List<Drone>, String>((
 ) {
   return ref.watch(fleetRepositoryProvider).listDrones(hubId);
 });
-
 
 /// Vuelos en curso de **todas** las centrales del operador, para que siga
 /// el mapa de cada dron en misión y el contador de la barra no se quede

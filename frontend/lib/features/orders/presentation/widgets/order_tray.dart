@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/api_exception.dart';
 import '../../../../core/widgets/auto_refresh.dart';
+import '../../../../core/widgets/compact_form_header.dart';
 import '../../../../core/widgets/content_page.dart';
 import 'tray_content.dart';
 
@@ -23,6 +24,8 @@ class OrderTray<T> extends StatelessWidget {
     this.emptyTitle = 'Todo al día',
     this.emptyAction,
     this.beforeList,
+    this.emptyBody,
+    this.groupOf,
   });
   final String title, idleSubtitle, emptyTitle, emptyText;
   final int titleMaxLines;
@@ -31,15 +34,20 @@ class OrderTray<T> extends StatelessWidget {
   final VoidCallback onRefresh;
   final IconData emptyIcon;
   final String Function(T) keyOf;
+  final String? Function(T)? groupOf;
   final Widget Function(BuildContext, T) itemBuilder;
-  final Widget? bottom, emptyAction, beforeList;
+  final Widget? bottom, emptyAction, beforeList, emptyBody;
   @override
   Widget build(BuildContext context) => AutoRefresh(
     onTick: onRefresh,
     child: ContentPage(
       title: title,
       subtitle: idleSubtitle,
-      onBack: () => context.canPop() ? context.pop() : context.go('/more'),
+      header: CompactFormHeader(
+        title: title,
+        subtitle: idleSubtitle,
+        onBack: () => context.canPop() ? context.pop() : context.go('/more'),
+      ),
       onRefresh: () async => onRefresh(),
       slivers: [_TraySlivers<T>(tray: this)],
     ),
@@ -62,7 +70,7 @@ class _TraySlivers<T> extends StatelessWidget {
             ),
           ),
         if (tray.beforeList != null) SliverToBoxAdapter(child: tray.beforeList),
-        if (count != null && count > 0)
+        if (count != null && count > 0 && tray.groupOf == null)
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.only(bottom: 12),
@@ -83,8 +91,10 @@ class _TraySlivers<T> extends StatelessWidget {
           emptyText: tray.emptyText,
           onRefresh: tray.onRefresh,
           emptyAction: tray.emptyAction,
+          emptyBody: tray.emptyBody,
           keyOf: tray.keyOf,
           itemBuilder: tray.itemBuilder,
+          groupOf: tray.groupOf,
         ),
       ],
     );

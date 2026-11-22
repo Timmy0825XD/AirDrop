@@ -58,7 +58,7 @@ class _RoleShellState extends ConsumerState<RoleShell> {
     final selected = tabs.indexOf(widget.location);
     final onTab = tabs.isTab(widget.location);
     final media = MediaQuery.of(context);
-    final floating = role == UserRole.requester || role == UserRole.dispatcher;
+    final floating = role != UserRole.admin;
     final inset = !onTab
         ? 0.0
         : floating
@@ -76,6 +76,7 @@ class _RoleShellState extends ConsumerState<RoleShell> {
         isTabRoot: onTab,
         child: AppMaxWidth(
           child: Stack(
+            fit: StackFit.expand,
             children: [
               NotificationListener<UserScrollNotification>(
                 onNotification: _onScroll,
@@ -106,6 +107,7 @@ class _RoleShellState extends ConsumerState<RoleShell> {
                 child: floating
                     ? (onTab
                           ? FloatingTabBar(
+                              translucent: role == UserRole.fleetOperator,
                               destinations: tabs.destinations,
                               selected: selected,
                               onSelect: (i) => context.go(tabs.paths[i]),

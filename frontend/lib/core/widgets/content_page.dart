@@ -12,12 +12,14 @@ class ContentPage extends StatelessWidget {
     this.onBack,
     this.onRefresh,
     this.trailing,
+    this.header,
   });
   final String title, subtitle;
   final List<Widget> slivers;
   final VoidCallback? onBack;
   final Future<void> Function()? onRefresh;
   final Widget? trailing;
+  final Widget? header;
   @override
   Widget build(BuildContext context) {
     final scroll = CustomScrollView(
@@ -27,12 +29,14 @@ class ContentPage extends StatelessWidget {
         SliverPadding(
           padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
           sliver: SliverToBoxAdapter(
-            child: ContentPageHeader(
-              title: title,
-              subtitle: subtitle,
-              onBack: onBack,
-              trailing: trailing,
-            ),
+            child:
+                header ??
+                ContentPageHeader(
+                  title: title,
+                  subtitle: subtitle,
+                  onBack: onBack,
+                  trailing: trailing,
+                ),
           ),
         ),
         SliverPadding(

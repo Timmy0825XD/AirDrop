@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/widgets/warning_banner.dart';
+import '../../../../../core/widgets/choice_pill.dart';
 import '../../../../../theme/app_icons.dart';
 import '../../../data/inventory_models.dart';
 import '../inventory_form_values.dart';
@@ -16,7 +17,6 @@ class InventorySaleField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -27,17 +27,10 @@ class InventorySaleField extends StatelessWidget {
           runSpacing: 8,
           children: [
             for (final type in SaleType.values)
-              ChoiceChip(
-                label: Text(type.label),
+              ChoicePill(
+                label: type.label,
                 selected: type == values.saleType,
-                showCheckmark: false,
-                selectedColor: colors.primary,
-                labelStyle: TextStyle(
-                  color: type == values.saleType
-                      ? colors.onPrimary
-                      : colors.onSurface,
-                ),
-                onSelected: (_) {
+                onTap: () {
                   values.saleType = type;
                   onChanged();
                 },
@@ -129,7 +122,14 @@ class _KindToggle extends StatelessWidget {
                   ? Theme.of(context).colorScheme.primary
                   : Theme.of(context).colorScheme.onSurfaceVariant,
             ),
-            const SizedBox(width: 12),
+            SizedBox(
+              height: 36,
+              child: VerticalDivider(
+                width: 28,
+                thickness: 1,
+                color: Theme.of(context).colorScheme.outline,
+              ),
+            ),
             Expanded(
               child: Text(title, style: Theme.of(context).textTheme.titleSmall),
             ),
@@ -137,7 +137,7 @@ class _KindToggle extends StatelessWidget {
           ],
         ),
         Padding(
-          padding: const EdgeInsets.only(left: 34),
+          padding: const EdgeInsets.only(left: 50),
           child: Text(subtitle, style: Theme.of(context).textTheme.bodySmall),
         ),
       ],
