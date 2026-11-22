@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../theme/app_icons.dart';
 
 /// La hoja de abajo del modo dibujar: cuántos vértices hay, qué falta, y
 /// los botones de deshacer y borrar todo.
@@ -38,17 +39,18 @@ class _DrawButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final empty = bar.count == 0;
-    return Row(
+    return Wrap(
+      spacing: 12,
+      runSpacing: 8,
       children: [
         OutlinedButton.icon(
           onPressed: empty ? null : bar.onUndo,
-          icon: const Icon(Icons.undo_rounded),
+          icon: const Icon(AppIcons.undo, size: 20),
           label: const Text('Deshacer'),
         ),
-        const SizedBox(width: 12),
         TextButton.icon(
           onPressed: empty ? null : bar.onClear,
-          icon: const Icon(Icons.delete_outline_rounded),
+          icon: const Icon(AppIcons.trash, size: 20),
           label: const Text('Borrar todo'),
         ),
       ],

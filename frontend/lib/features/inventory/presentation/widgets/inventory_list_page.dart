@@ -11,8 +11,10 @@ class InventoryListPage extends StatelessWidget {
     required this.content,
     required this.onRefresh,
     required this.onQuarantine,
+    this.brand,
   });
   final Widget header, content;
+  final Widget? brand;
   final Future<void> Function() onRefresh;
   final VoidCallback onQuarantine;
 
@@ -27,7 +29,15 @@ class InventoryListPage extends StatelessWidget {
           slivers: [
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
-              sliver: SliverToBoxAdapter(child: header),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (brand != null) ...[brand!, const SizedBox(height: 20)],
+                    header,
+                  ],
+                ),
+              ),
             ),
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -39,7 +49,7 @@ class InventoryListPage extends StatelessWidget {
                 child: HomeLink(
                   title: 'Cuarentena',
                   subtitle: 'Insumos devueltos que no regresaron al stock',
-                  icon: AppIcons.privacy,
+                  icon: AppIcons.orders,
                   onTap: onQuarantine,
                 ),
               ),

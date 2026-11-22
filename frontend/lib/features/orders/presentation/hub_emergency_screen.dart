@@ -6,6 +6,7 @@ import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../../../core/widgets/form_submit_button.dart';
 import '../../../core/widgets/form_section.dart';
+import '../../../core/widgets/compact_form_header.dart';
 import '../../../theme/app_icons.dart';
 import 'widgets/hub_request/hub_request_destination.dart';
 import '../data/order_models.dart';
@@ -16,6 +17,7 @@ import 'widgets/hub_request/hub_request_fields.dart';
 import 'widgets/order_form_scaffold.dart';
 import 'widgets/hub_request/hub_request_values.dart';
 import 'widgets/hub_request/transfer_map.dart';
+import 'widgets/hub_request/hub_transfer_preview.dart';
 
 /// Urgencia a otra central (`POST /orders/hub-emergencies`): tu central
 /// necesita ya un insumo que otra tiene. Primero el medicamento y después
@@ -41,6 +43,7 @@ class _HubEmergencyScreenState extends ConsumerState<HubEmergencyScreen> {
   }
 
   Future<void> _submit() async {
+    if (_sending) return;
     final errors = _values.validate(plan: false, medicationFirst: true);
     setState(() {
       _errors = errors;
@@ -69,6 +72,11 @@ class _HubEmergencyScreenState extends ConsumerState<HubEmergencyScreen> {
     return OrderFormScaffold<CatalogOffer>(
       title: 'Urgencia a otra central',
       subtitle: 'Pide un insumo para tu central.',
+      header: CompactFormHeader(
+        title: 'Urgencia a otra central',
+        subtitle: 'Pide un insumo para tu central.',
+        onBack: () => context.canPop() ? context.pop() : context.go('/more'),
+      ),
       source: ref.watch(catalogProvider),
       emptyIcon: AppIcons.medication,
       onRetry: () => ref.invalidate(catalogProvider),
@@ -93,10 +101,12 @@ class _HubEmergencyScreenState extends ConsumerState<HubEmergencyScreen> {
         ),
         const SizedBox(height: 24),
         HubRequestDestination(hub: ref.watch(myHubProvider).value),
-        ?transferMapOf(
-          origins: ref.watch(originHubsProvider).value,
-          originHubId: _values.originHubId,
-          mine: ref.watch(myHubProvider).value,
+        HubTransferPreview(
+          map: transferMapOf(
+            origins: ref.watch(originHubsProvider).value,
+            originHubId: _values.originHubId,
+            mine: ref.watch(myHubProvider).value,
+          ),
         ),
         const SizedBox(height: 14),
         const HubTransferNote(),
@@ -106,6 +116,12 @@ class _HubEmergencyScreenState extends ConsumerState<HubEmergencyScreen> {
         loadingLabel: 'Enviando la urgencia',
         loading: _sending,
         onPressed: _submit,
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(0, 54),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
       ),
     );
   }

@@ -1,125 +1,184 @@
 import 'package:flutter/material.dart';
-
 import '../../../../core/date_format.dart';
-import '../../../../core/widgets/row_action_button.dart';
-import '../../../../core/widgets/status_card.dart';
-import '../../../../core/widgets/tone_tile.dart';
+import '../../../../core/widgets/glass_card.dart';
 import '../../../../core/widgets/drone_glyph.dart';
+import '../../../../core/widgets/status_pill.dart';
+import '../../../../theme/app_icons.dart';
 import '../../data/fleet_models.dart';
 import 'drone_health.dart';
 import 'drone_status_chip.dart';
 
-/// Tarjeta de un dron: el dron dibujado, identificador, modelo y, si los
-/// trae, motivo y fecha del mantenimiento; a la derecha el estado y
-/// "Gestionar".
-///
-/// [onActions] es `null` cuando no se puede tocar: en misión (Nest
-/// responde 409), en tierra esperando el rescate (lo resuelve el sistema)
-/// o con la central suspendida (Nest responde 403). Ahí la tarjeta dice
-/// por qué en vez del botón.
 class DroneTile extends StatelessWidget {
   const DroneTile({
     super.key,
     required this.drone,
     required this.modelName,
     required this.onActions,
+    this.onFlight,
   });
-
   final Drone drone;
   final String? modelName;
-  final VoidCallback? onActions;
-
+  final VoidCallback? onActions, onFlight;
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final busy = drone.status.isInMission;
-    return StatusCard(
-      leading: ToneTile(
-        tone: busy ? colors.secondary : colors.primary,
-        child: DroneGlyph(
-          color: busy ? colors.secondary : colors.primary,
-          size: 28,
-        ),
-      ),
-      body: _DroneInfo(drone: drone, modelName: modelName),
-      status: DroneStatusChip(status: drone.status),
-      footer: DroneHealth(drone: drone),
-      action: onActions == null
-          ? Text(_lockedLabel(drone.status), style: theme.textTheme.labelSmall)
-          : RowActionButton(label: 'Gestionar', onPressed: onActions!),
-    );
-  }
+  Widget build(BuildContext context) => GlassCard(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _DroneHeading(drone: drone, modelName: modelName),
+        const SizedBox(height: 10),
+        _DroneDetails(drone: drone),
+        DroneHealth(drone: drone),
+        const SizedBox(height: 10),
+        const Divider(height: 1),
+        _DroneAction(drone: drone, onActions: onActions, onFlight: onFlight),
+      ],
+    ),
+  );
 }
 
-/// Por qué el dron no se puede gestionar: vuela, espera el rescate (lo
-/// resuelve el sistema) o la central está suspendida.
-String _lockedLabel(DroneStatus status) => switch (status) {
-  DroneStatus.inMission => 'En vuelo',
-  DroneStatus.grounded => 'Espera rescate',
-  _ => 'Sin cambios',
-};
-
-/// Los primeros 8 caracteres de un id, para nombrar un pedido sin
-/// mostrar el uuid entero.
-String shortId(String id) => id.length <= 8 ? id : id.substring(0, 8);
-
-class _DroneInfo extends StatelessWidget {
-  const _DroneInfo({required this.drone, required this.modelName});
-
+class _DroneHeading extends StatelessWidget {
+  const _DroneHeading({required this.drone, required this.modelName});
   final Drone drone;
   final String? modelName;
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      DroneGlyph(color: Theme.of(context).colorScheme.onSurface, size: 28),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Wrap(
+              alignment: WrapAlignment.spaceBetween,
+              spacing: 10,
+              runSpacing: 6,
+              children: [
+                Text(
+                  drone.identifier,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                _DroneState(status: drone.status),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              modelName ?? 'Modelo no disponible',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    ],
+  );
+}
 
+class _DroneState extends StatelessWidget {
+  const _DroneState({required this.status});
+  final DroneStatus status;
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final muted = theme.textTheme.bodySmall?.copyWith(
-      color: theme.colorScheme.onSurfaceVariant,
-    );
-    final reason = drone.maintenanceReason?.trim();
-    final until = drone.maintenanceUntil;
-    final order = drone.activeOrderId;
-    final note = [
-      // En misión: la fase y el pedido (id corto, sin datos clínicos).
-      if (drone.phase case final phase?) phase.label,
-      if (drone.coldCompartment) 'Con frío',
-      if (order != null) 'Pedido ${shortId(order)}',
-      if (reason != null && reason.isNotEmpty) 'Motivo: $reason',
-      if (until != null && until.isNotEmpty)
-        'Hasta el ${formatDay(until, relative: false)}',
-    ].join(' · ');
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    final colors = Theme.of(context).colorScheme;
+    final color = status == DroneStatus.inMission
+        ? colors.primary
+        : status == DroneStatus.maintenance
+        ? colors.secondary
+        : StatusPill.colorOf(context, DroneStatusChip.toneOf(status));
+    return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          drone.identifier,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontSize: 15,
-            fontWeight: FontWeight.w800,
+        Container(
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 5),
+        Flexible(
+          child: Text(
+            status.label,
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: color),
           ),
         ),
-        const SizedBox(height: 3),
-        Text(
-          modelName ?? 'Modelo no disponible',
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.primary,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        if (note.isNotEmpty) ...[
-          const SizedBox(height: 3),
-          Text(
-            note,
-            style: muted,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
       ],
     );
   }
 }
+
+class _DroneDetails extends StatelessWidget {
+  const _DroneDetails({required this.drone});
+  final Drone drone;
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      for (final text in [
+        if (drone.phase case final phase?) phase.label,
+        if (drone.maintenanceReason case final reason?
+            when reason.trim().isNotEmpty)
+          reason,
+        if (drone.maintenanceUntil case final date? when date.isNotEmpty)
+          'Fecha estimada · ${formatDay(date, relative: false)}',
+      ])
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Text(text, style: Theme.of(context).textTheme.bodySmall),
+        ),
+    ],
+  );
+}
+
+class _DroneAction extends StatelessWidget {
+  const _DroneAction({
+    required this.drone,
+    required this.onActions,
+    required this.onFlight,
+  });
+  final Drone drone;
+  final VoidCallback? onActions, onFlight;
+  @override
+  Widget build(BuildContext context) {
+    final action = drone.status.isInMission ? onFlight : onActions;
+    if (action == null) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 12),
+        child: Text(
+          drone.status == DroneStatus.grounded
+              ? 'Espera rescate'
+              : drone.status.isInMission
+              ? 'En vuelo'
+              : 'Sin cambios',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      );
+    }
+    return TextButton(
+      onPressed: action,
+      style: TextButton.styleFrom(
+        alignment: Alignment.centerLeft,
+        backgroundColor: Colors.transparent,
+        padding: EdgeInsets.zero,
+        minimumSize: const Size(0, 44),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(drone.status.isInMission ? 'Ver vuelo' : 'Gestionar'),
+          ),
+          const Icon(AppIcons.forward, size: 18),
+        ],
+      ),
+    );
+  }
+}
+
+String shortId(String id) => id.length <= 8 ? id : id.substring(0, 8);

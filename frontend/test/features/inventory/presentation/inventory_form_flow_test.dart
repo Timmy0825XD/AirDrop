@@ -75,7 +75,10 @@ Future<void> _mount(
   addTearDown(router.dispose);
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [inventoryRepositoryProvider.overrideWithValue(repository)],
+      overrides: [
+        inventoryHubIdProvider.overrideWithValue('h'),
+        inventoryRepositoryProvider.overrideWithValue(repository),
+      ],
       child: MaterialApp.router(
         routerConfig: router,
         theme: ThemeData(extensions: const [AppPalette.light]),

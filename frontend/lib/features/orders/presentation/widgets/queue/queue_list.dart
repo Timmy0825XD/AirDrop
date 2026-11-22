@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/widgets/warning_banner.dart';
 import '../../../../../theme/app_icons.dart';
-import '../../../../home/presentation/widgets/home_section_heading.dart';
 import '../../../data/order_models.dart';
 import 'queue_tile.dart';
 
@@ -71,18 +70,22 @@ class _QueueListHeading extends StatelessWidget {
         ),
         const SizedBox(height: 12),
       ],
-      HomeSectionHeading(
-        title: count == 1
+      Text(
+        count == 1
             ? '1 solicitud por atender'
             : '$count solicitudes por atender',
+        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
       ),
+      const SizedBox(height: 12),
       Text(
         'En orden de prioridad',
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
-      const SizedBox(height: 16),
+      const SizedBox(height: 12),
     ],
   );
 }

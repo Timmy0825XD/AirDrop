@@ -3,17 +3,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
-import '../../../core/clock/sim_clock.dart';
+import '../../../core/date_format.dart';
 import '../../../core/widgets/app_snack.dart';
-import '../../../core/widgets/message_view.dart';
+import '../../../core/widgets/compact_form_header.dart';
+import '../../../core/widgets/content_page.dart';
+import '../../../core/widgets/work_error_card.dart';
 import '../../auth/presentation/widgets/auth_date_field.dart';
-import '../../home/presentation/widgets/section_form_page.dart';
-import '../../home/presentation/widgets/section_header.dart';
 import '../data/inventory_models.dart';
 import '../data/inventory_providers.dart';
 import 'widgets/inventory_form/inventory_form_sheet.dart';
 import 'widgets/inventory_form/inventory_form_page.dart';
 import 'widgets/inventory_form_values.dart';
+import 'widgets/inventory_list_values.dart';
 import '../../../core/widgets/skeleton.dart';
 
 /// Alta (`/inventory/new`) y edición (`/inventory/:id`) del inventario.
@@ -54,7 +55,7 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
   }
 
   Future<void> _pickDate() async {
-    final now = simClock.now();
+    final now = colombiaToday();
     final picked = await pickIsoDate(
       context,
       current: _values.expirationDate.text,
@@ -71,6 +72,12 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
   }
 
   Future<void> _submit(InventoryItem? original) async {
+    if (_isLoading) return;
+    if (original != null &&
+        original.hubId != ref.read(inventoryHubIdProvider)) {
+      showErrorSnack(context, 'Este insumo no pertenece a tu central.');
+      return;
+    }
     final errors = _values.validate(original: original);
     setState(() {
       _errors = errors;
@@ -121,20 +128,33 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
   Widget build(BuildContext context) {
     if (!_isEdit) return _form(null);
     final state = ref.watch(inventoryProvider);
-    if (state case AsyncError(:final error)) {
-      return _message(ApiException.messageOf(error));
+    final hubId = ref.watch(inventoryHubIdProvider);
+    if (state.hasError && !state.hasValue) {
+      return _message(ApiException.messageOf(state.error!));
     }
-    final rows = state.value;
+    final rows = inventoryRowsForHub(
+      state.value,
+      hubId,
+      reloading: state.isReloading,
+    );
     if (rows == null) {
-      return const Scaffold(body: SkeletonDetail());
+      if (state.hasError) return _message(ApiException.messageOf(state.error!));
+      if (hubId == null) return _message('No tienes una central asignada.');
+      if (state.hasValue && !state.isReloading) {
+        return _message('El ítem de inventario no pertenece a tu central.');
+      }
+      return _statePage(const SkeletonDetail());
     }
     final item = rows.where((row) => row.id == widget.itemId).firstOrNull;
     if (item == null) return _message('El ítem de inventario no existe.');
     _prefill(item);
-    return _form(item);
+    return _form(
+      item,
+      error: state.hasError ? ApiException.messageOf(state.error!) : null,
+    );
   }
 
-  Widget _form(InventoryItem? original) {
+  Widget _form(InventoryItem? original, {String? error}) {
     return InventoryFormPage(
       title: original == null ? 'Añadir insumo' : 'Editar insumo',
       subtitle: original == null
@@ -153,17 +173,34 @@ class _InventoryFormScreenState extends ConsumerState<InventoryFormScreen> {
         onPickDate: _pickDate,
         onChanged: () => setState(() {}),
       ),
+      notice: error == null
+          ? null
+          : RefreshNotice(
+              message:
+                  'No pudimos actualizar el lote. $error\nÚltimos datos disponibles.',
+              onRetry: () => ref.invalidate(inventoryProvider),
+            ),
     );
   }
 
   Widget _message(String text) {
-    return SectionStatePage(
-      header: SectionHeader(
-        title: 'Inventario',
-        subtitle: 'Editar ítem',
-        onBack: () => context.go('/inventory'),
+    return _statePage(
+      WorkErrorCard(
+        title: 'No pudimos abrir el insumo',
+        message: text,
+        onRetry: () => ref.invalidate(inventoryProvider),
       ),
-      body: MessageView(icon: Icons.inventory_2_rounded, message: text),
     );
   }
+
+  Widget _statePage(Widget body) => ContentPage(
+    title: 'Editar insumo',
+    subtitle: 'Datos del lote',
+    header: CompactFormHeader(
+      title: 'Editar insumo',
+      subtitle: 'Datos del lote',
+      onBack: () => context.canPop() ? context.pop() : context.go('/inventory'),
+    ),
+    slivers: [SliverToBoxAdapter(child: body)],
+  );
 }

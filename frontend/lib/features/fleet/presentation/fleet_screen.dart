@@ -4,183 +4,75 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
-import '../../../core/widgets/error_banner.dart';
-import '../../../core/widgets/list_padding.dart';
-import '../../../core/widgets/message_view.dart';
-import '../../../core/widgets/rise_in.dart';
-import '../../home/presentation/widgets/header_add_button.dart';
-import '../../home/presentation/widgets/section_header.dart';
-import '../../hubs/data/hub_models.dart';
+import '../../../core/widgets/auto_refresh.dart';
 import '../data/fleet_models.dart';
 import '../data/fleet_providers.dart';
 import 'widgets/drone_status_sheet.dart';
-import 'widgets/drone_tile.dart';
-import 'widgets/fleet_hub_selector.dart';
-import 'widgets/fleet_summary.dart';
 import 'widgets/maintenance_sheet.dart';
-import '../../../core/widgets/skeleton.dart';
+import 'widgets/fleet_list_page.dart';
+import 'widgets/fleet_list_values.dart';
 
-/// Flota del operador: elige una de sus centrales (chips bajo el
-/// encabezado si tiene varias) y lista sus drones. De la central elegida
-/// sale también el `hubId` del alta, porque `POST /fleet/drones` lo exige.
-class FleetScreen extends ConsumerWidget {
+class FleetScreen extends ConsumerStatefulWidget {
   const FleetScreen({super.key});
+  @override
+  ConsumerState<FleetScreen> createState() => _FleetScreenState();
+}
+
+class _FleetScreenState extends ConsumerState<FleetScreen> {
+  final _search = TextEditingController();
+  FleetFilter _filter = FleetFilter.all;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final hub = ref.watch(effectiveHubProvider);
-    final count = ref.watch(dronesProvider).value?.length;
-    return Scaffold(
-      body: Column(
-        children: [
-          SectionHeader(
-            title: 'Flota',
-            subtitle: hub == null
-                ? 'Drones de tus centrales'
-                : '${hub.name}${count == null ? '' : ' · ${count == 1 ? '1 dron' : '$count drones'}'}',
-            onBack: () => context.go('/home'),
-            trailing: const _NewDroneButton(),
-          ),
-          const Expanded(child: _FleetBody()),
-        ],
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  void _selectHub(String id) {
+    _search.clear();
+    setState(() => _filter = FleetFilter.all);
+    ref.read(fleetHubProvider.notifier).select(id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final data = FleetListValues(
+      hubs: ref.watch(assignedHubsProvider),
+      hub: ref.watch(effectiveHubProvider),
+      drones: ref.watch(dronesProvider),
+      models: ref.watch(fleetModelsProvider),
+      query: _search.text,
+      filter: _filter,
+    );
+    return AutoRefresh(
+      onTick: () => _refreshFleet(ref),
+      child: FleetListPage(
+        data: data,
+        search: _search,
+        onQuery: (_) => setState(() {}),
+        onFilter: (value) => setState(() => _filter = value),
+        onHub: _selectHub,
+        onRefresh: () => _refreshFleet(ref),
+        onOpen: (path) => context.push(path),
+        onManage: (drone) => _openDroneActions(context, ref, drone),
+        onClear: () => setState(() {
+          _search.clear();
+          _filter = FleetFilter.all;
+        }),
       ),
     );
   }
 }
 
-/// Si el operador no tiene centrales asignadas, ese es el mensaje: la
-/// lista de drones nunca se consulta sin una central elegida.
-class _FleetBody extends ConsumerWidget {
-  const _FleetBody();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return switch (ref.watch(assignedHubsProvider)) {
-      AsyncValue(hasValue: true, hasError: false, :final value?)
-          when value.isEmpty =>
-        const MessageView(
-          icon: Icons.domain_disabled_rounded,
-          message: 'No tienes centrales asignadas.',
-        ),
-      AsyncValue(hasValue: true, hasError: false, :final value?) => _FleetPane(
-        hubs: value,
-      ),
-      AsyncError(:final error) => MessageView.error(
-        message: ApiException.messageOf(error),
-      ),
-      _ => const SkeletonList(),
-    };
+Future<void> _refreshFleet(WidgetRef ref) {
+  ref.invalidate(assignedHubsProvider);
+  ref.invalidate(dronesProvider);
+  if (ref.read(fleetModelsProvider).hasError) {
+    ref.invalidate(fleetModelsProvider);
   }
-}
-
-/// Selector, aviso de central suspendida y listado de drones.
-class _FleetPane extends ConsumerWidget {
-  const _FleetPane({required this.hubs});
-
-  final List<Hub> hubs;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final hub = ref.watch(effectiveHubProvider);
-    if (hub == null) return const SizedBox.shrink();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (hubs.length > 1) ...[
-          const SizedBox(height: 16),
-          FleetHubSelector(
-            hubs: hubs,
-            selectedId: hub.id,
-            onChanged: (id) => ref.read(fleetHubProvider.notifier).select(id),
-          ),
-        ],
-        if (!hub.isActive)
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 14, 20, 0),
-            child: ErrorBanner(
-              message:
-                  'La central está suspendida: sus drones no se pueden '
-                  'gestionar hasta que la reactiven.',
-            ),
-          ),
-        Expanded(child: _DroneList(hubActive: hub.isActive)),
-      ],
-    );
-  }
-}
-
-/// Drones de la central efectiva. Sin acciones si el dron está en misión
-/// (Nest responde 409) o si la central está suspendida (403).
-class _DroneList extends ConsumerWidget {
-  const _DroneList({required this.hubActive});
-
-  final bool hubActive;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final models = ref.watch(fleetModelsProvider).value;
-    return switch (ref.watch(dronesProvider)) {
-      AsyncValue(hasValue: true, hasError: false, :final value?)
-          when value.isEmpty =>
-        const MessageView(
-          icon: Icons.flight_land_rounded,
-          message: 'Aún no hay drones en esta central.',
-        ),
-      AsyncValue(hasValue: true, hasError: false, :final value?) =>
-        ListView.separated(
-          padding: listPadding(context),
-          // El primer renglón es el resumen; después, un dron por renglón.
-          itemCount: value.length + 1,
-          separatorBuilder: (_, i) => SizedBox(height: i == 0 ? 16 : 10),
-          itemBuilder: (context, index) {
-            if (index == 0) return FleetSummary(drones: value);
-            final i = index - 1;
-            final drone = value[i];
-            return RiseIn(
-              key: ValueKey(drone.id),
-              delay: RiseIn.stagger(i),
-              child: DroneTile(
-                drone: drone,
-                modelName: _modelName(models, drone.droneModelId),
-                onActions: !drone.status.isOperable || !hubActive
-                    ? null
-                    : () => _openDroneActions(context, ref, drone),
-              ),
-            );
-          },
-        ),
-      AsyncError(:final error) => MessageView.error(
-        message: ApiException.messageOf(error),
-      ),
-      _ => const SkeletonList(),
-    };
-  }
-}
-
-/// El alta solo se ofrece con una central elegida y activa: Nest responde
-/// `403 La central está suspendida.` en cualquier otro caso.
-class _NewDroneButton extends ConsumerWidget {
-  const _NewDroneButton();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final hub = ref.watch(effectiveHubProvider);
-    if (!(hub?.isActive ?? false)) return const SizedBox.shrink();
-    return HeaderAddButton(
-      label: 'Nuevo dron',
-      onPressed: () => context.push('/fleet/new'),
-    );
-  }
-}
-
-/// Nombre del modelo resuelto contra `GET /fleet/models`, porque el dron
-/// solo trae el `droneModelId`.
-String? _modelName(List<DroneModel>? models, String droneModelId) {
-  if (models == null) return null;
-  for (final model in models) {
-    if (model.id == droneModelId) return model.name;
-  }
-  return null;
+  return ref
+      .read(dronesProvider.future)
+      .then<void>((_) {}, onError: (Object _, StackTrace _) {});
 }
 
 /// Hoja de acciones. Cada botón dispara un endpoint distinto, nunca los
@@ -221,6 +113,7 @@ Future<void> _setColdCompartment(
         .read(fleetRepositoryProvider)
         .setColdCompartment(drone.id, installed: install);
     ref.invalidate(dronesProvider);
+    ref.invalidate(operatorDronesProvider);
     if (!context.mounted) return;
     showAppSnack(
       context,

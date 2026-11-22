@@ -4,15 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/widgets/app_snack.dart';
 import '../../../core/widgets/auto_refresh.dart';
-import '../../../core/widgets/map_sheet.dart';
-import '../../../core/widgets/message_view.dart';
-import '../../home/presentation/widgets/section_header.dart';
 import '../data/fleet_flight.dart';
 import '../data/fleet_map_providers.dart';
 import '../data/fleet_providers.dart';
 import 'widgets/fleet_map/drone_facts_sheet.dart';
-import 'widgets/fleet_map/fleet_live_map.dart';
-import 'widgets/fleet_map/fleet_map_sheet.dart';
+import 'widgets/fleet_map/fleet_map_page.dart';
+import 'widgets/fleet_map/fleet_map_values.dart';
 import 'widgets/fleet_map/reroute_notice.dart';
 
 /// El mapa en vivo del operador (`/fleet/flights`, el botón del centro;
@@ -31,39 +28,29 @@ class FleetMapScreen extends ConsumerWidget {
     final live = ref.watch(fleetMapProvider);
     _listenNotices(context, ref);
     void watch(FleetFlight f) => context.push('/tracking/${f.orderId}');
-    final map = live.map;
-    return AutoRefresh(
-      onTick: () {
+    void refresh() {
+      if (live.map == null && live.problem != null) {
+        ref.invalidate(fleetMapProvider);
+      } else {
         ref.read(fleetMapProvider.notifier).refresh();
-        // El contador del botón del centro.
-        ref.invalidate(fleetFlightsProvider);
-      },
-      child: MapSheetScaffold(
-        title: 'Mapa en vivo',
-        onBack: () => SectionHeader.backOrHome(context),
-        map: (sheetHeight) => map == null
-            ? const SizedBox.expand()
-            : FleetLiveMap(
-                map: map,
-                incidents: live.incidents,
-                sheetHeight: sheetHeight,
-                onDrone: (f) =>
-                    showDroneFacts(context, f, onWatch: () => watch(f)),
-              ),
-        sheet: switch (live) {
-          FleetMapState(:final problem?) => [
-            MessageView.error(message: problem),
-          ],
-          FleetMapState(map: null) => const [
-            Center(child: CircularProgressIndicator()),
-          ],
-          _ => fleetMapSheet(
-            context: context,
-            map: map!,
-            incidents: live.incidents,
-            onFlight: watch,
-          ),
-        },
+      }
+      ref.invalidate(fleetFlightsProvider);
+    }
+
+    final values = FleetMapValues(
+      map: live.map,
+      drones: ref.watch(operatorDronesProvider).value ?? const [],
+      models: ref.watch(fleetModelsProvider).value ?? const [],
+    );
+    return AutoRefresh(
+      onTick: refresh,
+      child: FleetMapPage(
+        values: values,
+        incidents: live.incidents,
+        problem: live.problem,
+        onRetry: refresh,
+        onFlight: watch,
+        onDrone: (f) => showDroneFacts(context, f, onWatch: () => watch(f)),
       ),
     );
   }

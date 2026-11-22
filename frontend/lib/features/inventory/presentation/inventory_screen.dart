@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
+import '../../home/presentation/widgets/home_brand_bar.dart';
+import '../../notifications/data/notice_providers.dart';
 import '../data/inventory_models.dart';
 import '../data/inventory_providers.dart';
 import 'widgets/inventory_delete_confirm.dart';
@@ -31,8 +33,18 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(inventoryProvider);
+    final hubId = ref.watch(inventoryHubIdProvider);
+    final rows = inventoryRowsForHub(
+      state.value,
+      hubId,
+      reloading: state.isReloading,
+    );
     void add() => context.push('/inventory/new');
     return InventoryListPage(
+      brand: HomeBrandBar(
+        onNotices: () => context.push('/notifications'),
+        unread: ref.watch(unreadCountProvider).value,
+      ),
       onRefresh: () => ref
           .refresh(inventoryProvider.future)
           .then<void>((_) {}, onError: (Object _, StackTrace _) {}),
@@ -45,11 +57,17 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
         onFilter: (value) => setState(() => _filter = value),
       ),
       content: InventoryListContent(
-        rows: state.value,
+        rows: rows,
         query: _search.text,
         filter: _filter,
-        loading: !state.hasValue && !state.hasError,
-        error: state.hasError ? ApiException.messageOf(state.error!) : null,
+        loading: rows == null && !state.hasError,
+        error: state.hasError
+            ? ApiException.messageOf(state.error!)
+            : hubId == null
+            ? 'No tienes una central asignada.'
+            : state.hasValue && !state.isReloading && rows == null
+            ? 'No pudimos verificar los lotes de tu central. Actualiza el inventario.'
+            : null,
         onAdd: add,
         onRetry: () => ref.invalidate(inventoryProvider),
         onClear: () => setState(() {
@@ -68,10 +86,12 @@ Future<void> _deleteItem(
   WidgetRef ref,
   InventoryItem item,
 ) async {
+  if (item.hubId != ref.read(inventoryHubIdProvider)) return;
   if (!await confirmInventoryDelete(context, item: item) || !context.mounted) {
     return;
   }
   try {
+    if (item.hubId != ref.read(inventoryHubIdProvider)) return;
     await ref.read(deleteInventoryProvider.notifier).delete(item.id);
     if (context.mounted) {
       showAppSnack(context, 'Insumo eliminado del inventario.');

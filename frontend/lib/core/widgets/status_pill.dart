@@ -11,10 +11,19 @@ enum PillTone { positive, attention, negative, neutral }
 /// color no es decorativo: distingue de un vistazo si algo puede operar.
 /// Cuando cambia el texto, la pastilla nueva entra con un rebote corto.
 class StatusPill extends StatelessWidget {
-  const StatusPill({super.key, required this.label, required this.tone});
+  const StatusPill({
+    super.key,
+    required this.label,
+    required this.tone,
+    this.leading,
+    this.wrapLabel = false,
+    this.subdued = false,
+  });
 
   final String label;
   final PillTone tone;
+  final Widget? leading;
+  final bool wrapLabel, subdued;
 
   /// El color de cada tono; lo comparten otras piezas (puntos, cifras).
   static Color colorOf(BuildContext context, PillTone tone) {
@@ -30,7 +39,9 @@ class StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = colorOf(context, tone);
+    final color = subdued
+        ? theme.colorScheme.onSurfaceVariant
+        : colorOf(context, tone);
     return AnimatedSwitcher(
       duration: AppMotion.of(context, AppMotion.enter),
       switchInCurve: AppMotion.bounceCurve,
@@ -46,17 +57,21 @@ class StatusPill extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
+            leading ??
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                  ),
+                ),
             const SizedBox(width: 6),
             // Un texto largo o "muy grande" se corta; no desborda la fila.
             Flexible(
               child: Text(
                 label,
-                maxLines: 1,
+                maxLines: wrapLabel ? null : 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: color,

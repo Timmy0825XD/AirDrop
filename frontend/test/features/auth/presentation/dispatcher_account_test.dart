@@ -66,6 +66,7 @@ Future<GoRouter> _mount(
   double scale = 1,
   String initial = '/profile',
   MemoryPrefsStore? prefs,
+  Future<Hub?> Function()? loadHub,
 }) async {
   tester.view.physicalSize = const Size(320, 720);
   tester.view.devicePixelRatio = 1;
@@ -95,7 +96,9 @@ Future<GoRouter> _mount(
       retry: (count, error) => null,
       overrides: [
         authControllerProvider.overrideWith(() => auth),
-        myHubProvider.overrideWith((ref) async => _hub),
+        myHubProvider.overrideWith(
+          (ref) => loadHub?.call() ?? Future.value(_hub),
+        ),
         prefsStoreProvider.overrideWithValue(
           prefs ?? MemoryPrefsStore(available: true),
         ),
@@ -128,6 +131,35 @@ Future<void> _bring(WidgetTester tester, Finder finder) async {
 }
 
 void main() {
+  testWidgets(
+    'perfil mantiene la central conocida si falla una actualización',
+    (tester) async {
+      var attempts = 0;
+      final router = await _mount(
+        tester,
+        _Auth(_user()),
+        loadHub: () async {
+          if (attempts++ > 0) throw Exception('Sin conexión');
+          return _hub;
+        },
+      );
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(ProfileScreen)),
+        listen: false,
+      );
+      container.invalidate(myHubProvider);
+      await tester.pumpAndSettle();
+      await _bring(tester, find.text(_hub.name));
+      expect(find.text('Reintentar'), findsOneWidget);
+      await tester.tap(find.text(_hub.name));
+      await tester.pumpAndSettle();
+      expect(find.text('Mi central'), findsOneWidget);
+      router.pop();
+      await tester.pumpAndSettle();
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   testWidgets(
     'perfil institucional conserva edición y excluye documento y alergias',
     (tester) async {

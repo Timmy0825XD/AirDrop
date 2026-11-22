@@ -39,15 +39,15 @@ class ScheduleRangeFields extends StatelessWidget {
           onTap: () => _pickStart(context),
         ),
         const SizedBox(height: 16),
-        _ScheduleEndFields(form: form),
+        ScheduleEndFields(form: form),
       ],
     );
   }
 }
 
 /// Termina en una fecha o tras un número de entregas.
-class _ScheduleEndFields extends StatelessWidget {
-  const _ScheduleEndFields({required this.form});
+class ScheduleEndFields extends StatelessWidget {
+  const ScheduleEndFields({super.key, required this.form});
 
   final ScheduleForm form;
 

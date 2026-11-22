@@ -35,7 +35,8 @@ class GeofenceShapeField extends StatelessWidget {
               onChanged();
             },
             onDraw: () async {
-              if (await GeofenceDrawScreen.open(context, draft)) onChanged();
+              final done = await GeofenceDrawScreen.open(context, draft);
+              if (done && context.mounted) onChanged();
             },
           ),
         ),

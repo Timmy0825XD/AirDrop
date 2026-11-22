@@ -101,11 +101,22 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('18 vuelos · 86,4 km'), findsOneWidget);
+    expect(find.text('Salud de la flota'), findsOneWidget);
+    await tester.tap(find.text('18 vuelos · 86,4 km'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Disponible 84 %'), findsOneWidget);
+    await tester.tap(find.byTooltip('Cerrar detalle'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Incidentes del periodo'));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('WG-198-001'), findsOneWidget);
+    await tester.tap(find.byTooltip('Cerrar detalle'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Salud de la flota'));
+    await tester.pumpAndSettle();
     expect(find.textContaining('61 % de batería en promedio'), findsOneWidget);
     expect(find.text('1 pide revisión'), findsOneWidget);
-    expect(find.textContaining('WG-198-001'), findsOneWidget);
-
-    await tester.tap(find.text('Salud de la flota'));
+    await tester.tap(find.text('Salud de la flota').last);
     expect(opened, isTrue);
   });
 }

@@ -10,8 +10,9 @@ class AgendaEntryChecks extends StatelessWidget {
   final AgendaOrder entry;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget build(BuildContext context) => Wrap(
+    spacing: 12,
+    runSpacing: 6,
     children: [
       _Check(
         label: entry.order.destinationKind == DestinationKind.hub
@@ -25,7 +26,6 @@ class AgendaEntryChecks extends StatelessWidget {
             ? PillTone.positive
             : PillTone.attention,
       ),
-      const SizedBox(height: 6),
       _Check(
         label: entry.stockOk
             ? 'Stock disponible: ${entry.availableQuantity}'
@@ -33,7 +33,6 @@ class AgendaEntryChecks extends StatelessWidget {
         tone: entry.stockOk ? PillTone.positive : PillTone.negative,
       ),
       if (entry.prescriptionValid case final valid?) ...[
-        const SizedBox(height: 6),
         _Check(
           label: valid ? 'Fórmula vigente' : 'Fórmula vencida',
           tone: valid ? PillTone.positive : PillTone.negative,
@@ -50,6 +49,7 @@ class _Check extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       Icon(
@@ -62,7 +62,7 @@ class _Check extends StatelessWidget {
         color: StatusPill.colorOf(context, tone),
       ),
       const SizedBox(width: 8),
-      Expanded(
+      Flexible(
         child: Text(
           label,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(

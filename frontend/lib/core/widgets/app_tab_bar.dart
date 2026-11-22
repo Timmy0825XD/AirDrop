@@ -19,6 +19,7 @@ class NavCenterAction {
     required this.tabLabel,
     required this.onPressed,
     this.badge,
+    this.badgeLabel,
   });
 
   final IconData icon;
@@ -32,6 +33,9 @@ class NavCenterAction {
 
   /// Pendientes (urgencias en cola): un número rojo sobre el ícono.
   final int? badge;
+
+  /// Descripción del contador cuando no representa tareas por atender.
+  final String? badgeLabel;
 }
 
 /// La barra de pestañas del rol, pegada abajo como en cualquier app: dos

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/core/widgets/choice_pill.dart';
+import 'package:frontend/features/notifications/data/notice_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frontend/core/clock/sim_clock.dart';
 import 'package:frontend/features/inventory/data/inventory_models.dart';
 import 'package:frontend/features/inventory/data/inventory_providers.dart';
 import 'package:frontend/features/inventory/presentation/inventory_screen.dart';
+import 'package:frontend/features/inventory/presentation/inventory_form_screen.dart';
 import 'package:frontend/features/inventory/presentation/widgets/inventory_list_content.dart';
 import 'package:frontend/features/inventory/presentation/widgets/inventory_list_page.dart';
 import 'package:frontend/features/inventory/presentation/widgets/inventory_list_values.dart';
@@ -110,6 +113,50 @@ void main() {
   );
   tearDown(simClock.reset);
 
+  test('la caché de otra central nunca sirve al cambiar de despachador', () {
+    expect(inventoryRowsForHub(_rows, 'h'), same(_rows));
+    expect(inventoryRowsForHub(_rows, 'otra-central'), isNull);
+    expect(inventoryRowsForHub(_rows, null), isNull);
+    expect(inventoryRowsForHub(_rows, 'h', reloading: true), isNull);
+  });
+
+  testWidgets(
+    'otra central no puede ver ni abrir el formulario de un lote retenido',
+    (tester) async {
+      Widget scoped(Widget page) => ProviderScope(
+        overrides: [
+          inventoryHubIdProvider.overrideWithValue('otra-central'),
+          inventoryProvider.overrideWith((ref) async => _rows),
+          unreadCountProvider.overrideWith((ref) async => 0),
+        ],
+        child: page,
+      );
+      await _mount(tester, scoped(const InventoryScreen()));
+      expect(find.text('Acetaminofén 500 mg'), findsNothing);
+      expect(
+        find.textContaining('No pudimos verificar los lotes'),
+        findsOneWidget,
+      );
+      await _mount(tester, scoped(const InventoryFormScreen(itemId: 'a')));
+      expect(find.byType(TextField), findsNothing);
+      expect(
+        find.text('El ítem de inventario no pertenece a tu central.'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets('un fallo de recarga conserva los lotes conocidos con aviso', (
+    tester,
+  ) async {
+    await _mount(tester, _state(rows: _rows, error: 'Sin conexión'));
+    expect(find.textContaining('Últimos datos disponibles'), findsOneWidget);
+    await _bring(tester, find.text('Insulina glargina'));
+    expect(find.text('Insulina glargina'), findsOneWidget);
+    expect(find.text('Empieza tu inventario'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
   test(
     'combina búsqueda por nombre o lote y filtros sin alterar las existencias',
     () {
@@ -163,7 +210,11 @@ void main() {
     await _mount(
       tester,
       ProviderScope(
-        overrides: [inventoryProvider.overrideWith((ref) async => _rows)],
+        overrides: [
+          unreadCountProvider.overrideWith((ref) async => 0),
+          inventoryHubIdProvider.overrideWithValue('h'),
+          inventoryProvider.overrideWith((ref) async => _rows),
+        ],
         child: const InventoryScreen(),
       ),
     );
@@ -189,7 +240,7 @@ void main() {
     );
     expect(
       tester
-          .widget<ChoiceChip>(find.widgetWithText(ChoiceChip, 'Todos'))
+          .widget<ChoicePill>(find.widgetWithText(ChoicePill, 'Todos'))
           .selected,
       isTrue,
     );
@@ -230,8 +281,8 @@ void main() {
       );
       expect(find.text('Cadena de frío'), findsOneWidget);
       expect(find.text('Mercancía peligrosa · No vuela'), findsOneWidget);
-      await _bring(tester, find.text('Editar insumo'));
-      await tester.tap(find.text('Editar insumo'));
+      await _bring(tester, find.text(item.name));
+      await tester.tap(find.text(item.name));
       expect(edited, 1);
       await _bring(tester, find.byTooltip('Opciones del lote ${item.lot}'));
       await tester.tap(find.byTooltip('Opciones del lote ${item.lot}'));

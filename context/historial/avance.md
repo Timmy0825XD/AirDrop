@@ -1849,6 +1849,233 @@ capturas nativas de las 13 pantallas y análisis de los archivos revisados.
 El mapa usa el mismo componente: los tests de captura no descargan sus
 teselas; no sustituyen una prueba de red contra Nest y el proveedor del mapa.
 
+## Revisión visual por rol — Operador de flota (2026-11-22)
+
+Primer paso implementado en `fix/operador`: Inicio y barra flotante,
+consistentes con solicitante y despachador. Marca compartida e iconos
+Lucide; cinco destinos con Mapa en el centro y contador global de misiones.
+El Inicio resume todas las centrales asignadas, muestra alertas y drones
+por revisar, y abre Flota seleccionando la central del dron. Incluye los
+estados de carga, vacío, error y datos previos con reintento, centrales
+sin asignar o suspendidas y hasta dos vuelos con acceso al mapa completo.
+El tablero conserva uso, salud e incidentes mediante un resumen y hojas
+de detalle, con sus periodos de 7, 30 y 90 días y actualización de la operación.
+No se cambian contratos, estados de negocio ni acciones de la flota.
+
+Análisis estático de los archivos modificados y pruebas nuevas sin
+incidencias; revisión estática independiente sin hallazgos concretos y
+`git diff --check` correcto. Pruebas añadidas para navegación, selección
+de central, refresco, carga/error, varios vuelos y texto ampliado. Su
+ejecución quedó bloqueada por el compilador C++ que requiere PDFium en
+Windows; la ejecución alternativa no fue autorizada. No se declaran
+pruebas aprobadas ni revisión visual en dispositivo. No había Android
+conectado. El resto de pantallas del operador permanece para los pasos
+siguientes del rediseño.
+
+Corrección de fidelidad al diseño solicitado por el usuario: iconos junto
+a las cifras, tarjetas compactas con icono lateral, encabezado y selector
+de periodo como en la propuesta, y barra del operador translúcida sobre
+el contenido. Se mantienen las acciones y los datos de la operación.
+
+Segundo paso: Flota renovada según la propuesta aprobada. Selector de
+central con búsqueda, filtros de estado, búsqueda por identificador o
+modelo, tarjetas compactas con iconos laterales y estados de carga,
+vacío, búsqueda sin coincidencias y error con reintento. Ver vuelo sigue
+disponible en misión; Gestionar permanece bloqueado para los estados no
+operables y las centrales suspendidas. El cambio de central descarta la
+lista anterior mientras carga la nueva; los errores conservan únicamente
+datos de la misma central.
+
+Nuevo dron agrupa Identificación, Modelo y Equipamiento, con selección
+de los modelos sembrados, las validaciones actuales y la carga útil con
+frío descontado. Hoja de gestión con grupos y Lucide; conserva los
+endpoints y el cierre de la hoja antes de abrir motivo/fecha. Los cambios
+de estado y las altas invalidan también el resumen global de la flota.
+Revisión estática independiente, incluida la corrección entre centrales;
+pruebas añadidas para búsqueda, filtros, separación por central y acceso
+al vuelo. Su ejecución conserva la limitación del entorno indicada arriba.
+
+Corrección adicional según las capturas del usuario: Nuevo dron con
+encabezado compacto, Identificador en una tarjeta editable con icono y
+separador, orden y selección de modelos como en la propuesta, y frío con
+su separador, nota de peso y carga útil fuera de la tarjeta. Los dos
+vacíos del Inicio muestran el corredor horizontal aprobado. Se usa el
+dron dibujado de la marca en lugar del glifo genérico. Revisión estática
+independiente sin desajustes concretos adicionales; se añaden regresiones
+de composición para flecha, separadores, selección y vacíos.
+
+Tercer paso: Mapa en vivo renovado conservando Figtree, la paleta del tema,
+Lucide y el dron de la marca. Encabezado sólido con drones en misión y
+reloj simulado, incluidas velocidad y pausa. Rutas reales punteadas,
+identificadores junto a los drones y centrales tocables con su resumen.
+La hoja de vuelos usa filas sin cajas, separadores, estado, batería,
+llegada estimada, frío y "Ver vuelo". El vacío reutiliza el corredor
+aprobado; el error conserva los datos conocidos y permite reintentar.
+La ficha del dron tiene scroll y separadores, sin datos del pedido.
+
+`MapSheetScaffold` admite encabezado, controlador y mínimo opcionales,
+conservando los valores por defecto de los otros mapas. Se corrigió la
+superficie sólida del encabezado para tomar el color del tema y se
+ocultan los controles cuando la hoja deja menos de 152 dp disponibles.
+Se mantienen los contratos, el backend y el WebSocket existentes.
+Análisis dirigido sin incidencias, `git diff --check` correcto y revisión
+estática independiente sin hallazgos pendientes. Las pruebas y capturas
+conservan la limitación de PDFium indicada arriba; no se declaran pruebas
+ejecutadas ni validación visual de este paso.
+
+Cuarto paso: Geovallas y el formulario de nueva/editar geovalla operativa
+renovados con Figtree, la paleta del tema y Lucide. Catálogo con encabezado
+y "Crear", filtros, tarjetas de icono lateral, estado, flecha y "Ver y
+editar" o "Consultar" según permisos. Eliminar aparece solo en las
+operativas del operador y conserva la confirmación. Un único scroll para
+encabezado y contenido, skeleton, vacío por filtro, error con reintento
+y datos previos, y actualización al deslizar. Los permisos del admin y
+las zonas legales permanecen intactos.
+
+El formulario comparte encabezado compacto y botón de envío con Nuevo
+dron; el envoltorio `DroneFormHeader` conserva su apariencia. Nombre y
+motivo agrupados con iconos y separadores, categoría y vigencia con
+selector buscable, y área circular o poligonal con vista previa quieta de
+190 dp que vuelve a encuadrar después de dibujar. Deshacer y Borrar todo
+se acomodan con `Wrap` e iconos Lucide. Vigencia y estado inactivo usan
+`simClock`; se conservan validaciones, cambios parciales, endpoints y
+contratos, sin cambios de backend ni otro socket.
+
+Análisis final sin incidencias, `git diff --check` correcto y revisión
+estática independiente sin hallazgos materiales. No se ejecutaron pruebas
+ni capturas; persiste la limitación de PDFium indicada arriba y no se
+declara validación visual de este paso.
+
+Quinto paso: Perfil del operador renovado con la misma identidad visual.
+"Mi perfil" y acceso a ajustes, identidad lateral con avatar, acento,
+separador, nombre, rol y "Editar datos"; con texto grande se apila.
+"Tu información" muestra nombre y contacto, sin documento ni alergias.
+Se conservan edición, verificación y cancelación del correo pendiente,
+y cierre de sesión con confirmación. Los componentes reutilizados mantienen
+sus valores por defecto para los demás perfiles.
+
+"Tus centrales" comparte `assignedHubsProvider` con Flota, con carga,
+vacío, error y reintento, datos retenidos y actualización al deslizar.
+Cada central abre una ficha de consulta con mapa, contacto y estado;
+"Ver flota" selecciona esa central antes de abrir Flota. "Tu experiencia"
+ofrece ajustes y la política pública, sin las acciones de privacidad del
+solicitante. Ajustes comparte el andamiaje del despachador, conserva las
+preferencias del teléfono y vuelve a Perfil cuando no hay ruta anterior.
+No se cambian contratos, endpoints ni permisos de negocio.
+
+Análisis final sin incidencias, `git diff --check` correcto y revisión
+estática independiente sin hallazgos materiales. No se ejecutaron pruebas
+ni capturas; persiste la limitación C++ de PDFium indicada arriba. Las
+cinco pestañas del operador están implementadas; quedan pendientes la
+ejecución de sus pruebas y la validación visual.
+
+## Ajustes de fidelidad del despachador (2026-11-22)
+
+En `fix/operador`, Inicio ajustado a las referencias del usuario: iconos
+junto a las cifras y separadores como en el operador, vacío horizontal
+compartido y tarjetas laterales para las tareas. Mi central usa encabezado
+compacto con flecha junto al título y la misma consulta de central del
+operador: identidad lateral con estado, energía aparte, mapa real con
+coordenadas y contacto en dos filas con "Llamar" adaptable al texto grande.
+
+Urgencia a otra central y Nuevo abastecimiento comparten encabezado
+compacto y selectores con buscador. Se conservan las selecciones en
+cascada, stock, restricciones de venta, validaciones y destino. El plan
+indica cantidad por entrega, frecuencia, siete días en fila, franja real
+de una hora e inicio; la duración muestra su resumen y se despliega para
+editar o corregir errores. La vista previa de Nest resume la próxima
+entrega y despliega fechas y avisos; el mapa del traslado es desplegable.
+
+Mis abastecimientos incorpora título, acción de alta y próxima ocurrencia
+real con fecha, origen conocido, estado y accesos a recibir, la entrega o
+el plan. "Tus planes" agrupa filas perezosas con divisores y adapta la
+posición del estado al ancho y al tamaño del texto. Los componentes
+compartidos conservan sus opciones por defecto. Se mantienen backend,
+contratos y los pasos separados de autorización y confirmación de carga.
+
+La revisión estática corrigió errores de duración, la adaptación de la
+fecha y la posición del estado del plan. Análisis dirigido de 16 archivos
+sin incidencias y `git diff --check` correcto. Se intentaron las pruebas
+dirigidas de Inicio, abastecimiento, flujos de Más y cuenta del despachador;
+el proceso falló antes de ejecutar casos porque `pdfium_dart` no encontró
+un compilador para `windows_x64`. No se declaran pruebas aprobadas ni
+capturas; quedan sin verificar el resultado visual y la interacción nativa.
+
+## Agenda, Urgencias e Inventario del despachador (2026-11-22)
+
+Las tres pestañas comparten marca y avisos reales. Agenda muestra cinco
+fechas, o tres con texto ampliado, y el día seleccionado; conserva las
+franjas reales de una hora, los estados, stock, fórmula, capacidad y límite
+de despegue. El vacío permite elegir otra fecha y la recarga fallida
+conserva únicamente datos de la fecha seleccionada. Urgencias usa tarjetas
+compactas con icono y revisión, espera y alarma separadas, orden de Nest,
+stock, frío, fórmula y reasignación. Mantiene el reloj y los flujos de
+autorización y carga existentes.
+
+Inventario suma «Añadir» al costado, buscador, filtros y tarjetas compactas
+con cantidad, lote, fecha y restricciones. Tocar abre la edición; el menú
+conserva editar y eliminar con confirmación, y Cuarentena sigue accesible.
+La recarga y la caché se limitan a la central actualmente asignada, también
+al editar o borrar; cambiar de central vuelve a consultar. El formulario
+comparte encabezado y botón con el operador, conserva grupos, cantidad,
+peso, validaciones, cambios parciales y borrador ante un fallo de recarga
+de la misma central. Fechas, vencimientos y calendario usan el día de
+Colombia, con regresiones añadidas para medianoche.
+
+Vacíos horizontales con acción opcional, error con reintento y aviso sobre
+datos retenidos reutilizan componentes compartidos. La revisión estática
+corrigió el texto de frío truncado y la caché de otra central. Se actualizaron
+las pruebas dirigidas para avisos, errores de recarga, alcance por central
+y medianoche, incluida la ocultación de listado y editor de otra central.
+La revisión de Más queda para un siguiente pedido, por secciones.
+
+Análisis final de 11 archivos sin incidencias y `git diff --check` correcto.
+La revisión independiente confirmó ambos hallazgos resueltos en estático.
+Se intentaron las pruebas de Agenda, Urgencias y listado y formulario de
+Inventario, pero `pdfium_dart` detuvo el proceso antes de ejecutar casos:
+no hay compilador configurado para `windows_x64`. No se declaran pruebas
+aprobadas ni capturas; siguen pendientes el render y la interacción nativa.
+
+## Más, bandejas y cuenta del despachador (2026-11-22)
+
+Nuevo tramo en `fix/operador`: Más, sus cinco bandejas de pedidos,
+Cuarentena, Mi perfil y Ajustes, conservando Figtree, paleta y componentes
+compartidos. Más usa títulos fuertes, subtítulos atenuados, contadores
+grises o ámbar y el dron de marca en Vuelos. Traslados entrantes cuenta
+todos los pedidos entrantes; Inicio sigue contando solo los aterrizados
+por recibir.
+
+Las bandejas usan encabezado compacto y listas perezosas. Programados
+agrupa Hoy, Fechas anteriores y Más adelante; Historial agrupa por fecha
+de creación, con filtros y paginación que conserva datos ante un fallo.
+Tarjetas con medicamento e icono lateral, unidades, destino, estado y
+acciones propias. Entrantes mantiene el código de recepción y el origen
+real, sin mapa del origen. Pendiente de carga conserva revisión y
+deslizador obligatorio, con dron, conservación y lote reales. Vuelos usa
+un corredor horizontal decorativo y botón con borde al regresar, sin
+inventar avance ni llegada. Un error conserva los datos conocidos y
+no se presenta como vacío saludable.
+
+Cuarentena suma vacío ancho con escudo y «Actualizar», conservando los
+registros y acceso al pedido. Perfil comparte identidad lateral y grupos
+de datos y contacto; conserva central conocida ante error solo si sigue
+asignada y deshabilita el acceso sin central válida. Se mantienen política
+pública, correo pendiente y salida con confirmación. Ajustes comparte
+encabezado compacto, grupos e iconos; el tema tiene vista previa adaptable,
+«Aplicar» y mensaje correcto del tema aplicado; los demás ajustes son
+inmediatos. Este tramo conserva los contratos y los pasos de autorización
+y carga existentes.
+
+La revisión independiente confirmó resueltos en estático el teclado y
+objetivo táctil de 48 dp de `ChoicePill`, y la ruta de Entrantes que mantiene
+cada icono junto a su texto. Se actualizaron regresiones de contadores,
+vacío con error, retorno y central retenida, y se añadió la de teclado y
+área táctil. Análisis dirigido final de 32 entradas sin incidencias y
+`git diff --check` correcto; ningún widget nuevo supera 60 líneas.
+Las pruebas normales y con Chrome se detuvieron antes de ejecutar casos
+por el compilador C++ requerido por `pdfium_dart` en `windows_x64`.
+No se declaran pruebas aprobadas, capturas ni validación visual o nativa.
+
 ## Pendiente del backend
 
 Vive en [`pendientes-backend.md`](pendientes-backend.md), para que la persona

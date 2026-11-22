@@ -58,7 +58,7 @@ class _PendingLoadScreenState extends ConsumerState<PendingLoadScreen> {
       title: 'Pendiente de carga',
       idleSubtitle: 'Revisa el paquete antes de salir.',
       countLabel: (n) =>
-          n == 1 ? '1 dron espera la carga' : '$n drones esperan la carga',
+          n == 1 ? '1 pedido por preparar' : '$n pedidos por preparar',
       rows: ref.watch(pendingLoadProvider),
       onRefresh: () => ref.invalidate(pendingLoadProvider),
       emptyIcon: AppIcons.orders,

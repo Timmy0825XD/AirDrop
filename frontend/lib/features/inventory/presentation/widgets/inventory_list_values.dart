@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/clock/sim_clock.dart';
+import '../../../../core/date_format.dart';
 import '../../../../core/widgets/status_pill.dart';
 import '../../data/inventory_models.dart';
 
@@ -15,9 +15,22 @@ enum InventoryFilter {
 
 const inventoryWarningDays = 30;
 
+/// Los datos retenidos solo sirven para la central que sigue asignada.
+List<InventoryItem>? inventoryRowsForHub(
+  List<InventoryItem>? rows,
+  String? hubId, {
+  bool reloading = false,
+}) =>
+    !reloading &&
+        hubId != null &&
+        rows != null &&
+        rows.every((item) => item.hubId == hubId)
+    ? rows
+    : null;
+
 (String, PillTone) inventoryExpiry(InventoryItem item, {DateTime? today}) {
   final date = DateTime.tryParse(item.expirationDate);
-  final now = DateUtils.dateOnly(today ?? simClock.now());
+  final now = today == null ? colombiaToday() : DateUtils.dateOnly(today);
   if (date == null) return ('Vigente', PillTone.positive);
   if (date.isBefore(now)) return ('Vencido', PillTone.negative);
   if (date.difference(now).inDays <= inventoryWarningDays) {

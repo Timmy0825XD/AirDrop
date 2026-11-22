@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/widgets/glass_card.dart';
-import '../../../../../core/widgets/message_view.dart';
+import '../../../../../core/widgets/work_error_card.dart';
 import '../../../../../core/widgets/skeleton.dart';
 import '../../../../../theme/app_icons.dart';
 import '../../../data/order_models.dart';
+import '../../../../home/presentation/widgets/operator/operator_empty_card.dart';
 import 'queue_list.dart';
 
 /// Una carga o un fallo de red no equivalen a una cola vacía.
@@ -70,28 +70,20 @@ class _QueueState extends StatelessWidget {
   final VoidCallback onRetry;
 
   @override
-  Widget build(BuildContext context) => GlassCard(
-    padding: const EdgeInsets.symmetric(vertical: 12),
-    child: error == null
-        ? MessageView(
-            icon: AppIcons.check,
-            title: 'Todo al día',
-            message:
-                'No hay urgencias pendientes en tu central. Las nuevas solicitudes aparecerán aquí.',
-            action: TextButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(AppIcons.repeat, size: 20),
-              label: const Text('Actualizar'),
-            ),
-          )
-        : MessageView.error(
-            icon: AppIcons.unavailable,
-            title: 'No pudimos cargar las urgencias',
-            message: error!,
-            action: TextButton(
-              onPressed: onRetry,
-              child: const Text('Reintentar'),
-            ),
+  Widget build(BuildContext context) => error == null
+      ? OperatorEmptyCard(
+          title: 'Todo al día',
+          message:
+              'No hay urgencias pendientes en tu central. Las nuevas solicitudes aparecerán aquí.',
+          action: TextButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(AppIcons.repeat, size: 20),
+            label: const Text('Actualizar'),
           ),
-  );
+        )
+      : WorkErrorCard(
+          title: 'No pudimos cargar las urgencias',
+          message: error!,
+          onRetry: onRetry,
+        );
 }

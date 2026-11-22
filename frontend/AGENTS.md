@@ -234,13 +234,16 @@ La fuente de verdad ejecutable está en `lib/theme/`: [`app_theme.dart`](lib/the
 
 ## Navegación por rol (`lib/app/role_shell.dart`)
 
-Solicitante y despachador comparten `FloatingTabBar`
+Solicitante, despachador y operador comparten `FloatingTabBar`
 (`core/widgets/floating_tab_bar.dart`): cinco accesos con etiquetas visibles,
 radio 28 y urgencia con rayo relleno. El despachador conserva el contador
 de la cola y marca Urgencias como destino seleccionado. El alto y el espacio
 reservado se calculan con las etiquetas y la escala de texto. Se muestra en
-los destinos de la barra y se oculta en detalles y formularios. Operador y
-administrador siguen usando `AppTabBar`, descrita abajo.
+los destinos de la barra y se oculta en detalles y formularios. El operador
+conserva Mapa en el centro, con contador de todas sus misiones y descripción
+accesible del número de drones. El administrador sigue usando `AppTabBar`.
+Por corrección explícita del diseño aprobado, la barra del operador es
+translúcida y se superpone al contenido, sin una franja opaca a todo lo ancho.
 
 Todas las rutas con sesión viven dentro de un `ShellRoute` con `RoleShell`: la pantalla y, abajo, `AppTabBar` (`core/widgets/app_tab_bar.dart`), la barra de pestañas pegada abajo como en cualquier app: cinco pestañas del mismo tamaño, la del centro es la acción del rol (con su texto corto `tabLabel` y, si hay, el contador rojo). Desde la Fase 21 reemplaza a la barra flotante con botón central levantado. Los destinos y la acción de cada rol están en [`role_tabs.dart`](lib/app/role_tabs.dart):
 
@@ -268,29 +271,55 @@ cargar las bandejas vacías; un error ofrece reintentar y no oculta las
 tareas conocidas. La primera urgencia respeta el orden recibido de Nest.
 Preparar carga abre la revisión existente y recibir un traslado abre su
 código: ninguna acción del Inicio autoriza ni despega por sí sola.
+Las cifras llevan icono lateral y separadores como en el operador. El
+vacío horizontal reutiliza `OperatorEmptyCard`; las tareas usan
+`OperatorWorkCard` mediante `DispatcherTaskCard`, conservando sus acciones.
 
-Agenda usa una sola lista para permitir texto grande: título, selector de
-días y tarjetas por franja. El calendario y «Volver a hoy» usan la fecha
-simulada de Colombia. Conserva las verificaciones de stock y fórmula y
-el límite de despegue de Nest; un traslado a una central no exige la
-confirmación que se pide a una persona. «Revisar entrega» abre el pedido.
+Agenda, Urgencias e Inventario reutilizan `HomeBrandBar` con avisos reales.
+`WorkErrorCard` presenta el error con reintento y `RefreshNotice` acompaña
+los datos retenidos tras una actualización fallida. Sus vacíos horizontales
+usan `OperatorEmptyCard`: la acción es opcional y conserva los usos previos.
 
-Urgencias usa `queueProvider` y conserva el orden de Nest. La espera viene
-del reloj simulado; la alarma y la reasignación se muestran por separado.
-La lista es perezosa y conserva los datos conocidos si falla una recarga,
-con un aviso y reintento. Su estado vacío ofrece actualizar y el pie abre
-los pedidos pendientes de carga. «Revisar solicitud» abre el detalle; no
-autoriza ni confirma una carga desde la cola.
+Agenda usa una sola lista para permitir texto grande: cinco fechas, o
+tres con poco ancho o texto ampliado, y encabezado del día seleccionado.
+Las tarjetas conservan las franjas reales de una hora de Nest, rotuladas
+Mañana o Tarde según corresponda. Cada entrega muestra icono de medicamento,
+estado y verificaciones; conserva stock, fórmula, capacidad de drones y
+límite de despegue. Un traslado a una central no exige la confirmación
+que se pide a una persona. El calendario y «Volver a hoy» usan la fecha
+simulada de Colombia. Ante una recarga fallida conserva solo datos de la
+fecha seleccionada; el vacío permite elegir otra fecha. «Revisar entrega»
+abre el pedido.
+
+Urgencias usa `queueProvider` y conserva el orden de Nest. Las tarjetas
+compactas muestran icono de medicamento y «Revisar solicitud», con stock,
+frío, fórmula y reasignación visibles. La espera viene del reloj simulado
+existente y se muestra separada de la alarma. La lista es perezosa y
+conserva los datos conocidos si falla una recarga, con aviso y reintento.
+Su estado vacío ofrece actualizar y el pie abre los pedidos pendientes
+de carga. «Revisar solicitud» abre el detalle; no autoriza ni confirma una
+carga desde la cola.
 
 Inventario permite buscar por medicamento o lote y filtrar todos, por
-vencer o vencidos, sin cambiar el orden del repositorio. Sus tarjetas
-separan cantidad, lote, vencimiento y restricciones. El vacío ofrece añadir
+vencer o vencidos con `ChoicePill`, sin cambiar el orden del repositorio.
+«Añadir» va al costado con borde. Las tarjetas compactas muestran nombre,
+cantidad, lote y vencimiento, con frío, tipo de venta y mercancía peligrosa
+visibles. Toda la tarjeta abre la edición; el menú permite editar o
+eliminar, siempre con confirmación para borrar. El vacío ofrece añadir
 el primer insumo; carga, error y búsqueda sin coincidencias son estados
-distintos. Conserva eliminar con confirmación, actualizar y Cuarentena.
-El formulario de alta y edición agrupa medicamento, lote y existencias,
-y conservación y transporte. Mantiene `InventoryFormValues`, el peso por
-unidad, el calendario, las validaciones y el PATCH solo con cambios.
-Cantidad y peso se apilan en pantallas angostas o con texto grande.
+distintos. Conserva actualizar y el acceso real a Cuarentena.
+
+`inventoryHubIdProvider` observa la central actual de la cuenta y vuelve
+a consultar al cambiar la asignación. `inventoryRowsForHub` retiene datos
+solo de esa central y descarta la caché de otra central o una recarga por
+cambio de dependencias. Ese alcance se verifica también al editar y
+eliminar. El formulario conserva el borrador si falla una actualización
+de la misma central; usa `CompactFormHeader` y `FormSubmitButton`, como el
+operador. Agrupa medicamento, lote y existencias, conservación y transporte;
+mantiene `InventoryFormValues`, peso por unidad, validaciones y PATCH solo
+con cambios. Cantidad y peso se apilan en pantallas angostas o con texto
+grande. Vencimientos, filtros y límites del calendario usan
+`colombiaToday()`, también alrededor de medianoche.
 
 Más se organiza en cuatro grupos con accesos directos: Pedidos,
 Abastecimiento, Mi central y Cuenta (`ActionList`). Mantiene los contadores
@@ -298,23 +327,122 @@ reales y los accesos con candado cuando la central no puede operar.
 Cuenta y Mis abastecimientos siguen disponibles; Información de la central
 se puede consultar aunque esté suspendida. Un fallo al cargar la central
 ofrece actualizarla sin inventar contadores.
+`ActionList` usa títulos fuertes, subtítulos atenuados y contadores grises
+o ámbar, sin punto; Vuelos muestra `DroneGlyph`. Traslados entrantes cuenta
+todos los entrantes en Más; el «por recibir» de Inicio conserva únicamente
+los aterrizados que esperan el código.
 
-Las bandejas usan `ContentPage`, con encabezado y contenido en un único
-scroll, filas perezosas y refresco cada 10 s. Recibir abre el código y
-Revisar y cargar conserva la hoja y el deslizador antes del despegue.
-Los entrantes no ofrecen el mapa del origen. Historial filtra en Nest y
-conserva las páginas conocidas cuando falla una página adicional.
+Las cinco bandejas usan `ContentPage` y `CompactFormHeader`, con la flecha
+junto al título, scroll único y filas perezosas. Las cuatro listas operativas
+se refrescan cada 10 s; Historial conserva el refresco manual.
+`DispatcherOrderCard` reúne icono de medicamento, unidades y destino,
+estado, datos y acción según la bandeja. Programados agrupa Hoy, Fechas
+anteriores y Más adelante; Historial agrupa explícitamente por creación,
+filtra en Nest con `ChoicePill` y conserva las páginas conocidas si falla
+una página adicional. Un error con una lista conocida vacía se muestra
+como error, sin presentar el vacío saludable.
 
-Los formularios entre centrales agrupan pedido, destino y calendario;
-conservan stock, tipos de venta y vista previa de Nest. Mis abastecimientos
-muestra la siguiente ocurrencia real usando la selección compartida con
-Planes del solicitante. Mi central sigue en solo lectura, con mapa,
-estado de energía y contacto; Cuarentena permite consultar los pedidos.
-El perfil del despachador reutiliza identidad, grupos, edición y correo
-pendiente del solicitante, sin documento ni alergias. Su enlace de
-privacidad abre la política pública: revocar consentimiento y suprimir
-cuenta siguen reservados al solicitante. Ajustes conserva los controles
-de tema y accesibilidad, sin modo sencillo para el despachador.
+Recibir abre el código; los entrantes conservan el origen real de
+`originHubsProvider` o «Otra central» y no ofrecen el mapa del origen.
+Cada icono de la ruta permanece junto a su texto al reducir el ancho o
+ampliar la letra. Revisar y cargar conserva la hoja y `SlideToLaunch`
+antes del despegue, con datos reales de dron, conservación y lote.
+El corredor horizontal de Vuelos es decorativo, sin representar avance
+ni hora estimada; el regreso usa «Ver vuelo» con borde.
+
+Los formularios entre centrales (`HubEmergencyScreen` y
+`HubPlanFormScreen`) usan `CompactFormHeader`; `OrderFormScaffold.header`
+es opcional y conserva el encabezado por defecto de los otros formularios.
+`HubRequestPicker` ofrece campos compactos con chevrón hacia abajo y
+buscador. Se mantienen las selecciones en cascada, el stock, los tipos de
+venta, el bloqueo de control especial y las validaciones. En el plan la
+cantidad dice "Cantidad por entrega" y el destino sigue siendo la central
+del despachador; el mapa del traslado es desplegable.
+
+`HubScheduleFields` conserva frecuencia semanal (cada 1 a 4 semanas),
+mensual o fechas específicas; `HubWeekdays` reúne los siete días en una
+fila. La franja muestra su intervalo real de una hora. Inicio y duración
+conservan sus reglas: el fin por fecha o número de entregas tiene resumen
+visible, se despliega para editar y abre sus errores al validar. La vista
+previa real de Nest resume la próxima entrega y permite abrir fechas y
+avisos. Mis abastecimientos (`HubPlansPage`) suma título y acción de alta;
+muestra la siguiente ocurrencia real con fecha, origen cuando se conoce,
+estado y acceso a recibir, la entrega o el plan. La selección de esa
+ocurrencia sigue compartida con Planes del solicitante. "Tus planes" es
+una lista perezosa agrupada con divisores; el estado va a la derecha y se
+apila en poco ancho o con texto grande.
+
+Mi central usa `CompactFormHeader`, con la flecha junto al título, y
+`HubDetailContent`, compartido con la ficha del operador. Sigue en solo
+lectura: identidad lateral con estado, energía aparte, mapa real con
+dirección y coordenadas junto a él. Contacto reúne teléfono y correo en
+dos filas con iconos y separadores; "Llamar" queda al costado y se acomoda
+con poco ancho o texto grande. Cuarentena permite consultar los pedidos.
+
+El vacío de Cuarentena usa `CorridorArt` ancho con escudo, título, texto
+y «Actualizar» con borde. Los registros conservan sus datos reales y el
+acceso al pedido; carga, vacío y fallo de actualización siguen separados.
+
+El perfil del despachador reutiliza la identidad lateral del operador y
+los grupos compartidos para nombre y contacto, sin documento ni alergias.
+La central conocida solo se muestra si pertenece a `user.hubIds`; un
+error de recarga la conserva con aviso y reintento, y sin central válida
+el acceso queda deshabilitado. Mantiene edición, correo pendiente y
+salida con confirmación. Su enlace de privacidad abre la política pública:
+revocar consentimiento y suprimir cuenta siguen reservados al solicitante.
+Ajustes usa encabezado compacto, grupos con divisores e iconos laterales.
+La vista previa del tema se adapta al ancho y al texto y espera «Aplicar»;
+el mensaje distingue claro, oscuro y automático ya aplicados. Los demás
+ajustes se guardan inmediatamente, sin modo sencillo para el despachador.
+
+El Inicio del operador comparte marca, encabezados y `HomeStatusCard` con
+los roles revisados. Resume los drones de todas sus centrales, presenta
+alertas de vuelo y revisiones pendientes, y muestra hasta dos vuelos con
+acceso al mapa completo. Revisar un dron selecciona su central antes de
+abrir Flota; no cambia su estado. Carga, error y vacío son distintos, y
+las tareas conocidas permanecen ante una recarga fallida. El tablero del
+periodo conserva uso, salud e incidentes en un resumen con detalles en
+hojas; mantiene los periodos de 7, 30 y 90 días y el refresco de la operación.
+La composición aprobada usa icono y cifra en una fila, tarjetas compactas
+con el icono a la izquierda y el periodo en un selector desplegable.
+
+Flota usa `ContentPage` y una sola lista con selector de central mediante
+buscador, búsqueda por identificador o modelo y filtros de estado. Conserva
+datos previos solo cuando pertenecen a la central seleccionada: cambiar
+de central muestra carga, nunca los drones anteriores bajo otra central.
+Las tarjetas ofrecen Ver vuelo en misión y Gestionar solo con estado
+operable y central activa. El alta agrupa Identificación, Modelo y
+Equipamiento, conserva las validaciones y muestra la carga útil con el
+kilogramo del compartimento descontado. La hoja de gestión usa `ActionList`
+y mantiene las vías separadas de mantenimiento temporal y fuera de servicio.
+Nuevo dron usa `DroneFormHeader`: flecha junto al título y central debajo,
+tarjeta única para Identificador, iconos separados por líneas verticales
+y modelos en orden Colibrí, Garza, Cóndor. La selección se marca con borde
+y check del acento; frío, descuento de peso y carga útil se presentan como
+en la maqueta. Los vacíos del Inicio del operador usan `OperatorEmptyCard`
+con casa, corredor punteado, `DroneGlyph` y pin, conservando otros dibujos
+para carga y error. El dron de la marca sustituye el glifo genérico en
+los componentes revisados del operador.
+
+El Perfil del operador (`OperatorProfilePage`) conserva Figtree, la paleta
+y Lucide: "Mi perfil" con ajustes, avatar con borde del acento, separador,
+nombre, rol y "Editar datos". Reutiliza `RequesterProfileIdentity` con
+`minInlineWidth: 260`; la opción conserva 300 por defecto y el
+texto grande apila la identidad. Los roles institucionales se nombran con
+`ProfileLabels.role`. "Tu información" ofrece nombre y contacto, sin
+documento ni alergias; las opciones de `RequesterProfileInformation`
+conservan sus valores por defecto. Correo pendiente mantiene verificar y
+cancelar; edición y cierre de sesión reutilizan los flujos existentes.
+
+"Tus centrales" lee `assignedHubsProvider`, compartido con Flota, sin el
+filtro del administrador: skeleton, vacío, error con reintento, datos
+retenidos y actualización al deslizar. Cada central abre una ficha de
+consulta con `HubDetailContent` (mapa, contacto y estado); "Ver flota"
+selecciona esa central y abre `/fleet`. "Tu experiencia" enlaza Ajustes y
+la política pública (`/privacy/policy`); las acciones de `/privacy` siguen
+reservadas al solicitante. Cerrar sesión pide confirmación. Ajustes usa
+el mismo `ContentPage` y las opciones en `Wrap` del despachador, vuelve a
+`/profile` si no hay ruta anterior y conserva las preferencias del teléfono.
 
 ## Telemetría y mapa (`features/tracking/`)
 
@@ -361,7 +489,9 @@ de tema y accesibilidad, sin modo sencillo para el despachador.
 - Las pantallas donde el mapa es el centro (el vuelo, elegir un punto,
   dibujar una geovalla) usan `MapSheetScaffold`
   (`core/widgets/map_sheet.dart`): mapa a pantalla completa, volver y
-  título en vidrio arriba y una hoja que se arrastra abajo.
+  barra sólida arriba y una hoja que se arrastra abajo. El encabezado
+  completo, el controlador de la hoja y su tamaño mínimo son opcionales;
+  los otros mapas conservan sus valores por defecto.
 - `FlightMap` pinta la ruta en dos tramos (lo recorrido sólido en el
   degradado, lo que falta punteado), `PlacePin` en la central y el
   destino, y `DroneMarker` (la ficha del dron con un anillo suave que
@@ -398,7 +528,17 @@ de tema y accesibilidad, sin modo sencillo para el despachador.
   un dron (`hub-incident`) y avisa las alertas con "Ver vuelo". Todo vive en
   `fleetMapProvider` (`fleet_map_providers.dart`); con datos locales no
   abre socket. Tocar un dron abre su ficha (`showDroneFacts`, sin nada del
-  pedido); tocar una tarjeta de la hoja, su vuelo (`/tracking/:orderId`).
+  pedido), con scroll y separadores; "Ver vuelo" abre `/tracking/:orderId`.
+  Conserva Figtree, la paleta del tema, Lucide y el dron de la marca.
+  El encabezado sólido dice "Mapa en vivo", cuántos drones están en misión
+  y la hora simulada, con su velocidad o pausa. Las rutas reales son
+  punteadas, los drones llevan su identificador y las centrales abren su
+  resumen al tocarlas. La hoja lista vuelos sin cajas, separados por
+  líneas, con estado, batería, llegada estimada, frío y "Ver vuelo".
+  El vacío reutiliza el corredor aprobado (`OperatorEmptyCard`); ante un
+  error conserva el mapa conocido y ofrece "Reintentar". Los controles
+  del mapa siguen la altura de la hoja y se ocultan si al expandirla quedan
+  menos de 152 dp disponibles; reaparecen al bajarla.
   El contador del botón y el inicio del operador (`fleetFlightsProvider`,
   `operatorDronesProvider`) suman **todas** sus centrales.
 - Con `linkLost` (RF-34) la posición es estimada: `FlightLiveBar` dice "Sin enlace · posición estimada" en ámbar y el dron se dibuja tenue.
@@ -494,18 +634,33 @@ de tema y accesibilidad, sin modo sencillo para el despachador.
   operativas, con el filtro Todas · Operativas · Legales. El operador crea y
   edita operativas; el admin, zonas legales (RU-36). `GeofenceEditorScreen`
   elige `GeofenceFormScreen` o `LegalZoneFormScreen` por rol y clase.
+- Conserva Figtree, la paleta del tema y Lucide. `ContentPage` desplaza el
+  encabezado y el contenido juntos: "Crear", filtros con `ChoicePill` y
+  tarjetas con icono lateral, estado y flecha. El operador tiene "Ver y
+  editar" y menú "Eliminar" solo en operativas; las demás dicen "Consultar".
+  Incluye skeleton, vacío por filtro, error con reintento conservando datos
+  previos y actualización al deslizar. Borrar sigue pidiendo confirmación.
+  La vigencia y el estado inactivo respetan `simClock`, sin otro socket.
 - Tocar una geovalla que no gestionas abre su ficha
   (`showGeofenceDetailSheet`): clase, forma, norma y fuente o motivo,
   categoría y vigencia. Las legales traen su historial y, para el admin,
   Editar y Desactivar/Reactivar, con el motivo en `showReasonPrompt`.
+- Nueva/Editar geovalla operativa usa `CompactFormHeader` y
+  `FormSubmitButton`, compartidos con Nuevo dron; `DroneFormHeader` conserva
+  su apariencia como envoltorio del encabezado común. Nombre y motivo van
+  en un grupo con iconos y separadores; categoría y vigencia abren el
+  selector buscable. Se conservan validadores, endpoints, contratos y el
+  cálculo de cambios al editar.
 - La forma vive en `GeometryDraft`: círculo (centro y radio de 50 m a 5 km)
   o vértices (3 a 50, `[lng, lat]` sin el cierre). `GeofenceDrawScreen`
   (`MapSheetScaffold`) escribe en el draft al tocar "Listo": en vértices,
   cada toque pone uno; en círculo, el toque pone el centro y el deslizador
-  fija el radio.
+  fija el radio. `GeofenceDrawBar` acomoda Deshacer y Borrar todo con `Wrap`
+  e iconos Lucide.
 - El formulario solo muestra la vista previa quieta
-  (`GeofencePolygonPreview`, con un margen de encuadre chico); dentro de su
-  scroll, arrastrar un mapa peleaba con el scroll.
+  (`GeofencePolygonPreview`, de 190 dp y con un margen de encuadre chico);
+  su clave cambia con la geometría para reencuadrar al volver de dibujar.
+  Dentro de su scroll, arrastrar un mapa peleaba con el scroll.
 
 ## Pantallas de trabajo (desde la Fase 6)
 
@@ -525,7 +680,7 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `AppMaxWidth` | `core/widgets` | En tableta y web, pantalla y barra en una columna de 600 px centrada (lo pone `RoleShell`); el `MediaQuery` de adentro dice ese ancho. |
 | `BalancedGrid` | `core/widgets` | Cuadrícula sin huecos: filas parejas (5 datos = 3 + 2) y, en dos columnas, la última impar a todo el ancho. La usan `HomeGrid` y la telemetría. |
 | `MetricTile` / `BarSpark` / `RingGauge` | `core/widgets` | Cifra grande en una tarjeta con su etiqueta debajo (escrita normal) y contexto en gris; mini gráfico de barras que crece y anillo de progreso. |
-| `MapSheetScaffold` | `core/widgets` | Mapa a pantalla completa con volver y una barra sólida arriba, y una hoja que se arrastra (con la superficie de `AppSurfaces.sheet`); `titleBar` reemplaza el título de la barra ("En vivo" en el vuelo). |
+| `MapSheetScaffold` | `core/widgets` | Mapa a pantalla completa con volver y una barra sólida arriba, y una hoja que se arrastra (con la superficie de `AppSurfaces.sheet`); `titleBar` reemplaza el título de la barra ("En vivo" en el vuelo). `header` puede reemplazar toda la barra, `sheetController` comunica la altura actual al mapa y `minSheetFraction` ajusta el mínimo; son opcionales y conservan los valores por defecto de los demás mapas. |
 | `MenuList` / `MenuItem` | `core/widgets` | Una lista de opciones en una sola tarjeta, separadas por líneas finas, como los ajustes de un teléfono: ícono teñido, título, detalle opcional, contador (ámbar con `urgent`) y flecha, o candado con `onTap: null`. La usan "Más" y los accesos de los inicios (despachador, solicitante y administrador). |
 | `SlideToLaunch` | `core/widgets` | Deslizar para confirmar (pedir urgencia y despegar al confirmar la carga): pista gris, perilla del acento con el avión; sigue el dedo, resiste en el borde, vuelve con resorte si no llega al 75 % y espera a `onLaunch`; si la pantalla sigue abierta, vuelve al inicio. Para el lector de pantalla es un botón. |
 | `showLoadCheckSheet` | `orders/presentation/widgets/pending_load` | Revisión antes de confirmar la carga (medicamento, nevera, fórmula, dron y destino) y "Desliza para despegar". La usan la bandeja "Pendiente de carga" y el detalle: un toque nunca lanza el vuelo. |
@@ -538,7 +693,7 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `SectionFormPage` / `SectionStatePage` | `home/presentation/widgets` | Pantalla de formulario (encabezado, tarjeta sobre la curva y botón) y su versión para carga, error o vacío. La usan todos los formularios. |
 | `showAppSheet` | `core/widgets` | La única forma de abrir una hoja inferior (navegador raíz, encima de la barra). |
 | `FormBottomSheet` | `core/widgets` | Hoja inferior con título, campos y botón de guardar (editar perfil, mantenimiento); deja el área segura y tiene scroll. |
-| `ChoicePill` | `core/widgets` | Chip elegible (relleno o teñido, con ícono o check). |
+| `ChoicePill` | `core/widgets` | Chip elegible (relleno o teñido, con ícono o check), basado en `ChoiceChip` de Material: foco con Tab, activación con Enter o Espacio y objetivo táctil de 48 dp. Conserva su API y colores. |
 | `SlidingSegmented` | `core/widgets` | Filtro con pastilla que se desliza (`null` = "Todas"); si las opciones no caben, el filtro entero se desliza de lado (`segmentWidthOf`) en vez de cortar el texto. |
 | `showConfirmSheet` | `core/widgets` | Hoja inferior para confirmar suspender, reactivar, eliminar o cerrar sesión. |
 | `showAppSnack` / `showErrorSnack` / `GlassSnack` | `core/widgets/app_snack.dart` | El aviso de cualquier acción: tarjeta sólida con el ícono del tono, texto de Nest, acción opcional y una línea del tono que se acorta mientras se ve. `SnackTone`: `success`, `error`, `info`, `warning`. Los errores de Nest van con `showErrorSnack`. |
@@ -553,7 +708,7 @@ Las pantallas de los roles usan las piezas de auth (`AuthField`,
 | `PhoneLink` / `callPhone` | `core/widgets/phone_link.dart` | Teléfono con formato colombiano que se toca para llamar (`tel:+57…`, `url_launcher`), 48 px de alto; si el dispositivo no llama, avisa el número. |
 | `OrderStatusChip` (`forRequester`) | `orders/presentation/widgets` | El estado del pedido; con `forRequester` en palabras del solicitante ("Preparando el envío", "En camino", "No se entregó"). El despachador y el operador ven el técnico. |
 | `AuthDateField` + `pickIsoDate` / `AuthChoiceGroup` | `auth/presentation/widgets` | Fecha en calendario (guarda AAAA-MM-DD, muestra `sáb. 7 nov.`) y grupo de chips con label y error que tiembla, con la forma de `AuthField`. |
-| `OrderTray` / `OrderRowCard` | `orders/presentation/widgets` | Bandejas con `ContentPage`: encabezado, conteo, lista perezosa, recarga, vacío ilustrado, error con reintento y refresco cada 10 s. Tarjeta con estado, medicamento, cantidad, detalles y acción según la bandeja. |
+| `OrderTray` / `DispatcherOrderCard` | `orders/presentation/widgets` | Bandejas con `ContentPage` y encabezado compacto, conteo, lista perezosa con grupos opcionales, recarga, vacío ilustrado, error con reintento y refresco cada 10 s. Tarjeta con estado, icono de medicamento, cantidad, destino, datos y acción según la bandeja. |
 | `MissionCard` / `MissionRoute` / `LiveMission` | `home/presentation` | La misión en curso del inicio (solicitante con su pedido, despachador con el primer vuelo de su central): el estado con su punto verde, el medicamento y lo que va, "6 min" con "llega 9:52 a. m." (hora simulada) si hay telemetría, la ruta como barra con la ficha del dron en su punto real (en medio, subiendo y bajando, sin telemetría) y "Ver mapa". `LiveMission` abre el socket solo mientras se ve el inicio. |
 | `MedicationsScreen` / `MedicationList` / `MedicationTile` / `MedicationSheet` / `availabilityOf` | `orders/presentation` y `widgets/medications` | Medicamentos disponibles (`/medications`, RF-54, CU-49), solo solicitante, desde su inicio: el catálogo de la urgencia con nombre, tipo de venta, frío y la disponibilidad en palabras ("Pocas unidades" con 5 o menos); nunca cantidad, central, dron ni tiempo. Busca y filtra con `MedicationFilter`. "Pedir este medicamento" abre la urgencia con `extra: CatalogOffer` (`EmergencyScreen.initialOffer`). Sin conexión deja la última lista con su hora. |
 | `RequesterStats` / `NextDeliveryCard` | `home/presentation/widgets/requester` | Los números del solicitante (entregados con su anillo, o una frase si son 0, y los pedidos de las últimas 4 semanas en barras) y la próxima entrega programada (día y hora, plan o programada). Todo sale de sus pedidos. |

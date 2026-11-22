@@ -1,78 +1,188 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/widgets/glass_card.dart';
-import '../../../../core/widgets/status_pill.dart';
-import '../../../../core/widgets/tone_tile.dart';
-import '../../../orders/presentation/widgets/order_status_chip.dart';
-import '../../../tracking/data/telemetry_models.dart';
+import '../../../../core/widgets/drone_glyph.dart';
+import '../../../../theme/app_icons.dart';
+import '../../../../theme/app_palette.dart';
 import '../../data/fleet_flight.dart';
+import 'fleet_map/fleet_map_values.dart';
 
-/// "Crucero · Ida · 82 % · llega en 4 min".
-String _flightDetails(FleetFlight f) => [
-  f.phase?.label ?? 'Por despegar',
-  f.returning ? 'Regreso' : 'Ida',
-  if (f.batteryPercent case final b?) '${b.round()} %',
-  if (f.temperatureC case final c?)
-    '${c.toStringAsFixed(1).replaceAll('.', ',')} °C',
-  if (f.etaSeconds case final s? when !f.returning)
-    'llega en ${(s / 60).ceil()} min',
-].join(' · ');
-
-List<String> _flightAlerts(FleetFlight f) => [
-  if (f.batteryAlert) 'Batería baja',
-  if (f.failureAlert) 'Falla',
-  if (f.coldChainAlert || isColdChainBreach(f.temperatureC))
-    'Frío fuera de rango',
-];
-
-/// Un dron en misión: su nombre, el estado del pedido, la fase, la batería
-/// y la llegada, y las alertas si hay. Tocarla abre el mapa del vuelo.
+/// Fila sin tarjeta: la hoja separa los vuelos con líneas horizontales.
 class FleetFlightCard extends StatelessWidget {
-  const FleetFlightCard({super.key, required this.flight, required this.onTap});
-
+  const FleetFlightCard({
+    super.key,
+    required this.flight,
+    required this.onTap,
+    this.title,
+    this.routeLabel,
+  });
   final FleetFlight flight;
   final VoidCallback onTap;
+  final String? title, routeLabel;
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final f = flight;
-    return GlassCard(
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    child: InkWell(
       onTap: onTap,
-      padding: const EdgeInsets.all(14),
-      child: Row(
+      borderRadius: BorderRadius.circular(12),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: _FlightRow(card: this),
+      ),
+    ),
+  );
+}
+
+class _FlightRow extends StatelessWidget {
+  const _FlightRow({required this.card});
+  final FleetFlightCard card;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      final inline =
+          box.maxWidth >= 300 &&
+          MediaQuery.textScalerOf(context).scale(14) <= 18;
+      return Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          ToneTile.icon(
-            icon: Icons.flight_rounded,
-            tone: f.hasAlert
-                ? StatusPill.colorOf(context, PillTone.negative)
-                : theme.colorScheme.primary,
+          Padding(
+            padding: const EdgeInsets.only(top: 5),
+            child: DroneGlyph(
+              color: Theme.of(context).colorScheme.onSurface,
+              size: 28,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(f.identifier, style: theme.textTheme.titleMedium),
-                const SizedBox(height: 2),
-                Text(_flightDetails(f), style: theme.textTheme.bodySmall),
-                const SizedBox(height: 10),
-                Wrap(
-                  spacing: 6,
-                  runSpacing: 6,
-                  children: [
-                    OrderStatusChip(status: f.orderStatus),
-                    for (final alert in _flightAlerts(f))
-                      StatusPill(label: alert, tone: PillTone.negative),
-                  ],
-                ),
+                _FlightBody(card: card),
+                if (!inline)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 10),
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: _WatchFlight(),
+                    ),
+                  ),
               ],
             ),
           ),
-          Icon(Icons.map_rounded, color: theme.colorScheme.onSurfaceVariant),
+          if (inline)
+            const Padding(
+              padding: EdgeInsets.only(left: 10, top: 18),
+              child: _WatchFlight(),
+            ),
+        ],
+      );
+    },
+  );
+}
+
+class _FlightBody extends StatelessWidget {
+  const _FlightBody({required this.card});
+  final FleetFlightCard card;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final flight = card.flight;
+    final alerts = fleetFlightAlerts(flight);
+    return DefaultTextStyle(
+      style: theme.textTheme.bodySmall!.copyWith(
+        color: theme.colorScheme.onSurfaceVariant,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            card.title ?? flight.identifier,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 3),
+          _FlightPhase(flight: flight),
+          if (card.routeLabel case final route?) ...[
+            const SizedBox(height: 3),
+            Text(route),
+          ],
+          if (fleetFlightReadings(flight).isNotEmpty) ...[
+            const SizedBox(height: 3),
+            Text(fleetFlightReadings(flight)),
+          ],
+          if (alerts.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              alerts,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: context.palette.warning,
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
+}
+
+class _FlightPhase extends StatelessWidget {
+  const _FlightPhase({required this.flight});
+  final FleetFlight flight;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = flight.linkLost
+        ? context.palette.warning
+        : flight.returning
+        ? Theme.of(context).colorScheme.primary
+        : flight.phase == null
+        ? context.palette.warning
+        : context.palette.success;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          margin: const EdgeInsets.only(top: 5, right: 6),
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        Expanded(
+          child: Text(
+            fleetFlightPhase(flight),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _WatchFlight extends StatelessWidget {
+  const _WatchFlight();
+  @override
+  Widget build(BuildContext context) => DefaultTextStyle(
+    style: Theme.of(context).textTheme.labelMedium!.copyWith(
+      color: Theme.of(context).colorScheme.primary,
+      fontWeight: FontWeight.w700,
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Text('Ver vuelo'),
+        const SizedBox(width: 5),
+        Icon(
+          AppIcons.next,
+          size: 17,
+          color: Theme.of(context).colorScheme.primary,
+        ),
+      ],
+    ),
+  );
 }

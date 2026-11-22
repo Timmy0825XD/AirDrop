@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../theme/app_icons.dart';
 
 import '../../../../../core/api_exception.dart';
-import '../../../../../core/widgets/auth_picker_field.dart';
+import 'hub_request_picker.dart';
 import '../../../../../core/widgets/search_picker_sheet.dart';
 import '../../../../inventory/data/inventory_models.dart' show SaleType;
 import '../../../data/order_models.dart';
@@ -50,9 +50,8 @@ class HubEmergencyFields extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        AuthPickerField<CatalogOffer>(
+        HubRequestPicker<CatalogOffer>(
           icon: AppIcons.medication,
-          trailingIcon: AppIcons.next,
           label: 'Medicamento',
           hint: 'Elige el medicamento',
           sheetTitle: '¿Qué necesita tu central?',
@@ -77,7 +76,10 @@ class HubEmergencyFields extends StatelessWidget {
           curve: Curves.fastOutSlowIn,
           alignment: Alignment.topCenter,
           child: form.sources == null
-              ? const SizedBox(width: double.infinity)
+              ? const Padding(
+                  padding: EdgeInsets.only(top: 16),
+                  child: _HubSourcePlaceholder(),
+                )
               : _SourcePicker(form: form),
         ),
         const SizedBox(height: 16),
@@ -102,40 +104,65 @@ class _SourcePicker extends StatelessWidget {
     final values = form.values;
     return Padding(
       padding: const EdgeInsets.only(top: 16),
-      child: switch (form.sources!) {
-        AsyncValue(hasValue: true, hasError: false, :final value?) =>
-          AuthPickerField<OfferSource>(
-            icon: AppIcons.hub,
-            trailingIcon: AppIcons.next,
-            label: 'Central de origen',
-            hint: value.isEmpty
-                ? 'Ninguna otra central lo tiene ahora'
-                : 'Elige de qué central sale',
-            sheetTitle: '¿Qué central te lo manda?',
-            searchHint: 'Busca la central',
-            errorText: form.errors[HubRequestInput.origin],
-            shakeCount: form.shakeCount,
-            empty: 'Ninguna otra central activa lo tiene con stock.',
-            options: [
-              for (final source in value)
-                PickerOption(
-                  value: source,
-                  title: source.hub.name,
-                  subtitle:
-                      '${source.offer.availableQuantity} en stock · '
-                      '${source.hub.address}',
-                  icon: AppIcons.hub,
-                ),
-            ],
-            isSelected: (source) => source.hub.id == values.originHubId,
-            onSelected: (source) {
-              values.pickSource(source.hub.id, source.offer);
-              form.onChanged();
-            },
-          ),
-        AsyncError(:final error) => Text(ApiException.messageOf(error)),
-        _ => const LinearProgressIndicator(),
-      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          switch (form.sources!) {
+            AsyncValue(hasValue: true, hasError: false, :final value?) =>
+              HubRequestPicker<OfferSource>(
+                icon: AppIcons.hub,
+                label: 'Central de origen',
+                hint: value.isEmpty
+                    ? 'Ninguna otra central lo tiene ahora'
+                    : 'Elige de qué central sale',
+                sheetTitle: '¿Qué central te lo manda?',
+                searchHint: 'Busca la central',
+                errorText: form.errors[HubRequestInput.origin],
+                shakeCount: form.shakeCount,
+                empty: 'Ninguna otra central activa lo tiene con stock.',
+                options: [
+                  for (final source in value)
+                    PickerOption(
+                      value: source,
+                      title: source.hub.name,
+                      subtitle:
+                          '${source.offer.availableQuantity} en stock · '
+                          '${source.hub.address}',
+                      icon: AppIcons.hub,
+                    ),
+                ],
+                isSelected: (source) => source.hub.id == values.originHubId,
+                onSelected: (source) {
+                  values.pickSource(source.hub.id, source.offer);
+                  form.onChanged();
+                },
+              ),
+            AsyncError(:final error) => Text(ApiException.messageOf(error)),
+            _ => const LinearProgressIndicator(),
+          },
+          if (values.offer case final offer?)
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Text(
+                '${offer.availableQuantity} unidades disponibles',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+        ],
+      ),
     );
   }
+}
+
+class _HubSourcePlaceholder extends StatelessWidget {
+  const _HubSourcePlaceholder();
+  @override
+  Widget build(BuildContext context) => HubRequestPicker<String>(
+    label: 'Central de origen',
+    hint: 'Elige primero el medicamento',
+    icon: AppIcons.hub,
+    options: const [],
+    isSelected: (_) => false,
+    onSelected: (_) {},
+  );
 }

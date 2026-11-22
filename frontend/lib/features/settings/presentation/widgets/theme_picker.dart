@@ -36,24 +36,16 @@ class ThemePicker extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              for (final (mode, label) in _options)
-                Expanded(
-                  child: ThemeOption(
-                    mode: mode,
-                    label: label,
-                    selected: mode == picked,
-                    onTap: () => onPick(mode),
-                  ),
-                ),
-            ],
-          ),
+          _ThemeOptions(picked: picked, onPick: onPick),
           const SizedBox(height: 12),
           Text(
             pending
                 ? 'Así se vería. Toca Aplicar para cambiarlo.'
-                : 'Automático sigue el tema de tu teléfono.',
+                : applied == ThemeMode.system
+                ? 'Automático sigue el tema de tu teléfono.'
+                : applied == ThemeMode.dark
+                ? 'Tema oscuro aplicado.'
+                : 'Tema claro aplicado.',
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 12),
@@ -65,4 +57,32 @@ class ThemePicker extends StatelessWidget {
       ),
     );
   }
+}
+
+class _ThemeOptions extends StatelessWidget {
+  const _ThemeOptions({required this.picked, required this.onPick});
+  final ThemeMode picked;
+  final ValueChanged<ThemeMode> onPick;
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, box) {
+      final stacked =
+          box.maxWidth < 340 && MediaQuery.textScalerOf(context).scale(16) > 24;
+      final options = [
+        for (final (mode, label) in ThemePicker._options)
+          ThemeOption(
+            mode: mode,
+            label: label,
+            selected: mode == picked,
+            onTap: () => onPick(mode),
+          ),
+      ];
+      return stacked
+          ? Column(children: options)
+          : Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [for (final option in options) Expanded(child: option)],
+            );
+    },
+  );
 }

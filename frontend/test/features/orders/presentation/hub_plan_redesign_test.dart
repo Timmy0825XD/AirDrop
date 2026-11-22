@@ -153,7 +153,7 @@ void main() {
       await tester.pumpAndSettle();
       final qty = find.descendant(
         of: find.byWidgetPredicate(
-          (w) => w is AuthField && w.label == 'Cantidad',
+          (w) => w is AuthField && w.label == 'Cantidad por entrega',
         ),
         matching: find.byType(TextField),
       );

@@ -15,9 +15,11 @@ class AgendaPage extends StatelessWidget {
     required this.onPick,
     required this.onRefresh,
     required this.onProgrammed,
+    this.brand,
   });
   final String date;
   final Widget content;
+  final Widget? brand;
   final ValueChanged<String> onDateChanged;
   final VoidCallback onPick, onProgrammed;
   final Future<void> Function() onRefresh;
@@ -32,10 +34,18 @@ class AgendaPage extends StatelessWidget {
           physics: const AlwaysScrollableScrollPhysics(),
           padding: listPadding(context),
           children: [
+            if (brand != null) ...[brand!, const SizedBox(height: 20)],
             const _AgendaTitle(),
             const SizedBox(height: 24),
             AgendaDayBar(date: date, onChanged: onDateChanged, onPick: onPick),
             const SizedBox(height: 24),
+            Text(
+              agendaDateLabel(date),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 12),
             content,
             const SizedBox(height: 24),
             HomeLink(
@@ -67,7 +77,7 @@ class _AgendaTitle extends StatelessWidget {
       ),
       const SizedBox(height: 6),
       Text(
-        'Las entregas de tu central, por horario.',
+        'Entregas de tu central',
         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),

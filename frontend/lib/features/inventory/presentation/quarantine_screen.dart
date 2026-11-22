@@ -5,9 +5,10 @@ import '../../../theme/app_icons.dart';
 
 import '../../../core/widgets/status_pill.dart';
 import '../../../core/date_format.dart';
-import '../../orders/presentation/widgets/order_row_card.dart';
+import '../../orders/presentation/widgets/dispatcher_order_card.dart';
+import '../../orders/presentation/widgets/order_fact_row.dart';
 import '../../orders/presentation/widgets/order_tray.dart';
-import '../../../theme/app_palette.dart';
+import 'widgets/quarantine_empty_card.dart';
 import '../data/inventory_models.dart';
 import '../data/inventory_providers.dart';
 
@@ -21,7 +22,7 @@ class QuarantineScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return OrderTray<QuarantineRecord>(
       title: 'Cuarentena',
-      idleSubtitle: 'Lotes devueltos que no reingresan',
+      idleSubtitle: 'Insumos que no regresan al stock.',
       countLabel: (n) => n == 1 ? '1 lote en cuarentena' : '$n lotes',
       rows: ref.watch(quarantineProvider),
       onRefresh: () => ref.invalidate(quarantineProvider),
@@ -29,6 +30,9 @@ class QuarantineScreen extends ConsumerWidget {
       emptyTitle: 'Sin lotes en cuarentena',
       emptyText:
           'Los insumos devueltos que no puedan volver al inventario aparecerán aquí.',
+      emptyBody: QuarantineEmptyCard(
+        onRefresh: () => ref.invalidate(quarantineProvider),
+      ),
       keyOf: (row) => row.id,
       itemBuilder: (context, row) => QuarantineTile(
         record: row,
@@ -47,21 +51,27 @@ class QuarantineTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return OrderRowCard(
-      icon: switch (record.reason) {
-        QuarantineReason.coldChain => AppIcons.coldChain,
-        QuarantineReason.incident => AppIcons.warning,
-        _ => AppIcons.orders,
-      },
-      tone: context.palette.warning,
+    return DispatcherOrderCard(
       title: record.medicationName,
-      accent: '${record.quantity} und. · Lote ${record.lot}',
-      detail:
-          'Vence ${formatDay(record.expirationDate)} · '
-          'llegó ${formatDateTime(record.createdAt)}',
-      pill: StatusPill(label: record.reason.label, tone: PillTone.attention),
+      subtitle: '${record.quantity} unidades · Lote ${record.lot}',
+      status: StatusPill(
+        label: record.reason.label,
+        tone: PillTone.attention,
+        wrapLabel: true,
+      ),
+      facts: [
+        OrderFactRow(
+          icon: AppIcons.calendar,
+          label: 'Vence ${formatDay(record.expirationDate)}',
+        ),
+        OrderFactRow(
+          icon: AppIcons.incoming,
+          label: 'Ingresó ${formatDateTime(record.createdAt)}',
+        ),
+      ],
       onTap: onTap,
-      actionLabel: 'Ver pedido',
+      dividedFooter: true,
+      footer: OrderDetailAction(onTap: onTap, label: 'Ver pedido'),
     );
   }
 }

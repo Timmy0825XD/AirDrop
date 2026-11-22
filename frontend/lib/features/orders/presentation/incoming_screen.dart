@@ -5,7 +5,7 @@ import '../../../theme/app_icons.dart';
 
 import '../data/order_models.dart';
 import '../data/order_providers.dart';
-import 'widgets/order_tile.dart';
+import 'widgets/incoming_tile.dart';
 import 'widgets/order_tray.dart';
 
 /// "Traslados entrantes" del despachador (`GET /orders/incoming`): lo que
@@ -17,6 +17,8 @@ class IncomingScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final origins = ref.watch(originHubsProvider).value ?? const <OriginHub>[];
+    final names = {for (final hub in origins) hub.id: hub.name};
     return OrderTray<Order>(
       title: 'Traslados entrantes',
       idleSubtitle: 'Lo que otras centrales te envían',
@@ -27,11 +29,10 @@ class IncomingScreen extends ConsumerWidget {
       emptyTitle: 'Sin traslados entrantes',
       emptyText: 'Cuando otra central te envíe insumos, podrás seguirlos aquí.',
       keyOf: (order) => order.id,
-      itemBuilder: (context, order) => OrderTile(
+      itemBuilder: (context, order) => IncomingTile(
         order: order,
-        canWatch: false,
-        canReceive: order.status == OrderStatus.awaitingDelivery,
-        onTap: () => context.push('/orders/${order.id}'),
+        originName: names[order.originHubId] ?? 'Otra central',
+        onOpen: () => context.push('/orders/${order.id}'),
       ),
     );
   }

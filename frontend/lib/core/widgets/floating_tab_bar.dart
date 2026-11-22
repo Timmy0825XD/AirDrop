@@ -1,7 +1,10 @@
 import 'dart:math' as math;
+import 'dart:ui' show ImageFilter;
 import 'package:flutter/material.dart';
 
 import '../../theme/app_palette.dart';
+import '../../theme/app_icons.dart';
+import 'drone_glyph.dart';
 import 'app_max_width.dart';
 import 'app_tab_bar.dart';
 
@@ -31,7 +34,7 @@ double _dockHeight(BuildContext context, Iterable<String> labels) {
   return math.max(76, 52 + labelHeight);
 }
 
-/// Solicitante y despachador comparten la misma barra flotante.
+/// Los tres roles operativos comparten la misma barra flotante.
 class FloatingTabBar extends StatelessWidget {
   const FloatingTabBar({
     super.key,
@@ -40,12 +43,14 @@ class FloatingTabBar extends StatelessWidget {
     required this.onSelect,
     this.center,
     this.centerActive = false,
+    this.translucent = false,
   });
   final List<NavDestination> destinations;
   final int? selected;
   final ValueChanged<int> onSelect;
   final NavCenterAction? center;
   final bool centerActive;
+  final bool translucent;
 
   static double barHeight(
     BuildContext context, {
@@ -60,6 +65,7 @@ class FloatingTabBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _FloatingDock(
+      translucent: translucent,
       height: barHeight(
         context,
         labels: [
@@ -101,6 +107,7 @@ class _DockItems extends StatelessWidget {
               selected: bar.centerActive,
               primary: true,
               badge: action.badge,
+              badgeLabel: action.badgeLabel,
               onTap: action.onPressed,
             ),
           ),
@@ -111,9 +118,14 @@ class _DockItems extends StatelessWidget {
 }
 
 class _FloatingDock extends StatelessWidget {
-  const _FloatingDock({required this.height, required this.child});
+  const _FloatingDock({
+    required this.height,
+    required this.child,
+    required this.translucent,
+  });
   final double height;
   final Widget child;
+  final bool translucent;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -135,11 +147,19 @@ class _FloatingDock extends StatelessWidget {
           ),
         ],
       ),
-      child: Material(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
-        clipBehavior: Clip.antiAlias,
-        child: child,
+        child: BackdropFilter(
+          enabled: translucent,
+          filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+          child: Material(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest
+                .withValues(alpha: translucent ? 0.78 : 1),
+            borderRadius: BorderRadius.circular(28),
+            clipBehavior: Clip.antiAlias,
+            child: child,
+          ),
+        ),
       ),
     ),
   );
@@ -154,6 +174,7 @@ class _DockItem extends StatelessWidget {
     this.primary = false,
     this.semantics,
     this.badge,
+    this.badgeLabel,
   });
   final IconData icon;
   final String label;
@@ -162,6 +183,7 @@ class _DockItem extends StatelessWidget {
   final VoidCallback onTap;
   final String? semantics;
   final int? badge;
+  final String? badgeLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -171,7 +193,7 @@ class _DockItem extends StatelessWidget {
       button: true,
       selected: selected,
       label: (badge ?? 0) > 0
-          ? '${semantics ?? label}, $badge por atender'
+          ? '${semantics ?? label}, ${badgeLabel ?? '$badge por atender'}'
           : semantics ?? label,
       excludeSemantics: true,
       child: InkWell(
@@ -249,6 +271,8 @@ class _DockGlyph extends StatelessWidget {
                   size: 25,
                 ),
               )
+            : icon == AppIcons.drone
+            ? DroneGlyph(color: color, size: 24)
             : Icon(icon, color: color, size: 24),
       ),
     ),

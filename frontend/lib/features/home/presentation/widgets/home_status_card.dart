@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/widgets/corridor_art.dart';
-import '../../../../../core/widgets/glass_card.dart';
-import '../../../../../theme/app_icons.dart';
+import '../../../../core/widgets/corridor_art.dart';
+import '../../../../core/widgets/glass_card.dart';
+import '../../../../theme/app_icons.dart';
 
 /// Estado vacío y avisos de disponibilidad con la ilustración de la app.
-class DispatcherStatusCard extends StatelessWidget {
-  const DispatcherStatusCard({
+class HomeStatusCard extends StatelessWidget {
+  const HomeStatusCard({
     super.key,
     required this.title,
     required this.message,

@@ -20,7 +20,10 @@ class MapSheetScaffold extends StatelessWidget {
     required this.sheet,
     this.trailing,
     this.titleBar,
+    this.header,
+    this.sheetController,
     this.sheetFraction = 0.38,
+    this.minSheetFraction = 0.18,
   });
 
   final Widget Function(double sheetHeight) map;
@@ -29,34 +32,68 @@ class MapSheetScaffold extends StatelessWidget {
   final List<Widget> sheet;
   final Widget? trailing;
   final Widget? titleBar;
+  final Widget? header;
+  final DraggableScrollableController? sheetController;
 
   /// Qué parte de la pantalla ocupa la hoja al abrir.
   final double sheetFraction;
+  final double minSheetFraction;
+
+  @override
+  Widget build(BuildContext context) =>
+      Scaffold(body: _MapSheetLayout(view: this));
+}
+
+class _MapSheetLayout extends StatelessWidget {
+  const _MapSheetLayout({required this.view});
+  final MapSheetScaffold view;
 
   @override
   Widget build(BuildContext context) {
     final top = MediaQuery.paddingOf(context).top;
-    return Scaffold(
-      body: LayoutBuilder(
-        builder: (context, box) => Stack(
-          children: [
-            Positioned.fill(child: map(box.maxHeight * sheetFraction)),
+    return LayoutBuilder(
+      builder: (context, box) => Stack(
+        children: [
+          Positioned.fill(
+            child: _MapViewport(view: view, height: box.maxHeight),
+          ),
+          if (view.header case final header?)
+            Positioned(left: 0, right: 0, top: 0, child: header)
+          else
             Positioned(
               left: 16,
               right: 16,
               top: top + 12,
-              child: _TopBar(scaffold: this),
+              child: _TopBar(scaffold: view),
             ),
-            DraggableScrollableSheet(
-              initialChildSize: sheetFraction,
-              minChildSize: 0.18,
-              maxChildSize: 0.86,
-              snap: true,
-              builder: (context, scroll) =>
-                  _SheetBody(controller: scroll, children: sheet),
-            ),
-          ],
-        ),
+          DraggableScrollableSheet(
+            controller: view.sheetController,
+            initialChildSize: view.sheetFraction,
+            minChildSize: view.minSheetFraction,
+            maxChildSize: 0.86,
+            snap: true,
+            builder: (context, scroll) =>
+                _SheetBody(controller: scroll, children: view.sheet),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MapViewport extends StatelessWidget {
+  const _MapViewport({required this.view, required this.height});
+  final MapSheetScaffold view;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = view.sheetController;
+    if (controller == null) return view.map(height * view.sheetFraction);
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) => view.map(
+        height * (controller.isAttached ? controller.size : view.sheetFraction),
       ),
     );
   }

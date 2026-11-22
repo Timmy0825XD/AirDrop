@@ -9,6 +9,8 @@ import 'package:frontend/features/home/presentation/dispatcher_more_screen.dart'
 import 'package:frontend/features/hubs/data/hub_models.dart';
 import 'package:frontend/features/hubs/data/hub_providers.dart';
 import 'package:frontend/features/orders/data/order_providers.dart';
+import 'package:frontend/features/orders/data/order_models.dart';
+import 'package:frontend/features/inventory/data/inventory_models.dart';
 import 'package:frontend/theme/app_palette.dart';
 
 const _hub = Hub(
@@ -50,6 +52,7 @@ Future<GoRouter> _mount(
   WidgetTester tester, {
   Future<Hub?> Function()? loadHub,
   double scale = 1,
+  List<Order> incoming = const [],
 }) async {
   tester.view.physicalSize = const Size(320, 720);
   tester.view.devicePixelRatio = 1;
@@ -76,7 +79,7 @@ Future<GoRouter> _mount(
         queueProvider.overrideWith((ref) async => []),
         pendingLoadProvider.overrideWith((ref) async => []),
         scheduledProvider.overrideWith((ref) async => []),
-        incomingProvider.overrideWith((ref) async => []),
+        incomingProvider.overrideWith((ref) async => incoming),
         inFlightProvider.overrideWith((ref) async => []),
       ],
       child: MaterialApp.router(
@@ -105,6 +108,47 @@ Future<void> _bring(WidgetTester tester, String label) async {
 }
 
 void main() {
+  testWidgets(
+    'Más cuenta todos los traslados entrantes, incluidos los que siguen en vuelo',
+    (tester) async {
+      Order transfer(String id, OrderStatus status) => Order(
+        id: id,
+        missionType: MissionType.emergency,
+        destinationKind: DestinationKind.hub,
+        status: status,
+        priority: OrderPriority.normal,
+        medicationName: 'Suero oral',
+        saleType: SaleType.overTheCounter,
+        requiresColdChain: false,
+        quantity: 1,
+        address: 'Valledupar',
+        hasPrescription: false,
+        createdByUserId: 'u',
+        originHubId: 'other',
+        destinationHubId: 'h',
+      );
+      await _mount(
+        tester,
+        incoming: [
+          transfer('flying', OrderStatus.inFlight),
+          transfer('landed', OrderStatus.awaitingDelivery),
+        ],
+      );
+      await tester.pumpAndSettle();
+      final row = find
+          .ancestor(
+            of: find.text('Traslados entrantes'),
+            matching: find.byType(InkWell),
+          )
+          .first;
+      expect(
+        find.descendant(of: row, matching: find.text('2')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   for (final scale in [1.0, 2.0]) {
     testWidgets(
       'los 12 accesos de Más abren su destino y permiten volver, texto x$scale',

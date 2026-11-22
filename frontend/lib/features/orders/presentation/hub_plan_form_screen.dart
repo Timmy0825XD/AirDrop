@@ -6,6 +6,7 @@ import '../../../core/api_exception.dart';
 import '../../../core/widgets/app_snack.dart';
 import '../../../core/widgets/form_submit_button.dart';
 import '../../../core/widgets/form_section.dart';
+import '../../../core/widgets/compact_form_header.dart';
 import '../../../theme/app_icons.dart';
 import 'widgets/hub_request/hub_request_destination.dart';
 import '../data/order_models.dart';
@@ -18,7 +19,9 @@ import 'widgets/order_form_scaffold.dart';
 import 'widgets/plan_schedule/busy_slots.dart';
 import 'widgets/plan_schedule/schedule_values.dart';
 import 'widgets/plan_schedule/schedule_fields.dart';
-import 'widgets/plan_schedule/schedule_preview_card.dart';
+import 'widgets/hub_request/hub_schedule_fields.dart';
+import 'widgets/hub_request/hub_schedule_preview.dart';
+import 'widgets/hub_request/hub_transfer_preview.dart';
 import 'widgets/plan_schedule/schedule_preview_state.dart';
 
 /// Abastecimiento programado desde otra central (`POST /orders/hub-plans`):
@@ -49,6 +52,7 @@ class _HubPlanFormScreenState extends ConsumerState<HubPlanFormScreen>
   ScheduleDraft get _draft => _values.schedule;
 
   Future<void> _submit() async {
+    if (_sending) return;
     final errors = _values.validate(plan: true);
     final scheduleErrors = _draft.validate(needsPrescription: false);
     setState(() {
@@ -82,6 +86,11 @@ class _HubPlanFormScreenState extends ConsumerState<HubPlanFormScreen>
     return OrderFormScaffold<OriginHub>(
       title: 'Nuevo abastecimiento',
       subtitle: 'Organiza las próximas entregas.',
+      header: CompactFormHeader(
+        title: 'Nuevo abastecimiento',
+        subtitle: 'Organiza las próximas entregas.',
+        onBack: () => context.canPop() ? context.pop() : context.go('/more'),
+      ),
       source: ref.watch(originHubsProvider),
       emptyIcon: AppIcons.hub,
       onRetry: () => ref.invalidate(originHubsProvider),
@@ -103,17 +112,10 @@ class _HubPlanFormScreenState extends ConsumerState<HubPlanFormScreen>
           ],
         ),
         const SizedBox(height: 24),
-        HubRequestDestination(hub: ref.watch(myHubProvider).value),
-        ?transferMapOf(
-          origins: origins,
-          originHubId: _values.originHubId,
-          mine: ref.watch(myHubProvider).value,
-        ),
-        const SizedBox(height: 16),
         FormSection(
           title: 'Cuándo recibir',
           children: [
-            ScheduleFields(
+            HubScheduleFields(
               form: ScheduleForm(
                 draft: _draft,
                 errors: _scheduleErrors,
@@ -125,10 +127,19 @@ class _HubPlanFormScreenState extends ConsumerState<HubPlanFormScreen>
           ],
         ),
         const SizedBox(height: 16),
-        SchedulePreviewCard(
+        HubSchedulePreview(
           preview: preview,
           error: previewError,
           loading: previewLoading,
+        ),
+        const SizedBox(height: 24),
+        HubRequestDestination(hub: ref.watch(myHubProvider).value),
+        HubTransferPreview(
+          map: transferMapOf(
+            origins: origins,
+            originHubId: _values.originHubId,
+            mine: ref.watch(myHubProvider).value,
+          ),
         ),
         const SizedBox(height: 14),
         const HubTransferNote(),
@@ -138,6 +149,12 @@ class _HubPlanFormScreenState extends ConsumerState<HubPlanFormScreen>
         loadingLabel: 'Programando el abastecimiento',
         loading: _sending,
         onPressed: previewError == null ? _submit : null,
+        style: FilledButton.styleFrom(
+          minimumSize: const Size(0, 54),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
       ),
     );
   }

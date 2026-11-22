@@ -45,30 +45,16 @@ class _SlotHeader extends StatelessWidget {
   final int drones;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.all(18),
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: .04),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+    ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              AppIcons.clock,
-              size: 22,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Franja de las ${formatTimeText(slot.time)}',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
-              ),
-            ),
-          ],
-        ),
+        _SlotTime(time: slot.time),
         const SizedBox(height: 6),
         Text(
           '${slot.orders.length} ${slot.orders.length == 1 ? 'entrega' : 'entregas'} · '
@@ -85,4 +71,40 @@ class _SlotHeader extends StatelessWidget {
       ],
     ),
   );
+}
+
+class _SlotTime extends StatelessWidget {
+  const _SlotTime({required this.time});
+  final String time;
+  @override
+  Widget build(BuildContext context) => Row(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Icon(
+        AppIcons.clock,
+        size: 22,
+        color: Theme.of(context).colorScheme.primary,
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Text(
+          agendaSlotLabel(time),
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700),
+        ),
+      ),
+    ],
+  );
+}
+
+String agendaSlotLabel(String time) {
+  final hour = int.tryParse(time.split(':').first);
+  if (hour == null) return 'Franja de las ${formatTimeText(time)}';
+  final period = hour < 12
+      ? 'Mañana'
+      : hour < 18
+      ? 'Tarde'
+      : 'Noche';
+  return '$period · ${formatTimeText(time)} – ${formatTimeText('${hour + 1}:00')}';
 }

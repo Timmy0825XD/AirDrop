@@ -11,8 +11,10 @@ class QueuePage extends StatelessWidget {
     required this.content,
     required this.onRefresh,
     required this.onPendingLoad,
+    this.brand,
   });
   final Widget content;
+  final Widget? brand;
   final Future<void> Function() onRefresh;
   final VoidCallback onPendingLoad;
 
@@ -25,9 +27,17 @@ class QueuePage extends StatelessWidget {
         child: CustomScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           slivers: [
-            const SliverPadding(
-              padding: EdgeInsets.fromLTRB(20, 18, 20, 24),
-              sliver: SliverToBoxAdapter(child: _QueueTitle()),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    if (brand != null) ...[brand!, const SizedBox(height: 20)],
+                    const _QueueTitle(),
+                  ],
+                ),
+              ),
             ),
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -63,13 +73,6 @@ class _QueueTitle extends StatelessWidget {
         style: Theme.of(context).textTheme.headlineLarge?.copyWith(
           fontWeight: FontWeight.w700,
           letterSpacing: -0.6,
-        ),
-      ),
-      const SizedBox(height: 6),
-      Text(
-        'Revisa las solicitudes de tu central.',
-        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
       const SimClockBadge(top: 10),

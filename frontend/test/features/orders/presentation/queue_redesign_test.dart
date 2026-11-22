@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/features/notifications/data/notice_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -207,10 +208,12 @@ void main() {
         expect(
           tester
               .widget<StatusPill>(
-                find.descendant(
-                  of: alarmIndicators,
-                  matching: find.byType(StatusPill),
-                ),
+                find
+                    .descendant(
+                      of: alarmIndicators,
+                      matching: find.byType(StatusPill),
+                    )
+                    .last,
               )
               .tone,
           PillTone.negative,
@@ -245,6 +248,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            unreadCountProvider.overrideWith((ref) async => 0),
             queueProvider.overrideWith((ref) async {
               requests++;
               return rows;
@@ -303,6 +307,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            unreadCountProvider.overrideWith((ref) async => 0),
             queueProvider.overrideWith((ref) async => [_entry('a')]),
           ],
           child: MaterialApp.router(

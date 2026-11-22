@@ -101,7 +101,7 @@ void main() {
     expect(find.text('Corredor Aéreo Ambulancia'), findsOneWidget);
     expect(find.text('Operativa · Polígono de 3 vértices'), findsOneWidget);
     expect(find.text('Prohibida · Círculo de 100 m'), findsOneWidget);
-    expect(find.text('Norma · activa'), findsOneWidget);
+    expect(find.text('Zona legal · Activa'), findsOneWidget);
   });
 
   testWidgets('el filtro deja solo las legales', (tester) async {

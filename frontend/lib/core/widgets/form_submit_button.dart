@@ -7,16 +7,18 @@ class FormSubmitButton extends StatelessWidget {
     required this.loadingLabel,
     required this.loading,
     required this.onPressed,
+    this.style,
   });
   final String label, loadingLabel;
   final bool loading;
   final VoidCallback? onPressed;
+  final ButtonStyle? style;
   @override
   Widget build(BuildContext context) => FilledButton(
     onPressed: loading ? null : onPressed,
     style: FilledButton.styleFrom(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-    ),
+    ).merge(style),
     child: loading
         ? Row(
             mainAxisAlignment: MainAxisAlignment.center,

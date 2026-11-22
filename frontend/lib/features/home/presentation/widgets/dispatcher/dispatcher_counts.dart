@@ -12,12 +12,14 @@ class DispatcherCounts {
     required this.pendingLoad,
     required this.inFlight,
     required this.toReceive,
+    this.incoming,
   });
 
   final int? queue;
   final int? scheduled;
   final int? pendingLoad;
   final int? inFlight;
+  final int? incoming;
 
   /// Traslados entrantes con el dron ya en su central, esperando el código.
   final int? toReceive;
@@ -29,6 +31,7 @@ class DispatcherCounts {
     scheduled: ref.watch(scheduledProvider).value?.length,
     pendingLoad: ref.watch(pendingLoadProvider).value?.length,
     inFlight: ref.watch(inFlightProvider).value?.length,
+    incoming: ref.watch(incomingProvider).value?.length,
     toReceive: ref
         .watch(incomingProvider)
         .value

@@ -162,6 +162,10 @@ void main() {
       await _bring(tester, find.text('Reintentar'));
       await tester.tap(find.text('Reintentar'));
       expect(refreshed, 2);
+      await _mount(tester, _tray(items: [], error: 'Sin conexión'));
+      expect(find.text('Todo al día'), findsNothing);
+      expect(find.text('No hay pedidos pendientes.'), findsNothing);
+      expect(find.text('Sin conexión'), findsOneWidget);
       await _mount(
         tester,
         _tray(items: [_order('known')], error: 'Sin conexión'),
@@ -200,6 +204,7 @@ void main() {
         ProviderScope(
           retry: (count, error) => null,
           overrides: [
+            originHubsProvider.overrideWith((ref) async => [_origin]),
             incomingProvider.overrideWith(
               (ref) async => [
                 _order('incoming', status: OrderStatus.awaitingDelivery),
@@ -269,8 +274,8 @@ void main() {
       await _bring(tester, find.text('Revisar y cargar'));
       await tester.tap(find.text('Revisar y cargar'));
       expect(reviewed, 1);
-      await _bring(tester, find.text('Volviendo a la central'));
-      expect(find.text('Volviendo a la central'), findsOneWidget);
+      await _bring(tester, find.text('De regreso'));
+      expect(find.text('De regreso'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

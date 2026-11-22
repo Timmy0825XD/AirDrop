@@ -8,6 +8,7 @@ import '../../../core/widgets/app_snack.dart';
 import '../../../theme/app_icons.dart';
 import '../../home/presentation/widgets/sign_out.dart';
 import '../../hubs/data/hub_providers.dart';
+import '../../fleet/data/fleet_providers.dart';
 import '../data/auth_models.dart';
 import 'auth_controller.dart';
 import 'widgets/profile/profile_edit_sheet.dart';
@@ -18,6 +19,8 @@ import 'widgets/requester_profile/requester_profile_details.dart';
 import 'widgets/requester_profile/requester_profile_page.dart';
 import 'widgets/requester_profile/requester_profile_values.dart';
 import 'widgets/dispatcher_profile/dispatcher_profile_page.dart';
+import 'widgets/operator_profile/operator_profile_page.dart';
+import 'widgets/operator_profile/operator_hub_sheet.dart';
 
 /// Datos reales de la cuenta y acciones de edición compartidas por los roles.
 class ProfileScreen extends ConsumerWidget {
@@ -56,6 +59,9 @@ class ProfileScreen extends ConsumerWidget {
         onSignOut: () => signOut(context, ref, icon: AppIcons.signOut),
       );
     }
+    if (user.role == UserRole.fleetOperator) {
+      return _operatorProfile(context, ref, user);
+    }
     return ProfileLegacyPage(
       user: user,
       hubNames: user.hubIds.isEmpty ? const [] : _hubNames(ref, user),
@@ -64,6 +70,37 @@ class ProfileScreen extends ConsumerWidget {
       onSignOut: () => signOut(context, ref),
     );
   }
+}
+
+Widget _operatorProfile(BuildContext context, WidgetRef ref, PublicUser user) {
+  final hubs = ref.watch(assignedHubsProvider);
+  return OperatorProfilePage(
+    user: user,
+    hubs: hubs.value,
+    hubsLoading: hubs.isLoading && !hubs.hasValue,
+    hubsError: hubs.hasError ? ApiException.messageOf(hubs.error!) : null,
+    onRetryHubs: () => ref.invalidate(assignedHubsProvider),
+    onRefresh: () async {
+      try {
+        final refreshed = ref.refresh(assignedHubsProvider.future);
+        await refreshed;
+      } catch (_) {
+        /* La sección de centrales muestra el error y el reintento. */
+      }
+    },
+    onHub: (hub) => showOperatorHubSheet(
+      context,
+      hub,
+      onFleet: () {
+        if (!context.mounted) return;
+        ref.read(fleetHubProvider.notifier).select(hub.id);
+        context.go('/fleet');
+      },
+    ),
+    onOpen: (group) => _openDetails(context, ref, user, group),
+    onCancelEmail: () => _cancelEmail(context, ref),
+    onSignOut: () => signOut(context, ref, icon: AppIcons.signOut),
+  );
 }
 
 List<String>? _hubNames(WidgetRef ref, PublicUser user) {

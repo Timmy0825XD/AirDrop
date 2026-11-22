@@ -14,6 +14,7 @@ abstract final class AppIcons {
   static const notifications = LucideIcons.bell;
   static const medication = LucideIcons.pill;
   static const next = LucideIcons.chevronRight;
+  static const down = LucideIcons.chevronDown;
   static const forward = LucideIcons.arrowRight;
   static const hub = LucideIcons.hospital;
   static const destination = LucideIcons.mapPin;
@@ -35,6 +36,7 @@ abstract final class AppIcons {
   static const repeat = LucideIcons.repeat2;
   static const people = LucideIcons.usersRound;
   static const edit = LucideIcons.pencil;
+  static const tag = LucideIcons.tag;
   static const document = LucideIcons.clipboardList;
   static const coldChain = LucideIcons.snowflake;
   static const more = LucideIcons.ellipsis;
@@ -48,4 +50,13 @@ abstract final class AppIcons {
   static const history = LucideIcons.history;
   static const info = LucideIcons.info;
   static const power = LucideIcons.power;
+  static const drone = LucideIcons.drone;
+  static const radar = LucideIcons.radar;
+  static const geofences = LucideIcons.hexagon;
+  static const circle = LucideIcons.circle;
+  static const undo = LucideIcons.undo2;
+  static const maintenance = LucideIcons.wrench;
+  static const battery = LucideIcons.battery;
+  static const health = LucideIcons.activity;
+  static const usage = LucideIcons.chartColumn;
 }

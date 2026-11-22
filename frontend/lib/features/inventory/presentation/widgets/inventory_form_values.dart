@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/clock/sim_clock.dart';
+import '../../../../core/date_format.dart';
 import '../../../../core/field_limits.dart';
 import '../../../../core/validators.dart';
 import '../../data/inventory_models.dart';
@@ -93,12 +93,14 @@ class InventoryFormValues {
     return null;
   }
 
-  /// AAAA-MM-DD estrictamente después de hoy (fecha local), como
+  /// AAAA-MM-DD estrictamente después de hoy en Colombia, como
   /// `IsAfterToday` de Nest.
   static bool isAfterToday(String isoDate, {DateTime? now}) {
     final date = DateTime.tryParse(isoDate);
     if (date == null) return false;
-    return date.isAfter(DateUtils.dateOnly(now ?? simClock.now()));
+    return date.isAfter(
+      now == null ? colombiaToday() : DateUtils.dateOnly(now),
+    );
   }
 
   /// Rellena el formulario al editar. Solo corre la primera vez: si el

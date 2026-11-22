@@ -1,51 +1,46 @@
 import 'package:flutter/material.dart';
+import '../../../../../core/widgets/glass_card.dart';
+import '../../../../../theme/app_icons.dart';
+import 'field_row_separator.dart';
 
-/// El compartimento de frío del dron (RF-49): lo necesitan los insumos
-/// refrigerados y pesa 1 kg, que se descuenta de la carga útil.
 class ColdCompartmentSwitch extends StatelessWidget {
   const ColdCompartmentSwitch({
     super.key,
     required this.value,
     required this.onChanged,
   });
-
   final bool value;
   final ValueChanged<bool> onChanged;
-
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: value
-            ? colors.tertiary.withValues(alpha: 0.10)
-            : colors.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(18),
+  Widget build(BuildContext context) => MergeSemantics(
+    child: GlassCard(
+      radius: 16,
+      onTap: () => onChanged(!value),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      child: Row(
+        children: [
+          const Icon(AppIcons.coldChain, size: 26),
+          const FieldRowSeparator(),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Compartimento de frío',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Conserva entre 2 y 8 °C',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          Switch(value: value, onChanged: onChanged),
+        ],
       ),
-      // Material propio: sin él, el fondo teñido taparía la onda al tocar.
-      child: Material(
-        type: MaterialType.transparency,
-        child: SwitchListTile(
-          value: value,
-          onChanged: onChanged,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          secondary: Icon(
-            Icons.ac_unit_rounded,
-            color: value ? colors.tertiary : colors.onSurfaceVariant,
-          ),
-          title: Text(
-            'Compartimento de frío',
-            style: theme.textTheme.titleSmall,
-          ),
-          subtitle: Text(
-            'Para insumos refrigerados. Resta 1 kg de carga útil.',
-            style: theme.textTheme.bodySmall,
-          ),
-        ),
-      ),
-    );
-  }
+    ),
+  );
 }
