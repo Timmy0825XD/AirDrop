@@ -33,7 +33,7 @@ Contenido mínimo:
 3. Qué datos son sensibles y que responderlos es opcional.
 4. Derechos del titular (art. 8): conocer, actualizar, rectificar, pedir prueba de la autorización, ser informado del uso, revocar la autorización, pedir la supresión y quejarse ante la SIC.
 5. Cómo ejercerlos: desde el perfil o por el canal de contacto. Una consulta se responde en **10 días hábiles** y un reclamo en **15** (arts. 14 y 15).
-6. **Encargados y dónde están los datos.** Base de datos y archivos en Supabase (región São Paulo, Brasil); servidor en Render (EE. UU.); caché en Upstash; correo en Brevo. Los datos se **transmiten** a esos encargados bajo un contrato de transmisión (Decreto 1377, art. 25), no se transfieren a otro responsable.
+6. **Encargados y dónde están los datos.** Base de datos y archivos en Supabase (región São Paulo, Brasil); servidor en Azure App Service (Chile Central); caché en Upstash; correo en Brevo. Los datos se **transmiten** a esos encargados bajo un contrato de transmisión (Decreto 1377, art. 25), no se transfieren a otro responsable.
 7. Cuánto se conservan los datos (ver "Revocar y suprimir").
 8. Fecha de vigencia y versión.
 
