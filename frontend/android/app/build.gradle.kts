@@ -52,6 +52,14 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
+            // APK liviano: R8 quita y ofusca el código Java/Kotlin sin uso y
+            // shrinkResources elimina los recursos que nadie referencia.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 }

@@ -21,7 +21,7 @@ Controles que AirDrop debe tener para proteger datos de salud y la operación. L
 
 ## Riesgos aceptados
 
-- **Una sola base para desarrollo y despliegue.** El backend local y el de Render comparten Supabase y Upstash, y TypeORM sincroniza el esquema. Mientras se prueba en local, el servicio de Render queda suspendido. Si dos versiones del esquema corrieran a la vez, una podría borrarle columnas a la otra.
+- **Una sola base para desarrollo y despliegue.** El backend local y el de Azure comparten Supabase y Upstash, y TypeORM sincroniza el esquema. Mientras se prueba en local, la app de Azure queda detenida. Si dos versiones del esquema corrieran a la vez, una podría borrarle columnas a la otra.
 - **Bloqueo por cuenta.** Alguien puede bloquear a propósito la cuenta de otro probando claves. Se acepta, porque el bloqueo es temporal y sin él quedaría abierto el ataque por fuerza bruta.
 - **Sin segundo factor** para despachador y administrador. Se acepta en el MVP. Una operación real lo pediría, porque esos roles ven datos sensibles.
 

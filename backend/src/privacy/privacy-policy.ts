@@ -4,9 +4,9 @@
  * otra vez en el siguiente ingreso; un cambio de redacción solo sube
  * `POLICY_VERSION`.
  */
-export const POLICY_VERSION = '1.0';
+export const POLICY_VERSION = '1.1';
 export const SUBSTANTIAL_POLICY_VERSION = '1.0';
-export const POLICY_EFFECTIVE_FROM = '2026-11-14';
+export const POLICY_EFFECTIVE_FROM = '2026-11-22';
 
 export const DEFAULT_CONTROLLER_NAME = 'AirDrop — proyecto académico';
 export const DEFAULT_CONTACT_EMAIL = 'privacidad@airdrop.example';
@@ -70,7 +70,7 @@ export function privacyPolicy(controller: {
       {
         title: 'Encargados y dónde están los datos',
         body: [
-          'Base de datos y archivos en Supabase (São Paulo, Brasil); servidor en Render (EE. UU.); caché en Upstash; correo en Brevo.',
+          'Base de datos y archivos en Supabase (São Paulo, Brasil); servidor en Azure (Chile); caché en Upstash; correo en Brevo.',
           'Los datos se transmiten a esos encargados bajo un contrato de transmisión (Decreto 1377, art. 25); no se transfieren a otro responsable.',
         ],
       },
