@@ -16,7 +16,7 @@ describe('CD-03 — A – C (Aplicación – Pedidos)', () => {
     cy.login(CUENTAS.solicitante).then((token) => {
       solicitante = token;
       cy.api(token, 'GET', '/auth/me').then((yo) => {
-        expect(yo.status).to.eq(200);
+        expect(yo.status, JSON.stringify(yo.body.message ?? '')).to.eq(200);
         expect(yo.body.role).to.eq('requester');
       });
     });
@@ -25,7 +25,7 @@ describe('CD-03 — A – C (Aplicación – Pedidos)', () => {
   it('CD-03 paso 2: la urgencia de venta libre se crea recibida (201)', () => {
     cy.api(solicitante, 'POST', '/orders/emergencies', urgenciaLibre()).then(
       (respuesta) => {
-        expect(respuesta.status).to.eq(201);
+        expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(201);
         expect(respuesta.body.status).to.eq('received');
         pedido = respuesta.body.id;
       },
@@ -42,7 +42,7 @@ describe('CD-03 — A – C (Aplicación – Pedidos)', () => {
         saleType: 'special_control',
       }),
     ).then((respuesta) => {
-      expect(respuesta.status).to.eq(400);
+      expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(400);
       expect(respuesta.body.message).to.eq(
         'El control especial no se pide por este canal.',
       );
@@ -51,7 +51,7 @@ describe('CD-03 — A – C (Aplicación – Pedidos)', () => {
 
   it('CD-03 paso 4: «Mis pedidos» muestra solo el pedido recibido', () => {
     cy.api(solicitante, 'GET', '/orders/mine').then((respuesta) => {
-      expect(respuesta.status).to.eq(200);
+      expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(200);
       expect(respuesta.body).to.have.length(1);
       expect(respuesta.body[0].id).to.eq(pedido);
       expect(respuesta.body[0].status).to.eq('received');

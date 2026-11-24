@@ -5,11 +5,30 @@ const TEST_PASSWORD = 'Password123';
 
 /**
  * Deja la base con los datos de la sección 2.3 de la guía (central A con
- * WG-198-001 disponible, central B con WG-198-002 en mantenimiento,
+ * AD-RPL-07 disponible, central B con AD-RPL-08 en mantenimiento,
  * despachadores, operador, solicitante e inventario). Cada caso arranca así.
  */
 Cypress.Commands.add('seedTest', () => {
   cy.task('seedTest', null, { timeout: 300000 });
+  // Reloj simulado a x8 (RF-31): un vuelo de 2 minutos dura 15 s y la espera
+  // del código, 37 s. JWT, OTP y el bloqueo de login siguen en hora real.
+  // Con Redis detenido (REDIS_CAIDO) la consola no responde: no se exige aquí.
+  cy.loginAdmin().then((admin) => {
+    cy.api(admin, 'PUT', '/control/clock', { speed: 8, paused: false });
+    // Sin actores simulados ni modo caos: cada paso lo hace la prueba.
+    cy.api(admin, 'PUT', '/control/actors', { autoDispatcher: false, orderFlow: false });
+    cy.api(admin, 'PUT', '/control/chaos', { enabled: false });
+  });
+
+});
+
+/** Sesión del administrador del .env (ADMIN_EMAIL / ADMIN_PASSWORD). */
+Cypress.Commands.add('loginAdmin', () => {
+  return cy.task('adminCreds', null, { log: false }).then((creds) =>
+    cy
+      .request({ method: 'POST', url: '/auth/login', body: creds, log: false })
+      .its('body.accessToken', { log: false }),
+  );
 });
 
 /** Inicia sesión por la API y devuelve el accessToken (sin mostrar la clave). */
@@ -28,7 +47,7 @@ Cypress.Commands.add('login', (email) => {
 /**
  * La central A de los datos de prueba (10.4631, -73.2532) queda dentro de la
  * geovalla de la demo «Zona de eventos Parque de la Leyenda»: ningún corredor
- * sale de ahí. Los despachos salen de la central B, con WG-198-002 puesto en
+ * sale de ahí. Los despachos salen de la central B, con AD-RPL-08 puesto en
  * disponible (seed:test lo deja en mantenimiento). Devuelve el id de la
  * central B.
  */
@@ -37,7 +56,7 @@ Cypress.Commands.add('activarCentralB', (operador, despachadorB) => {
     const centralB = yo.body.hubIds[0];
     cy.api(operador, 'GET', `/fleet/drones?hubId=${centralB}`).then(
       (drones) => {
-        const dron = drones.body.find((d) => d.identifier === 'WG-198-002');
+        const dron = drones.body.find((d) => d.identifier === 'AD-RPL-08');
         cy.api(operador, 'PATCH', `/fleet/drones/${dron.id}/status`, {
           status: 'available',
         })

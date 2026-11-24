@@ -24,7 +24,7 @@ describe('CH-05 — Entrega con un código incorrecto', () => {
   it('CH-05 paso 1: la pantalla de entrega muestra el código generado', () => {
     cy.api(solicitante, 'GET', `/orders/${pedido}/delivery-code`).then(
       (respuesta) => {
-        expect(respuesta.status).to.eq(200);
+        expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(200);
         expect(respuesta.body.code).to.match(/^\d{6}$/);
         codigo = respuesta.body.code;
       },
@@ -38,7 +38,7 @@ describe('CH-05 — Entrega con un código incorrecto', () => {
       code: distinto,
     }).then((respuesta) => {
       cy.log(`Respuesta real: ${respuesta.status} ${respuesta.body.message}`);
-      expect(respuesta.status).to.eq(400);
+      expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(400);
       expect(respuesta.body.message).to.eq(
         'El código es inválido, ya se usó o venció.',
       );
@@ -47,7 +47,7 @@ describe('CH-05 — Entrega con un código incorrecto', () => {
 
   it('CH-05 paso 4: el pedido sigue en espera de entrega', () => {
     cy.api(solicitante, 'GET', `/orders/${pedido}`).then((respuesta) => {
-      expect(respuesta.status).to.eq(200);
+      expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(200);
       expect(respuesta.body.status).to.eq('awaiting_delivery');
     });
   });

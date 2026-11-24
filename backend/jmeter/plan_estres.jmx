@@ -115,7 +115,7 @@
           <collectionProp name="Arguments.arguments">
             <elementProp name="" elementType="HTTPArgument">
               <boolProp name="HTTPArgument.always_encode">false</boolProp>
-              <stringProp name="Argument.value">{&quot;medicationName&quot;:&quot;Acetaminofén 500 mg&quot;,&quot;saleType&quot;:&quot;over_the_counter&quot;,&quot;description&quot;:&quot;Prueba de carga JMeter&quot;,&quot;address&quot;:&quot;Calle 16 No. 19-35, Valledupar&quot;,&quot;latitude&quot;:10.4802,&quot;longitude&quot;:-73.2475}</stringProp>
+              <stringProp name="Argument.value">{&quot;medicationName&quot;:&quot;Acetaminofén 500 mg&quot;,&quot;saleType&quot;:&quot;over_the_counter&quot;,&quot;triage&quot;:{&quot;redFlags&quot;:[],&quot;patientGroup&quot;:&quot;adult&quot;,&quot;symptoms&quot;:[&quot;fever&quot;],&quot;onset&quot;:&quot;today&quot;,&quot;severity&quot;:&quot;moderate&quot;},&quot;allergies&quot;:&quot;&quot;,&quot;address&quot;:&quot;Prueba de carga JMeter&quot;,&quot;latitude&quot;:10.4631,&quot;longitude&quot;:-73.2532}</stringProp>
               <stringProp name="Argument.metadata">=</stringProp>
             </elementProp>
           </collectionProp>
@@ -133,7 +133,7 @@
           <collectionProp name="Arguments.arguments">
             <elementProp name="" elementType="HTTPArgument">
               <boolProp name="HTTPArgument.always_encode">false</boolProp>
-              <stringProp name="Argument.value">{&quot;medicationName&quot;:&quot;Acetaminofén 500 mg&quot;,&quot;saleType&quot;:&quot;over_the_counter&quot;,&quot;quantity&quot;:1,&quot;frequency&quot;:&quot;weekly&quot;,&quot;startDate&quot;:&quot;${__time(yyyy-MM-dd,)}&quot;,&quot;address&quot;:&quot;Calle 16 No. 19-35, Valledupar&quot;,&quot;latitude&quot;:10.4802,&quot;longitude&quot;:-73.2475}</stringProp>
+              <stringProp name="Argument.value">{&quot;medicationName&quot;:&quot;Acetaminofén 500 mg&quot;,&quot;saleType&quot;:&quot;over_the_counter&quot;,&quot;quantity&quot;:1,&quot;schedule&quot;:{&quot;kind&quot;:&quot;dates&quot;,&quot;dates&quot;:[&quot;${__timeShift(yyyy-MM-dd,,P1D,,)}&quot;],&quot;time&quot;:&quot;10:00&quot;},&quot;address&quot;:&quot;Prueba de carga JMeter&quot;,&quot;latitude&quot;:10.4631,&quot;longitude&quot;:-73.2532}</stringProp>
               <stringProp name="Argument.metadata">=</stringProp>
             </elementProp>
           </collectionProp>
@@ -181,7 +181,7 @@
           <collectionProp name="Arguments.arguments">
             <elementProp name="" elementType="HTTPArgument">
               <boolProp name="HTTPArgument.always_encode">false</boolProp>
-              <stringProp name="Argument.value">{&quot;medicationName&quot;:&quot;Acetaminofén 500 mg&quot;,&quot;saleType&quot;:&quot;over_the_counter&quot;,&quot;description&quot;:&quot;Prueba de carga JMeter&quot;,&quot;address&quot;:&quot;Calle 16 No. 19-35, Valledupar&quot;,&quot;latitude&quot;:10.4802,&quot;longitude&quot;:-73.2475}</stringProp>
+              <stringProp name="Argument.value">{&quot;medicationName&quot;:&quot;Acetaminofén 500 mg&quot;,&quot;saleType&quot;:&quot;over_the_counter&quot;,&quot;triage&quot;:{&quot;redFlags&quot;:[],&quot;patientGroup&quot;:&quot;adult&quot;,&quot;symptoms&quot;:[&quot;fever&quot;],&quot;onset&quot;:&quot;today&quot;,&quot;severity&quot;:&quot;moderate&quot;},&quot;allergies&quot;:&quot;&quot;,&quot;address&quot;:&quot;Prueba de carga JMeter&quot;,&quot;latitude&quot;:10.4631,&quot;longitude&quot;:-73.2532}</stringProp>
               <stringProp name="Argument.metadata">=</stringProp>
             </elementProp>
           </collectionProp>
@@ -199,7 +199,7 @@
           <collectionProp name="Arguments.arguments">
             <elementProp name="" elementType="HTTPArgument">
               <boolProp name="HTTPArgument.always_encode">false</boolProp>
-              <stringProp name="Argument.value">{&quot;medicationName&quot;:&quot;Acetaminofén 500 mg&quot;,&quot;saleType&quot;:&quot;over_the_counter&quot;,&quot;quantity&quot;:1,&quot;frequency&quot;:&quot;weekly&quot;,&quot;startDate&quot;:&quot;${__time(yyyy-MM-dd,)}&quot;,&quot;address&quot;:&quot;Calle 16 No. 19-35, Valledupar&quot;,&quot;latitude&quot;:10.4802,&quot;longitude&quot;:-73.2475}</stringProp>
+              <stringProp name="Argument.value">{&quot;medicationName&quot;:&quot;Acetaminofén 500 mg&quot;,&quot;saleType&quot;:&quot;over_the_counter&quot;,&quot;quantity&quot;:1,&quot;schedule&quot;:{&quot;kind&quot;:&quot;dates&quot;,&quot;dates&quot;:[&quot;${__timeShift(yyyy-MM-dd,,P1D,,)}&quot;],&quot;time&quot;:&quot;10:00&quot;},&quot;address&quot;:&quot;Prueba de carga JMeter&quot;,&quot;latitude&quot;:10.4631,&quot;longitude&quot;:-73.2532}</stringProp>
               <stringProp name="Argument.metadata">=</stringProp>
             </elementProp>
           </collectionProp>
@@ -247,7 +247,7 @@
           <collectionProp name="Arguments.arguments">
             <elementProp name="" elementType="HTTPArgument">
               <boolProp name="HTTPArgument.always_encode">false</boolProp>
-              <stringProp name="Argument.value">{&quot;medicationName&quot;:&quot;Acetaminofén 500 mg&quot;,&quot;saleType&quot;:&quot;over_the_counter&quot;,&quot;description&quot;:&quot;Prueba de carga JMeter&quot;,&quot;address&quot;:&quot;Calle 16 No. 19-35, Valledupar&quot;,&quot;latitude&quot;:10.4802,&quot;longitude&quot;:-73.2475}</stringProp>
+              <stringProp name="Argument.value">{&quot;medicationName&quot;:&quot;Acetaminofén 500 mg&quot;,&quot;saleType&quot;:&quot;over_the_counter&quot;,&quot;triage&quot;:{&quot;redFlags&quot;:[],&quot;patientGroup&quot;:&quot;adult&quot;,&quot;symptoms&quot;:[&quot;fever&quot;],&quot;onset&quot;:&quot;today&quot;,&quot;severity&quot;:&quot;moderate&quot;},&quot;allergies&quot;:&quot;&quot;,&quot;address&quot;:&quot;Prueba de carga JMeter&quot;,&quot;latitude&quot;:10.4631,&quot;longitude&quot;:-73.2532}</stringProp>
               <stringProp name="Argument.metadata">=</stringProp>
             </elementProp>
           </collectionProp>
@@ -265,7 +265,7 @@
           <collectionProp name="Arguments.arguments">
             <elementProp name="" elementType="HTTPArgument">
               <boolProp name="HTTPArgument.always_encode">false</boolProp>
-              <stringProp name="Argument.value">{&quot;medicationName&quot;:&quot;Acetaminofén 500 mg&quot;,&quot;saleType&quot;:&quot;over_the_counter&quot;,&quot;quantity&quot;:1,&quot;frequency&quot;:&quot;weekly&quot;,&quot;startDate&quot;:&quot;${__time(yyyy-MM-dd,)}&quot;,&quot;address&quot;:&quot;Calle 16 No. 19-35, Valledupar&quot;,&quot;latitude&quot;:10.4802,&quot;longitude&quot;:-73.2475}</stringProp>
+              <stringProp name="Argument.value">{&quot;medicationName&quot;:&quot;Acetaminofén 500 mg&quot;,&quot;saleType&quot;:&quot;over_the_counter&quot;,&quot;quantity&quot;:1,&quot;schedule&quot;:{&quot;kind&quot;:&quot;dates&quot;,&quot;dates&quot;:[&quot;${__timeShift(yyyy-MM-dd,,P1D,,)}&quot;],&quot;time&quot;:&quot;10:00&quot;},&quot;address&quot;:&quot;Prueba de carga JMeter&quot;,&quot;latitude&quot;:10.4631,&quot;longitude&quot;:-73.2532}</stringProp>
               <stringProp name="Argument.metadata">=</stringProp>
             </elementProp>
           </collectionProp>
@@ -313,7 +313,7 @@
           <collectionProp name="Arguments.arguments">
             <elementProp name="" elementType="HTTPArgument">
               <boolProp name="HTTPArgument.always_encode">false</boolProp>
-              <stringProp name="Argument.value">{&quot;medicationName&quot;:&quot;Acetaminofén 500 mg&quot;,&quot;saleType&quot;:&quot;over_the_counter&quot;,&quot;description&quot;:&quot;Prueba de carga JMeter&quot;,&quot;address&quot;:&quot;Calle 16 No. 19-35, Valledupar&quot;,&quot;latitude&quot;:10.4802,&quot;longitude&quot;:-73.2475}</stringProp>
+              <stringProp name="Argument.value">{&quot;medicationName&quot;:&quot;Acetaminofén 500 mg&quot;,&quot;saleType&quot;:&quot;over_the_counter&quot;,&quot;triage&quot;:{&quot;redFlags&quot;:[],&quot;patientGroup&quot;:&quot;adult&quot;,&quot;symptoms&quot;:[&quot;fever&quot;],&quot;onset&quot;:&quot;today&quot;,&quot;severity&quot;:&quot;moderate&quot;},&quot;allergies&quot;:&quot;&quot;,&quot;address&quot;:&quot;Prueba de carga JMeter&quot;,&quot;latitude&quot;:10.4631,&quot;longitude&quot;:-73.2532}</stringProp>
               <stringProp name="Argument.metadata">=</stringProp>
             </elementProp>
           </collectionProp>
@@ -331,7 +331,7 @@
           <collectionProp name="Arguments.arguments">
             <elementProp name="" elementType="HTTPArgument">
               <boolProp name="HTTPArgument.always_encode">false</boolProp>
-              <stringProp name="Argument.value">{&quot;medicationName&quot;:&quot;Acetaminofén 500 mg&quot;,&quot;saleType&quot;:&quot;over_the_counter&quot;,&quot;quantity&quot;:1,&quot;frequency&quot;:&quot;weekly&quot;,&quot;startDate&quot;:&quot;${__time(yyyy-MM-dd,)}&quot;,&quot;address&quot;:&quot;Calle 16 No. 19-35, Valledupar&quot;,&quot;latitude&quot;:10.4802,&quot;longitude&quot;:-73.2475}</stringProp>
+              <stringProp name="Argument.value">{&quot;medicationName&quot;:&quot;Acetaminofén 500 mg&quot;,&quot;saleType&quot;:&quot;over_the_counter&quot;,&quot;quantity&quot;:1,&quot;schedule&quot;:{&quot;kind&quot;:&quot;dates&quot;,&quot;dates&quot;:[&quot;${__timeShift(yyyy-MM-dd,,P1D,,)}&quot;],&quot;time&quot;:&quot;10:00&quot;},&quot;address&quot;:&quot;Prueba de carga JMeter&quot;,&quot;latitude&quot;:10.4631,&quot;longitude&quot;:-73.2532}</stringProp>
               <stringProp name="Argument.metadata">=</stringProp>
             </elementProp>
           </collectionProp>

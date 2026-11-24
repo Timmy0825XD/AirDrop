@@ -1,5 +1,5 @@
 /**
- * Pruebas unitarias del CU-20 (Gestionar flota), casos CP-20-01 a CP-20-10 de
+ * Pruebas unitarias del CU-20 (Gestionar flota), casos CP-20-01 a CP-20-12 de
  * la Segunda Parte del documento. El nombre de cada `it` empieza con el ID del
  * caso para que la terminal lo muestre en la captura.
  */
@@ -26,11 +26,8 @@ import { DroneModel } from './drone-model.entity';
 import { DRONE_TYPES } from './drone-types';
 import { FleetService } from './fleet.service';
 
-/**
- * Las fechas del documento (2026-10-20) eran futuras el día de la prueba. El
- * reloj se fija ese día para que no caduquen con el calendario.
- */
-const FIXED_NOW = new Date('2026-10-16T15:00:00.000Z');
+/** El reloj se fija para que la fecha estimada de los datos siga siendo futura. */
+const FIXED_NOW = new Date('2026-11-23T15:00:00.000Z');
 
 const garza: DroneModel = {
   id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
@@ -55,7 +52,7 @@ function operator(overrides: Partial<User> = {}): User {
 
 function droneDto(overrides: Partial<CreateDroneDto> = {}): CreateDroneDto {
   return {
-    identifier: 'WG-198-001',
+    identifier: 'AD-RPL-07',
     droneModelId: garza.id,
     hubId: rosario.id,
     ...overrides,
@@ -65,13 +62,13 @@ function droneDto(overrides: Partial<CreateDroneDto> = {}): CreateDroneDto {
 function storedDrone(overrides: Partial<Drone> = {}): Drone {
   return {
     id: 'ffffffff-ffff-4fff-8fff-ffffffffffff',
-    identifier: 'WG-198-001',
+    identifier: 'AD-RPL-07',
     droneModelId: garza.id,
     hubId: rosario.id,
     status: DroneStatus.AVAILABLE,
     maintenanceReason: null,
     maintenanceUntil: null,
-    createdAt: new Date('2026-10-16T15:00:00.000Z'),
+    createdAt: new Date('2026-11-23T15:00:00.000Z'),
     ...overrides,
   } as Drone;
 }
@@ -130,24 +127,26 @@ describe('CU-20 Gestionar flota', () => {
     jest.useRealTimers();
   });
 
-  it('CP-20-01 registra un Wingcopter 198 con identificador único y queda disponible', async () => {
-    expect(await errors(CreateDroneDto, droneDto())).toEqual([]);
+  it('CP-20-01 registra un Garza con compartimento de frío e identificador único y queda disponible', async () => {
+    const body = droneDto({ coldCompartment: true });
+    expect(await errors(CreateDroneDto, body)).toEqual([]);
     const { service, drones } = build();
 
-    const result = await service.createDrone(operator(), droneDto());
+    const result = await service.createDrone(operator(), body);
 
     expect(drones.save).toHaveBeenCalledTimes(1);
-    expect(result.identifier).toBe('WG-198-001');
+    expect(result.identifier).toBe('AD-RPL-07');
     expect(result.droneModelId).toBe(garza.id);
     expect(result.hubId).toBe(rosario.id);
     expect(result.status).toBe(DroneStatus.AVAILABLE);
+    expect(result.coldCompartment).toBe(true);
   });
 
   it('CP-20-02 registra un mantenimiento con motivo y fecha estimada', async () => {
     const body = {
       status: DroneStatus.MAINTENANCE,
       reason: 'Revisión de hélices',
-      estimatedEndDate: '2026-10-20',
+      estimatedEndDate: '2026-11-27',
     };
     expect(await errors(UpdateDroneStatusDto, body)).toEqual([]);
     const { service, drones } = build({ existing: storedDrone() });
@@ -161,7 +160,7 @@ describe('CU-20 Gestionar flota', () => {
     expect(drones.save).toHaveBeenCalledTimes(1);
     expect(result.status).toBe(DroneStatus.MAINTENANCE);
     expect(result.maintenanceReason).toBe('Revisión de hélices');
-    expect(result.maintenanceUntil).toBe('2026-10-20');
+    expect(result.maintenanceUntil).toBe('2026-11-27');
     // El motor de decisión solo toma drones disponibles.
     expect(result.status).not.toBe(DroneStatus.AVAILABLE);
   });
@@ -188,7 +187,7 @@ describe('CU-20 Gestionar flota', () => {
     // El modelo viaja como UUID: se usa uno válido que no está registrado.
     const unknownModel = '99999999-9999-4999-8999-999999999999';
     const body = droneDto({
-      identifier: 'WG-198-010',
+      identifier: 'AD-RPL-08',
       droneModelId: unknownModel,
     });
     expect(await errors(CreateDroneDto, body)).toEqual([]);
@@ -213,7 +212,7 @@ describe('CU-20 Gestionar flota', () => {
 
   it('CP-20-07 no cambia el estado de un dron en misión (409)', async () => {
     const inMission = storedDrone({
-      identifier: 'WG-198-004',
+      identifier: 'AD-RPL-04',
       status: DroneStatus.IN_MISSION,
     });
     const { service, drones } = build({ existing: inMission });
@@ -236,7 +235,7 @@ describe('CU-20 Gestionar flota', () => {
 
     const attempt = service.createDrone(
       operator(),
-      droneDto({ identifier: 'WG-198-011', hubId: clinicaNorte.id }),
+      droneDto({ identifier: 'AD-RPL-09', hubId: clinicaNorte.id }),
     );
 
     await expect(attempt).rejects.toBeInstanceOf(ForbiddenException);
@@ -269,9 +268,44 @@ describe('CU-20 Gestionar flota', () => {
     const found = await errors(UpdateDroneStatusDto, {
       status: DroneStatus.MAINTENANCE,
       reason: '',
-      estimatedEndDate: '2026-10-20',
+      estimatedEndDate: '2026-11-27',
     });
 
     expect(found.length).toBeGreaterThan(0);
+  });
+
+  it('CP-20-11 registra un Colibrí sin compartimento de frío cuando no se indica', async () => {
+    const colibri: DroneModel = {
+      id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+      ...DRONE_TYPES[0],
+    };
+    const body = droneDto({
+      identifier: 'AD-RPL-10',
+      droneModelId: colibri.id,
+    });
+    expect(await errors(CreateDroneDto, body)).toEqual([]);
+    const { service } = build({ model: colibri });
+
+    const result = await service.createDrone(operator(), body);
+
+    expect(result.droneModelId).toBe(colibri.id);
+    expect(result.coldCompartment).toBe(false);
+  });
+
+  it('CP-20-12 no instala el compartimento de frío con el dron en misión y sí con el dron en tierra (409)', async () => {
+    const inMission = storedDrone({ status: DroneStatus.IN_MISSION });
+    const enVuelo = build({ existing: inMission });
+    await expect(
+      enVuelo.service.setColdCompartment(operator(), inMission.id, true),
+    ).rejects.toBeInstanceOf(ConflictException);
+    expect(enVuelo.drones.save).not.toHaveBeenCalled();
+
+    const enTierra = build({ existing: storedDrone() });
+    const result = await enTierra.service.setColdCompartment(
+      operator(),
+      storedDrone().id,
+      true,
+    );
+    expect(result.coldCompartment).toBe(true);
   });
 });

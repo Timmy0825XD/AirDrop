@@ -1,6 +1,6 @@
 /**
  * Pruebas unitarias del CU-08 (Gestionar inventario), casos CP-08-01 a
- * CP-08-11 de la Segunda Parte. El nombre de cada `it` empieza con el ID del
+ * CP-08-12 de la Segunda Parte. El nombre de cada `it` empieza con el ID del
  * caso para que la terminal lo muestre en la captura.
  */
 import { ConflictException, ForbiddenException } from '@nestjs/common';
@@ -218,5 +218,16 @@ describe('CU-08 Gestionar inventario', () => {
     expect(await errores({ ...valido, name: '' })).toContain(
       'El nombre es obligatorio.',
     );
+  });
+
+  it('CP-08-12 rechaza un peso por unidad de 0 g y de 20001 g y acepta 1 g y 20000 g (400)', async () => {
+    expect(await errores({ ...valido, unitWeightG: 0 })).toContain(
+      'El peso por unidad debe ser mayor que cero.',
+    );
+    expect(await errores({ ...valido, unitWeightG: 20001 })).toContain(
+      'El peso por unidad no puede superar 20 kg.',
+    );
+    expect(await errores({ ...valido, unitWeightG: 1 })).toEqual([]);
+    expect(await errores({ ...valido, unitWeightG: 20000 })).toEqual([]);
   });
 });

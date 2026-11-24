@@ -17,7 +17,7 @@ describe('CA-06 — C – E (Pedidos – Inventario)', () => {
   /** Unidades de Acetaminofén en el inventario de la central A. */
   function unidadesEnCentralA() {
     return cy.api(despachador, 'GET', '/inventory').then((respuesta) => {
-      expect(respuesta.status).to.eq(200);
+      expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(200);
       const item = respuesta.body.find(
         (fila) => fila.name === 'Acetaminofén 500 mg',
       );
@@ -27,7 +27,7 @@ describe('CA-06 — C – E (Pedidos – Inventario)', () => {
 
   it('CA-06 paso 1: el catálogo muestra Acetaminofén 500 mg con 120 unidades en la central', () => {
     cy.api(solicitante, 'GET', '/orders/catalog').then((catalogo) => {
-      expect(catalogo.status).to.eq(200);
+      expect(catalogo.status, JSON.stringify(catalogo.body.message ?? '')).to.eq(200);
       expect(catalogo.body.map((fila) => fila.name)).to.include(
         'Acetaminofén 500 mg',
       );
@@ -40,7 +40,7 @@ describe('CA-06 — C – E (Pedidos – Inventario)', () => {
   it('CA-06 paso 2: la urgencia se crea recibida y con prioridad alta', () => {
     cy.api(solicitante, 'POST', '/orders/emergencies', urgenciaLibre()).then(
       (respuesta) => {
-        expect(respuesta.status).to.eq(201);
+        expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(201);
         expect(respuesta.body.status).to.eq('received');
         expect(respuesta.body.priority).to.eq('high');
         pedido = respuesta.body.id;
@@ -50,7 +50,7 @@ describe('CA-06 — C – E (Pedidos – Inventario)', () => {
 
   it('CA-06 paso 3: «Mis pedidos» muestra el pedido recibido, sin dron', () => {
     cy.api(solicitante, 'GET', '/orders/mine').then((respuesta) => {
-      expect(respuesta.status).to.eq(200);
+      expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(200);
       const fila = respuesta.body.find((p) => p.id === pedido);
       expect(fila.status).to.eq('received');
       expect(fila.droneId).to.be.null;

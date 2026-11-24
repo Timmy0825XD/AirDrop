@@ -5,6 +5,11 @@
  *   pnpm seed:clean   borra lo que tenga prefijo PRUEBA- o correo @prueba.co
  *
  * Usa DATABASE_URL del .env: apúntalo a una base solo para pruebas.
+ *
+ * Con AISLAR_DEMO=1 (lo usa Cypress) suspende además las centrales que no
+ * son de prueba, para que las urgencias de prueba no se ofrezcan a la red de
+ * la demo (RU-10). El reinicio del escenario (POST /control/reset) las deja
+ * activas de nuevo.
  */
 import { DocumentType } from '../src/common/enums/document-type.enum';
 import { DroneStatus } from '../src/common/enums/drone-status.enum';
@@ -26,8 +31,11 @@ import {
   createInventoryItem,
 } from './seed-shared';
 import request from 'supertest';
+import { DataSource } from 'typeorm';
 
 const TEST_PREFIX = 'PRUEBA-';
+/** Ya se crearon los datos (lo que falle después, al cerrar, no cuenta). */
+let seedDone = false;
 const TEST_EMAIL_DOMAIN = '@prueba.co';
 
 export function cleanTestData(): Promise<void> {
@@ -60,6 +68,22 @@ async function seedTestData(): Promise<void> {
       longitude: -73.14,
       contactPhone: '3109876543',
     });
+
+    if (process.env.AISLAR_DEMO === '1') {
+      const others = (await app
+        .get(DataSource)
+        .query(`SELECT id FROM hubs WHERE name NOT LIKE $1 AND status = 'active'`, [
+          `${TEST_PREFIX}%`,
+        ])) as Array<{ id: string }>;
+      for (const hub of others) {
+        await request(app.getHttpServer())
+          .patch(`/hubs/${hub.id}/suspension`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ suspended: true })
+          .expect(200);
+      }
+      console.log(`Centrales de la demo suspendidas: ${others.length}`);
+    }
 
     const dispatcherA = await createStaff(
       app,
@@ -142,12 +166,12 @@ async function seedTestData(): Promise<void> {
     }
 
     await createDrone(app, operator.token, {
-      identifier: 'WG-198-001',
+      identifier: 'AD-RPL-07',
       droneModelId: garza.id,
       hubId: hubA,
     });
     const droneB = await createDrone(app, operator.token, {
-      identifier: 'WG-198-002',
+      identifier: 'AD-RPL-08',
       droneModelId: garza.id,
       hubId: hubB,
     });
@@ -160,11 +184,12 @@ async function seedTestData(): Promise<void> {
       })
       .expect(200);
 
+    seedDone = true;
     console.log(
       `Datos de prueba creados. Contraseña de las cuentas ${TEST_EMAIL_DOMAIN}: ${TEST_PASSWORD}`,
     );
   } finally {
-    await app.close();
+    await app.close().catch(() => undefined);
   }
 }
 
@@ -174,7 +199,17 @@ async function main(): Promise<void> {
     await cleanTestData();
     console.log('Datos de prueba eliminados.');
   } else if (command === 'seed') {
+    // Una consulta de fondo de la app (el reloj de vuelo) puede fallar
+    // cuando la conexión se cierra. Si los datos ya quedaron, no cuenta.
+    const lateError = (error: unknown) => {
+      if (seedDone) process.exit(0);
+      console.error(error instanceof Error ? error.message : error);
+      process.exit(1);
+    };
+    process.on('uncaughtException', lateError);
+    process.on('unhandledRejection', lateError);
     await seedTestData();
+    process.exit(0);
   } else {
     throw new Error('Uso: seed-test.ts <seed|clean>');
   }

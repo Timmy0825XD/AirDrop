@@ -42,7 +42,7 @@ describe('CH-04 — Entrega con el código correcto', () => {
   it('CH-04 pasos 1 y 2: la pantalla de entrega muestra el código de 6 dígitos y su vencimiento', () => {
     cy.api(solicitante, 'GET', `/orders/${pedido}/delivery-code`).then(
       (respuesta) => {
-        expect(respuesta.status).to.eq(200);
+        expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(200);
         expect(respuesta.body.code).to.match(/^\d{6}$/);
         expect(respuesta.body.expiresAt, 'vence tras el aterrizaje').to.be.a(
           'string',
@@ -56,19 +56,19 @@ describe('CH-04 — Entrega con el código correcto', () => {
     cy.api(solicitante, 'POST', `/orders/${pedido}/delivery-code/validate`, {
       code: codigo,
     }).then((respuesta) => {
-      expect(respuesta.status).to.eq(200);
+      expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(200);
       expect(respuesta.body.status).to.eq('delivered');
     });
   });
 
   it('CH-04 paso 4: la misión se cierra y el dron queda libre', () => {
     // El dron regresa a su central y se libera al aterrizar allá (~2 min).
-    esperarDronLibre(operador, central, 'WG-198-002', 100);
+    esperarDronLibre(operador, central, 'AD-RPL-08', 100);
   });
 
   it('CH-04 paso 5: el pedido queda entregado', () => {
     cy.api(solicitante, 'GET', `/orders/${pedido}`).then((respuesta) => {
-      expect(respuesta.status).to.eq(200);
+      expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(200);
       expect(respuesta.body.status).to.eq('delivered');
     });
   });

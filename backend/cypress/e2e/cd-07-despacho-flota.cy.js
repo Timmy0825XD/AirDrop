@@ -2,7 +2,7 @@
 // la central no tiene ninguno, la urgencia va a otra que sí (RU-10: se
 // ofrece primero a las centrales con dron elegible). Rutas y simulación
 // corren reales con los datos de `seed:test`. El despacho sale de la central B, cuyo único dron
-// es WG-198-002 (ver `activarCentralB`); la guía dice WG-198-001 (central A).
+// es AD-RPL-08 (ver `activarCentralB`); la guía dice AD-RPL-07 (central A).
 import { CUENTAS, urgenciaLibre } from '../support/datos';
 
 describe('CD-07 — F – I (Despacho – Flota)', () => {
@@ -25,15 +25,15 @@ describe('CD-07 — F – I (Despacho – Flota)', () => {
   it('CD-07 paso 1: el pedido queda asignado al dron disponible de la central', () => {
     cy.api(solicitante, 'POST', '/orders/emergencies', urgenciaLibre()).then(
       (pedido) => {
-        expect(pedido.status).to.eq(201);
+        expect(pedido.status, JSON.stringify(pedido.body.message ?? '')).to.eq(201);
         cy.api(
           despachador,
           'POST',
           `/orders/${pedido.body.id}/authorize`,
           {},
         ).then((respuesta) => {
-          expect(respuesta.status).to.eq(201);
-          expect(respuesta.body.assignment.identifier).to.eq('WG-198-002');
+          expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(201);
+          expect(respuesta.body.assignment.identifier).to.eq('AD-RPL-08');
           dronAsignado = respuesta.body.assignment.droneId;
         });
       },
@@ -50,9 +50,9 @@ describe('CD-07 — F – I (Despacho – Flota)', () => {
         `Cambio a mantenimiento: ${cambio.status} ${cambio.body.message ?? cambio.body.status}`,
       );
     });
-    cy.api(solicitante, 'POST', '/orders/emergencies', urgenciaLibre()).then(
+    cy.api(solicitante, 'POST', '/orders/emergencies', urgenciaLibre({ latitude: 10.5, longitude: -73.2 })).then(
       (pedido) => {
-        expect(pedido.status).to.eq(201);
+        expect(pedido.status, JSON.stringify(pedido.body.message ?? '')).to.eq(201);
         segundoPedido = pedido.body.id;
         cy.api(
           despachador,
@@ -62,7 +62,7 @@ describe('CD-07 — F – I (Despacho – Flota)', () => {
         ).then((respuesta) => {
           // Antes respondía 409. Con RU-10 la urgencia sale hacia la central
           // que tiene dron (A) y B ni la ve en su cola.
-          expect(respuesta.status).to.eq(403);
+          expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(403);
           expect(respuesta.body.message).to.eq(
             'Esta urgencia todavía no está en la cola de tu central.',
           );
@@ -74,8 +74,8 @@ describe('CD-07 — F – I (Despacho – Flota)', () => {
   it('CD-07 paso 3: la central A la autoriza con su dron disponible', () => {
     cy.api(despachadorA, 'POST', `/orders/${segundoPedido}/authorize`, {}).then(
       (respuesta) => {
-        expect(respuesta.status).to.eq(201);
-        expect(respuesta.body.assignment.identifier).to.eq('WG-198-001');
+        expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(201);
+        expect(respuesta.body.assignment.identifier).to.eq('AD-RPL-07');
       },
     );
   });
