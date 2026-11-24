@@ -203,9 +203,10 @@ export class PrivacyService {
   ): Promise<void> {
     let why = purpose;
     if (!why) {
-      const order = await this.dataSource
-        .getRepository(Order)
-        .findOne({ where: { id: orderId }, select: { id: true, status: true } });
+      const order = await this.dataSource.getRepository(Order).findOne({
+        where: { id: orderId },
+        select: { id: true, status: true },
+      });
       why =
         order && AUTHORIZING_STATUSES.includes(order.status)
           ? PrescriptionAccessPurpose.AUTHORIZE
@@ -262,7 +263,8 @@ export class PrivacyService {
       id: row.id,
       orderId: row.orderId,
       userId: row.userId,
-      userName: people.find((person) => person.id === row.userId)?.fullName ?? null,
+      userName:
+        people.find((person) => person.id === row.userId)?.fullName ?? null,
       role: row.role,
       purpose: row.purpose,
       fileIndex: row.fileIndex,

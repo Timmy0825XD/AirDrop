@@ -1,6 +1,10 @@
 import { ContingencyProtocol } from '../common/enums/contingency-protocol.enum';
 import { RouteLeg } from '../common/enums/route-leg.enum';
-import { RemoteIdStatus, buildRemoteId, remoteIdStatus } from './remote-id.rules';
+import {
+  RemoteIdStatus,
+  buildRemoteId,
+  remoteIdStatus,
+} from './remote-id.rules';
 
 describe('Identificación remota (RF-48)', () => {
   it('lleva matrícula, operador, tipo y manifiesto vigente', () => {
@@ -28,9 +32,9 @@ describe('Identificación remota (RF-48)', () => {
         incidentId: 'i',
       },
     };
-    expect(remoteIdStatus({ linkLost: true, ...landing }, RouteLeg.RETURN)).toBe(
-      RemoteIdStatus.LINK_LOST,
-    );
+    expect(
+      remoteIdStatus({ linkLost: true, ...landing }, RouteLeg.RETURN),
+    ).toBe(RemoteIdStatus.LINK_LOST);
     expect(remoteIdStatus(landing, RouteLeg.OUTBOUND)).toBe(
       RemoteIdStatus.EMERGENCY,
     );

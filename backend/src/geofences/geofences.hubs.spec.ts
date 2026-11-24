@@ -150,7 +150,7 @@ describe('Una geovalla cambia la ruta de los drones en el aire (RF-33)', () => {
         ...fields,
         ...shapeOf(plaza),
       }),
-    ).resolves.toMatchObject({ name: expect.any(String) });
+    ).resolves.toMatchObject({ name: expect.any(String) as string });
   });
 });
 

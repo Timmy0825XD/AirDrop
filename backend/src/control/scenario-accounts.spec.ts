@@ -130,7 +130,7 @@ describe('ScenarioAccountsService.restore (RF-40, CU-41)', () => {
         fullName: dispatcher.fullName,
         status: UserStatus.ACTIVE,
         failedLoginCount: 0,
-        passwordHash: expect.stringMatching(/^\$2[aby]\$/),
+        passwordHash: expect.stringMatching(/^\$2[aby]\$/) as string,
       }),
     );
     // Solo su central.

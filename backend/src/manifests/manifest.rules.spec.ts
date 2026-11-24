@@ -44,8 +44,8 @@ describe('Manifiesto de carga (RF-47)', () => {
       coldCompartmentKg: 1,
       coldRange: COLD_RANGE,
     });
-    expect(
-      manifestCold({ ...order, requiresColdChain: false }, false),
-    ).toEqual({ coldCompartmentKg: null, coldRange: null });
+    expect(manifestCold({ ...order, requiresColdChain: false }, false)).toEqual(
+      { coldCompartmentKg: null, coldRange: null },
+    );
   });
 });
