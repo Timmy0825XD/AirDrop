@@ -448,7 +448,7 @@ export function buildLiveFlight(input: {
  */
 export function coldChainFailureRate(): number {
   const raw = process.env.COLD_CHAIN_FAILURE_RATE;
-  const configured = raw === undefined || raw === '' ? NaN : Number(raw);
+  const configured = raw === undefined || raw === '' ? Number.NaN : Number(raw);
   return configured >= 0 && configured <= 1
     ? configured
     : DEFAULT_COLD_CHAIN_FAILURE_RATE;
