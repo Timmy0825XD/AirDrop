@@ -5,7 +5,6 @@ import { DataSource, EntityManager, In, IsNull } from 'typeorm';
 import { simClock } from '../common/clock/sim-clock';
 import { DroneMaintenanceKind } from '../common/enums/drone-maintenance-kind.enum';
 import { DroneStatus } from '../common/enums/drone-status.enum';
-import { HubStatus } from '../common/enums/hub-status.enum';
 import { Drone } from '../fleet/drone.entity';
 import { DroneMaintenance } from '../fleet/drone-maintenance.entity';
 import { Hub } from '../hubs/hub.entity';

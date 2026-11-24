@@ -10,10 +10,7 @@ import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { Order } from '../orders/order.entity';
 import { User } from '../users/user.entity';
-import {
-  DEFAULT_CONTROLLER_NAME,
-  POLICY_VERSION,
-} from './privacy-policy';
+import { DEFAULT_CONTROLLER_NAME, POLICY_VERSION } from './privacy-policy';
 import {
   ONLY_REQUESTERS,
   ORDER_IN_PROGRESS,
@@ -132,18 +129,19 @@ describe('Política versionada (RF-50)', () => {
 
 describe('Revocar y suprimir (RF-50, CU-46)', () => {
   it('revocar pide la contraseña, cancela lo que no tiene dron y deja la cuenta inactiva', async () => {
-    const { service, manager, notifications } = build({ pending: ['o1', 'o2'] });
+    const { service, manager, notifications } = build({
+      pending: ['o1', 'o2'],
+    });
     const user = await holder();
     await expect(service.revoke(user, 'otra')).rejects.toThrow(
       new BadRequestException(WRONG_PASSWORD),
     );
     const result = await service.revoke(user, PASSWORD);
     expect(result).toEqual({ status: UserStatus.REVOKED, cancelledOrders: 2 });
-    expect(manager.update).toHaveBeenCalledWith(
-      Order,
-      expect.anything(),
-      { status: OrderStatus.CANCELLED, statusReason: REVOKED_REASON },
-    );
+    expect(manager.update).toHaveBeenCalledWith(Order, expect.anything(), {
+      status: OrderStatus.CANCELLED,
+      statusReason: REVOKED_REASON,
+    });
     expect(manager.update).toHaveBeenCalledWith(
       User,
       { id: 'user-1' },
@@ -173,7 +171,7 @@ describe('Revocar y suprimir (RF-50, CU-46)', () => {
     expect(result.status).toBe(UserStatus.DELETED);
     const userUpdate = manager.update.mock.calls.find(
       ([entity]) => entity === User,
-    )!;
+    )! as unknown[];
     const changes = userUpdate[2] as Record<string, unknown>;
     expect(changes).toMatchObject({
       email: null,

@@ -63,7 +63,10 @@ describe('dispatch window', () => {
     expect(isMissedDeparture(scheduled(), closed)).toBe(true);
     expect(
       isMissedDeparture(
-        scheduled({ loadConfirmedAt: closed, status: OrderStatus.PENDING_LOAD }),
+        scheduled({
+          loadConfirmedAt: closed,
+          status: OrderStatus.PENDING_LOAD,
+        }),
         closed,
       ),
     ).toBe(false);
@@ -90,7 +93,10 @@ describe('agenda facts', () => {
       departBefore: SLOT_START.toISOString(),
       availableQuantity: 4,
     };
-    const agenda = buildAgenda(1, [row, { ...row, status: OrderStatus.SKIPPED }]);
+    const agenda = buildAgenda(1, [
+      row,
+      { ...row, status: OrderStatus.SKIPPED },
+    ]);
     expect(agenda.drones).toBe(1);
     expect(agenda.slots).toEqual([
       {

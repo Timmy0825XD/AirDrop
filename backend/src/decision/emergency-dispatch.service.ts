@@ -306,10 +306,7 @@ export class EmergencyDispatchService implements OnModuleInit, OnModuleDestroy {
         continue;
       }
       withStock.push(toOption(hub, distanceKm));
-      if (
-        evaluation.inRange &&
-        Number.isFinite(evaluation.etaMs)
-      ) {
+      if (evaluation.inRange && Number.isFinite(evaluation.etaMs)) {
         candidates.push({
           hubId: hub.id,
           name: hub.name,

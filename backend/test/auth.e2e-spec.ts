@@ -173,7 +173,9 @@ describeIfDb('Auth (e2e)', () => {
       .send({ email: 'persona.desconocida@gmail.com' })
       .expect(200);
     expect(unknown.body).toEqual(
-      forgot.body.message ? { message: forgot.body.message } : unknown.body,
+      (forgot.body as { message?: string }).message
+        ? { message: (forgot.body as { message?: string }).message }
+        : unknown.body,
     );
     expect((unknown.body as { message: string }).message).toBe(
       (forgot.body as { message: string }).message,

@@ -1,4 +1,10 @@
-import { Controller, Get, Param, ParseUUIDPipe, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -18,10 +24,7 @@ export class ManifestsController {
   /** RF-47: el manifiesto vigente del pedido y los anulados. */
   @Get(':id/manifest')
   @Roles(UserRole.DISPATCHER, UserRole.FLEET_OPERATOR, UserRole.ADMIN)
-  forOrder(
-    @CurrentUser() user: User,
-    @Param('id', ParseUUIDPipe) id: string,
-  ) {
+  forOrder(@CurrentUser() user: User, @Param('id', ParseUUIDPipe) id: string) {
     return this.manifests.forOrder(user, id);
   }
 }

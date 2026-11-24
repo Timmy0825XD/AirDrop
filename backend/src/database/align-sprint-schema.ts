@@ -13,9 +13,10 @@ async function addEnumValue(
   typeName: string,
   label: string,
 ): Promise<void> {
-  const rows = (await boot.query(`SELECT 1 FROM pg_type WHERE typname = $1`, [
-    typeName,
-  ])) as unknown[];
+  const rows = await boot.query<unknown[]>(
+    `SELECT 1 FROM pg_type WHERE typname = $1`,
+    [typeName],
+  );
   if (!rows.length) {
     return;
   }
@@ -25,19 +26,20 @@ async function addEnumValue(
 }
 
 async function tableExists(boot: DataSource, name: string): Promise<boolean> {
-  const rows = (await boot.query(`SELECT to_regclass($1) AS name`, [
-    `public.${name}`,
-  ])) as Array<{ name: string | null }>;
+  const rows = await boot.query<Array<{ name: string | null }>>(
+    `SELECT to_regclass($1) AS name`,
+    [`public.${name}`],
+  );
   return Boolean(rows[0]?.name);
 }
 
 async function migrateHubStatus(boot: DataSource): Promise<void> {
-  const labels = (await boot.query(
+  const labels = await boot.query<Array<{ enumlabel: string }>>(
     `SELECT e.enumlabel
      FROM pg_enum e
      JOIN pg_type t ON e.enumtypid = t.oid
      WHERE t.typname = 'hub_status'`,
-  )) as Array<{ enumlabel: string }>;
+  );
   if (!labels.some((row) => row.enumlabel === 'pending_approval')) {
     return;
   }
@@ -99,11 +101,13 @@ async function copyLegacyHubAssignments(boot: DataSource): Promise<void> {
 }
 
 async function dropHubCreatorUnique(boot: DataSource): Promise<void> {
-  const indexes = (await boot.query(
+  const indexes = await boot.query<
+    Array<{ indexname: string; indexdef: string }>
+  >(
     `SELECT indexname, indexdef
      FROM pg_indexes
      WHERE schemaname = 'public' AND tablename = 'hubs'`,
-  )) as Array<{ indexname: string; indexdef: string }>;
+  );
   for (const index of indexes) {
     const definition = index.indexdef.toLowerCase();
     if (
@@ -124,11 +128,11 @@ async function migrateInventorySaleType(boot: DataSource): Promise<void> {
   if (!(await tableExists(boot, 'inventory_items'))) {
     return;
   }
-  const columns = (await boot.query(
+  const columns = await boot.query<Array<{ column_name: string }>>(
     `SELECT column_name
      FROM information_schema.columns
      WHERE table_schema = 'public' AND table_name = 'inventory_items'`,
-  )) as Array<{ column_name: string }>;
+  );
   const names = new Set(columns.map((row) => row.column_name));
   if (names.has('requiresPrescription')) {
     await boot.query(
@@ -211,10 +215,10 @@ async function addGeofenceClasses(boot: DataSource): Promise<void> {
   await boot.query(`DO $$ BEGIN
     CREATE TYPE operational_category AS ENUM ('works', 'crowd', 'interference', 'ground_risk', 'other');
   EXCEPTION WHEN duplicate_object THEN NULL; END $$`);
-  const hadClass = (await boot.query(
+  const hadClass = await boot.query<unknown[]>(
     `SELECT 1 FROM information_schema.columns
      WHERE table_name = 'geofences' AND column_name = 'class'`,
-  )) as unknown[];
+  );
   await boot.query(
     `ALTER TABLE geofences
        ADD COLUMN IF NOT EXISTS class geofence_class NOT NULL DEFAULT 'operational',
@@ -248,11 +252,13 @@ async function allowIncidentHistory(boot: DataSource): Promise<void> {
     if (!(await tableExists(boot, table))) {
       continue;
     }
-    const indexes = (await boot.query(
+    const indexes = await boot.query<
+      Array<{ indexname: string; indexdef: string }>
+    >(
       `SELECT indexname, indexdef FROM pg_indexes
        WHERE schemaname = 'public' AND tablename = $1`,
       [table],
-    )) as Array<{ indexname: string; indexdef: string }>;
+    );
     for (const index of indexes) {
       const definition = index.indexdef.toLowerCase();
       if (definition.includes('unique') && definition.includes('("orderid")')) {
