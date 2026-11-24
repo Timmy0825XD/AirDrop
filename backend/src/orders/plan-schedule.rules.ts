@@ -208,7 +208,7 @@ export function colombiaInstant(date: string, time: string): Date {
 function normalize(input: ScheduleInput, today: string): PlanSchedule {
   const time = input.time;
   if (input.kind === ScheduleKind.DATES) {
-    const dates = [...new Set(input.dates ?? [])].sort();
+    const dates = [...new Set(input.dates ?? [])].sort((a, b) => a.localeCompare(b));
     if (!dates.length || dates.length > MAX_PLAN_DATES) {
       throw new BadRequestException(SCHEDULE_NEEDS_DATES);
     }
@@ -247,7 +247,7 @@ function normalize(input: ScheduleInput, today: string): PlanSchedule {
       dayOfMonth: input.dayOfMonth,
     };
   }
-  const daysOfWeek = [...new Set(input.daysOfWeek ?? [])].sort();
+  const daysOfWeek = [...new Set(input.daysOfWeek ?? [])].sort((a, b) => a - b);
   if (!daysOfWeek.length) {
     throw new BadRequestException(SCHEDULE_NEEDS_DAYS);
   }
@@ -304,7 +304,7 @@ function candidateDates(schedule: PlanSchedule, until: string): string[] {
 
 export function assertTime(time: string): void {
   const match = /^(\d{2}):00$/.exec(time);
-  const hour = match ? Number(match[1]) : NaN;
+  const hour = match ? Number(match[1]) : Number.NaN;
   if (!(hour >= FIRST_SLOT_HOUR && hour <= LAST_SLOT_HOUR)) {
     throw new BadRequestException(SCHEDULE_BAD_TIME);
   }

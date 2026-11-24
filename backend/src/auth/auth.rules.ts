@@ -34,7 +34,7 @@ export function jwtExpiresInSeconds(raw: string | undefined): number {
     return DEFAULT_JWT_EXPIRES_IN_SECONDS;
   }
   const match = /^(\d+)\s*([smhd])?$/i.exec(value);
-  const amount = match ? Number(match[1]) : NaN;
+  const amount = match ? Number(match[1]) : Number.NaN;
   if (!match || !Number.isSafeInteger(amount) || amount <= 0) {
     throw new Error(JWT_EXPIRES_IN_INVALID);
   }
