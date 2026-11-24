@@ -38,7 +38,7 @@ describe('CH-07 — Código correcto después del tiempo de espera', () => {
       code: codigo,
     }).then((respuesta) => {
       cy.log(`Respuesta real: ${respuesta.status} ${respuesta.body.message}`);
-      expect(respuesta.status).to.eq(400);
+      expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(400);
       // Con el pedido ya «en retorno» el estado se revisa antes que el código.
       expect(respuesta.body.message).to.be.oneOf([
         'Solo se entrega un pedido en espera de entrega.',
@@ -49,7 +49,7 @@ describe('CH-07 — Código correcto después del tiempo de espera', () => {
 
   it('CH-07 paso 4: el dron regresa con el paquete y el pedido queda en retorno', () => {
     cy.api(solicitante, 'GET', `/orders/${pedido}`).then((respuesta) => {
-      expect(respuesta.status).to.eq(200);
+      expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(200);
       expect(respuesta.body.status).to.eq('returning');
     });
   });

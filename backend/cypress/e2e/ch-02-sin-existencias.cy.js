@@ -20,7 +20,7 @@ describe('CH-02 — Urgencia sin existencias', () => {
 
   it('CH-02 paso 1: el medicamento no aparece en el catálogo', () => {
     cy.api(solicitante, 'GET', '/orders/catalog').then((respuesta) => {
-      expect(respuesta.status).to.eq(200);
+      expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(200);
       expect(respuesta.body.map((fila) => fila.name)).not.to.include(
         SIN_EXISTENCIAS,
       );
@@ -34,7 +34,7 @@ describe('CH-02 — Urgencia sin existencias', () => {
       '/orders/emergencies',
       urgenciaLibre({ medicationName: SIN_EXISTENCIAS }),
     ).then((respuesta) => {
-      expect(respuesta.status).to.eq(400);
+      expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(400);
       expect(respuesta.body.message).to.eq(
         'Ninguna central activa tiene ese medicamento disponible.',
       );
@@ -43,7 +43,7 @@ describe('CH-02 — Urgencia sin existencias', () => {
 
   it('CH-02 paso 4: no se creó ningún pedido nuevo', () => {
     cy.api(solicitante, 'GET', '/orders/mine').then((respuesta) => {
-      expect(respuesta.status).to.eq(200);
+      expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(200);
       expect(respuesta.body).to.have.length(antes);
     });
   });

@@ -37,7 +37,7 @@ describe('CH-06 — Reutilizar el código de una entrega cerrada', () => {
     cy.api(solicitante, 'GET', `/orders/${pedido}/delivery-code`).then(
       (respuesta) => {
         cy.log(`Respuesta real: ${respuesta.status} ${respuesta.body.message}`);
-        expect(respuesta.status).to.eq(400);
+        expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(400);
         expect(respuesta.body.code).to.be.undefined;
       },
     );
@@ -48,7 +48,7 @@ describe('CH-06 — Reutilizar el código de una entrega cerrada', () => {
       code: codigo,
     }).then((respuesta) => {
       cy.log(`Respuesta real: ${respuesta.status} ${respuesta.body.message}`);
-      expect(respuesta.status).to.eq(400);
+      expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(400);
       expect(respuesta.body.message).to.eq(
         'El código es inválido, ya se usó o venció.',
       );
@@ -57,7 +57,7 @@ describe('CH-06 — Reutilizar el código de una entrega cerrada', () => {
 
   it('CH-06 paso 4: el pedido sigue entregado, sin cambios', () => {
     cy.api(solicitante, 'GET', `/orders/${pedido}`).then((respuesta) => {
-      expect(respuesta.status).to.eq(200);
+      expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(200);
       expect(respuesta.body.status).to.eq('delivered');
     });
   });

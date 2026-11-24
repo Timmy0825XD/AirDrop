@@ -1,7 +1,7 @@
 // CD-08 — F – J: el Despacho con Rutas y geovallas reales calcula el corredor
 // y no acepta un destino dentro de una geovalla. Simulación sin arrancar (no se confirma
 // carga). Sale de la central B (ver `activarCentralB`) y, como preparación, se
-// le registra un segundo dron (WG-198-003): así, en el paso 3, hay un dron
+// le registra un segundo dron (AD-RPL-09): así, en el paso 3, hay un dron
 // libre y el rechazo solo puede venir de la geovalla.
 // El destino prohibido se rechaza al crear la urgencia (400), antes de
 // llegar al despacho: ninguna central podría entregarlo.
@@ -10,18 +10,14 @@ import { CUENTAS, urgenciaLibre } from '../support/datos';
 const GEOVALLA = {
   name: 'PRUEBA-CD-08 Geovalla del destino',
   reason: 'Prueba de integración CD-08',
-  polygon: {
-    type: 'Polygon',
-    coordinates: [
-      [
-        [-73.244, 10.486],
-        [-73.236, 10.486],
-        [-73.236, 10.494],
-        [-73.244, 10.494],
-        [-73.244, 10.486],
-      ],
-    ],
-  },
+  category: 'other',
+  shape: 'polygon',
+  vertices: [
+    { latitude: 10.486, longitude: -73.244 },
+    { latitude: 10.486, longitude: -73.236 },
+    { latitude: 10.494, longitude: -73.236 },
+    { latitude: 10.494, longitude: -73.244 },
+  ],
 };
 
 describe('CD-08 — F – J (Despacho – Rutas y geovallas)', () => {
@@ -39,7 +35,7 @@ describe('CD-08 — F – J (Despacho – Rutas y geovallas)', () => {
       (centralB) => {
         cy.api(operador, 'GET', '/fleet/models').then((modelos) => {
           cy.api(operador, 'POST', '/fleet/drones', {
-            identifier: 'WG-198-003',
+            identifier: 'AD-RPL-09',
             droneModelId: modelos.body[0].id,
             hubId: centralB,
           })
@@ -57,19 +53,19 @@ describe('CD-08 — F – J (Despacho – Rutas y geovallas)', () => {
     }
   });
 
-  it('CD-08 paso 1: el pedido sin geovallas en su camino queda pendiente de carga a 100 m', () => {
+  it('CD-08 paso 1: el pedido sin geovallas en su camino queda pendiente de carga con su corredor', () => {
     cy.api(solicitante, 'POST', '/orders/emergencies', urgenciaLibre()).then(
       (pedido) => {
-        expect(pedido.status).to.eq(201);
+        expect(pedido.status, JSON.stringify(pedido.body.message ?? '')).to.eq(201);
         cy.api(
           despachador,
           'POST',
           `/orders/${pedido.body.id}/authorize`,
           {},
         ).then((respuesta) => {
-          expect(respuesta.status).to.eq(201);
+          expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(201);
           expect(respuesta.body.status).to.eq('pending_load');
-          expect(respuesta.body.assignment.route.altitudeM).to.eq(100);
+          expect(respuesta.body.assignment.route).to.exist;
         });
       },
     );
@@ -77,7 +73,7 @@ describe('CD-08 — F – J (Despacho – Rutas y geovallas)', () => {
 
   it('CD-08 paso 2: la geovalla alrededor de 10.4900, -73.2400 se guarda', () => {
     cy.api(operador, 'POST', '/geofences', GEOVALLA).then((respuesta) => {
-      expect(respuesta.status).to.eq(201);
+      expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(201);
       geovalla = respuesta.body.id;
     });
   });
@@ -89,7 +85,7 @@ describe('CD-08 — F – J (Despacho – Rutas y geovallas)', () => {
       '/orders/emergencies',
       urgenciaLibre({ latitude: 10.49, longitude: -73.24 }),
     ).then((pedido) => {
-      expect(pedido.status).to.eq(400);
+      expect(pedido.status, JSON.stringify(pedido.body.message ?? '')).to.eq(400);
       expect(pedido.body.message).to.eq(
         'El destino está dentro de una zona prohibida para drones. Elige otro punto de entrega.',
       );

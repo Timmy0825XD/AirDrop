@@ -29,7 +29,7 @@ describe('CD-09 — F – K (Redis caído)', () => {
   it('CD-09 paso 3: con Redis detenido, confirmar la carga responde 503', () => {
     cy.api(despachador, 'POST', `/orders/${pedido}/confirm-load`).then(
       (respuesta) => {
-        expect(respuesta.status).to.eq(503);
+        expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(503);
         expect(respuesta.body.message).to.eq(
           'La telemetría no está disponible. No se puede iniciar el vuelo.',
         );

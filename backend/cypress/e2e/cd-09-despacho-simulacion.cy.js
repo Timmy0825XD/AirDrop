@@ -45,7 +45,7 @@ describe('CD-09 — F – K (Despacho – Simulación y telemetría)', () => {
   it('CD-09 paso 1: el despachador de otra central no confirma la carga (403)', () => {
     cy.api(despachadorOtra, 'POST', `/orders/${pedido}/confirm-load`).then(
       (respuesta) => {
-        expect(respuesta.status).to.eq(403);
+        expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(403);
         expect(respuesta.body.message).to.eq(
           'Solo el despachador de la central de origen confirma la carga.',
         );
@@ -56,7 +56,7 @@ describe('CD-09 — F – K (Despacho – Simulación y telemetría)', () => {
   it('CD-09 paso 2: el despachador de origen confirma la carga, el pedido vuela y hay telemetría', () => {
     cy.api(despachadorOrigen, 'POST', `/orders/${pedido}/confirm-load`).then(
       (respuesta) => {
-        expect(respuesta.status).to.eq(201);
+        expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(201);
         expect(respuesta.body.loadConfirmedAt).to.be.a('string');
       },
     );
@@ -64,7 +64,7 @@ describe('CD-09 — F – K (Despacho – Simulación y telemetría)', () => {
     esperarEstado(despachadorOrigen, pedido, 'in_flight', 15);
     cy.api(despachadorOrigen, 'GET', `/telemetry/orders/${pedido}`).then(
       (telemetria) => {
-        expect(telemetria.status).to.eq(200);
+        expect(telemetria.status, JSON.stringify(telemetria.body.message ?? '')).to.eq(200);
       },
     );
   });

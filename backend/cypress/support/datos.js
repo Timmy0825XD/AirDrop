@@ -13,28 +13,45 @@ export const DOCUMENTO_SOLICITANTE = {
   patientDocumentNumber: '1099000001',
 };
 
-/** Urgencia de venta libre (datos V1 de la guía). */
+/** Paso 1 de la urgencia: el tamizaje en fichas (RF-41). */
+export const TAMIZAJE = {
+  redFlags: [],
+  patientGroup: 'adult',
+  symptoms: ['fever'],
+  onset: 'today',
+  severity: 'moderate',
+};
+
+/** Urgencia de venta libre (valores V1): tamizaje, medicamento y punto en el mapa. */
 export function urgenciaLibre(overrides = {}) {
   return {
     medicationName: 'Acetaminofén 500 mg',
     saleType: 'over_the_counter',
-    description: 'Fiebre alta persistente',
-    address: 'Calle 16 No. 19-35, Valledupar',
-    latitude: 10.4802,
-    longitude: -73.2475,
+    triage: TAMIZAJE,
+    allergies: '',
+    address: 'Casa esquinera de reja verde',
+    // Cerca de La Paz: la central B (PRUEBA-Clínica del Norte) es la que
+    // llega antes, así que la urgencia entra primero a su cola (RU-10).
+    latitude: 10.365,
+    longitude: -73.152,
     ...overrides,
   };
 }
 
-/** Urgencia bajo fórmula con una imagen de `bytes` bytes y el tipo indicado. */
-export function urgenciaConFormula(bytes, mime = 'image/jpeg') {
+/**
+ * Urgencia bajo fórmula (RU-25): `fotos` archivos de `bytes` bytes cada uno,
+ * del tipo indicado (una foto JPG, un PDF o cualquier otro).
+ */
+export function urgenciaConFormula(bytes, mime = 'image/jpeg', fotos = 1) {
   return urgenciaLibre({
     medicationName: 'Insulina glargina 100 UI',
     saleType: 'prescription',
-    description: 'Dosis diaria de insulina',
+    triage: { ...TAMIZAJE, symptoms: ['blood_sugar'] },
     ...DOCUMENTO_SOLICITANTE,
-    prescriptionMime: mime,
-    prescriptionImageBase64: archivoFalso(bytes, mime),
+    prescriptions: Array.from({ length: fotos }, () => ({
+      mime,
+      base64: archivoFalso(bytes, mime),
+    })),
   });
 }
 
@@ -61,3 +78,36 @@ export function hoyEnColombia() {
     day: '2-digit',
   }).format(new Date());
 }
+
+/** Ítem del caso CA-01 (y de CD-05). */
+export const ITEM_CA01 = {
+  name: 'Acetaminofén 500 mg',
+  quantity: 240,
+  lot: 'ACE-RPL-2601',
+  expirationDate: '2028-02-13',
+  requiresColdChain: false,
+  saleType: 'over_the_counter',
+  unitWeightG: 30,
+};
+
+/** Un dato distinto en cada corrida: últimos `n` dígitos de la hora. */
+export function unico(n) {
+  return String(Date.now()).slice(-n);
+}
+
+/** Solicitante nuevo para los casos de registro (CA-05 y CD-02). */
+export function solicitanteNuevo() {
+  const n = unico(8);
+  return {
+    fullName: 'Solicitante Registro Prueba',
+    documentType: 'citizenship_id',
+    documentNumber: `10${n}`,
+    email: `registro.${n}@prueba.co`,
+    phone: `31${n}`,
+    password: 'Password123',
+    consentAccepted: true,
+  };
+}
+
+/** Urgencia cerca de la central A (PRUEBA-Hospital Rosario Pumarejo, Río Seco). */
+export const CERCA_DE_A = { latitude: 10.596, longitude: -73.214 };

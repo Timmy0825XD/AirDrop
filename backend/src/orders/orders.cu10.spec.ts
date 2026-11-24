@@ -1,38 +1,43 @@
 /**
  * Pruebas unitarias del CU-10 (Crear pedido programado), casos CP-10-01 a
- * CP-10-11 de la Segunda Parte del documento. El nombre de cada `it` empieza
+ * CP-10-15 de la Segunda Parte del documento. El nombre de cada `it` empieza
  * con el ID del caso para que la terminal lo muestre en la captura.
  *
- * El reloj se fija en 2026-10-16 (fecha de referencia de los datos del
- * documento): así CP-10-02 (inicio 2026-10-16) sigue siendo "hoy" y los casos
- * no cambian de resultado según el día en que se corran.
+ * El reloj se fija el lunes 2026-11-23 a las 07:00 de Colombia: así las
+ * fechas de los datos de prueba no cambian de resultado según el día en que
+ * se corran.
  */
 import { BadRequestException } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
+import { validate, ValidationError } from 'class-validator';
 import { DocumentType } from '../common/enums/document-type.enum';
 import { MissionType } from '../common/enums/mission-type.enum';
-import { OrderStatus } from '../common/enums/order-status.enum';
-import { PlanFrequency } from '../common/enums/plan-frequency.enum';
 import { PlanStatus } from '../common/enums/plan-status.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
+import { ScheduleKind } from '../common/enums/schedule-kind.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { HubsService } from '../hubs/hubs.service';
 import { User } from '../users/user.entity';
 import { CreatePlanDto } from './dto/create-plan.dto';
+import { PlanScheduleDto } from './dto/plan-schedule.dto';
 import { InventoryOfferQuery } from './inventory-offer.query';
 import { Order } from './order.entity';
-import {
-  SPECIAL_CONTROL_MESSAGE,
-  START_DATE_IN_THE_PAST,
-  addCalendarDays,
-  occurrenceDates,
-  windowEnd,
-} from './orders.rules';
+import { SPECIAL_CONTROL_MESSAGE } from './orders.rules';
 import { OrdersService } from './orders.service';
+import {
+  SCHEDULE_BAD_TIME,
+  SCHEDULE_EMPTY,
+  SCHEDULE_END_OR_COUNT,
+  SCHEDULE_NEEDS_DAYS,
+  SCHEDULE_PAST_PRESCRIPTION,
+  SCHEDULE_START_IN_THE_PAST,
+  SCHEDULE_TOO_LONG,
+  buildSchedule,
+} from './plan-schedule.rules';
 
-const FIXED_NOW = new Date('2026-10-16T15:00:00.000Z');
+/** Lunes 23 de noviembre de 2026, 07:00 en Colombia (UTC-5). */
+const FIXED_NOW = new Date('2026-11-23T12:00:00.000Z');
 
 function requester(): User {
   return {
@@ -45,23 +50,37 @@ function requester(): User {
   } as unknown as User;
 }
 
-function planDto(overrides: Partial<CreatePlanDto> = {}): CreatePlanDto {
+/** Todos los jueves a las 10:00, 4 entregas, desde el 26 de noviembre. */
+function semanal(overrides: Partial<PlanScheduleDto> = {}): PlanScheduleDto {
   return {
-    medicationName: 'Insulina glargina',
-    saleType: SaleType.OVER_THE_COUNTER,
-    quantity: 4,
-    frequency: PlanFrequency.WEEKLY,
-    startDate: '2026-10-22',
-    latitude: 10.6314,
-    longitude: -73.1279,
+    kind: ScheduleKind.WEEKLY,
+    daysOfWeek: [4],
+    everyWeeks: 1,
+    startDate: '2026-11-26',
+    count: 4,
+    time: '10:00',
     ...overrides,
   };
 }
 
-function build(medicationName = 'Insulina glargina') {
+function planDto(overrides: Partial<CreatePlanDto> = {}): CreatePlanDto {
+  return {
+    medicationName: 'Losartán 50 mg',
+    saleType: SaleType.OVER_THE_COUNTER,
+    quantity: 30,
+    schedule: semanal(),
+    address: 'Casa esquinera de reja verde',
+    latitude: 10.4631,
+    longitude: -73.2532,
+    ...overrides,
+  };
+}
+
+function build(medicationName = 'Losartán 50 mg') {
   const orders = {
     create: jest.fn((value: Partial<Order>) => value),
-    save: jest.fn((value: Order) => Promise.resolve(value)),
+    save: jest.fn((value: Order | Order[]) => Promise.resolve(value)),
+    find: jest.fn().mockResolvedValue([]),
   };
   const plans = {
     create: jest.fn((value: object) => value),
@@ -94,15 +113,27 @@ function build(medicationName = 'Insulina glargina') {
   return { service, orders, plans };
 }
 
+/** Las entregas que guardó el plan, una por fecha. */
 function savedOccurrences(orders: { save: jest.Mock }): Order[] {
-  return orders.save.mock.calls.map(([row]) => row as Order);
+  return orders.save.mock.calls.flatMap(([row]) =>
+    Array.isArray(row) ? (row as Order[]) : [row as Order],
+  );
+}
+
+function dates(orders: { save: jest.Mock }): string[] {
+  return savedOccurrences(orders).map((row) => row.scheduledFor as string);
+}
+
+function mensajes(fallo: ValidationError): string[] {
+  return [
+    ...Object.values(fallo.constraints ?? {}),
+    ...(fallo.children ?? []).flatMap(mensajes),
+  ];
 }
 
 async function errors(data: object): Promise<string[]> {
   const failures = await validate(plainToInstance(CreatePlanDto, data));
-  return failures.flatMap((failure) =>
-    Object.values(failure.constraints ?? {}),
-  );
+  return failures.flatMap(mensajes);
 }
 
 describe('CU-10 Crear pedido programado', () => {
@@ -114,72 +145,56 @@ describe('CU-10 Crear pedido programado', () => {
     jest.useRealTimers();
   });
 
-  it('CP-10-01 crea un plan semanal de venta libre con 8 entregas en recibido', async () => {
+  it('CP-10-01 crea un plan semanal de los jueves a las 10:00 con 4 entregas', async () => {
     expect(await errors(planDto())).toEqual([]);
     const { service, orders } = build();
 
     const plan = await service.createPlan(requester(), planDto());
 
     expect(plan.status).toBe(PlanStatus.ACTIVE);
-    expect(plan.frequency).toBe(PlanFrequency.WEEKLY);
-    const rows = savedOccurrences(orders);
-    expect(rows).toHaveLength(8);
-    rows.forEach((row, index) => {
-      expect(row.status).toBe(OrderStatus.RECEIVED);
-      expect(row.missionType).toBe(MissionType.SCHEDULED);
-      expect(row.scheduledFor).toBe(addCalendarDays('2026-10-22', 7 * index));
-    });
+    expect(dates(orders)).toEqual([
+      '2026-11-26',
+      '2026-12-03',
+      '2026-12-10',
+      '2026-12-17',
+    ]);
+    savedOccurrences(orders).forEach((row) =>
+      expect(row.missionType).toBe(MissionType.SCHEDULED),
+    );
   });
 
-  it('CP-10-02 crea un plan de frecuencia única con una sola entrega en la fecha de inicio', async () => {
+  it('CP-10-02 crea un plan mensual el día 15 con 3 entregas', async () => {
     const body = planDto({
-      frequency: PlanFrequency.ONCE,
-      startDate: '2026-10-16',
+      schedule: {
+        kind: ScheduleKind.MONTHLY,
+        dayOfMonth: 15,
+        startDate: '2026-11-23',
+        count: 3,
+        time: '09:00',
+      },
     });
     expect(await errors(body)).toEqual([]);
     const { service, orders } = build();
 
-    const plan = await service.createPlan(requester(), body);
+    await service.createPlan(requester(), body);
 
-    const rows = savedOccurrences(orders);
-    expect(rows).toHaveLength(1);
-    expect(rows[0].scheduledFor).toBe('2026-10-16');
-    expect(rows[0].status).toBe(OrderStatus.RECEIVED);
-    // La frecuencia única no se extiende: nunca entra en renovación.
-    expect(plan.renewalDue).toBe(false);
+    expect(dates(orders)).toEqual(['2026-12-15', '2027-01-15', '2027-02-15']);
   });
 
-  it('CP-10-03 crea un plan quincenal y uno mensual dentro de las 8 semanas', async () => {
-    const quincenal = build('Hierro polimaltosado');
-    await quincenal.service.createPlan(
-      requester(),
-      planDto({
-        medicationName: 'Hierro polimaltosado',
-        quantity: 30,
-        frequency: PlanFrequency.BIWEEKLY,
-      }),
-    );
-    expect(
-      savedOccurrences(quincenal.orders).map((r) => r.scheduledFor),
-    ).toEqual(['2026-10-22', '2026-11-05', '2026-11-19', '2026-12-03']);
+  it('CP-10-03 crea un plan de fechas sueltas con una entrega por fecha', async () => {
+    const body = planDto({
+      schedule: {
+        kind: ScheduleKind.DATES,
+        dates: ['2026-12-04', '2026-11-27'],
+        time: '16:00',
+      },
+    });
+    expect(await errors(body)).toEqual([]);
+    const { service, orders } = build();
 
-    const mensual = build('Hierro polimaltosado');
-    await mensual.service.createPlan(
-      requester(),
-      planDto({
-        medicationName: 'Hierro polimaltosado',
-        quantity: 30,
-        frequency: PlanFrequency.MONTHLY,
-      }),
-    );
-    expect(savedOccurrences(mensual.orders).map((r) => r.scheduledFor)).toEqual(
-      ['2026-10-22', '2026-11-22'],
-    );
-    // Todas las fechas caen antes del cierre de la ventana de 8 semanas.
-    const end = windowEnd('2026-10-22');
-    [...savedOccurrences(quincenal.orders), ...savedOccurrences(mensual.orders)]
-      .map((row) => row.scheduledFor as string)
-      .forEach((date) => expect(date < end).toBe(true));
+    await service.createPlan(requester(), body);
+
+    expect(dates(orders)).toEqual(['2026-11-27', '2026-12-04']);
   });
 
   it('CP-10-04 rechaza un plan de control especial (400)', async () => {
@@ -193,29 +208,20 @@ describe('CU-10 Crear pedido programado', () => {
     await expect(attempt).rejects.toThrow(
       new BadRequestException(SPECIAL_CONTROL_MESSAGE),
     );
-    await expect(attempt).rejects.toThrow(
-      'El control especial no se pide por este canal.',
-    );
     expect(plans.save).not.toHaveBeenCalled();
     expect(orders.save).not.toHaveBeenCalled();
   });
 
-  it('CP-10-05 rechaza un plan con la fecha de inicio anterior a hoy (400)', async () => {
-    const { service, orders, plans } = build();
+  it('CP-10-05 rechaza un plan que empieza antes de hoy (400)', async () => {
+    const { service, plans } = build();
 
     const attempt = service.createPlan(
       requester(),
-      planDto({ startDate: '2026-10-01' }),
+      planDto({ schedule: semanal({ startDate: '2026-11-22' }) }),
     );
 
-    await expect(attempt).rejects.toThrow(
-      new BadRequestException(START_DATE_IN_THE_PAST),
-    );
-    await expect(attempt).rejects.toThrow(
-      'La fecha de inicio no puede ser anterior a hoy.',
-    );
+    await expect(attempt).rejects.toThrow(SCHEDULE_START_IN_THE_PAST);
     expect(plans.save).not.toHaveBeenCalled();
-    expect(orders.save).not.toHaveBeenCalled();
   });
 
   it('CP-10-06 rechaza un plan con cantidad 0 (400)', async () => {
@@ -230,36 +236,121 @@ describe('CU-10 Crear pedido programado', () => {
     );
   });
 
-  it('CP-10-08 rechaza una frecuencia fuera de la lista (400)', async () => {
-    const found = await errors({ ...planDto(), frequency: 'diaria' });
+  it('CP-10-08 rechaza la franja de las 17:00 y acepta la de las 16:00 (400)', async () => {
+    const tarde = build();
+    await expect(
+      tarde.service.createPlan(
+        requester(),
+        planDto({ schedule: semanal({ time: '17:00' }) }),
+      ),
+    ).rejects.toThrow(SCHEDULE_BAD_TIME);
 
-    expect(found).toContain(
-      'La frecuencia debe ser única, semanal, quincenal o mensual.',
+    const ultima = build();
+    await ultima.service.createPlan(
+      requester(),
+      planDto({ schedule: semanal({ time: '16:00' }) }),
     );
+    expect(dates(ultima.orders)).toHaveLength(4);
   });
 
-  it('CP-10-09 corta el plan semanal en 24 fechas con una ventana muy larga', () => {
-    const dates = occurrenceDates(
-      '2026-10-22',
-      '2030-01-01',
-      PlanFrequency.WEEKLY,
+  it('CP-10-09 rechaza un plan con fecha de fin y número de entregas a la vez (400)', async () => {
+    const { service, plans } = build();
+
+    const attempt = service.createPlan(
+      requester(),
+      planDto({ schedule: semanal({ endDate: '2026-12-31', count: 4 }) }),
     );
 
-    expect(dates).toHaveLength(24);
-    expect(dates[0]).toBe('2026-10-22');
-    expect(dates[23]).toBe(addCalendarDays('2026-10-22', 7 * 23));
-    expect(dates[23]).toBe('2027-04-01');
+    await expect(attempt).rejects.toThrow(SCHEDULE_END_OR_COUNT);
+    expect(plans.save).not.toHaveBeenCalled();
   });
 
-  it('CP-10-10 devuelve una lista vacía si la ventana termina el mismo día de inicio', () => {
-    expect(
-      occurrenceDates('2026-10-22', '2026-10-22', PlanFrequency.WEEKLY),
-    ).toEqual([]);
+  it('CP-10-10 rechaza un plan de más de 3 meses y acepta uno de 3 meses exactos (400)', async () => {
+    const largo = build();
+    await expect(
+      largo.service.createPlan(
+        requester(),
+        planDto({
+          schedule: semanal({ count: undefined, endDate: '2027-02-27' }),
+        }),
+      ),
+    ).rejects.toThrow(SCHEDULE_TOO_LONG);
+
+    const justo = build();
+    await justo.service.createPlan(
+      requester(),
+      planDto({
+        schedule: semanal({ count: undefined, endDate: '2027-02-26' }),
+      }),
+    );
+    expect(dates(justo.orders).at(-1)).toBe('2027-02-25');
   });
 
   it('CP-10-11 rechaza el medicamento vacío con «El medicamento es obligatorio.»', async () => {
     expect(await errors(planDto({ medicationName: '' }))).toContain(
       'El medicamento es obligatorio.',
     );
+  });
+
+  it('CP-10-12 rechaza un plan semanal sin días de la semana (400)', async () => {
+    const { service, plans } = build();
+
+    const attempt = service.createPlan(
+      requester(),
+      planDto({ schedule: semanal({ daysOfWeek: [] }) }),
+    );
+
+    await expect(attempt).rejects.toThrow(SCHEDULE_NEEDS_DAYS);
+    expect(plans.save).not.toHaveBeenCalled();
+  });
+
+  it('CP-10-13 no agenda una entrega que empezaría en menos de 2 horas (400)', async () => {
+    // Hoy a las 08:00: falta 1 hora y no da tiempo de avisar ni de preparar.
+    const { service, plans } = build();
+
+    const attempt = service.createPlan(
+      requester(),
+      planDto({
+        schedule: {
+          kind: ScheduleKind.DATES,
+          dates: ['2026-11-23'],
+          time: '08:00',
+        },
+      }),
+    );
+
+    await expect(attempt).rejects.toThrow(SCHEDULE_EMPTY);
+    expect(plans.save).not.toHaveBeenCalled();
+  });
+
+  it('CP-10-14 no deja que el plan dure más que la vigencia de la fórmula (400)', () => {
+    const schedule = semanal();
+
+    expect(() =>
+      buildSchedule(schedule, {
+        now: FIXED_NOW,
+        prescriptionValidUntil: '2026-12-10',
+      }),
+    ).toThrow(SCHEDULE_PAST_PRESCRIPTION);
+    expect(
+      buildSchedule(schedule, {
+        now: FIXED_NOW,
+        prescriptionValidUntil: '2026-12-17',
+      }).lastDate,
+    ).toBe('2026-12-17');
+  });
+
+  it('CP-10-15 crea un plan de martes y jueves cada 2 semanas', () => {
+    const result = buildSchedule(
+      semanal({ daysOfWeek: [2, 4], everyWeeks: 2, startDate: '2026-11-24' }),
+      { now: FIXED_NOW },
+    );
+
+    expect(result.occurrences.map((o) => o.date)).toEqual([
+      '2026-11-24',
+      '2026-11-26',
+      '2026-12-08',
+      '2026-12-10',
+    ]);
   });
 });

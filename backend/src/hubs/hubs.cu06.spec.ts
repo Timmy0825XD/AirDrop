@@ -1,10 +1,12 @@
 import { NO_AIRSPACE } from '../airspace/airspace.testing';
 /**
- * Pruebas unitarias del CU-06 (Crear central), casos CP-06-01 a CP-06-08 de
+ * Pruebas unitarias del CU-06 (Crear central), casos CP-06-01 a CP-06-09 de
  * la Segunda Parte. El nombre de cada `it` empieza con el ID del caso para que
  * la terminal lo muestre en la captura.
  */
-import { ForbiddenException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import { HUB_IN_PROHIBITED_AIRSPACE } from '../airspace/airspace.rules';
+import { AirspaceService } from '../airspace/airspace.service';
 import { ConfigService } from '@nestjs/config';
 import { JwtStrategy } from '../auth/jwt.strategy';
 import { plainToInstance } from 'class-transformer';
@@ -23,11 +25,22 @@ const valido: CreateHubDto = {
   name: 'Hospital Rosario Pumarejo',
   type: HubType.HOSPITAL,
   address: 'Calle 16 No. 19-35, Valledupar',
-  latitude: 10.4631,
-  longitude: -73.2532,
+  latitude: 10.4682,
+  longitude: -73.2558,
   contactPhone: '3001234567',
   contactEmail: 'contacto@rosario.co',
 };
+
+/** Espacio aéreo con el anillo de 1,5 km del aeropuerto de Valledupar. */
+const CON_AEROPUERTO = {
+  assertHubLocation: ({ latitude }: { latitude: number }) => {
+    if (latitude > 10.43 && latitude < 10.445) {
+      throw new BadRequestException(
+        HUB_IN_PROHIBITED_AIRSPACE + ' (Aeropuerto Alfonso López Pumarejo)',
+      );
+    }
+  },
+} as unknown as AirspaceService;
 
 function usuario(overrides: Partial<User> = {}): User {
   return {
@@ -38,7 +51,7 @@ function usuario(overrides: Partial<User> = {}): User {
   } as User;
 }
 
-function build() {
+function build(airspace: AirspaceService = NO_AIRSPACE) {
   const guardadas: Hub[] = [];
   const hubs = {
     create: jest.fn((value: Partial<Hub>) => value),
@@ -46,14 +59,14 @@ function build() {
       const hub = {
         ...value,
         id: '22222222-2222-4222-8222-222222222222',
-        createdAt: new Date('2026-10-26T15:00:00.000Z'),
+        createdAt: new Date('2026-11-23T15:00:00.000Z'),
       };
       guardadas.push(hub);
       return Promise.resolve(hub);
     }),
   };
   return {
-    service: new HubsService(hubs as never, NO_AIRSPACE),
+    service: new HubsService(hubs as never, airspace),
     hubs,
     guardadas,
   };
@@ -157,5 +170,21 @@ describe('CU-06 Crear central', () => {
     });
 
     expect(user).toBeNull();
+  });
+
+  it('CP-06-09 rechaza una central dentro del anillo del aeropuerto y acepta una fuera de él (400)', async () => {
+    const enAnillo = build(CON_AEROPUERTO);
+    const intento = enAnillo.service.create(usuario(), {
+      ...valido,
+      latitude: 10.4352,
+      longitude: -73.2495,
+    });
+    await expect(intento).rejects.toBeInstanceOf(BadRequestException);
+    await expect(intento).rejects.toThrow(HUB_IN_PROHIBITED_AIRSPACE);
+    expect(enAnillo.hubs.save).not.toHaveBeenCalled();
+
+    const fuera = build(CON_AEROPUERTO);
+    const central = await fuera.service.create(usuario(), valido);
+    expect(central.status).toBe(HubStatus.ACTIVE);
   });
 });

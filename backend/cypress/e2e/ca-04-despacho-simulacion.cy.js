@@ -29,17 +29,17 @@ describe('CA-04 — F – K (Despacho – Simulación y telemetría)', () => {
 
   it('CA-04 paso 1: los pendientes de carga muestran el pedido con su dron', () => {
     cy.api(despachador, 'GET', '/orders/pending-load').then((respuesta) => {
-      expect(respuesta.status).to.eq(200);
+      expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(200);
       const fila = respuesta.body.find((p) => p.id === pedido);
       expect(fila, 'pedido en la lista').to.exist;
-      expect(fila.assignment.identifier).to.eq('WG-198-002');
+      expect(fila.assignment.identifier).to.eq('AD-RPL-08');
     });
   });
 
   it('CA-04 paso 2: confirmar la carga pasa el pedido a «en vuelo»', () => {
     cy.api(despachador, 'POST', `/orders/${pedido}/confirm-load`).then(
       (respuesta) => {
-        expect(respuesta.status).to.eq(201);
+        expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(201);
       },
     );
     // El reloj de vuelo cambia el estado en su siguiente ciclo (≤ 2 s).
@@ -48,7 +48,7 @@ describe('CA-04 — F – K (Despacho – Simulación y telemetría)', () => {
 
   it('CA-04 paso 3: el operador recibe telemetría con posición, altitud, velocidad y batería al menos cada 2 s', () => {
     cy.api(operador, 'GET', `/telemetry/orders/${pedido}`).then((primera) => {
-      expect(primera.status).to.eq(200);
+      expect(primera.status, JSON.stringify(primera.body.message ?? '')).to.eq(200);
       for (const campo of [
         'latitude',
         'longitude',
@@ -60,7 +60,7 @@ describe('CA-04 — F – K (Despacho – Simulación y telemetría)', () => {
       }
       cy.wait(2500);
       cy.api(operador, 'GET', `/telemetry/orders/${pedido}`).then((segunda) => {
-        expect(segunda.status).to.eq(200);
+        expect(segunda.status, JSON.stringify(segunda.body.message ?? '')).to.eq(200);
         // En 2,5 s llegó al menos un paquete nuevo: el vuelo avanzó.
         expect(
           JSON.stringify(segunda.body),

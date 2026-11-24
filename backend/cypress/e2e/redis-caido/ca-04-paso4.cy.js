@@ -28,7 +28,7 @@ describe('CA-04 — F – K (Redis detenido)', () => {
   it('CA-04 paso 4: con Redis detenido, confirmar la carga responde 503 y el pedido sigue pendiente de carga', () => {
     cy.api(despachador, 'POST', `/orders/${pedido}/confirm-load`).then(
       (respuesta) => {
-        expect(respuesta.status).to.eq(503);
+        expect(respuesta.status, JSON.stringify(respuesta.body.message ?? '')).to.eq(503);
         expect(respuesta.body.message).to.eq(
           'La telemetría no está disponible. No se puede iniciar el vuelo.',
         );

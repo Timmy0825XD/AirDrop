@@ -1,18 +1,27 @@
 /**
  * Pruebas unitarias del CU-09 (Crear pedido de emergencia), casos CP-09-01 a
- * CP-09-12 de la Segunda Parte. El nombre de cada `it` empieza con el ID del
+ * CP-09-15 de la Segunda Parte. El nombre de cada `it` empieza con el ID del
  * caso para que la terminal lo muestre en la captura. El almacenamiento de la
  * fórmula y las existencias se simulan (mocks).
  */
 import { BadRequestException } from '@nestjs/common';
-import { COORDINATES_PRECISION } from './orders.rules';
 import { plainToInstance } from 'class-transformer';
-import { validate } from 'class-validator';
+import { validate, ValidationError } from 'class-validator';
 import { DocumentType } from '../common/enums/document-type.enum';
 import { HubStatus } from '../common/enums/hub-status.enum';
 import { OrderPriority } from '../common/enums/order-priority.enum';
 import { OrderStatus } from '../common/enums/order-status.enum';
+import {
+  PatientDocumentType,
+  PatientRelation,
+} from '../common/enums/patient.enum';
 import { SaleType } from '../common/enums/sale-type.enum';
+import {
+  PatientGroup,
+  Symptom,
+  SymptomOnset,
+  SymptomSeverity,
+} from '../common/enums/triage.enum';
 import { UserRole } from '../common/enums/user-role.enum';
 import { UserStatus } from '../common/enums/user-status.enum';
 import { Hub } from '../hubs/hub.entity';
@@ -22,13 +31,19 @@ import { CreateEmergencyDto } from './dto/create-emergency.dto';
 import { InventoryOfferQuery } from './inventory-offer.query';
 import { Order } from './order.entity';
 import {
+  COORDINATES_PRECISION,
   DOCUMENT_MISMATCH,
   NO_STOCK_MESSAGE,
   ORIGIN_STOCK_MESSAGE,
-  PRESCRIPTION_IMAGE_REQUIRED,
   SPECIAL_CONTROL_MESSAGE,
 } from './orders.rules';
 import { OrdersService } from './orders.service';
+import {
+  PRESCRIPTION_CORRUPT,
+  PRESCRIPTION_FILES_RULE,
+  PRESCRIPTION_IMAGE_REQUIRED,
+  PRESCRIPTION_SIZE,
+} from './prescription.rules';
 
 const KB = 1024;
 const MB = 1024 * KB;
@@ -46,8 +61,8 @@ const centralDestino = {
   id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
   status: HubStatus.ACTIVE,
   address: 'Calle 16 No. 19-35, Valledupar',
-  latitude: 10.4631,
-  longitude: -73.2532,
+  latitude: 10.4682,
+  longitude: -73.2558,
 } as Hub;
 
 const centralOrigen = {
@@ -62,27 +77,47 @@ const despachador = {
   hubAssignments: [{ hubId: centralDestino.id }],
 } as unknown as User;
 
-function imagen(bytes: number): string {
+function foto(bytes: number): string {
   // Empieza con la firma de un JPEG (FF D8 FF): el backend revisa el contenido.
   const content = Buffer.alloc(bytes, 1);
   content.set([0xff, 0xd8, 0xff]);
   return content.toString('base64');
 }
 
-/** Urgencia bajo fórmula con los datos de CP-09-01. */
+function pdf(bytes: number): string {
+  // Empieza con la firma de un PDF (%PDF-).
+  const content = Buffer.alloc(bytes, 0x20);
+  content.write('%PDF-1.7', 0, 'latin1');
+  return content.toString('base64');
+}
+
+/** Paso 1 de la urgencia: el tamizaje en fichas (RF-41). */
+const tamizaje = {
+  redFlags: [],
+  patientGroup: PatientGroup.ADULT,
+  symptoms: [Symptom.BLOOD_SUGAR],
+  onset: SymptomOnset.TODAY,
+  severity: SymptomSeverity.MODERATE,
+};
+
+/** Urgencia bajo fórmula con los datos de CP-09-01: dos fotos de la fórmula. */
 function conFormula(
   overrides: Partial<CreateEmergencyDto> = {},
 ): CreateEmergencyDto {
   return {
-    medicationName: 'Insulina glargina',
+    medicationName: 'Insulina glargina 100 UI',
     saleType: SaleType.PRESCRIPTION,
-    description: 'Paciente diabético sin insulina',
-    latitude: 10.6314,
-    longitude: -73.1279,
+    triage: tamizaje,
+    allergies: '',
+    address: 'Casa esquinera de reja verde',
+    latitude: 10.4631,
+    longitude: -73.2532,
     patientDocumentType: DocumentType.CITIZENSHIP_ID,
     patientDocumentNumber: '1099000001',
-    prescriptionMime: 'image/jpeg',
-    prescriptionImageBase64: imagen(300 * KB),
+    prescriptions: [
+      { mime: 'image/jpeg', base64: foto(300 * KB) },
+      { mime: 'image/jpeg', base64: foto(280 * KB) },
+    ],
     ...overrides,
   };
 }
@@ -94,16 +129,16 @@ function libre(
   return {
     medicationName: 'Acetaminofén 500 mg',
     saleType: SaleType.OVER_THE_COUNTER,
-    description: 'Fiebre alta persistente',
-    latitude: 10.6314,
-    longitude: -73.1279,
+    triage: { ...tamizaje, symptoms: [Symptom.FEVER] },
+    latitude: 10.4631,
+    longitude: -73.2532,
     ...overrides,
   };
 }
 
 function build(
   oferta: { name: string; availableQuantity: number } | null = {
-    name: 'Insulina glargina',
+    name: 'Insulina glargina 100 UI',
     availableQuantity: 40,
   },
 ) {
@@ -113,7 +148,7 @@ function build(
       Promise.resolve({
         ...value,
         id: '11111111-1111-4111-8111-111111111111',
-        createdAt: new Date('2026-10-26T15:00:00.000Z'),
+        createdAt: new Date('2026-11-20T15:00:00.000Z'),
       }),
     ),
     delete: jest.fn(),
@@ -152,24 +187,30 @@ function build(
   return { service, pedidos, imagenes, almacenamiento, buscarOferta };
 }
 
+function mensajes(fallo: ValidationError): string[] {
+  return [
+    ...Object.values(fallo.constraints ?? {}),
+    ...(fallo.children ?? []).flatMap(mensajes),
+  ];
+}
+
 async function errores(data: object): Promise<string[]> {
   const fallos = await validate(plainToInstance(CreateEmergencyDto, data));
-  return fallos.flatMap((fallo) => Object.values(fallo.constraints ?? {}));
+  return fallos.flatMap(mensajes);
 }
 
 describe('CU-09 Crear pedido de emergencia', () => {
-  it('CP-09-01 crea una urgencia bajo fórmula con imagen y documento del paciente', async () => {
+  it('CP-09-01 crea una urgencia bajo fórmula con tamizaje, dos fotos de la fórmula y el documento del paciente', async () => {
     expect(await errores(conFormula())).toEqual([]);
-    const { service, almacenamiento, imagenes } = build();
+    const { service, almacenamiento } = build();
 
     const pedido = await service.createEmergency(solicitante, conFormula());
 
     expect(pedido.status).toBe(OrderStatus.RECEIVED);
     expect(pedido.priority).toBe(OrderPriority.HIGH);
     expect(pedido.droneId).toBeNull();
-    // La imagen se envía al almacenamiento (simulado) y se guarda su llave.
-    expect(almacenamiento.upload).toHaveBeenCalledTimes(1);
-    expect(imagenes.save).toHaveBeenCalledTimes(1);
+    // Cada foto se envía al almacenamiento privado (simulado).
+    expect(almacenamiento.upload).toHaveBeenCalledTimes(2);
   });
 
   it('CP-09-02 crea una urgencia de venta libre sin fórmula', async () => {
@@ -197,23 +238,17 @@ describe('CU-09 Crear pedido de emergencia', () => {
     await expect(intento).rejects.toThrow(
       new BadRequestException(SPECIAL_CONTROL_MESSAGE),
     );
-    await expect(intento).rejects.toThrow(
-      'El control especial no se pide por este canal.',
-    );
     expect(pedidos.save).not.toHaveBeenCalled();
   });
 
-  it('CP-09-04 rechaza una urgencia bajo fórmula sin la imagen (400)', async () => {
+  it('CP-09-04 rechaza una urgencia bajo fórmula sin la fórmula (400)', async () => {
     const { service, pedidos } = build();
 
     const intento = service.createEmergency(
       solicitante,
-      conFormula({ prescriptionImageBase64: undefined }),
+      conFormula({ prescriptions: [] }),
     );
 
-    await expect(intento).rejects.toThrow(
-      new BadRequestException(PRESCRIPTION_IMAGE_REQUIRED),
-    );
     await expect(intento).rejects.toThrow(PRESCRIPTION_IMAGE_REQUIRED);
     expect(pedidos.save).not.toHaveBeenCalled();
   });
@@ -229,30 +264,41 @@ describe('CU-09 Crear pedido de emergencia', () => {
     await expect(intento).rejects.toThrow(
       new BadRequestException(DOCUMENT_MISMATCH),
     );
-    await expect(intento).rejects.toThrow(
-      'El documento de la cuenta debe ser el del paciente de la fórmula.',
-    );
     expect(pedidos.save).not.toHaveBeenCalled();
   });
 
-  it('CP-09-06 rechaza una imagen de 5 MB + 1 byte (400)', async () => {
-    const { service, pedidos } = build();
-
-    const intento = service.createEmergency(
+  it('CP-09-06 rechaza un archivo de la fórmula de 5 MB + 1 byte y acepta uno de 5 MB (400)', async () => {
+    const grande = build();
+    const intento = grande.service.createEmergency(
       solicitante,
-      conFormula({ prescriptionImageBase64: imagen(5 * MB + 1) }),
+      conFormula({
+        prescriptions: [{ mime: 'image/jpeg', base64: foto(5 * MB + 1) }],
+      }),
     );
+    await expect(intento).rejects.toThrow(PRESCRIPTION_SIZE);
+    expect(grande.pedidos.save).not.toHaveBeenCalled();
 
-    await expect(intento).rejects.toThrow(
-      'Cada archivo de la fórmula debe pesar hasta 5 MB.',
+    const justo = build();
+    const pedido = await justo.service.createEmergency(
+      solicitante,
+      conFormula({
+        prescriptions: [{ mime: 'image/jpeg', base64: foto(5 * MB) }],
+      }),
     );
-    expect(pedidos.save).not.toHaveBeenCalled();
+    expect(pedido.status).toBe(OrderStatus.RECEIVED);
   });
 
-  it('CP-09-07 rechaza la descripción vacía (400)', async () => {
-    expect(await errores(conFormula({ description: '' }))).toContain(
-      'La descripción es obligatoria.',
+  it('CP-09-07 rechaza una fórmula de 4 fotos y acepta una de 3 (400)', async () => {
+    const cuatro = Array.from({ length: 4 }, () => ({
+      mime: 'image/jpeg',
+      base64: foto(100 * KB),
+    }));
+    expect(await errores(conFormula({ prescriptions: cuatro }))).toContain(
+      PRESCRIPTION_FILES_RULE,
     );
+    expect(
+      await errores(conFormula({ prescriptions: cuatro.slice(0, 3) })),
+    ).toEqual([]);
   });
 
   it('CP-09-08 rechaza coordenadas con más de 6 decimales (400)', async () => {
@@ -260,7 +306,7 @@ describe('CU-09 Crear pedido de emergencia', () => {
 
     const intento = service.createEmergency(
       solicitante,
-      conFormula({ latitude: 10.6314159 }),
+      conFormula({ latitude: 10.4631159 }),
     );
 
     await expect(intento).rejects.toThrow(
@@ -274,17 +320,11 @@ describe('CU-09 Crear pedido de emergencia', () => {
 
     const intento = service.createEmergency(
       solicitante,
-      libre({
-        medicationName: 'Medicamento sin existencias',
-        description: 'Paciente diabético sin insulina',
-      }),
+      libre({ medicationName: 'Medicamento sin existencias' }),
     );
 
     await expect(intento).rejects.toThrow(
       new BadRequestException(NO_STOCK_MESSAGE),
-    );
-    await expect(intento).rejects.toThrow(
-      'Ninguna central activa tiene ese medicamento disponible.',
     );
     expect(pedidos.save).not.toHaveBeenCalled();
   });
@@ -302,10 +342,6 @@ describe('CU-09 Crear pedido de emergencia', () => {
     await expect(intento).rejects.toThrow(
       new BadRequestException(ORIGIN_STOCK_MESSAGE),
     );
-    await expect(intento).rejects.toThrow(
-      'La central de origen no tiene esa cantidad disponible.',
-    );
-    // requireOffer se llamó con la central de origen.
     expect(buscarOferta).toHaveBeenCalledWith(
       'Acetaminofén 500 mg',
       SaleType.OVER_THE_COUNTER,
@@ -332,5 +368,54 @@ describe('CU-09 Crear pedido de emergencia', () => {
     expect(await errores(libre({ medicationName: '' }))).toContain(
       'El medicamento es obligatorio.',
     );
+  });
+
+  it('CP-09-13 rechaza un tamizaje sin ningún síntoma (400)', async () => {
+    expect(
+      await errores(libre({ triage: { ...tamizaje, symptoms: [] } })),
+    ).toContain('Elige al menos un síntoma.');
+  });
+
+  it('CP-09-14 crea una urgencia para un hijo a cargo con su registro civil', async () => {
+    const paraHijo = conFormula({
+      triage: { ...tamizaje, patientGroup: PatientGroup.CHILD },
+      patient: {
+        fullName: 'Tomás Martínez Ríos',
+        documentType: PatientDocumentType.CIVIL_REGISTRY,
+        documentNumber: '1065998877',
+        relation: PatientRelation.CHILD,
+      },
+      patientDocumentType: undefined,
+      patientDocumentNumber: undefined,
+    });
+    expect(await errores(paraHijo)).toEqual([]);
+    const { service } = build();
+
+    const pedido = await service.createEmergency(solicitante, paraHijo);
+
+    expect(pedido.status).toBe(OrderStatus.RECEIVED);
+  });
+
+  it('CP-09-15 rechaza un archivo que dice ser PDF pero no lo es, y acepta un PDF real (400)', async () => {
+    const { service, pedidos } = build();
+
+    const intento = service.createEmergency(
+      solicitante,
+      conFormula({
+        prescriptions: [{ mime: 'application/pdf', base64: foto(100 * KB) }],
+      }),
+    );
+
+    await expect(intento).rejects.toThrow(PRESCRIPTION_CORRUPT);
+    expect(pedidos.save).not.toHaveBeenCalled();
+
+    const bueno = build();
+    const pedido = await bueno.service.createEmergency(
+      solicitante,
+      conFormula({
+        prescriptions: [{ mime: 'application/pdf', base64: pdf(200 * KB) }],
+      }),
+    );
+    expect(pedido.status).toBe(OrderStatus.RECEIVED);
   });
 });
