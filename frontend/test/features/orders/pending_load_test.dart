@@ -29,7 +29,7 @@ void main() {
     await _pumpTray(tester);
 
     expect(find.text('Insulina glargina 100 UI/ml'), findsOneWidget);
-    expect(find.text('Dron D-01 · 4,2 km · 100 m'), findsOneWidget);
+    expect(find.text('Garza D-01'), findsOneWidget);
 
     await tester.tap(find.text('Revisar y cargar'));
     await tester.pump();

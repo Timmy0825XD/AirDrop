@@ -53,8 +53,8 @@ void main() {
     expect(find.text('Vuelos en curso'), findsOneWidget);
     expect(find.text('1 vuelo en curso'), findsOneWidget);
     expect(find.text(pending.medicationName), findsOneWidget);
-    expect(find.text('Dron D-01 · 4,2 km · 100 m'), findsOneWidget);
-    expect(find.text('En vuelo'), findsOneWidget);
+    expect(find.text('Garza D-01'), findsOneWidget);
+    expect(find.text('En camino'), findsOneWidget);
     expect(find.text('Ver vuelo'), findsOneWidget);
   });
 }

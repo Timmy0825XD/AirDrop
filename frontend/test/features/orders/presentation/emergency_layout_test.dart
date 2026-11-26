@@ -53,7 +53,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(find.text('Vamos contigo.'), findsOneWidget);
-      await tester.ensureVisible(find.text('Continuar'));
+      await tester.scrollUntilVisible(find.text('Continuar'), 200);
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
       expect(find.text('Continuar').hitTestable(), findsOneWidget);

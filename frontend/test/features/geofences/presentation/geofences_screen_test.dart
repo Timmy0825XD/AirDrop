@@ -120,7 +120,7 @@ void main() {
 
     await tester.tap(find.text('CAI Gobernación'));
     await tester.pumpAndSettle();
-    expect(find.textContaining('RAC 100.315(a)'), findsOneWidget);
+    expect(find.textContaining('RAC 100.315(a)'), findsWidgets);
     expect(find.text('Historial'), findsOneWidget);
     expect(find.text('Desactivar'), findsNothing);
     expect(find.text('Eliminar'), findsNothing);

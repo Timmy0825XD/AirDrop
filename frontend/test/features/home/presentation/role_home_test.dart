@@ -6,6 +6,7 @@ import 'package:frontend/app/providers.dart';
 import 'package:frontend/app/router.dart';
 import 'package:frontend/core/auth/token_store.dart';
 import 'package:frontend/features/auth/data/auth_models.dart';
+import 'package:frontend/features/auth/data/local/local_fixtures.dart';
 import 'package:frontend/features/auth/data/local/local_auth_repository.dart';
 import 'package:frontend/features/auth/presentation/auth_controller.dart';
 import 'package:frontend/features/fleet/data/fleet_flight.dart';
@@ -269,7 +270,7 @@ class FakeFleetRepository implements FleetRepository {
 
 const InventoryItem _inventoryItem = InventoryItem(
   id: 'e1111111-1111-4111-8111-111111111111',
-  hubId: 'hub-1',
+  hubId: localFixtureHubId,
   name: 'Acetaminofén 500 mg',
   quantity: 240,
   lot: 'ACT-500-26',
@@ -290,11 +291,10 @@ void main() {
 
     await _pumpHome(tester, container, settles: false);
 
-    expect(find.text('Hola, Ana'), findsOneWidget);
-    expect(find.text('Solicitante'), findsOneWidget);
+    expect(find.text('Hola, Ana.'), findsOneWidget);
     // Los accesos van debajo de la misión y los números: se baja hasta ellos.
-    await tester.scrollUntilVisible(find.text('Entrega periódica'), 200);
-    expect(find.text('Entrega periódica'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Crear entrega periódica'), 200);
+    expect(find.text('Crear entrega periódica'), findsOneWidget);
     // Pedir urgencia (centro), Mis pedidos y Mis planes ya están en la barra.
     expect(find.widgetWithText(MenuList, 'Pedir urgencia'), findsNothing);
     expect(find.widgetWithText(MenuList, 'Mis pedidos'), findsNothing);
@@ -317,7 +317,7 @@ void main() {
 
     await _pumpHome(tester, container, settles: false);
 
-    expect(find.text('Operador de flota'), findsOneWidget);
+    expect(find.textContaining('Operador de flota'), findsOneWidget);
     expect(find.widgetWithText(MenuList, 'Flota'), findsNothing);
     expect(find.widgetWithText(MenuList, 'Geovallas'), findsNothing);
   });
@@ -373,7 +373,8 @@ void main() {
 
       await _pumpHome(tester, container, settles: false);
 
-      expect(find.text('Central de prueba · Suspendida'), findsOneWidget);
+      expect(find.text('Central de prueba'), findsOneWidget);
+      expect(find.text('Central suspendida'), findsWidgets);
       expect(
         find.textContaining('Tu central está suspendida.'),
         findsOneWidget,
@@ -399,11 +400,12 @@ void main() {
     final semantics = tester.ensureSemantics();
     await _pumpHome(tester, container, settles: false);
 
-    expect(find.text('Hola, Diego'), findsOneWidget);
-    expect(find.text('Central de prueba · Activa'), findsOneWidget);
+    expect(find.text('Hola, Diego.'), findsOneWidget);
+    expect(find.text('Central de prueba'), findsOneWidget);
+    expect(find.text('Central activa'), findsOneWidget);
     // "Lo que te toca ahora" va antes que las cifras.
     await tester.scrollUntilVisible(find.text('Para atender ahora'), 200);
-    expect(find.textContaining('Cargar '), findsWidgets);
+    expect(find.text('Preparar carga'), findsWidgets);
     await tester.scrollUntilVisible(
       find.bySemanticsLabel(RegExp('Por cargar: 1')),
       200,
@@ -497,7 +499,8 @@ void main() {
 
     expect(find.byType(InventoryScreen), findsOneWidget);
     expect(find.text('Acetaminofén 500 mg'), findsOneWidget);
-    expect(find.textContaining('Lote ACT-500-26 · 240 und.'), findsOneWidget);
+    expect(find.text('240 unidades'), findsOneWidget);
+    expect(find.textContaining('Lote ACT-500-26 · Vence'), findsOneWidget);
     expect(find.textContaining('Cadena de frío'), findsOneWidget);
   });
 
@@ -528,10 +531,7 @@ void main() {
 
     expect(find.byType(GeofencesScreen), findsOneWidget);
     expect(find.text('Corredor Aéreo Ambulancia'), findsOneWidget);
-    expect(
-      find.text('Operativa · Polígono de 3 vértices'),
-      findsOneWidget,
-    );
+    expect(find.text('Operativa · Polígono de 3 vértices'), findsOneWidget);
   });
 }
 

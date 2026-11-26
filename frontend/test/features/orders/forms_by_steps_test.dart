@@ -73,6 +73,9 @@ void main() {
   testWidgets('la entrega periódica no pasa del paso 1 sin medicamento', (
     tester,
   ) async {
+    tester.view.physicalSize = const Size(400, 900);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -84,15 +87,20 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 600));
 
-    expect(find.text('Paso 1 de 3 · Qué'), findsOneWidget);
+    expect(find.text('1 de 3', skipOffstage: false), findsOneWidget);
     // Los campos de "Dónde" todavía no están.
     expect(find.text('Dirección'), findsNothing);
 
-    await tester.ensureVisible(find.text('Siguiente'));
-    await tester.tap(find.text('Siguiente'));
+    await tester.ensureVisible(
+      find.text('Elegir calendario', skipOffstage: false),
+    );
+    await tester.tap(find.text('Elegir calendario'));
     await tester.pump(const Duration(milliseconds: 600));
 
-    expect(find.text('Paso 1 de 3 · Qué'), findsOneWidget);
-    expect(find.text('Elige un medicamento del catálogo.'), findsOneWidget);
+    expect(find.text('1 de 3', skipOffstage: false), findsOneWidget);
+    expect(
+      find.text('Elige un medicamento del catálogo.', skipOffstage: false),
+      findsOneWidget,
+    );
   });
 }

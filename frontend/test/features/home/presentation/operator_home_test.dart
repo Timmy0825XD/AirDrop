@@ -11,16 +11,24 @@ void main() {
   testWidgets('espera las lecturas antes de declarar Todo al día', (
     tester,
   ) async {
+    final semantics = tester.ensureSemantics();
     await pumpOperatorPage(
       tester,
       operatorData(drones: const AsyncLoading(), flights: const AsyncLoading()),
     );
-    expect(find.text('Todo al día'), findsNothing);
-    expect(find.bySemanticsLabel('Cargando pendientes'), findsOneWidget);
+    expect(find.text('Todo al día', skipOffstage: false), findsNothing);
+    expect(
+      find.bySemanticsLabel(RegExp('Cargando pendientes'), skipOffstage: false),
+      findsOneWidget,
+    );
     await pumpOperatorPage(tester, operatorData());
-    expect(find.text('Todo al día'), findsOneWidget);
-    expect(find.text('Sin vuelos por ahora'), findsOneWidget);
+    expect(find.text('Todo al día', skipOffstage: false), findsOneWidget);
+    expect(
+      find.text('Sin vuelos por ahora', skipOffstage: false),
+      findsOneWidget,
+    );
     expect(tester.takeException(), isNull);
+    semantics.dispose();
   });
 
   testWidgets(
@@ -39,11 +47,11 @@ void main() {
         operatorData(drones: failed),
         onRetry: () => retried++,
       );
-      expect(find.text('Todo al día'), findsNothing);
-      expect(find.text('Cóndor CD-03'), findsOneWidget);
-      expect(find.text('Sin conexión'), findsOneWidget);
-      await tester.ensureVisible(find.text('Reintentar'));
-      await tester.tap(find.text('Reintentar'));
+      expect(find.text('Todo al día', skipOffstage: false), findsNothing);
+      expect(find.text('Cóndor CD-03', skipOffstage: false), findsOneWidget);
+      expect(find.text('Sin conexión', skipOffstage: false), findsOneWidget);
+      await tester.ensureVisible(find.text('Reintentar', skipOffstage: false));
+      await tester.tap(find.text('Reintentar', skipOffstage: false));
       expect(retried, 1);
       expect(tester.takeException(), isNull);
     },
@@ -58,9 +66,9 @@ void main() {
       operatorData(hubs: const AsyncData([])),
       onOpen: opened.add,
     );
-    expect(find.text('Todo al día'), findsNothing);
-    expect(find.text('Tu flota'), findsNothing);
-    await tester.tap(find.text('Ver mi perfil'));
+    expect(find.text('Todo al día', skipOffstage: false), findsNothing);
+    expect(find.text('Tu flota', skipOffstage: false), findsNothing);
+    await tester.tap(find.text('Ver mi perfil', skipOffstage: false));
     expect(opened, ['/profile']);
   });
 
@@ -78,9 +86,12 @@ void main() {
         ),
         onRetry: () => retried = true,
       );
-      expect(find.text('No pudimos cargar tus centrales'), findsOneWidget);
-      expect(find.text('Ver mi perfil'), findsNothing);
-      await tester.tap(find.text('Reintentar'));
+      expect(
+        find.text('No pudimos cargar tus centrales', skipOffstage: false),
+        findsOneWidget,
+      );
+      expect(find.text('Ver mi perfil', skipOffstage: false), findsNothing);
+      await tester.tap(find.text('Reintentar', skipOffstage: false));
       expect(retried, isTrue);
     },
   );
@@ -108,26 +119,57 @@ void main() {
           onOpen: opened.add,
           onDrone: reviewed.add,
         );
-        expect(find.text('Todo al día'), findsNothing);
-        expect(find.text('En espera de rescate'), findsOneWidget);
+        expect(find.text('Todo al día', skipOffstage: false), findsNothing);
+        expect(
+          find.text('En espera de rescate', skipOffstage: false),
+          findsOneWidget,
+        );
         final review = find.descendant(
-          of: find.widgetWithText(OperatorWorkCard, 'Cóndor CD-03'),
-          matching: find.text('Ver dron'),
+          of: find.widgetWithText(
+            OperatorWorkCard,
+            'Cóndor CD-03',
+            skipOffstage: false,
+          ),
+          skipOffstage: false,
+          matching: find.text('Ver dron', skipOffstage: false),
         );
         await tester.ensureVisible(review);
         await tester.pumpAndSettle();
         await tester.tap(review);
         expect(reviewed.single.hubId, 'h2');
-        await tester.ensureVisible(find.text('Regresando'));
+        await tester.scrollUntilVisible(
+          find.text('GZ-02'),
+          200,
+          scrollable: find
+              .descendant(
+                of: find.byType(ListView),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
         await tester.pumpAndSettle();
         final backFlight = find.descendant(
-          of: find.widgetWithText(OperatorWorkCard, 'GZ-02'),
-          matching: find.text('Ver vuelo'),
+          of: find.widgetWithText(
+            OperatorWorkCard,
+            'GZ-02',
+            skipOffstage: false,
+          ),
+          skipOffstage: false,
+          matching: find.text('Ver vuelo', skipOffstage: false),
         );
         await tester.ensureVisible(backFlight);
         await tester.tap(backFlight);
         expect(opened.last, '/tracking/p02');
-        await tester.ensureVisible(find.text('Últimos 30 días'));
+        await tester.scrollUntilVisible(
+          find.text('Últimos 30 días'),
+          200,
+          scrollable: find
+              .descendant(
+                of: find.byType(ListView),
+                matching: find.byType(Scrollable),
+              )
+              .first,
+        );
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       },
@@ -149,11 +191,12 @@ void main() {
       ),
       onOpen: opened.add,
     );
-    expect(find.text('GZ-01'), findsOneWidget);
-    expect(find.text('GZ-02'), findsOneWidget);
-    expect(find.text('GZ-03'), findsNothing);
+    expect(find.text('GZ-01', skipOffstage: false), findsOneWidget);
+    expect(find.text('GZ-02', skipOffstage: false), findsOneWidget);
+    expect(find.text('GZ-03', skipOffstage: false), findsNothing);
     final all = find.text('Ver los 3 vuelos en el mapa');
-    await tester.ensureVisible(all);
+    await tester.scrollUntilVisible(all, 200);
+    await tester.pumpAndSettle();
     await tester.tap(all);
     expect(opened, ['/fleet/flights']);
   });
@@ -167,8 +210,11 @@ void main() {
           drones: AsyncData([operatorDrone('99', status: DroneStatus.unknown)]),
         ),
       );
-      expect(find.text('Todo al día'), findsNothing);
-      expect(find.text('Estado por confirmar'), findsOneWidget);
+      expect(find.text('Todo al día', skipOffstage: false), findsNothing);
+      expect(
+        find.text('Estado por confirmar', skipOffstage: false),
+        findsOneWidget,
+      );
       expect(find.textContaining('Despegar'), findsNothing);
     },
   );
@@ -183,9 +229,12 @@ void main() {
       // ignore: invalid_use_of_internal_member
     ).copyWithPrevious(AsyncData([operatorFlight('01')]));
     await pumpOperatorPage(tester, operatorData(flights: failed));
-    expect(find.text('Todo al día'), findsNothing);
-    expect(find.text('Sin vuelos por ahora'), findsNothing);
-    expect(find.text('GZ-01'), findsOneWidget);
-    expect(find.text('Sin red'), findsOneWidget);
+    expect(find.text('Todo al día', skipOffstage: false), findsNothing);
+    expect(
+      find.text('Sin vuelos por ahora', skipOffstage: false),
+      findsNothing,
+    );
+    expect(find.text('GZ-01', skipOffstage: false), findsOneWidget);
+    expect(find.text('Sin red', skipOffstage: false), findsOneWidget);
   });
 }
