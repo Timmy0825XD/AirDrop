@@ -64,12 +64,12 @@ void main() {
     // 20:30 UTC son las 3:30 p. m. en Colombia.
     await pump(_fence(expiresAt: DateTime.utc(2026, 11, 8, 20, 30)));
     await tester.pump(const Duration(milliseconds: 600));
-    expect(find.text('Vence 3:30 p. m.'), findsOneWidget);
+    expect(find.textContaining('· 3:30 p. m.'), findsOneWidget);
     expect(find.byTooltip('Más acciones'), findsNothing);
 
     await pump(_fence(), onDelete: () {});
     await tester.pump(const Duration(milliseconds: 600));
-    expect(find.text('Riesgo en tierra'), findsOneWidget);
+    expect(find.text('Operativa · Activa'), findsOneWidget);
     expect(find.text('Operativa · Polígono de 3 vértices'), findsOneWidget);
     expect(find.byTooltip('Más acciones'), findsOneWidget);
   });

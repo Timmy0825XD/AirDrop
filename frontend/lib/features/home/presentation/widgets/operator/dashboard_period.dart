@@ -31,9 +31,11 @@ class DashboardPeriod extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              'Últimos $days días',
-              style: Theme.of(context).textTheme.bodySmall,
+            Flexible(
+              child: Text(
+                'Últimos $days días',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
             ),
             const SizedBox(width: 6),
             const RotatedBox(

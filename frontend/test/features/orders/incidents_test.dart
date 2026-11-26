@@ -71,7 +71,7 @@ void main() {
     expect(StatusReasonBanner.reasonOf(retry), isNull);
   });
 
-  testWidgets('un entregado cuyo dron vuelve dice "Volviendo a la central"', (
+  testWidgets('un entregado cuyo dron vuelve dice "De regreso"', (
     tester,
   ) async {
     await tester.pumpWidget(
@@ -87,7 +87,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Volviendo a la central'), findsOneWidget);
+    expect(find.text('De regreso'), findsOneWidget);
     expect(find.text('Entregado'), findsNothing);
   });
 }
