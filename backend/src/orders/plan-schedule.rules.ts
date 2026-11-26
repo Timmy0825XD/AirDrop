@@ -208,7 +208,9 @@ export function colombiaInstant(date: string, time: string): Date {
 function normalize(input: ScheduleInput, today: string): PlanSchedule {
   const time = input.time;
   if (input.kind === ScheduleKind.DATES) {
-    const dates = [...new Set(input.dates ?? [])].sort((a, b) => a.localeCompare(b));
+    const dates = [...new Set(input.dates ?? [])].sort((a, b) =>
+      a.localeCompare(b),
+    );
     if (!dates.length || dates.length > MAX_PLAN_DATES) {
       throw new BadRequestException(SCHEDULE_NEEDS_DATES);
     }
